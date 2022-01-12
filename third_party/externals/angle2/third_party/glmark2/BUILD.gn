@@ -404,7 +404,8 @@ if (is_win && target_cpu != "arm64") {
     sources = [ "src/src/gl-state-wgl.cpp" ]
     deps = [ ":glmark2_common_gl" ]
 
-    libs = [ "opengl32.lib" ]
+    # libs = [ "opengl32.lib" ]
+    libs = [ "opengl32" ]
     defines = [ "GLMARK2_USE_WGL" ]
   }
 }

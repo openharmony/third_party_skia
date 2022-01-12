@@ -16,9 +16,12 @@
 #ifndef _UNICODE
 #define _UNICODE
 #endif
-#include <ObjBase.h>
-#include <XpsObjectModel.h>
-#include <T2EmbApi.h>
+// #include <ObjBase.h>
+#include <objbase.h>
+// #include <XpsObjectModel.h>
+#include <xpsobjectmodel.h>
+// #include <T2EmbApi.h>
+#include <t2embapi.h>
 #include <FontSub.h>
 #include <limits>
 

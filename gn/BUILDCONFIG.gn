@@ -17,8 +17,6 @@ declare_args() {
   # Android 5.0, Lollipop
   ndk_api = 21
 
-  sanitize = ""
-
   ar = "ar"
   cc = "cc"
   cxx = "c++"
@@ -44,24 +42,7 @@ if (target_cpu == "wasm") {
   target_os = "wasm"
 }
 
-# Platform detection
-if (target_os == "") {
-  target_os = host_os
-  if (ndk != "") {
-    target_os = "android"
-  }
-}
-if (current_os == "") {
-  current_os = target_os
-}
-
-is_android = current_os == "android"
-is_fuchsia = current_os == "fuchsia"
-is_ios = current_os == "ios" || current_os == "tvos"
-is_tvos = current_os == "tvos"
-is_linux = current_os == "linux"
-is_mac = current_os == "mac"
-is_win = current_os == "win"
+import("platform.gni")
 
 # This is just to make the Dawn build files happy. Skia itself uses target_os = "linux"
 # for ChromeOS, so this variable will not affect Skia proper.
@@ -160,67 +141,16 @@ if (target_os == "win") {
   }
 }
 
-# A component is either a static or a shared library.
-template("component") {
-  _component_mode = "static_library"
-  if (is_component_build) {
-    _component_mode = "shared_library"
-  }
-
-  target(_component_mode, target_name) {
-    forward_variables_from(invoker, "*")
-  }
-}
-
-# Default configs
-default_configs = [
-  "${skia_root_dir}/gn/skia:default",
-  "${skia_root_dir}/gn/skia:no_exceptions",
-  "${skia_root_dir}/gn/skia:no_rtti",
-]
-if (!is_debug) {
-  default_configs += [
-    "${skia_root_dir}/gn/skia:optimize",
-    "${skia_root_dir}/gn/skia:NDEBUG",
-  ]
-}
-if (!is_official_build) {
-  default_configs += [ "${skia_root_dir}/gn/skia:debug_symbols" ]
-}
-default_configs += [ "${skia_root_dir}/gn/skia:extra_flags" ]
-
-set_defaults("executable") {
-  configs = [ "${skia_root_dir}/gn/skia:executable" ] + default_configs
-}
-
 set_defaults("source_set") {
-  configs = default_configs
+  configs = []
 }
 
 set_defaults("static_library") {
-  configs = default_configs
+  configs = []
 }
 
 set_defaults("shared_library") {
-  configs = default_configs
-}
-
-set_defaults("component") {
-  configs = default_configs
-  if (!is_component_build) {
-    complete_static_lib = true
-  }
-}
-
-skia_target_default_configs = []
-if (!is_official_build) {
-  skia_target_default_configs += [ "${skia_root_dir}/gn/skia:warnings" ]
-}
-
-skia_header_target_default_configs = []
-if (!is_official_build) {
-  skia_header_target_default_configs +=
-      [ "${skia_root_dir}/gn/skia:warnings_for_public_headers" ]
+  configs = []
 }
 
 if (is_win) {

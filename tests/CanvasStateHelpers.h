@@ -20,11 +20,11 @@ class SkCanvas;
 class SkCanvasState;
 class SkRegion;
 
-#if defined(SK_BUILD_FOR_WIN)
-#define EXPORT _declspec(dllexport)
-#else
+// #if defined(SK_BUILD_FOR_WIN)
+// #define EXPORT _declspec(dllexport)
+// #else
 #define EXPORT
-#endif
+// #endif
 
 /*
  *  Helper function to perform drawing to an SkCanvas. Used by both

@@ -18,6 +18,9 @@ import sys
 # Also write skia.h.deps, which Ninja uses to track dependencies. It's the
 # very same mechanism Ninja uses to know which .h files affect which .cpp files.
 
+os.system("rm ../../.gn")
+os.system("ln -s third_party/Skia/.gn ../../.gn")
+
 gn              = sys.argv[1]
 absolute_source = sys.argv[2]
 skia_h          = sys.argv[3]
@@ -34,10 +37,13 @@ gn_desc_cmd = [gn, 'desc', '.', '--root=%s' % absolute_source, '--format=json',
 
 desc_json_txt = ''
 try:
-  desc_json_txt = subprocess.check_output(gn_desc_cmd)
+  desc_json_txt = subprocess.check_output(gn_desc_cmd).decode('utf-8')
 except subprocess.CalledProcessError as e:
-  print(e.output)
+  print(e.output.decode('utf-8'))
   raise
+
+begin_index = desc_json_txt.index("{")
+desc_json_txt = desc_json_txt[begin_index:]
 
 desc_json = {}
 try:
@@ -97,3 +103,6 @@ with open(skia_h + '.deps', 'w') as f:
 # and I think we have some bad versions of those files laying around.
 if os.path.exists(skia_h + '.d'):
   os.remove(skia_h + '.d')
+
+os.system("rm ../../.gn")
+os.system("ln -s build/core/gn/dotfile.gn ../../.gn")
