@@ -231,14 +231,14 @@ foreach(is_shared_library,
     if (is_fuchsia) {
       public_deps += [
         "$angle_root/src/common/fuchsia_egl",
-        "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.images",
-        "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.ui.policy",
-        "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.ui.scenic",
-        "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.ui.views",
-        "//third_party/fuchsia-sdk/sdk/pkg/async-loop-cpp",
-        "//third_party/fuchsia-sdk/sdk/pkg/async-loop-default",
-        "//third_party/fuchsia-sdk/sdk/pkg/fdio",
-        "//third_party/fuchsia-sdk/sdk/pkg/scenic_cpp",
+        "${skia_third_party_dir}/fuchsia-sdk/sdk/fidl/fuchsia.images",
+        "${skia_third_party_dir}/fuchsia-sdk/sdk/fidl/fuchsia.ui.policy",
+        "${skia_third_party_dir}/fuchsia-sdk/sdk/fidl/fuchsia.ui.scenic",
+        "${skia_third_party_dir}/fuchsia-sdk/sdk/fidl/fuchsia.ui.views",
+        "${skia_third_party_dir}/fuchsia-sdk/sdk/pkg/async-loop-cpp",
+        "${skia_third_party_dir}/fuchsia-sdk/sdk/pkg/async-loop-default",
+        "${skia_third_party_dir}/fuchsia-sdk/sdk/pkg/fdio",
+        "${skia_third_party_dir}/fuchsia-sdk/sdk/pkg/scenic_cpp",
       ]
     }
 

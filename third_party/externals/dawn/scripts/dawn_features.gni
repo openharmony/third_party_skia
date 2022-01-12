@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 
 if (build_with_chromium) {
-  import("//build/config/ozone.gni")
-  import("//build/config/sanitizers/sanitizers.gni")
+  import("${skia_root_dir}/build/config/ozone.gni")
+  import("${skia_root_dir}/build/config/sanitizers/sanitizers.gni")
 
   dawn_use_x11 = ozone_platform_x11
 } else {

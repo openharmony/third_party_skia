@@ -4,7 +4,7 @@
 # found in the LICENSE file.
 
 if (is_fuchsia) {
-  import("//build/fuchsia/sdk.gni")
+  import("${skia_root_dir}/build/fuchsia/sdk.gni")
 }
 
 declare_args() {

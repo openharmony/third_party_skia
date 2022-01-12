@@ -16,7 +16,7 @@
 swiftshader_standalone = true
 
 # Path to SwiftShader
-swiftshader_dir = "//"
+swiftshader_dir = "${skia_root_dir}/"
 
 # Paths to SwiftShader dependencies
-swiftshader_spirv_tools_dir = "//third_party/SPIRV-Tools"
+swiftshader_spirv_tools_dir = "${skia_third_party_dir}/SPIRV-Tools"

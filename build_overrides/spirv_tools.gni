@@ -5,5 +5,5 @@
 
 spirv_tools_standalone = false
 
-spirv_tools_googletest_dir = "//third_party/googletest/src"
-spirv_tools_spirv_headers_dir = "//third_party/externals/spirv-headers"
+spirv_tools_googletest_dir = "${skia_third_party_dir}/googletest/src"
+spirv_tools_spirv_headers_dir = "${skia_third_party_dir}/externals/spirv-headers"

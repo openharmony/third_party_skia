@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build_overrides/build.gni")
-import("//third_party/abseil-cpp/absl.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
+import("${skia_third_party_dir}/abseil-cpp/absl.gni")
 
 absl_source_set("hash") {
   sources = [
@@ -14,16 +14,16 @@ absl_source_set("hash") {
   deps = [
     ":city",
     ":low_level_hash",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:endian",
-    "//third_party/abseil-cpp/absl/container:fixed_array",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/numeric:int128",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/types:optional",
-    "//third_party/abseil-cpp/absl/types:variant",
-    "//third_party/abseil-cpp/absl/utility",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:fixed_array",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:int128",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:optional",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:variant",
+    "${skia_third_party_dir}/abseil-cpp/absl/utility",
   ]
 }
 
@@ -32,10 +32,10 @@ absl_source_set("hash_testing") {
   public = [ "hash_testing.h" ]
   deps = [
     ":spy_hash_state",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/types:variant",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:variant",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -44,19 +44,19 @@ absl_source_set("spy_hash_state") {
   public = [ "internal/spy_hash_state.h" ]
   deps = [
     ":hash",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/strings:str_format",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings:str_format",
   ]
-  visibility = [ "//third_party/abseil-cpp/absl/*" ]
+  visibility = [ "${skia_third_party_dir}/abseil-cpp/absl/*" ]
 }
 
 absl_source_set("city") {
   public = [ "internal/city.h" ]
   sources = [ "internal/city.cc" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
   ]
 }
 
@@ -64,10 +64,10 @@ absl_source_set("low_level_hash") {
   public = [ "internal/low_level_hash.h" ]
   sources = [ "internal/low_level_hash.cc" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:endian",
-    "//third_party/abseil-cpp/absl/numeric:bits",
-    "//third_party/abseil-cpp/absl/numeric:int128",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:bits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:int128",
   ]
   visibility = [ ":*" ]
 }
@@ -77,8 +77,8 @@ absl_source_set("low_level_hash_test") {
   sources = [ "internal/low_level_hash_test.cc" ]
   deps = [
     ":low_level_hash",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/googletest:gtest",
-    "//third_party/googletest:gmock",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/googletest:gtest",
+    "${skia_third_party_dir}/googletest:gmock",
   ]
 }

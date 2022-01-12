@@ -24,7 +24,7 @@ source_set("opencl_icd_loader") {
       "src/loader/windows/icd_windows_hkr.c",
     ]
 
-    configs -= [ "//build/config/win:lean_and_mean" ]
+    configs -= [ "${skia_root_dir}/build/config/win:lean_and_mean" ]
     libs = [ "cfgmgr32.lib" ]
 
     if (is_clang) {
@@ -46,8 +46,8 @@ source_set("opencl_icd_loader") {
     }
   }
 
-  configs -= [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+  configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
 
   public_configs = [ ":opencl_icd_loader_config" ]
   public_deps = [ "$angle_root:cl_includes" ]

@@ -29,8 +29,8 @@ config("glm_public_config") {
   }
 }
 source_set("glm") {
-  configs -= [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+  configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
 
   public_configs = [ ":glm_public_config" ]
 

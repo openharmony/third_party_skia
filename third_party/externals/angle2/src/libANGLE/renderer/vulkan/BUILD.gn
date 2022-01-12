@@ -4,8 +4,8 @@
 #
 # This file houses the build configuration for the ANGLE Vulkan back-end.
 
-import("//build/config/dcheck_always_on.gni")
-import("//build_overrides/swiftshader.gni")
+import("${skia_root_dir}/build/config/dcheck_always_on.gni")
+import("${skia_root_dir}/build_overrides/swiftshader.gni")
 import("../../../../gni/angle.gni")
 
 assert(angle_enable_vulkan)

@@ -381,7 +381,7 @@ glmark2_exe("glmark2_angle") {
 
   if ((is_linux || is_chromeos) && !is_component_build) {
     # Set rpath to find shared libs in a non-component build.
-    public_configs = [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
+    public_configs = [ "${skia_root_dir}/build/config/gcc:rpath_for_built_shared_libraries" ]
   }
 }
 

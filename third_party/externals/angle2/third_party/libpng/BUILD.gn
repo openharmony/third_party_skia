@@ -38,7 +38,7 @@ static_library("libpng") {
   if (is_win) {
     cflags = [ "/wd4028" ]
   }
-  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
   public_configs = [ ":libpng_config" ]
-  deps = [ "//third_party/zlib:zlib" ]
+  deps = [ "${skia_third_party_dir}/zlib:zlib" ]
 }

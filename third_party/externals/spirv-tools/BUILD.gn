@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build_overrides/build.gni")
-import("//build_overrides/spirv_tools.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/spirv_tools.gni")
 if (build_with_chromium) {
-  import("//testing/test.gni")
-  import("//third_party/protobuf/proto_library.gni")
+  import("${skia_root_dir}/testing/test.gni")
+  import("${skia_third_party_dir}/protobuf/proto_library.gni")
 }
 
 spirv_headers = spirv_tools_spirv_headers_dir
@@ -468,8 +468,8 @@ static_library("spvtools") {
   ]
 
   if (build_with_chromium) {
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
   }
   configs += [ ":spvtools_internal_config" ]
 }
@@ -535,8 +535,8 @@ static_library("spvtools_val") {
   public_deps = [ ":spvtools_headers" ]
 
   if (build_with_chromium) {
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
   }
   configs += [ ":spvtools_internal_config" ]
 }
@@ -773,8 +773,8 @@ static_library("spvtools_opt") {
   ]
 
   if (build_with_chromium) {
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
   }
   configs += [ ":spvtools_internal_config" ]
 }
@@ -788,8 +788,8 @@ static_library("spvtools_link") {
   ]
   public_deps = [ ":spvtools_headers" ]
   if (build_with_chromium) {
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
   }
   configs += [ ":spvtools_internal_config" ]
 }
@@ -863,8 +863,8 @@ static_library("spvtools_reduce") {
   ]
   public_deps = [ ":spvtools_headers" ]
   if (build_with_chromium) {
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
   }
   configs += [ ":spvtools_internal_config" ]
 }
@@ -1277,11 +1277,11 @@ if (build_with_chromium) {
       ":spvtools_fuzz_proto",
       ":spvtools_opt",
       ":spvtools_reduce",
-      "//third_party/protobuf:protobuf_full",
+      "${skia_third_party_dir}/protobuf:protobuf_full",
     ]
     public_deps = [ ":spvtools_headers" ]
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
     configs += [ ":spvtools_internal_config" ]
   }
 }
@@ -1367,11 +1367,11 @@ if (build_with_chromium) {
       ":spvtools_language_header_debuginfo",
       ":spvtools_language_header_vkdebuginfo100",
       ":spvtools_val",
-      "//testing/gmock",
-      "//testing/gtest",
-      "//testing/gtest:gtest_main",
-      "//third_party/googletest:gmock",
-      "//third_party/googletest:gtest",
+      "${skia_root_dir}/testing/gmock",
+      "${skia_root_dir}/testing/gtest",
+      "${skia_root_dir}/testing/gtest:gtest_main",
+      "${skia_third_party_dir}/googletest:gmock",
+      "${skia_third_party_dir}/googletest:gtest",
     ]
 
     if (is_clang) {
@@ -1488,7 +1488,7 @@ if (!is_ios && !spirv_is_winuwp && build_with_chromium) {
       ":spvtools_software_version",
       ":spvtools_util_cli_consumer",
       ":spvtools_val",
-      "//third_party/protobuf:protobuf_full",
+      "${skia_third_party_dir}/protobuf:protobuf_full",
     ]
     configs += [ ":spvtools_internal_config" ]
   }

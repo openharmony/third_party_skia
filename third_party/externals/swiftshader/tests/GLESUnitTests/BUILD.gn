@@ -12,24 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//testing/test.gni")
+import("${skia_root_dir}/testing/test.gni")
 import("../../src/swiftshader.gni")
 
 if (build_with_chromium) {
   test("swiftshader_unittests") {
     deps = [
-      "//base",
-      "//base/test:test_support",
-      "//testing/gmock",
-      "//testing/gtest",
-      "//third_party/googletest:gmock",
-      "//third_party/googletest:gtest",
-      "//third_party/swiftshader/src/OpenGL/libEGL:swiftshader_libEGL",
-      "//third_party/swiftshader/src/OpenGL/libGLESv2:swiftshader_libGLESv2",
+      "${skia_root_dir}/base",
+      "${skia_root_dir}/base/test:test_support",
+      "${skia_root_dir}/testing/gmock",
+      "${skia_root_dir}/testing/gtest",
+      "${skia_third_party_dir}/googletest:gmock",
+      "${skia_third_party_dir}/googletest:gtest",
+      "${skia_third_party_dir}/swiftshader/src/OpenGL/libEGL:swiftshader_libEGL",
+      "${skia_third_party_dir}/swiftshader/src/OpenGL/libGLESv2:swiftshader_libGLESv2",
     ]
 
     sources = [
-      "//gpu/swiftshader_tests_main.cc",
+      "${skia_root_dir}/gpu/swiftshader_tests_main.cc",
       "unittests.cpp",
     ]
 

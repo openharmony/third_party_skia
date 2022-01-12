@@ -32,7 +32,7 @@ declare_args() {
 
 if (use_system_xcode == "") {
   if (target_os == "mac") {
-    _result = exec_script("//build/mac/should_use_hermetic_xcode.py",
+    _result = exec_script("${skia_root_dir}/build/mac/should_use_hermetic_xcode.py",
                           [ target_os ],
                           "value")
     use_system_xcode = _result == 0

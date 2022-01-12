@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-buildconfig = "//build/config/BUILDCONFIG.gn"
+buildconfig = "${skia_root_dir}/build/config/BUILDCONFIG.gn"
 
 default_args = {
   clang_use_chrome_plugins = false

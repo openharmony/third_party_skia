@@ -16,5 +16,5 @@
 spirv_tools_standalone = false
 
 # Paths to SPIRV-Tools dependencies in SwiftShader
-spirv_tools_googletest_dir = "//third_party/googletest"
-spirv_tools_spirv_headers_dir = "//third_party/SPIRV-Headers"
+spirv_tools_googletest_dir = "${skia_third_party_dir}/googletest"
+spirv_tools_spirv_headers_dir = "${skia_third_party_dir}/SPIRV-Headers"

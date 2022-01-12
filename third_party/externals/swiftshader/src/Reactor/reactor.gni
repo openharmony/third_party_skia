@@ -6,7 +6,7 @@
 # SwiftShader libraries
 
 import("../swiftshader.gni")
-import("//build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 
 declare_args() {
   # Subzero doesn't support ARM64, MIPS64, and PPC64 (only x86 and ARMv7a).

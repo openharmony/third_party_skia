@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 import("../tint_overrides_with_defaults.gni")
 
 ###############################################################################
@@ -160,8 +160,8 @@ template("libtint_source_set") {
     }
     configs += [ ":tint_common_config" ]
     if (build_with_chromium) {
-      configs -= [ "//build/config/compiler:chromium_code" ]
-      configs += [ "//build/config/compiler:no_chromium_code" ]
+      configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+      configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
     }
 
     if (!defined(invoker.public_configs)) {
@@ -762,7 +762,7 @@ source_set("libtint") {
   public_configs = [ ":tint_public_config" ]
 
   if (build_with_chromium) {
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
   }
 }

@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build_overrides/angle.gni")
+import("${skia_root_dir}/build_overrides/angle.gni")
 
 declare_args() {
   is_ggp = false
@@ -22,17 +22,17 @@ declare_args() {
 }
 
 if (angle_has_build) {
-  import("//build/config/dcheck_always_on.gni")
-  import("//build/config/ozone.gni")  # import the ozone_platform_x11 variable
-  import("//build/config/sanitizers/sanitizers.gni")
-  import("//build_overrides/build.gni")
-  import("//testing/test.gni")
+  import("${skia_root_dir}/build/config/dcheck_always_on.gni")
+  import("${skia_root_dir}/build/config/ozone.gni")  # import the ozone_platform_x11 variable
+  import("${skia_root_dir}/build/config/sanitizers/sanitizers.gni")
+  import("${skia_root_dir}/build_overrides/build.gni")
+  import("${skia_root_dir}/testing/test.gni")
   if (is_android) {
-    import("//build/config/android/config.gni")
+    import("${skia_root_dir}/build/config/android/config.gni")
   }
 
   if (is_win) {
-    import("//build/config/win/visual_studio_version.gni")
+    import("${skia_root_dir}/build/config/win/visual_studio_version.gni")
   }
 
   if (is_chromecast || ozone_platform_headless) {
@@ -234,7 +234,7 @@ declare_args() {
 }
 
 if (!defined(angle_zlib_compression_utils_dir)) {
-  angle_zlib_compression_utils_dir = "//third_party/zlib/google"
+  angle_zlib_compression_utils_dir = "${skia_third_party_dir}/zlib/google"
 }
 
 angle_common_configs = [
@@ -248,11 +248,11 @@ angle_common_configs = [
 angle_remove_configs = []
 
 if (angle_has_build) {
-  angle_remove_configs += [ "//build/config/compiler:default_include_dirs" ]
+  angle_remove_configs += [ "${skia_root_dir}/build/config/compiler:default_include_dirs" ]
 }
 
 if (angle_has_build && is_clang) {
-  angle_remove_configs += [ "//build/config/clang:find_bad_constructs" ]
+  angle_remove_configs += [ "${skia_root_dir}/build/config/clang:find_bad_constructs" ]
 }
 
 set_defaults("angle_executable") {
@@ -314,7 +314,7 @@ template("angle_executable") {
     configs -= invoker.suppressed_configs
 
     if (angle_has_build && is_win) {
-      data_deps += [ "//build/win:runtime_libs" ]
+      data_deps += [ "${skia_root_dir}/build/win:runtime_libs" ]
     }
   }
 }
@@ -348,7 +348,7 @@ template("angle_shared_library") {
 
     if (is_android) {
       configs += [ angle_root + ":build_id_config" ]
-      configs -= [ "//build/config/android:hide_all_but_jni_onload" ]
+      configs -= [ "${skia_root_dir}/build/config/android:hide_all_but_jni_onload" ]
     }
     if (is_ios) {
       info_plist = "$angle_root/util/ios/Info.plist"
@@ -434,16 +434,16 @@ if (angle_standalone || build_with_chromium) {
                       "$angle_root/src/tests:angle_test_expectations",
                       "$angle_root/third_party/rapidjson:rapidjson",
                       "$angle_root/util:angle_test_utils",
-                      "//testing/gmock",
-                      "//testing/gtest",
-                      "//third_party/googletest:gmock",
-                      "//third_party/googletest:gtest",
+                      "${skia_root_dir}/testing/gmock",
+                      "${skia_root_dir}/testing/gtest",
+                      "${skia_third_party_dir}/googletest:gmock",
+                      "${skia_third_party_dir}/googletest:gtest",
                     ]
 
       data = invoker.data + [
                "$angle_root/scripts/run_gtest_angle_test.py",
-               "//testing/scripts/common.py",
-               "//testing/xvfb.py",
+               "${skia_root_dir}/testing/scripts/common.py",
+               "${skia_root_dir}/testing/xvfb.py",
              ]
 
       sources += [
@@ -456,8 +456,8 @@ if (angle_standalone || build_with_chromium) {
         sources +=
             [ "$angle_root/src/tests/test_utils/runner/HistogramWriter.cpp" ]
         deps += [
-          "//third_party/catapult/tracing/tracing:histogram",
-          "//third_party/catapult/tracing/tracing:reserved_infos",
+          "${skia_third_party_dir}/catapult/tracing/tracing:histogram",
+          "${skia_third_party_dir}/catapult/tracing/tracing:reserved_infos",
         ]
       }
 
@@ -474,12 +474,12 @@ if (angle_standalone || build_with_chromium) {
 
       if ((is_linux || is_chromeos) && !is_component_build) {
         # Set rpath to find shared libs in a non-component build.
-        configs += [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
+        configs += [ "${skia_root_dir}/build/config/gcc:rpath_for_built_shared_libraries" ]
       }
 
       if (is_android) {
         public_configs += [ "$angle_root:build_id_config" ]
-        configs -= [ "//build/config/android:hide_all_but_jni" ]
+        configs -= [ "${skia_root_dir}/build/config/android:hide_all_but_jni" ]
         use_default_launcher = false
         generate_final_jni = false
         android_manifest_template = "$angle_root/src/tests/test_utils/runner/android/java/AndroidManifest.xml.jinja2"
@@ -498,7 +498,7 @@ if (angle_standalone || build_with_chromium) {
       }
 
       if (angle_has_build && is_win) {
-        data_deps += [ "//build/win:runtime_libs" ]
+        data_deps += [ "${skia_root_dir}/build/win:runtime_libs" ]
       }
     }
   }
@@ -563,12 +563,12 @@ template("angle_trace") {
     # Disable optimization in the trace perf tests to avoid optimizing huge files.
     if (!is_debug && !is_ubsan) {
       suppressed_configs += [
-        "//build/config/compiler:afdo",
-        "//build/config/compiler:afdo_optimize_size",
-        "//build/config/compiler:default_optimization",
-        "//build/config/compiler/pgo:default_pgo_flags",
+        "${skia_root_dir}/build/config/compiler:afdo",
+        "${skia_root_dir}/build/config/compiler:afdo_optimize_size",
+        "${skia_root_dir}/build/config/compiler:default_optimization",
+        "${skia_root_dir}/build/config/compiler/pgo:default_pgo_flags",
       ]
-      configs += [ "//build/config/compiler:no_optimize" ]
+      configs += [ "${skia_root_dir}/build/config/compiler:no_optimize" ]
     }
 
     include_dirs = [ "." ]

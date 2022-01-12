@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//gni/angle.gni")
+import("${skia_root_dir}/gni/angle.gni")
 
 vulkan_headers_dir = angle_vulkan_headers_dir
 

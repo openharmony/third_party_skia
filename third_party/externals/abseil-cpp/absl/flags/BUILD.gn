@@ -2,13 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/abseil-cpp/absl.gni")
+import("${skia_third_party_dir}/abseil-cpp/absl.gni")
 
 absl_source_set("path_util") {
   public = [ "internal/path_util.h" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
   ]
   visibility = [ ":*" ]
 }
@@ -18,10 +18,10 @@ absl_source_set("program_name") {
   public = [ "internal/program_name.h" ]
   deps = [
     ":path_util",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
   ]
   visibility = [ ":*" ]
 }
@@ -43,10 +43,10 @@ absl_source_set("config") {
   deps = [
     ":path_util",
     ":program_name",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
   ]
 }
 
@@ -54,11 +54,11 @@ absl_source_set("marshalling") {
   sources = [ "marshalling.cc" ]
   public = [ "marshalling.h" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:log_severity",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/strings:str_format",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:log_severity",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings:str_format",
   ]
 }
 
@@ -66,8 +66,8 @@ absl_source_set("commandlineflag_internal") {
   public = [ "internal/commandlineflag.h" ]
   sources = [ "internal/commandlineflag.cc" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:fast_type_id",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:fast_type_id",
   ]
 }
 
@@ -76,10 +76,10 @@ absl_source_set("commandlineflag") {
   public = [ "commandlineflag.h" ]
   deps = [
     ":commandlineflag_internal",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:fast_type_id",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/types:optional",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:fast_type_id",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -89,8 +89,8 @@ absl_source_set("private_handle_accessor") {
   deps = [
     ":commandlineflag",
     ":commandlineflag_internal",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
   ]
   visibility = [ ":*" ]
 }
@@ -106,11 +106,11 @@ absl_source_set("reflection") {
     ":commandlineflag_internal",
     ":config",
     ":private_handle_accessor",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/container:flat_hash_map",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:flat_hash_map",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
   ]
 }
 
@@ -126,18 +126,18 @@ absl_source_set("flag_internal") {
     ":config",
     ":marshalling",
     ":reflection",
-    "//third_party/abseil-cpp/absl/base",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/memory",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/synchronization",
-    "//third_party/abseil-cpp/absl/utility",
+    "${skia_third_party_dir}/abseil-cpp/absl/base",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/memory",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/abseil-cpp/absl/utility",
   ]
   visibility = [
     ":*",
-    "//third_party/abseil-cpp/absl/base/*",
+    "${skia_third_party_dir}/abseil-cpp/absl/base/*",
   ]
 }
 
@@ -151,10 +151,10 @@ absl_source_set("flag") {
     ":config",
     ":flag_internal",
     ":reflection",
-    "//third_party/abseil-cpp/absl/base",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/base",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
   ]
 }
 
@@ -170,10 +170,10 @@ absl_source_set("usage_internal") {
     ":private_handle_accessor",
     ":program_name",
     ":reflection",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/container:flat_hash_map",
-    "//third_party/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:flat_hash_map",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
   ]
   visibility = [ ":*" ]
 }
@@ -183,10 +183,10 @@ absl_source_set("usage") {
   public = [ "usage.h" ]
   deps = [
     ":usage_internal",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
   ]
 }
 
@@ -207,9 +207,9 @@ absl_source_set("parse") {
     ":reflection",
     ":usage",
     ":usage_internal",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
   ]
 }

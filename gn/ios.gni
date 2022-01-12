@@ -33,7 +33,7 @@ if (is_ios) {
 
       _output_extension = invoker.output_extension
 
-      script = "//gn/compile_ib_files.py"
+      script = "${skia_root_dir}/gn/compile_ib_files.py"
       sources = invoker.sources
       outputs = [
         "$target_gen_dir/$target_name/{{source_name_part}}.$_output_extension",
@@ -109,7 +109,7 @@ if (is_ios) {
     bundle_prefix = "com.google"
 
     action("${app_name}_generate_info_plist") {
-      script = "//gn/gen_plist_ios.py"
+      script = "${skia_root_dir}/gn/gen_plist_ios.py"
       outputs = [ "$gen_path/${app_name}_Info.plist" ]
       args = [
         rebase_path("$gen_path/$app_name", root_build_dir),
@@ -164,14 +164,14 @@ if (is_ios) {
     action("${app_name}_dsymutil") {
       public_deps = [ ":${app_name}_generate_executable" ]
       sources = [ "$gen_path/$app_name" ]
-      script = "//gn/call.py"
+      script = "${skia_root_dir}/gn/call.py"
       args = [
         "dsymutil",
         rebase_path("$gen_path/$app_name"),
       ]
       outputs = [ "$gen_path/${app_name}.dSYM" ]
       testonly = defined(invoker.testonly) && invoker.testonly
-      pool = "//gn/toolchain:dsymutil_pool($default_toolchain)"
+      pool = "${skia_root_dir}/gn/toolchain:dsymutil_pool($default_toolchain)"
     }
 
     bundle_data("${app_name}_bundle_executable_and_symbols") {
@@ -215,7 +215,7 @@ if (is_ios) {
 
       # should only code sign when running on a device, not the simulator
       if (target_cpu != "x64") {
-        code_signing_script = "//gn/codesign_ios.py"
+        code_signing_script = "${skia_root_dir}/gn/codesign_ios.py"
         code_signing_sources = [ "$target_gen_dir/$app_name" ]
         code_signing_outputs = [
           "$bundle_root_dir/_CodeSignature/CodeResources",

@@ -14,7 +14,7 @@
 
 import("../../src/swiftshader.gni")
 
-import("//testing/test.gni")
+import("${skia_root_dir}/testing/test.gni")
 
 config("marl_config") {
   include_dirs = [ "include" ]

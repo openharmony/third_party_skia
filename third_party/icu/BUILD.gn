@@ -83,7 +83,7 @@ if (skia_use_system_icu) {
       "U_DISABLE_RENAMING",
       "SK_USING_THIRD_PARTY_ICU",
     ]
-    configs = [ "//gn/portable:add_rtti" ]
+    configs = [ "${skia_root_dir}/gn/portable:add_rtti" ]
     defines = [
       # http://userguide.icu-project.org/howtouseicu
       "U_COMMON_IMPLEMENTATION",

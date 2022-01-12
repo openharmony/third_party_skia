@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build_overrides/vulkan_common.gni")
+import("${skia_root_dir}/build_overrides/vulkan_common.gni")
 
 # These are variables that are overridable by projects that include Dawn.
 # The values in this file are the defaults for when we are building from
 # Dawn's repository.
-vvl_spirv_tools_dir = "//third_party/vulkan-deps/spirv-tools/src"
-vvl_glslang_dir = "//third_party/vulkan-deps/glslang/src"
+vvl_spirv_tools_dir = "${skia_third_party_dir}/vulkan-deps/spirv-tools/src"
+vvl_glslang_dir = "${skia_third_party_dir}/vulkan-deps/glslang/src"
 
 # Fake the ozone_platform_x11 when inside Dawn's repository
 import("../scripts/dawn_features.gni")

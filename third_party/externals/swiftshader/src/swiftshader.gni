@@ -5,12 +5,12 @@
 # This file contains configs that need to be added or removed to all
 # SwiftShader libraries
 
-import("//build_overrides/build.gni")
-import("//build_overrides/spirv_tools.gni")
-import("//build_overrides/swiftshader.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/spirv_tools.gni")
+import("${skia_root_dir}/build_overrides/swiftshader.gni")
 
 if (!swiftshader_standalone) {
-  import("//build/config/sanitizers/sanitizers.gni")
+  import("${skia_root_dir}/build/config/sanitizers/sanitizers.gni")
 } else {
   declare_args() {
     is_ubsan_vptr = false
@@ -31,17 +31,17 @@ configs_to_add = []
 configs_to_delete = []
 
 if (is_win) {
-  configs_to_delete += [ "//build/config/win:unicode" ]
+  configs_to_delete += [ "${skia_root_dir}/build/config/win:unicode" ]
 }
 
 if (is_debug && swiftshader_optimized_debug_build) {
-  configs_to_delete += [ "//build/config/compiler:default_optimization" ]
-  configs_to_add += [ "//build/config/compiler:optimize" ]
+  configs_to_delete += [ "${skia_root_dir}/build/config/compiler:default_optimization" ]
+  configs_to_add += [ "${skia_root_dir}/build/config/compiler:optimize" ]
 }
 
-configs_to_delete += [ "//build/config/compiler:chromium_code" ]
+configs_to_delete += [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
 configs_to_add += [
-  "//build/config/compiler:no_chromium_code",
+  "${skia_root_dir}/build/config/compiler:no_chromium_code",
   "$swiftshader_dir:swiftshader_config",
 ]
 

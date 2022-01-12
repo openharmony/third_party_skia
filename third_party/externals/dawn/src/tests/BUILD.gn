@@ -14,7 +14,7 @@
 
 import("../../scripts/dawn_overrides_with_defaults.gni")
 
-import("//testing/test.gni")
+import("${skia_root_dir}/testing/test.gni")
 import("${dawn_root}/generator/dawn_generator.gni")
 import("${dawn_root}/scripts/dawn_features.gni")
 
@@ -81,10 +81,10 @@ if (!build_with_chromium) {
   group("gmock_and_gtest") {
     testonly = true
     public_deps = [
-      "//base",
-      "//base/test:test_support",
-      "//testing/gmock",
-      "//testing/gtest",
+      "${skia_root_dir}/base",
+      "${skia_root_dir}/base/test:test_support",
+      "${skia_root_dir}/testing/gmock",
+      "${skia_root_dir}/testing/gtest",
     ]
   }
 }
@@ -100,17 +100,17 @@ if (build_with_chromium) {
   source_set("dawn_unittests_main") {
     testonly = true
     deps = [ ":gmock_and_gtest" ]
-    sources = [ "//gpu/dawn_unittests_main.cc" ]
+    sources = [ "${skia_root_dir}/gpu/dawn_unittests_main.cc" ]
   }
   source_set("dawn_end2end_tests_main") {
     testonly = true
     deps = [ ":gmock_and_gtest" ]
-    sources = [ "//gpu/dawn_end2end_tests_main.cc" ]
+    sources = [ "${skia_root_dir}/gpu/dawn_end2end_tests_main.cc" ]
   }
   source_set("dawn_perf_tests_main") {
     testonly = true
     deps = [ ":gmock_and_gtest" ]
-    sources = [ "//gpu/dawn_perf_tests_main.cc" ]
+    sources = [ "${skia_root_dir}/gpu/dawn_perf_tests_main.cc" ]
   }
 }
 
@@ -512,7 +512,7 @@ source_set("dawn_white_box_tests_sources") {
 
   if (dawn_enable_opengles) {
     sources += [ "white_box/EGLImageWrappingTests.cpp" ]
-    deps += [ "//third_party/angle:libEGL" ]
+    deps += [ "${skia_third_party_dir}/angle:libEGL" ]
   }
 
   libs = []
@@ -597,7 +597,7 @@ test("dawn_perf_tests") {
   # other perf test scaffolding in order to run in swarming correctly.
   if (build_with_chromium) {
     deps += [ ":dawn_perf_tests_main" ]
-    data_deps = [ "//testing:run_perf_test" ]
+    data_deps = [ "${skia_root_dir}/testing:run_perf_test" ]
   } else {
     sources += [ "PerfTestsMain.cpp" ]
   }

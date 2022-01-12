@@ -5,9 +5,9 @@
 
 # These are variables that are overridable by projects that include Tint.
 
-tint_root_dir = "//third_party/externals/tint"
-tint_spirv_tools_dir = "//third_party/externals/spirv-tools"
-tint_spirv_headers_dir = "//third_party/externals/spirv-headers"
+tint_root_dir = "${skia_third_party_dir}/externals/tint"
+tint_spirv_tools_dir = "${skia_third_party_dir}/externals/spirv-tools"
+tint_spirv_headers_dir = "${skia_third_party_dir}/externals/spirv-headers"
 
 tint_build_spv_reader = true
 tint_build_spv_writer = true

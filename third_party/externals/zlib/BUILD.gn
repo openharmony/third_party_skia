@@ -2,14 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/compiler/compiler.gni")
+import("${skia_root_dir}/build/config/compiler/compiler.gni")
 
 if (build_with_chromium) {
-  import("//testing/test.gni")
+  import("${skia_root_dir}/testing/test.gni")
 }
 
 if (current_cpu == "arm" || current_cpu == "arm64") {
-  import("//build/config/arm.gni")
+  import("${skia_root_dir}/build/config/arm.gni")
 }
 
 config("zlib_config") {
@@ -21,7 +21,7 @@ config("zlib_internal_config") {
 
   if (!is_debug) {
     # Build code using -O3, see: crbug.com/1084371.
-    configs = [ "//build/config/compiler:optimize_speed" ]
+    configs = [ "${skia_root_dir}/build/config/compiler:optimize_speed" ]
   }
   if (is_debug || use_libfuzzer) {
     # Enable zlib's asserts in debug and fuzzer builds.
@@ -184,8 +184,8 @@ source_set("zlib_inflate_chunk_simd") {
 
   # Needed for MSVC, which is still supported by V8 and PDFium. zlib uses K&R C
   # style function declarations, which triggers warning C4131.
-  configs -= [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+  configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
 
   public_configs = [ ":zlib_inflate_chunk_simd_config" ]
 
@@ -334,16 +334,16 @@ component("zlib") {
   deps += [ ":zlib_x86_simd" ]
 
   if (is_android) {
-    import("//build/config/android/config.gni")
+    import("${skia_root_dir}/build/config/android/config.gni")
     if (defined(android_ndk_root) && android_ndk_root != "") {
-      deps += [ "//third_party/android_ndk:cpu_features" ]
+      deps += [ "${skia_third_party_dir}/android_ndk:cpu_features" ]
     } else {
       assert(false, "CPU detection requires the Android NDK")
     }
   }
 
-  configs -= [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+  configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
 
   public_configs = [ ":zlib_config" ]
 
@@ -393,8 +393,8 @@ static_library("minizip") {
 
   deps = [ ":zlib" ]
 
-  configs -= [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+  configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
 
   public_configs = [ ":zlib_config" ]
 
@@ -409,14 +409,14 @@ executable("zlib_bench") {
 
   sources = [ "contrib/bench/zlib_bench.cc" ]
   if (!is_debug) {
-    configs -= [ "//build/config/compiler:default_optimization" ]
-    configs += [ "//build/config/compiler:optimize_speed" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:default_optimization" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:optimize_speed" ]
   }
 
   deps = [ ":zlib" ]
 
-  configs -= [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+  configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
 }
 
 if (build_with_chromium) {
@@ -439,12 +439,12 @@ if (build_with_chromium) {
       ":zlib",
       "google:compression_utils",
       "google:zip",
-      "//base/test:test_support",
-      "//testing/gtest",
+      "${skia_root_dir}/base/test:test_support",
+      "${skia_root_dir}/testing/gtest",
     ]
 
     include_dirs = [
-      "//third_party/googletest/src/googletest/include/gtest",
+      "${skia_third_party_dir}/googletest/src/googletest/include/gtest",
       ".",
       "google",
     ]

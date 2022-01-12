@@ -1,4 +1,4 @@
-buildconfig = "//gn/BUILDCONFIG.gn"
+buildconfig = "${skia_root_dir}/gn/BUILDCONFIG.gn"
 
 default_args = {
   angle_standalone = false

@@ -4,7 +4,7 @@
 
 assert(is_fuchsia)
 
-import("//build/fuchsia/sdk.gni")
+import("${skia_root_dir}/build/fuchsia/sdk.gni")
 
 pkg_dir = target_gen_dir
 pkg_name = "skqp_pkg"
@@ -14,8 +14,8 @@ fuchsia_package(pkg_name) {
   name = pkg_name
   version = 0
   deps = [
-    "//:skqp",
-    "//build/fuchsia",
+    "${skia_root_dir}/:skqp",
+    "${skia_root_dir}/build/fuchsia",
   ]
   pkg_manifest = "${pkg_dir}/${target_name}.manifest"
 }
@@ -49,7 +49,7 @@ group("base_manifest") {
       rebase_path("${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/dist/lib")
   layer_path = rebase_path("${fuchsia_sdk_path}/pkg/vulkan_layers")
 
-  skqp_component_manifest = rebase_path("//build/fuchsia/skqp/skqp.cmx")
+  skqp_component_manifest = rebase_path("${skia_root_dir}/build/fuchsia/skqp/skqp.cmx")
 
   if (target_cpu == "x64" || target_cpu == "x86_64") {
     clang_path =
@@ -105,7 +105,7 @@ action("append_assets_to_manifest") {
 
   base_pkg_manifest = "${pkg_dir}/base_${pkg_name}.manifest"
   pkg_manifest = "${pkg_dir}/${pkg_name}.manifest"
-  assets_path = "//platform_tools/android/apps/skqp/src/main/assets"
+  assets_path = "${skia_root_dir}/platform_tools/android/apps/skqp/src/main/assets"
 
   inputs = [ assets_path ]
 

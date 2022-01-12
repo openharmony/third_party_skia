@@ -14,7 +14,7 @@
 
 import("../../../scripts/dawn_overrides_with_defaults.gni")
 
-import("//build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 
 # SPIRV_Cross does not have BUILD.gn rules, so implement our own.
 is_msvc = is_win && !is_clang

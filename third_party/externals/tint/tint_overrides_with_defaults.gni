@@ -12,29 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build_overrides/tint.gni")
+import("${skia_root_dir}/build_overrides/tint.gni")
 
 # This file contains Tint-related build flags.
 
 declare_args() {
   # Path to tint checkout
   if (!defined(tint_root_dir)) {
-    tint_root_dir = "//"
+    tint_root_dir = "${skia_root_dir}/"
   }
 
   # Path to spirv-tools checkout
   if (!defined(tint_spirv_tools_dir)) {
-    tint_spirv_tools_dir = "//third_party/spirv-tools"
+    tint_spirv_tools_dir = "${skia_third_party_dir}/spirv-tools"
   }
 
   # Path to googletest checkout
   if (!defined(tint_googletest_dir)) {
-    tint_googletest_dir = "//third_party/googletest"
+    tint_googletest_dir = "${skia_third_party_dir}/googletest"
   }
 
   # Path to spirv-headers checkout
   if (!defined(tint_spirv_headers_dir)) {
-    tint_spirv_headers_dir = "//third_party/spirv-headers"
+    tint_spirv_headers_dir = "${skia_third_party_dir}/spirv-headers"
   }
 
   # Build the SPIR-V input reader

@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-tint_root_dir = "//third_party/tint"
-tint_spirv_tools_dir = "//third_party/vulkan-deps/spirv-tools/src"
-tint_spirv_headers_dir = "//third_party/vulkan-deps/spirv-headers/src"
+tint_root_dir = "${skia_third_party_dir}/tint"
+tint_spirv_tools_dir = "${skia_third_party_dir}/vulkan-deps/spirv-tools/src"
+tint_spirv_headers_dir = "${skia_third_party_dir}/vulkan-deps/spirv-headers/src"
 
 tint_build_spv_reader = true
 tint_build_spv_writer = true

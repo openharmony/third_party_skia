@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 import("dawn_features.gni")
 import("dawn_overrides_with_defaults.gni")
 
@@ -64,7 +64,7 @@ template("dawn_component") {
       ]
     }
     if ((is_linux || is_chromeos) && dawn_has_build) {
-      configs = [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
+      configs = [ "${skia_root_dir}/build/config/gcc:rpath_for_built_shared_libraries" ]
     }
   }
 
@@ -103,7 +103,7 @@ template("dawn_component") {
     # shared_library symbols are visible. This matches what Chromium's
     # component template does.
     if (build_with_chromium && is_android) {
-      configs -= [ "//build/config/android:hide_all_but_jni_onload" ]
+      configs -= [ "${skia_root_dir}/build/config/android:hide_all_but_jni_onload" ]
     }
   }
 
