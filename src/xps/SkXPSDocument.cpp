@@ -15,7 +15,8 @@
 #include "src/utils/win/SkTScopedComPtr.h"
 #include "src/xps/SkXPSDevice.h"
 
-#include <XpsObjectModel.h>
+// #include <XpsObjectModel.h>
+#include <xpsobjectmodel.h>
 
 namespace {
 struct SkXPSDocument final : public SkDocument {

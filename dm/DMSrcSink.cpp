@@ -60,7 +60,7 @@
     #include "src/utils/win/SkAutoCoInitialize.h"
     #include "src/utils/win/SkHRESULT.h"
     #include "src/utils/win/SkTScopedComPtr.h"
-    #include <XpsObjectModel.h>
+    #include <xpsobjectmodel.h>
 #endif
 
 #if defined(SK_ENABLE_SKOTTIE)

@@ -19,7 +19,8 @@ GLTestContext* CreatePlatformGLTestContext(GrGLStandard, GLTestContext*) { retur
 #else
 
 #include <windows.h>
-#include <GL/GL.h>
+// #include <GL/GL.h>
+#include <GL/gl.h>
 #include "src/utils/win/SkWGL.h"
 
 #include <windows.h>

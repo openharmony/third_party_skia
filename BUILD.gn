@@ -8,6 +8,10 @@ import("gn/fuchsia_defines.gni")
 import("gn/shared_sources.gni")
 import("gn/skia.gni")
 
+if (defined(is_mingw) && is_mingw == true) {
+  is_win = true
+}
+
 if (is_fuchsia) {
   import("${skia_root_dir}/build/fuchsia/sdk.gni")
   import("build/fuchsia/fuchsia_download_sdk.gni")
@@ -22,6 +26,21 @@ if (defined(skia_settings)) {
 }
 
 import("gn/ios.gni")
+
+config("skia_wno") {
+  visibility = [ ":*" ]
+
+  cflags = [
+    "-Wno-pessimizing-move",
+    "-Wno-return-type",
+    "-Wno-sign-compare",
+    "-Wno-sometimes-uninitialized",
+    "-Wno-unknown-pragmas",
+    "-Wno-unused-function",
+    "-Wno-unused-private-field",
+    "-Wno-unused-variable",
+  ]
+}
 
 # Skia public API, generally provided by :skia.
 config("skia_public") {
@@ -70,6 +89,9 @@ config("skia_public") {
     } else {
       cflags_objcc += [ "-Wno-unguarded-availability" ]
     }
+  }
+  if (is_win) {
+    defines += [ "SK_BUILD_FOR_WIN" ]
   }
 }
 
@@ -214,7 +236,7 @@ opts("sse42") {
 opts("avx") {
   enabled = is_x86
   sources = skia_opts.avx_sources
-  if (is_win) {
+  if (is_win && !is_mingw) {
     cflags = [ "/arch:AVX" ]
   } else {
     cflags = [ "-mavx" ]
@@ -227,7 +249,7 @@ opts("avx") {
 opts("hsw") {
   enabled = is_x86
   sources = skia_opts.hsw_sources
-  if (is_win) {
+  if (is_win && !is_mingw) {
     cflags = [ "/arch:AVX2" ]
   } else {
     cflags = [ "-march=haswell" ]
@@ -240,7 +262,7 @@ opts("hsw") {
 opts("skx") {
   enabled = is_x86
   sources = skia_opts.skx_sources
-  if (is_win) {
+  if (is_win && !is_mingw) {
     cflags = [ "/arch:AVX512" ]
   } else {
     cflags = [ "-march=skylake-avx512" ]
@@ -268,6 +290,7 @@ template("optional") {
       visibility = [ ":*" ]
       check_includes = false
       configs = skia_library_configs
+      configs += [ ":skia_wno" ]
 
       # "*" clobbers the current scope; append to existing configs
       forward_variables_from(invoker,
@@ -552,7 +575,9 @@ optional("fontmgr_win") {
     "src/fonts/SkFontMgr_indirect.cpp",
     "src/ports/SkFontMgr_win_dw.cpp",
     "src/ports/SkScalerContext_win_dw.cpp",
+    "src/ports/SkScalerContext_win_dw.h",
     "src/ports/SkTypeface_win_dw.cpp",
+    "src/ports/SkTypeface_win_dw.h",
   ]
 }
 optional("fontmgr_win_factory") {
@@ -566,7 +591,8 @@ optional("fontmgr_win_gdi") {
 
   public = [ "include/ports/SkTypeface_win.h" ]
   sources = [ "src/ports/SkFontHost_win.cpp" ]
-  libs = [ "Gdi32.lib" ]
+  # libs = [ "Gdi32.lib" ]
+  libs = [ "gdi32" ]
 }
 
 if (skia_lex) {
@@ -625,9 +651,11 @@ if (skia_compile_sksl_tests) {
     defines = [
       "SKSL_STANDALONE",
       "SK_DISABLE_TRACING",
+      "SK_ENABLE_SPIRV_CROSS",
       "SK_ENABLE_SPIRV_VALIDATION",
     ]
     sources = [
+      "src/core/SkArenaAlloc.cpp",
       "src/core/SkBlockAllocator.cpp",
       "src/core/SkCpu.cpp",
       "src/core/SkData.cpp",
@@ -648,6 +676,9 @@ if (skia_compile_sksl_tests) {
       "src/ports/SkMemory_malloc.cpp",
       "src/ports/SkOSFile_stdio.cpp",
       "src/sksl/SkSLMain.cpp",
+      "src/utils/SkJSON.cpp",
+      "src/utils/SkJSONWriter.cpp",
+      "src/utils/SkParse.cpp",
       "src/utils/SkUTF.cpp",
     ]
     if (is_win) {
@@ -662,6 +693,7 @@ if (skia_compile_sksl_tests) {
       ":run_sksllex",
       "${skia_third_party_dir}/externals/spirv-tools:spvtools",
       "${skia_third_party_dir}/externals/spirv-tools:spvtools_val",
+      "${skia_third_party_dir}/spirv-cross:spirv_cross",
     ]
   }
 
@@ -888,7 +920,8 @@ optional("gpu") {
     } else if (is_win && !skia_enable_winuwp) {
       sources += [ "src/gpu/gl/win/GrGLMakeNativeInterface_win.cpp" ]
       if (target_cpu != "arm64") {
-        libs += [ "OpenGL32.lib" ]
+        # libs += [ "OpenGL32.lib" ]
+        libs += [ "opengl32" ]
       }
     } else {
       sources += [ "src/gpu/gl/GrGLMakeNativeInterface_none.cpp" ]
@@ -945,7 +978,10 @@ optional("gpu") {
   }
 
   if (skia_use_direct3d) {
-    public_defines += [ "SK_DIRECT3D" ]
+    public_defines += [ 
+      "SK_DIRECT3D",
+      "SK_ENABLE_SPIRV_CROSS",
+    ]
     deps += [
       "${skia_third_party_dir}/d3d12allocator",
       "${skia_third_party_dir}/spirv-cross:spirv_cross",
@@ -1095,7 +1131,7 @@ optional("pdf") {
 }
 
 optional("xps") {
-  enabled = skia_use_xps && is_win
+  enabled = skia_use_xps && is_win && !is_mingw
   public_defines = [ "SK_SUPPORT_XPS" ]
   public = skia_xps_public
   sources = skia_xps_sources
@@ -1143,7 +1179,7 @@ skia_source_set("skcms") {
   if (!is_win || is_clang) {
     cflags += [
       "-w",
-      "-std=c11",
+      "-std=c++11",
     ]
   }
 
@@ -1337,24 +1373,36 @@ skia_component("skia") {
 
   if (is_win) {
     sources += [
-      "src/ports/SkDebug_win.cpp",
+      # "src/ports/SkDebug_win.cpp",
       "src/ports/SkImageEncoder_WIC.cpp",
       "src/ports/SkImageGeneratorWIC.cpp",
       "src/ports/SkOSFile_win.cpp",
       "src/ports/SkOSLibrary_win.cpp",
     ]
     libs += [
-      "Ole32.lib",
-      "OleAut32.lib",
+      # "Ole32.lib",
+      # "OleAut32.lib",
     ]
 
     if (!skia_enable_winuwp) {
       libs += [
-        "FontSub.lib",
-        "User32.lib",
-        "Usp10.lib",
+        # "FontSub.lib",
+        # "User32.lib",
+        # "Usp10.lib",
       ]
     }
+    libs += [
+      "kernel32",
+      "gdi32",
+      "fontsub",
+      "ole32",
+      "oleaut32",
+      "psapi",
+      "user32",
+      "usp10",
+      "uuid",
+      "windowscodecs",
+    ]
   } else {
     sources += [
       "src/ports/SkOSFile_posix.cpp",
@@ -1393,6 +1441,14 @@ skia_component("skia") {
     frameworks = [
       "ApplicationServices.framework",
       "OpenGL.framework",
+    ]
+    libs += [
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreText.framework/Versions/A/CoreText.tbd",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation.tbd",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics.tbd",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO.tbd",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices.tbd",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL.tbd",
     ]
   }
 
@@ -1602,7 +1658,7 @@ if (skia_enable_tools) {
   }
 
   config("cpp14") {
-    if (is_win) {
+    if (is_win && !is_mingw) {
       cflags_cc = [ "/std:c++14" ]
     } else {
       cflags_cc = [ "-std=c++14" ]
@@ -1642,6 +1698,7 @@ if (skia_enable_tools) {
       public_configs = [
         ":" + target_name + "_config",
         ":skia_private",
+        ":skia_wno",
       ]
 
       if (!defined(deps)) {
@@ -1687,7 +1744,10 @@ if (skia_enable_tools) {
           if (!defined(configs)) {
             configs = []
           }
-          configs += [ ":skia_private" ]
+          configs += [
+            ":skia_private",
+            ":skia_wno",
+          ]
           testonly = true
         }
       } else {
@@ -1699,7 +1759,10 @@ if (skia_enable_tools) {
           if (!defined(configs)) {
             configs = []
           }
-          configs += [ ":skia_private" ]
+          configs += [
+            ":skia_private",
+            ":skia_wno",
+          ]
           testonly = true
         }
       }
@@ -1792,9 +1855,11 @@ if (skia_enable_tools) {
         ]
       } else if (is_win) {
         sources += [ "tools/gpu/gl/win/CreatePlatformGLTestContext_win.cpp" ]
-        libs += [ "Gdi32.lib" ]
+        # libs += [ "Gdi32.lib" ]
+        libs += [ "gdi32" ]
         if (target_cpu != "arm64") {
-          libs += [ "OpenGL32.lib" ]
+          # libs += [ "OpenGL32.lib" ]
+          libs += [ "opengl32" ]
         }
       }
     }
@@ -1951,7 +2016,7 @@ if (skia_enable_tools) {
         sources += [ "tools/AutoreleasePool.mm" ]
         frameworks += [ "Foundation.framework" ]
       }
-    } else if (is_win && !skia_enable_winuwp) {
+    } else if (is_win && !is_mingw && !skia_enable_winuwp) {
       libs += [ "DbgHelp.lib" ]
     }
 
@@ -2034,6 +2099,9 @@ if (skia_enable_tools) {
     }
     if (skia_enable_graphite) {
       sources += graphite_tests_sources
+      if (skia_use_metal) {
+        sources += graphite_metal_tests_sources
+      }
     }
     if (!skia_enable_skgpu_v1) {
       sources -= skgpu_v1_tests_sources
@@ -2754,7 +2822,7 @@ if (skia_enable_tools) {
         "tools/fiddle/examples.cpp",
         "tools/fiddle/examples.h",
       ]
-      if (is_win) {
+      if (is_win && !is_mingw) {
         cflags = [
           "/wd4756",  # Overflow in constant arithmetic
           "/wd4305",  # truncation from 'double' to 'float'
@@ -2889,7 +2957,7 @@ if (skia_enable_tools) {
       ]
     }
     test_app("mdbviz") {
-      if (is_win) {
+      if (is_win && !is_mingw) {
         # on Windows we need to disable some exception handling warnings due to the Qt headers
         cflags = [ "/Wv:18" ]  # 18 -> VS2013, 19 -> VS2015, 1910 -> VS2017
       }

@@ -19,6 +19,7 @@
 #define SK_NOTHING_ARG2(arg1, arg2)
 #define SK_NOTHING_ARG3(arg1, arg2, arg3)
 
+/*
 #if !defined(SK_BUILD_FOR_ANDROID) && !defined(SK_BUILD_FOR_IOS) && !defined(SK_BUILD_FOR_WIN) && \
     !defined(SK_BUILD_FOR_UNIX) && !defined(SK_BUILD_FOR_MAC)
 
@@ -42,6 +43,7 @@
     #endif
 
 #endif
+*/
 
 #if defined(SK_BUILD_FOR_WIN) && !defined(__clang__)
     #if !defined(SK_RESTRICT)
@@ -276,6 +278,8 @@
 #  else
 #    define SK_DUMP_LINE_FORMAT "%s:%d"
 #  endif
+#  define SK_ABORT(message, ...)
+/*
 #  define SK_ABORT(message, ...) \
     do { \
         SkDebugf(SK_DUMP_LINE_FORMAT ": fatal error: \"" message "\"\n", \
@@ -283,6 +287,7 @@
         SK_DUMP_GOOGLE3_STACK(); \
         sk_abort_no_print(); \
     } while (false)
+*/
 #endif
 
 // If SK_R32_SHIFT is set, we'll use that to choose RGBA or BGRA.
@@ -487,6 +492,7 @@
     #define SkDEBUGFAILF(fmt, ...)
     #define SkDEBUGCODE(...)
     #define SkDEBUGF(...)
+    #define SkDebugf(...)
 
     // unlike SkASSERT, this macro executes its condition in the non-debug build.
     // The if is present so that this can be used with functions marked SK_WARN_UNUSED_RESULT.

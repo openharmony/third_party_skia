@@ -12,8 +12,10 @@
 
 #ifdef SK_BUILD_FOR_WIN
 
-#include <ObjBase.h>
-#include <XpsObjectModel.h>
+// #include <ObjBase.h>
+#include <objbase.h>
+// #include <XpsObjectModel.h>
+#include <xpsobjectmodel.h>
 
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColor.h"

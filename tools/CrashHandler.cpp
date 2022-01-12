@@ -149,6 +149,7 @@
             }
         }
 
+/*
     #elif defined(SK_BUILD_FOR_WIN)
 
         #include <DbgHelp.h>
@@ -245,6 +246,7 @@
         void SetupCrashHandler() {
             SetUnhandledExceptionFilter(handler);
         }
+*/
 
     #else
 

@@ -28,6 +28,7 @@ static_library("particles") {
     configs += [
       "../../:skia_private",
       "../../:our_vulkan_headers",
+      "../../:skia_wno",
     ]
   }
 }

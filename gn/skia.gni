@@ -3,9 +3,10 @@
 # found in the LICENSE file.
 
 import("../build_overrides/skia.gni")
+import("platform.gni")
 
 if (!defined(is_skia_standalone)) {
-  is_skia_standalone = false
+  is_skia_standalone = true
 }
 
 is_skia_dev_build = is_skia_standalone && !is_official_build
@@ -20,10 +21,10 @@ declare_args() {
   skia_enable_flutter_defines = false
   skia_enable_fontmgr_empty = false
   skia_enable_fontmgr_fuchsia = is_fuchsia
-  skia_enable_fontmgr_win = is_win
+  skia_enable_fontmgr_win = is_win || is_mingw
   skia_enable_gpu = true
   skia_enable_pdf = true
-  skia_enable_skottie = !(is_win && is_component_build)
+  skia_enable_skottie = !((is_win || is_mingw) && is_component_build)
   skia_enable_skrive = true
   skia_enable_sksl = true
   skia_enable_skvm_jit_when_possible = is_skia_dev_build
@@ -53,7 +54,8 @@ declare_args() {
   skia_use_freetype = is_android || is_fuchsia || is_linux
   skia_use_harfbuzz = true
   skia_use_gl = !is_fuchsia
-  skia_use_icu = !is_fuchsia
+  # skia_use_icu = !is_fuchsia
+  skia_use_icu = false # There is a bug about icu when running the compilation.
   skia_use_libheif = is_skia_dev_build
   skia_use_libjpeg_turbo_decode = true
   skia_use_libjpeg_turbo_encode = true
@@ -64,7 +66,7 @@ declare_args() {
   skia_use_lua = is_skia_dev_build && !is_ios
   skia_use_metal = false
   skia_use_ndk_images = is_android && defined(ndk_api) && ndk_api >= 30
-  skia_use_piex = !is_win
+  skia_use_piex = !(is_win || is_mingw)
   skia_use_sfml = false
   skia_use_webgl = false
   skia_use_wuffs = false
@@ -111,7 +113,7 @@ declare_args() {
   skia_enable_fontmgr_custom_embedded = skia_use_freetype && !is_fuchsia
   skia_enable_fontmgr_custom_empty = skia_use_freetype
   skia_enable_fontmgr_fontconfig = skia_use_freetype && skia_use_fontconfig
-  skia_enable_fontmgr_win_gdi = is_win && !skia_enable_winuwp
+  skia_enable_fontmgr_win_gdi = (is_win || is_mingw) && !skia_enable_winuwp
   skia_enable_fontmgr_FontConfigInterface =
       skia_use_freetype && skia_use_fontconfig
   skia_enable_spirv_validation = is_skia_dev_build && is_debug && !skia_use_dawn
@@ -131,7 +133,7 @@ declare_args() {
     skia_fontmgr_factory = ":fontmgr_empty_factory"
   } else if (is_android && skia_enable_fontmgr_android) {
     skia_fontmgr_factory = ":fontmgr_android_factory"
-  } else if (is_win && skia_enable_fontmgr_win) {
+  } else if ((is_win || is_mingw) && skia_enable_fontmgr_win) {
     skia_fontmgr_factory = ":fontmgr_win_factory"
   } else if ((is_mac || is_ios) && skia_use_fonthost_mac) {
     skia_fontmgr_factory = ":fontmgr_mac_ct_factory"
@@ -163,6 +165,32 @@ skia_enable_sksl = skia_enable_sksl || skia_enable_gpu
 # These will be applied by the 'skia_*' templates.
 # In the Skia build these configs apply many warnings as errors.
 # Other projects may optionally set these configs as they see fit.
+template("component") {
+  _component_mode = "static_library"
+  if (is_component_build) {
+    _component_mode = "shared_library"
+  }
+
+  target(_component_mode, target_name) {
+    forward_variables_from(invoker, "*")
+  }
+}
+
+set_defaults("component") {
+  if (!is_component_build) {
+    configs = []
+    if (defined(default_compiler_configs)) {
+      configs += default_compiler_configs
+    }
+    complete_static_lib = true
+  } else {
+    configs = default_shared_library_configs
+  }
+  configs += [
+    "${skia_root_dir}:skia_wno",
+  ]
+}
+
 template("skia_target") {
   target(invoker._skia_target_type, target_name) {
     # set_defaults(invoker._skia_target_type) might not exist or set configs
