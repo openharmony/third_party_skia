@@ -2,17 +2,17 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/abseil-cpp/absl.gni")
+import("${skia_third_party_dir}/abseil-cpp/absl.gni")
 
 absl_source_set("random") {
   public = [ "random.h" ]
   deps = [
     ":distributions",
     ":seed_sequences",
-    "//third_party/abseil-cpp/absl/random/internal:nonsecure_base",
-    "//third_party/abseil-cpp/absl/random/internal:pcg_engine",
-    "//third_party/abseil-cpp/absl/random/internal:pool_urbg",
-    "//third_party/abseil-cpp/absl/random/internal:randen_engine",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:nonsecure_base",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:pcg_engine",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:pool_urbg",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:randen_engine",
   ]
 }
 
@@ -35,27 +35,27 @@ absl_source_set("distributions") {
     "gaussian_distribution.cc",
   ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:base_internal",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/numeric:bits",
-    "//third_party/abseil-cpp/absl/random/internal:distribution_caller",
-    "//third_party/abseil-cpp/absl/random/internal:fast_uniform_bits",
-    "//third_party/abseil-cpp/absl/random/internal:fastmath",
-    "//third_party/abseil-cpp/absl/random/internal:generate_real",
-    "//third_party/abseil-cpp/absl/random/internal:iostream_state_saver",
-    "//third_party/abseil-cpp/absl/random/internal:traits",
-    "//third_party/abseil-cpp/absl/random/internal:uniform_helper",
-    "//third_party/abseil-cpp/absl/random/internal:wide_multiply",
-    "//third_party/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:base_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:bits",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:distribution_caller",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:fast_uniform_bits",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:fastmath",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:generate_real",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:iostream_state_saver",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:uniform_helper",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:wide_multiply",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
   ]
 }
 
 absl_source_set("seed_gen_exception") {
   public = [ "seed_gen_exception.h" ]
   sources = [ "seed_gen_exception.cc" ]
-  deps = [ "//third_party/abseil-cpp/absl/base:config" ]
+  deps = [ "${skia_third_party_dir}/abseil-cpp/absl/base:config" ]
 }
 
 absl_source_set("seed_sequences") {
@@ -63,12 +63,12 @@ absl_source_set("seed_sequences") {
   sources = [ "seed_sequences.cc" ]
   deps = [
     ":seed_gen_exception",
-    "//third_party/abseil-cpp/absl/container:inlined_vector",
-    "//third_party/abseil-cpp/absl/random/internal:nonsecure_base",
-    "//third_party/abseil-cpp/absl/random/internal:pool_urbg",
-    "//third_party/abseil-cpp/absl/random/internal:salted_seed_seq",
-    "//third_party/abseil-cpp/absl/random/internal:seed_material",
-    "//third_party/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:inlined_vector",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:nonsecure_base",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:pool_urbg",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:salted_seed_seq",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:seed_material",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
   ]
 }
 
@@ -76,10 +76,10 @@ absl_source_set("bit_gen_ref") {
   public = [ "bit_gen_ref.h" ]
   deps = [
     ":random",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:fast_type_id",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/random/internal:distribution_caller",
-    "//third_party/abseil-cpp/absl/random/internal:fast_uniform_bits",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:fast_type_id",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:distribution_caller",
+    "${skia_third_party_dir}/abseil-cpp/absl/random/internal:fast_uniform_bits",
   ]
 }

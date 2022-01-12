@@ -7,7 +7,7 @@
 import("../../../../gni/angle.gni")
 
 if (angle_has_build && ozone_platform_gbm) {
-  import("//build/config/linux/pkg_config.gni")
+  import("${skia_root_dir}/build/config/linux/pkg_config.gni")
 }
 
 assert(angle_enable_gl)
@@ -283,6 +283,6 @@ angle_source_set("angle_gl_backend") {
   }
   if (ozone_platform_gbm) {
     public_configs += [ ":libdrm" ]
-    deps += [ "//third_party/minigbm" ]
+    deps += [ "${skia_third_party_dir}/minigbm" ]
   }
 }

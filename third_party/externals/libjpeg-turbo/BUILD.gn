@@ -5,9 +5,9 @@
 # Do not use the targets in this file unless you need a certain libjpeg
 # implementation. Use the meta target //third_party:jpeg instead.
 
-import("//build/config/sanitizers/sanitizers.gni")
+import("${skia_root_dir}/build/config/sanitizers/sanitizers.gni")
 if (current_cpu == "arm" || current_cpu == "arm64") {
-  import("//build/config/arm.gni")
+  import("${skia_root_dir}/build/config/arm.gni")
 }
 
 assert(!is_ios, "This is not used on iOS, don't drag it in unintentionally")
@@ -24,7 +24,7 @@ source_set("libjpeg_headers") {
 }
 
 if (current_cpu == "x86" || current_cpu == "x64") {
-  import("//third_party/nasm/nasm_assemble.gni")
+  import("${skia_third_party_dir}/nasm/nasm_assemble.gni")
 
   nasm_assemble("simd_asm") {
     defines = []
@@ -185,8 +185,8 @@ static_library("simd") {
       "NEON_INTRINSICS"
     ]
 
-    configs -= [ "//build/config/compiler:default_optimization" ]
-    configs += [ "//build/config/compiler:optimize_speed" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:default_optimization" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:optimize_speed" ]
   } else {
     sources = [
       "jsimd_none.c",
@@ -307,7 +307,7 @@ static_library("turbojpeg") {
 }
 
 if (build_with_chromium) {
-  import("//testing/test.gni")
+  import("${skia_root_dir}/testing/test.gni")
 
   test("libjpeg_turbo_unittests") {
     testonly = true
@@ -335,9 +335,9 @@ if (build_with_chromium) {
 
     deps = [
       ":turbojpeg",
-      "//base",
-      "//testing/gtest",
-      "//testing/gtest:gtest_main",
+      "${skia_root_dir}/base",
+      "${skia_root_dir}/testing/gtest",
+      "${skia_root_dir}/testing/gtest:gtest_main",
     ]
 
     data = [
@@ -352,11 +352,11 @@ if (build_with_chromium) {
     ]
 
     include_dirs = [
-      "//third_party/googletest/src/googletest/include/gtest",
+      "${skia_third_party_dir}/googletest/src/googletest/include/gtest",
       ".",
     ]
 
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
   }
 }

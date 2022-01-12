@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build_overrides/vulkan_common.gni")
+import("${skia_root_dir}/build_overrides/vulkan_common.gni")

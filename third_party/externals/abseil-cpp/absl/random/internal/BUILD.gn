@@ -2,27 +2,27 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/abseil-cpp/absl.gni")
+import("${skia_third_party_dir}/abseil-cpp/absl.gni")
 
 absl_source_set("traits") {
   public = [ "traits.h" ]
-  deps = [ "//third_party/abseil-cpp/absl/base:config" ]
+  deps = [ "${skia_third_party_dir}/abseil-cpp/absl/base:config" ]
 }
 
 absl_source_set("distribution_caller") {
   public = [ "distribution_caller.h" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:fast_type_id",
-    "//third_party/abseil-cpp/absl/utility",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:fast_type_id",
+    "${skia_third_party_dir}/abseil-cpp/absl/utility",
   ]
 }
 
 absl_source_set("fast_uniform_bits") {
   public = [ "fast_uniform_bits.h" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
   ]
 }
 
@@ -35,12 +35,12 @@ absl_source_set("seed_material") {
   }
   deps = [
     ":fast_uniform_bits",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:dynamic_annotations",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/types:optional",
-    "//third_party/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:dynamic_annotations",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:optional",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
   ]
 }
 
@@ -51,13 +51,13 @@ absl_source_set("pool_urbg") {
     ":randen",
     ":seed_material",
     ":traits",
-    "//third_party/abseil-cpp/absl/base",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:endian",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/abseil-cpp/absl/random:seed_gen_exception",
-    "//third_party/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/abseil-cpp/absl/base",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/random:seed_gen_exception",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
   ]
 }
 
@@ -65,33 +65,33 @@ absl_source_set("explicit_seed_seq") {
   testonly = true
   public = [ "explicit_seed_seq.h" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
   ]
 }
 
 absl_source_set("sequence_urbg") {
   testonly = true
   public = [ "sequence_urbg.h" ]
-  deps = [ "//third_party/abseil-cpp/absl/base:config" ]
+  deps = [ "${skia_third_party_dir}/abseil-cpp/absl/base:config" ]
 }
 
 absl_source_set("salted_seed_seq") {
   public = [ "salted_seed_seq.h" ]
   deps = [
     ":seed_material",
-    "//third_party/abseil-cpp/absl/container:inlined_vector",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/types:optional",
-    "//third_party/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:inlined_vector",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:optional",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
   ]
 }
 
 absl_source_set("iostream_state_saver") {
   public = [ "iostream_state_saver.h" ]
   deps = [
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/numeric:int128",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:int128",
   ]
 }
 
@@ -100,23 +100,23 @@ absl_source_set("generate_real") {
   deps = [
     ":fastmath",
     ":traits",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/numeric:bits",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:bits",
   ]
 }
 
 absl_source_set("fastmath") {
   public = [ "fastmath.h" ]
-  deps = [ "//third_party/abseil-cpp/absl/numeric:bits" ]
+  deps = [ "${skia_third_party_dir}/abseil-cpp/absl/numeric:bits" ]
 }
 
 absl_source_set("wide_multiply") {
   public = [ "wide_multiply.h" ]
   deps = [
     ":traits",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/numeric:bits",
-    "//third_party/abseil-cpp/absl/numeric:int128",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:bits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:int128",
   ]
 }
 
@@ -126,10 +126,10 @@ absl_source_set("nonsecure_base") {
     ":pool_urbg",
     ":salted_seed_seq",
     ":seed_material",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/types:optional",
-    "//third_party/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:optional",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
   ]
 }
 
@@ -138,10 +138,10 @@ absl_source_set("pcg_engine") {
   deps = [
     ":fastmath",
     ":iostream_state_saver",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/numeric:bits",
-    "//third_party/abseil-cpp/absl/numeric:int128",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:bits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:int128",
   ]
 }
 
@@ -150,8 +150,8 @@ absl_source_set("randen_engine") {
   deps = [
     ":iostream_state_saver",
     ":randen",
-    "//third_party/abseil-cpp/absl/base:endian",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
   ]
 }
 
@@ -162,8 +162,8 @@ absl_source_set("platform") {
   ]
   sources = [ "randen_round_keys.cc" ]
   deps = [
-    "//build:chromeos_buildflags",
-    "//third_party/abseil-cpp/absl/base:config",
+    "${skia_root_dir}/build:chromeos_buildflags",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
   ]
 }
 
@@ -174,7 +174,7 @@ absl_source_set("randen") {
     ":platform",
     ":randen_hwaes",
     ":randen_slow",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
   ]
 }
 
@@ -183,10 +183,10 @@ absl_source_set("randen_slow") {
   sources = [ "randen_slow.cc" ]
   deps = [
     ":platform",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:endian",
-    "//third_party/abseil-cpp/absl/numeric:int128",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:int128",
   ]
 }
 
@@ -199,7 +199,7 @@ absl_source_set("randen_hwaes") {
   deps = [
     ":platform",
     ":randen_hwaes_impl",
-    "//third_party/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
   ]
 }
 
@@ -210,17 +210,17 @@ absl_source_set("randen_hwaes_impl") {
   ]
   deps = [
     ":platform",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/numeric:int128",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:int128",
   ]
 }
 
 executable("gaussian_distribution_gentables") {
   sources = [ "gaussian_distribution_gentables.cc" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/random:distributions",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/random:distributions",
   ]
 }
 
@@ -235,12 +235,12 @@ absl_source_set("distribution_test_util") {
     "distribution_test_util.cc",
   ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/strings:str_format",
-    "//third_party/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings:str_format",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
   ]
 }
 
@@ -253,9 +253,9 @@ absl_source_set("distribution_test_util") {
 #  deps = [
 #    ":platform",
 #    ":randen_engine",
-#    "//third_party/abseil-cpp/absl/base:config",
-#    "//third_party/abseil-cpp/absl/base:core_headers",
-#    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
+#    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+#    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+#    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
 #  ]
 # }
 
@@ -263,7 +263,7 @@ absl_source_set("uniform_helper") {
   public = [ "uniform_helper.h" ]
   deps = [
     ":traits",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
   ]
 }

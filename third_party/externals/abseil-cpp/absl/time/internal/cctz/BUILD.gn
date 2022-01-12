@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/abseil-cpp/absl.gni")
+import("${skia_third_party_dir}/abseil-cpp/absl.gni")
 
 absl_source_set("civil_time") {
   sources = [ "src/civil_time_detail.cc" ]
@@ -10,7 +10,7 @@ absl_source_set("civil_time") {
     "include/cctz/civil_time.h",
     "include/cctz/civil_time_detail.h",
   ]
-  deps = [ "//third_party/abseil-cpp/absl/base:config" ]
+  deps = [ "${skia_third_party_dir}/abseil-cpp/absl/base:config" ]
 }
 
 absl_source_set("time_zone") {
@@ -41,6 +41,6 @@ absl_source_set("time_zone") {
   }
   deps = [
     ":civil_time",
-    "//third_party/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
   ]
 }

@@ -2,20 +2,20 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# import("//gn/skia.gni")
+# import("${skia_root_dir}/gn/skia.gni")
 
 declare_args() {
   using_fuchsia_sdk = true
 
   # Fuchsia SDK install dir.
-  fuchsia_sdk_path = "//fuchsia/sdk/$host_os"
+  fuchsia_sdk_path = "${skia_root_dir}/fuchsia/sdk/$host_os"
 
   # Clang install dir.
-  fuchsia_toolchain_path = "//fuchsia/toolchain/$host_os"
+  fuchsia_toolchain_path = "${skia_root_dir}/fuchsia/toolchain/$host_os"
 
   # Path to GN-generated GN targets derived from parsing json file at
   # |fuchsia_sdk_manifest_path|.  The parsing logic can be found in sdk.gni.
-  fuchsia_sdk_root = "//build/fuchsia"
+  fuchsia_sdk_root = "${skia_root_dir}/build/fuchsia"
 }
 
 declare_args() {
@@ -88,7 +88,7 @@ template("_fuchsia_fidl_library") {
 
   fidl_gen_target_name = "fidlgen_$target_name"
   action(fidl_gen_target_name) {
-    script = "//build/fuchsia/fidl_gen_cpp"
+    script = "${skia_root_dir}/build/fuchsia/fidl_gen_cpp"
 
     library_name_slashes = string_replace(library_name, ".", "/")
 
@@ -295,7 +295,7 @@ template("fuchsia_package") {
   pkg_archive = "${pkg_dir}/${pkg_name}-${pkg_version}.far"
 
   action(gen_far_target_name) {
-    script = "//build/fuchsia/gen_package"
+    script = "${skia_root_dir}/build/fuchsia/gen_package"
 
     pm_binary = rebase_path("$fuchsia_sdk_path/tools/pm")
 
@@ -353,7 +353,7 @@ template("fuchsia_repo") {
     if (defined(invoker.testonly)) {
       testonly = invoker.testonly
     }
-    script = "//build/fuchsia/gen_repo"
+    script = "${skia_root_dir}/build/fuchsia/gen_repo"
 
     pm_binary = rebase_path("$fuchsia_sdk_path/tools/pm")
     repo_directory = invoker.repo

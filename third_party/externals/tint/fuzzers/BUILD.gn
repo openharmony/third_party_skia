@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 import("../tint_overrides_with_defaults.gni")
 
 # Fuzzers - Libfuzzer based fuzzing targets for Chromium
 # To run the fuzzers outside of Chromium, use the CMake based builds.
 
 if (build_with_chromium) {
-  import("//testing/libfuzzer/fuzzer_test.gni")
+  import("${skia_root_dir}/testing/libfuzzer/fuzzer_test.gni")
 
   fuzzer_corpus_wgsl_dir = "${target_gen_dir}/fuzzer_corpus_wgsl"
   action("tint_generate_wgsl_corpus") {

@@ -14,19 +14,19 @@
 
 import("../../scripts/dawn_overrides_with_defaults.gni")
 
-import("//build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 import("${dawn_root}/scripts/dawn_features.gni")
 
 # Use Chromium's dcheck_always_on when available so that we respect it when
 # running tests on the GPU builders
 if (build_with_chromium) {
-  import("//build/config/dcheck_always_on.gni")
+  import("${skia_root_dir}/build/config/dcheck_always_on.gni")
 } else {
   dcheck_always_on = false
 }
 
 if (build_with_chromium) {
-  import("//build/config/sanitizers/sanitizers.gni")
+  import("${skia_root_dir}/build/config/sanitizers/sanitizers.gni")
 } else {
   use_fuzzing_engine = false
 }

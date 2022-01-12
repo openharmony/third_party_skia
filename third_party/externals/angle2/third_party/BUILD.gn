@@ -5,7 +5,7 @@
 # See:
 # https://chromium.googlesource.com/chromium/src/+/main/third_party/BUILD.gn
 
-import("//third_party/libjpeg.gni")
+import("${skia_third_party_dir}/libjpeg.gni")
 
 assert(!is_ios, "This is not used on iOS, don't drag it in unintentionally")
 
@@ -25,10 +25,10 @@ group("jpeg") {
   if (use_system_libjpeg) {
     public_configs = [ ":system_libjpeg_config" ]
   } else if (use_libjpeg_turbo) {
-    public_deps = [ "//third_party/libjpeg_turbo:libjpeg" ]
+    public_deps = [ "${skia_third_party_dir}/libjpeg_turbo:libjpeg" ]
     public_configs = [ ":libjpeg_turbo_config" ]
   } else {
-    public_deps = [ "//third_party/libjpeg:libjpeg" ]
+    public_deps = [ "${skia_third_party_dir}/libjpeg:libjpeg" ]
   }
 }
 
@@ -40,8 +40,8 @@ group("jpeg_includes") {
   if (use_system_libjpeg) {
     public_configs = [ ":system_libjpeg_config" ]
   } else if (use_libjpeg_turbo) {
-    public_configs = [ "//third_party/libjpeg_turbo:libjpeg_config" ]
+    public_configs = [ "${skia_third_party_dir}/libjpeg_turbo:libjpeg_config" ]
   } else {
-    public_configs = [ "//third_party/libjpeg:libjpeg_config" ]
+    public_configs = [ "${skia_third_party_dir}/libjpeg:libjpeg_config" ]
   }
 }

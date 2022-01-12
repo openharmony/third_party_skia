@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build_overrides/build.gni")
-import("//testing/test.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
+import("${skia_root_dir}/testing/test.gni")
 import("../tint_overrides_with_defaults.gni")
 
 ###############################################################################
@@ -66,11 +66,11 @@ if (!build_with_chromium) {
   group("gmock_and_gtest") {
     testonly = true
     public_deps = [
-      "//base",
-      "//base/test:test_support",
-      "//testing/gmock",
-      "//testing/gtest",
-      "//third_party/googletest:gmock",
+      "${skia_root_dir}/base",
+      "${skia_root_dir}/base/test:test_support",
+      "${skia_root_dir}/testing/gmock",
+      "${skia_root_dir}/testing/gtest",
+      "${skia_third_party_dir}/googletest:gmock",
     ]
   }
 }
@@ -85,7 +85,7 @@ source_set("tint_unittests_main") {
   testonly = true
   deps = [ ":gmock_and_gtest" ]
   if (build_with_chromium) {
-    sources = [ "//gpu/tint_unittests_main.cc" ]
+    sources = [ "${skia_root_dir}/gpu/tint_unittests_main.cc" ]
   } else {
     sources = [ "../src/test_main.cc" ]
     configs += [ ":tint_unittests_config" ]
@@ -122,8 +122,8 @@ template("tint_unittests_source_set") {
     }
     configs += [ ":tint_unittests_config" ]
     if (build_with_chromium) {
-      configs -= [ "//build/config/compiler:chromium_code" ]
-      configs += [ "//build/config/compiler:no_chromium_code" ]
+      configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+      configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
     }
 
     testonly = true
@@ -767,8 +767,8 @@ source_set("tint_unittests_src") {
   configs += [ ":tint_unittests_config" ]
 
   if (build_with_chromium) {
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
   }
 }
 
@@ -786,8 +786,8 @@ test("tint_unittests") {
   configs += [ ":tint_unittests_config" ]
 
   if (build_with_chromium) {
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
   }
 
   testonly = true

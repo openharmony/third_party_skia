@@ -2,16 +2,16 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/host_byteorder.gni")
-import("//third_party/icu/config.gni")
-import("//third_party/icu/sources.gni")
+import("${skia_root_dir}/build/config/host_byteorder.gni")
+import("${skia_third_party_dir}/icu/config.gni")
+import("${skia_third_party_dir}/icu/sources.gni")
 
 if (is_android) {
-  import("//build/config/android/rules.gni")
+  import("${skia_root_dir}/build/config/android/rules.gni")
 }
 
 if (is_mac && !icu_is_in_fuchsia) {
-  import("//build/config/sanitizers/sanitizers.gni")
+  import("${skia_root_dir}/build/config/sanitizers/sanitizers.gni")
 }
 
 assert(!icu_disable_thin_archive || !is_component_build,
@@ -150,15 +150,15 @@ template("generate_icu_component") {
 
       # ICU uses RTTI, replace the default "no rtti" config (if applied).
       configs += [
-        "//build/config:no_rtti",
-        "//build/config:symbol_visibility_hidden",
+        "${skia_root_dir}/build/config:no_rtti",
+        "${skia_root_dir}/build/config:symbol_visibility_hidden",
       ]
       configs -= [
-        "//build/config:no_rtti",
-        "//build/config:symbol_visibility_hidden",
+        "${skia_root_dir}/build/config:no_rtti",
+        "${skia_root_dir}/build/config:symbol_visibility_hidden",
       ]
 
-      configs += [ "//build/config:rtti" ]
+      configs += [ "${skia_root_dir}/build/config:rtti" ]
 
       # These need to be applied after the main configs so the "-Wno-*" options
       # take effect.
@@ -184,16 +184,16 @@ template("generate_icu_component") {
 
       # ICU uses RTTI, replace the default "no rtti" config (if applied).
       configs += [
-        "//build/config/compiler:no_rtti",
-        "//build/config/compiler:chromium_code",
+        "${skia_root_dir}/build/config/compiler:no_rtti",
+        "${skia_root_dir}/build/config/compiler:chromium_code",
       ]
       configs -= [
-        "//build/config/compiler:no_rtti",
-        "//build/config/compiler:chromium_code",
+        "${skia_root_dir}/build/config/compiler:no_rtti",
+        "${skia_root_dir}/build/config/compiler:chromium_code",
       ]
       configs += [
-        "//build/config/compiler:rtti",
-        "//build/config/compiler:no_chromium_code",
+        "${skia_root_dir}/build/config/compiler:rtti",
+        "${skia_root_dir}/build/config/compiler:no_chromium_code",
       ]
 
       # These need to be applied after the main configs so the "-Wno-*" options
@@ -205,7 +205,7 @@ template("generate_icu_component") {
       # Make icu into a standalone static library. Currently This is only useful
       # on Chrome OS.
       if (invoker.check_thin_archive && icu_disable_thin_archive) {
-        configs -= [ "//build/config/compiler:thin_archive" ]
+        configs -= [ "${skia_root_dir}/build/config/compiler:thin_archive" ]
         complete_static_lib = true
       }
     }
@@ -348,7 +348,7 @@ if (icu_use_data_file) {
   }
 
   copy("extra_icudata") {
-    sources = [ "//third_party/icu/android_small/icudtl_extra.dat" ]
+    sources = [ "${skia_third_party_dir}/icu/android_small/icudtl_extra.dat" ]
     outputs = [ "$root_out_dir/icudtl_extra.dat" ]
   }
 } else {

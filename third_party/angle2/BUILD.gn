@@ -8,7 +8,7 @@ declare_args() {
 
 group("angle2") {
   public_deps = [
-    "//third_party/externals/angle2:libEGL",
-    "//third_party/externals/angle2:libGLESv2",
+    "${skia_third_party_dir}/externals/angle2:libEGL",
+    "${skia_third_party_dir}/externals/angle2:libGLESv2",
   ]
 }

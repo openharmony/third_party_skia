@@ -1,11 +1,11 @@
 import("../third_party.gni")
 
-spirv_cross = "//third_party/externals/spirv-cross"
+spirv_cross = "${skia_third_party_dir}/externals/spirv-cross"
 
 third_party("spirv_cross") {
   public_include_dirs = [
-    "//third_party/externals",
-    "//third_party/externals/spirv-cross",
+    "${skia_third_party_dir}/externals",
+    "${skia_third_party_dir}/externals/spirv-cross",
   ]
   public_defines = [ "SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS" ]
 

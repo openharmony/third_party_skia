@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import("../../swiftshader.gni")
-import("//testing/libfuzzer/fuzzer_test.gni")
+import("${skia_root_dir}/testing/libfuzzer/fuzzer_test.gni")
 
 # Need a separate config to ensure the warnings are added to the end.
 config("swiftshader_opengl_compiler_private_config") {

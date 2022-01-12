@@ -5,15 +5,15 @@
 # import the ozone_platform_x11 variable
 import("gni/angle.gni")
 if (angle_has_build) {
-  import("//build/config/linux/pkg_config.gni")
-  import("//build/config/sanitizers/sanitizers.gni")
-  import("//build/config/ui.gni")
-  import("//testing/libfuzzer/fuzzer_test.gni")
+  import("${skia_root_dir}/build/config/linux/pkg_config.gni")
+  import("${skia_root_dir}/build/config/sanitizers/sanitizers.gni")
+  import("${skia_root_dir}/build/config/ui.gni")
+  import("${skia_root_dir}/testing/libfuzzer/fuzzer_test.gni")
 
   if (is_android) {
     # android/rules.gni can only be imported for Android targets
-    import("//build/config/android/config.gni")
-    import("//build/config/android/rules.gni")
+    import("${skia_root_dir}/build/config/android/config.gni")
+    import("${skia_root_dir}/build/config/android/rules.gni")
     import("android/angle_apk.gni")
   }
 } else {
@@ -403,7 +403,7 @@ angle_static_library("angle_common") {
   }
 
   if (using_sanitizer && !build_with_chromium) {
-    data_deps = [ "//build/config/clang:llvm-symbolizer_data($host_toolchain)" ]
+    data_deps = [ "${skia_root_dir}/build/config/clang:llvm-symbolizer_data($host_toolchain)" ]
   }
 }
 
@@ -936,7 +936,7 @@ angle_source_set("libANGLE_base") {
 
   # Enable extra Chromium style warnings for libANGLE.
   if (is_clang && angle_has_build) {
-    suppressed_configs -= [ "//build/config/clang:find_bad_constructs" ]
+    suppressed_configs -= [ "${skia_root_dir}/build/config/clang:find_bad_constructs" ]
   }
 
   if (is_apple) {
@@ -999,7 +999,7 @@ angle_source_set("angle_gl_enum_utils") {
 }
 
 if (!defined(angle_abseil_cpp_dir)) {
-  angle_abseil_cpp_dir = "//third_party/abseil-cpp"
+  angle_abseil_cpp_dir = "${skia_third_party_dir}/abseil-cpp"
 }
 
 config("angle_abseil_config") {
@@ -1015,7 +1015,7 @@ config("angle_abseil_config") {
 
 group("angle_abseil") {
   if (angle_enable_abseil) {
-    # When build_with_chromium=true we need to include "//third_party/abseil-cpp:absl" while
+    # When build_with_chromium=true we need to include "${skia_third_party_dir}/abseil-cpp:absl" while
     # we can be more specific when building standalone ANGLE.
     if (build_with_chromium || is_component_build) {
       public_deps = [ "$angle_abseil_cpp_dir:absl" ]
@@ -1031,13 +1031,13 @@ group("angle_abseil") {
 }
 
 config("angle_compression_config") {
-  include_dirs = [ "//third_party/zlib/google" ]
+  include_dirs = [ "${skia_third_party_dir}/zlib/google" ]
 }
 
 group("angle_compression") {
   public_configs = [
     ":angle_compression_config",
-    "//third_party/zlib:zlib_config",
+    "${skia_third_party_dir}/zlib:zlib_config",
   ]
   public_deps =
       [ "$angle_zlib_compression_utils_dir:compression_utils_portable" ]

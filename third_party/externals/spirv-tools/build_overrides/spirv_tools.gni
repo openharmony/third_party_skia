@@ -21,5 +21,5 @@
 spirv_tools_standalone = true
 
 # The path to SPIRV-Tools' dependencies
-spirv_tools_googletest_dir = "//external/googletest"
-spirv_tools_spirv_headers_dir = "//external/spirv-headers"
+spirv_tools_googletest_dir = "${skia_root_dir}/external/googletest"
+spirv_tools_spirv_headers_dir = "${skia_root_dir}/external/spirv-headers"

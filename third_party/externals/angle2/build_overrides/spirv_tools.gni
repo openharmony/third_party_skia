@@ -6,5 +6,5 @@
 spirv_tools_standalone = false
 
 # Paths to SPIRV-Tools dependencies in ANGLE
-spirv_tools_googletest_dir = "//third_party/googletest/src"
-spirv_tools_spirv_headers_dir = "//third_party/vulkan-deps/spirv-headers/src"
+spirv_tools_googletest_dir = "${skia_third_party_dir}/googletest/src"
+spirv_tools_spirv_headers_dir = "${skia_third_party_dir}/vulkan-deps/spirv-headers/src"

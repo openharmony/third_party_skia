@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build_overrides/build.gni")
-import("//third_party/abseil-cpp/absl.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
+import("${skia_third_party_dir}/abseil-cpp/absl.gni")
 
 absl_source_set("strings") {
   sources = [
@@ -44,16 +44,16 @@ absl_source_set("strings") {
   ]
   deps = [
     ":internal",
-    "//third_party/abseil-cpp/absl/base",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:endian",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/abseil-cpp/absl/base:throw_delegate",
-    "//third_party/abseil-cpp/absl/memory",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/numeric:bits",
-    "//third_party/abseil-cpp/absl/numeric:int128",
+    "${skia_third_party_dir}/abseil-cpp/absl/base",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:throw_delegate",
+    "${skia_third_party_dir}/abseil-cpp/absl/memory",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:bits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:int128",
   ]
 }
 
@@ -71,11 +71,11 @@ absl_source_set("internal") {
     "internal/utf8.h",
   ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:endian",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
   ]
 }
 
@@ -105,15 +105,15 @@ absl_source_set("str_format_internal") {
   visibility = [ ":*" ]
   deps = [
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/functional:function_ref",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/numeric:bits",
-    "//third_party/abseil-cpp/absl/numeric:int128",
-    "//third_party/abseil-cpp/absl/numeric:representation",
-    "//third_party/abseil-cpp/absl/types:optional",
-    "//third_party/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/functional:function_ref",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:bits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:int128",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:representation",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:optional",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
   ]
 }
 
@@ -139,18 +139,18 @@ absl_source_set("cord_internal") {
   visibility = [ ":*" ]
   deps = [
     ":strings",
-    "//third_party/abseil-cpp/absl/base:base_internal",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:endian",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/abseil-cpp/absl/base:throw_delegate",
-    "//third_party/abseil-cpp/absl/container:compressed_tuple",
-    "//third_party/abseil-cpp/absl/container:inlined_vector",
-    "//third_party/abseil-cpp/absl/container:layout",
-    "//third_party/abseil-cpp/absl/functional:function_ref",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:base_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:throw_delegate",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:compressed_tuple",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:inlined_vector",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:layout",
+    "${skia_third_party_dir}/abseil-cpp/absl/functional:function_ref",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
   ]
 }
 
@@ -161,11 +161,11 @@ absl_source_set("cord_rep_btree_test") {
     ":cord_internal",
     ":cord_rep_test_util",
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/abseil-cpp/absl/cleanup",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/cleanup",
+    "${skia_third_party_dir}/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -177,17 +177,17 @@ absl_source_set("cord_rep_btree_reader_test") {
     ":cord_internal",
     ":cord_rep_test_util",
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
 absl_source_set("cordz_update_tracker") {
   public = ["internal/cordz_update_tracker.h"]
-  visibility = [ "//third_party/abseil-cpp/*" ]
-  deps = ["//third_party/abseil-cpp/absl/base:config"]
+  visibility = [ "${skia_third_party_dir}/abseil-cpp/*" ]
+  deps = ["${skia_third_party_dir}/abseil-cpp/absl/base:config"]
 }
 
 absl_source_set("cordz_update_tracker_test") {
@@ -195,11 +195,11 @@ absl_source_set("cordz_update_tracker_test") {
   sources = ["internal/cordz_update_tracker_test.cc"]
   deps = [
     ":cordz_update_tracker",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/synchronization",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -216,61 +216,61 @@ absl_source_set("cord") {
     ":internal",
     ":str_format",
     ":strings",
-    "//third_party/abseil-cpp/absl/base",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:endian",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/abseil-cpp/absl/container:fixed_array",
-    "//third_party/abseil-cpp/absl/container:inlined_vector",
-    "//third_party/abseil-cpp/absl/functional:function_ref",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/types:optional",
+    "${skia_third_party_dir}/abseil-cpp/absl/base",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:endian",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:fixed_array",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:inlined_vector",
+    "${skia_third_party_dir}/abseil-cpp/absl/functional:function_ref",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:optional",
   ]
 }
 
 absl_source_set("cordz_handle") {
   sources = ["internal/cordz_handle.cc"]
   public = ["internal/cordz_handle.h"]
-  visibility = [ "//third_party/abseil-cpp/*" ]
+  visibility = [ "${skia_third_party_dir}/abseil-cpp/*" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/abseil-cpp/absl/base",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
   ]
 }
 
 absl_source_set("cordz_info") {
   sources = ["internal/cordz_info.cc"]
   public = ["internal/cordz_info.h"]
-  visibility = [ "//third_party/abseil-cpp/*" ]
+  visibility = [ "${skia_third_party_dir}/abseil-cpp/*" ]
   deps = [
     ":cord_internal",
     ":cordz_functions",
     ":cordz_handle",
     ":cordz_statistics",
     ":cordz_update_tracker",
-    "//third_party/abseil-cpp/absl/base",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/abseil-cpp/absl/container:inlined_vector",
-    "//third_party/abseil-cpp/absl/debugging:stacktrace",
-    "//third_party/abseil-cpp/absl/synchronization",
-    "//third_party/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/abseil-cpp/absl/base",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:inlined_vector",
+    "${skia_third_party_dir}/abseil-cpp/absl/debugging:stacktrace",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
   ]
 }
 
 absl_source_set("cordz_update_scope") {
   public = ["internal/cordz_update_scope.h"]
-  visibility = [ "//third_party/abseil-cpp/*" ]
+  visibility = [ "${skia_third_party_dir}/abseil-cpp/*" ]
   deps = [
     ":cord_internal",
     ":cordz_info",
     ":cordz_update_tracker",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
   ]
 }
 
@@ -283,41 +283,41 @@ absl_source_set("cordz_update_scope_test") {
     ":cordz_test_helpers",
     ":cordz_update_scope",
     ":cordz_update_tracker",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
 absl_source_set("cordz_sample_token") {
   sources = ["internal/cordz_sample_token.cc"]
   public = ["internal/cordz_sample_token.h"]
-  visibility = [ "//third_party/abseil-cpp/*" ]
+  visibility = [ "${skia_third_party_dir}/abseil-cpp/*" ]
   deps = [
     ":cordz_handle",
     ":cordz_info",
-    "//third_party/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
   ]
 }
 
 absl_source_set("cordz_functions") {
   sources = ["internal/cordz_functions.cc"]
   public = ["internal/cordz_functions.h"]
-  visibility = [ "//third_party/abseil-cpp/*" ]
+  visibility = [ "${skia_third_party_dir}/abseil-cpp/*" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:exponential_biased",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:exponential_biased",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
   ]
 }
 
 absl_source_set("cordz_statistics") {
   public = ["internal/cordz_statistics.h"]
-  visibility = [ "//third_party/abseil-cpp/*" ]
+  visibility = [ "${skia_third_party_dir}/abseil-cpp/*" ]
   deps = [
     ":cordz_update_tracker",
-    "//third_party/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
   ]
 }
 
@@ -327,9 +327,9 @@ absl_source_set("cordz_functions_test") {
   deps = [
     ":cordz_functions",
     ":cordz_test_helpers",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -339,15 +339,15 @@ absl_source_set("cordz_functions_test") {
 #   sources = [ "internal/cordz_handle_test.cc" ]
 #   deps = [
 #     ":cordz_handle",
-#     "//third_party/abseil-cpp/absl/base:config",
-#     "//third_party/abseil-cpp/absl/memory",
-#     "//third_party/abseil-cpp/absl/random",
-#     "//third_party/abseil-cpp/absl/random:distributions",
-#     "//third_party/abseil-cpp/absl/synchronization",
-#     "//third_party/abseil-cpp/absl/synchronization:thread_pool",
-#     "//third_party/abseil-cpp/absl/time",
-#     "//third_party/googletest:gmock",
-#     "//third_party/googletest:gtest",
+#     "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+#     "${skia_third_party_dir}/abseil-cpp/absl/memory",
+#     "${skia_third_party_dir}/abseil-cpp/absl/random",
+#     "${skia_third_party_dir}/abseil-cpp/absl/random:distributions",
+#     "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
+#     "${skia_third_party_dir}/abseil-cpp/absl/synchronization:thread_pool",
+#     "${skia_third_party_dir}/abseil-cpp/absl/time",
+#     "${skia_third_party_dir}/googletest:gmock",
+#     "${skia_third_party_dir}/googletest:gtest",
 #   ]
 # }
 
@@ -362,12 +362,12 @@ absl_source_set("cordz_info_test") {
     ":cordz_test_helpers",
     ":cordz_update_tracker",
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/debugging:stacktrace",
-    "//third_party/abseil-cpp/absl/debugging:symbolize",
-    "//third_party/abseil-cpp/absl/types:span",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/debugging:stacktrace",
+    "${skia_third_party_dir}/abseil-cpp/absl/debugging:symbolize",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -382,11 +382,11 @@ absl_source_set("cordz_info_statistics_test") {
     ":cordz_statistics",
     ":cordz_update_scope",
     ":cordz_update_tracker",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/synchronization",
-    "//third_party/abseil-cpp/absl/synchronization:thread_pool",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization:thread_pool",
+    "${skia_third_party_dir}/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -400,14 +400,14 @@ absl_source_set("cordz_info_statistics_test") {
 #     ":cordz_info",
 #     ":cordz_sample_token",
 #     ":cordz_test_helpers",
-#     "//third_party/abseil-cpp/absl/base:config",
-#     "//third_party/abseil-cpp/absl/memory",
-#     "//third_party/abseil-cpp/absl/random",
-#     "//third_party/abseil-cpp/absl/synchronization",
-#     "//third_party/abseil-cpp/absl/synchronization:thread_pool",
-#     "//third_party/abseil-cpp/absl/time",
-#     "//third_party/googletest:gmock",
-#     "//third_party/googletest:gtest",
+#     "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+#     "${skia_third_party_dir}/abseil-cpp/absl/memory",
+#     "${skia_third_party_dir}/abseil-cpp/absl/random",
+#     "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
+#     "${skia_third_party_dir}/abseil-cpp/absl/synchronization:thread_pool",
+#     "${skia_third_party_dir}/abseil-cpp/absl/time",
+#     "${skia_third_party_dir}/googletest:gmock",
+#     "${skia_third_party_dir}/googletest:gtest",
 #   ]
 # }
 
@@ -418,7 +418,7 @@ absl_source_set("cord_test_helpers") {
     ":cord",
     ":cord_internal",
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
   ]
 }
 
@@ -428,8 +428,8 @@ absl_source_set("cord_rep_test_util") {
   deps = [
     ":cord_internal",
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
   ]
 }
 
@@ -444,9 +444,9 @@ absl_source_set("cordz_test_helpers") {
     ":cordz_statistics",
     ":cordz_update_tracker",
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -463,11 +463,11 @@ absl_source_set("cordz_test") {
     ":cordz_test_helpers",
     ":cordz_update_tracker",
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -477,11 +477,11 @@ absl_source_set("cord_rep_consume_test") {
   deps = [
     ":cord_internal",
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/debugging:leak_check",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/debugging:leak_check",
+    "${skia_third_party_dir}/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -490,7 +490,7 @@ absl_source_set("pow10_helper") {
   sources = [ "internal/pow10_helper.cc" ]
   public = [ "internal/pow10_helper.h" ]
   visibility = [ ":*" ]
-  deps = [ "//third_party/abseil-cpp/absl/base:config" ]
+  deps = [ "${skia_third_party_dir}/abseil-cpp/absl/base:config" ]
 }
 
 absl_source_set("ascii_test") {
@@ -498,8 +498,8 @@ absl_source_set("ascii_test") {
   sources = [ "ascii_test.cc" ]
   deps = [
     ":strings",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -508,7 +508,7 @@ absl_source_set("match_test") {
   sources = [ "match_test.cc" ]
   deps = [
     ":strings",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -517,7 +517,7 @@ absl_source_set("str_replace_test") {
   sources = [ "str_replace_test.cc" ]
   deps = [
     ":strings",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -526,10 +526,10 @@ absl_source_set("string_view_test") {
   sources = [ "string_view_test.cc" ]
   deps = [
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/base:dynamic_annotations",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:dynamic_annotations",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }
 
@@ -540,9 +540,9 @@ absl_source_set("cord_rep_btree_navigator_test") {
     ":cord_internal",
     ":cord_rep_test_util",
     ":strings",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:raw_logging_internal",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:raw_logging_internal",
+    "${skia_third_party_dir}/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }

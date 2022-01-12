@@ -9,12 +9,12 @@ import("gn/shared_sources.gni")
 import("gn/skia.gni")
 
 if (is_fuchsia) {
-  import("//build/fuchsia/sdk.gni")
+  import("${skia_root_dir}/build/fuchsia/sdk.gni")
   import("build/fuchsia/fuchsia_download_sdk.gni")
 }
 
 if (skia_use_dawn) {
-  import("//third_party/externals/dawn/scripts/dawn_features.gni")
+  import("${skia_third_party_dir}/externals/dawn/scripts/dawn_features.gni")
 }
 
 if (defined(skia_settings)) {
@@ -375,7 +375,7 @@ optional("fontmgr_android") {
 
   deps = [
     ":typeface_freetype",
-    "//third_party/expat",
+    "${skia_third_party_dir}/expat",
   ]
   public = [ "include/ports/SkFontMgr_android.h" ]
   sources = [
@@ -452,7 +452,7 @@ optional("fontmgr_fontconfig") {
   enabled = skia_enable_fontmgr_fontconfig
 
   # The public header includes fontconfig.h and uses FcConfig*
-  public_deps = [ "//third_party:fontconfig" ]
+  public_deps = [ "${skia_third_party_dir}:fontconfig" ]
   public = [ "include/ports/SkFontMgr_fontconfig.h" ]
   deps = [ ":typeface_freetype" ]
   sources = [ "src/ports/SkFontMgr_fontconfig.cpp" ]
@@ -469,7 +469,7 @@ optional("fontmgr_FontConfigInterface") {
 
   deps = [
     ":typeface_freetype",
-    "//third_party:fontconfig",
+    "${skia_third_party_dir}:fontconfig",
   ]
   public = [
     "include/ports/SkFontConfigInterface.h",
@@ -495,9 +495,9 @@ optional("fontmgr_fuchsia") {
   deps = []
 
   if (is_fuchsia && using_fuchsia_sdk) {
-    deps += [ "//build/fuchsia/fidl:fuchsia.fonts" ]
+    deps += [ "${skia_root_dir}/build/fuchsia/fidl:fuchsia.fonts" ]
   } else {
-    deps = [ "//sdk/fidl/fuchsia.fonts" ]
+    deps = [ "${skia_root_dir}/sdk/fidl/fuchsia.fonts" ]
   }
   public = [ "src/ports/SkFontMgr_fuchsia.h" ]
   sources = [ "src/ports/SkFontMgr_fuchsia.cpp" ]
@@ -660,8 +660,8 @@ if (skia_compile_sksl_tests) {
     include_dirs = [ "." ]
     deps = [
       ":run_sksllex",
-      "//third_party/externals/spirv-tools:spvtools",
-      "//third_party/externals/spirv-tools:spvtools_val",
+      "${skia_third_party_dir}/externals/spirv-tools:spvtools",
+      "${skia_third_party_dir}/externals/spirv-tools:spvtools_val",
     ]
   }
 
@@ -909,7 +909,7 @@ optional("gpu") {
       if (using_fuchsia_sdk) {
         public_deps += [ "$fuchsia_sdk_root/pkg:vulkan" ]
       } else {
-        public_deps += [ "//src/graphics/lib/vulkan" ]
+        public_deps += [ "${skia_root_dir}/src/graphics/lib/vulkan" ]
       }
     }
   }
@@ -924,14 +924,14 @@ optional("gpu") {
   if (skia_use_dawn) {
     public_defines += [ "SK_DAWN" ]
     sources += skia_dawn_sources
-    public_deps += [ "//third_party/externals/dawn/src/dawn:dawn_headers" ]
+    public_deps += [ "${skia_third_party_dir}/externals/dawn/src/dawn:dawn_headers" ]
     deps += [
-      "//third_party/externals/dawn/src/dawn:dawn_proc",
-      "//third_party/externals/dawn/src/dawn:dawncpp",
+      "${skia_third_party_dir}/externals/dawn/src/dawn:dawn_proc",
+      "${skia_third_party_dir}/externals/dawn/src/dawn:dawncpp",
     ]
     if (dawn_enable_d3d12 || dawn_enable_desktop_gl || dawn_enable_metal ||
         dawn_enable_opengles || dawn_enable_vulkan) {
-      deps += [ "//third_party/externals/dawn/src/dawn_native" ]
+      deps += [ "${skia_third_party_dir}/externals/dawn/src/dawn_native" ]
     }
     if (dawn_enable_d3d12) {
       libs += [
@@ -947,8 +947,8 @@ optional("gpu") {
   if (skia_use_direct3d) {
     public_defines += [ "SK_DIRECT3D" ]
     deps += [
-      "//third_party/d3d12allocator",
-      "//third_party/spirv-cross:spirv_cross",
+      "${skia_third_party_dir}/d3d12allocator",
+      "${skia_third_party_dir}/spirv-cross:spirv_cross",
     ]
     sources += skia_direct3d_sources
     if (skia_enable_direct3d_debug_layer) {
@@ -1020,7 +1020,7 @@ optional("jpeg_decode") {
   enabled = skia_use_libjpeg_turbo_decode
   public_defines = [ "SK_CODEC_DECODES_JPEG" ]
 
-  deps = [ "//third_party/libjpeg-turbo:libjpeg" ]
+  deps = [ "${skia_third_party_dir}/libjpeg-turbo:libjpeg" ]
   sources = [
     "src/codec/SkJpegCodec.cpp",
     "src/codec/SkJpegDecoderMgr.cpp",
@@ -1032,7 +1032,7 @@ optional("jpeg_encode") {
   enabled = skia_use_libjpeg_turbo_encode
   public_defines = [ "SK_ENCODE_JPEG" ]
 
-  deps = [ "//third_party/libjpeg-turbo:libjpeg" ]
+  deps = [ "${skia_third_party_dir}/libjpeg-turbo:libjpeg" ]
   public = [ "include/encode/SkJpegEncoder.h" ]
   sources = [
     "src/images/SkJPEGWriteUtility.cpp",
@@ -1075,7 +1075,7 @@ optional("pdf") {
   enabled = skia_use_zlib && skia_enable_pdf
   public_defines = [ "SK_SUPPORT_PDF" ]
 
-  deps = [ "//third_party/zlib" ]
+  deps = [ "${skia_third_party_dir}/zlib" ]
   if (skia_use_libjpeg_turbo_decode) {
     deps += [ ":jpeg_decode" ]
   }
@@ -1086,10 +1086,10 @@ optional("pdf") {
   sources = skia_pdf_sources
   sources_when_disabled = [ "src/pdf/SkDocument_PDF_None.cpp" ]
   if (skia_use_icu && skia_use_harfbuzz && skia_pdf_subset_harfbuzz) {
-    deps += [ "//third_party/harfbuzz" ]
+    deps += [ "${skia_third_party_dir}/harfbuzz" ]
     defines = [ "SK_PDF_USE_HARFBUZZ_SUBSET" ]
   } else if (skia_use_icu && skia_use_sfntly) {
-    deps += [ "//third_party/sfntly" ]
+    deps += [ "${skia_third_party_dir}/sfntly" ]
     defines = [ "SK_PDF_USE_SFNTLY" ]
   }
 }
@@ -1105,7 +1105,7 @@ optional("png_decode") {
   enabled = skia_use_libpng_decode
   public_defines = [ "SK_CODEC_DECODES_PNG" ]
 
-  deps = [ "//third_party/libpng" ]
+  deps = [ "${skia_third_party_dir}/libpng" ]
   sources = [
     "src/codec/SkIcoCodec.cpp",
     "src/codec/SkPngCodec.cpp",
@@ -1116,7 +1116,7 @@ optional("png_encode") {
   enabled = skia_use_libpng_encode
   public_defines = [ "SK_ENCODE_PNG" ]
 
-  deps = [ "//third_party/libpng" ]
+  deps = [ "${skia_third_party_dir}/libpng" ]
   sources = [ "src/images/SkPngEncoder.cpp" ]
 }
 
@@ -1125,9 +1125,9 @@ optional("raw") {
   public_defines = [ "SK_CODEC_DECODES_RAW" ]
 
   deps = [
-    "//third_party/dng_sdk",
-    "//third_party/libjpeg-turbo:libjpeg",
-    "//third_party/piex",
+    "${skia_third_party_dir}/dng_sdk",
+    "${skia_third_party_dir}/libjpeg-turbo:libjpeg",
+    "${skia_third_party_dir}/piex",
   ]
 
   # SkRawCodec catches any exceptions thrown by dng_sdk, insulating the rest of
@@ -1155,7 +1155,7 @@ skia_source_set("skcms") {
 optional("typeface_freetype") {
   enabled = skia_use_freetype
 
-  deps = [ "//third_party/freetype2" ]
+  deps = [ "${skia_third_party_dir}/freetype2" ]
   sources = [
     "src/ports/SkFontHost_FreeType.cpp",
     "src/ports/SkFontHost_FreeType_common.cpp",
@@ -1167,7 +1167,7 @@ optional("webp_decode") {
   enabled = skia_use_libwebp_decode
   public_defines = [ "SK_CODEC_DECODES_WEBP" ]
 
-  deps = [ "//third_party/libwebp" ]
+  deps = [ "${skia_third_party_dir}/libwebp" ]
   sources = [ "src/codec/SkWebpCodec.cpp" ]
 }
 
@@ -1175,7 +1175,7 @@ optional("webp_encode") {
   enabled = skia_use_libwebp_encode
   public_defines = [ "SK_ENCODE_WEBP" ]
 
-  deps = [ "//third_party/libwebp" ]
+  deps = [ "${skia_third_party_dir}/libwebp" ]
   sources = [ "src/images/SkWebpEncoder.cpp" ]
 }
 
@@ -1183,7 +1183,7 @@ optional("wuffs") {
   enabled = skia_use_wuffs
   public_defines = [ "SK_HAS_WUFFS_LIBRARY" ]
 
-  deps = [ "//third_party/wuffs" ]
+  deps = [ "${skia_third_party_dir}/wuffs" ]
   sources = [ "src/codec/SkWuffsCodec.cpp" ]
 }
 
@@ -1191,7 +1191,7 @@ optional("xml") {
   enabled = skia_use_expat
   public_defines = [ "SK_XML" ]
 
-  deps = [ "//third_party/expat" ]
+  deps = [ "${skia_third_party_dir}/expat" ]
   sources = [
     "src/svg/SkSVGCanvas.cpp",
     "src/svg/SkSVGDevice.cpp",
@@ -1364,9 +1364,9 @@ skia_component("skia") {
   }
 
   if (is_android) {
-    deps += [ "//third_party/expat" ]
+    deps += [ "${skia_third_party_dir}/expat" ]
     if (defined(ndk) && ndk != "") {
-      deps += [ "//third_party/cpu-features" ]
+      deps += [ "${skia_third_party_dir}/cpu-features" ]
     }
     sources += [ "src/ports/SkDebug_android.cpp" ]
     libs += [
@@ -1415,7 +1415,7 @@ skia_component("skia") {
   }
 
   if (skia_enable_spirv_validation) {
-    deps += [ "//third_party/externals/spirv-tools:spvtools_val" ]
+    deps += [ "${skia_third_party_dir}/externals/spirv-tools:spvtools_val" ]
     defines += [ "SK_ENABLE_SPIRV_VALIDATION" ]
   }
 
@@ -1565,7 +1565,7 @@ if (skia_enable_tools) {
     skia_h = "$target_gen_dir/skia.h"
     script = "gn/find_headers.py"
 
-    args = [ rebase_path("//bin/gn") ] + [ rebase_path("//") ] +
+    args = [ rebase_path("${skia_root_dir}/bin/gn") ] + [ rebase_path("//") ] +
            [ rebase_path(skia_h, root_build_dir) ] +
            rebase_path(skia_public_includes)
     depfile = "$skia_h.deps"
@@ -1626,7 +1626,7 @@ if (skia_enable_tools) {
     ]
 
     if (skia_use_dawn) {
-      deps += [ "//third_party/externals/dawn/src/dawn:dawn_headers" ]
+      deps += [ "${skia_third_party_dir}/externals/dawn/src/dawn:dawn_headers" ]
     }
   }
 
@@ -1666,12 +1666,12 @@ if (skia_enable_tools) {
         extra_configs = [ ":skia_private" ]
         launchscreen = "platform_tools/ios/app/LaunchScreen.storyboard"
         data_sources = [ "resources" ]
-        if ("True" == exec_script("//gn/checkdir.py",
+        if ("True" == exec_script("${skia_root_dir}/gn/checkdir.py",
                                   [ rebase_path("skps", root_build_dir) ],
                                   "trim string")) {
           data_sources += [ "skps" ]
         }
-        if ("True" == exec_script("//gn/checkdir.py",
+        if ("True" == exec_script("${skia_root_dir}/gn/checkdir.py",
                                   [ rebase_path("mskps", root_build_dir) ],
                                   "trim string")) {
           data_sources += [ "mskps" ]
@@ -1772,7 +1772,7 @@ if (skia_enable_tools) {
         sources += [ "tools/gpu/gl/mac/CreatePlatformGLTestContext_mac.cpp" ]
       }
       if (skia_use_angle) {
-        deps += [ "//third_party/angle2" ]
+        deps += [ "${skia_third_party_dir}/angle2" ]
         sources += [ "tools/gpu/gl/angle/GLTestContext_angle.cpp" ]
       }
     }
@@ -1817,7 +1817,7 @@ if (skia_enable_tools) {
       sources += [ "tools/gpu/d3d/D3DTestUtils.cpp" ]
     }
     if (skia_use_dawn) {
-      public_deps += [ "//third_party/externals/dawn/src/dawn:dawn_headers" ]
+      public_deps += [ "${skia_third_party_dir}/externals/dawn/src/dawn:dawn_headers" ]
       sources += [ "tools/gpu/dawn/DawnTestContext.cpp" ]
       if (is_clang) {
         cflags_cc = [ "-Wno-microsoft-cast" ]
@@ -2053,9 +2053,9 @@ if (skia_enable_tools) {
       "modules/sksg:tests",
       "modules/skshaper",
       "modules/svg:tests",
-      "//third_party/libpng",
-      "//third_party/libwebp",
-      "//third_party/zlib",
+      "${skia_third_party_dir}/libpng",
+      "${skia_third_party_dir}/libwebp",
+      "${skia_third_party_dir}/zlib",
     ]
   }
 
@@ -2120,7 +2120,7 @@ if (skia_enable_tools) {
       "modules/skparagraph:samples",
       "modules/skshaper",
       "modules/svg",
-      "//third_party/imgui",
+      "${skia_third_party_dir}/imgui",
     ]
   }
   test_lib("hash_and_encode") {
@@ -2131,7 +2131,7 @@ if (skia_enable_tools) {
     deps = [
       ":flags",
       ":skia",
-      "//third_party/libpng",
+      "${skia_third_party_dir}/libpng",
     ]
   }
   if (target_cpu != "wasm") {
@@ -2359,7 +2359,7 @@ if (skia_enable_tools) {
         ":gpu_tool_utils",
         ":skia",
         ":tool_utils",
-        "//third_party/libmicrohttpd",
+        "${skia_third_party_dir}/libmicrohttpd",
       ]
     }
   }
@@ -2481,7 +2481,7 @@ if (skia_enable_tools) {
     }
     test_app("skqp") {
       sources = [ "tools/skqp/src/skqp_main.cpp" ]
-      include_dirs = [ "//" ]
+      include_dirs = [ "${skia_root_dir}/" ]
       lib_dirs = []
       deps = [ ":skqp_lib" ]
     }
@@ -2498,7 +2498,7 @@ if (skia_enable_tools) {
     # Build a package repository for skqp on Fuchsia.
     group("skqp_repo") {
       testonly = true
-      deps = [ "//build/fuchsia/skqp:skqp_repo" ]
+      deps = [ "${skia_root_dir}/build/fuchsia/skqp:skqp_repo" ]
     }
   }
   if (is_android) {
@@ -2740,10 +2740,10 @@ if (skia_enable_tools) {
 
     deps = [ ":tool_utils" ]
     if (is_android) {
-      deps += [ "//third_party/native_app_glue" ]
+      deps += [ "${skia_third_party_dir}/native_app_glue" ]
     }
     if (skia_use_gl && skia_use_angle) {
-      deps += [ "//third_party/angle2" ]
+      deps += [ "${skia_third_party_dir}/angle2" ]
     }
   }
 
@@ -2833,7 +2833,7 @@ if (skia_enable_tools) {
         "modules/skottie:utils",
         "modules/sksg:samples",
         "modules/svg",
-        "//third_party/imgui",
+        "${skia_third_party_dir}/imgui",
       ]
       if (skia_use_experimental_xform) {
         deps += [ ":experimental_xform" ]
@@ -2841,10 +2841,10 @@ if (skia_enable_tools) {
       }
       if (skia_use_vulkan) {
         deps += [
-          "//third_party/externals/spirv-tools:spvtools",
+          "${skia_third_party_dir}/externals/spirv-tools:spvtools",
 
           #spvtools depends on this but doesn't deps it in.
-          "//third_party/externals/spirv-tools:spvtools_val",
+          "${skia_third_party_dir}/externals/spirv-tools:spvtools_val",
         ]
       }
     }
@@ -3068,7 +3068,7 @@ if (skia_enable_tools) {
       ]
       deps = [
         "modules/svg",
-        "//third_party/libpng",
+        "${skia_third_party_dir}/libpng",
       ]
     }
 
@@ -3110,7 +3110,7 @@ if (skia_enable_tools) {
         "tools/debugger/DrawCommand.cpp",
         "tools/debugger/JsonWriteBuffer.cpp",
       ]
-      deps = [ "//third_party/libpng" ]
+      deps = [ "${skia_third_party_dir}/libpng" ]
     }
 
     libfuzzer_app("api_path_measure") {
@@ -3158,7 +3158,7 @@ if (skia_enable_tools) {
       ]
       deps = [
         "modules/svg",
-        "//third_party/libpng",
+        "${skia_third_party_dir}/libpng",
       ]
     }
 
@@ -3193,7 +3193,7 @@ if (skia_enable_tools) {
         ]
         deps = [
           "modules/svg",
-          "//third_party/libpng",
+          "${skia_third_party_dir}/libpng",
         ]
       }
     }
@@ -3219,7 +3219,7 @@ if (skia_enable_tools) {
       ]
       deps = [
         "modules/svg",
-        "//third_party/libpng",
+        "${skia_third_party_dir}/libpng",
       ]
     }
 
@@ -3252,7 +3252,7 @@ if (skia_enable_tools) {
       ]
       deps = [
         "modules/svg",
-        "//third_party/libpng",
+        "${skia_third_party_dir}/libpng",
       ]
     }
 

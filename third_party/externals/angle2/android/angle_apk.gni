@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/android/rules.gni")
+import("${skia_root_dir}/build/config/android/rules.gni")
 import("../gni/angle.gni")
 
 vulkan_validation_layers = [ "VkLayer_khronos_validation" ]

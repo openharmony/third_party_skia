@@ -13,14 +13,14 @@
 # limitations under the License.
 
 # Override for angle_root
-angle_root = "//third_party/angle"
+angle_root = "${skia_third_party_dir}/angle"
 
 # True if ANGLE can access build/, testing/ and other Chrome folders.
 angle_has_build = true
 
 # Paths to ANGLE dependencies in Dawn
-angle_glslang_dir = "//third_party/vulkan-deps/glslang/src"
-angle_spirv_cross_dir = "//third_party/vulkan-deps/spirv-cross/src"
-angle_spirv_headers_dir = "//third_party/vulkan-deps/spirv-headers/src"
-angle_spirv_tools_dir = "//third_party/vulkan-deps/spirv-tools/src"
-angle_vulkan_memory_allocator_dir = "//third_party/vulkan_memory_allocator"
+angle_glslang_dir = "${skia_third_party_dir}/vulkan-deps/glslang/src"
+angle_spirv_cross_dir = "${skia_third_party_dir}/vulkan-deps/spirv-cross/src"
+angle_spirv_headers_dir = "${skia_third_party_dir}/vulkan-deps/spirv-headers/src"
+angle_spirv_tools_dir = "${skia_third_party_dir}/vulkan-deps/spirv-tools/src"
+angle_vulkan_memory_allocator_dir = "${skia_third_party_dir}/vulkan_memory_allocator"

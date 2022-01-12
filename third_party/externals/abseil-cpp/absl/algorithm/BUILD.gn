@@ -2,19 +2,19 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/abseil-cpp/absl.gni")
+import("${skia_third_party_dir}/abseil-cpp/absl.gni")
 
 absl_source_set("algorithm") {
   public = [ "algorithm.h" ]
-  deps = [ "//third_party/abseil-cpp/absl/base:config" ]
+  deps = [ "${skia_third_party_dir}/abseil-cpp/absl/base:config" ]
 }
 
 absl_source_set("container") {
   public = [ "container.h" ]
   deps = [
     ":algorithm",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
   ]
 }
 
@@ -23,8 +23,8 @@ absl_source_set("algorithm_test") {
   sources = [ "algorithm_test.cc" ]
   deps = [
     ":algorithm",
-    "//third_party/googletest:gtest",
-    "//third_party/googletest:gmock",
+    "${skia_third_party_dir}/googletest:gtest",
+    "${skia_third_party_dir}/googletest:gmock",
   ]
 }
 
@@ -33,11 +33,11 @@ absl_source_set("container_test") {
   sources = [ "container_test.cc" ]
   deps = [
     ":container",
-    "//third_party/abseil-cpp/absl/base",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/memory",
-    "//third_party/abseil-cpp/absl/types:span",
-    "//third_party/googletest:gtest",
-    "//third_party/googletest:gmock",
+    "${skia_third_party_dir}/abseil-cpp/absl/base",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/memory",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/googletest:gtest",
+    "${skia_third_party_dir}/googletest:gmock",
   ]
 }

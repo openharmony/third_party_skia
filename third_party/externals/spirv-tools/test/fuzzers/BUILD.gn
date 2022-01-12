@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//testing/libfuzzer/fuzzer_test.gni")
-import("//testing/test.gni")
+import("${skia_root_dir}/testing/libfuzzer/fuzzer_test.gni")
+import("${skia_root_dir}/testing/test.gni")
 
 config("fuzzer_config") {
   configs = [ "../..:spvtools_internal_config" ]
@@ -58,9 +58,9 @@ template("spvtools_fuzzer") {
       deps += invoker.deps
     }
 
-    configs -= [ "//build/config/compiler:chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
     configs += [
-      "//build/config/compiler:no_chromium_code",
+      "${skia_root_dir}/build/config/compiler:no_chromium_code",
       ":fuzzer_config",
     ]
   }

@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/c++/c++.gni")
-import("//build/config/sanitizers/sanitizers.gni")
-import("//build/toolchain/toolchain.gni")
+import("${skia_root_dir}/build/config/c++/c++.gni")
+import("${skia_root_dir}/build/config/sanitizers/sanitizers.gni")
+import("${skia_root_dir}/build/toolchain/toolchain.gni")
 
 # Used by libc++ and libc++abi.
 config("config") {
@@ -48,14 +48,14 @@ target(_libcxx_target_type, "libc++") {
   # 'common_deps' dependency below.  Some targets that package libc++.so may
   # need to explicitly depend on libc++.
   visibility = [
-    "//build/config:common_deps",
-    "//third_party/catapult/devil:devil",
+    "${skia_root_dir}/build/config:common_deps",
+    "${skia_third_party_dir}/catapult/devil:devil",
   ]
   if (is_linux && !is_chromeos) {
     # This target packages libc++.so, so must have an explicit dependency on
     # libc++.
     visibility +=
-        [ "//remoting/host/linux:remoting_me2me_host_copy_user_session" ]
+        [ "${skia_root_dir}/remoting/host/linux:remoting_me2me_host_copy_user_session" ]
   }
   if (libcxx_is_shared) {
     no_default_deps = true
@@ -110,39 +110,39 @@ target(_libcxx_target_type, "libc++") {
       "trunk/src/support/win32/support.cpp",
       "trunk/src/support/win32/thread_win32.cpp",
     ]
-    configs -= [ "//build/config/win:winver" ]
+    configs -= [ "${skia_root_dir}/build/config/win:winver" ]
     configs += [ ":winver" ]
     if (libcxx_natvis_include) {
       inputs = [
         # libc++.natvis listed as an input here instead of in
         # //build/config/c++:runtime_library to prevent unnecessary size
         # increase in generated build files.
-        "//build/config/c++/libc++.natvis",
+        "${skia_root_dir}/build/config/c++/libc++.natvis",
       ]
     }
   }
   configs -= [
-    "//build/config/compiler:chromium_code",
-    "//build/config/compiler:no_exceptions",
-    "//build/config/compiler:no_rtti",
-    "//build/config/coverage:default_coverage",
+    "${skia_root_dir}/build/config/compiler:chromium_code",
+    "${skia_root_dir}/build/config/compiler:no_exceptions",
+    "${skia_root_dir}/build/config/compiler:no_rtti",
+    "${skia_root_dir}/build/config/coverage:default_coverage",
   ]
   if (is_android && libcxx_is_shared) {
     # Use libc++_chrome to avoid conflicting with system libc++
     # See crbug.com/1076244#c11 for more detail.
     output_name = "libc++_chrome"
-    configs -= [ "//build/config/android:hide_all_but_jni_onload" ]
+    configs -= [ "${skia_root_dir}/build/config/android:hide_all_but_jni_onload" ]
   }
   configs += [
     ":config",
-    "//build/config/compiler:no_chromium_code",
-    "//build/config/compiler:exceptions",
-    "//build/config/compiler:rtti",
-    "//build/config/sanitizers:sanitizer_options_link_helper",
+    "${skia_root_dir}/build/config/compiler:no_chromium_code",
+    "${skia_root_dir}/build/config/compiler:exceptions",
+    "${skia_root_dir}/build/config/compiler:rtti",
+    "${skia_root_dir}/build/config/sanitizers:sanitizer_options_link_helper",
   ]
   if (libcxx_is_shared && !is_win) {
-    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
-    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+    configs -= [ "${skia_root_dir}/build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "${skia_root_dir}/build/config/gcc:symbol_visibility_default" ]
   }
 
   defines = [ "_LIBCPP_BUILDING_LIBRARY" ]
@@ -186,7 +186,7 @@ target(_libcxx_target_type, "libc++") {
   if (!is_win) {
     defines += [ "LIBCXX_BUILDING_LIBCXXABI" ]
     if (!export_libcxxabi_from_executables) {
-      deps = [ "//buildtools/third_party/libc++abi" ]
+      deps = [ "${skia_root_dir}/buildtools/third_party/libc++abi" ]
     }
   }
 }

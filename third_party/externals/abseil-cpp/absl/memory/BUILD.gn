@@ -2,13 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/abseil-cpp/absl.gni")
+import("${skia_third_party_dir}/abseil-cpp/absl.gni")
 
 absl_source_set("memory") {
   public = [ "memory.h" ]
   deps = [
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
   ]
 }
 
@@ -21,9 +21,9 @@ absl_source_set("memory_test") {
     sources = [ "memory_test.cc" ]
     deps = [
       ":memory",
-      "//third_party/abseil-cpp/absl/base:core_headers",
-      "//third_party/googletest:gmock",
-      "//third_party/googletest:gtest",
+      "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+      "${skia_third_party_dir}/googletest:gmock",
+      "${skia_third_party_dir}/googletest:gtest",
     ]
   }
 }

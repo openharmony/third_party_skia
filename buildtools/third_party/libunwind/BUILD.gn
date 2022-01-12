@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/c++/c++.gni")
+import("${skia_root_dir}/build/config/c++/c++.gni")
 
 config("libunwind_config") {
   cflags = [
@@ -28,15 +28,15 @@ config("libunwind_config") {
 source_set("libunwind") {
   visibility = []
   if (is_fuchsia) {
-    visibility += [ "//buildtools/third_party/libc++abi" ]
+    visibility += [ "${skia_root_dir}/buildtools/third_party/libc++abi" ]
   } else if (is_android) {
-    visibility += [ "//buildtools/third_party/libc++abi" ]
-    visibility += [ "//services/tracing/public/cpp" ]
+    visibility += [ "${skia_root_dir}/buildtools/third_party/libc++abi" ]
+    visibility += [ "${skia_root_dir}/services/tracing/public/cpp" ]
   }
   if (!is_component_build) {
     defines = [ "_LIBUNWIND_DISABLE_VISIBILITY_ANNOTATIONS" ]
   }
-  include_dirs = [ "//buildtools/third_party/libunwind/trunk/include" ]
+  include_dirs = [ "${skia_root_dir}/buildtools/third_party/libunwind/trunk/include" ]
   sources = [
     # C++ sources
     "trunk/src/Unwind-EHABI.cpp",
@@ -52,17 +52,17 @@ source_set("libunwind") {
     "trunk/src/UnwindRegistersSave.S",
   ]
   configs -= [
-    "//build/config/compiler:chromium_code",
-    "//build/config/compiler:no_exceptions",
-    "//build/config/compiler:no_rtti",
-    "//build/config/coverage:default_coverage",
-    "//build/config/compiler:default_optimization",
+    "${skia_root_dir}/build/config/compiler:chromium_code",
+    "${skia_root_dir}/build/config/compiler:no_exceptions",
+    "${skia_root_dir}/build/config/compiler:no_rtti",
+    "${skia_root_dir}/build/config/coverage:default_coverage",
+    "${skia_root_dir}/build/config/compiler:default_optimization",
   ]
   configs += [
-    "//build/config/compiler:no_chromium_code",
-    "//build/config/compiler:exceptions",
-    "//build/config/compiler:rtti",
-    "//build/config/compiler:optimize_speed",
+    "${skia_root_dir}/build/config/compiler:no_chromium_code",
+    "${skia_root_dir}/build/config/compiler:exceptions",
+    "${skia_root_dir}/build/config/compiler:rtti",
+    "${skia_root_dir}/build/config/compiler:optimize_speed",
 
     # Must be after no_chromium_code
     ":libunwind_config",

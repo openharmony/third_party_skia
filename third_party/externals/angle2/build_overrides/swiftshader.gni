@@ -6,7 +6,7 @@
 swiftshader_standalone = false
 
 # Path to SwiftShader
-swiftshader_dir = "//third_party/SwiftShader"
+swiftshader_dir = "${skia_third_party_dir}/SwiftShader"
 
 # Paths to SwiftShader dependencies
-swiftshader_spirv_tools_dir = "//third_party/vulkan-deps/spirv-tools/src"
+swiftshader_spirv_tools_dir = "${skia_third_party_dir}/vulkan-deps/spirv-tools/src"

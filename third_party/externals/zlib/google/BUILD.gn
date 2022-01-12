@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 
 if (build_with_chromium) {
   static_library("zip") {
@@ -17,8 +17,8 @@ if (build_with_chromium) {
       "zip_writer.h",
     ]
     deps = [
-      "//base",
-      "//third_party/zlib:minizip",
+      "${skia_root_dir}/base",
+      "${skia_third_party_dir}/zlib:minizip",
     ]
   }
 
@@ -28,8 +28,8 @@ if (build_with_chromium) {
       "compression_utils.h",
     ]
     deps = [
-      "//base",
-      "//third_party/zlib",
+      "${skia_root_dir}/base",
+      "${skia_third_party_dir}/zlib",
     ]
     public_deps = [ ":compression_utils_portable" ]
   }
@@ -42,5 +42,5 @@ static_library("compression_utils_portable") {
     "compression_utils_portable.cc",
     "compression_utils_portable.h",
   ]
-  public_deps = [ "//third_party/zlib" ]
+  public_deps = [ "${skia_third_party_dir}/zlib" ]
 }

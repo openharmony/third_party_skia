@@ -2,11 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/abseil-cpp/absl.gni")
+import("${skia_third_party_dir}/abseil-cpp/absl.gni")
 
 absl_source_set("type_traits") {
   public = [ "type_traits.h" ]
-  deps = [ "//third_party/abseil-cpp/absl/base:config" ]
+  deps = [ "${skia_third_party_dir}/abseil-cpp/absl/base:config" ]
 }
 
 absl_source_set("type_traits_test") {
@@ -17,6 +17,6 @@ absl_source_set("type_traits_test") {
   }
   deps = [
     ":type_traits",
-    "//third_party/googletest:gtest",
+    "${skia_third_party_dir}/googletest:gtest",
   ]
 }

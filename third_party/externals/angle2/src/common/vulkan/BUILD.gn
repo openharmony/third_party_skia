@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build_overrides/swiftshader.gni")
+import("${skia_root_dir}/build_overrides/swiftshader.gni")
 import("../../../gni/angle.gni")
 
 declare_args() {
@@ -105,10 +105,10 @@ if (angle_enable_vulkan) {
     if (is_fuchsia) {
       public_deps += [
         "$angle_root/src/common/fuchsia_egl",
-        "//third_party/fuchsia-sdk/sdk/pkg/vulkan",
+        "${skia_third_party_dir}/fuchsia-sdk/sdk/pkg/vulkan",
       ]
       if (!angle_use_vulkan_null_display) {
-        public_deps += [ "//third_party/fuchsia-sdk/sdk/pkg/vulkan_layers:VkLayer_image_pipe_swapchain" ]
+        public_deps += [ "${skia_third_party_dir}/fuchsia-sdk/sdk/pkg/vulkan_layers:VkLayer_image_pipe_swapchain" ]
       }
     } else if (!is_android && !is_ggp) {
       if (angle_shared_libvulkan) {
@@ -131,7 +131,7 @@ if (angle_enable_vulkan) {
     group("vulkan_validation_layers") {
       data_deps = []
       if (is_fuchsia) {
-        data_deps += [ "//third_party/fuchsia-sdk/sdk/pkg/vulkan_layers:VkLayer_khronos_validation" ]
+        data_deps += [ "${skia_third_party_dir}/fuchsia-sdk/sdk/pkg/vulkan_layers:VkLayer_khronos_validation" ]
       } else {
         data_deps +=
             [ "$angle_vulkan_validation_layers_dir:vulkan_validation_layers" ]

@@ -18,7 +18,7 @@
 # It takes advantage of GN's variable scoping rules to define global variables
 # inside if constructs.
 
-import("//build_overrides/dawn.gni")
+import("${skia_root_dir}/build_overrides/dawn.gni")
 
 if (!defined(dawn_standalone)) {
   dawn_standalone = false
@@ -34,27 +34,27 @@ if (!defined(dawn_root)) {
 dawn_gen_root = get_path_info("${dawn_root}", "gen_dir")
 
 if (!defined(dawn_jinja2_dir)) {
-  dawn_jinja2_dir = "//third_party/jinja2"
+  dawn_jinja2_dir = "${skia_third_party_dir}/jinja2"
 }
 
 if (!defined(dawn_glfw_dir)) {
-  dawn_glfw_dir = "//third_party/glfw"
+  dawn_glfw_dir = "${skia_third_party_dir}/glfw"
 }
 
 if (!defined(dawn_glm_dir)) {
-  dawn_glm_dir = "//third_party/glm"
+  dawn_glm_dir = "${skia_third_party_dir}/glm"
 }
 
 if (!defined(dawn_googletest_dir)) {
-  dawn_googletest_dir = "//third_party/googletest"
+  dawn_googletest_dir = "${skia_third_party_dir}/googletest"
 }
 
 if (!defined(dawn_spirv_cross_dir)) {
-  dawn_spirv_cross_dir = "//third_party/vulkan-deps/spirv-cross/src"
+  dawn_spirv_cross_dir = "${skia_third_party_dir}/vulkan-deps/spirv-cross/src"
 }
 
 if (!defined(dawn_spirv_tools_dir)) {
-  dawn_spirv_tools_dir = "//third_party/vulkan-deps/spirv-tools/src"
+  dawn_spirv_tools_dir = "${skia_third_party_dir}/vulkan-deps/spirv-tools/src"
 }
 
 if (!defined(dawn_swiftshader_dir)) {
@@ -66,7 +66,7 @@ if (!defined(dawn_vulkan_loader_dir)) {
   # Default to the Vulkan loader not being available except in standalone.
   dawn_vulkan_loader_dir = ""
   if (dawn_standalone) {
-    dawn_vulkan_loader_dir = "//third_party/vulkan-deps/vulkan-loader/src"
+    dawn_vulkan_loader_dir = "${skia_third_party_dir}/vulkan-deps/vulkan-loader/src"
   }
 }
 
@@ -81,5 +81,5 @@ if (!defined(dawn_tint_dir)) {
 }
 
 if (!defined(dawn_abseil_dir)) {
-  dawn_abseil_dir = "//third_party/abseil-cpp"
+  dawn_abseil_dir = "${skia_third_party_dir}/abseil-cpp"
 }

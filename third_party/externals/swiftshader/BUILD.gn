@@ -65,7 +65,7 @@ config("swiftshader_config") {
   if (build_with_chromium) {
     if (is_clang) {
       if (current_cpu == "arm64") {
-        import("//build/config/arm.gni")
+        import("${skia_root_dir}/build/config/arm.gni")
 
         if (arm_control_flow_integrity == "standard") {
           cflags += [ "-mbranch-protection=standard" ]

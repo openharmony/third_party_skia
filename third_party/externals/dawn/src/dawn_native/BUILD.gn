@@ -14,7 +14,7 @@
 
 import("../../scripts/dawn_overrides_with_defaults.gni")
 
-import("//build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 import("${dawn_root}/generator/dawn_generator.gni")
 import("${dawn_root}/scripts/dawn_component.gni")
 import("${dawn_root}/scripts/dawn_features.gni")
@@ -22,7 +22,7 @@ import("${dawn_root}/scripts/dawn_features.gni")
 # Import mac_deployment_target
 if (is_mac) {
   if (dawn_has_build) {
-    import("//build/config/mac/mac_sdk.gni")
+    import("${skia_root_dir}/build/config/mac/mac_sdk.gni")
   } else {
     mac_deployment_target = "10.11.0"
   }
@@ -32,7 +32,7 @@ if (is_mac) {
 enable_vulkan_validation_layers = dawn_enable_vulkan_validation_layers &&
                                   dawn_vulkan_validation_layers_dir != ""
 if (enable_vulkan_validation_layers) {
-  import("//build_overrides/vulkan_validation_layers.gni")
+  import("${skia_root_dir}/build_overrides/vulkan_validation_layers.gni")
 }
 
 # ANGLE is an optional dependency; only use it if the path has been set.
@@ -54,7 +54,7 @@ if (dawn_enable_vulkan) {
 }
 
 group("dawn_abseil") {
-  # When build_with_chromium=true we need to include "//third_party/abseil-cpp:absl" while
+  # When build_with_chromium=true we need to include "${skia_third_party_dir}/abseil-cpp:absl" while
   # it's beneficial to be more specific with standalone Dawn, especially when it comes to
   # including it as a dependency in other projects (such as Skia).
   if (build_with_chromium) {
@@ -664,11 +664,11 @@ source_set("dawn_native_sources") {
       # Necessary to ensure that the Vulkan libraries will be in the
       # final Fuchsia package.
       data_deps = [
-        "//third_party/fuchsia-sdk:vulkan_base",
-        "//third_party/fuchsia-sdk:vulkan_validation",
+        "${skia_third_party_dir}/fuchsia-sdk:vulkan_base",
+        "${skia_third_party_dir}/fuchsia-sdk:vulkan_validation",
 
         # NOTE: The line below is a work around for http://crbug.com/1001081
-        "//third_party/fuchsia-sdk/sdk:trace_engine",
+        "${skia_third_party_dir}/fuchsia-sdk/sdk:trace_engine",
       ]
     }
     if (enable_vulkan_validation_layers) {

@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/config/ui.gni")
-import("//build/config/ozone.gni")
+import("${skia_root_dir}/build/config/ui.gni")
+import("${skia_root_dir}/build/config/ozone.gni")
 import("../../swiftshader.gni")
 
 # Need a separate config to ensure the warnings are added to the end.

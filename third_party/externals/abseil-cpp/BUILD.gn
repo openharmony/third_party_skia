@@ -6,11 +6,11 @@
 # opts will be linked together, and in some cases headers compiled with and
 # without these options will be part of the same program.
 
-import("//build/config/c++/c++.gni")
-import("//build/config/sanitizers/sanitizers.gni")
-import("//build/toolchain/toolchain.gni")
-import("//build_overrides/build.gni")
-import("//third_party/abseil-cpp/absl.gni")
+import("${skia_root_dir}/build/config/c++/c++.gni")
+import("${skia_root_dir}/build/config/sanitizers/sanitizers.gni")
+import("${skia_root_dir}/build/toolchain/toolchain.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
+import("${skia_third_party_dir}/abseil-cpp/absl.gni")
 
 config("absl_component_build") {
   defines = [ "ABSL_CONSUME_DLL" ]
@@ -53,46 +53,46 @@ component("absl") {
 
 group("absl_component_deps") {
   public_deps = [
-    "//third_party/abseil-cpp/absl/algorithm:container",
-    "//third_party/abseil-cpp/absl/base",
-    "//third_party/abseil-cpp/absl/base:config",
-    "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/container:btree",
-    "//third_party/abseil-cpp/absl/container:fixed_array",
-    "//third_party/abseil-cpp/absl/container:flat_hash_map",
-    "//third_party/abseil-cpp/absl/container:flat_hash_set",
-    "//third_party/abseil-cpp/absl/container:inlined_vector",
-    "//third_party/abseil-cpp/absl/container:node_hash_map",
-    "//third_party/abseil-cpp/absl/container:node_hash_set",
-    "//third_party/abseil-cpp/absl/debugging:failure_signal_handler",
-    "//third_party/abseil-cpp/absl/debugging:stacktrace",
-    "//third_party/abseil-cpp/absl/debugging:symbolize",
-    "//third_party/abseil-cpp/absl/functional:bind_front",
-    "//third_party/abseil-cpp/absl/hash",
-    "//third_party/abseil-cpp/absl/memory",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-    "//third_party/abseil-cpp/absl/numeric:bits",
-    "//third_party/abseil-cpp/absl/numeric:int128",
-    "//third_party/abseil-cpp/absl/status",
-    "//third_party/abseil-cpp/absl/status:statusor",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/strings:str_format",
-    "//third_party/abseil-cpp/absl/synchronization",
-    "//third_party/abseil-cpp/absl/time",
-    "//third_party/abseil-cpp/absl/types:optional",
-    "//third_party/abseil-cpp/absl/types:span",
-    "//third_party/abseil-cpp/absl/types:variant",
+    "${skia_third_party_dir}/abseil-cpp/absl/algorithm:container",
+    "${skia_third_party_dir}/abseil-cpp/absl/base",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+    "${skia_third_party_dir}/abseil-cpp/absl/base:core_headers",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:btree",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:fixed_array",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:flat_hash_map",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:flat_hash_set",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:inlined_vector",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:node_hash_map",
+    "${skia_third_party_dir}/abseil-cpp/absl/container:node_hash_set",
+    "${skia_third_party_dir}/abseil-cpp/absl/debugging:failure_signal_handler",
+    "${skia_third_party_dir}/abseil-cpp/absl/debugging:stacktrace",
+    "${skia_third_party_dir}/abseil-cpp/absl/debugging:symbolize",
+    "${skia_third_party_dir}/abseil-cpp/absl/functional:bind_front",
+    "${skia_third_party_dir}/abseil-cpp/absl/hash",
+    "${skia_third_party_dir}/abseil-cpp/absl/memory",
+    "${skia_third_party_dir}/abseil-cpp/absl/meta:type_traits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:bits",
+    "${skia_third_party_dir}/abseil-cpp/absl/numeric:int128",
+    "${skia_third_party_dir}/abseil-cpp/absl/status",
+    "${skia_third_party_dir}/abseil-cpp/absl/status:statusor",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings",
+    "${skia_third_party_dir}/abseil-cpp/absl/strings:str_format",
+    "${skia_third_party_dir}/abseil-cpp/absl/synchronization",
+    "${skia_third_party_dir}/abseil-cpp/absl/time",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:optional",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:span",
+    "${skia_third_party_dir}/abseil-cpp/absl/types:variant",
   ]
 
   # The following dependencies currently don't build with NaCl.
   # TODO(https://crbug.com/1114625): Fix build errors and remove this section.
   if (is_nacl) {
     public_deps -= [
-      "//third_party/abseil-cpp/absl/container:flat_hash_map",
-      "//third_party/abseil-cpp/absl/container:flat_hash_set",
-      "//third_party/abseil-cpp/absl/container:node_hash_map",
-      "//third_party/abseil-cpp/absl/container:node_hash_set",
-      "//third_party/abseil-cpp/absl/debugging:failure_signal_handler",
+      "${skia_third_party_dir}/abseil-cpp/absl/container:flat_hash_map",
+      "${skia_third_party_dir}/abseil-cpp/absl/container:flat_hash_set",
+      "${skia_third_party_dir}/abseil-cpp/absl/container:node_hash_map",
+      "${skia_third_party_dir}/abseil-cpp/absl/container:node_hash_set",
+      "${skia_third_party_dir}/abseil-cpp/absl/debugging:failure_signal_handler",
     ]
   }
 
@@ -176,7 +176,7 @@ config("absl_test_cflags_cc") {
 }
 
 if (build_with_chromium) {
-  import("//testing/test.gni")
+  import("${skia_root_dir}/testing/test.gni")
 
   if (!is_component_build) {
     test("absl_tests") {
@@ -207,7 +207,7 @@ if (build_with_chromium) {
         "absl/strings:string_view_test",
         "absl/types:optional_test",
         "absl/types:variant_test",
-        "//third_party/googletest:gtest_main",
+        "${skia_third_party_dir}/googletest:gtest_main",
       ]
     }
   }
@@ -216,15 +216,15 @@ if (build_with_chromium) {
     testonly = true
     sources = [ "absl_hardening_test.cc" ]
     deps = [
-      "//base/test:run_all_unittests",
-      "//third_party/abseil-cpp/absl/base:config",
-      "//third_party/abseil-cpp/absl/container:fixed_array",
-      "//third_party/abseil-cpp/absl/container:inlined_vector",
-      "//third_party/abseil-cpp/absl/strings",
-      "//third_party/abseil-cpp/absl/types:optional",
-      "//third_party/abseil-cpp/absl/types:span",
-      "//third_party/abseil-cpp/absl/types:variant",
-      "//third_party/googletest:gtest",
+      "${skia_root_dir}/base/test:run_all_unittests",
+      "${skia_third_party_dir}/abseil-cpp/absl/base:config",
+      "${skia_third_party_dir}/abseil-cpp/absl/container:fixed_array",
+      "${skia_third_party_dir}/abseil-cpp/absl/container:inlined_vector",
+      "${skia_third_party_dir}/abseil-cpp/absl/strings",
+      "${skia_third_party_dir}/abseil-cpp/absl/types:optional",
+      "${skia_third_party_dir}/abseil-cpp/absl/types:span",
+      "${skia_third_party_dir}/abseil-cpp/absl/types:variant",
+      "${skia_third_party_dir}/googletest:gtest",
     ]
   }
 }

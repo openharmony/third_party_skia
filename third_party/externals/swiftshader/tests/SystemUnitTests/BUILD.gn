@@ -12,20 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//testing/test.gni")
+import("${skia_root_dir}/testing/test.gni")
 
 test("swiftshader_system_unittests") {
   deps = [
-    "//base",
-    "//base/test:test_support",
-    "//testing/gmock",
-    "//testing/gtest",
+    "${skia_root_dir}/base",
+    "${skia_root_dir}/base/test:test_support",
+    "${skia_root_dir}/testing/gmock",
+    "${skia_root_dir}/testing/gtest",
     "../../src/System",
     "../../third_party/marl:Marl",
   ]
 
   sources = [
-    "//gpu/swiftshader_tests_main.cc",
+    "${skia_root_dir}/gpu/swiftshader_tests_main.cc",
     "LRUCacheTests.cpp",
     "unittests.cpp",
     "SynchronizationTests.cpp",

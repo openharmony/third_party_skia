@@ -12,20 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//testing/test.gni")
+import("${skia_root_dir}/testing/test.gni")
 
 test("swiftshader_vulkan_unittests") {
   deps = [
-    "//base",
-    "//base/test:test_support",
-    "//testing/gmock",
-    "//testing/gtest",
-    "//third_party/SPIRV-Tools/src:SPIRV-Tools",
-    "//third_party/swiftshader/src/Vulkan:swiftshader_libvulkan",
+    "${skia_root_dir}/base",
+    "${skia_root_dir}/base/test:test_support",
+    "${skia_root_dir}/testing/gmock",
+    "${skia_root_dir}/testing/gtest",
+    "${skia_third_party_dir}/SPIRV-Tools/src:SPIRV-Tools",
+    "${skia_third_party_dir}/swiftshader/src/Vulkan:swiftshader_libvulkan",
   ]
 
   sources = [
-    "//gpu/swiftshader_tests_main.cc",
+    "${skia_root_dir}/gpu/swiftshader_tests_main.cc",
     "BasicTests.cpp"
     "ComputeTests.cpp"
     "Device.cpp"
@@ -35,7 +35,7 @@ test("swiftshader_vulkan_unittests") {
   ]
 
   include_dirs = [
-    "//third_party/SPIRV-Tools/src/include",
+    "${skia_third_party_dir}/SPIRV-Tools/src/include",
     "../../include", # Khronos headers
   ]
 

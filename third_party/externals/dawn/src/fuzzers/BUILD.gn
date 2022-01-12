@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build_overrides/build.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 import("../../scripts/dawn_overrides_with_defaults.gni")
 
 # We only have libfuzzer in Chromium builds but if we build fuzzer targets only
@@ -25,7 +25,7 @@ import("../../scripts/dawn_overrides_with_defaults.gni")
 # whole Chromium checkout.
 
 if (build_with_chromium) {
-  import("//testing/libfuzzer/fuzzer_test.gni")
+  import("${skia_root_dir}/testing/libfuzzer/fuzzer_test.gni")
 
   # In Chromium build we just proxy everything to the real fuzzer_test
   template("dawn_fuzzer_test") {
@@ -34,7 +34,7 @@ if (build_with_chromium) {
     }
   }
 } else {
-  import("//testing/test.gni")
+  import("${skia_root_dir}/testing/test.gni")
 
   # In standalone build we do something similar to fuzzer_test.
   template("dawn_fuzzer_test") {

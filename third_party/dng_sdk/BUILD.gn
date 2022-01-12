@@ -13,8 +13,8 @@ third_party("dng_sdk") {
   public_include_dirs = [ "../externals/dng_sdk/source" ]
 
   configs = [
-    "//gn/portable:add_exceptions",
-    "//gn/portable:add_rtti",
+    "${skia_root_dir}/gn/portable:add_exceptions",
+    "${skia_root_dir}/gn/portable:add_rtti",
   ]
 
   public_defines = [ "qDNGBigEndian=0" ]
@@ -30,8 +30,8 @@ third_party("dng_sdk") {
   ]
 
   deps = [
-    "//third_party/libjpeg-turbo:libjpeg",
-    "//third_party/zlib",
+    "${skia_third_party_dir}/libjpeg-turbo:libjpeg",
+    "${skia_third_party_dir}/zlib",
   ]
 
   sources = [

@@ -48,8 +48,8 @@ static_library("glfw") {
   public_configs = [ ":glfw_public" ]
 
   if (dawn_has_build) {
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
+    configs -= [ "${skia_root_dir}/build/config/compiler:chromium_code" ]
+    configs += [ "${skia_root_dir}/build/config/compiler:no_chromium_code" ]
   }
 
   if (is_win && !is_clang) {
