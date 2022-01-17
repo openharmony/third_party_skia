@@ -28,7 +28,7 @@ if (defined(skia_settings)) {
 import("gn/ios.gni")
 
 config("skia_wno") {
-  visibility = [ ":*" ]
+  # visibility = [ ":*" ]
 
   cflags = [
     "-Wno-pessimizing-move",
@@ -1820,6 +1820,7 @@ if (skia_enable_tools) {
       "tools/gpu/gl/GLTestContext.cpp",  # See comment below about
                                          # GrContextFactory workaround.
       "tools/gpu/mock/MockTestContext.cpp",
+      "tools/gpu/gl/none/CreatePlatformGLTestContext_none.cpp",
     ]
 
     libs = []

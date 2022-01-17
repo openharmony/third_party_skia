@@ -323,7 +323,7 @@ static void find_culprit() {
 #else
     #include <signal.h>
     #if !defined(SK_BUILD_FOR_ANDROID)
-        #include <execinfo.h>
+        // #include <execinfo.h>
 
 #endif
 
@@ -347,6 +347,7 @@ static void find_culprit() {
         }
         find_culprit();
 
+/*
     #if !defined(SK_BUILD_FOR_ANDROID)
         void* stack[128];
         int count = backtrace(stack, SK_ARRAY_COUNT(stack));
@@ -356,6 +357,7 @@ static void find_culprit() {
             info("    %s\n", symbols[i]);
         }
     #endif
+*/
         fflush(stdout);
 
         if (sig == SIGINT && FLAGS_ignoreSigInt) {

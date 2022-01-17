@@ -11,5 +11,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-skia_root_dir = "//third_party/Skia"
-skia_third_party_dir = "//third_party/Skia/third_party"
+skia_root_dir = "//third_party/skia"
+skia_third_party_dir = "//third_party/skia/third_party"
