@@ -3,7 +3,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("../build_overrides/skia.gni")
+import("../../build_overrides/skia.gni")
 
 if (is_fuchsia) {
   import("${skia_root_dir}/build/fuchsia/sdk.gni")
