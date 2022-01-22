@@ -9,10 +9,13 @@ if (!defined(is_skia_standalone)) {
   is_skia_standalone = true
 }
 
+if (!defined(skia_android_serial)) {
+  skia_android_serial = ""
+}
+
 is_skia_dev_build = is_skia_standalone && !is_official_build
 
 declare_args() {
-  skia_android_serial = ""
   skia_compile_processors = false
   skia_enable_api_available_macro = true
   skia_enable_android_utils = is_skia_dev_build
@@ -54,8 +57,9 @@ declare_args() {
   skia_use_freetype = is_android || is_fuchsia || is_linux
   skia_use_harfbuzz = true
   skia_use_gl = !is_fuchsia
+
   # skia_use_icu = !is_fuchsia
-  skia_use_icu = false # There is a bug about icu when running the compilation.
+  skia_use_icu = false  # There is a bug about icu when running the compilation.
   skia_use_libheif = is_skia_dev_build
   skia_use_libjpeg_turbo_decode = true
   skia_use_libjpeg_turbo_encode = true
@@ -186,9 +190,7 @@ set_defaults("component") {
   } else {
     configs = default_shared_library_configs
   }
-  configs += [
-    "${skia_root_dir}:skia_wno",
-  ]
+  configs += [ "${skia_root_dir}:skia_wno" ]
 }
 
 template("skia_target") {

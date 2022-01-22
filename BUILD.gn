@@ -28,9 +28,8 @@ if (defined(skia_settings)) {
 import("gn/ios.gni")
 
 config("skia_wno") {
-  # visibility = [ ":*" ]
-
   cflags = [
+    "-Wno-deprecated-declarations",
     "-Wno-pessimizing-move",
     "-Wno-return-type",
     "-Wno-sign-compare",
@@ -591,6 +590,7 @@ optional("fontmgr_win_gdi") {
 
   public = [ "include/ports/SkTypeface_win.h" ]
   sources = [ "src/ports/SkFontHost_win.cpp" ]
+
   # libs = [ "Gdi32.lib" ]
   libs = [ "gdi32" ]
 }
@@ -957,7 +957,8 @@ optional("gpu") {
   if (skia_use_dawn) {
     public_defines += [ "SK_DAWN" ]
     sources += skia_dawn_sources
-    public_deps += [ "${skia_third_party_dir}/externals/dawn/src/dawn:dawn_headers" ]
+    public_deps +=
+        [ "${skia_third_party_dir}/externals/dawn/src/dawn:dawn_headers" ]
     deps += [
       "${skia_third_party_dir}/externals/dawn/src/dawn:dawn_proc",
       "${skia_third_party_dir}/externals/dawn/src/dawn:dawncpp",
@@ -978,7 +979,7 @@ optional("gpu") {
   }
 
   if (skia_use_direct3d) {
-    public_defines += [ 
+    public_defines += [
       "SK_DIRECT3D",
       "SK_ENABLE_SPIRV_CROSS",
     ]
@@ -1820,7 +1821,6 @@ if (skia_enable_tools) {
       "tools/gpu/gl/GLTestContext.cpp",  # See comment below about
                                          # GrContextFactory workaround.
       "tools/gpu/mock/MockTestContext.cpp",
-      "tools/gpu/gl/none/CreatePlatformGLTestContext_none.cpp",
     ]
 
     libs = []
@@ -1834,6 +1834,8 @@ if (skia_enable_tools) {
         frameworks += [ "OpenGLES.framework" ]
       } else if (is_mac) {
         sources += [ "tools/gpu/gl/mac/CreatePlatformGLTestContext_mac.cpp" ]
+      } else if (defined(is_ohos) && is_ohos) {
+        sources += [ "tools/gpu/gl/none/CreatePlatformGLTestContext_none.cpp" ]
       }
       if (skia_use_angle) {
         deps += [ "${skia_third_party_dir}/angle2" ]
@@ -1856,6 +1858,7 @@ if (skia_enable_tools) {
         ]
       } else if (is_win) {
         sources += [ "tools/gpu/gl/win/CreatePlatformGLTestContext_win.cpp" ]
+
         # libs += [ "Gdi32.lib" ]
         libs += [ "gdi32" ]
         if (target_cpu != "arm64") {
@@ -1883,7 +1886,8 @@ if (skia_enable_tools) {
       sources += [ "tools/gpu/d3d/D3DTestUtils.cpp" ]
     }
     if (skia_use_dawn) {
-      public_deps += [ "${skia_third_party_dir}/externals/dawn/src/dawn:dawn_headers" ]
+      public_deps +=
+          [ "${skia_third_party_dir}/externals/dawn/src/dawn:dawn_headers" ]
       sources += [ "tools/gpu/dawn/DawnTestContext.cpp" ]
       if (is_clang) {
         cflags_cc = [ "-Wno-microsoft-cast" ]
@@ -2115,6 +2119,9 @@ if (skia_enable_tools) {
       ":skia",
       ":test",
       ":tool_utils",
+      "${skia_third_party_dir}/libpng",
+      "${skia_third_party_dir}/libwebp",
+      "${skia_third_party_dir}/zlib",
       "experimental/skrive:tests",
       "experimental/sktext:tests",
       "modules/skottie:tests",
@@ -2122,9 +2129,6 @@ if (skia_enable_tools) {
       "modules/sksg:tests",
       "modules/skshaper",
       "modules/svg:tests",
-      "${skia_third_party_dir}/libpng",
-      "${skia_third_party_dir}/libwebp",
-      "${skia_third_party_dir}/zlib",
     ]
   }
 
@@ -2184,12 +2188,12 @@ if (skia_enable_tools) {
       ":flags",
       ":gpu_tool_utils",
       ":xml",
+      "${skia_third_party_dir}/imgui",
       "experimental/sktext:samples",
       "modules/audioplayer",
       "modules/skparagraph:samples",
       "modules/skshaper",
       "modules/svg",
-      "${skia_third_party_dir}/imgui",
     ]
   }
   test_lib("hash_and_encode") {
@@ -2894,6 +2898,7 @@ if (skia_enable_tools) {
         ":skia",
         ":tool_utils",
         ":trace",
+        "${skia_third_party_dir}/imgui",
         "experimental/skrive",
         "experimental/sktext",
         "modules/audioplayer",
@@ -2902,7 +2907,6 @@ if (skia_enable_tools) {
         "modules/skottie:utils",
         "modules/sksg:samples",
         "modules/svg",
-        "${skia_third_party_dir}/imgui",
       ]
       if (skia_use_experimental_xform) {
         deps += [ ":experimental_xform" ]
@@ -3136,8 +3140,8 @@ if (skia_enable_tools) {
         "tools/fonts/TestTypeface.cpp",
       ]
       deps = [
-        "modules/svg",
         "${skia_third_party_dir}/libpng",
+        "modules/svg",
       ]
     }
 
@@ -3226,8 +3230,8 @@ if (skia_enable_tools) {
         "tools/fonts/TestTypeface.cpp",
       ]
       deps = [
-        "modules/svg",
         "${skia_third_party_dir}/libpng",
+        "modules/svg",
       ]
     }
 
@@ -3261,8 +3265,8 @@ if (skia_enable_tools) {
           "tools/fonts/TestTypeface.cpp",
         ]
         deps = [
-          "modules/svg",
           "${skia_third_party_dir}/libpng",
+          "modules/svg",
         ]
       }
     }
@@ -3287,8 +3291,8 @@ if (skia_enable_tools) {
         "tools/fonts/TestTypeface.cpp",
       ]
       deps = [
-        "modules/svg",
         "${skia_third_party_dir}/libpng",
+        "modules/svg",
       ]
     }
 
@@ -3320,8 +3324,8 @@ if (skia_enable_tools) {
         "tools/fonts/TestTypeface.cpp",
       ]
       deps = [
-        "modules/svg",
         "${skia_third_party_dir}/libpng",
+        "modules/svg",
       ]
     }
 
