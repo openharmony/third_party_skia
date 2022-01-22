@@ -19,7 +19,7 @@ import sys
 # very same mechanism Ninja uses to know which .h files affect which .cpp files.
 
 os.system("rm ../../.gn")
-os.system("ln -s third_party/Skia/.gn ../../.gn")
+os.system("ln -s third_party/skia/.gn ../../.gn")
 
 gn              = sys.argv[1]
 absolute_source = sys.argv[2]

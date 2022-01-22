@@ -1,5 +1,5 @@
-buildconfig = "//third_party/Skia/gn/BUILDCONFIG.gn"
-root = "//third_party/Skia"
+buildconfig = "//third_party/skia/gn/BUILDCONFIG.gn"
+root = "//third_party/skia"
 
 default_args = {
   angle_standalone = false
