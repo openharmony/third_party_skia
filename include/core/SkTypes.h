@@ -20,7 +20,7 @@
 #define SK_NOTHING_ARG3(arg1, arg2, arg3)
 
 #if !defined(SK_BUILD_FOR_ANDROID) && !defined(SK_BUILD_FOR_IOS) && !defined(SK_BUILD_FOR_WIN) && \
-    !defined(SK_BUILD_FOR_UNIX) && !defined(SK_BUILD_FOR_MAC)
+    !defined(SK_BUILD_FOR_UNIX) && !defined(SK_BUILD_FOR_MAC) && !defined(SK_BUILD_FOR_OHOS)
 
     #ifdef __APPLE__
         #include <TargetConditionals.h>
@@ -29,12 +29,12 @@
     #if defined(_WIN32) || defined(__SYMBIAN32__)
         #define SK_BUILD_FOR_WIN
     #elif defined(ANDROID) || defined(__ANDROID__)
-        #define SK_BUILD_FOR_ANDROID
+        
     #elif defined(linux) || defined(__linux) || defined(__FreeBSD__) || \
           defined(__OpenBSD__) || defined(__sun) || defined(__NetBSD__) || \
           defined(__DragonFly__) || defined(__Fuchsia__) || \
           defined(__GLIBC__) || defined(__GNU__) || defined(__unix__)
-        #define SK_BUILD_FOR_UNIX
+        
     #elif TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
         #define SK_BUILD_FOR_IOS
     #else
@@ -233,7 +233,7 @@
 #endif
 
 #if !defined(SK_SUPPORT_GPU)
-#  define SK_SUPPORT_GPU 1
+#  define SK_SUPPORT_GPU true
 #endif
 
 #if SK_SUPPORT_GPU || SK_GRAPHITE_ENABLED
@@ -276,13 +276,17 @@
 #  else
 #    define SK_DUMP_LINE_FORMAT "%s:%d"
 #  endif
-#  define SK_ABORT(message, ...) \
-    do { \
-        SkDebugf(SK_DUMP_LINE_FORMAT ": fatal error: \"" message "\"\n", \
+#  ifdef SK_BUILD_FOR_OHOS
+#    define SK_ABORT(message, ...)
+#  else
+#    define SK_ABORT(message, ...) \
+        do { \
+            SkDebugf(SK_DUMP_LINE_FORMAT ": fatal error: \"" message "\"\n", \
                  __FILE__, __LINE__, ##__VA_ARGS__); \
-        SK_DUMP_GOOGLE3_STACK(); \
-        sk_abort_no_print(); \
-    } while (false)
+            SK_DUMP_GOOGLE3_STACK(); \
+            sk_abort_no_print(); \
+        } while (false)
+#  endif
 #endif
 
 // If SK_R32_SHIFT is set, we'll use that to choose RGBA or BGRA.
@@ -487,6 +491,9 @@
     #define SkDEBUGFAILF(fmt, ...)
     #define SkDEBUGCODE(...)
     #define SkDEBUGF(...)
+    #ifdef SK_BUILD_FOR_OHOS
+        #define SkDebugf(...)
+    #endif
 
     // unlike SkASSERT, this macro executes its condition in the non-debug build.
     // The if is present so that this can be used with functions marked SK_WARN_UNUSED_RESULT.

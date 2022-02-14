@@ -57,6 +57,9 @@ if (skia_use_system_icu) {
       if (is_mac || is_ios) {
         args += [ "--mac" ]
       }
+      if (is_win || is_mingw) {
+        args += [ "--win" ]
+      }
     }
   }
 
@@ -104,17 +107,22 @@ if (skia_use_system_icu) {
       defines += [ "__i386__" ]
     }
     sources = icu_sources
-    if (is_win) {
+    if (is_win || (defined(is_mingw) && is_mingw)) {
       deps = [ ":icudata" ]
       public_defines += [
         "U_NOEXCEPT=",
         "U_STATIC_IMPLEMENTATION",
       ]
-      libs = [ "Advapi32.lib" ]
+      if (defined(is_mingw) && is_mingw) {
+        libs = [ "advapi32" ]
+      } else {
+        libs = [ "Advapi32.lib" ]
+      }
       sources += [
         "../externals/icu/source/stubdata/stubdata.cpp",
         "SkLoadICU.cpp",
       ]
+      cflags_cc = [ "-DWINVER=0x0601" ]
     } else {
       sources += [ "$data_assembly" ]
       deps = [ ":make_data_assembly" ]
