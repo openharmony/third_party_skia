@@ -1272,6 +1272,8 @@ if (skia_enable_gpu && skia_generate_workarounds) {
 }
 
 skia_component("skia") {
+  output_dir = "${root_out_dir}/thirdparty/skia"
+  output_name = "skia"
   public_configs = [ ":skia_public" ]
   configs = skia_library_configs
 
