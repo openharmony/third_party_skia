@@ -11,16 +11,48 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-is_android = host_os == "android"
-is_fuchsia = host_os == "fuchsia"
-is_mingw = current_os == "mingw"
-is_ios = current_os == "ios" || current_os == "tvos"
-is_tvos = current_os == "tvos"
-is_linux = current_os == "linux"
-is_mac = host_os == "mac"
+if (defined(build_cross_platform_version) && build_cross_platform_version) {
+  import("//build/config/aosp/config.gni")
+  if (is_android) {
+    ndk = aosp_ndk_root
+    ndk_host = ""
+    ndk_target = ""
+    ndk_gdbserver = ""
 
-if (!defined(is_win)) {
-  is_win = is_mingw
+    if (host_os == "linux") {
+      ndk_host = "linux-x86_64"
+    } else if (host_os == "mac") {
+      ndk_host = "darwin-x86_64"
+    } else if (host_os == "win") {
+      ndk_host = "windows-x86_64"
+    }
+
+    if (target_cpu == "arm64") {
+      ndk_target = "aarch64-linux-android"
+      ndk_gdbserver = "prebuilt/android-arm64/gdbserver/gdbserver"
+    } else if (target_cpu == "arm") {
+      ndk_target = "armv7a-linux-androideabi"
+      ndk_gdbserver = "prebuilt/android-arm/gdbserver/gdbserver"
+    } else if (target_cpu == "x64") {
+      ndk_target = "x86_64-linux-android"
+      ndk_gdbserver = "prebuilt/android-x86_64/gdbserver/gdbserver"
+    } else if (target_cpu == "x86") {
+      ndk_target = "i686-linux-android"
+      ndk_gdbserver = "prebuilt/android-x86/gdbserver/gdbserver"
+    }
+  }
+} else {
+  is_android = host_os == "android"
+  is_mingw = current_os == "mingw"
+  is_ios = current_os == "ios" || current_os == "tvos"
+  is_tvos = current_os == "tvos"
+  is_linux = current_os == "linux"
+  is_mac = host_os == "mac"
+
+  if (!defined(is_win)) {
+    is_win = is_mingw
+  }
 }
 
+is_fuchsia = host_os == "fuchsia"
 sanitize = ""

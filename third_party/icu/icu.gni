@@ -867,3 +867,25 @@ icu_sources = [
   "$_src/i18n/ztrans.cpp",
   "$_src/i18n/ztrans.h",
 ]
+
+if (defined(build_cross_platform_version) && build_cross_platform_version) {
+  icu_sources += [
+    "$_src/i18n/double-conversion-double-to-string.cpp",
+    "$_src/i18n/double-conversion-string-to-double.cpp",
+    "$_src/i18n/formatted_string_builder.cpp",
+    "$_src/i18n/formattedval_iterimpl.cpp",
+    "$_src/i18n/formattedval_sbimpl.cpp",
+    "$_src/i18n/formattedvalue.cpp",
+    "$_src/i18n/measunit_extra.cpp",
+    "$_src/i18n/number_output.cpp",
+    "$_src/i18n/number_symbolswrapper.cpp",
+    "$_src/i18n/number_usageprefs.cpp",
+    "$_src/i18n/numrange_capi.cpp",
+    "$_src/i18n/pluralranges.cpp",
+    "$_src/i18n/string_segment.cpp",
+    "$_src/i18n/units_complexconverter.cpp",
+    "$_src/i18n/units_converter.cpp",
+    "$_src/i18n/units_data.cpp",
+    "$_src/i18n/units_router.cpp",
+  ]
+}

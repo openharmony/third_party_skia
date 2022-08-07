@@ -51,6 +51,9 @@ config("skia_public") {
   if (is_component_build) {
     defines += [ "SKIA_DLL" ]
   }
+  if (defined(build_cross_platform_version) && defined(is_android) && is_android) {
+    defines += [ "SK_BUILD_FOR_ANDROID" ]
+  }
   if (defined(is_ohos) && is_ohos) {
     defines += [ "SK_BUILD_FOR_OHOS" ]
   }

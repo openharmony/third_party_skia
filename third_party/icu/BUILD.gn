@@ -134,4 +134,24 @@ if (skia_use_system_icu) {
     outputs = [ "$root_out_dir/icudtl.dat" ]
     data = [ "$root_out_dir/icudtl.dat" ]
   }
+
+  if (defined(build_cross_platform_version) && build_cross_platform_version) {
+    config("icu_config") {
+      defines = [
+        "U_COMMON_IMPLEMENTATION",
+        "U_STATIC_IMPLEMENTATION",
+        "U_ENABLE_DYLOAD=0",
+        "U_I18N_IMPLEMENTATION",
+        "U_USING_ICU_NAMESPACE=0",
+        "U_DISABLE_RENAMING",
+        "SK_USING_THIRD_PARTY_ICU",
+      ]
+
+      include_dirs = [
+        "../externals/icu/source/common",
+        "../externals/icu/source/i18n",
+        ".",
+      ]
+    }
+  }
 }
