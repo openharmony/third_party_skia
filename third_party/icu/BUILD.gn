@@ -135,7 +135,7 @@ if (skia_use_system_icu) {
     data = [ "$root_out_dir/icudtl.dat" ]
   }
 
-  if (defined(build_cross_platform_version) && build_cross_platform_version) {
+  if (is_cross_platform_build) {
     config("icu_config") {
       defines = [
         "U_COMMON_IMPLEMENTATION",

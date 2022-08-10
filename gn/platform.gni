@@ -11,7 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if (defined(build_cross_platform_version) && build_cross_platform_version) {
+is_cross_platform_build =
+    defined(build_cross_platform_version) && build_cross_platform_version
+
+if (is_cross_platform_build) {
   import("//build/config/aosp/config.gni")
   if (is_android) {
     ndk = aosp_ndk_root
@@ -40,6 +43,15 @@ if (defined(build_cross_platform_version) && build_cross_platform_version) {
       ndk_target = "i686-linux-android"
       ndk_gdbserver = "prebuilt/android-x86/gdbserver/gdbserver"
     }
+  } else if (is_ios) {
+    ios_min_target = "10.0"
+    ar = "ar"
+    cc = "clang"
+    cxx = "clang++"
+    win_vc = ""
+    win_toolchain_version = ""
+    clang_win = ""
+    cc_wrapper = ""
   }
 } else {
   is_android = host_os == "android"

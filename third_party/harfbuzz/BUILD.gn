@@ -288,7 +288,7 @@ if (skia_use_system_harfbuzz) {
       "$_src/hb-uniscribe.h",
     ]
 
-    if (defined(build_cross_platform_version) && build_cross_platform_version) {
+    if (is_cross_platform_build) {
       deps = [ "../icu" ]
 
       defines += [
@@ -307,7 +307,7 @@ if (skia_use_system_harfbuzz) {
     assert(unused_sources != [])
   }
 
-  if (defined(build_cross_platform_version) && build_cross_platform_version) {
+  if (is_cross_platform_build) {
     config("harfbuzz_config") {
       visibility = [ ":*" ]
 

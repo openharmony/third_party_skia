@@ -1,3 +1,4 @@
+import("../platform.gni")
 if (is_fuchsia) {
   import("${skia_root_dir}/build/fuchsia/sdk.gni")
 }
@@ -32,7 +33,9 @@ declare_args() {
     target_cxx = cxx
   }
 
-  cc_wrapper = ""
+  if (!is_cross_platform_build) {
+    cc_wrapper = ""
+  }
 
   # dsymutil seems to kill the machine when too many processes are run in
   # parallel, so we need to use a pool to limit the concurrency when passing

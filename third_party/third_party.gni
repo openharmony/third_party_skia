@@ -71,6 +71,10 @@ template("third_party") {
     _mode = "source_set"
   }
 
+  if (is_cross_platform_build) {
+    _mode = "source_set"
+  }
+
   target(_mode, target_name) {
     if (enabled) {
       # set_defaults(_mode) might not exist or set configs
