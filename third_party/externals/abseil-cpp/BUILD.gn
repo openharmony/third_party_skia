@@ -23,29 +23,17 @@ component("absl") {
 
     if (is_win && is_clang) {
       if (current_cpu == "x64") {
-        if (is_debug) {
-          sources = [ "symbols_x64_dbg.def" ]
+        if (is_asan) {
+          sources = [ "symbols_x64_rel_asan.def" ]
         } else {
-          if (is_asan) {
-            sources = [ "symbols_x64_rel_asan.def" ]
-          } else {
-            sources = [ "symbols_x64_rel.def" ]
-          }
+          sources = [ "symbols_x64_rel.def" ]
         }
       }
       if (current_cpu == "x86") {
-        if (is_debug) {
-          sources = [ "symbols_x86_dbg.def" ]
-        } else {
-          sources = [ "symbols_x86_rel.def" ]
-        }
+        sources = [ "symbols_x86_rel.def" ]
       }
       if (current_cpu == "arm64") {
-        if (is_debug) {
-          sources = [ "symbols_arm64_dbg.def" ]
-        } else {
-          sources = [ "symbols_arm64_rel.def" ]
-        }
+        sources = [ "symbols_arm64_rel.def" ]
       }
     }
   }
@@ -182,6 +170,7 @@ if (build_with_chromium) {
     test("absl_tests") {
       testonly = true
       deps = [
+        "${skia_third_party_dir}/googletest:gtest_main",
         "absl/algorithm:algorithm_test",
         "absl/algorithm:container_test",
         "absl/base:config_test",
@@ -192,22 +181,21 @@ if (build_with_chromium) {
         "absl/meta:type_traits_test",
         "absl/status:statusor_test",
         "absl/strings:ascii_test",
-        "absl/strings:cord_rep_btree_test",
+        "absl/strings:cord_rep_btree_navigator_test",
         "absl/strings:cord_rep_btree_reader_test",
+        "absl/strings:cord_rep_btree_test",
         "absl/strings:cord_rep_consume_test",
         "absl/strings:cordz_functions_test",
         "absl/strings:cordz_info_statistics_test",
         "absl/strings:cordz_info_test",
         "absl/strings:cordz_test",
         "absl/strings:cordz_update_scope_test",
-        "absl/strings:cord_rep_btree_navigator_test",
         "absl/strings:cordz_update_tracker_test",
         "absl/strings:match_test",
         "absl/strings:str_replace_test",
         "absl/strings:string_view_test",
         "absl/types:optional_test",
         "absl/types:variant_test",
-        "${skia_third_party_dir}/googletest:gtest_main",
       ]
     }
   }
