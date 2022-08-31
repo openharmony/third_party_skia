@@ -287,6 +287,41 @@ if (skia_use_system_harfbuzz) {
       "$_src/hb-uniscribe.cc",
       "$_src/hb-uniscribe.h",
     ]
+
+    if (is_cross_platform_build) {
+      deps = [ "../icu" ]
+
+      defines += [
+        "HAVE_ICU",
+        "HAVE_ICU_BUILTIN",
+      ]
+
+      public += [ "$_src/hb-icu.h" ]
+      sources += [ "$_src/hb-icu.cc" ]
+      unused_sources -= [
+        "$_src/hb-icu.cc",
+        "$_src/hb-icu.h",
+      ]
+    }
+
     assert(unused_sources != [])
+  }
+
+  if (is_cross_platform_build) {
+    config("harfbuzz_config") {
+      visibility = [ ":*" ]
+
+      include_dirs = [
+        ".",
+        "../externals/harfbuzz/src",
+      ]
+
+      defines = [
+        "HAVE_OT",
+        "HAVE_CONFIG_OVERRIDE_H",
+        "HB_NO_FALLBACK_SHAPE",
+        "HB_NO_WIN1256",
+      ]
+    }
   }
 }

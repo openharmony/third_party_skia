@@ -169,6 +169,10 @@ skia_enable_sksl = skia_enable_sksl || skia_enable_gpu
 # Other projects may optionally set these configs as they see fit.
 template("component") {
   _component_mode = "static_library"
+  if (is_cross_platform_build) {
+    _component_mode = "source_set"
+  }
+
   if (is_component_build) {
     _component_mode = "shared_library"
   }
@@ -184,7 +188,9 @@ set_defaults("component") {
     if (defined(default_compiler_configs)) {
       configs += default_compiler_configs
     }
-    complete_static_lib = true
+    if (!is_cross_platform_build) {
+      complete_static_lib = true
+    }
   } else {
     configs = default_shared_library_configs
   }
