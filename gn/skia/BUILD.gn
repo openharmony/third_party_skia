@@ -5,6 +5,8 @@
 
 import("../../build_overrides/skia.gni")
 
+import("../platform.gni")
+
 if (is_fuchsia) {
   import("${skia_root_dir}/build/fuchsia/sdk.gni")
 }
