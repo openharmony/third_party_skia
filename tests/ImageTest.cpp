@@ -1178,6 +1178,7 @@ static sk_sp<SkImage> create_picture_image(sk_sp<SkColorSpace> space) {
                                     nullptr, nullptr, SkImage::BitDepth::kU8, std::move(space));
 };
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(Image_ColorSpace, r) {
     sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
     sk_sp<SkImage> image = GetResourceAsImage("images/mandrill_512_q075.jpg");
@@ -1209,7 +1210,9 @@ DEF_TEST(Image_ColorSpace, r) {
     image = surface->makeImageSnapshot();
     REPORTER_ASSERT(r, SkColorSpace::Equals(rec2020.get(), image->colorSpace()));
 }
+#endif
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(Image_makeColorSpace, r) {
     sk_sp<SkColorSpace> p3 = SkColorSpace::MakeRGB(SkNamedTransferFn::kSRGB, SkNamedGamut::kDisplayP3);
     skcms_TransferFunction fn;
@@ -1248,6 +1251,7 @@ DEF_TEST(Image_makeColorSpace, r) {
     REPORTER_ASSERT(r, almost_equal(0x82, SkGetPackedG32(*p3Bitmap.getAddr32(0, 0))));
     REPORTER_ASSERT(r, almost_equal(0x77, SkGetPackedB32(*p3Bitmap.getAddr32(0, 0))));
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1517,6 +1521,7 @@ DEF_TEST(image_cubicresampler, reporter) {
     diff(SkImageShader::CubicResamplerMatrix(0, 1.0f/2), gCentripetalCatmulRom);
 }
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(image_subset_encode_skbug_7752, reporter) {
     sk_sp<SkImage> image = GetResourceAsImage("images/mandrill_128.png");
     const int W = image->width();
@@ -1531,3 +1536,4 @@ DEF_TEST(image_subset_encode_skbug_7752, reporter) {
     check_roundtrip(image->makeSubset({W/2, H/2, W, H}));
     check_roundtrip(image->makeColorSpace(SkColorSpace::MakeSRGBLinear()));
 }
+#endif

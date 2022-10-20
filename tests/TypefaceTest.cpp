@@ -527,6 +527,7 @@ DEF_TEST(Typeface_serialize, reporter) {
 
 }
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(Typeface_glyph_to_char, reporter) {
     SkFont font(ToolUtils::emoji_typeface(), 12);
     SkASSERT(font.getTypeface());
@@ -562,10 +563,12 @@ DEF_TEST(Typeface_glyph_to_char, reporter) {
                         originalCodepoints[i], newCodepoints[i], glyphs[i]);
     }
 }
+#endif
 
 // This test makes sure the legacy typeface creation does not lose its specified
 // style. See https://bugs.chromium.org/p/skia/issues/detail?id=8447 for more
 // context.
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(LegacyMakeTypeface, reporter) {
     sk_sp<SkFontMgr> fm = SkFontMgr::RefDefault();
     sk_sp<SkTypeface> typeface1 = fm->legacyMakeTypeface(nullptr, SkFontStyle::Italic());
@@ -579,3 +582,4 @@ DEF_TEST(LegacyMakeTypeface, reporter) {
     REPORTER_ASSERT(reporter, typeface3->isItalic());
     REPORTER_ASSERT(reporter, typeface3->isBold());
 }
+#endif

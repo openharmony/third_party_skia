@@ -26,6 +26,7 @@ struct State {
     SkImage*    fImg;
 };
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(serial_procs_image, reporter) {
     auto src_img = GetResourceAsImage("images/mandrill_128.png");
     const char magic_str[] = "magic signature";
@@ -79,6 +80,7 @@ DEF_TEST(serial_procs_image, reporter) {
         REPORTER_ASSERT(reporter, ToolUtils::equal_pixels(src_img.get(), dst_img.get()));
     }
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

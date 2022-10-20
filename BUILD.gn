@@ -2275,6 +2275,11 @@ if (skia_enable_tools) {
         "modules/skottie:utils",
         "modules/svg",
       ]
+      ldflags = [
+        "--stdlib=libc++",
+        "-lc++",
+        "-lc++abi",
+      ]
     }
     test_app("sorttoy") {
       sources = [
