@@ -1085,10 +1085,12 @@ static void check_color_xform(skiatest::Reporter* r, const char* path) {
     REPORTER_ASSERT(r, SkCodec::kSuccess == result);
 }
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(Codec_ColorXform, r) {
     check_color_xform(r, "images/mandrill_512_q075.jpg");
     check_color_xform(r, "images/mandrill_512.png");
 }
+#endif
 
 static bool color_type_match(SkColorType origColorType, SkColorType codecColorType) {
     switch (origColorType) {
@@ -1133,6 +1135,7 @@ static void check_round_trip(skiatest::Reporter* r, SkCodec* origCodec, const Sk
     REPORTER_ASSERT(r, md5(bm1) == md5(bm2));
 }
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(Codec_PngRoundTrip, r) {
     auto codec = SkCodec::MakeFromStream(GetResourceAsStream("images/mandrill_512_q075.jpg"));
 
@@ -1173,6 +1176,7 @@ DEF_TEST(Codec_PngRoundTrip, r) {
         check_round_trip(r, codec.get(), newInfo);
     }
 }
+#endif
 
 static void test_conversion_possible(skiatest::Reporter* r, const char* path,
                                      bool supportsScanlineDecoder,

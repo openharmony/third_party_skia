@@ -265,6 +265,7 @@ DEF_GPUTEST_FOR_RENDERING_CONTEXTS(SkRemoteGlyphCache_ReleaseTypeFace, reporter,
     discardableManager->unlockAndDeleteAll();
 }
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(SkRemoteGlyphCache_StrikeLockingServer, reporter) {
     sk_sp<DiscardableManager> discardableManager = sk_make_sp<DiscardableManager>();
     SkStrikeServer server(discardableManager.get());
@@ -299,7 +300,9 @@ DEF_TEST(SkRemoteGlyphCache_StrikeLockingServer, reporter) {
     // Must unlock everything on termination, otherwise valgrind complains about memory leaks.
     discardableManager->unlockAndDeleteAll();
 }
+#endif
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(SkRemoteGlyphCache_StrikeDeletionServer, reporter) {
     sk_sp<DiscardableManager> discardableManager = sk_make_sp<DiscardableManager>();
     SkStrikeServer server(discardableManager.get());
@@ -335,7 +338,9 @@ DEF_TEST(SkRemoteGlyphCache_StrikeDeletionServer, reporter) {
     // Must unlock everything on termination, otherwise valgrind complains about memory leaks.
     discardableManager->unlockAndDeleteAll();
 }
+#endif
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(SkRemoteGlyphCache_StrikePinningClient, reporter) {
     sk_sp<DiscardableManager> discardableManager = sk_make_sp<DiscardableManager>();
     SkStrikeServer server(discardableManager.get());
@@ -375,7 +380,9 @@ DEF_TEST(SkRemoteGlyphCache_StrikePinningClient, reporter) {
     // Must unlock everything on termination, otherwise valgrind complains about memory leaks.
     discardableManager->unlockAndDeleteAll();
 }
+#endif
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(SkRemoteGlyphCache_ClientMemoryAccounting, reporter) {
     sk_sp<DiscardableManager> discardableManager = sk_make_sp<DiscardableManager>();
     SkStrikeServer server(discardableManager.get());
@@ -404,6 +411,7 @@ DEF_TEST(SkRemoteGlyphCache_ClientMemoryAccounting, reporter) {
     // Must unlock everything on termination, otherwise valgrind complains about memory leaks.
     discardableManager->unlockAndDeleteAll();
 }
+#endif
 
 DEF_TEST(SkRemoteGlyphCache_PurgesServerEntries, reporter) {
     sk_sp<DiscardableManager> discardableManager = sk_make_sp<DiscardableManager>();

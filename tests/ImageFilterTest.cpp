@@ -1324,12 +1324,14 @@ static void test_huge_blur(SkCanvas* canvas, skiatest::Reporter* reporter) {
     canvas->drawImage(bitmap.asImage(), 0, 0, SkSamplingOptions(), &paint);
 }
 
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(HugeBlurImageFilter, reporter) {
     SkBitmap temp;
     temp.allocN32Pixels(100, 100);
     SkCanvas canvas(temp);
     test_huge_blur(&canvas, reporter);
 }
+#endif
 
 DEF_TEST(ImageFilterMatrixConvolutionTest, reporter) {
     SkScalar kernel[1] = { 0 };

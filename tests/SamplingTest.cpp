@@ -16,6 +16,7 @@
 // In general, sampling under identity matrix should not affect the pixels. However,
 // cubic resampling when B != 0 is expected to change pixels.
 //
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(sampling_with_identity_matrix, r) {
     const char* names[] = {
         "images/mandrill_128.png", "images/color_wheel.jpg",
@@ -55,3 +56,4 @@ DEF_TEST(sampling_with_identity_matrix, r) {
         }
     }
 }
+#endif

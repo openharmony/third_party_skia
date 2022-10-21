@@ -473,11 +473,14 @@ static void TestTypefaceSerialization(skiatest::Reporter* reporter, sk_sp<SkType
     REPORTER_ASSERT(reporter, fontMetrics == cloneMetrics,
         "Typeface: \"%s\" CloneTypeface: \"%s\"", name.c_str(), cloneName.c_str());
 }
+
+#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(Serialization_Typeface, reporter) {
     SkFont font;
     TestTypefaceSerialization(reporter, font.refTypefaceOrDefault());
     TestTypefaceSerialization(reporter, ToolUtils::sample_user_typeface());
 }
+#endif
 
 static void setup_bitmap_for_canvas(SkBitmap* bitmap) {
     bitmap->allocN32Pixels(kBitmapSize, kBitmapSize);
