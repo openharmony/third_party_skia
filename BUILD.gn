@@ -8,6 +8,12 @@ import("gn/fuchsia_defines.gni")
 import("gn/shared_sources.gni")
 import("gn/skia.gni")
 
+group("third_party_skia_ohos") {
+  deps = [
+    "//third_party/skia:skia(//build/toolchain/ohos:ohos_clang_arm)"
+  ]
+}
+
 if (defined(is_mingw) && is_mingw == true) {
   is_win = true
 }
@@ -39,6 +45,11 @@ config("skia_wno") {
     "-Wno-unused-private-field",
     "-Wno-unused-variable",
     "-Wno-c++17-extensions",
+  ]
+  ldflags = [
+    "--stdlib=libc++",
+    "-lc++",
+    "-lc++abi",
   ]
 }
 

@@ -11,7 +11,7 @@
     "scripts": {},
     "licensePath": "COPYING",
     "component": {
-        "name": "skia",
+        "name": "third_party_skia",
         "subsystem": "thirdparty",
         "syscap": [],
         "features": [],
@@ -24,7 +24,7 @@
         },
         "build": {
             "sub_component": [
-                "//third_party/skia:skia"
+                "//third_party/skia:third_party_skia_ohos"
             ],
             "inner_kits": [],
             "test": []
