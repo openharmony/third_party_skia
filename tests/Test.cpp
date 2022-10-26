@@ -53,7 +53,7 @@ SkString skiatest::GetTmpDir() {
     if (!FLAGS_tmpDir.isEmpty()) {
         return SkString(FLAGS_tmpDir[0]);
     }
-#ifdef SK_BUILD_FOR_ANDROID
+#if defined(SK_BUILD_FOR_ANDROID) || defined(SK_BUILD_FOR_OHOS)
     const char* environmentVariable = "TMPDIR";
     const char* defaultValue = "/data/local/tmp";
 #elif defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_UNIX)
