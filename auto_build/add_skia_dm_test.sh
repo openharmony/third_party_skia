@@ -23,9 +23,9 @@ echo "    STEP 2: modify napi api"
 echo ""
 echo "======================================"
 
-hilog_target_file="./base/hiviewdfx/hilog/interfaces/js/kits/napi/BUILD.gn"
+api_target_gn_file="./base/hiviewdfx/hilog/interfaces/js/kits/napi/BUILD.gn"
 
-sed -i '/output_name/s/libhilog/libhilognapi/g' ${hilog_target_file}
+sed -i '/output_name/s/libhilog/libhilognapi/g' ${api_target_gn_file}
 
 api_target_file="./developtools/profiler/hidebug/interfaces/js/kits/napi/BUILD.gn"
 api_target_line='output_name = "libhidebugnapi"'
