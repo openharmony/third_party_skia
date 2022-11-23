@@ -225,7 +225,6 @@ static void fill_in_mips(SkMipmapBuilder* builder, sk_sp<SkImage> img) {
     }
 }
 
-#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(image_mip_factory, reporter) {
     // TODO: what do to about lazy images and mipmaps?
     auto img = GetResourceAsImage("images/mandrill_128.png")->makeRasterImage();
@@ -243,11 +242,9 @@ DEF_TEST(image_mip_factory, reporter) {
     REPORTER_ASSERT(reporter, img1.get() != img2.get());
     REPORTER_ASSERT(reporter, img2->hasMipmaps());
 }
-#endif
 
 // Ensure we can't attach mips that don't "match" the image
 //
-#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(image_mip_mismatch, reporter) {
     auto check_fails = [reporter](sk_sp<SkImage> img, const SkImageInfo& info) {
         SkMipmapBuilder builder(info);
@@ -269,4 +266,3 @@ DEF_TEST(image_mip_mismatch, reporter) {
     SkASSERT(img->imageInfo().alphaType() != kUnpremul_SkAlphaType);
     check_fails(img, img->imageInfo().makeAlphaType(kUnpremul_SkAlphaType));
 }
-#endif

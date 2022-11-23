@@ -16,7 +16,6 @@
 #include "include/core/SkImageEncoder.h"
 #include "include/core/SkImageInfo.h"
 
-#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(AlphaEncodedInfo, r) {
     auto codec = SkCodec::MakeFromStream(GetResourceAsStream("images/grayscale.jpg"));
     REPORTER_ASSERT(r, codec->getInfo().colorType() == kGray_8_SkColorType);
@@ -41,4 +40,3 @@ DEF_TEST(AlphaEncodedInfo, r) {
 
     REPORTER_ASSERT(r, ToolUtils::equal_pixels(bm.pixmap(), bm2.pixmap()));
 }
-#endif

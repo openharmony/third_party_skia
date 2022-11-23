@@ -567,7 +567,6 @@ DEF_TEST(EncodedOriginToMatrixTest, r) {
     }
 }
 
-#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(AnimCodecPlayer, r) {
     static constexpr struct {
         const char* fFile;
@@ -610,4 +609,3 @@ DEF_TEST(AnimCodecPlayer, r) {
                         "Mismatched size for frame at 500 ms of %s", test.fFile);
     }
 }
-#endif

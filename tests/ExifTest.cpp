@@ -27,7 +27,6 @@ DEF_TEST(ExifOrientation, r) {
     REPORTER_ASSERT(r, kTopLeft_SkEncodedOrigin == origin);
 }
 
-#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(ExifOrientationInExif, r) {
     std::unique_ptr<SkStream> stream(GetResourceAsStream("images/orientation/exif.jpg"));
 
@@ -36,9 +35,7 @@ DEF_TEST(ExifOrientationInExif, r) {
     SkEncodedOrigin origin = codec->getOrigin();
     REPORTER_ASSERT(r, kLeftBottom_SkEncodedOrigin == origin);
 }
-#endif
 
-#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(ExifOrientationInSubIFD, r) {
     std::unique_ptr<SkStream> stream(GetResourceAsStream("images/orientation/subifd.jpg"));
 
@@ -47,4 +44,3 @@ DEF_TEST(ExifOrientationInSubIFD, r) {
     SkEncodedOrigin origin = codec->getOrigin();
     REPORTER_ASSERT(r, kLeftBottom_SkEncodedOrigin == origin);
 }
-#endif

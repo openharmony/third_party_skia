@@ -112,7 +112,6 @@ static void test_serialize(skiatest::Reporter* r, sk_sp<SkColorSpace> space, boo
     }
 }
 
-#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(ColorSpace_Serialize, r) {
     test_serialize(r, SkColorSpace::MakeSRGB(), true);
     test_serialize(r, SkColorSpace::MakeSRGBLinear(), true);
@@ -146,9 +145,7 @@ DEF_TEST(ColorSpace_Serialize, r) {
     }};
     test_serialize(r, SkColorSpace::MakeRGB(fn, toXYZ), false);
 }
-#endif
 
-#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(ColorSpace_Equals, r) {
     sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
 
@@ -194,7 +191,6 @@ DEF_TEST(ColorSpace_Equals, r) {
     REPORTER_ASSERT(r, !SkColorSpace::Equals(z30.get(), rgb4.get()));
     REPORTER_ASSERT(r, !SkColorSpace::Equals(srgb.get(), rgb4.get()));
 }
-#endif
 
 static inline bool matrix_almost_equal(const skcms_Matrix3x3& a, const skcms_Matrix3x3& b) {
     for (int r = 0; r < 3; ++r) {
