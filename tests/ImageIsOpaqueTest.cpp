@@ -54,7 +54,6 @@ static sk_sp<SkPicture> make_picture() {
     return recorder.finishRecordingAsPicture();
 }
 
-#ifdef SKIA_COMPILE_DM_ALL
 DEF_TEST(Image_isAlphaOnly, reporter) {
     SkPMColor pmColors = 0;
     SkPixmap pmap = {
@@ -77,4 +76,3 @@ DEF_TEST(Image_isAlphaOnly, reporter) {
     REPORTER_ASSERT(reporter, SkImage::MakeRasterCopy({
         SkImageInfo::MakeA8(1, 1), (uint8_t*)&pmColors, 1})->isAlphaOnly() == true);
 }
-#endif
