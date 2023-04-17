@@ -15,7 +15,7 @@ is_cross_platform_build =
     defined(build_cross_platform_version) && build_cross_platform_version
 
 if (is_cross_platform_build) {
-  import("//build/config/aosp/config.gni")
+  import("//build/config/config.gni")
   if (is_android) {
     ndk = aosp_ndk_root
     ndk_host = ""
