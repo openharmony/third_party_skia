@@ -60,6 +60,9 @@ std::unique_ptr<GrDrawOpAtlas> GrDrawOpAtlas::Make(GrProxyProvider* proxyProvide
                                                    int height, int plotWidth, int plotHeight,
                                                    GenerationCounter* generationCounter,
                                                    AllowMultitexturing allowMultitexturing,
+#ifdef SK_ENABLE_SMALL_PAGE
+                                                   int atlasPageNum,
+#endif
                                                    EvictionCallback* evictor) {
     if (!format.isValid()) {
         return nullptr;
@@ -67,8 +70,11 @@ std::unique_ptr<GrDrawOpAtlas> GrDrawOpAtlas::Make(GrProxyProvider* proxyProvide
 
     std::unique_ptr<GrDrawOpAtlas> atlas(new GrDrawOpAtlas(proxyProvider, format, colorType,
                                                            width, height, plotWidth, plotHeight,
-                                                           generationCounter,
-                                                           allowMultitexturing));
+                                                           generationCounter,allowMultitexturing
+#ifdef SK_ENABLE_SMALL_PAGE
+                                                           , atlasPageNum
+#endif
+                                                           ));
     if (!atlas->getViews()[0].proxy()) {
         return nullptr;
     }
@@ -207,7 +213,11 @@ void GrDrawOpAtlas::Plot::resetRects() {
 GrDrawOpAtlas::GrDrawOpAtlas(GrProxyProvider* proxyProvider, const GrBackendFormat& format,
                              GrColorType colorType, int width, int height,
                              int plotWidth, int plotHeight, GenerationCounter* generationCounter,
-                             AllowMultitexturing allowMultitexturing)
+                             AllowMultitexturing allowMultitexturing
+#ifdef SK_ENABLE_SMALL_PAGE
+                             , int atlasPageNum
+#endif
+                             )
         : fFormat(format)
         , fColorType(colorType)
         , fTextureWidth(width)
@@ -218,7 +228,11 @@ GrDrawOpAtlas::GrDrawOpAtlas(GrProxyProvider* proxyProvider, const GrBackendForm
         , fAtlasGeneration(fGenerationCounter->next())
         , fPrevFlushToken(GrDeferredUploadToken::AlreadyFlushedToken())
         , fFlushesSinceLastUse(0)
+#ifdef SK_ENABLE_SMALL_PAGE
+        , fMaxPages(AllowMultitexturing::kYes == allowMultitexturing ? ((atlasPageNum > 16) ? 16 : atlasPageNum) : 1)
+#else
         , fMaxPages(AllowMultitexturing::kYes == allowMultitexturing ? kMaxMultitexturePages : 1)
+#endif
         , fNumActivePages(0) {
     int numPlotsX = width/plotWidth;
     int numPlotsY = height/plotHeight;
@@ -229,6 +243,8 @@ GrDrawOpAtlas::GrDrawOpAtlas(GrProxyProvider* proxyProvider, const GrBackendForm
     fNumPlots = numPlotsX * numPlotsY;
 
     this->createPages(proxyProvider, generationCounter);
+    SkDebugf("Texture[Width:%{public}d, Height:%{public}d, MaxPage:%{public}d], Plot[Width:%{public}d, Height:%{public}d].", \
+        fTextureWidth, fTextureHeight, fMaxPages, fPlotWidth, fPlotHeight);
 }
 
 inline void GrDrawOpAtlas::processEviction(PlotLocator plotLocator) {
@@ -403,7 +419,41 @@ GrDrawOpAtlas::ErrorCode GrDrawOpAtlas::addToAtlas(GrResourceProvider* resourceP
     return ErrorCode::kSucceeded;
 }
 
+#ifdef SK_ENABLE_SMALL_PAGE
+void GrDrawOpAtlas::compactRadicals(GrDeferredUploadToken startTokenForNextFlush) {
+    if (fNumActivePages <= 1) {
+        return;
+    }
+    PlotList::Iter plotIter;
+    unsigned short usedAtlasLastFlush = 0;
+    for (uint32_t pageIndex = 0; pageIndex < fNumActivePages; ++pageIndex) {
+        plotIter.init(fPages[pageIndex].fPlotList, PlotList::Iter::kHead_IterStart);
+        while (Plot* plot = plotIter.get()) {
+            if (plot->lastUseToken().inInterval(fPrevFlushToken, startTokenForNextFlush)) {
+                usedAtlasLastFlush |= (1 << pageIndex);
+                break;
+            } else if (plot->lastUploadToken() != GrDeferredUploadToken::AlreadyFlushedToken()) {
+                this->processEvictionAndResetRects(plot);
+            }
+            plotIter.next();
+        }
+    }
+    int lastPageIndex = fNumActivePages - 1;
+    while (lastPageIndex > 0 && !(usedAtlasLastFlush & (1 << lastPageIndex))) {
+        deactivateLastPage();
+        lastPageIndex--;
+    }
+}
+#endif
+
 void GrDrawOpAtlas::compact(GrDeferredUploadToken startTokenForNextFlush) {
+    int threshold = kPlotRecentlyUsedCount;
+#ifdef SK_ENABLE_SMALL_PAGE
+    if (this->fRadicalsCompact) {
+        threshold = 1;
+        compactRadicals(startTokenForNextFlush);
+    }
+#endif
     if (fNumActivePages < 1) {
         fPrevFlushToken = startTokenForNextFlush;
         return;
@@ -464,7 +514,7 @@ void GrDrawOpAtlas::compact(GrDeferredUploadToken startTokenForNextFlush) {
 #endif
                 // Count plots we can potentially upload to in all pages except the last one
                 // (the potential compactee).
-                if (plot->flushesSinceLastUsed() > kPlotRecentlyUsedCount) {
+                if (plot->flushesSinceLastUsed() > threshold) {
                     availablePlots.push_back() = plot;
                 }
 
@@ -499,7 +549,7 @@ void GrDrawOpAtlas::compact(GrDeferredUploadToken startTokenForNextFlush) {
             }
 #endif
             // If this plot was used recently
-            if (plot->flushesSinceLastUsed() <= kPlotRecentlyUsedCount) {
+            if (plot->flushesSinceLastUsed() <= threshold) {
                 usedPlots++;
             } else if (plot->lastUseToken() != GrDeferredUploadToken::AlreadyFlushedToken()) {
                 // otherwise if aged out just evict it.
@@ -521,7 +571,7 @@ void GrDrawOpAtlas::compact(GrDeferredUploadToken startTokenForNextFlush) {
             plotIter.init(fPages[lastPageIndex].fPlotList, PlotList::Iter::kHead_IterStart);
             while (Plot* plot = plotIter.get()) {
                 // If this plot was used recently
-                if (plot->flushesSinceLastUsed() <= kPlotRecentlyUsedCount) {
+                if (plot->flushesSinceLastUsed() <= threshold) {
                     // See if there's room in an earlier page and if so evict.
                     // We need to be somewhat harsh here so that a handful of plots that are
                     // consistently in use don't end up locking the page in memory.
@@ -553,6 +603,8 @@ void GrDrawOpAtlas::compact(GrDeferredUploadToken startTokenForNextFlush) {
 
     fPrevFlushToken = startTokenForNextFlush;
 }
+
+
 
 bool GrDrawOpAtlas::createPages(
         GrProxyProvider* proxyProvider, GenerationCounter* generationCounter) {
@@ -669,6 +721,14 @@ GrDrawOpAtlasConfig::GrDrawOpAtlasConfig(int maxTextureSize, size_t maxBytes) {
     fMaxTextureSize = std::min<int>(maxTextureSize, kMaxAtlasDim);
 }
 
+#ifdef SK_ENABLE_SMALL_PAGE
+int GrDrawOpAtlasConfig::resetAsSmallPage() {
+    size_t maxBytes = fARGBDimensions.width() * fARGBDimensions.height() * 4;
+    fARGBDimensions.set(512, 512);
+    return maxBytes / (fARGBDimensions.width() * fARGBDimensions.height());
+}
+#endif
+
 SkISize GrDrawOpAtlasConfig::atlasDimensions(GrMaskFormat type) const {
     if (kA8_GrMaskFormat == type) {
         // A8 is always 2x the ARGB dimensions, clamped to the max allowed texture size
@@ -686,10 +746,16 @@ SkISize GrDrawOpAtlasConfig::plotDimensions(GrMaskFormat type) const {
         // larger SDF glyphs. Since the largest SDF glyph can be 170x170 with padding, this
         // allows us to pack 3 in a 512x256 plot, or 9 in a 512x512 plot.
 
+#ifdef SK_ENABLE_SMALL_PAGE
+        // This will give us 515×512 plots for 1024x1024, 256x256 plots otherwise.
+        int plotWidth = atlasDimensions.width() >= 1024 ? 512 : 256;
+        int plotHeight = atlasDimensions.height() >= 1024 ? 512 : 256;
+#else
         // This will give us 512x256 plots for 2048x1024, 512x512 plots for 2048x2048,
         // and 256x256 plots otherwise.
         int plotWidth = atlasDimensions.width() >= 2048 ? 512 : 256;
         int plotHeight = atlasDimensions.height() >= 2048 ? 512 : 256;
+#endif
 
         return { plotWidth, plotHeight };
     } else {

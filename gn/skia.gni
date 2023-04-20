@@ -102,6 +102,9 @@ declare_args() {
 
   skia_build_fuzzers = is_clang && is_linux && target_cpu == "x64"
   skia_use_libfuzzer_defaults = true
+
+  # TODO: move to ace feature gni when ace feature is ready
+  ace_enable_skia_small_page_texture = true
 }
 
 declare_args() {

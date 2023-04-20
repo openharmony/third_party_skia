@@ -404,6 +404,7 @@ std::tuple<bool, int> GlyphVector::regenerateAtlas(int begin, int end,
             SkASSERT(grGlyph != nullptr);
 
             if (!atlasManager->hasGlyph(maskFormat, grGlyph)) {
+                atlasManager->incAtlasMissCount();
                 const SkGlyph& skGlyph = *metricsAndImages.glyph(grGlyph->fPackedID);
                 auto code = atlasManager->addGlyphToAtlas(
                         skGlyph, grGlyph, srcPadding, target->resourceProvider(),
@@ -412,6 +413,8 @@ std::tuple<bool, int> GlyphVector::regenerateAtlas(int begin, int end,
                     success = code != GrDrawOpAtlas::ErrorCode::kError;
                     break;
                 }
+            } else {
+                atlasManager->incAtlasHitCount();
             }
             atlasManager->addGlyphToBulkAndSetUseToken(
                     &fBulkUseToken, maskFormat, grGlyph,
