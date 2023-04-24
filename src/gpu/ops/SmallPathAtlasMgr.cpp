@@ -59,7 +59,7 @@ bool SmallPathAtlasMgr::initAtlas(GrProxyProvider* proxyProvider, const GrCaps* 
 #ifdef SK_ENABLE_SMALL_PAGE
     int pageNum = 4; // The maximum number of texture pages in the original skia code is 4
     if (atlasConfig.getARGBDimensions().width() > 512) {
-        // reset atlasConfig to suit small page
+        // reset atlasConfig to suit small page.
         pageNum = atlasConfig.resetAsSmallPage();
     }
 #endif

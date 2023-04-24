@@ -70,11 +70,11 @@ std::unique_ptr<GrDrawOpAtlas> GrDrawOpAtlas::Make(GrProxyProvider* proxyProvide
 
     std::unique_ptr<GrDrawOpAtlas> atlas(new GrDrawOpAtlas(proxyProvider, format, colorType,
                                                            width, height, plotWidth, plotHeight,
-                                                           generationCounter,allowMultitexturing
 #ifdef SK_ENABLE_SMALL_PAGE
-                                                           , atlasPageNum
+                                                           generationCounter, allowMultitexturing, atlasPageNum));
+#else
+                                                           generationCounter, allowMultitexturing));
 #endif
-                                                           ));
     if (!atlas->getViews()[0].proxy()) {
         return nullptr;
     }
@@ -213,11 +213,11 @@ void GrDrawOpAtlas::Plot::resetRects() {
 GrDrawOpAtlas::GrDrawOpAtlas(GrProxyProvider* proxyProvider, const GrBackendFormat& format,
                              GrColorType colorType, int width, int height,
                              int plotWidth, int plotHeight, GenerationCounter* generationCounter,
-                             AllowMultitexturing allowMultitexturing
 #ifdef SK_ENABLE_SMALL_PAGE
-                             , int atlasPageNum
+                             AllowMultitexturing allowMultitexturing, int atlasPageNum)
+#else
+                             AllowMultitexturing allowMultitexturing)
 #endif
-                             )
         : fFormat(format)
         , fColorType(colorType)
         , fTextureWidth(width)
@@ -447,12 +447,16 @@ void GrDrawOpAtlas::compactRadicals(GrDeferredUploadToken startTokenForNextFlush
 #endif
 
 void GrDrawOpAtlas::compact(GrDeferredUploadToken startTokenForNextFlush) {
-    int threshold = kPlotRecentlyUsedCount;
 #ifdef SK_ENABLE_SMALL_PAGE
-    if (this->fRadicalsCompact) {
+    int threshold;
+    if (this->fUseRadicalsCompact) {
         threshold = 1;
         compactRadicals(startTokenForNextFlush);
+    } else {
+        threshold = kPlotRecentlyUsedCount;
     }
+#else
+    int threshold = kPlotRecentlyUsedCount;
 #endif
     if (fNumActivePages < 1) {
         fPrevFlushToken = startTokenForNextFlush;
@@ -603,8 +607,6 @@ void GrDrawOpAtlas::compact(GrDeferredUploadToken startTokenForNextFlush) {
 
     fPrevFlushToken = startTokenForNextFlush;
 }
-
-
 
 bool GrDrawOpAtlas::createPages(
         GrProxyProvider* proxyProvider, GenerationCounter* generationCounter) {

@@ -36,7 +36,7 @@ static void append_index_uv_varyings(GrGeometryProcessor::ProgramImpl::EmitArgs&
 #ifdef SK_ENABLE_SMALL_PAGE
             args.fVertBuilder->codeAppendf(R"code(
                 int2 coords = int2(%s.x, %s.y);
-                int texIdx = 4 * ((coords.x >> 14) & (0x3)) + ((coords.y >> 14) & (0x3));
+                int texIdx = ((coords.x >> 12) & 0xc) + ((coords.y >> 14) & 0x3);
                 float2 unormTexCoords = float2(coords.x & 0x3FFF, coords.y & 0x3FFF);
             )code", inTexCoordsName, inTexCoordsName);
 #else

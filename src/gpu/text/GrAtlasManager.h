@@ -48,6 +48,7 @@ public:
 
     bool hasGlyph(GrMaskFormat, GrGlyph*);
 
+#if defined(SK_ENABLE_SMALL_PAGE) || defined(SK_DEBUG_ATLAS_HIT_RATE)
     void incAtlasHitCount() { fAtlasHitCount++; }
     void incAtlasMissCount() { fAtlasMissCount++; }
     float atlasHitRate() {
@@ -60,7 +61,7 @@ public:
         fAtlasHitCount = 0;
         fAtlasMissCount = 0;
     }
-
+#endif
     // If bilerpPadding == true then addGlyphToAtlas adds a 1 pixel border to the glyph before
     // inserting it into the atlas.
     GrDrawOpAtlas::ErrorCode addGlyphToAtlas(const SkGlyph&,
@@ -128,7 +129,7 @@ public:
         for (int i = 0; i < kMaskFormatCount; ++i) {
             if (fAtlases[i]) {
 #ifdef SK_ENABLE_SMALL_PAGE
-                fAtlases[i]->isRadicalsCompact(isRadicals);
+                fAtlases[i]->setRadicalsCompactFlag(isRadicals);
 #endif
                 fAtlases[i]->compact(startTokenForNextFlush);
             }
@@ -179,10 +180,10 @@ private:
     GrProxyProvider* fProxyProvider;
     sk_sp<const GrCaps> fCaps;
     GrDrawOpAtlasConfig fAtlasConfig;
-
+#if defined(SK_ENABLE_SMALL_PAGE) || defined(SK_DEBUG_ATLAS_HIT_RATE)
     int fAtlasHitCount = 0;
     int fAtlasMissCount = 0;
-
+#endif
     using INHERITED = GrOnFlushCallbackObject;
 };
 

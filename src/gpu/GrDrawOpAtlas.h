@@ -388,7 +388,7 @@ public:
     }
 
 #ifdef SK_ENABLE_SMALL_PAGE
-    void isRadicalsCompact(bool isRadicals) { fRadicalsCompact = isRadicals; }
+    void setRadicalsCompactFlag(bool isRadicals) { fUseRadicalsCompact = isRadicals; }
 #endif
     void compact(GrDeferredUploadToken startTokenForNextFlush);
 
@@ -404,11 +404,11 @@ public:
 private:
     GrDrawOpAtlas(GrProxyProvider*, const GrBackendFormat& format, GrColorType, int width,
                   int height, int plotWidth, int plotHeight, GenerationCounter* generationCounter,
-                  AllowMultitexturing allowMultitexturing
 #ifdef SK_ENABLE_SMALL_PAGE
-                  , int atlasPageNum
+                  AllowMultitexturing allowMultitexturing, int atlasPageNum);
+#else
+                  AllowMultitexturing allowMultitexturing);
 #endif
-                  );
 
     /**
      * The backing GrTexture for a GrDrawOpAtlas is broken into a spatial grid of Plots. The Plots
@@ -566,7 +566,7 @@ private:
     uint32_t fNumActivePages;
 
 #ifdef SK_ENABLE_SMALL_PAGE
-    bool fRadicalsCompact = false;
+    bool fUseRadicalsCompact = false;
 #endif
 
     SkDEBUGCODE(void validate(const AtlasLocator& atlasLocator) const;)
