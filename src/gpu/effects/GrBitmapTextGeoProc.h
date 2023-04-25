@@ -23,7 +23,11 @@ class GrSurfaceProxyView;
  */
 class GrBitmapTextGeoProc : public GrGeometryProcessor {
 public:
+#ifdef SK_ENABLE_SMALL_PAGE
+    inline static constexpr int kMaxTextures = 16;
+#else
     inline static constexpr int kMaxTextures = 4;
+#endif
 
     static GrGeometryProcessor* Make(SkArenaAlloc* arena,
                                      const GrShaderCaps& caps,

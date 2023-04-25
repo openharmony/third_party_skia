@@ -302,6 +302,13 @@ bool GrAtlasManager::initAtlas(GrMaskFormat format) {
     int index = MaskFormatToAtlasIndex(format);
     if (fAtlases[index] == nullptr) {
         GrColorType grColorType = GrMaskFormatToColorType(format);
+#ifdef SK_ENABLE_SMALL_PAGE
+        int pageNum = 4; // The maximum number of texture pages in the original skia code is 4
+        if ((format == kA8_GrMaskFormat) && (fAtlasConfig.getARGBDimensions().width() > 512)) {
+            // reset fAtlasConfig to suit small page.
+            pageNum = fAtlasConfig.resetAsSmallPage();
+        }
+#endif
         SkISize atlasDimensions = fAtlasConfig.atlasDimensions(format);
         SkISize plotDimensions = fAtlasConfig.plotDimensions(format);
 
@@ -311,7 +318,11 @@ bool GrAtlasManager::initAtlas(GrMaskFormat format) {
         fAtlases[index] = GrDrawOpAtlas::Make(fProxyProvider, backendFormat, grColorType,
                                               atlasDimensions.width(), atlasDimensions.height(),
                                               plotDimensions.width(), plotDimensions.height(),
-                                              this, fAllowMultitexturing, nullptr);
+                                              this, fAllowMultitexturing,
+#ifdef SK_ENABLE_SMALL_PAGE
+                                              pageNum,
+#endif
+                                              nullptr);
         if (!fAtlases[index]) {
             return false;
         }

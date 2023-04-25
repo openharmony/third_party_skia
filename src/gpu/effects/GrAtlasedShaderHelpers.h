@@ -33,11 +33,19 @@ static void append_index_uv_varyings(GrGeometryProcessor::ProgramImpl::EmitArgs&
                 float2 unormTexCoords = float2(%s.x, %s.y);
            )code", inTexCoordsName, inTexCoordsName);
         } else {
+#ifdef SK_ENABLE_SMALL_PAGE
+            args.fVertBuilder->codeAppendf(R"code(
+                int2 coords = int2(%s.x, %s.y);
+                int texIdx = ((coords.x >> 12) & 0xc) + ((coords.y >> 14) & 0x3);
+                float2 unormTexCoords = float2(coords.x & 0x3FFF, coords.y & 0x3FFF);
+            )code", inTexCoordsName, inTexCoordsName);
+#else
             args.fVertBuilder->codeAppendf(R"code(
                 int2 coords = int2(%s.x, %s.y);
                 int texIdx = coords.x >> 13;
                 float2 unormTexCoords = float2(coords.x & 0x1FFF, coords.y);
             )code", inTexCoordsName, inTexCoordsName);
+#endif
         }
     } else {
         if (numTextureSamplers <= 1) {
@@ -46,11 +54,21 @@ static void append_index_uv_varyings(GrGeometryProcessor::ProgramImpl::EmitArgs&
                 float2 unormTexCoords = float2(%s.x, %s.y);
             )code", inTexCoordsName, inTexCoordsName);
         } else {
+#ifdef SK_ENABLE_SMALL_PAGE
+             args.fVertBuilder->codeAppendf(R"code(
+                float2 coord = float2(%s.x, %s.y);
+                float diff0 = floor(coord.x * exp2(-14));
+                float diff1 = floor(coord.y * exp2(-14));
+                float texIdx = 4 * diff0 + diff1;
+                float2 unormTexCoords = float2(coord.x - diff0, coord.y - diff1);
+            )code", inTexCoordsName, inTexCoordsName);
+#else
             args.fVertBuilder->codeAppendf(R"code(
                 float2 coord = float2(%s.x, %s.y);
                 float texIdx = floor(coord.x * exp2(-13));
                 float2 unormTexCoords = float2(coord.x - texIdx * exp2(13), coord.y);
             )code", inTexCoordsName, inTexCoordsName);
+#endif
         }
     }
 

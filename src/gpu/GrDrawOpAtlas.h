@@ -58,7 +58,11 @@ public:
     // These are both restricted by the space they occupy in the PlotLocator.
     // maxPages is also limited by being crammed into the glyph uvs.
     // maxPlots is also limited by the fPlotAlreadyUpdated bitfield in BulkUseTokenUpdater
+#ifdef SK_ENABLE_SMALL_PAGE
+    inline static constexpr auto kMaxMultitexturePages = 16;
+#else
     inline static constexpr auto kMaxMultitexturePages = 4;
+#endif
     inline static constexpr int kMaxPlots = 32;
 
     /**
@@ -133,7 +137,11 @@ public:
         uint64_t genID() const { return fPlotLocator.genID(); }
 
         SkIPoint topLeft() const {
+#ifdef SK_ENABLE_SMALL_PAGE
+            return {fUVs[0] & 0x3FFF, fUVs[1] & 0x3FFF};
+#else
             return {fUVs[0] & 0x1FFF, fUVs[1]};
+#endif
         }
 
         uint16_t width() const {
@@ -156,19 +164,41 @@ public:
 
         void updatePlotLocator(PlotLocator p) {
             fPlotLocator = p;
+#ifdef SK_ENABLE_SMALL_PAGE
+            SkASSERT(fPlotLocator.pageIndex() <= 15);
+            // package pageIndex(max value is 16, 4bit)
+            // high 2bit save in x-axis(fUVs[0],fUVs[2]),low 2bit save in y-axis(fUVs[1],fUVs[3])
+            uint16_t page = fPlotLocator.pageIndex() << 12;
+            fUVs[0] = (fUVs[0] & 0x3FFF) | (page & 0xC000);
+            fUVs[1] = (fUVs[1] & 0x3FFF) | ((page << 2) & 0xC000);
+            fUVs[2] = (fUVs[2] & 0x3FFF) | (page & 0xC000);
+            fUVs[3] = (fUVs[3] & 0x3FFF) | ((page << 2) & 0xC000);
+#else
             SkASSERT(fPlotLocator.pageIndex() <= 3);
             uint16_t page = fPlotLocator.pageIndex() << 13;
             fUVs[0] = (fUVs[0] & 0x1FFF) | page;
             fUVs[2] = (fUVs[2] & 0x1FFF) | page;
+#endif
         }
 
         void updateRect(GrIRect16 rect) {
+#ifdef SK_ENABLE_SMALL_PAGE
+            SkASSERT(rect.fLeft <= rect.fRight);
+            SkASSERT(rect.fRight <= 0x3FFF);
+            SkASSERT(rect.fTop <= rect.fBottom);
+            SkASSERT(rect.fBottom <= 0x3FFF);
+            fUVs[0] = (fUVs[0] & 0xC000) | rect.fLeft;
+            fUVs[1] = (fUVs[1] & 0xC000) | rect.fTop;
+            fUVs[2] = (fUVs[2] & 0xC000) | rect.fRight;
+            fUVs[3] = (fUVs[3] & 0xC000) | rect.fBottom;
+#else
             SkASSERT(rect.fLeft <= rect.fRight);
             SkASSERT(rect.fRight <= 0x1FFF);
             fUVs[0] = (fUVs[0] & 0xE000) | rect.fLeft;
             fUVs[1] = rect.fTop;
             fUVs[2] = (fUVs[2] & 0xE000) | rect.fRight;
             fUVs[3] = rect.fBottom;
+#endif
         }
 
     private:
@@ -227,6 +257,9 @@ public:
                                                int plotWidth, int plotHeight,
                                                GenerationCounter* generationCounter,
                                                AllowMultitexturing allowMultitexturing,
+#ifdef SK_ENABLE_SMALL_PAGE
+                                               int atlasPageNum,
+#endif
                                                EvictionCallback* evictor);
 
     /**
@@ -354,6 +387,9 @@ public:
         }
     }
 
+#ifdef SK_ENABLE_SMALL_PAGE
+    void setRadicalsCompactFlag(bool isRadicals) { fUseRadicalsCompact = isRadicals; }
+#endif
     void compact(GrDeferredUploadToken startTokenForNextFlush);
 
     void instantiate(GrOnFlushResourceProvider*);
@@ -368,7 +404,11 @@ public:
 private:
     GrDrawOpAtlas(GrProxyProvider*, const GrBackendFormat& format, GrColorType, int width,
                   int height, int plotWidth, int plotHeight, GenerationCounter* generationCounter,
+#ifdef SK_ENABLE_SMALL_PAGE
+                  AllowMultitexturing allowMultitexturing, int atlasPageNum);
+#else
                   AllowMultitexturing allowMultitexturing);
+#endif
 
     /**
      * The backing GrTexture for a GrDrawOpAtlas is broken into a spatial grid of Plots. The Plots
@@ -483,6 +523,9 @@ private:
     bool createPages(GrProxyProvider*, GenerationCounter*);
     bool activateNewPage(GrResourceProvider*);
     void deactivateLastPage();
+#ifdef SK_ENABLE_SMALL_PAGE
+    void compactRadicals(GrDeferredUploadToken startTokenForNextFlush);
+#endif
 
     void processEviction(PlotLocator);
     inline void processEvictionAndResetRects(Plot* plot) {
@@ -522,6 +565,10 @@ private:
 
     uint32_t fNumActivePages;
 
+#ifdef SK_ENABLE_SMALL_PAGE
+    bool fUseRadicalsCompact = false;
+#endif
+
     SkDEBUGCODE(void validate(const AtlasLocator& atlasLocator) const;)
 };
 
@@ -541,6 +588,10 @@ public:
 
     SkISize atlasDimensions(GrMaskFormat type) const;
     SkISize plotDimensions(GrMaskFormat type) const;
+#ifdef SK_ENABLE_SMALL_PAGE
+    SkISize getARGBDimensions(){ return fARGBDimensions; }
+    int resetAsSmallPage();
+#endif
 
 private:
     // On some systems texture coordinates are represented using half-precision floating point,
