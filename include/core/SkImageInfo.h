@@ -706,6 +706,18 @@ public:
         SK_DEBUG is defined at compile time.
     */
     SkDEBUGCODE(void validate() const;)
+ 
+    void dump(std::string &desc, int depth) const
+    {
+        std::string split(depth, '\t');
+        desc += split + "\n SkImageInfo:{ \n";
+        desc += split + "\t fColorSpace: Omit\n";
+        desc += split + "\t fDimensions:{fWidth:" + std::to_string(fDimensions.fWidth) +
+            " fHeight:" + std::to_string(fDimensions.fHeight) + "}\n";
+        desc += split + "\t fColorType: " + std::to_string(static_cast<int>(fColorType)) + "\n";
+        desc += split + "\t fAlphaType: " + std::to_string(static_cast<int>(fAlphaType)) + "\n";
+        desc += split + "}\n";
+    }
 
 private:
     SkColorInfo fColorInfo;

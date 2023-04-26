@@ -8,6 +8,7 @@
 #ifndef SkTextBlob_DEFINED
 #define SkTextBlob_DEFINED
 
+#include <string>
 #include "include/core/SkFont.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkRefCnt.h"
@@ -226,7 +227,7 @@ public:
     private:
         const RunRecord* fRunRecord;
     };
-
+    void dump(std::string &desc, int depth) const;
 private:
     friend class SkNVRefCnt<SkTextBlob>;
 

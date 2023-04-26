@@ -606,6 +606,8 @@ public:
     */
     size_t readFromMemory(const void* buffer, size_t length);
 
+    void dump(std::string &desc, int depth) const;
+
 private:
     static constexpr int kOpCount = kReplace_Op + 1;
 

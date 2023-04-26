@@ -470,7 +470,7 @@ public:
         SkRRect from output.
     */
     void dump() const { this->dump(false); }
-
+    void dump(std::string& desc, int depth) const;
     /** Writes text representation of SkRRect to standard output. The representation
         may be directly compiled as C++ code. Floating point values are written
         in hexadecimal to preserve their exact bit pattern. The output reconstructs the

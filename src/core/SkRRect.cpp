@@ -638,6 +638,20 @@ SkString SkRRect::dumpToString(bool asHex) const {
 
 void SkRRect::dump(bool asHex) const { SkDebugf("%s\n", this->dumpToString(asHex).c_str()); }
 
+void SkRRect::dump(std::string &desc, int depth) const {
+    std::string split(depth, '\t');
+    desc += split + "\n SkRRect:{ \n";
+
+    fRect.dump(desc, depth + 1);
+    desc += split + "\t const SkPoint corners[] = {\n";
+    for (int i = 0; i < 4; ++i) {
+        fRadii[i].dump(desc, depth + 1);
+    }
+    desc += split + "\t}\n";
+    desc += split + "\t fType:" + std::to_string(fType) + "\n";
+    desc += split + "}\n";
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**

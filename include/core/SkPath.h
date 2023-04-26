@@ -7,7 +7,7 @@
 
 #ifndef SkPath_DEFINED
 #define SkPath_DEFINED
-
+#include <string>
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPathTypes.h"
 #include "include/private/SkPathRef.h"
@@ -1521,7 +1521,7 @@ public:
 
         Verb autoClose(SkPoint pts[2]);
     };
-
+    void dump(std::string &desc, int depth) const;
 private:
     /** \class SkPath::RangeIter
         Iterates through a raw range of path verbs, points, and conics. All values are returned
