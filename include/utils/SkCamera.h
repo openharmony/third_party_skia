@@ -82,12 +82,10 @@ public:
     void rotateY(SkScalar deg);
     void rotateZ(SkScalar deg);
 
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
     void setCameraLocation(SkScalar x, SkScalar y, SkScalar z);
     SkScalar getCameraLocationX() const;
     SkScalar getCameraLocationY() const;
     SkScalar getCameraLocationZ() const;
-#endif
 
     void getMatrix(SkMatrix*) const;
     void applyToCanvas(SkCanvas*) const;

@@ -285,12 +285,12 @@ config("default") {
     }
   }
 
-  if (sanitize != "" && sanitize != "MSVC") {
+  if (sanitize_skia != "" && sanitize_skia != "MSVC") {
     # You can either pass the sanitizers directly, e.g. "address,undefined",
     # or pass one of the couple common aliases used by the bots.
-    sanitizers = sanitize
+    sanitizers = sanitize_skia
 
-    if (sanitize == "ASAN") {
+    if (sanitize_skia == "ASAN") {
       # ASAN implicitly runs all UBSAN checks also.
       sanitizers = "undefined,address"
 
@@ -298,11 +298,11 @@ config("default") {
         # TODO(mtklein): work out UBSAN link errors
         sanitizers = "address"
       }
-    } else if (sanitize == "HWASAN") {
+    } else if (sanitize_skia == "HWASAN") {
       sanitizers = "hwaddress"
-    } else if (sanitize == "TSAN") {
+    } else if (sanitize_skia == "TSAN") {
       sanitizers = "thread"
-    } else if (sanitize == "MSAN") {
+    } else if (sanitize_skia == "MSAN") {
       sanitizers = "memory"
     }
 
@@ -588,7 +588,7 @@ config("debug_symbols") {
 }
 
 config("no_rtti") {
-  if (sanitize != "ASAN") {  # -fsanitize=vptr requires RTTI
+  if (sanitize_skia != "ASAN") {  # -fsanitize=vptr requires RTTI
     if (is_win) {
       cflags_cc = [ "/GR-" ]
     } else {

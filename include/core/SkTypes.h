@@ -20,7 +20,7 @@
 #define SK_NOTHING_ARG3(arg1, arg2, arg3)
 
 #if !defined(SK_BUILD_FOR_ANDROID) && !defined(SK_BUILD_FOR_IOS) && !defined(SK_BUILD_FOR_WIN) && \
-    !defined(SK_BUILD_FOR_UNIX) && !defined(SK_BUILD_FOR_MAC) && !defined(SK_BUILD_FOR_OHOS)
+    !defined(SK_BUILD_FOR_UNIX) && !defined(SK_BUILD_FOR_MAC)
 
     #ifdef __APPLE__
         #include <TargetConditionals.h>
@@ -276,8 +276,11 @@
 #  else
 #    define SK_DUMP_LINE_FORMAT "%s:%d"
 #  endif
-#  ifdef SK_BUILD_FOR_OHOS
-#    define SK_ABORT(message, ...)
+#  ifndef SK_BUILD_FOR_OHOS
+#    define SK_ABORT(message, ...) \
+        do { \
+            sk_abort_no_print(); \
+        } while (false)
 #  else
 #    define SK_ABORT(message, ...) \
         do { \
@@ -457,7 +460,7 @@
 [[noreturn]] SK_API extern void sk_abort_no_print(void);
 
 #ifndef SkDebugf
-    SK_API void SkDebugf(const char format[], ...) SK_PRINTF_LIKE(1, 2);
+    extern SK_API void SkDebugf(const char format[], ...) SK_PRINTF_LIKE(1, 2);
 #endif
 
 // SkASSERT, SkASSERTF and SkASSERT_RELEASE can be used as stand alone assertion expressions, e.g.
@@ -491,10 +494,9 @@
     #define SkDEBUGFAILF(fmt, ...)
     #define SkDEBUGCODE(...)
     #define SkDEBUGF(...)
-    #ifdef SK_BUILD_FOR_OHOS
+    #ifndef SK_BUILD_FOR_OHOS
         #define SkDebugf(...)
     #endif
-
     // unlike SkASSERT, this macro executes its condition in the non-debug build.
     // The if is present so that this can be used with functions marked SK_WARN_UNUSED_RESULT.
     #define SkAssertResult(cond)         if (cond) {} do {} while(false)
