@@ -84,7 +84,7 @@ template("third_party") {
       if (is_debug) {
         configs += [ "${skia_root_dir}/gn/skia:optimize" ]
       }
-      if (sanitize == "ASAN") {
+      if (sanitize_skia == "ASAN") {
         configs += [ "${skia_root_dir}/gn/skia:recover_pointer_overflow" ]
       }
 

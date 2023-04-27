@@ -1,6 +1,9 @@
 # Copyright 2019 Google LLC.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
+import("../../gn/oh_skia.gni")
+
 _src = "../externals/icu/source"
 icu_sources = [
   "$_src/common/appendable.cpp",
@@ -868,7 +871,8 @@ icu_sources = [
   "$_src/i18n/ztrans.h",
 ]
 
-if (defined(build_cross_platform_version) && build_cross_platform_version) {
+if ((defined(build_cross_platform_version) && build_cross_platform_version) ||
+    use_oh_skia) {
   icu_sources += [
     "$_src/i18n/double-conversion-double-to-string.cpp",
     "$_src/i18n/double-conversion-string-to-double.cpp",

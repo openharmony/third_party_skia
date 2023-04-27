@@ -1,0 +1,52 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+skia_common_defines = [
+  "SK_HAS_ANDROID_CODEC",
+  "SK_CODEC_DECODES_JPEG",
+  "SK_ENCODE_JPEG",
+  "SK_ENCODE_PNG",
+  "SK_CODEC_DECODES_PNG",
+  "SK_CODEC_DECODES_WEBP",
+  "SK_ENCODE_WEBP",
+  "SK_GL",
+  "SK_USE_LIBGIFCODEC",
+  "SK_HAS_HEIF_LIBRARY",
+  "SK_XML",
+  "WEBP_SWAP_16BIT_CSP",
+  "SK_ENABLE_SVG",
+  "SKSHAPER_IMPLEMENTATION=1",
+  "SK_SHAPER_HARFBUZZ_AVAILABLE",
+  "SK_UNICODE_AVAILABLE",
+  "SKUNICODE_IMPLEMENTATION=1",
+  "SK_SUPPORT_PDF",
+]
+
+skia_common_cflags = [
+  "-Wno-deprecated-declarations",
+  "-Wno-pessimizing-move",
+  "-Wno-return-type",
+  "-Wno-sign-compare",
+  "-Wno-sometimes-uninitialized",
+  "-Wno-unknown-pragmas",
+  "-Wno-unused-function",
+  "-Wno-unused-private-field",
+  "-Wno-unused-variable",
+  "-Wno-c++17-extensions",
+  "-Wno-unknown-warning-option",
+]
+
+declare_args() {
+  use_oh_skia = true
+  skia_use_freetype2 = true
+}

@@ -12,6 +12,10 @@
 #include "include/core/SkFontStyle.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
+#if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
+    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
+#include <string>
+#endif
 
 class SkData;
 class SkFontData;
@@ -41,6 +45,17 @@ public:
     void getFamilyName(int index, SkString* familyName) const;
     SkFontStyleSet* createStyleSet(int index) const;
 
+#if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
+    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
+    /**
+     * OHOS_Container font base path. It is empty when using OpenHarmony fonts.
+     */
+    static std::string containerFontPath;
+    /**
+     * Indicate the runtimeOS of preview(OHOS_Container and OHOS)
+     */
+    static std::string runtimeOS;
+#endif
     /**
      *  The caller must call unref() on the returned object.
      *  Never returns NULL; will return an empty set if the name is not found.
@@ -116,6 +131,16 @@ public:
 
     /** Return the default fontmgr. */
     static sk_sp<SkFontMgr> RefDefault();
+
+#if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
+    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
+    /** Set the runtimeOS and container font base path */
+    static void SetFontMgrConfig(const std::string runtime, const std::string containerFontBasePath)
+    {
+        containerFontPath = containerFontBasePath;
+        runtimeOS = runtime;
+    }
+#endif
 
 protected:
     virtual int onCountFamilies() const = 0;
