@@ -36,6 +36,7 @@ public:
         Builder& setResourceProvider(sk_sp<skresources::ResourceProvider>);
 
         sk_sp<SkSVGDOM> make(SkStream&) const;
+        sk_sp<SkSVGDOM> make(SkStream&, uint64_t) const;
 
     private:
         sk_sp<SkFontMgr>                     fFontMgr;
@@ -44,6 +45,10 @@ public:
 
     static sk_sp<SkSVGDOM> MakeFromStream(SkStream& str) {
         return Builder().make(str);
+    }
+
+    static sk_sp<SkSVGDOM> MakeFromStream(SkStream&str, uint64_t svgColor) {
+        return Builder().make(str, svgColor);
     }
 
     /**
