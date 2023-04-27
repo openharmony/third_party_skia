@@ -11,8 +11,8 @@
 
 class SkSVGXMLDOM : public SkDOM {
 public:
-    typedef SkDOMNode Node;
-    typedef SkDOMAttr Attr;
+    using SkDOMNode = Node;
+    using SkDOMAttr = Attr;
 
     SkSVGXMLDOM() = default;
     ~SkSVGXMLDOM() override = default;
@@ -25,6 +25,6 @@ public:
     SkXMLParser* beginParsing() override;
 private:
     // for pure color svg
-    uint64_t fSvgThemeColor = 0;
+    uint64_t fSvgThemeColor {0};
 };
 #endif

@@ -40,7 +40,7 @@ protected:
         return false;
     }
 
-    bool setSVGColorAndOpacity(
+    bool setSVGColor(
         SkDOM::Attr* attr, const char name[], const char value[], const SkColorEx& svgThemeColor) {
         if (svgThemeColor.valid && (((strcmp(name, "fill") == 0) && (strcmp(value, "none") != 0)) ||
             ((strcmp(name, "stroke") == 0) && (strcmp(value, "none") != 0))) && isPureColor(value)) {
@@ -76,7 +76,7 @@ protected:
         attr->fName = dupstr(fAlloc, name, strlen(name));
         SkColorEx svgThemeColor;
         svgThemeColor.value = fSvgThemeColor;
-        if (!setSVGColorAndOpacity(attr, name, value, svgThemeColor)) {
+        if (!setSVGColor(attr, name, value, svgThemeColor)) {
             return false;
         }
         attr->fValue = dupstr(fAlloc, value, strlen(value));
@@ -87,7 +87,7 @@ protected:
                 for (auto& arr: styleClassMap) {
                     SkDOM::Attr* attr = fAttrs.append();
                     attr->fName = dupstr(fAlloc, arr.first.c_str(), strlen(arr.first.c_str()));
-                    if (!setSVGColorAndOpacity(attr, attr->fName, arr.second.c_str(), svgThemeColor)) {
+                    if (!setSVGColor(attr, attr->fName, arr.second.c_str(), svgThemeColor)) {
                         continue;
                     }
                     attr->fValue = dupstr(fAlloc, arr.second.c_str(), strlen(arr.second.c_str()));
@@ -128,7 +128,7 @@ protected:
         if (pos != std::string::npos) {
             color = color.substr(pos);
         }
-        // 6 is length of "url(#\0"
+        // 6 is least length of "url(#..." of a valid color value, 5 is to get the "url(#"
         if (color.length() > 6 && color.substr(0, 5) == "url(#") {
             return false;
         }

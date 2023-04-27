@@ -19,7 +19,7 @@ const std::unordered_map<std::string, std::string>& CssStyleParser::getArributes
 
 void CssStyleParser::parseCssStyle(const std::string& style)
 {
-    // begin from 1 to skip first '.'
+    // begin from 1 to skip first '.'for example: ".cls-1{fill:#843dd1;}"
     auto styles = splitString(style.substr(1), "}.");
     for (auto& style : styles) {
         auto nameEnd = style.find_first_of('{');
@@ -34,6 +34,7 @@ void CssStyleParser::parseCssStyle(const std::string& style)
             for (auto& splitName : splitNames) {
                 for (auto& attribute : attributesVector) {
                     auto arrPair = splitString(attribute, ":");
+                    // 2 means stye is a kind of key: value, for example a color stype: "fill:#843dd1"
                     if (arrPair.size() == 2) {
                         auto arrMapIter = fStyleMap.find(splitName);
                         if (arrMapIter == fStyleMap.end()) {
