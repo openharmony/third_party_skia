@@ -13,6 +13,7 @@
 #if defined(SK_BUILD_FOR_WIN)
 #include "include/ports/SkTypeface_win.h"
 #endif
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS();
 
 namespace CommonFlags {
 
@@ -26,14 +27,7 @@ static DEFINE_bool(gdi, false, "Use GDI instead of DirectWrite for font renderin
 #endif
 
 void SetDefaultFontMgr() {
-    if (!FLAGS_nativeFonts) {
-        gSkFontMgr_DefaultFactory = &ToolUtils::MakePortableFontMgr;
-    }
-#if defined(SK_BUILD_FOR_WIN)
-    if (FLAGS_gdi) {
-        gSkFontMgr_DefaultFactory = &SkFontMgr_New_GDI;
-    }
-#endif
+    gSkFontMgr_DefaultFactory = &SkFontMgr_New_OHOS;
 }
 
 }

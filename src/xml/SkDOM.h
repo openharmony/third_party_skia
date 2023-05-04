@@ -14,30 +14,50 @@
 #include "include/private/SkTemplates.h"
 #include "src/core/SkArenaAlloc.h"
 
-struct SkDOMNode;
-struct SkDOMAttr;
-
 class SkDOMParser;
 class SkStream;
 class SkXMLParser;
 
+struct SkDOMAttr {
+    const char* fName;
+    const char* fValue;
+};
+
+struct SkDOMNode {
+    const char* fName;
+    SkDOMNode*  fFirstChild;
+    SkDOMNode*  fNextSibling;
+    SkDOMAttr*  fAttrs;
+    uint16_t    fAttrCount;
+    uint8_t     fType;
+    uint8_t     fPad;
+
+    const SkDOMAttr* attrs() const {
+        return fAttrs;
+    }
+
+    SkDOMAttr* attrs() {
+        return fAttrs;
+    }
+};
+
 class SkDOM : public SkNoncopyable {
 public:
     SkDOM();
-    ~SkDOM();
+    virtual ~SkDOM();
 
     typedef SkDOMNode Node;
     typedef SkDOMAttr Attr;
-
+    static void walk_dom(const SkDOM& dom, const SkDOM::Node* node, SkXMLParser* parser);
     /** Returns null on failure
     */
-    const Node* build(SkStream&);
-    const Node* copy(const SkDOM& dom, const Node* node);
+    virtual const Node* build(SkStream&);
+
+    virtual const Node* copy(const SkDOM& dom, const Node* node);
+    virtual SkXMLParser* beginParsing();
+    virtual const Node* finishParsing();
 
     const Node* getRootNode() const;
-
-    SkXMLParser* beginParsing();
-    const Node* finishParsing();
 
     enum Type {
         kElement_Type,
@@ -84,7 +104,7 @@ public:
         const Attr* fStop;
     };
 
-private:
+protected:
     SkArenaAllocWithReset        fAlloc;
     Node*                        fRoot;
     std::unique_ptr<SkDOMParser> fParser;

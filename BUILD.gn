@@ -1319,6 +1319,7 @@ optional("xml") {
     "src/svg/SkSVGCanvas.cpp",
     "src/svg/SkSVGDevice.cpp",
     "src/xml/SkDOM.cpp",
+    "src/xml/SkDOMParser.cpp",
     "src/xml/SkXMLParser.cpp",
     "src/xml/SkXMLWriter.cpp",
   ]
@@ -1437,6 +1438,7 @@ if (use_oh_skia) {
     cflags = skia_common_cflags
     configs = [ ":skia_private" ]
     sources = [
+      "${skia_modules_dir}/svg/src/CssStyleParser.cpp",
       "${skia_modules_dir}/svg/src/SkSVGAttribute.cpp",
       "${skia_modules_dir}/svg/src/SkSVGAttributeParser.cpp",
       "${skia_modules_dir}/svg/src/SkSVGCircle.cpp",
@@ -1479,6 +1481,7 @@ if (use_oh_skia) {
       "${skia_modules_dir}/svg/src/SkSVGTransformableNode.cpp",
       "${skia_modules_dir}/svg/src/SkSVGUse.cpp",
       "${skia_modules_dir}/svg/src/SkSVGValue.cpp",
+      "${skia_modules_dir}/svg/src/SkSVGXMLDOM.cpp",
     ]
   }
 }
