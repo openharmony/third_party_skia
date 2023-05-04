@@ -1946,7 +1946,7 @@ void SkPath::dump(SkWStream* wStream, bool dumpAsHex) const {
         wStream->writeText(builder.c_str());
     }
 }
- 
+
 void SkPath::dump(std::string &desc, int depth) const {
     std::string split(depth, '\t');
     desc += split + "\n SkPath:{ \n";

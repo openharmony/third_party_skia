@@ -99,7 +99,7 @@ public:
     // Provides access to functions that aren't part of the public API.
     SkVerticesPriv priv();
     const SkVerticesPriv priv() const;  // NOLINT(readability-const-return-type)
- 
+
     void dump(std::string &desc, int depth) const
     {
         std::string split(depth, '\t');
