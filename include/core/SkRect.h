@@ -31,15 +31,7 @@ struct SK_API SkIRect {
     int32_t fRight;  //!< larger x-axis bounds
     int32_t fBottom; //!< larger y-axis bounds
 
-    void dump(std::string& desc, int depth) const {
-        std::string split(depth, '\t');
-        desc += split + "\n SkIRect:{ \n";
-        desc += split + "\t fLeft:" + std::to_string(fLeft) + "\n";
-        desc += split + "\t fTop:" + std::to_string(fTop) + "\n";
-        desc += split + "\t fRight:" + std::to_string(fRight) + "\n";
-        desc += split + "\t fBottom:" + std::to_string(fBottom) + "\n";
-        desc += split + "}\n";
-    }
+    void dump(std::string& desc, int depth) const;
     /** Returns constructed SkIRect set to (0, 0, 0, 0).
         Many other rectangles are empty; if left is equal to or greater than right,
         or if top is equal to or greater than bottom. Setting all members to zero

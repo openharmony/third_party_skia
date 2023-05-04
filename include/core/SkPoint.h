@@ -162,14 +162,7 @@ struct SK_API SkPoint {
     SkScalar fX; //!< x-axis value
     SkScalar fY; //!< y-axis value
 
-    void dump(std::string &desc, int depth) const
-    {
-        std::string split(depth, '\t');
-        desc += split + "\n SkPoint:{ \n";
-        desc += split + "\t fX: " + std::to_string(fX) + "\n";
-        desc += split + "\t fY: " + std::to_string(fY) + "\n";
-        desc += split + "}\n";
-    }
+    void dump(std::string &desc, int depth) const;
 
     /** Sets fX to x, fY to y. Used both to set SkPoint and vector.
 

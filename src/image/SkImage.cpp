@@ -629,6 +629,14 @@ sk_sp<SkImage> SkImage::reinterpretColorSpace(sk_sp<SkColorSpace> target) const 
     return as_IB(this)->onReinterpretColorSpace(std::move(target));
 }
 
+void SkImage::dump(std::string &desc, int depth) const {
+    std::string split(depth, '\t');
+    desc += split + "\n SkImage:{ \n";
+    fInfo.dump(desc, depth + 1);
+    desc += split + "\t fUniqueID: " + std::to_string(fUniqueID) + "\n";
+    desc += split + "}\n";
+}
+
 sk_sp<SkImage> SkImage::makeNonTextureImage() const {
     if (!this->isTextureBacked()) {
         return sk_ref_sp(const_cast<SkImage*>(this));
