@@ -227,7 +227,7 @@ public:
     private:
         const RunRecord* fRunRecord;
     };
-    void dump(std::string &desc, int depth) const;
+    void dump(std::string& desc, int depth) const;
 private:
     friend class SkNVRefCnt<SkTextBlob>;
 

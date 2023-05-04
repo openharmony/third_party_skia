@@ -75,7 +75,7 @@ SkImageInfo SkImageInfo::MakeS32(int width, int height, SkAlphaType at) {
     return SkImageInfo({width, height}, {kN32_SkColorType, at, SkColorSpace::MakeSRGB()});
 }
 
-void SkImageInfo::dump(std::string &desc, int depth) const {
+void SkImageInfo::dump(std::string& desc, int depth) const {
     std::string split(depth, '\t');
     desc += split + "\n SkImageInfo:{ \n";
     desc += split + "\t fColorSpace: Omit\n";

@@ -23,7 +23,7 @@ static inline bool is_length_nearly_zero(float x, float y, float z, float *lengt
     return *lengthSquared <= (SK_ScalarNearlyZero * SK_ScalarNearlyZero);
 }
 
-void SkPoint3::dump(std::string &desc, int depth) const {
+void SkPoint3::dump(std::string& desc, int depth) const {
     std::string split(depth, '\t');
     desc += split + "\n SkPoint3:{ \n";
     desc += split + "\t fX: " + std::to_string(fX) + "\n";

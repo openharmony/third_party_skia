@@ -100,7 +100,7 @@ public:
     SkVerticesPriv priv();
     const SkVerticesPriv priv() const;  // NOLINT(readability-const-return-type)
 
-    void dump(std::string &desc, int depth) const;
+    void dump(std::string& desc, int depth) const;
 
 private:
     SkVertices() {}

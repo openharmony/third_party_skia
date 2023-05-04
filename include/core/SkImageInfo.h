@@ -707,7 +707,7 @@ public:
     */
     SkDEBUGCODE(void validate() const;)
 
-    void dump(std::string &desc, int depth) const;
+    void dump(std::string& desc, int depth) const;
 
 private:
     SkColorInfo fColorInfo;

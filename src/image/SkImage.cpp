@@ -629,7 +629,7 @@ sk_sp<SkImage> SkImage::reinterpretColorSpace(sk_sp<SkColorSpace> target) const 
     return as_IB(this)->onReinterpretColorSpace(std::move(target));
 }
 
-void SkImage::dump(std::string &desc, int depth) const {
+void SkImage::dump(std::string& desc, int depth) const {
     std::string split(depth, '\t');
     desc += split + "\n SkImage:{ \n";
     fInfo.dump(desc, depth + 1);

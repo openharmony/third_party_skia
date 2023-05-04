@@ -638,7 +638,7 @@ SkString SkRRect::dumpToString(bool asHex) const {
 
 void SkRRect::dump(bool asHex) const { SkDebugf("%s\n", this->dumpToString(asHex).c_str()); }
 
-void SkRRect::dump(std::string &desc, int depth) const {
+void SkRRect::dump(std::string& desc, int depth) const {
     std::string split(depth, '\t');
     desc += split + "\n SkRRect:{ \n";
 

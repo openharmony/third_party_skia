@@ -1255,7 +1255,7 @@ public:
     */
     sk_sp<SkImage> reinterpretColorSpace(sk_sp<SkColorSpace> newColorSpace) const;
 
-    void dump(std::string &desc, int depth) const;
+    void dump(std::string& desc, int depth) const;
 
 private:
     SkImage(const SkImageInfo& info, uint32_t uniqueID);

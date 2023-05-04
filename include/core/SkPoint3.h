@@ -19,7 +19,7 @@ struct SK_API SkPoint3 {
         return pt;
     }
 
-    void dump(std::string &desc, int depth) const;
+    void dump(std::string& desc, int depth) const;
 
     SkScalar x() const { return fX; }
     SkScalar y() const { return fY; }

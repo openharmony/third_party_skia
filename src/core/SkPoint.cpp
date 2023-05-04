@@ -9,7 +9,7 @@
 #include "src/core/SkPointPriv.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-void SkPoint::dump(std::string &desc, int depth) const {
+void SkPoint::dump(std::string& desc, int depth) const {
     std::string split(depth, '\t');
     desc += split + "\n SkPoint:{ \n";
     desc += split + "\t fX: " + std::to_string(fX) + "\n";

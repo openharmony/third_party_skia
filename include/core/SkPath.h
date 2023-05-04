@@ -1521,7 +1521,7 @@ public:
 
         Verb autoClose(SkPoint pts[2]);
     };
-    void dump(std::string &desc, int depth) const;
+    void dump(std::string& desc, int depth) const;
 private:
     /** \class SkPath::RangeIter
         Iterates through a raw range of path verbs, points, and conics. All values are returned

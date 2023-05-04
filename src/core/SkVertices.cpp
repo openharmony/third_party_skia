@@ -226,7 +226,7 @@ SkVertices::Sizes SkVertices::getSizes() const {
     SkASSERT(sizes.isValid());
     return sizes;
 }
-void SkVertices::dump(std::string &desc, int depth) const {
+void SkVertices::dump(std::string& desc, int depth) const {
     std::string split(depth, '\t');
     desc += split + "\n SkVertices:{ \n";
     desc += split + "\t fUniqueID: " + std::to_string(fUniqueID) + "\n";

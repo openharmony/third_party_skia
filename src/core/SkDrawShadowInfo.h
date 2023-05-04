@@ -25,8 +25,7 @@ struct SkDrawShadowRec {
     SkColor     fSpotColor;
     uint32_t    fFlags;
 
-    void dump(std::string &desc, int depth) const
-    {
+    void dump(std::string& desc, int depth) const {
         std::string split(depth, '\t');
         desc += split + "\n SkDrawShadowRec:{ \n";
         fZPlaneParams.dump(desc, depth + 1);

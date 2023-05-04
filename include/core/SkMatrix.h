@@ -1667,7 +1667,7 @@ public:
         example: https://fiddle.skia.org/c/@Matrix_dump
     */
     void dump() const;
-    void dump(std::string &desc, int depth) const;
+    void dump(std::string& desc, int depth) const;
     /** Returns the minimum scaling factor of SkMatrix by decomposing the scaling and
         skewing elements.
         Returns -1 if scale factor overflows or SkMatrix contains perspective.
