@@ -59,7 +59,7 @@ static constexpr uint32_t GrGLFormatChannels(GrGLFormat format) {
         case GrGLFormat::kCOMPRESSED_RGB8_ETC2:  return kRGB_SkColorChannelFlags;
         case GrGLFormat::kCOMPRESSED_RGB8_BC1:   return kRGB_SkColorChannelFlags;
         case GrGLFormat::kCOMPRESSED_RGBA8_BC1:  return kRGBA_SkColorChannelFlags;
-        case GrGLFormat::kCOMPRESSED_ASTC_RGB8:  return kRGB_SkColorChannelFlags;
+        case GrGLFormat::kCOMPRESSED_ASTC_RGBA8: return kRGB_SkColorChannelFlags;
         case GrGLFormat::kR16:                   return kRed_SkColorChannelFlag;
         case GrGLFormat::kRG16:                  return kRG_SkColorChannelFlags;
         case GrGLFormat::kRGBA16:                return kRGBA_SkColorChannelFlags;
@@ -120,7 +120,7 @@ static constexpr GrColorFormatDesc GrGLFormatDesc(GrGLFormat format) {
         case GrGLFormat::kCOMPRESSED_RGB8_ETC2: return GrColorFormatDesc::MakeInvalid();
         case GrGLFormat::kCOMPRESSED_RGB8_BC1:  return GrColorFormatDesc::MakeInvalid();
         case GrGLFormat::kCOMPRESSED_RGBA8_BC1: return GrColorFormatDesc::MakeInvalid();
-        case GrGLFormat::kCOMPRESSED_ASTC_RGB8: return GrColorFormatDesc::MakeInvalid();
+        case GrGLFormat::kCOMPRESSED_ASTC_RGBA8:return GrColorFormatDesc::MakeInvalid();
 
         // This type only describes color channels.
         case GrGLFormat::kSTENCIL_INDEX8:   return GrColorFormatDesc::MakeInvalid();
@@ -394,7 +394,7 @@ static constexpr GrGLFormat GrGLFormatFromGLEnum(GrGLenum glFormat) {
         case GR_GL_COMPRESSED_RGB8_ETC2: return GrGLFormat::kCOMPRESSED_RGB8_ETC2;
         case GR_GL_COMPRESSED_RGB_S3TC_DXT1_EXT: return GrGLFormat::kCOMPRESSED_RGB8_BC1;
         case GR_GL_COMPRESSED_RGBA_S3TC_DXT1_EXT: return GrGLFormat::kCOMPRESSED_RGBA8_BC1;
-        case GR_GL_COMPRESSED_RGBA_ASTC_4x4: return GrGLFormat::kCOMPRESSED_ASTC_RGB8;
+        case GR_GL_COMPRESSED_RGBA_ASTC_4x4: return GrGLFormat::kCOMPRESSED_ASTC_RGBA8;
         case GR_GL_R16:                  return GrGLFormat::kR16;
         case GR_GL_RG16:                 return GrGLFormat::kRG16;
         case GR_GL_RGBA16:               return GrGLFormat::kRGBA16;
@@ -430,7 +430,7 @@ static constexpr GrGLenum GrGLFormatToEnum(GrGLFormat format) {
         case GrGLFormat::kCOMPRESSED_RGB8_ETC2: return GR_GL_COMPRESSED_RGB8_ETC2;
         case GrGLFormat::kCOMPRESSED_RGB8_BC1:  return GR_GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
         case GrGLFormat::kCOMPRESSED_RGBA8_BC1: return GR_GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-        case GrGLFormat::kCOMPRESSED_ASTC_RGB8: return GR_GL_COMPRESSED_RGBA_ASTC_4x4;
+        case GrGLFormat::kCOMPRESSED_ASTC_RGBA8:return GR_GL_COMPRESSED_RGBA_ASTC_4x4;
         case GrGLFormat::kR16:                  return GR_GL_R16;
         case GrGLFormat::kRG16:                 return GR_GL_RG16;
         case GrGLFormat::kRGBA16:               return GR_GL_RGBA16;
@@ -465,7 +465,7 @@ static constexpr size_t GrGLFormatBytesPerBlock(GrGLFormat format) {
         case GrGLFormat::kCOMPRESSED_RGB8_ETC2: return 8;
         case GrGLFormat::kCOMPRESSED_RGB8_BC1:  return 8;
         case GrGLFormat::kCOMPRESSED_RGBA8_BC1: return 8;
-        case GrGLFormat::kCOMPRESSED_ASTC_RGB8: return 8;
+        case GrGLFormat::kCOMPRESSED_ASTC_RGBA8:return 16;
         case GrGLFormat::kR16:                  return 2;
         case GrGLFormat::kRG16:                 return 4;
         case GrGLFormat::kRGBA16:               return 8;
@@ -490,7 +490,7 @@ static constexpr int GrGLFormatStencilBits(GrGLFormat format) {
         case GrGLFormat::kCOMPRESSED_RGB8_ETC2:
         case GrGLFormat::kCOMPRESSED_RGB8_BC1:
         case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
-        case GrGLFormat::kCOMPRESSED_ASTC_RGB8:
+        case GrGLFormat::kCOMPRESSED_ASTC_RGBA8:
         case GrGLFormat::kRGBA8:
         case GrGLFormat::kR8:
         case GrGLFormat::kALPHA8:
@@ -524,7 +524,7 @@ static constexpr bool GrGLFormatIsPackedDepthStencil(GrGLFormat format) {
         case GrGLFormat::kCOMPRESSED_RGB8_ETC2:
         case GrGLFormat::kCOMPRESSED_RGB8_BC1:
         case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
-        case GrGLFormat::kCOMPRESSED_ASTC_RGB8:
+        case GrGLFormat::kCOMPRESSED_ASTC_RGBA8:
         case GrGLFormat::kRGBA8:
         case GrGLFormat::kR8:
         case GrGLFormat::kALPHA8:
@@ -560,7 +560,7 @@ static constexpr bool GrGLFormatIsSRGB(GrGLFormat format) {
     case GrGLFormat::kCOMPRESSED_RGB8_ETC2:
     case GrGLFormat::kCOMPRESSED_RGB8_BC1:
     case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
-    case GrGLFormat::kCOMPRESSED_ASTC_RGB8:
+    case GrGLFormat::kCOMPRESSED_ASTC_RGBA8:
     case GrGLFormat::kRGBA8:
     case GrGLFormat::kR8:
     case GrGLFormat::kALPHA8:

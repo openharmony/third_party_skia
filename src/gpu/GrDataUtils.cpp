@@ -165,7 +165,7 @@ size_t GrNumBlocks(SkImage::CompressionType type, SkISize baseDimensions) {
         case SkImage::CompressionType::kETC2_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGBA8_UNORM:
-        case SkImage::CompressionType::kASTC_RGB8_UNORM: {
+        case SkImage::CompressionType::kASTC_RGBA8_UNORM: {
             int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
             int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
 
@@ -182,7 +182,7 @@ size_t GrCompressedRowBytes(SkImage::CompressionType type, int width) {
         case SkImage::CompressionType::kETC2_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGBA8_UNORM:
-        case SkImage::CompressionType::kASTC_RGB8_UNORM: {
+        case SkImage::CompressionType::kASTC_RGBA8_UNORM: {
             int numBlocksWidth = num_4x4_blocks(width);
 
             static_assert(sizeof(ETC1Block) == sizeof(BC1Block));
@@ -199,7 +199,7 @@ SkISize GrCompressedDimensions(SkImage::CompressionType type, SkISize baseDimens
         case SkImage::CompressionType::kETC2_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGBA8_UNORM:
-        case SkImage::CompressionType::kASTC_RGB8_UNORM: {
+        case SkImage::CompressionType::kASTC_RGBA8_UNORM: {
             int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
             int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
 

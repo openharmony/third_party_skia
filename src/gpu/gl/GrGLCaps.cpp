@@ -2863,7 +2863,7 @@ void GrGLCaps::initFormatTable(const GrGLContextInfo& ctxInfo, const GrGLInterfa
 
     // Format: COMPRESSED_ASTC_RGB8
     {
-        FormatInfo& info = this->getFormatInfo(GrGLFormat::kCOMPRESSED_ASTC_RGB8);
+        FormatInfo& info = this->getFormatInfo(GrGLFormat::kCOMPRESSED_ASTC_RGBA8);
         info.fFormatType = FormatType::kNormalizedFixedPoint;
         //info.fBaseInternalFormat = GR_GL_RGB;
         info.fDefaultExternalFormat = GR_GL_RGB;
@@ -4695,7 +4695,7 @@ GrBackendFormat GrGLCaps::getBackendFormatFromCompressionType(
                                                GR_GL_TEXTURE_2D);
             }
             return {};
-        case SkImage::CompressionType::kASTC_RGB8_UNORM:
+        case SkImage::CompressionType::kASTC_RGBA8_UNORM:
             if (this->isFormatTexturable(GrGLFormat::kCOMPRESSED_ASTC_RGB8)) {
                 return GrBackendFormat::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_4x4,
                                                GR_GL_TEXTURE_2D);
