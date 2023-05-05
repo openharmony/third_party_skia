@@ -31,6 +31,11 @@ struct SK_API SkIRect {
     int32_t fRight;  //!< larger x-axis bounds
     int32_t fBottom; //!< larger y-axis bounds
 
+    /** Writes text representation of SkIRect to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
     void dump(std::string& desc, int depth) const;
     /** Returns constructed SkIRect set to (0, 0, 0, 0).
         Many other rectangles are empty; if left is equal to or greater than right,
@@ -1353,7 +1358,13 @@ public:
     */
     void dump(bool asHex) const;
 
+    /** Writes text representation of SkRect to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
     void dump(std::string& desc, int depth) const;
+
     /** Writes text representation of SkRect to standard output. The representation may be
         directly compiled as C++ code. Floating point values are written
         with limited precision; it may not be possible to reconstruct original SkRect

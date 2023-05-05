@@ -1521,7 +1521,7 @@ public:
 
         Verb autoClose(SkPoint pts[2]);
     };
-    void dump(std::string& desc, int depth) const;
+
 private:
     /** \class SkPath::RangeIter
         Iterates through a raw range of path verbs, points, and conics. All values are returned
@@ -1683,6 +1683,13 @@ public:
         example: https://fiddle.skia.org/c/@Path_dump
     */
     void dump(SkWStream* stream, bool dumpAsHex) const;
+
+    /** Writes text representation of SkPath to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
 
     void dump() const { this->dump(nullptr, false); }
     void dumpHex() const { this->dump(nullptr, true); }

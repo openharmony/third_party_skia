@@ -162,6 +162,11 @@ struct SK_API SkPoint {
     SkScalar fX; //!< x-axis value
     SkScalar fY; //!< y-axis value
 
+    /** Writes text representation of SkPoint to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
     void dump(std::string& desc, int depth) const;
 
     /** Sets fX to x, fY to y. Used both to set SkPoint and vector.

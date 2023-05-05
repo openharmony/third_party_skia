@@ -25,17 +25,12 @@ struct SkDrawShadowRec {
     SkColor     fSpotColor;
     uint32_t    fFlags;
 
-    void dump(std::string& desc, int depth) const {
-        std::string split(depth, '\t');
-        desc += split + "\n SkDrawShadowRec:{ \n";
-        fZPlaneParams.dump(desc, depth + 1);
-        fLightPos.dump(desc, depth + 1);
-        desc += split + "\t fLightRadius: " + std::to_string(fLightRadius) + "\n";
-        desc += split + "\t fAmbientColor: " + std::to_string(fAmbientColor) + "\n";
-        desc += split + "\t fSpotColor: " + std::to_string(fSpotColor) + "\n";
-        desc += split + "\t fFlags: " + std::to_string(fFlags) + "\n";
-        desc += split + "}\n";
-    }
+    /** Writes text representation of SkDrawShadowRec to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
 };
 
 namespace SkDrawShadowMetrics {

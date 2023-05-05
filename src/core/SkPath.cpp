@@ -1983,7 +1983,6 @@ void SkPath::dump(std::string& desc, int depth) const {
                 descSk.append("path.close();\n");
                 break;
             default:
-                verb = kDone_Verb;  // stop the loop
                 break;
         }
         if (descSk.size()) {

@@ -14,6 +14,18 @@
 
 namespace SkDrawShadowMetrics {
 
+void SkDrawShadowRec::dump(std::string& desc, int depth) const {
+    std::string split(depth, '\t');
+    desc += split + "\n SkDrawShadowRec:{ \n";
+    fZPlaneParams.dump(desc, depth + 1);
+    fLightPos.dump(desc, depth + 1);
+    desc += split + "\t fLightRadius: " + std::to_string(fLightRadius) + "\n";
+    desc += split + "\t fAmbientColor: " + std::to_string(fAmbientColor) + "\n";
+    desc += split + "\t fSpotColor: " + std::to_string(fSpotColor) + "\n";
+    desc += split + "\t fFlags: " + std::to_string(fFlags) + "\n";
+    desc += split + "}\n";
+}
+
 static SkScalar compute_z(SkScalar x, SkScalar y, const SkPoint3& params) {
     return x*params.fX + y*params.fY + params.fZ;
 }
