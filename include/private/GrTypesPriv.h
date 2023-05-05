@@ -1234,6 +1234,7 @@ static constexpr SkColorType GrCompressionTypeToSkColorType(SkImage::Compression
         case SkImage::CompressionType::kETC2_RGB8_UNORM: return kRGB_888x_SkColorType;
         case SkImage::CompressionType::kBC1_RGB8_UNORM:  return kRGB_888x_SkColorType;
         case SkImage::CompressionType::kBC1_RGBA8_UNORM: return kRGBA_8888_SkColorType;
+        case SkImage::CompressionType::kASTC_RGB8_UNORM: return kRGB_888x_SkColorType;
     }
 
     SkUNREACHABLE;
@@ -1346,6 +1347,7 @@ static constexpr const char* GrCompressionTypeToStr(SkImage::CompressionType com
         case SkImage::CompressionType::kETC2_RGB8_UNORM: return "kETC2_RGB8_UNORM";
         case SkImage::CompressionType::kBC1_RGB8_UNORM:  return "kBC1_RGB8_UNORM";
         case SkImage::CompressionType::kBC1_RGBA8_UNORM: return "kBC1_RGBA8_UNORM";
+        case SkImage::CompressionType::kASTC_RGB8_UNORM: return "kASTC_RGB8_UNORM";
     }
     SkUNREACHABLE;
 }

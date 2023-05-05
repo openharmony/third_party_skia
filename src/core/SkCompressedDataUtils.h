@@ -22,6 +22,7 @@ static constexpr bool SkCompressionTypeIsOpaque(SkImage::CompressionType compres
         case SkImage::CompressionType::kETC2_RGB8_UNORM: return true;
         case SkImage::CompressionType::kBC1_RGB8_UNORM:  return true;
         case SkImage::CompressionType::kBC1_RGBA8_UNORM: return false;
+        case SkImage::CompressionType::kASTC_RGB8_UNORM: return true;
     }
 
     SkUNREACHABLE;

@@ -237,6 +237,7 @@ bool SkDecompress(sk_sp<SkData> data,
         case Type::kETC2_RGB8_UNORM: return decompress_etc1(dimensions, bytes, dst);
         case Type::kBC1_RGB8_UNORM:  return decompress_bc1(dimensions, bytes, true, dst);
         case Type::kBC1_RGBA8_UNORM: return decompress_bc1(dimensions, bytes, false, dst);
+        case Type::kASTC_RGB8_UNORM: return true;
     }
 
     SkUNREACHABLE;
@@ -274,6 +275,11 @@ size_t SkCompressedDataSize(SkImage::CompressionType type, SkISize dimensions,
             }
             break;
         }
+        case SkImage::CompressionType::kASTC_RGB8_UNORM:
+        {
+            totalSize = std::ceil(dimensions.width() / 4.0f) * std::ceil(dimensions.height() / 4.0f) * 16;
+            break;
+        }
     }
 
     return totalSize;
@@ -288,6 +294,8 @@ size_t SkCompressedBlockSize(SkImage::CompressionType type) {
         case SkImage::CompressionType::kBC1_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGBA8_UNORM:
             return sizeof(BC1Block);
+        case SkImage::CompressionType::kASTC_RGB8_UNORM:
+            return 0;
     }
     SkUNREACHABLE;
 }

@@ -1,0 +1,276 @@
+diff --git a/include/core/SkImage.h b/include/core/SkImage.h
+index bd48124e2e..0890f7e59a 100644
+--- a/include/core/SkImage.h
++++ b/include/core/SkImage.h
+@@ -202,7 +202,8 @@ public:
+ 
+         kBC1_RGB8_UNORM,
+         kBC1_RGBA8_UNORM,
+-        kLast = kBC1_RGBA8_UNORM,
++        kASTC_RGB8_UNORM,
++        kLast = kASTC_RGB8_UNORM,
+     };
+ 
+     static constexpr int kCompressionTypeCount = static_cast<int>(CompressionType::kLast) + 1;
+diff --git a/include/gpu/gl/GrGLTypes.h b/include/gpu/gl/GrGLTypes.h
+index 49f5ee7bf6..67756a98ab 100644
+--- a/include/gpu/gl/GrGLTypes.h
++++ b/include/gpu/gl/GrGLTypes.h
+@@ -76,6 +76,7 @@ enum class GrGLFormat {
+     kCOMPRESSED_RGB8_ETC2,
+     kCOMPRESSED_RGB8_BC1,
+     kCOMPRESSED_RGBA8_BC1,
++    kCOMPRESSED_ASTC_RGB8,
+     kR16,
+     kRG16,
+     kRGBA16,
+diff --git a/include/private/GrTypesPriv.h b/include/private/GrTypesPriv.h
+index cba4b4c79d..7b2a5a262e 100644
+--- a/include/private/GrTypesPriv.h
++++ b/include/private/GrTypesPriv.h
+@@ -1234,6 +1234,7 @@ static constexpr SkColorType GrCompressionTypeToSkColorType(SkImage::Compression
+         case SkImage::CompressionType::kETC2_RGB8_UNORM: return kRGB_888x_SkColorType;
+         case SkImage::CompressionType::kBC1_RGB8_UNORM:  return kRGB_888x_SkColorType;
+         case SkImage::CompressionType::kBC1_RGBA8_UNORM: return kRGBA_8888_SkColorType;
++        case SkImage::CompressionType::kASTC_RGB8_UNORM: return kRGB_888x_SkColorType;
+     }
+ 
+     SkUNREACHABLE;
+@@ -1346,6 +1347,7 @@ static constexpr const char* GrCompressionTypeToStr(SkImage::CompressionType com
+         case SkImage::CompressionType::kETC2_RGB8_UNORM: return "kETC2_RGB8_UNORM";
+         case SkImage::CompressionType::kBC1_RGB8_UNORM:  return "kBC1_RGB8_UNORM";
+         case SkImage::CompressionType::kBC1_RGBA8_UNORM: return "kBC1_RGBA8_UNORM";
++        case SkImage::CompressionType::kASTC_RGB8_UNORM: return "kASTC_RGB8_UNORM";
+     }
+     SkUNREACHABLE;
+ }
+diff --git a/src/core/SkCompressedDataUtils.cpp b/src/core/SkCompressedDataUtils.cpp
+index 741a6105ac..45f01741f7 100644
+--- a/src/core/SkCompressedDataUtils.cpp
++++ b/src/core/SkCompressedDataUtils.cpp
+@@ -237,6 +237,7 @@ bool SkDecompress(sk_sp<SkData> data,
+         case Type::kETC2_RGB8_UNORM: return decompress_etc1(dimensions, bytes, dst);
+         case Type::kBC1_RGB8_UNORM:  return decompress_bc1(dimensions, bytes, true, dst);
+         case Type::kBC1_RGBA8_UNORM: return decompress_bc1(dimensions, bytes, false, dst);
++        case Type::kASTC_RGB8_UNORM: return true;
+     }
+ 
+     SkUNREACHABLE;
+@@ -274,6 +275,11 @@ size_t SkCompressedDataSize(SkImage::CompressionType type, SkISize dimensions,
+             }
+             break;
+         }
++        case SkImage::CompressionType::kASTC_RGB8_UNORM:
++        {
++            totalSize = std::ceil(dimensions.width() / 4.0f) * std::ceil(dimensions.height() / 4.0f) * 16;
++            break;
++        }
+     }
+ 
+     return totalSize;
+@@ -288,6 +294,8 @@ size_t SkCompressedBlockSize(SkImage::CompressionType type) {
+         case SkImage::CompressionType::kBC1_RGB8_UNORM:
+         case SkImage::CompressionType::kBC1_RGBA8_UNORM:
+             return sizeof(BC1Block);
++        case SkImage::CompressionType::kASTC_RGB8_UNORM:
++            return 0;
+     }
+     SkUNREACHABLE;
+ }
+diff --git a/src/core/SkCompressedDataUtils.h b/src/core/SkCompressedDataUtils.h
+index 5adc07751c..280de6da8e 100644
+--- a/src/core/SkCompressedDataUtils.h
++++ b/src/core/SkCompressedDataUtils.h
+@@ -22,6 +22,7 @@ static constexpr bool SkCompressionTypeIsOpaque(SkImage::CompressionType compres
+         case SkImage::CompressionType::kETC2_RGB8_UNORM: return true;
+         case SkImage::CompressionType::kBC1_RGB8_UNORM:  return true;
+         case SkImage::CompressionType::kBC1_RGBA8_UNORM: return false;
++        case SkImage::CompressionType::kASTC_RGB8_UNORM: return true;
+     }
+ 
+     SkUNREACHABLE;
+diff --git a/src/gpu/GrBackendUtils.cpp b/src/gpu/GrBackendUtils.cpp
+index 5b06ea3b62..f1cb545b19 100644
+--- a/src/gpu/GrBackendUtils.cpp
++++ b/src/gpu/GrBackendUtils.cpp
+@@ -42,6 +42,8 @@ SkImage::CompressionType GrBackendFormatToCompressionType(const GrBackendFormat&
+                     return SkImage::CompressionType::kBC1_RGB8_UNORM;
+                 case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
+                     return SkImage::CompressionType::kBC1_RGBA8_UNORM;
++                case GrGLFormat::kCOMPRESSED_ASTC_RGB8:
++                    return SkImage::CompressionType::kASTC_RGB8_UNORM;
+                 default:
+                     return SkImage::CompressionType::kNone;
+             }
+diff --git a/src/gpu/GrDataUtils.cpp b/src/gpu/GrDataUtils.cpp
+index 232c1d9982..ee889762ee 100644
+--- a/src/gpu/GrDataUtils.cpp
++++ b/src/gpu/GrDataUtils.cpp
+@@ -164,7 +164,8 @@ size_t GrNumBlocks(SkImage::CompressionType type, SkISize baseDimensions) {
+             return baseDimensions.width() * baseDimensions.height();
+         case SkImage::CompressionType::kETC2_RGB8_UNORM:
+         case SkImage::CompressionType::kBC1_RGB8_UNORM:
+-        case SkImage::CompressionType::kBC1_RGBA8_UNORM: {
++        case SkImage::CompressionType::kBC1_RGBA8_UNORM:
++        case SkImage::CompressionType::kASTC_RGB8_UNORM: {
+             int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
+             int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
+ 
+@@ -180,7 +181,8 @@ size_t GrCompressedRowBytes(SkImage::CompressionType type, int width) {
+             return 0;
+         case SkImage::CompressionType::kETC2_RGB8_UNORM:
+         case SkImage::CompressionType::kBC1_RGB8_UNORM:
+-        case SkImage::CompressionType::kBC1_RGBA8_UNORM: {
++        case SkImage::CompressionType::kBC1_RGBA8_UNORM:
++        case SkImage::CompressionType::kASTC_RGB8_UNORM: {
+             int numBlocksWidth = num_4x4_blocks(width);
+ 
+             static_assert(sizeof(ETC1Block) == sizeof(BC1Block));
+@@ -196,7 +198,8 @@ SkISize GrCompressedDimensions(SkImage::CompressionType type, SkISize baseDimens
+             return baseDimensions;
+         case SkImage::CompressionType::kETC2_RGB8_UNORM:
+         case SkImage::CompressionType::kBC1_RGB8_UNORM:
+-        case SkImage::CompressionType::kBC1_RGBA8_UNORM: {
++        case SkImage::CompressionType::kBC1_RGBA8_UNORM:
++        case SkImage::CompressionType::kASTC_RGB8_UNORM: {
+             int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
+             int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
+ 
+diff --git a/src/gpu/gl/GrGLCaps.cpp b/src/gpu/gl/GrGLCaps.cpp
+index a17e8bf0fb..10ab76b703 100644
+--- a/src/gpu/gl/GrGLCaps.cpp
++++ b/src/gpu/gl/GrGLCaps.cpp
+@@ -2861,6 +2861,23 @@ void GrGLCaps::initFormatTable(const GrGLContextInfo& ctxInfo, const GrGLInterfa
+         // There are no support GrColorTypes for this format
+     }
+ 
++    // Format: COMPRESSED_ASTC_RGB8
++    {
++        FormatInfo& info = this->getFormatInfo(GrGLFormat::kCOMPRESSED_ASTC_RGB8);
++        info.fFormatType = FormatType::kNormalizedFixedPoint;
++        //info.fBaseInternalFormat = GR_GL_RGB;
++        info.fDefaultExternalFormat = GR_GL_RGB;
++        //info.fInternalFormatForTexImage = GR_GL_COMPRESSED_RGBA_ASTC_4x4;
++        info.fInternalFormatForTexImageOrStorage = GR_GL_COMPRESSED_RGBA_ASTC_4x4;
++        if (GR_IS_GR_GL_ES(standard)) {
++            if (ctxInfo.hasExtension("GL_OES_texture_compression_astc")) {
++                info.fFlags = FormatInfo::kTexturable_Flag;
++            }
++        } // No GL or WebGL support
++
++        // There are no support GrColorTypes for this format
++    }
++
+     // Format: R16
+     {
+         FormatInfo& info = this->getFormatInfo(GrGLFormat::kR16);
+@@ -4678,6 +4695,12 @@ GrBackendFormat GrGLCaps::getBackendFormatFromCompressionType(
+                                                GR_GL_TEXTURE_2D);
+             }
+             return {};
++        case SkImage::CompressionType::kASTC_RGB8_UNORM:
++            if (this->isFormatTexturable(GrGLFormat::kCOMPRESSED_ASTC_RGB8)) {
++                return GrBackendFormat::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_4x4,
++                                               GR_GL_TEXTURE_2D);
++            }
++            return {};
+     }
+ 
+     SkUNREACHABLE;
+@@ -4758,6 +4781,8 @@ std::vector<GrCaps::TestFormatColorTypeCombination> GrGLCaps::getTestingCombinat
+           GrBackendFormat::MakeGL(GR_GL_COMPRESSED_RGB8_ETC2, GR_GL_TEXTURE_2D) },
+         { GrColorType::kRGB_888x,
+           GrBackendFormat::MakeGL(GR_GL_COMPRESSED_ETC1_RGB8, GR_GL_TEXTURE_2D) },
++        { GrColorType::kRGB_888x,
++          GrBackendFormat::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_4x4, GR_GL_TEXTURE_2D) },
+         { GrColorType::kRGB_888x,
+           GrBackendFormat::MakeGL(GR_GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GR_GL_TEXTURE_2D) },
+         { GrColorType::kRGBA_8888,
+diff --git a/src/gpu/gl/GrGLUtil.cpp b/src/gpu/gl/GrGLUtil.cpp
+index cafbc4018c..b5f992d2f5 100644
+--- a/src/gpu/gl/GrGLUtil.cpp
++++ b/src/gpu/gl/GrGLUtil.cpp
+@@ -739,6 +739,7 @@ bool GrGLFormatIsCompressed(GrGLFormat format) {
+         case GrGLFormat::kCOMPRESSED_RGB8_ETC2:
+         case GrGLFormat::kCOMPRESSED_RGB8_BC1:
+         case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
++        case GrGLFormat::kCOMPRESSED_ASTC_RGB8:
+             return true;
+ 
+         case GrGLFormat::kRGBA8:
+diff --git a/src/gpu/gl/GrGLUtil.h b/src/gpu/gl/GrGLUtil.h
+index 01bcbc4182..c82e1637e3 100644
+--- a/src/gpu/gl/GrGLUtil.h
++++ b/src/gpu/gl/GrGLUtil.h
+@@ -59,6 +59,7 @@ static constexpr uint32_t GrGLFormatChannels(GrGLFormat format) {
+         case GrGLFormat::kCOMPRESSED_RGB8_ETC2:  return kRGB_SkColorChannelFlags;
+         case GrGLFormat::kCOMPRESSED_RGB8_BC1:   return kRGB_SkColorChannelFlags;
+         case GrGLFormat::kCOMPRESSED_RGBA8_BC1:  return kRGBA_SkColorChannelFlags;
++        case GrGLFormat::kCOMPRESSED_ASTC_RGB8:  return kRGB_SkColorChannelFlags;
+         case GrGLFormat::kR16:                   return kRed_SkColorChannelFlag;
+         case GrGLFormat::kRG16:                  return kRG_SkColorChannelFlags;
+         case GrGLFormat::kRGBA16:                return kRGBA_SkColorChannelFlags;
+@@ -119,6 +120,7 @@ static constexpr GrColorFormatDesc GrGLFormatDesc(GrGLFormat format) {
+         case GrGLFormat::kCOMPRESSED_RGB8_ETC2: return GrColorFormatDesc::MakeInvalid();
+         case GrGLFormat::kCOMPRESSED_RGB8_BC1:  return GrColorFormatDesc::MakeInvalid();
+         case GrGLFormat::kCOMPRESSED_RGBA8_BC1: return GrColorFormatDesc::MakeInvalid();
++        case GrGLFormat::kCOMPRESSED_ASTC_RGB8: return GrColorFormatDesc::MakeInvalid();
+ 
+         // This type only describes color channels.
+         case GrGLFormat::kSTENCIL_INDEX8:   return GrColorFormatDesc::MakeInvalid();
+@@ -392,6 +394,7 @@ static constexpr GrGLFormat GrGLFormatFromGLEnum(GrGLenum glFormat) {
+         case GR_GL_COMPRESSED_RGB8_ETC2: return GrGLFormat::kCOMPRESSED_RGB8_ETC2;
+         case GR_GL_COMPRESSED_RGB_S3TC_DXT1_EXT: return GrGLFormat::kCOMPRESSED_RGB8_BC1;
+         case GR_GL_COMPRESSED_RGBA_S3TC_DXT1_EXT: return GrGLFormat::kCOMPRESSED_RGBA8_BC1;
++        case GR_GL_COMPRESSED_RGBA_ASTC_4x4: return GrGLFormat::kCOMPRESSED_ASTC_RGB8;
+         case GR_GL_R16:                  return GrGLFormat::kR16;
+         case GR_GL_RG16:                 return GrGLFormat::kRG16;
+         case GR_GL_RGBA16:               return GrGLFormat::kRGBA16;
+@@ -427,6 +430,7 @@ static constexpr GrGLenum GrGLFormatToEnum(GrGLFormat format) {
+         case GrGLFormat::kCOMPRESSED_RGB8_ETC2: return GR_GL_COMPRESSED_RGB8_ETC2;
+         case GrGLFormat::kCOMPRESSED_RGB8_BC1:  return GR_GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+         case GrGLFormat::kCOMPRESSED_RGBA8_BC1: return GR_GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
++        case GrGLFormat::kCOMPRESSED_ASTC_RGB8: return GR_GL_COMPRESSED_RGBA_ASTC_4x4;
+         case GrGLFormat::kR16:                  return GR_GL_R16;
+         case GrGLFormat::kRG16:                 return GR_GL_RG16;
+         case GrGLFormat::kRGBA16:               return GR_GL_RGBA16;
+@@ -461,6 +465,7 @@ static constexpr size_t GrGLFormatBytesPerBlock(GrGLFormat format) {
+         case GrGLFormat::kCOMPRESSED_RGB8_ETC2: return 8;
+         case GrGLFormat::kCOMPRESSED_RGB8_BC1:  return 8;
+         case GrGLFormat::kCOMPRESSED_RGBA8_BC1: return 8;
++        case GrGLFormat::kCOMPRESSED_ASTC_RGB8: return 8;
+         case GrGLFormat::kR16:                  return 2;
+         case GrGLFormat::kRG16:                 return 4;
+         case GrGLFormat::kRGBA16:               return 8;
+@@ -485,6 +490,7 @@ static constexpr int GrGLFormatStencilBits(GrGLFormat format) {
+         case GrGLFormat::kCOMPRESSED_RGB8_ETC2:
+         case GrGLFormat::kCOMPRESSED_RGB8_BC1:
+         case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
++        case GrGLFormat::kCOMPRESSED_ASTC_RGB8:
+         case GrGLFormat::kRGBA8:
+         case GrGLFormat::kR8:
+         case GrGLFormat::kALPHA8:
+@@ -518,6 +524,7 @@ static constexpr bool GrGLFormatIsPackedDepthStencil(GrGLFormat format) {
+         case GrGLFormat::kCOMPRESSED_RGB8_ETC2:
+         case GrGLFormat::kCOMPRESSED_RGB8_BC1:
+         case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
++        case GrGLFormat::kCOMPRESSED_ASTC_RGB8:
+         case GrGLFormat::kRGBA8:
+         case GrGLFormat::kR8:
+         case GrGLFormat::kALPHA8:
+@@ -553,6 +560,7 @@ static constexpr bool GrGLFormatIsSRGB(GrGLFormat format) {
+     case GrGLFormat::kCOMPRESSED_RGB8_ETC2:
+     case GrGLFormat::kCOMPRESSED_RGB8_BC1:
+     case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
++    case GrGLFormat::kCOMPRESSED_ASTC_RGB8:
+     case GrGLFormat::kRGBA8:
+     case GrGLFormat::kR8:
+     case GrGLFormat::kALPHA8:
+@@ -603,6 +611,7 @@ static constexpr const char* GrGLFormatToStr(GrGLenum glFormat) {
+         case GR_GL_COMPRESSED_RGB8_ETC2: return "ETC2";
+         case GR_GL_COMPRESSED_RGB_S3TC_DXT1_EXT: return "RGB8_BC1";
+         case GR_GL_COMPRESSED_RGBA_S3TC_DXT1_EXT: return "RGBA8_BC1";
++        case GR_GL_COMPRESSED_RGBA_ASTC_4x4: return "ASTC";
+         case GR_GL_R16:                  return "R16";
+         case GR_GL_RG16:                 return "RG16";
+         case GR_GL_RGBA16:               return "RGBA16";
