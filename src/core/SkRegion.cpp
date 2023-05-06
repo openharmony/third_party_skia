@@ -1327,6 +1327,30 @@ bool SkRegion::isValid() const {
                         fRunHead->getYSpanCount(), fRunHead->getIntervalCount());
 }
 
+void SkRegion::dump(std::string& desc, int depth) const {
+    std::string split(depth, '\t');
+    desc += split + "\n SkRegion:{ \n";
+    if (this->isEmpty()) {
+        desc += split + "  rgn: empty\n";
+    } else {
+        desc += split + "  rgn:\n";
+        desc += split + "\t fBounds.fLeft:" + std::to_string(fBounds.fLeft) + "\n";
+        desc += split + "\t fBounds.fTop:" + std::to_string(fBounds.fTop) + "\n";
+        desc += split + "\t fBounds.fRight:" + std::to_string(fBounds.fRight) + "\n";
+        desc += split + "\t fBounds.fBottom:" + std::to_string(fBounds.fBottom) + "\n";
+
+        if (this->isComplex()) {
+            desc += split + "\t fRunHead->readonly_runs():";
+            const RunType* runs = fRunHead->readonly_runs();
+            for (int i = 0; i < fRunHead->fRunCount; i++) {
+                desc += " " + std::to_string(runs[i]);
+            }
+            desc += "\n";
+        }
+    }
+    desc += split + "}\n";
+}
+
 #ifdef SK_DEBUG
 void SkRegionPriv::Validate(const SkRegion& rgn) { SkASSERT(rgn.isValid()); }
 

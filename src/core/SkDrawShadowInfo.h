@@ -24,6 +24,13 @@ struct SkDrawShadowRec {
     SkColor     fAmbientColor;
     SkColor     fSpotColor;
     uint32_t    fFlags;
+
+    /** Writes text representation of SkDrawShadowRec to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
 };
 
 namespace SkDrawShadowMetrics {

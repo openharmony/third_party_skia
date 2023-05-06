@@ -226,7 +226,40 @@ SkVertices::Sizes SkVertices::getSizes() const {
     SkASSERT(sizes.isValid());
     return sizes;
 }
+void SkVertices::dump(std::string& desc, int depth) const {
+    std::string split(depth, '\t');
+    desc += split + "\n SkVertices:{ \n";
+    desc += split + "\t fUniqueID: " + std::to_string(fUniqueID) + "\n";
+    if (fPositions != nullptr) {
+        fPositions->dump(desc, depth + 1);
+    } else {
+        desc += split + "\t fPositions: nullptr\n";
+    }
 
+    if (fTexs != nullptr) {
+        fTexs->dump(desc, depth + 1);
+    } else {
+        desc += split + "\t fTexs: nullptr\n";
+    }
+
+    if (fColors != nullptr) {
+        desc += split + "\t fColors: " + std::to_string(*fColors) + "\n";
+    } else {
+        desc += split + "\t fColors: nullptr\n";
+    }
+
+    if (fIndices != nullptr) {
+        desc += split + "\t fIndices: " + std::to_string(*fIndices) + "\n";
+    } else {
+        desc += split + "\t fIndices: nullptr\n";
+    }
+
+    fBounds.dump(desc, depth + 1);
+    desc += split + "\t fVertexCount: " + std::to_string(fVertexCount) + "\n";
+    desc += split + "\t fIndexCount: " + std::to_string(fIndexCount) + "\n";
+    desc += split + "\t fMode: " + std::to_string(static_cast<int>(fMode)) + "\n";
+    desc += split + "}\n";
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 // storage = packed | vertex_count | index_count | attr_count

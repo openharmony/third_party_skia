@@ -10,6 +10,16 @@
 #include "include/private/SkMalloc.h"
 #include "src/core/SkRectPriv.h"
 
+void SkIRect::dump(std::string& desc, int depth) const {
+    std::string split(depth, '\t');
+    desc += split + "\n SkIRect:{ \n";
+    desc += split + "\t fLeft:" + std::to_string(fLeft) + "\n";
+    desc += split + "\t fTop:" + std::to_string(fTop) + "\n";
+    desc += split + "\t fRight:" + std::to_string(fRight) + "\n";
+    desc += split + "\t fBottom:" + std::to_string(fBottom) + "\n";
+    desc += split + "}\n";
+}
+
 bool SkIRect::intersect(const SkIRect& a, const SkIRect& b) {
     SkIRect tmp = {
         std::max(a.fLeft,   b.fLeft),
@@ -166,6 +176,16 @@ void SkRect::dump(bool asHex) const {
                     strL.c_str(), strT.c_str(), strR.c_str(), strB.c_str());
     }
     SkDebugf("%s\n", line.c_str());
+}
+
+void SkRect::dump(std::string& desc, int depth) const {
+    std::string split(depth, '\t');
+    desc += split + "\n SkRect:{ \n";
+    desc += split + "\t fLeft:" + std::to_string(fLeft) + "\n";
+    desc += split + "\t fTop:" + std::to_string(fTop) + "\n";
+    desc += split + "\t fRight:" + std::to_string(fRight) + "\n";
+    desc += split + "\t fBottom:" + std::to_string(fBottom) + "\n";
+    desc += split + "}\n";
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

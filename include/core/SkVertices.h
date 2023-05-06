@@ -100,6 +100,13 @@ public:
     SkVerticesPriv priv();
     const SkVerticesPriv priv() const;  // NOLINT(readability-const-return-type)
 
+    /** Writes text representation of SkVertices to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
+
 private:
     SkVertices() {}
 

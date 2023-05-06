@@ -1255,6 +1255,13 @@ public:
     */
     sk_sp<SkImage> reinterpretColorSpace(sk_sp<SkColorSpace> newColorSpace) const;
 
+    /** Writes text representation of SkImage to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
+
 private:
     SkImage(const SkImageInfo& info, uint32_t uniqueID);
 

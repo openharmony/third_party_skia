@@ -7,7 +7,7 @@
 
 #ifndef SkPath_DEFINED
 #define SkPath_DEFINED
-
+#include <string>
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPathTypes.h"
 #include "include/private/SkPathRef.h"
@@ -1683,6 +1683,13 @@ public:
         example: https://fiddle.skia.org/c/@Path_dump
     */
     void dump(SkWStream* stream, bool dumpAsHex) const;
+
+    /** Writes text representation of SkPath to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
 
     void dump() const { this->dump(nullptr, false); }
     void dumpHex() const { this->dump(nullptr, true); }

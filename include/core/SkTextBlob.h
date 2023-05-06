@@ -15,6 +15,7 @@
 #include "include/private/SkTemplates.h"
 
 #include <atomic>
+#include <string>
 
 struct SkRSXform;
 struct SkSerialProcs;
@@ -227,6 +228,12 @@ public:
         const RunRecord* fRunRecord;
     };
 
+    /** Writes text representation of SkTextBlob to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
 private:
     friend class SkNVRefCnt<SkTextBlob>;
 

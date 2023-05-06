@@ -606,6 +606,13 @@ public:
     */
     size_t readFromMemory(const void* buffer, size_t length);
 
+    /** Writes text representation of SkRegion to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
+
 private:
     static constexpr int kOpCount = kReplace_Op + 1;
 

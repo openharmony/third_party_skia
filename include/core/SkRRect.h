@@ -471,6 +471,13 @@ public:
     */
     void dump() const { this->dump(false); }
 
+    /** Writes text representation of SkRRect to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
+
     /** Writes text representation of SkRRect to standard output. The representation
         may be directly compiled as C++ code. Floating point values are written
         in hexadecimal to preserve their exact bit pattern. The output reconstructs the

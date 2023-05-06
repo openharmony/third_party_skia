@@ -1668,6 +1668,13 @@ public:
     */
     void dump() const;
 
+    /** Writes text representation of SkMatrix to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
+
     /** Returns the minimum scaling factor of SkMatrix by decomposing the scaling and
         skewing elements.
         Returns -1 if scale factor overflows or SkMatrix contains perspective.
