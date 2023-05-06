@@ -8,7 +8,6 @@
 #ifndef SkTextBlob_DEFINED
 #define SkTextBlob_DEFINED
 
-#include <string>
 #include "include/core/SkFont.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkRefCnt.h"
@@ -16,6 +15,7 @@
 #include "include/private/SkTemplates.h"
 
 #include <atomic>
+#include <string>
 
 struct SkRSXform;
 struct SkSerialProcs;
