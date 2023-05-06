@@ -370,7 +370,7 @@ public:
 
     void dump() const;
 
-    /** Writes text representation of SkMatrix to string.
+    /** Writes text representation of SkM44 to string.
 
         @param desc     the string storing a description of parameters.
         @param depth    the number of tabs preceding each line.
