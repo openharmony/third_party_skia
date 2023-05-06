@@ -12,8 +12,6 @@
 #include "src/core/SkDrawShadowInfo.h"
 #include "src/utils/SkPolyUtils.h"
 
-namespace SkDrawShadowMetrics {
-
 void SkDrawShadowRec::dump(std::string& desc, int depth) const {
     std::string split(depth, '\t');
     desc += split + "\n SkDrawShadowRec:{ \n";
@@ -25,6 +23,8 @@ void SkDrawShadowRec::dump(std::string& desc, int depth) const {
     desc += split + "\t fFlags: " + std::to_string(fFlags) + "\n";
     desc += split + "}\n";
 }
+
+namespace SkDrawShadowMetrics {
 
 static SkScalar compute_z(SkScalar x, SkScalar y, const SkPoint3& params) {
     return x*params.fX + y*params.fY + params.fZ;

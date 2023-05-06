@@ -370,6 +370,13 @@ public:
 
     void dump() const;
 
+    /** Writes text representation of SkMatrix to string.
+
+        @param desc     the string storing a description of parameters.
+        @param depth    the number of tabs preceding each line.
+    */
+    void dump(std::string& desc, int depth) const;
+
     ////////////
 
     SkV4 map(float x, float y, float z, float w) const;

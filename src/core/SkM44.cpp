@@ -7,6 +7,7 @@
 
 #include "include/core/SkM44.h"
 #include "include/core/SkMatrix.h"
+#include "include/core/SkString.h"
 #include "include/private/SkVx.h"
 
 #include "src/core/SkMatrixInvert.h"
@@ -301,6 +302,24 @@ void SkM44::dump() const {
              fMat[3], fMat[7], fMat[11], fMat[15]);
 }
 
+void SkM44::dump(std::string& desc, int depth) const {
+    SkString str;
+    str.appendf("|%g %g %g %g|\n"
+                "|%g %g %g %g|\n"
+                "|%g %g %g %g|\n"
+                "|%g %g %g %g|\n",
+        fMat[0], fMat[4], fMat[8],  fMat[12],
+        fMat[1], fMat[5], fMat[9],  fMat[13],
+        fMat[2], fMat[6], fMat[10], fMat[14],
+        fMat[3], fMat[7], fMat[11], fMat[15]);
+
+    std::string split(depth, '\t');
+    desc += split + "\n SkM44:{ \n";
+    desc += std::string(str.c_str());
+    desc += split + "}\n";
+
+    SkDebugf("%s\n", str.c_str());
+}
 ///////////////////////////////////////////////////////////////////////////////
 
 SkM44 SkM44::RectToRect(const SkRect& src, const SkRect& dst) {
