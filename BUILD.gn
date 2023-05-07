@@ -60,7 +60,7 @@ config("skia_public") {
   cflags_objcc = []
   if (target_cpu == "x86_64" || current_os == "windows" ||
       current_os == "mac" || current_os == "linux" || current_os == "ios") {
-    cflags_cc = [ "-Wno-psabi" ]
+    cflags_cc += [ "-Wno-psabi" ]
   }
   if (is_component_build) {
     defines += [ "SKIA_DLL" ]
@@ -646,7 +646,7 @@ if (use_oh_skia) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
     } else if (use_linux) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
-    } else {
+    } else if (is_ohos) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_OHOS" ]
     }
   }
@@ -969,9 +969,7 @@ optional("gpu") {
       ]
 
       # this lib is required to link against AHardwareBuffer
-      if (defined(ndk_api) && ndk_api >= 26) {
-        libs += [ "android" ]
-      }
+      libs += [ "android" ]
     } else if (skia_use_egl || is_ohos) {
       sources += [
         "src/gpu/gl/egl/GrGLMakeEGLInterface.cpp",
@@ -1374,7 +1372,7 @@ if (use_oh_skia) {
       "${skia_modules_dir}/skshaper/src/SkShaper_primitive.cpp",
     ]
 
-    if (skia_use_fonthost_mac) {
+    if (is_mac) {
       sources += [ "${skia_modules_dir}/skshaper/src/SkShaper_coretext.cpp" ]
       frameworks = [ "ApplicationServices.framework" ]
     }
@@ -1789,9 +1787,13 @@ if (use_oh_skia) {
       ":skcms",
       ":xps",
     ]
-    if ((defined(ace_enable_gpu) && ace_enable_gpu) ||
-        !defined(config.disable_gpu) || !config.disable_gpu) {
+    if (is_ios) {
       public_deps += [ ":gpu" ]
+    } else {
+      if ((defined(ace_enable_gpu) && ace_enable_gpu) ||
+          !defined(config.disable_gpu) || !config.disable_gpu) {
+        public_deps += [ ":gpu" ]
+      }
     }
     deps = [
       ":android_utils",
@@ -2361,7 +2363,7 @@ if (skia_enable_tools) {
       if (is_android || skia_use_egl || is_ohos) {
         sources += [ "tools/gpu/gl/egl/CreatePlatformGLTestContext_egl.cpp" ]
 
-        if (use_oh_skia) {
+        if (is_ohos) {
           include_dirs = [ "//third_party/EGL/api" ]
           deps += [ "//foundation/graphic/graphic_2d:libgl" ]
         } else {
