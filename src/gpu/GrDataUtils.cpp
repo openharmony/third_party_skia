@@ -181,12 +181,17 @@ size_t GrCompressedRowBytes(SkImage::CompressionType type, int width) {
             return 0;
         case SkImage::CompressionType::kETC2_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGB8_UNORM:
-        case SkImage::CompressionType::kBC1_RGBA8_UNORM:
-        case SkImage::CompressionType::kASTC_RGBA8_UNORM: {
+        case SkImage::CompressionType::kBC1_RGBA8_UNORM: {
             int numBlocksWidth = num_4x4_blocks(width);
 
             static_assert(sizeof(ETC1Block) == sizeof(BC1Block));
             return numBlocksWidth * sizeof(ETC1Block);
+        }
+        case SkImage::CompressionType::kASTC_RGBA8_UNORM: {
+            int numBlocksWidth = num_4x4_blocks(width);
+
+            // The evil number 16 here is the constant size of ASTC 4x4 block
+            return numBlocksWidth * 16;
         }
     }
     SkUNREACHABLE;
@@ -203,7 +208,7 @@ SkISize GrCompressedDimensions(SkImage::CompressionType type, SkISize baseDimens
             int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
             int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
 
-            // Each BC1_RGB8_UNORM and ETC1 block has 16 pixels
+            // Each BC1_RGB8_UNORM and ETC1 block and ASTC 4x4 block has 16 pixels
             return { 4 * numBlocksWidth, 4 * numBlocksHeight };
         }
     }

@@ -2865,9 +2865,7 @@ void GrGLCaps::initFormatTable(const GrGLContextInfo& ctxInfo, const GrGLInterfa
     {
         FormatInfo& info = this->getFormatInfo(GrGLFormat::kCOMPRESSED_ASTC_RGBA8);
         info.fFormatType = FormatType::kNormalizedFixedPoint;
-        //info.fBaseInternalFormat = GR_GL_RGB;
         info.fDefaultExternalFormat = GR_GL_RGB;
-        //info.fInternalFormatForTexImage = GR_GL_COMPRESSED_RGBA_ASTC_4x4;
         info.fInternalFormatForTexImageOrStorage = GR_GL_COMPRESSED_RGBA_ASTC_4x4;
         if (GR_IS_GR_GL_ES(standard)) {
             if (ctxInfo.hasExtension("GL_OES_texture_compression_astc")) {
@@ -4696,7 +4694,7 @@ GrBackendFormat GrGLCaps::getBackendFormatFromCompressionType(
             }
             return {};
         case SkImage::CompressionType::kASTC_RGBA8_UNORM:
-            if (this->isFormatTexturable(GrGLFormat::kCOMPRESSED_ASTC_RGB8)) {
+            if (this->isFormatTexturable(GrGLFormat::kCOMPRESSED_ASTC_RGBA8)) {
                 return GrBackendFormat::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_4x4,
                                                GR_GL_TEXTURE_2D);
             }
@@ -4781,7 +4779,7 @@ std::vector<GrCaps::TestFormatColorTypeCombination> GrGLCaps::getTestingCombinat
           GrBackendFormat::MakeGL(GR_GL_COMPRESSED_RGB8_ETC2, GR_GL_TEXTURE_2D) },
         { GrColorType::kRGB_888x,
           GrBackendFormat::MakeGL(GR_GL_COMPRESSED_ETC1_RGB8, GR_GL_TEXTURE_2D) },
-        { GrColorType::kRGB_888x,
+        { GrColorType::kRGBA_8888,
           GrBackendFormat::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_4x4, GR_GL_TEXTURE_2D) },
         { GrColorType::kRGB_888x,
           GrBackendFormat::MakeGL(GR_GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GR_GL_TEXTURE_2D) },

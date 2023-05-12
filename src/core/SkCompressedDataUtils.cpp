@@ -233,11 +233,11 @@ bool SkDecompress(sk_sp<SkData> data,
 
     const uint8_t* bytes = data->bytes();
     switch (compressionType) {
-        case Type::kNone:            return false;
-        case Type::kETC2_RGB8_UNORM: return decompress_etc1(dimensions, bytes, dst);
-        case Type::kBC1_RGB8_UNORM:  return decompress_bc1(dimensions, bytes, true, dst);
-        case Type::kBC1_RGBA8_UNORM: return decompress_bc1(dimensions, bytes, false, dst);
-        case Type::kASTC_RGBA8_UNORM:return false;
+        case Type::kNone:             return false;
+        case Type::kETC2_RGB8_UNORM:  return decompress_etc1(dimensions, bytes, dst);
+        case Type::kBC1_RGB8_UNORM:   return decompress_bc1(dimensions, bytes, true, dst);
+        case Type::kBC1_RGBA8_UNORM:  return decompress_bc1(dimensions, bytes, false, dst);
+        case Type::kASTC_RGBA8_UNORM: return false;
     }
 
     SkUNREACHABLE;
@@ -275,8 +275,9 @@ size_t SkCompressedDataSize(SkImage::CompressionType type, SkISize dimensions,
             }
             break;
         }
-        case SkImage::CompressionType::kASTC_RGBA8_UNORM:
-        {
+        case SkImage::CompressionType::kASTC_RGBA8_UNORM: {
+            // The evil number 16 here is the size of each ASTC block, which is constant for the ASTC 4x4 format,
+            // while the ASTC 4x4 format also explain the evil number 4.0f above
             totalSize = std::ceil(dimensions.width() / 4.0f) * std::ceil(dimensions.height() / 4.0f) * 16;
             break;
         }
@@ -295,6 +296,7 @@ size_t SkCompressedBlockSize(SkImage::CompressionType type) {
         case SkImage::CompressionType::kBC1_RGBA8_UNORM:
             return sizeof(BC1Block);
         case SkImage::CompressionType::kASTC_RGBA8_UNORM:
+            // The evil number 16 here is the constant size of ASTC 4x4 format
             return 16;
     }
     SkUNREACHABLE;
