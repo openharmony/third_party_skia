@@ -1790,9 +1790,10 @@ if (use_oh_skia) {
     if (is_ios) {
       public_deps += [ ":gpu" ]
     } else {
-      if ((defined(ace_enable_gpu) && ace_enable_gpu) ||
-          !defined(config.disable_gpu) || !config.disable_gpu) {
-        public_deps += [ ":gpu" ]
+      if ((defined(ace_enable_gpu) && ace_enable_gpu) || defined(config)) {
+        if(!defined(config.disable_gpu) || !config.disable_gpu) {
+          public_deps += [ ":gpu" ]
+        }
       }
     }
     deps = [
