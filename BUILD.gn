@@ -1715,10 +1715,10 @@ skia_component("skia") {
     sources += [ "src/ports/SkDebug_stdio.cpp" ]
   }
 
-  if (skia_enable_spirv_validation) {
-    deps += [ "${skia_third_party_dir}/externals/spirv-tools:spvtools_val" ]
-    defines += [ "SK_ENABLE_SPIRV_VALIDATION" ]
-  }
+  #if (skia_enable_spirv_validation) {
+  #  deps += [ "${skia_third_party_dir}/externals/spirv-tools:spvtools_val" ]
+  #  defines += [ "SK_ENABLE_SPIRV_VALIDATION" ]
+  #}
 
   if (skia_include_multiframe_procs) {
     sources += [ "tools/SkSharingProc.cpp" ]
@@ -1790,9 +1790,11 @@ if (use_oh_skia) {
     if (is_ios) {
       public_deps += [ ":gpu" ]
     } else {
-      if ((defined(ace_enable_gpu) && ace_enable_gpu) ||
-          !defined(config.disable_gpu) || !config.disable_gpu) {
-        public_deps += [ ":gpu" ]
+      if (defined(ace_enable_gpu) && ace_enable_gpu) {
+        if (!defined(config) || !defined(config.disable_gpu) ||
+            !config.disable_gpu) {
+          public_deps += [ ":gpu" ]
+        }
       }
     }
     deps = [
