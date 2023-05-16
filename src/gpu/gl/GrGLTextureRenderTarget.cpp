@@ -41,7 +41,7 @@ GrGLTextureRenderTarget::GrGLTextureRenderTarget(GrGLGpu* gpu,
 
 void GrGLTextureRenderTarget::dumpMemoryStatistics(
     SkTraceMemoryDump* traceMemoryDump) const {
-#ifndef SK_BUILD_FOR_ANDROID_FRAMEWORK
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
     // Delegate to the base classes
     GrGLRenderTarget::dumpMemoryStatistics(traceMemoryDump);
     GrGLTexture::dumpMemoryStatistics(traceMemoryDump);

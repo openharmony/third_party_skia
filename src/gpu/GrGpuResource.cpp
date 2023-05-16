@@ -23,6 +23,10 @@ static inline GrResourceCache* get_resource_cache(GrGpu* gpu) {
 
 GrGpuResource::GrGpuResource(GrGpu* gpu) : fGpu(gpu), fUniqueID(CreateUniqueID()) {
     SkDEBUGCODE(fCacheArrayIndex = -1);
+    auto cache = get_resource_cache(fGpu);
+    if(cache) {
+        fGrResourceTag = cache->resourceAccess().getCurrentGrResourceTag();
+    }
 }
 
 void GrGpuResource::registerWithCache(SkBudgeted budgeted) {

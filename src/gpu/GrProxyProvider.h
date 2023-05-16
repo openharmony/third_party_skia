@@ -294,6 +294,7 @@ private:
                                                       SkBudgeted);
 
     sk_sp<GrTextureProxy> createWrapped(sk_sp<GrTexture> tex, UseAllocator useAllocator);
+    template <class T> sk_sp<T> assignTagToProxy(sk_sp<T> proxy);
 
     struct UniquelyKeyedProxyHashTraits {
         static const GrUniqueKey& GetKey(const GrTextureProxy& p) { return p.getUniqueKey(); }

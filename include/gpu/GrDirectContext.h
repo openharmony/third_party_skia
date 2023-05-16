@@ -12,6 +12,8 @@
 
 #include "include/gpu/GrBackendSurface.h"
 
+#include "src/gpu/GrGpuResource.h"
+
 // We shouldn't need this but currently Android is relying on this being include transitively.
 #include "include/core/SkUnPreMultiply.h"
 
@@ -824,6 +826,25 @@ public:
     // Provides access to functions that aren't part of the public API.
     GrDirectContextPriv priv();
     const GrDirectContextPriv priv() const;  // NOLINT(readability-const-return-type)
+        /*
+        *Set current resource tag for gpu cache recycle.
+        */
+    void setCurrentGrResourceTag(const GrGpuResourceTag tag);
+    /*
+    *Get current resource tag for gpu cache recycle.
+    */
+    GrGpuResourceTag getCurrentGrGpuResourceTag() const;
+
+    /*
+    * Releases GrGpuResource objects and removes them from the cache by tag.
+    */
+    void releasesByTag(const GrGpuResourceTag);
+
+    /*
+    *Get all GrGpuResource tag.
+    */
+    std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const;
+
 
 protected:
     GrDirectContext(GrBackendApi backend, const GrContextOptions& options);

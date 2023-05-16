@@ -2003,7 +2003,10 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
         fContext->priv().dmsaaStats().fTriggerCounts[op->name()]++;
     }
 #endif
-
+    auto direct = fContext->priv().asDirectContext();
+    if (direct && op) {
+        op->setGrOpTag(direct->getCurrentGrResourceTag());
+    }
     opsTask->addDrawOp(this->drawingManager(), std::move(op), drawNeedsMSAA, analysis,
                        std::move(appliedClip), dstProxyView,
                        GrTextureResolveManager(this->drawingManager()), *this->caps());
