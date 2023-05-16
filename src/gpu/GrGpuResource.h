@@ -111,27 +111,28 @@ struct GrGpuResourceTag {
         : fPid(pid), fTid(tid), fWid(wid), fFid(fid) {}
 
     bool operator< (const GrGpuResourceTag& tag) const {
-        if (fPid != tag.fPid){
+        if (fPid != tag.fPid) {
             return fPid < tag.fPid;
         }
-        if (fTid != tag.fTid){
+        if (fTid != tag.fTid) {
             return fTid < tag.fTid;
         }
-        if (fWid != tag.fWid){
+        if (fWid != tag.fWid) {
             return fWid < tag.fWid;
         }
-        if (fFid != tag.fFid){
+        if (fFid != tag.fFid) {
             return fFid < tag.fFid;
         }
         return false;
     }
 
-    bool operator==(const GrGpuResourceTag& tag) const {
+    bool operator== (const GrGpuResourceTag& tag) const {
         return (fPid == tag.fPid) && (fTid == tag.fTid) && (fWid == tag.fWid) && (fFid == tag.fFid);
     }
 
     std::string toString() const {
-        return "[" + std::to_string(fPid) + "," + std::to_string(fTid) + "," + std::to_string(fWid) + "," + std::to_string(fFid) + "]"; 
+        return "[" + std::to_string(fPid) + "," + std::to_string(fTid) + ","
+            + std::to_string(fWid) + "," + std::to_string(fFid) + "]";
     }
 
     bool isGrTagValid() const {
@@ -157,7 +158,7 @@ struct GrGpuResourceTag {
         return true;
     }
 
-        bool filter(GrGpuResourceTag&& tag) const {
+    bool filter(GrGpuResourceTag&& tag) const {
         if (!isGrTagValid()) {
             return !tag.isGrTagValid();
         }
@@ -289,15 +290,17 @@ public:
 
     static uint32_t CreateUniqueID();
 
-    /*
-    * Set the resource tag.
-    */
-   void setResourceTag(const GrGpuResourceTag tag) { fGrResourceTag = tag;}
+    /**
+     * Set the resource tag.
+     */
+        void setResourceTag(const GrGpuResourceTag tag) { fGrResourceTag = tag; }
 
-   /*
-   * Get the resource tag.
-   */
-   GrGpuResourceTag getResourceTag() const { return fGrResourceTag; }
+    /**
+     * Get the resource tag.
+     *
+     * @return all GrGpuResourceTags.
+     */
+    GrGpuResourceTag getResourceTag() const { return fGrResourceTag; }
    
 protected:
     // This must be called by every non-wrapped GrGpuObject. It should be called once the object is

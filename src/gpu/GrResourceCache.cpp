@@ -1,4 +1,4 @@
-  /*
+/*
  * Copyright 2014 Google Inc.
  *
  * Use of this source code is governed by a BSD-style license that can be
@@ -277,8 +277,9 @@ void GrResourceCache::releaseByTag(const GrGpuResourceTag tag) {
         GrGpuResource* resource = fNonpurgeableResources[i];
         if (tag.filter(resource->getResourceTag())) {
             recycleVector.emplace_back(resource);
-            if(resource->getUniqueKey().isValid()) {
-                fProxyProvider->processInvalidUniqueKey(resource->getUniqueKey(), nullptr, GrProxyProvider::InvalidateGPUResource::kNo);
+            if (resource->getUniqueKey().isValid()) {
+                fProxyProvider->processInvalidUniqueKey(resource->getUniqueKey(), nullptr,
+                                                        GrProxyProvider::InvalidateGPUResource::kNo);
             }
         }
     }
@@ -287,8 +288,9 @@ void GrResourceCache::releaseByTag(const GrGpuResourceTag tag) {
         GrGpuResource* resource = fPurgeableQueue.at(i);
         if (tag.filter(resource->getResourceTag())) {
             recycleVector.emplace_back(resource);
-            if(resource->getUniqueKey().isValid()) {
-                fProxyProvider->processInvalidUniqueKey(resource->getUniqueKey(), nullptr, GrProxyProvider::InvalidateGPUResource::kNo);
+            if (resource->getUniqueKey().isValid()) {
+                fProxyProvider->processInvalidUniqueKey(resource->getUniqueKey(), nullptr,
+                                                        GrProxyProvider::InvalidateGPUResource::kNo);
             }
         }
     }
@@ -313,7 +315,7 @@ GrGpuResourceTag GrResourceCache::getCurrentGrResourceTag() const {
     if (grResourceTagCacheStack.empty()) {
         return{};
     }
-    return grResourceTagCacheStack.top()
+    return grResourceTagCacheStack.top();
 }
 
 std::set<GrGpuResourceTag> GrResourceCache::getAllGrGpuResourceTags() const {
@@ -689,7 +691,7 @@ void GrResourceCache::purgeUnlockedResources(const GrStdSteadyClock::time_point*
     this->validate();
 }
 
-void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag tag) { 
+void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag tag) {
     // Sort the queue
     fPurgeableQueue.sort();
 
@@ -919,12 +921,12 @@ void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) c
 }
 
 void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag tag) const {
-    for (int i=0; i < fNonpurgeableResources.count(); ++i) {
+    for (int i = 0; i < fNonpurgeableResources.count(); ++i) {
         if (tag.filter(fNonpurgeableResources[i]->getResourceTag())) {
             fNonpurgeableResources[i]->dumpMemoryStatistics(traceMemoryDump);
         }
     }
-    for (int i=0; i < fPurgeableQueue.count(); ++i) {
+    for (int i = 0; i < fPurgeableQueue.count(); ++i) {
         if (tag.filter(fPurgeableQueue.at(i)->getResourceTag())) {
             fPurgeableQueue.at(i)->dumpMemoryStatistics(traceMemoryDump);
         }

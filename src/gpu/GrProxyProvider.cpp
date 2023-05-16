@@ -217,9 +217,11 @@ sk_sp<GrTextureProxy> GrProxyProvider::createWrapped(sk_sp<GrTexture> tex,
 #endif
 
     if (tex->asRenderTarget()) {
-        return assignTagToProxy(sk_sp<GrTextureProxy>(new GrTextureRenderTargetProxy(std::move(tex), useAllocator, this->isDDLProvider())));
+        return assignTagToProxy(
+            sk_sp<GrTextureProxy>(new GrTextureRenderTargetProxy(std::move(tex), useAllocator, this->isDDLProvider())));
     } else {
-        return assignTagToProxy(sk_sp<GrTextureProxy>(new GrTextureProxy(std::move(tex), useAllocator,
+        return assignTagToProxy(
+            sk_sp<GrTextureProxy>(new GrTextureProxy(std::move(tex), useAllocator,
                                                         this->isDDLProvider())));
     }
 }
@@ -642,6 +644,8 @@ sk_sp<GrTextureProxy> GrProxyProvider::wrapRenderableBackendTexture(
 
     return sk_sp<GrTextureProxy>(new GrTextureRenderTargetProxy(std::move(tex), UseAllocator::kNo,
                                                                 this->isDDLProvider()));
+    return assignTagToProxy(sk_sp<GrTextureProxy>(new GrTextureRenderTargetProxy(std::move(tex), UseAllocator::kNo,
+                                                                this->isDDLProvider())));
 }
 
 sk_sp<GrSurfaceProxy> GrProxyProvider::wrapBackendRenderTarget(
@@ -672,7 +676,6 @@ sk_sp<GrSurfaceProxy> GrProxyProvider::wrapBackendRenderTarget(
     SkASSERT(!rt->getUniqueKey().isValid());
     // Make sure we match how we created the proxy with SkBudgeted::kNo
     SkASSERT(GrBudgetedType::kBudgeted != rt->resourcePriv().budgetedType());
-
     return assignTagToProxy(sk_sp<GrRenderTargetProxy>(new GrRenderTargetProxy(std::move(rt), UseAllocator::kNo)));
 }
 

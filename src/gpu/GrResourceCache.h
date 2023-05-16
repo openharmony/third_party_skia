@@ -73,15 +73,15 @@ public:
     class ResourceAccess;
     ResourceAccess resourceAccess();
 
-    /*
-    * Get current resource tag for gpu cache recycle.
-    */
-   GrGpuResourceTag getCurrentGrResourceTag() const;
+    /**
+     * Get current resource tag for gpu cache recycle.
+     */
+    GrGpuResourceTag getCurrentGrResourceTag() const;
 
-   /*
-   * Set current resourcetag for gpu cache recycle.
-   */
-  void setCurrentGrResourceTag(const GrGpuResourceTag tag);
+    /**
+     * Set current resourcetag for gpu cache recycle.
+     */
+    void setCurrentGrResourceTag(const GrGpuResourceTag tag);
 
     /** Unique ID of the owning GrContext. */
     uint32_t contextUniqueID() const { return fContextUniqueID; }
@@ -140,7 +140,7 @@ public:
     /**
      * Get all GrGpuResource tags.
     */
-   std::set<GrGpuResourceTag> getAllGrGpuResourceTag() const;
+    std::set<GrGpuResourceTag> getAllGrGpuResourceTag() const;
 
     /**
      * Find a resource that matches a scratch key.
@@ -278,7 +278,7 @@ public:
         fThreadSafeCache = threadSafeCache;
     }
 
-    std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const;// Get the tag of all GPU resources
+    std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const; // Get the tag of all GPU resources
 
 private:
     ///////////////////////////////////////////////////////////////////////////
@@ -414,6 +414,7 @@ private:
     // This resource is allowed to be in the nonpurgeable array for the sake of validate() because
     // we're in the midst of converting it to purgeable status.
     SkDEBUGCODE(GrGpuResource*          fNewlyPurgeableResourceForValidation = nullptr;)
+    std::stack<GrGpuResourceTag> grResourceTagCacheStack;
 
     //Indicates the cached resource tags.
     std::stack<GrGpuResourceTag> GrResourceCacheStack;
@@ -444,7 +445,7 @@ private:
     /**
      * Get current resource tag for gpu cache recycle.
      */
-    GrGpuResourceTag getCurrentGrResourceTag() const { return fCache->getCurrentGrResourceTag();}
+    GrGpuResourceTag getCurrentGrResourceTag() const { return fCache->getCurrentGrResourceTag(); }
 
     /**
      * Notifications that should be sent to the cache when the ref/io cnt status of resources

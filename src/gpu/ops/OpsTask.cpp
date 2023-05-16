@@ -512,7 +512,7 @@ void OpsTask::onPrepare(GrOpFlushState* flushState) {
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
             TRACE_EVENT0("skia.gpu", chain.head()->name());
 #endif
-            autotag = chain.head()->getGrOpTag();
+            auto tag = chain.head()->getGrOpTag();
             if (grGpu && tag.isGrTagValid()) {
                 grGpu->setCurrentGrResourceTag(tag);
             }
@@ -534,9 +534,9 @@ void OpsTask::onPrepare(GrOpFlushState* flushState) {
             // GrOp::prePrepare may or may not have been called at this point
             chain.head()->prepare(flushState);
             flushState->setOpArgs(nullptr);
-            if (grGpu&& tag.isGrTagValid()) {
+            if (grGpu && tag.isGrTagValid()) {
                 GrGpuResourceTag grGpuResourceTag;
-                grGpu->setCurrentGrGpuResourceTag(grGpuResourceTag);
+                grGpu->setCurrentGrResourceTag(grGpuResourceTag);
             }
         }
     }
@@ -645,6 +645,7 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
 
     GrSurfaceProxyView dstView(sk_ref_sp(this->target(0)), fTargetOrigin, fTargetSwizzle);
 
+    auto grGpu = flushState->gpu();
     // Draw all the generated geometry.
     for (const auto& chain : fOpChains) {
         if (!chain.shouldExecute()) {
@@ -653,6 +654,10 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
         TRACE_EVENT0("skia.gpu", chain.head()->name());
 #endif
+        auto tag = chain.head()->getGrOpTag();
+            if (grGpu && tag.isGrTagValid()) {
+                grGpu->setCurrentGrResourceTag(tag);
+            }
 
         GrOpFlushState::OpArgs opArgs(chain.head(),
                                       dstView,
@@ -665,6 +670,10 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
         flushState->setOpArgs(&opArgs);
         chain.head()->execute(flushState, chain.bounds());
         flushState->setOpArgs(nullptr);
+        if (grGpu && tag.isGrTagValid()) {
+                GrGpuResourceTag grGpuResourceTag;
+                grGpu->setCurrentGrResourceTag(grGpuResourceTag);
+            }
     }
 
     renderPass->end();

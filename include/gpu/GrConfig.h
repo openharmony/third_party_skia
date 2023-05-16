@@ -15,6 +15,8 @@
  *  Gr defines are set to 0 or 1, rather than being undefined or defined
  */
 
+#define SK_DUMP_STATES //OPEN DUMP
+
 #if !defined(GR_CACHE_STATS)
   #if defined(SK_DEBUG) || defined(SK_DUMP_STATS)
       #define GR_CACHE_STATS  1

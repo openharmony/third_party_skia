@@ -329,7 +329,7 @@ void GrDirectContext::purgeUnlockedResources(bool scratchResourcesOnly) {
     fGpu->releaseUnlockedBackendObjects();
 }
 
-void GrDirectContext::purgeUnlockedResourcesByTag(bool scratchResourceseOnly, const GrGpuResourceTag tag){
+void GrDirectContext::purgeUnlockedResourcesByTag(bool scratchResourceseOnly, const GrGpuResourceTag tag) {
     ASSERT_SINGLE_OWNER
     fResourceCache->purgeUnlockedResourcesByTag(scratchResourceseOnly, tag);
     fResourceCache->purgeAsNeeded();
@@ -480,16 +480,16 @@ void GrDirectContext::dumpMemoryStatisticsByTag(SkTraceMemoryDump* traceMemoryDu
     ASSERT_SINGLE_OWNER
     fResourceCache->dumpMemoryStatistics(traceMemoryDump, tag);
     traceMemoryDump->dumpNumericValue("skia/gr_text_blob_cache", "size", "bytes",
-    this->getTextBlobCache()->usedBytes());
+        this->getTextBlobCache()->usedBytes());
 }
 
 void GrDirectContext::setCurrentGrResourceTag(const GrGpuResourceTag tag) {
-    if (fResourceCache){
+    if (fResourceCache) {
         return fResourceCache->setCurrentGrResourceTag(tag);
     }
 }
 
-GrGpuResourceTag GrDirectContext::getCurrentGrGpuResourceTag() const {
+GrGpuResourceTag GrDirectContext::getCurrentGrResourceTag() const {
     if (fResourceCache) {
         return fResourceCache->getCurrentGrResourceTag();
     }
