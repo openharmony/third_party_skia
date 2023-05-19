@@ -11,6 +11,7 @@
 #include "include/core/SkPath.h"
 #include "include/core/SkSpan.h"
 #include "include/core/SkSurface.h"
+#include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrTypes.h"
 #include "include/private/SkTArray.h"
 #include "src/core/SkTInternalLList.h"
@@ -55,6 +56,12 @@ public:
 
     GrDirectContext* getContext() { return fContext; }
     const GrDirectContext* getContext() const { return fContext; }
+
+void setCurrentGrResourceTag(const GrGpuResourceTag tag) {
+    if (fContext) {
+        fContext->setCurrentGrResourceTag(tag);
+    }
+}
 
     /**
      * Gets the capabilities of the draw target.

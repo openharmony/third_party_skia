@@ -329,6 +329,16 @@ void GrDirectContext::purgeUnlockedResources(bool scratchResourcesOnly) {
     fGpu->releaseUnlockedBackendObjects();
 }
 
+void GrDirectContext::purgeUnlockedResourcesByTag(bool scratchResourceseOnly, const GrGpuResourceTag tag) {
+    ASSERT_SINGLE_OWNER
+    fResourceCache->purgeUnlockedResourcesByTag(scratchResourceseOnly, tag);
+    fResourceCache->purgeAsNeeded();
+
+    // The textBlod Cache doesn't actually hold any GPU resource but this is a convenient
+    // place to purge stale blobs
+    this->getTextBlobCache()->purgeStaleBlobs();
+}
+
 void GrDirectContext::performDeferredCleanup(std::chrono::milliseconds msNotUsed,
                                              bool scratchResourcesOnly) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
@@ -464,6 +474,37 @@ void GrDirectContext::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) c
     fResourceCache->dumpMemoryStatistics(traceMemoryDump);
     traceMemoryDump->dumpNumericValue("skia/gr_text_blob_cache", "size", "bytes",
                                       this->getTextBlobCache()->usedBytes());
+}
+
+void GrDirectContext::dumpMemoryStatisticsByTag(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag tag) const {
+    ASSERT_SINGLE_OWNER
+    fResourceCache->dumpMemoryStatistics(traceMemoryDump, tag);
+    traceMemoryDump->dumpNumericValue("skia/gr_text_blob_cache", "size", "bytes",
+        this->getTextBlobCache()->usedBytes());
+}
+
+void GrDirectContext::setCurrentGrResourceTag(const GrGpuResourceTag tag) {
+    if (fResourceCache) {
+        return fResourceCache->setCurrentGrResourceTag(tag);
+    }
+}
+
+GrGpuResourceTag GrDirectContext::getCurrentGrResourceTag() const {
+    if (fResourceCache) {
+        return fResourceCache->getCurrentGrResourceTag();
+    }
+    return {};
+}
+void GrDirectContext::releasesByTag(const GrGpuResourceTag tag) {
+    if (fResourceCache) {
+        fResourceCache->releaseByTag(tag);
+    }
+}
+std::set<GrGpuResourceTag> GrDirectContext::getAllGrGpuResourceTags() const {
+    if (fResourceCache) {
+        return fResourceCache->getAllGrGpuResourceTags();
+    }
+    return {};
 }
 
 GrBackendTexture GrDirectContext::createBackendTexture(int width, int height,

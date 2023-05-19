@@ -111,6 +111,10 @@ void SurfaceFillContext::ClearToGrPaint(std::array<float, 4> color, GrPaint* pai
 }
 
 void SurfaceFillContext::addOp(GrOp::Owner op) {
+    auto direct = fContext->priv().asDirectContext();
+    if (direct && op) {
+        op->setGrOpTag(direct->getCurrentGrResourceTag());
+    }
     GrDrawingManager* drawingMgr = this->drawingManager();
     this->getOpsTask()->addOp(drawingMgr,
                               std::move(op),

@@ -268,6 +268,65 @@ void GrResourceCache::releaseAll() {
     SkASSERT(!fTexturesAwaitingUnref.count());
 }
 
+void GrResourceCache::releaseByTag(const GrGpuResourceTag tag) {
+    AutoValidate av(this);
+    this->processFreedGpuResources();
+    SkASSERT(fProxyProvider); // better have called setProxyProvider
+    std::vector<GrGpuResource*> recycleVector;
+    for (int i = 0; i < fNonpurgeableResources.count(); i++) {
+        GrGpuResource* resource = fNonpurgeableResources[i];
+        if (tag.filter(resource->getResourceTag())) {
+            recycleVector.emplace_back(resource);
+            if (resource->getUniqueKey().isValid()) {
+                fProxyProvider->processInvalidUniqueKey(resource->getUniqueKey(), nullptr,
+                                                        GrProxyProvider::InvalidateGPUResource::kNo);
+            }
+        }
+    }
+
+    for (int i = 0; i < fPurgeableQueue.count(); i++) {
+        GrGpuResource* resource = fPurgeableQueue.at(i);
+        if (tag.filter(resource->getResourceTag())) {
+            recycleVector.emplace_back(resource);
+            if (resource->getUniqueKey().isValid()) {
+                fProxyProvider->processInvalidUniqueKey(resource->getUniqueKey(), nullptr,
+                                                        GrProxyProvider::InvalidateGPUResource::kNo);
+            }
+        }
+    }
+
+    for (auto resource : recycleVector) {
+        SkASSERT(!resource->wasDestroyed());
+        resource->cacheAccess().release();
+    }
+}
+
+void GrResourceCache::setCurrentGrResourceTag(const GrGpuResourceTag tag) {
+    if (tag.isGrTagValid()) {
+        grResourceTagCacheStack.push(tag);
+        return;
+    }
+    if (!grResourceTagCacheStack.empty()) {
+        grResourceTagCacheStack.pop();
+    }
+}
+
+GrGpuResourceTag GrResourceCache::getCurrentGrResourceTag() const {
+    if (grResourceTagCacheStack.empty()) {
+        return{};
+    }
+    return grResourceTagCacheStack.top();
+}
+
+std::set<GrGpuResourceTag> GrResourceCache::getAllGrGpuResourceTags() const {
+    std::set<GrGpuResourceTag> result;
+    for (int i = 0; i < fNonpurgeableResources.count(); ++i) {
+        auto tag = fNonpurgeableResources[i]->getResourceTag();
+        result.insert(tag);
+    }
+    return result;
+}
+
 void GrResourceCache::refResource(GrGpuResource* resource) {
     SkASSERT(resource);
     SkASSERT(resource->getContext()->priv().getResourceCache() == this);
@@ -632,6 +691,29 @@ void GrResourceCache::purgeUnlockedResources(const GrStdSteadyClock::time_point*
     this->validate();
 }
 
+void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag tag) {
+    // Sort the queue
+    fPurgeableQueue.sort();
+
+    //Make a list of the scratch resources to delete
+    SkTDArray<GrGpuResource*> scratchResources;
+    for (int i = 0; i < fPurgeableQueue.count(); i++) {
+        GrGpuResource* resource = fPurgeableQueue.at(i);
+        SkASSERT(resource->resourcePriv().isPurgeable());
+        if (tag.filter(resource->getResourceTag()) && (!scratchResourcesOnly || !resource->getUniqueKey().isValid())) {
+            *scratchResources.append() = resource;
+        }
+    }
+
+    //Delete the scatch resource. This must be done as a separate pass
+    //to avoid messing up the sorted order of the queue
+    for (int i = 0; i <scratchResources.count(); i++) {
+        scratchResources.getAt(i)->cacheAccess().release();
+    }
+
+    this->validate();
+}
+
 bool GrResourceCache::purgeToMakeHeadroom(size_t desiredHeadroomBytes) {
     AutoValidate av(this);
     if (desiredHeadroomBytes > fMaxBytes) {
@@ -835,6 +917,19 @@ void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) c
     }
     for (int i = 0; i < fPurgeableQueue.count(); ++i) {
         fPurgeableQueue.at(i)->dumpMemoryStatistics(traceMemoryDump);
+    }
+}
+
+void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag tag) const {
+    for (int i = 0; i < fNonpurgeableResources.count(); ++i) {
+        if (tag.filter(fNonpurgeableResources[i]->getResourceTag())) {
+            fNonpurgeableResources[i]->dumpMemoryStatistics(traceMemoryDump);
+        }
+    }
+    for (int i = 0; i < fPurgeableQueue.count(); ++i) {
+        if (tag.filter(fPurgeableQueue.at(i)->getResourceTag())) {
+            fPurgeableQueue.at(i)->dumpMemoryStatistics(traceMemoryDump);
+        }
     }
 }
 
