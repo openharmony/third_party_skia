@@ -495,7 +495,7 @@ GrGpuResourceTag GrDirectContext::getCurrentGrResourceTag() const {
     }
     return {};
 }
-void GrDirectContext::releasesByTag(const GrGpuResourceTag tag) {
+void GrDirectContext::releaseByTag(const GrGpuResourceTag tag) {
     if (fResourceCache) {
         fResourceCache->releaseByTag(tag);
     }

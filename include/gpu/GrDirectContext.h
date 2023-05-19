@@ -846,7 +846,7 @@ public:
     /**
      * Releases GrGpuResource objects and removes them from the cache by tag.
      */
-    void releasesByTag(const GrGpuResourceTag tag);
+    void releaseByTag(const GrGpuResourceTag tag);
 
     /**
      * Get all GrGpuResource tag.
