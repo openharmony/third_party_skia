@@ -100,7 +100,7 @@ config("skia_public") {
   if (!skia_enable_skgpu_v1) {
     defines += [ "SK_GPU_V1=0" ]
   }
-  if (ace_enable_skia_small_page_texture) {
+  if (ace_enable_skia_small_page_texture && !(is_mac || is_ios)) {
     defines += [ "SK_ENABLE_SMALL_PAGE" ]
   }
 
@@ -497,7 +497,11 @@ optional("fontmgr_custom_empty_factory") {
 }
 
 optional("fontmgr_fontconfig") {
-  enabled = skia_enable_fontmgr_fontconfig
+  if (use_oh_skia) {
+    enabled = false
+  } else {
+    enabled = skia_enable_fontmgr_fontconfig
+  }
 
   # The public header includes fontconfig.h and uses FcConfig*
   public_deps = [ "${skia_third_party_dir}:fontconfig" ]
@@ -507,13 +511,22 @@ optional("fontmgr_fontconfig") {
   sources_for_tests = [ "tests/FontMgrFontConfigTest.cpp" ]
 }
 optional("fontmgr_fontconfig_factory") {
-  enabled = skia_enable_fontmgr_fontconfig
+  if (use_oh_skia) {
+    enabled = false
+  } else {
+    enabled = skia_enable_fontmgr_fontconfig
+  }
+
   deps = [ ":fontmgr_fontconfig" ]
   sources = [ "src/ports/SkFontMgr_fontconfig_factory.cpp" ]
 }
 
 optional("fontmgr_FontConfigInterface") {
-  enabled = skia_enable_fontmgr_FontConfigInterface
+  if (use_oh_skia) {
+    enabled = false
+  } else {
+    enabled = skia_enable_fontmgr_FontConfigInterface
+  }
 
   deps = [
     ":typeface_freetype",
@@ -1517,6 +1530,7 @@ skia_component("skia") {
     ":fontmgr_FontConfigInterface",
     ":fontmgr_android",
     ":fontmgr_custom_directory",
+    ":fontmgr_custom_directory_factory",
     ":fontmgr_custom_embedded",
     ":fontmgr_custom_empty",
     ":fontmgr_fontconfig",
@@ -1777,6 +1791,7 @@ if (use_oh_skia) {
       ":fontmgr_FontConfigInterface",
       ":fontmgr_android",
       ":fontmgr_custom_directory",
+      ":fontmgr_custom_directory_factory",
       ":fontmgr_custom_embedded",
       ":fontmgr_fontconfig",
       ":fontmgr_mac_ct",
