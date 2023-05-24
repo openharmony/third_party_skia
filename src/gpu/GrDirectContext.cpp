@@ -342,6 +342,7 @@ void GrDirectContext::purgeUnlockedResourcesByTag(bool scratchResourceseOnly, co
 void GrDirectContext::performDeferredCleanup(std::chrono::milliseconds msNotUsed,
                                              bool scratchResourcesOnly) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+    HITRACE_OHOS(TRACE_FUNC);
 
     ASSERT_SINGLE_OWNER
 
@@ -513,6 +514,7 @@ GrBackendTexture GrDirectContext::createBackendTexture(int width, int height,
                                                        GrRenderable renderable,
                                                        GrProtected isProtected) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+    HITRACE_OHOS(TRACE_FUNC);
     if (this->abandoned()) {
         return GrBackendTexture();
     }
@@ -612,6 +614,7 @@ GrBackendTexture GrDirectContext::createBackendTexture(int width, int height,
     auto finishedCallback = GrRefCntedCallback::Make(finishedProc, finishedContext);
 
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+    HITRACE_OHOS(TRACE_FUNC);
     if (this->abandoned()) {
         return {};
     }
@@ -666,6 +669,7 @@ GrBackendTexture GrDirectContext::createBackendTexture(const SkPixmap srcData[],
                                                        GrGpuFinishedProc finishedProc,
                                                        GrGpuFinishedContext finishedContext) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+    HITRACE_OHOS(TRACE_FUNC);
 
     auto finishedCallback = GrRefCntedCallback::Make(finishedProc, finishedContext);
 
@@ -814,6 +818,7 @@ GrBackendTexture GrDirectContext::createCompressedBackendTexture(
         GrGpuFinishedProc finishedProc,
         GrGpuFinishedContext finishedContext) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+    HITRACE_OHOS(TRACE_FUNC);
     auto finishedCallback = GrRefCntedCallback::Make(finishedProc, finishedContext);
 
     if (this->abandoned()) {
@@ -850,6 +855,7 @@ GrBackendTexture GrDirectContext::createCompressedBackendTexture(
         GrGpuFinishedProc finishedProc,
         GrGpuFinishedContext finishedContext) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+    HITRACE_OHOS(TRACE_FUNC);
     GrBackendFormat format = this->compressedBackendFormat(compression);
     return this->createCompressedBackendTexture(width, height, format, color,
                                                 mipMapped, isProtected, finishedProc,
@@ -866,6 +872,7 @@ GrBackendTexture GrDirectContext::createCompressedBackendTexture(
         GrGpuFinishedProc finishedProc,
         GrGpuFinishedContext finishedContext) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+    HITRACE_OHOS(TRACE_FUNC);
     auto finishedCallback = GrRefCntedCallback::Make(finishedProc, finishedContext);
 
     if (this->abandoned()) {
@@ -891,6 +898,7 @@ GrBackendTexture GrDirectContext::createCompressedBackendTexture(
         GrGpuFinishedProc finishedProc,
         GrGpuFinishedContext finishedContext) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+    HITRACE_OHOS(TRACE_FUNC);
     GrBackendFormat format = this->compressedBackendFormat(compression);
     return this->createCompressedBackendTexture(width, height, format, data, dataSize, mipMapped,
                                                 isProtected, finishedProc, finishedContext);
@@ -982,6 +990,7 @@ bool GrDirectContext::setBackendRenderTargetState(const GrBackendRenderTarget& b
 
 void GrDirectContext::deleteBackendTexture(GrBackendTexture backendTex) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+    HITRACE_OHOS(TRACE_FUNC);
     // For the Vulkan backend we still must destroy the backend texture when the context is
     // abandoned.
     if ((this->abandoned() && this->backend() != GrBackendApi::kVulkan) || !backendTex.isValid()) {

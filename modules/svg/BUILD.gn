@@ -22,6 +22,7 @@ if ((skia_enable_svg && skia_use_expat) || use_oh_skia) {
       "../..:skia",
       "../skresources",
       "../skshaper",
+      "//base/hiviewdfx/hitrace/interfaces/native/innerkits:hitrace_meter",
     ]
   }
 

@@ -1038,6 +1038,7 @@ void GrGLGpu::uploadTexData(SkISize texDims,
                             size_t bpp,
                             const GrMipLevel texels[],
                             int mipLevelCount) {
+    HITRACE_OHOS(TRACE_FUNC);
     SkASSERT(!texDims.isEmpty());
     SkASSERT(!dstRect.isEmpty());
     SkASSERT(SkIRect::MakeSize(texDims).contains(dstRect));

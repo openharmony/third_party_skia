@@ -230,6 +230,7 @@ void SkGlyphRunListPainter::processGlyphRun(const SkGlyphRun& glyphRun,
                                             const GrSDFTControl& control,
                                             SkGlyphRunPainterInterface* process,
                                             const char* tag) {
+    HITRACE_OHOS(TRACE_FUNC);
     #if defined(SK_TRACE_GLYPH_RUN_PROCESS)
         SkString msg;
         msg.appendf("\nStart glyph run processing");
