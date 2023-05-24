@@ -1776,11 +1776,11 @@ if (use_oh_skia) {
         ":icu_config",
       ]
 
-      public_deps = [ ":new_skia" ]
+      public_deps = [ ":skia_canvaskit_0310" ]
     }
   }
 
-  ohos_shared_library("new_skia") {
+  ohos_shared_library("skia_canvaskit_0310") {
     part_name = "third_party_skia"
     subsystem_name = "thirdparty"
 
