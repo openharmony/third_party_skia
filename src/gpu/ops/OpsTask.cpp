@@ -659,6 +659,9 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
                 grGpu->setCurrentGrResourceTag(tag);
             }
 
+#ifdef SK_BUILD_TRACE_FOR_OHOS
+        SkOHOSTraceUtil::addOpsCount(chain.head()->name());
+#endif
         GrOpFlushState::OpArgs opArgs(chain.head(),
                                       dstView,
                                       fUsesMSAASurface,
