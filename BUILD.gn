@@ -1744,7 +1744,6 @@ if (use_oh_skia) {
     include_dirs = [ "//third_party/skia" ]
 
     defines = skia_common_defines
-    cflags = skia_common_cflags
   }
 
   config("harfbuzz_config") {
