@@ -52,11 +52,7 @@ config("skia_wno") {
 
 # Skia public API, generally provided by :skia.
 config("skia_public") {
-  include_dirs = [
-    ".",
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter",
-  ]
+  include_dirs = [ "." ]
 
   defines = [ "NEW_SKIA" ]
   cflags = [ "-Wno-format" ]
@@ -1293,18 +1289,11 @@ optional("typeface_freetype") {
     enabled = skia_use_freetype
   }
 
-  deps = [
-    "${skia_third_party_dir}/freetype2",
-    "//base/hiviewdfx/hitrace/interfaces/native/innerkits:hitrace_meter",
-  ]
+  deps = [ "${skia_third_party_dir}/freetype2" ]
   sources = [
     "src/ports/SkFontHost_FreeType.cpp",
     "src/ports/SkFontHost_FreeType_common.cpp",
     "src/ports/SkFontHost_FreeType_common.h",
-  ]
-  include_dirs = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-    "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter",
   ]
 }
 
@@ -1795,11 +1784,7 @@ if (use_oh_skia) {
     part_name = "third_party_skia"
     subsystem_name = "thirdparty"
 
-    include_dirs = [
-      "${skia_third_party_dir}/externals/libgifcodec",
-      "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
-      "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter",
-    ]
+    include_dirs = [ "${skia_third_party_dir}/externals/libgifcodec" ]
     public_configs = [ ":skia_public" ]
     configs = skia_library_configs
     public_deps = [
@@ -1950,10 +1935,7 @@ if (use_oh_skia) {
     }
     if (is_ohos) {
       sources += [ "//third_party/skia/src/ports/SkDebug_ohos.cpp" ]
-      external_deps = [
-        "hitrace_native:hitrace_meter",
-        "hiviewdfx_hilog_native:libhilog",
-      ]
+      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
     }
 
     if (is_android) {

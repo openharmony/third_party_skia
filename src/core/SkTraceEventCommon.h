@@ -61,7 +61,6 @@
 
 #ifdef SK_DISABLE_TRACING
 
-#define HITRACE_OHOS(name) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
 #define TRACE_EVENT0(cg, n) TRACE_EMPTY
@@ -75,8 +74,6 @@
 #define TRACE_COUNTER2(cg, n, v1n, v1v, v2n, v2v) TRACE_EMPTY
 
 #elif defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
-
-#define HITRACE_OHOS(name) TRACE_EMPTY
 
 #include <cutils/trace.h>
 #include <stdarg.h>
@@ -198,115 +195,19 @@ public:
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
 
-#ifdef SK_BUILD_FOR_OHOS
-
-#include <algorithm>
-#include <inttypes.h>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
-#include "hitrace_meter.h"
-
-class SkOHOSTraceUtil {
-public:
-    using Pair = std::pair<std::string, uint64_t>;
-
-    explicit SkOHOSTraceUtil(const char *name) {
-        StartTraceDebug(gEnableTracing, HITRACE_TAG_GRAPHIC_AGP, name, 0);
-    }
-
-    ~SkOHOSTraceUtil() {
-        FinishTraceDebug(gEnableTracing, HITRACE_TAG_GRAPHIC_AGP);
-    }
-
-    static void setEnableTracing(const bool &enableTracing) {
-        gEnableTracing = enableTracing;
-    }
-
-    static bool getEnableTracing() {
-        return gEnableTracing;
-    }
-
-    static void clearOpsCount() {
-        opsCount = 0;
-        opsCountUmap.clear();
-    }
-
-    static void addOpsCount(const std::string &op) {
-        opsCount++;
-        opsCountUmap[op]++;
-    }
-
-    static uint64_t getOpsCount() {
-        return opsCount;
-    }
-
-    static std::unordered_map<std::string, uint64_t> getOpsCountUmap() {
-        return opsCountUmap;
-    }
-
-    static std::vector<Pair> getOpsCountVector(const bool &sort_cnt = true) {
-        std::vector<Pair> opsCountVtr;
-        for (auto& opItem : opsCountUmap) {
-            opsCountVtr.push_back(std::make_pair(opItem.first, opItem.second));
-        }
-        if (sort_cnt) {
-            std::sort(opsCountVtr.begin(), opsCountVtr.end(), [](Pair x, Pair y) -> bool {
-                if (x.second > y.second) {
-                    return true;
-                }
-                return false;
-            });
-        }
-        return opsCountVtr;
-    }
-
-private:
-    static bool gEnableTracing;
-    static uint64_t opsCount;
-    static std::unordered_map<std::string, uint64_t> opsCountUmap;
-};
-
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this does nothing.
 #define TRACE_EVENT0(category_group, name) \
-    SkOHOSTraceUtil _trace(name); \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
 
 #define TRACE_EVENT0_ALWAYS(category_group, name) \
-    SkOHOSTraceUtil _trace(name); \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
 
 #define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
-    SkOHOSTraceUtil _trace(name); \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
 
 #define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
-    SkOHOSTraceUtil _trace(name); \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val)
-
-#define HITRACE_OHOS(name) SkOHOSTraceUtil __trace(name)
-
-#else // !SK_BUILD_FOR_OHOS
-
-// Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
-// associated arguments. If the category is not enabled, then this does nothing.
-#define TRACE_EVENT0(category_group, name) \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
-
-#define TRACE_EVENT0_ALWAYS(category_group, name) \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
-
-#define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
-
-#define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
-    INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val)
-
-#define HITRACE_OHOS(name) TRACE_EMPTY
-
-#endif // SK_BUILD_FOR_OHOS
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val)
 
 // Records a single event called "name" immediately, with 0, 1 or 2 associated arguments. If the
 // category is not enabled, then this does nothing.

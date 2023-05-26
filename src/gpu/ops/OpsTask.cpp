@@ -476,7 +476,6 @@ void OpsTask::onPrePrepare(GrRecordingContext* context) {
         return;
     }
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
 
     GrSurfaceProxyView dstView(sk_ref_sp(this->target(0)), fTargetOrigin, fTargetSwizzle);
     for (const auto& chain : fOpChains) {
@@ -503,7 +502,6 @@ void OpsTask::onPrepare(GrOpFlushState* flushState) {
         return;
     }
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
 
     flushState->setSampledProxyArray(&fSampledProxies);
     GrSurfaceProxyView dstView(sk_ref_sp(this->target(0)), fTargetOrigin, fTargetSwizzle);
@@ -564,7 +562,6 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
     }
 
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
 
     // Make sure load ops are not kClear if the GPU needs to use draws for clears
     SkASSERT(fColorLoadOp != GrLoadOp::kClear ||
@@ -662,9 +659,6 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
                 grGpu->setCurrentGrResourceTag(tag);
             }
 
-#ifdef SK_BUILD_FOR_OHOS
-        SkOHOSTraceUtil::addOpsCount(chain.head()->name());
-#endif
         GrOpFlushState::OpArgs opArgs(chain.head(),
                                       dstView,
                                       fUsesMSAASurface,

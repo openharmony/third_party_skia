@@ -320,7 +320,6 @@ size_t GrComputeTightCombinedBufferSize(size_t bytesPerPixel, SkISize baseDimens
 void GrFillInCompressedData(SkImage::CompressionType type, SkISize dimensions,
                             GrMipmapped mipMapped, char* dstPixels, const SkColor4f& colorf) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
 
     int numMipLevels = 1;
     if (mipMapped == GrMipmapped::kYes) {
@@ -515,7 +514,6 @@ static inline void append_clamp_gamut(SkRasterPipeline* pipeline) {
 
 bool GrConvertPixels(const GrPixmap& dst, const GrCPixmap& src, bool flipY) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     if (src.dimensions().isEmpty() || dst.dimensions().isEmpty()) {
         return false;
     }
@@ -694,7 +692,6 @@ bool GrConvertPixels(const GrPixmap& dst, const GrCPixmap& src, bool flipY) {
 
 bool GrClearImage(const GrImageInfo& dstInfo, void* dst, size_t dstRB, std::array<float, 4> color) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
 
     if (!dstInfo.isValid()) {
         return false;
