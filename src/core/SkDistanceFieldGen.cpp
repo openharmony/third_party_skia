@@ -12,6 +12,7 @@
 #include "src/core/SkDistanceFieldGen.h"
 #include "src/core/SkMask.h"
 #include "src/core/SkPointPriv.h"
+#include "src/gpu/GrTracing.h"
 
 #include <utility>
 
@@ -470,6 +471,7 @@ static bool generate_distance_field_from_image(unsigned char* distanceField,
 bool SkGenerateDistanceFieldFromA8Image(unsigned char* distanceField,
                                         const unsigned char* image,
                                         int width, int height, size_t rowBytes) {
+    HITRACE_OHOS(TRACE_FUNC);
     SkASSERT(distanceField);
     SkASSERT(image);
 

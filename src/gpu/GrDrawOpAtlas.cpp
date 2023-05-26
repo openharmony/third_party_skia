@@ -170,6 +170,7 @@ void GrDrawOpAtlas::Plot::uploadToTexture(GrDeferredTextureUploadWritePixelsFn& 
     // We should only be issuing uploads if we are in fact dirty
     SkASSERT(fDirty && fData && proxy && proxy->peekTexture());
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+    HITRACE_OHOS(TRACE_FUNC);
     size_t rowBytes = fBytesPerPixel * fWidth;
     const unsigned char* dataPtr = fData;
     // Clamp to 4-byte aligned boundaries

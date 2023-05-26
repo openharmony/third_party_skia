@@ -31,6 +31,7 @@
 #include "src/core/SkSurfacePriv.h"
 #include "src/core/SkTextFormatParams.h"
 #include "src/core/SkWriteBuffer.h"
+#include "src/gpu/GrTracing.h"
 #include "src/utils/SkMatrix22.h"
 #include <new>
 
@@ -548,6 +549,7 @@ static void generateMask(const SkMask& mask, const SkPath& path,
 }
 
 void SkScalerContext::getImage(const SkGlyph& origGlyph) {
+    HITRACE_OHOS(TRACE_FUNC);
     const SkGlyph* unfilteredGlyph = &origGlyph;
     // in case we need to call generateImage on a mask-format that is different
     // (i.e. larger) than what our caller allocated by looking at origGlyph.
