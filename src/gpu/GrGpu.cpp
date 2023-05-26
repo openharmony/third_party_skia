@@ -104,8 +104,6 @@ sk_sp<GrTexture> GrGpu::createTextureCommon(SkISize dimensions,
                                             GrProtected isProtected,
                                             int mipLevelCount,
                                             uint32_t levelClearMask) {
-    TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     if (this->caps()->isFormatCompressed(format)) {
         // Call GrGpu::createCompressedTexture.
         return nullptr;
@@ -159,8 +157,6 @@ sk_sp<GrTexture> GrGpu::createTexture(SkISize dimensions,
                                       GrMipmapped mipMapped,
                                       SkBudgeted budgeted,
                                       GrProtected isProtected) {
-    TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     int mipLevelCount = 1;
     if (mipMapped == GrMipmapped::kYes) {
         mipLevelCount =
@@ -195,7 +191,6 @@ sk_sp<GrTexture> GrGpu::createTexture(SkISize dimensions,
                                       const GrMipLevel texels[],
                                       int texelLevelCount) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     if (texelLevelCount) {
         if (!validate_texel_levels(dimensions, srcColorType, texels, texelLevelCount,
                                    this->caps())) {
@@ -388,7 +383,6 @@ sk_sp<GrRenderTarget> GrGpu::onWrapVulkanSecondaryCBAsRenderTarget(const SkImage
 sk_sp<GrGpuBuffer> GrGpu::createBuffer(size_t size, GrGpuBufferType intendedType,
                                        GrAccessPattern accessPattern, const void* data) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     this->handleDirtyContext();
     sk_sp<GrGpuBuffer> buffer = this->onCreateBuffer(size, intendedType, accessPattern, data);
     if (!this->caps()->reuseScratchBuffers()) {
@@ -400,7 +394,6 @@ sk_sp<GrGpuBuffer> GrGpu::createBuffer(size_t size, GrGpuBufferType intendedType
 bool GrGpu::copySurface(GrSurface* dst, GrSurface* src, const SkIRect& srcRect,
                         const SkIPoint& dstPoint) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     SkASSERT(dst && src);
     SkASSERT(!src->framebufferOnly());
 
@@ -420,7 +413,6 @@ bool GrGpu::readPixels(GrSurface* surface,
                        void* buffer,
                        size_t rowBytes) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     SkASSERT(surface);
     SkASSERT(!surface->framebufferOnly());
     SkASSERT(this->caps()->areColorTypeAndFormatCompatible(surfaceColorType,
@@ -457,7 +449,6 @@ bool GrGpu::writePixels(GrSurface* surface,
                         int mipLevelCount,
                         bool prepForTexSampling) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     ATRACE_ANDROID_FRAMEWORK_ALWAYS("Texture upload(%u) %ix%i",
                                     surface->uniqueID().asUInt(), rect.width(), rect.height());
     SkASSERT(surface);
@@ -506,7 +497,6 @@ bool GrGpu::transferPixelsTo(GrTexture* texture,
                              size_t offset,
                              size_t rowBytes) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     SkASSERT(texture);
     SkASSERT(transferBuffer);
 
@@ -556,7 +546,6 @@ bool GrGpu::transferPixelsFrom(GrSurface* surface,
                                sk_sp<GrGpuBuffer> transferBuffer,
                                size_t offset) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     SkASSERT(surface);
     SkASSERT(transferBuffer);
     SkASSERT(this->caps()->areColorTypeAndFormatCompatible(surfaceColorType,
@@ -589,7 +578,6 @@ bool GrGpu::transferPixelsFrom(GrSurface* surface,
 
 bool GrGpu::regenerateMipMapLevels(GrTexture* texture) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
     SkASSERT(texture);
     SkASSERT(this->caps()->mipmapSupport());
     SkASSERT(texture->mipmapped() == GrMipmapped::kYes);
@@ -643,7 +631,6 @@ void GrGpu::executeFlushInfo(SkSpan<GrSurfaceProxy*> proxies,
                              const GrFlushInfo& info,
                              const GrBackendSurfaceMutableState* newState) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
 
     GrResourceProvider* resourceProvider = fContext->priv().resourceProvider();
 

@@ -207,7 +207,6 @@ void GrGLProgramBuilder::storeShaderInCache(const SkSL::Program::Inputs& inputs,
 
 sk_sp<GrGLProgram> GrGLProgramBuilder::finalize(const GrGLPrecompiledProgram* precompiledProgram) {
     TRACE_EVENT0("skia.shaders", TRACE_FUNC);
-    HITRACE_OHOS(TRACE_FUNC);
 
     // verify we can get a program id
     GrGLuint programID;
