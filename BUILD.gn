@@ -55,13 +55,7 @@ config("skia_public") {
   include_dirs = [ "." ]
 
   defines = [ "NEW_SKIA" ]
-  cflags = [ "-Wno-format" ]
-  cflags_cc = [ "-Wno-array-parameter" ]
   cflags_objcc = []
-  if (target_cpu == "x86_64" || current_os == "windows" ||
-      current_os == "mac" || current_os == "linux" || current_os == "ios") {
-    cflags_cc += [ "-Wno-psabi" ]
-  }
   if (is_skia_dev_build) {
     defines += [ "GR_TEST_UTILS=1" ]
   }
@@ -123,7 +117,13 @@ config("skia_public") {
 config("skia_private") {
   visibility = [ "./*" ]
 
+  cflags = [ "-Wno-format" ]
+  cflags_cc = [ "-Wno-array-parameter" ]
   defines = [ "SK_GAMMA_APPLY_TO_A8" ]
+  if (target_cpu == "x86_64" || current_os == "windows" ||
+      current_os == "mac" || current_os == "linux" || current_os == "ios") {
+    cflags_cc += [ "-Wno-psabi" ]
+  }
   if (skia_use_fixed_gamma_text) {
     defines += [
       "SK_GAMMA_EXPONENT=1.4",
