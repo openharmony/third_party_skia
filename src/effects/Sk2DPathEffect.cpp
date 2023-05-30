@@ -149,7 +149,7 @@ public:
     }
 
     Factory getFactory() const override { return CreateProc; }
-    const char* getTypeName() const override { return "SkLine2DPathEffect"; }
+    const char* getTypeName() const override { return "SkLine2DPathEffectImpl"; }
 
 private:
     SkScalar fWidth;
@@ -181,7 +181,7 @@ public:
     }
 
     Factory getFactory() const override { return CreateProc; }
-    const char* getTypeName() const override { return "SkPath2DPathEffect"; }
+    const char* getTypeName() const override { return "SkPath2DPathEffectImpl"; }
 
 private:
     SkPath  fPath;
