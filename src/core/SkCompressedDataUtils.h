@@ -18,10 +18,11 @@ class SkData;
 
 static constexpr bool SkCompressionTypeIsOpaque(SkImage::CompressionType compression) {
     switch (compression) {
-        case SkImage::CompressionType::kNone:            return true;
-        case SkImage::CompressionType::kETC2_RGB8_UNORM: return true;
-        case SkImage::CompressionType::kBC1_RGB8_UNORM:  return true;
-        case SkImage::CompressionType::kBC1_RGBA8_UNORM: return false;
+        case SkImage::CompressionType::kNone:             return true;
+        case SkImage::CompressionType::kETC2_RGB8_UNORM:  return true;
+        case SkImage::CompressionType::kBC1_RGB8_UNORM:   return true;
+        case SkImage::CompressionType::kBC1_RGBA8_UNORM:  return false;
+        case SkImage::CompressionType::kASTC_RGBA8_UNORM: return false;
     }
 
     SkUNREACHABLE;

@@ -1230,10 +1230,11 @@ static constexpr size_t GrColorTypeBytesPerPixel(GrColorType ct) {
 // an SkColorType even for CompressedTypes so we need some conversion.
 static constexpr SkColorType GrCompressionTypeToSkColorType(SkImage::CompressionType compression) {
     switch (compression) {
-        case SkImage::CompressionType::kNone:            return kUnknown_SkColorType;
-        case SkImage::CompressionType::kETC2_RGB8_UNORM: return kRGB_888x_SkColorType;
-        case SkImage::CompressionType::kBC1_RGB8_UNORM:  return kRGB_888x_SkColorType;
-        case SkImage::CompressionType::kBC1_RGBA8_UNORM: return kRGBA_8888_SkColorType;
+        case SkImage::CompressionType::kNone:             return kUnknown_SkColorType;
+        case SkImage::CompressionType::kETC2_RGB8_UNORM:  return kRGB_888x_SkColorType;
+        case SkImage::CompressionType::kBC1_RGB8_UNORM:   return kRGB_888x_SkColorType;
+        case SkImage::CompressionType::kBC1_RGBA8_UNORM:  return kRGBA_8888_SkColorType;
+        case SkImage::CompressionType::kASTC_RGBA8_UNORM: return kRGBA_8888_SkColorType;
     }
 
     SkUNREACHABLE;
@@ -1342,10 +1343,11 @@ static constexpr const char* GrColorTypeToStr(GrColorType ct) {
 
 static constexpr const char* GrCompressionTypeToStr(SkImage::CompressionType compression) {
     switch (compression) {
-        case SkImage::CompressionType::kNone:            return "kNone";
-        case SkImage::CompressionType::kETC2_RGB8_UNORM: return "kETC2_RGB8_UNORM";
-        case SkImage::CompressionType::kBC1_RGB8_UNORM:  return "kBC1_RGB8_UNORM";
-        case SkImage::CompressionType::kBC1_RGBA8_UNORM: return "kBC1_RGBA8_UNORM";
+        case SkImage::CompressionType::kNone:             return "kNone";
+        case SkImage::CompressionType::kETC2_RGB8_UNORM:  return "kETC2_RGB8_UNORM";
+        case SkImage::CompressionType::kBC1_RGB8_UNORM:   return "kBC1_RGB8_UNORM";
+        case SkImage::CompressionType::kBC1_RGBA8_UNORM:  return "kBC1_RGBA8_UNORM";
+        case SkImage::CompressionType::kASTC_RGBA8_UNORM: return "kASTC_RGBA8_UNORM";
     }
     SkUNREACHABLE;
 }
