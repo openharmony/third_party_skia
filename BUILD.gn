@@ -107,6 +107,9 @@ config("skia_public") {
   # Some older versions of the Clang toolchain change the visibility of
   # symbols decorated with API_AVAILABLE macro to be visible. Users of such
   # toolchains suppress the use of this macro till toolchain updates are made.
+  if (is_mac) {
+    defines += [ "SK_GL_ENABLE_330_MAC" ]
+  }
   if (is_mac || is_ios) {
     if (skia_enable_api_available_macro) {
       defines += [ "SK_ENABLE_API_AVAILABLE" ]
