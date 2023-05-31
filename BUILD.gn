@@ -1805,10 +1805,7 @@ if (use_oh_skia) {
       public_deps += [ ":gpu" ]
     } else {
       if (defined(ace_enable_gpu) && ace_enable_gpu) {
-        if (!defined(config) || !defined(config.disable_gpu) ||
-            !config.disable_gpu) {
-          public_deps += [ ":gpu" ]
-        }
+        public_deps += [ ":gpu" ]
       }
     }
     deps = [
@@ -1885,6 +1882,13 @@ if (use_oh_skia) {
 
     defines = skia_common_defines
     cflags = skia_common_cflags
+    if (!defined(ace_enable_gpu) || !ace_enable_gpu) {
+      defines += [
+        "SK_BUILD_FOR_UNIX",
+        "SK_SUPPORT_GPU=0",
+      ]
+      defines -= [ "SK_GL" ]
+    }
     cflags_cc = [ "-Wno-unknown-pragmas" ]
     libs = []
 
