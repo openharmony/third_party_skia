@@ -1666,8 +1666,8 @@ int GrGLGpu::getCompatibleStencilIndex(GrGLFormat format) {
 
 static void set_khr_debug_label(GrGLGpu* gpu, const GrGLuint id) {
     if (gpu->glCaps().debugSupport()) {
-        const char* label = "Skia";
-        GR_GL_CALL(gpu->glInterface(), ObjectLabel(GR_GL_TEXTURE, id, -1, label));
+        SkString label = SkStringPrintf("Skia_Texture_%d", id);
+        GR_GL_CALL(gpu->glInterface(), ObjectLabel(GR_GL_TEXTURE, id, -1, label.c_str()));
     }
 }
 
