@@ -260,6 +260,10 @@ static_library("libjpeg") {
     "NO_GETENV",
   ]
 
+  if (build_with_chromium) {
+    defines += [ "HAS_CHROMIUM" ]
+  }
+
   configs += [ ":libjpeg_config" ]
 
   public_configs = [ ":libjpeg_config" ]
