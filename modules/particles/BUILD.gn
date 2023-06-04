@@ -20,10 +20,14 @@ static_library("particles") {
     import("particles.gni")
     public_configs = [ ":public_config" ]
     include_dirs = [ "../../tools/timer" ]
-    deps = [
-      "../..:skia",
-      "../skresources",
-    ]
+    if (use_oh_skia) {
+      deps = [ "../..:skia_canvaskit_0310" ]
+    } else {
+      deps = [
+        "../..:skia",
+        "../skresources",
+      ]
+    }
     sources = skia_particle_sources
     configs += [
       "../../:skia_private",

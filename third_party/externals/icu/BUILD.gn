@@ -14,7 +14,7 @@ if (is_mac && !icu_is_in_fuchsia) {
   import("${skia_root_dir}/build/config/sanitizers/sanitizers.gni")
 }
 
-assert(!icu_disable_thin_archive || !is_component_build,
+assert(!icu_disable_thin_archive || !is_skia_component_build,
        "icu_disable_thin_archive only works in static library builds")
 
 # Meta target that includes both icuuc and icui18n. Most targets want both.
@@ -46,7 +46,7 @@ config("icu_config") {
     "U_ENABLE_RESOURCE_TRACING=0",
   ]
 
-  if (!is_component_build) {
+  if (!is_skia_component_build) {
     defines += [ "U_STATIC_IMPLEMENTATION" ]
   }
 

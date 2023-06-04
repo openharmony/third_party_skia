@@ -76,8 +76,8 @@ std::unique_ptr<SkFontData> SkTypeface_OHOS::onMakeFontData() const
  */
 void SkTypeface_OHOS::onGetFontDescriptor(SkFontDescriptor* descriptor, bool* isLocal) const
 {
-    if (isLocal) {
-        *isLocal = false;
+    if (!*isLocal) {
+        *isLocal = true;
     }
     if (descriptor) {
         SkString familyName;
