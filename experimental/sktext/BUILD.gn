@@ -21,11 +21,19 @@ if (skia_enable_sktext && skia_enable_skshaper && skia_use_icu &&
     public_configs = [ ":public_config" ]
     public = sktext_public
     sources = sktext_sources
-    deps = [
-      "../..:skia",
-      "../../modules/skshaper",
-      "../../modules/skunicode",
-    ]
+    if (use_oh_skia) {
+      deps = [
+        "../..:skia_canvaskit_0310",
+        "../../modules/skshaper",
+        "../../modules/skunicode",
+      ]
+    } else {
+      deps = [
+        "../..:skia",
+        "../../modules/skshaper",
+        "../../modules/skunicode",
+      ]
+    }
   }
 
   if (defined(is_skia_standalone) && skia_enable_tools) {
@@ -54,12 +62,19 @@ if (skia_enable_sktext && skia_enable_skshaper && skia_use_icu &&
           "tests/UnicodeText.cpp",
           "tests/WrappedText.cpp",
         ]
-        deps = [
-          ":sktext",
-          "../..:gpu_tool_utils",
-          "../..:skia",
-          "../../modules/skshaper",
-        ]
+        if (use_oh_skia) {
+          deps = [
+            ":sktext",
+            "../..:gpu_tool_utils",
+          ]
+        } else {
+          deps = [
+            ":sktext",
+            "../..:gpu_tool_utils",
+            "../..:skia",
+            "../../modules/skshaper",
+          ]
+        }
       } else {
         sources = []
       }
