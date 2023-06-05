@@ -1784,6 +1784,7 @@ if (use_oh_skia) {
 
   ohos_shared_library("skia_canvaskit_0310") {
     part_name = "third_party_skia"
+    innerapi_tags = [ "platformsdk" ]
     subsystem_name = "thirdparty"
 
     include_dirs = [ "${skia_third_party_dir}/externals/libgifcodec" ]
