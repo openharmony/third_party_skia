@@ -79,5 +79,10 @@ bool SkAndroidFrameworkTraceUtil::gEnableAndroidTracing = false;
 
 #endif //SK_BUILD_FOR_ANDROID_FRAMEWORK
 
+#ifdef SK_BUILD_TRACE_FOR_OHOS
 
+bool SkOHOSTraceUtil::gEnableTracing = false;
+uint64_t SkOHOSTraceUtil::opsCount = 0;
+std::unordered_map<std::string, uint64_t> SkOHOSTraceUtil::opsCountUmap = {};
 
+#endif // SK_BUILD_TRACE_FOR_OHOS
