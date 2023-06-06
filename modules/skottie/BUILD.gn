@@ -25,9 +25,6 @@ if (skia_enable_skottie) {
       "../skshaper",
       "../skunicode",
     ]
-    if (use_oh_skia) {
-      deps -= [ "../..:skia" ]
-    }
   }
 
   if (defined(is_skia_standalone)) {
@@ -46,9 +43,6 @@ if (skia_enable_skottie) {
         ":skottie",
         "../..:skia",
       ]
-      if (use_oh_skia) {
-        deps -= [ "../..:skia" ]
-      }
     }
 
     if (skia_enable_tools) {
@@ -74,9 +68,6 @@ if (skia_enable_skottie) {
           "../..:test",
           "../skshaper",
         ]
-        if (use_oh_skia) {
-          deps -= [ "../..:skia" ]
-        }
       }
 
       skia_source_set("fuzz") {
@@ -144,9 +135,6 @@ if (skia_enable_skottie) {
           "../..:skia",
           "../..:tool_utils",
         ]
-        if (use_oh_skia) {
-          deps -= [ "../..:skia" ]
-        }
       }
     }
   }

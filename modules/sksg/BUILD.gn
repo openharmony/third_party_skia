@@ -15,11 +15,7 @@ skia_component("sksg") {
   public_configs = [ ":public_config" ]
   sources = skia_sksg_sources
   configs = [ "../../:skia_private" ]
-  if (use_oh_skia) {
-    deps = [ "../..:skia_canvaskit_0310" ]
-  } else {
-    deps = [ "../..:skia" ]
-  }
+  deps = [ "../..:skia" ]
 }
 
 if (defined(is_skia_standalone) && skia_enable_tools) {
@@ -33,9 +29,6 @@ if (defined(is_skia_standalone) && skia_enable_tools) {
       "../..:skia",
       "../..:test",
     ]
-    if (use_oh_skia) {
-      deps -= [ "../..:skia" ]
-    }
   }
 
   skia_source_set("samples") {

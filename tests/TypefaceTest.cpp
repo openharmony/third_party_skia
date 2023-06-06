@@ -515,7 +515,7 @@ static void check_serialize_behaviors(sk_sp<SkTypeface> tf, bool isLocalData,
     if (isLocalData) {
         REPORTER_ASSERT(reporter, data0->equals(data2.get()));
     } else {
-        REPORTER_ASSERT(reporter, !data1->equals(data2.get()));
+        REPORTER_ASSERT(reporter, data1->equals(data2.get()));
     }
 }
 

@@ -24,7 +24,7 @@
         },
         "build": {
             "sub_component": [
-                "//third_party/skia:skia_canvaskit_0310(//build/toolchain/ohos:ohos_clang_arm)"
+                "//third_party/skia:skia(//build/toolchain/ohos:ohos_clang_arm)"
             ],
             "inner_kits": [],
             "test": []
