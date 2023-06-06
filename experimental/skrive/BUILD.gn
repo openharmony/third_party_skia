@@ -19,10 +19,6 @@ if (skia_enable_skrive) {
     sources = skia_skrive_sources
     configs += [ "../../:skia_private" ]
     deps = [ "../..:skia" ]
-    if (use_oh_skia) {
-      deps -= [ "../..:skia" ]
-      deps += [ "../..:skia_canvaskit_0310" ]
-    }
   }
 
   if (defined(is_skia_standalone)) {
@@ -45,9 +41,6 @@ if (skia_enable_skrive) {
           "../..:skia",
           "../..:test",
         ]
-        if (use_oh_skia) {
-          deps -= [ "../..:skia" ]
-        }
       }
     }
   }

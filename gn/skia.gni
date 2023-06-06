@@ -32,7 +32,7 @@ declare_args() {
   skia_enable_skrive = true
   skia_enable_sksl = true
   skia_enable_skvm_jit_when_possible = is_skia_dev_build
-  skia_enable_svg = !is_skia_component_build
+  skia_enable_svg = !is_component_build
   skia_enable_tools = is_skia_dev_build
   skia_enable_gpu_debug_layers = is_skia_dev_build && is_debug
   skia_disable_vma_stl_shared_mutex = false
@@ -105,7 +105,7 @@ declare_args() {
   skia_use_libfuzzer_defaults = true
 
   # TODO: move to ace feature gni when ace feature is ready
-  ace_enable_skia_small_page_texture = false
+  ace_enable_skia_small_page_texture = true
 }
 
 declare_args() {
@@ -180,7 +180,7 @@ template("component") {
     _component_mode = "source_set"
   }
 
-  if (is_skia_component_build) {
+  if (is_component_build) {
     _component_mode = "shared_library"
   }
 
@@ -190,7 +190,7 @@ template("component") {
 }
 
 set_defaults("component") {
-  if (is_skia_component_build) {
+  if (!is_component_build) {
     configs = []
     if (defined(default_compiler_configs)) {
       configs += default_compiler_configs

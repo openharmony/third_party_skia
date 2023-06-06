@@ -26,19 +26,11 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_use_icu &&
     public = skparagraph_public
     sources = skparagraph_sources
     configs = []
-    if (use_oh_skia) {
-      deps = [
-        "../..:skia_canvaskit_0310",
-        "../skshaper",
-        "../skunicode",
-      ]
-    } else {
-      deps = [
-        "../..:skia",
-        "../skshaper",
-        "../skunicode",
-      ]
-    }
+    deps = [
+      "../..:skia",
+      "../skshaper",
+      "../skunicode",
+    ]
   }
 
   config("utils_config") {
@@ -61,19 +53,12 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_use_icu &&
       if (paragraph_gms_enabled) {
         testonly = true
         sources = [ "gm/simple_gm.cpp" ]
-        if (use_oh_skia) {
-          deps = [
-            ":skparagraph",
-            "../..:gpu_tool_utils",
-          ]
-        } else {
-          deps = [
-            ":skparagraph",
-            "../..:gpu_tool_utils",
-            "../..:skia",
-            "../skshaper",
-          ]
-        }
+        deps = [
+          ":skparagraph",
+          "../..:gpu_tool_utils",
+          "../..:skia",
+          "../skshaper",
+        ]
       } else {
         sources = []
       }
@@ -83,19 +68,12 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_use_icu &&
       if (paragraph_tests_enabled) {
         testonly = true
         sources = [ "tests/SkParagraphTest.cpp" ]
-        if (use_oh_skia) {
-          deps = [
-            ":skparagraph",
-            "../..:test",
-          ]
-        } else {
-          deps = [
-            ":skparagraph",
-            "../..:skia",
-            "../..:test",
-            "../skshaper",
-          ]
-        }
+        deps = [
+          ":skparagraph",
+          "../..:skia",
+          "../..:test",
+          "../skshaper",
+        ]
       } else {
         sources = []
       }
