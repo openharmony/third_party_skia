@@ -9,6 +9,9 @@ if ((skia_enable_svg && skia_use_expat) || use_oh_skia) {
   config("public_config") {
     defines = [ "SK_ENABLE_SVG" ]
     include_dirs = [ "include" ]
+    if (is_ohos) {
+      include_dirs += [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+    }
   }
 
   skia_component("svg") {
@@ -23,6 +26,11 @@ if ((skia_enable_svg && skia_use_expat) || use_oh_skia) {
       "../skresources",
       "../skshaper",
     ]
+    if (is_ohos) {
+      deps += [
+        "//base/hiviewdfx/hitrace/interfaces/native/innerkits:hitrace_meter",
+      ]
+    }
   }
 
   if (skia_enable_tools) {

@@ -48,7 +48,11 @@ class GrPaint;
  * The bounds are used in determining which clip elements must be applied and thus the bounds cannot
  * in turn depend upon the clip.
  */
-#define GR_OP_SPEW 0
+#ifdef SK_BUILD_TRACE_FOR_OHOS
+    #define GR_OP_SPEW 1
+#else
+    #define GR_OP_SPEW 0
+#endif
 #if GR_OP_SPEW
     #define GrOP_SPEW(code) code
     #define GrOP_INFO(...) SkDebugf(__VA_ARGS__)

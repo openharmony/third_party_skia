@@ -153,6 +153,9 @@ config("skia_private") {
   if (skia_enable_winuwp) {
     defines += [ "SK_WINUWP" ]
   }
+  if (is_ohos) {
+    defines += [ "SK_BUILD_TRACE_FOR_OHOS" ]
+  }
 }
 
 # Any code that's linked into Skia-the-library should use this config via += skia_library_configs.
@@ -1458,6 +1461,9 @@ if (use_oh_skia) {
       "${skia_modules_dir}/skresources/include",
       "${skia_modules_dir}/skshaper/include",
     ]
+    if (is_ohos) {
+      include_dirs += [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+    }
     defines = skia_common_defines
     cflags = skia_common_cflags
     configs = [ ":skia_private" ]
