@@ -184,6 +184,7 @@ public:
     }
 
     void purgeUnlockedResourcesByTag(bool scratchResourceOnly, const GrGpuResourceTag tag);
+    void purgeUnlockAndSafeCacheGpuResources();
 
     // Purge unlocked resources not used since the passed point in time. If 'scratchResourcesOnly'
     // is true the purgeable resources containing persistent data are spared. If it is false then

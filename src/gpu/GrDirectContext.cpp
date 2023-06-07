@@ -329,6 +329,23 @@ void GrDirectContext::purgeUnlockedResources(bool scratchResourcesOnly) {
     fGpu->releaseUnlockedBackendObjects();
 }
 
+void GrDirectContext::purgeUnlockAndSafeCacheGpuResources() {
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned()) {
+        return;
+    }
+
+    fResourceCache->purgeUnlockAndSafeCacheGpuResources();
+    fResourceCache->purgeAsNeeded();
+
+    // The textBlob Cache doesn't actually hold any GPU resource but this is a convenient
+    // place to purge stale blobs
+    this->getTextBlobCache()->purgeStaleBlobs();
+
+    fGpu->releaseUnlockedBackendObjects();
+}
+
 void GrDirectContext::purgeUnlockedResourcesByTag(bool scratchResourceseOnly, const GrGpuResourceTag tag) {
     ASSERT_SINGLE_OWNER
     fResourceCache->purgeUnlockedResourcesByTag(scratchResourceseOnly, tag);
