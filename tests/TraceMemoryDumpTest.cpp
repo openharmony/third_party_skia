@@ -185,7 +185,7 @@ DEF_GPUTEST_FOR_GL_RENDERING_CONTEXTS(SkTraceMemoryDump_ownedGLTextureRenderTarg
     auto texRT = sk_make_sp<GrGLTextureRenderTarget>(gpu, SkBudgeted::kYes, 8, texDesc, rtIDs,
                                                      GrMipmapStatus::kNotAllocated);
 
-    ValidateMemoryDumps(reporter, dContext, 3, texRT->gpuMemorySize(), true /* isOwned */);
+    ValidateMemoryDumps(reporter, dContext, 2, texRT->gpuMemorySize(), true /* isOwned */);
 }
 
 #endif  // SK_GL

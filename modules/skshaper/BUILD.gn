@@ -10,7 +10,7 @@ if (skia_enable_skshaper) {
   config("public_config") {
     include_dirs = [ "include" ]
     defines = []
-    if (is_component_build) {
+    if (is_skia_component_build) {
       defines += [ "SKSHAPER_DLL" ]
     }
     if (skia_use_fonthost_mac) {
@@ -25,8 +25,16 @@ if (skia_enable_skshaper) {
     check_includes = false
     public_configs = [ ":public_config" ]
     public = skia_shaper_public
-    deps = [ "../..:skia" ]
+    if (!use_oh_skia) {
+      deps = [ "../..:skia" ]
+    } else {
+      include_dirs = [ "//third_party/skia" ]
+      deps = []
+    }
     defines = [ "SKSHAPER_IMPLEMENTATION=1" ]
+    if (use_oh_skia) {
+      defines += [ "SK_UNICODE_AVAILABLE" ]
+    }
     sources = skia_shaper_primitive_sources
     if (skia_use_fonthost_mac) {
       sources += skia_shaper_coretext_sources
@@ -44,10 +52,16 @@ if (skia_enable_skshaper) {
     if (skia_use_icu && skia_use_harfbuzz) {
       sources += skia_shaper_harfbuzz_sources
       deps += [
-        "../skunicode",
         "${skia_third_party_dir}/harfbuzz",
+        "../skunicode",
       ]
+
+      if (use_oh_skia) {
+        deps -= [ "../skunicode" ]
+      }
     }
+
+    #configs += [
     configs += [
       "../../:skia_private",
       "../../third_party/icu/config:no_cxx",

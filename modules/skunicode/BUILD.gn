@@ -14,7 +14,7 @@ if (skia_use_icu) {
   config("public_config") {
     include_dirs = [ "include" ]
     defines = [ "SK_UNICODE_AVAILABLE" ]
-    if (is_component_build) {
+    if (is_skia_component_build) {
       defines += [ "SKUNICODE_DLL" ]
     }
   }
@@ -23,7 +23,12 @@ if (skia_use_icu) {
     check_includes = false
     public_configs = [ ":public_config" ]
     public = skia_unicode_public
-    deps = [ "../..:skia" ]
+    if (!use_oh_skia) {
+      deps = [ "../..:skia" ]
+    } else {
+      include_dirs = [ "//third_party/skia" ]
+      deps = []
+    }
     defines = [ "SKUNICODE_IMPLEMENTATION=1" ]
     sources = skia_unicode_sources
 
@@ -35,6 +40,7 @@ if (skia_use_icu) {
       sources += skia_unicode_builtin_icu_sources
       deps += [ "${skia_third_party_dir}/icu" ]
     }
+
     configs += [
       "../../:skia_private",
       "../../third_party/icu/config:no_cxx",
