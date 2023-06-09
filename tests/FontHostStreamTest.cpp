@@ -100,7 +100,7 @@ DEF_TEST(FontHostStream, reporter) {
         SkFontDescriptor desc;
         bool isLocalStream = false;
         streamTypeface->getFontDescriptor(&desc, &isLocalStream);
-        REPORTER_ASSERT(reporter, isLocalStream);
+        REPORTER_ASSERT(reporter, !isLocalStream);
 
         font.setTypeface(streamTypeface);
         drawBG(&streamCanvas);
