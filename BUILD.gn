@@ -626,6 +626,12 @@ optional("fontmgr_win") {
 }
 
 if (use_oh_skia) {
+  ohos_prebuilt_etc("ohos_fontconfig.json") {
+    source = "//third_party/skia/src/ports/skia_ohos/config/fontconfig.json"
+    part_name = "third_party_skia"
+    subsystem_name = "thirdparty"
+  }
+
   optional("fontmgr_ohos") {
     enabled = skia_enable_fontmgr_ohos
 
@@ -662,6 +668,15 @@ if (use_oh_skia) {
     } else {
       deps += [ "//third_party/bounds_checking_function:libsec_static" ]
     }
+
+    deps += [ ":ohos_fontconfig.json" ]
+
+    if (graphic_standard_feature_wuji_enable) {
+      deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
+    } else if (ace_engine_standard_fonts_enable) {
+      deps += [ "//base/global/system_resources:ohos_fonts" ]
+    }
+
     if (use_mingw_win) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
     } else if (use_mac) {
