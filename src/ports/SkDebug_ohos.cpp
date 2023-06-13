@@ -31,7 +31,11 @@ void SkDebugf(const char format[], ...) {
         va_end(args2);
     }
 
+#ifdef SK_BUILD_TRACE_FOR_OHOS
+    HiLogPrintArgs(LOG_CORE, LogLevel::LOG_INFO, 0xD003900, LOG_TAG, format, args1);
+#else
     HiLogPrintArgs(LOG_CORE, LogLevel::LOG_DEBUG, 0xD003900, LOG_TAG, format, args1);
+#endif
 
     va_end(args1);
 }

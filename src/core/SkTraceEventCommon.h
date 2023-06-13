@@ -229,26 +229,70 @@ public:
     }
 
     static void clearOpsCount() {
-        opsCount = 0;
-        opsCountUmap.clear();
+        opsCountMerged = 0;
+        opsCountUnmerged = 0;
+        opsCountUmapMerged.clear();
+        opsCountUmapUnmerged.clear();
     }
 
-    static void addOpsCount(const std::string &op) {
-        opsCount++;
-        opsCountUmap[op]++;
+    static void addOpsCountMerged(const std::string &op) {
+        opsCountMerged++;
+        opsCountUmapMerged[op]++;
     }
 
-    static uint64_t getOpsCount() {
-        return opsCount;
+    static void addOpsCountUnmerged(const std::string &op) {
+        opsCountUnmerged++;
+        opsCountUmapUnmerged[op]++;
     }
 
-    static std::unordered_map<std::string, uint64_t> getOpsCountUmap() {
-        return opsCountUmap;
+    static void addCauseOrderViolationOpsCount() {
+        causeOrderViolationOpsCount++;
     }
 
-    static std::vector<Pair> getOpsCountVector(const bool &sort_cnt = true) {
+    static void addReachMaxCandidatesOpsCount() {
+        reachMaxCandidatesOpsCount++;
+    }
+
+    static uint64_t getOpsCountMerged() {
+        return opsCountMerged;
+    }
+
+    static uint64_t getOpsCountUnmerged() {
+        return opsCountUnmerged;
+    }
+
+    static uint64_t getCauseOrderViolationOpsCount() {
+        return causeOrderViolationOpsCount;
+    }
+
+    static uint64_t getReachMaxCandidatesOpsCount() {
+        return reachMaxCandidatesOpsCount;
+    }
+
+    static std::unordered_map<std::string, uint64_t> getOpsCountUmapMerged() {
+        return opsCountUmapMerged;
+    }
+
+    static std::unordered_map<std::string, uint64_t> getOpsCountUmapUnmerged() {
+        return opsCountUmapUnmerged;
+    }
+
+    static std::vector<Pair> getOpsCountVectorMerged(const bool &sort_cnt = true) {
         std::vector<Pair> opsCountVtr;
-        for (const auto& opItem : opsCountUmap) {
+        for (const auto& opItem : opsCountUmapMerged) {
+            opsCountVtr.push_back(std::make_pair(opItem.first, opItem.second));
+        }
+        if (sort_cnt) {
+            std::sort(opsCountVtr.begin(), opsCountVtr.end(), [](const Pair &opItemX, const Pair &opItemY) -> bool {
+                return opItemX.second > opItemY.second;
+            });
+        }
+        return opsCountVtr;
+    }
+
+    static std::vector<Pair> getOpsCountVectorUnmerged(const bool &sort_cnt = true) {
+        std::vector<Pair> opsCountVtr;
+        for (const auto& opItem : opsCountUmapUnmerged) {
             opsCountVtr.push_back(std::make_pair(opItem.first, opItem.second));
         }
         if (sort_cnt) {
@@ -261,8 +305,12 @@ public:
 
 private:
     static bool gEnableTracing;
-    static uint64_t opsCount;
-    static std::unordered_map<std::string, uint64_t> opsCountUmap;
+    static uint64_t opsCountMerged;
+    static uint64_t opsCountUnmerged;
+    static uint64_t causeOrderViolationOpsCount;
+    static uint64_t reachMaxCandidatesOpsCount;
+    static std::unordered_map<std::string, uint64_t> opsCountUmapMerged;
+    static std::unordered_map<std::string, uint64_t> opsCountUmapUnmerged;
 };
 
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2

@@ -153,6 +153,9 @@ config("skia_private") {
   if (skia_enable_winuwp) {
     defines += [ "SK_WINUWP" ]
   }
+  if (is_ohos) {
+    defines += [ "SK_BUILD_TRACE_FOR_OHOS" ]
+  }
 }
 
 # Any code that's linked into Skia-the-library should use this config via += skia_library_configs.
