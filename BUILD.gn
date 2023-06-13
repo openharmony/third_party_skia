@@ -62,7 +62,7 @@ config("skia_public") {
   if (is_skia_dev_build) {
     defines += [ "GR_TEST_UTILS=1" ]
   }
-  if (is_component_build) {
+  if (is_skia_component_build) {
     defines += [ "SKIA_DLL" ]
   }
   if (is_cross_platform_build && defined(is_android) && is_android) {
@@ -629,6 +629,12 @@ optional("fontmgr_win") {
 }
 
 if (use_oh_skia) {
+  ohos_prebuilt_etc("ohos_fontconfig.json") {
+    source = "//third_party/skia/src/ports/skia_ohos/config/fontconfig.json"
+    part_name = "third_party_skia"
+    subsystem_name = "thirdparty"
+  }
+
   optional("fontmgr_ohos") {
     enabled = skia_enable_fontmgr_ohos
 
@@ -658,9 +664,21 @@ if (use_oh_skia) {
     deps = [
       ":typeface_freetype",
       "${skia_third_party_dir}/expat",
-      "//third_party/bounds_checking_function:libsec_shared",
       "//third_party/jsoncpp:jsoncpp_static",
     ]
+    if (is_component_build) {
+      deps += [ "//third_party/bounds_checking_function:libsec_shared" ]
+    } else {
+      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+    }
+
+    deps += [ ":ohos_fontconfig.json" ]
+
+    if (graphic_standard_feature_wuji_enable) {
+      deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
+    } else if (ace_engine_standard_fonts_enable) {
+      deps += [ "//base/global/system_resources:ohos_fonts" ]
+    }
 
     if (use_mingw_win) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
@@ -1362,160 +1380,6 @@ optional("skvm_jit") {
   }
 }
 
-if (use_oh_skia) {
-  ohos_source_set("skia_skresources") {
-    include_dirs = [
-      "//third_party/skia",
-      "${skia_modules_dir}/skresources/include",
-    ]
-    defines = skia_common_defines
-    cflags = skia_common_cflags
-    sources = [ "${skia_modules_dir}/skresources/src//SkResources.cpp" ]
-    configs = [
-      ":skia_private",
-      ":skia_library",
-    ]
-  }
-
-  ohos_source_set("skia_skshaper") {
-    include_dirs = [
-      "//third_party/skia",
-      "${skia_modules_dir}/skshaper/include",
-      "${skia_modules_dir}/skunicode/include",
-    ]
-    defines = []
-    if (is_component_build) {
-      defines += [ "SKSHAPER_DLL" ]
-    }
-    if (skia_use_fonthost_mac) {
-      defines += [ "SK_SHAPER_CORETEXT_AVAILABLE" ]
-    }
-    if (skia_use_icu && skia_use_harfbuzz) {
-      defines += [ "SK_SHAPER_HARFBUZZ_AVAILABLE" ]
-    }
-
-    defines += skia_common_defines
-    cflags = skia_common_cflags
-    sources = [
-      "${skia_modules_dir}/skshaper/src/SkShaper.cpp",
-      "${skia_modules_dir}/skshaper/src/SkShaper_primitive.cpp",
-    ]
-
-    if (is_mac) {
-      sources += [ "${skia_modules_dir}/skshaper/src/SkShaper_coretext.cpp" ]
-      frameworks = [ "ApplicationServices.framework" ]
-    }
-
-    if (is_ios) {
-      frameworks = [
-        "CoreFoundation.framework",
-        "CoreText.framework",
-      ]
-    }
-
-    if (skia_use_icu && skia_use_harfbuzz) {
-      sources += [ "${skia_modules_dir}/skshaper/src/SkShaper_harfbuzz.cpp" ]
-      defines += [ "U_SHOW_CPLUSPLUS_API=0" ]
-      include_dirs += [
-        "${skia_third_party_dir}/harfbuzz",
-        "${skia_third_party_dir}/externals/harfbuzz/src",
-        "${skia_third_party_dir}/externals/icu/source/common",
-        "${skia_third_party_dir}/externals/icu/source/i18n",
-        "${skia_third_party_dir}/externals/icu/source",
-        "${skia_third_party_dir}/icu",
-      ]
-    }
-
-    configs = [ ":skia_private" ]
-  }
-
-  ohos_source_set("skia_skunicode") {
-    part_name = "third_party_skia"
-    subsystem_name = "thirdparty"
-
-    configs = []
-    include_dirs = [
-      "//third_party/skia",
-      "${skia_modules_dir}/skunicode/include",
-      "${skia_third_party_dir}/externals/icu/source/common",
-      "${skia_third_party_dir}/externals/icu/source/i18n",
-      "${skia_third_party_dir}/icu",
-    ]
-    defines = skia_common_defines
-    cflags = skia_common_cflags
-    defines += [ "U_SHOW_CPLUSPLUS_API=0" ]
-    if (is_component_build) {
-      defines += [ "SKUNICODE_DLL" ]
-    }
-    sources = [ "${skia_modules_dir}/skunicode/src/SkUnicode_icu.cpp" ]
-    sources += [ "${skia_modules_dir}/skunicode/src/SkUnicode_icu_builtin.cpp" ]
-    configs += [ "${skia_root_dir}/gn/portable:add_rtti" ]
-    deps = [ "${skia_third_party_dir}/icu:icu" ]
-    configs += [ ":skia_private" ]
-  }
-
-  ohos_source_set("skia_svg") {
-    include_dirs = [
-      "//third_party/skia",
-      "${skia_modules_dir}/svg/include",
-      "${skia_modules_dir}/skresources/include",
-      "${skia_modules_dir}/skshaper/include",
-    ]
-    if (is_ohos) {
-      include_dirs += [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
-    }
-    defines = skia_common_defines
-    cflags = skia_common_cflags
-    configs = [ ":skia_private" ]
-    sources = [
-      "${skia_modules_dir}/svg/src/CssStyleParser.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGAttribute.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGAttributeParser.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGCircle.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGClipPath.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGContainer.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGDOM.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGEllipse.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFe.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeBlend.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeColorMatrix.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeComposite.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeDisplacementMap.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeFlood.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeGaussianBlur.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeImage.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeLightSource.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeLighting.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeMorphology.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeOffset.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFeTurbulence.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFilter.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGFilterContext.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGGradient.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGImage.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGLine.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGLinearGradient.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGMask.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGNode.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGPath.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGPattern.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGPoly.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGRadialGradient.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGRect.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGRenderContext.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGSVG.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGShape.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGStop.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGText.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGTextPriv.h",
-      "${skia_modules_dir}/svg/src/SkSVGTransformableNode.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGUse.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGValue.cpp",
-      "${skia_modules_dir}/svg/src/SkSVGXMLDOM.cpp",
-    ]
-  }
-}
-
 if (skia_enable_gpu && skia_generate_workarounds) {
   action("workaround_list") {
     script = "tools/build_workaround_header.py"
@@ -1540,222 +1404,6 @@ if (skia_enable_gpu && skia_generate_workarounds) {
 }
 
 skia_component("skia") {
-  output_dir = "${root_out_dir}/thirdparty/skia"
-  output_name = "skia"
-  public_configs = [ ":skia_public" ]
-  configs = skia_library_configs
-
-  public_deps = [
-    ":fontmgr_FontConfigInterface",
-    ":fontmgr_android",
-    ":fontmgr_custom_directory",
-    ":fontmgr_custom_directory_factory",
-    ":fontmgr_custom_embedded",
-    ":fontmgr_custom_empty",
-    ":fontmgr_fontconfig",
-    ":fontmgr_fuchsia",
-    ":fontmgr_mac_ct",
-    ":fontmgr_win",
-    ":fontmgr_win_gdi",
-    ":gpu",
-    ":graphite",
-    ":pdf",
-    ":skcms",
-    ":xps",
-  ]
-  if (use_oh_skia) {
-    public_deps += [ ":fontmgr_ohos" ]
-  }
-
-  deps = [
-    ":android_utils",
-    ":arm64",
-    ":armv7",
-    ":avx",
-    ":crc32",
-    ":fontmgr_factory",
-    ":gif",
-    ":heif",
-    ":hsw",
-    ":jpeg_decode",
-    ":jpeg_encode",
-    ":ndk_images",
-    ":none",
-    ":png_decode",
-    ":png_encode",
-    ":raw",
-    ":skvm_jit",
-    ":skx",
-    ":sse2",
-    ":sse41",
-    ":sse42",
-    ":ssse3",
-    ":webp_decode",
-    ":webp_encode",
-    ":wuffs",
-    ":xml",
-  ]
-
-  public = skia_core_public
-  public += skia_utils_public
-  public += skia_effects_public
-  public += skia_effects_imagefilter_public
-
-  sources = []
-  sources += skia_core_sources
-  sources += skia_utils_sources
-  sources += skia_effects_sources
-  sources += skia_effects_imagefilter_sources
-  sources += [
-    "src/android/SkAndroidFrameworkUtils.cpp",
-    "src/android/SkAnimatedImage.cpp",
-    "src/codec/SkAndroidCodec.cpp",
-    "src/codec/SkAndroidCodecAdapter.cpp",
-    "src/codec/SkBmpBaseCodec.cpp",
-    "src/codec/SkBmpCodec.cpp",
-    "src/codec/SkBmpMaskCodec.cpp",
-    "src/codec/SkBmpRLECodec.cpp",
-    "src/codec/SkBmpStandardCodec.cpp",
-    "src/codec/SkCodec.cpp",
-    "src/codec/SkCodecImageGenerator.cpp",
-    "src/codec/SkColorTable.cpp",
-    "src/codec/SkEncodedInfo.cpp",
-    "src/codec/SkMaskSwizzler.cpp",
-    "src/codec/SkMasks.cpp",
-    "src/codec/SkParseEncodedOrigin.cpp",
-    "src/codec/SkSampledCodec.cpp",
-    "src/codec/SkSampler.cpp",
-    "src/codec/SkStreamBuffer.cpp",
-    "src/codec/SkSwizzler.cpp",
-    "src/codec/SkWbmpCodec.cpp",
-    "src/images/SkImageEncoder.cpp",
-    "src/ports/SkDiscardableMemory_none.cpp",
-    "src/ports/SkGlobalInitialization_default.cpp",
-    "src/ports/SkImageGenerator_skia.cpp",
-    "src/ports/SkMemory_malloc.cpp",
-    "src/ports/SkOSFile_stdio.cpp",
-    "src/sfnt/SkOTTable_name.cpp",
-    "src/sfnt/SkOTUtils.cpp",
-  ]
-
-  defines = [ "SK_HAS_ANDROID_CODEC" ]
-  libs = []
-
-  if (skia_enable_sksl) {
-    deps += [ ":dehydrate_sksl" ]
-    sources += skia_sksl_sources
-  }
-
-  if (is_win) {
-    sources += [
-      "src/ports/SkDebug_win.cpp",
-      "src/ports/SkImageEncoder_WIC.cpp",
-      "src/ports/SkImageGeneratorWIC.cpp",
-      "src/ports/SkOSFile_win.cpp",
-      "src/ports/SkOSLibrary_win.cpp",
-    ]
-    libs += [
-      # "Ole32.lib",
-      # "OleAut32.lib",
-    ]
-
-    if (!skia_enable_winuwp) {
-      libs += [
-        # "FontSub.lib",
-        # "User32.lib",
-        # "Usp10.lib",
-      ]
-    }
-    libs += [
-      "kernel32",
-      "gdi32",
-      "fontsub",
-      "ole32",
-      "oleaut32",
-      "psapi",
-      "user32",
-      "usp10",
-      "uuid",
-      "windowscodecs",
-    ]
-  } else {
-    sources += [
-      "src/ports/SkOSFile_posix.cpp",
-      "src/ports/SkOSLibrary_posix.cpp",
-    ]
-    libs += [ "dl" ]
-  }
-  if (is_ohos) {
-    sources += [ "//third_party/skia/src/ports/SkDebug_ohos.cpp" ]
-    deps += [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
-  }
-  if (is_android) {
-    deps += [ "${skia_third_party_dir}/expat" ]
-    if (defined(ndk) && ndk != "") {
-      deps += [ "${skia_third_party_dir}/cpu-features" ]
-    }
-    sources += [ "src/ports/SkDebug_android.cpp" ]
-    libs += [
-      "EGL",
-      "GLESv2",
-      "log",
-    ]
-  }
-
-  if (is_linux || target_cpu == "wasm") {
-    sources += [ "src/ports/SkDebug_stdio.cpp" ]
-    if (skia_use_egl) {
-      libs += [ "GLESv2" ]
-    }
-  }
-
-  if (is_mac) {
-    public += [ "include/ports/SkCFObject.h" ]
-    sources += [
-      "src/ports/SkDebug_stdio.cpp",
-      "src/ports/SkImageEncoder_CG.cpp",
-      "src/ports/SkImageGeneratorCG.cpp",
-    ]
-    frameworks = [
-      "ApplicationServices.framework",
-      "OpenGL.framework",
-    ]
-    libs += [
-      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreText.framework/Versions/A/CoreText.tbd",
-      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation.tbd",
-      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics.tbd",
-      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO.tbd",
-      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices.tbd",
-      "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL.tbd",
-    ]
-  }
-
-  if (is_ios) {
-    public += [ "include/ports/SkCFObject.h" ]
-    sources += [
-      "src/ports/SkDebug_stdio.cpp",
-      "src/ports/SkImageEncoder_CG.cpp",
-      "src/ports/SkImageGeneratorCG.cpp",
-    ]
-    frameworks = [
-      "CoreFoundation.framework",
-      "ImageIO.framework",
-      "MobileCoreServices.framework",
-    ]
-  }
-
-  if (is_fuchsia) {
-    sources += [ "src/ports/SkDebug_stdio.cpp" ]
-  }
-
-  #if (skia_enable_spirv_validation) {
-  #  deps += [ "${skia_third_party_dir}/externals/spirv-tools:spvtools_val" ]
-  #  defines += [ "SK_ENABLE_SPIRV_VALIDATION" ]
-  #}
-
-  if (skia_include_multiframe_procs) {
-    sources += [ "tools/SkSharingProc.cpp" ]
-  }
 }
 
 if (use_oh_skia) {
@@ -1794,11 +1442,11 @@ if (use_oh_skia) {
         ":icu_config",
       ]
 
-      public_deps = [ ":skia_canvaskit_0310" ]
+      public_deps = [ ":skia_canvaskit" ]
     }
   }
 
-  ohos_shared_library("skia_canvaskit_0310") {
+  ohos_shared_library("skia_canvaskit") {
     part_name = "third_party_skia"
     innerapi_tags = [ "platformsdk" ]
     subsystem_name = "thirdparty"
@@ -1846,10 +1494,6 @@ if (use_oh_skia) {
       ":none",
       ":png_decode",
       ":png_encode",
-      ":skia_skresources",
-      ":skia_skshaper",
-      ":skia_skunicode",
-      ":skia_svg",
       ":skvm_jit",
       ":skx",
       ":sse2",
@@ -1859,6 +1503,10 @@ if (use_oh_skia) {
       ":webp_decode",
       ":webp_encode",
       ":xml",
+      "modules/skresources",
+      "modules/skshaper",
+      "modules/skunicode",
+      "modules/svg",
     ]
 
     public = skia_core_public
@@ -2267,6 +1915,10 @@ if (skia_enable_tools) {
         deps = []
       }
       deps += [ ":skia" ]
+      if (use_oh_skia) {
+        deps -= [ ":skia" ]
+        deps += [ ":skia_canvaskit" ]
+      }
       testonly = true
     }
   }
@@ -2395,8 +2047,6 @@ if (skia_enable_tools) {
         frameworks += [ "OpenGLES.framework" ]
       } else if (is_mac) {
         sources += [ "tools/gpu/gl/mac/CreatePlatformGLTestContext_mac.cpp" ]
-      } else if (defined(is_ohos) && is_ohos) {
-        sources += [ "tools/gpu/gl/none/CreatePlatformGLTestContext_none.cpp" ]
       }
       if (skia_use_angle) {
         deps += [ "${skia_third_party_dir}/angle2" ]
@@ -2502,11 +2152,7 @@ if (skia_enable_tools) {
   }
   test_lib("common_flags_fontmgr") {
     sources = [ "tools/flags/CommonFlagsFontMgr.cpp" ]
-
-    deps = [
-      ":flags",
-      ":fontmgr_ohos",
-    ]
+    deps = [ ":flags" ]
   }
   test_lib("common_flags_aa") {
     sources = [ "tools/flags/CommonFlagsAA.cpp" ]
@@ -2632,6 +2278,13 @@ if (skia_enable_tools) {
       "modules/skparagraph:gm",
       "modules/skshaper",
     ]
+    if (use_oh_skia) {
+      deps -= [
+        ":skia",
+        "modules/skshaper",
+      ]
+      deps += [ ":skia_canvaskit" ]
+    }
     if (is_skia_dev_build) {
       sources += [ "gm/fiddle.cpp" ]
       deps += [ ":skia.h" ]
@@ -2656,6 +2309,10 @@ if (skia_enable_tools) {
       ":skia",
       ":tool_utils",
     ]
+    if (use_oh_skia) {
+      deps -= [ ":skia" ]
+      deps += [ ":skia_canvaskit" ]
+    }
     public_deps = [
       ":gpu_tool_utils",  # Test.h #includes headers from this target.
     ]
@@ -2701,6 +2358,13 @@ if (skia_enable_tools) {
       "modules/skshaper",
       "modules/svg:tests",
     ]
+    if (use_oh_skia) {
+      deps -= [
+        ":skia",
+        "modules/skshaper",
+      ]
+      deps += [ ":skia_canvaskit" ]
+    }
   }
 
   import("gn/bench.gni")
@@ -2777,6 +2441,10 @@ if (skia_enable_tools) {
       ":skia",
       "${skia_third_party_dir}/libpng",
     ]
+    if (use_oh_skia) {
+      deps -= [ ":skia" ]
+      deps += [ ":skia_canvaskit" ]
+    }
   }
   if (target_cpu != "wasm") {
     test_app("convert-to-nia") {
@@ -2840,6 +2508,13 @@ if (skia_enable_tools) {
         "modules/skottie:utils",
         "modules/svg",
       ]
+      if (use_oh_skia) {
+        deps -= [
+          ":skia",
+          "modules/svg",
+        ]
+        deps += [ ":skia_canvaskit" ]
+      }
       ldflags = [
         "--stdlib=libc++",
         "-lc++",

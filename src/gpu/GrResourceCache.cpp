@@ -691,6 +691,30 @@ void GrResourceCache::purgeUnlockedResources(const GrStdSteadyClock::time_point*
     this->validate();
 }
 
+void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
+    fThreadSafeCache->dropUniqueRefs(nullptr);
+    // Sort the queue
+    fPurgeableQueue.sort();
+
+    //Make a list of the scratch resources to delete
+    SkTDArray<GrGpuResource*> scratchResources;
+    for (int i = 0; i < fPurgeableQueue.count(); i++) {
+        GrGpuResource* resource = fPurgeableQueue.at(i);
+        SkASSERT(resource->resourcePriv().isPurgeable());
+        if (!resource->getUniqueKey().isValid()) {
+            *scratchResources.append() = resource;
+        }
+    }
+
+    //Delete the scatch resource. This must be done as a separate pass
+    //to avoid messing up the sorted order of the queue
+    for (int i = 0; i <scratchResources.count(); i++) {
+        scratchResources.getAt(i)->cacheAccess().release();
+    }
+
+    this->validate();
+}
+
 void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag tag) {
     // Sort the queue
     fPurgeableQueue.sort();
