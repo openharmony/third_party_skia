@@ -2278,6 +2278,11 @@ if (skia_enable_tools) {
       "modules/skparagraph:gm",
       "modules/skshaper",
     ]
+    if (is_ohos) {
+      deps += [
+        "//base/hiviewdfx/hitrace/interfaces/native/innerkits:hitrace_meter",
+      ]
+    }
     if (use_oh_skia) {
       deps -= [
         ":skia",
