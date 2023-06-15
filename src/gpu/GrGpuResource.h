@@ -383,7 +383,7 @@ private:
 
     // An index into a heap when this resource is purgeable or an array when not. This is maintained
     // by the cache.
-    int fCacheArrayIndex;
+    int fCacheArrayIndex = -1;
     // This value reflects how recently this resource was accessed in the cache. This is maintained
     // by the cache.
     uint32_t fTimestamp;
