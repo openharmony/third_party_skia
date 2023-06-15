@@ -21,6 +21,9 @@ if (skia_enable_sktext && skia_enable_skshaper && skia_use_icu &&
     public_configs = [ ":public_config" ]
     public = sktext_public
     sources = sktext_sources
+    if (is_ohos) {
+      include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+    }
     if (use_oh_skia) {
       deps = [
         "../..:skia_canvaskit",
@@ -62,6 +65,9 @@ if (skia_enable_sktext && skia_enable_skshaper && skia_use_icu &&
           "tests/UnicodeText.cpp",
           "tests/WrappedText.cpp",
         ]
+        if (is_ohos) {
+          include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+        }
         if (use_oh_skia) {
           deps = [
             ":sktext",
