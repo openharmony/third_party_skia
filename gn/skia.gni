@@ -37,7 +37,7 @@ declare_args() {
   skia_disable_vma_stl_shared_mutex = false
   skia_enable_winuwp = false
   skia_generate_workarounds = false
-  skia_include_multiframe_procs = false
+  skia_include_multiframe_procs = true
   skia_lex = false
   skia_libgifcodec_path = "third_party/externals/libgifcodec"
   skia_qt_path = getenv("QT_PATH")
