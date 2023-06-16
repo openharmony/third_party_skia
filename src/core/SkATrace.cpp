@@ -82,6 +82,7 @@ bool SkAndroidFrameworkTraceUtil::gEnableAndroidTracing = false;
 #ifdef SK_BUILD_TRACE_FOR_OHOS
 
 bool SkOHOSTraceUtil::gEnableTracing = false;
+bool SkOHOSTraceUtil::gEnableHiLog = false;
 uint64_t SkOHOSTraceUtil::opsCountMerged = 0;
 uint64_t SkOHOSTraceUtil::opsCountUnmerged = 0;
 uint64_t SkOHOSTraceUtil::causeOrderViolationOpsCount = 0;
