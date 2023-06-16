@@ -53,6 +53,11 @@ GrGpuResource::~GrGpuResource() {
 
 void GrGpuResource::release() {
     SkASSERT(fGpu);
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!fGpu) {
+        SkDebugf("OHOS GrGpuResource::release(), fGpu == nullptr");
+        return;
+    }
     this->onRelease();
     get_resource_cache(fGpu)->resourceAccess().removeResource(this);
     fGpu = nullptr;

@@ -25,6 +25,9 @@ if (skia_enable_skottie) {
       "../skshaper",
       "../skunicode",
     ]
+    if (is_ohos) {
+      include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+    }
     if (use_oh_skia) {
       deps -= [ "../..:skia" ]
     }
@@ -68,6 +71,9 @@ if (skia_enable_skottie) {
           "tests/Text.cpp",
         ]
 
+        if (is_ohos) {
+          include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+        }
         deps = [
           ":skottie",
           "../..:skia",

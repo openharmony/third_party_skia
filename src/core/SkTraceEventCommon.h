@@ -228,6 +228,14 @@ public:
         return gEnableTracing;
     }
 
+    static void setEnableHiLog(const bool &enableHiLog) {
+        gEnableHiLog = enableHiLog;
+    }
+
+    static bool getEnableHiLog() {
+        return gEnableHiLog;
+    }
+
     static void clearOpsCount() {
         opsCountMerged = 0;
         opsCountUnmerged = 0;
@@ -305,6 +313,7 @@ public:
 
 private:
     static bool gEnableTracing;
+    static bool gEnableHiLog;
     static uint64_t opsCountMerged;
     static uint64_t opsCountUnmerged;
     static uint64_t causeOrderViolationOpsCount;

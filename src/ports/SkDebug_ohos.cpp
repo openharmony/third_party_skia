@@ -8,6 +8,7 @@
  */
 
 #include "include/core/SkTypes.h"
+#include "src/core/SkTraceEventCommon.h"
 #include <stdio.h>
 
 #define LOG_TAG "skia"
@@ -32,7 +33,11 @@ void SkDebugf(const char format[], ...) {
     }
 
 #ifdef SK_BUILD_TRACE_FOR_OHOS
-    HiLogPrintArgs(LOG_CORE, LogLevel::LOG_INFO, 0xD003900, LOG_TAG, format, args1);
+    if (SkOHOSTraceUtil::getEnableHiLog()) {
+        HiLogPrintArgs(LOG_CORE, LogLevel::LOG_INFO, 0xD003900, LOG_TAG, format, args1);
+    } else {
+        HiLogPrintArgs(LOG_CORE, LogLevel::LOG_DEBUG, 0xD003900, LOG_TAG, format, args1);
+    }
 #else
     HiLogPrintArgs(LOG_CORE, LogLevel::LOG_DEBUG, 0xD003900, LOG_TAG, format, args1);
 #endif

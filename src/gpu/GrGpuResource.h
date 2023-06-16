@@ -11,6 +11,7 @@
 #include "include/private/GrResourceKey.h"
 #include "include/private/GrTypesPriv.h"
 #include "include/private/SkNoncopyable.h"
+#include <mutex>
 
 class GrGpu;
 class GrResourceCache;
@@ -406,6 +407,7 @@ private:
     using INHERITED = GrIORef<GrGpuResource>;
     friend class GrIORef<GrGpuResource>; // to access notifyRefCntWillBeZero and
                                          // notifyARefCntIsZero.
+    std::mutex mutex_; // The gpu cache is released abnormally due to multi threads.
 };
 
 class GrGpuResource::ProxyAccess {

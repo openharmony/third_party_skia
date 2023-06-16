@@ -163,6 +163,7 @@ public:
             this->refAndMakeResourceMRU(resource);
             return resource;
         }
+        SkDebugf("OHOS resource is not in cache, return nullptr!");
         return nullptr;
     }
 

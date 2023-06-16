@@ -19,6 +19,9 @@ if (skia_enable_skrive) {
     sources = skia_skrive_sources
     configs += [ "../../:skia_private" ]
     deps = [ "../..:skia" ]
+    if (is_ohos) {
+      include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+    }
     if (use_oh_skia) {
       deps -= [ "../..:skia" ]
       deps += [ "../..:skia_canvaskit" ]
@@ -40,6 +43,9 @@ if (skia_enable_skrive) {
           "tests/JsonReader.cpp",
         ]
 
+        if (is_ohos) {
+          include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+        }
         deps = [
           ":skrive",
           "../..:skia",

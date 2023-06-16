@@ -136,7 +136,10 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
     SkASSERT(!this->isInCache(resource));
     SkASSERT(!resource->wasDestroyed());
     SkASSERT(!resource->resourcePriv().isPurgeable());
-
+    if (!resource || this->isInCache(resource) || resource->wasDestroyed() || resource->resourcePriv().isPurgeable()) {
+        SkDebugf("OHOS GrResourceCache::insertResource resource is invalid!!!");
+        return;
+    }
     // We must set the timestamp before adding to the array in case the timestamp wraps and we wind
     // up iterating over all the resources that already have timestamps.
     resource->cacheAccess().setTimestamp(this->getNextTimestamp());
@@ -171,13 +174,7 @@ void GrResourceCache::removeResource(GrGpuResource* resource) {
 
     size_t size = resource->gpuMemorySize();
     if (resource->resourcePriv().isPurgeable() && this->isInPurgeableCache(resource)) {
-        auto count1 = fPurgeableQueue.count();
         fPurgeableQueue.remove(resource);
-        auto count2 = fPurgeableQueue.count();
-        if ((count1 == count2) || this->isInPurgeableCache(resource)) {
-            SkDebugf("GrResourceCache::removeResource remove resource failed");
-            return;
-        }
         fPurgeableBytes -= size;
     } else if (this->isInNonpurgeableCache(resource)) {
         this->removeFromNonpurgeableArray(resource);
@@ -362,6 +359,7 @@ GrGpuResource* GrResourceCache::findAndRefScratchResource(const GrScratchKey& sc
     if (resource) {
         fScratchMap.remove(scratchKey, resource);
         if (!this->isInCache(resource)) {
+            SkDebugf("OHOS GrResourceCache::findAndRefScratchResource not in cache, return!!!");
             return nullptr;
         }
         this->refAndMakeResourceMRU(resource);
@@ -453,6 +451,8 @@ void GrResourceCache::refAndMakeResourceMRU(GrGpuResource* resource) {
         }
         if (!this->isInNonpurgeableCache(resource)) {
             this->addToNonpurgeableArray(resource);
+        } else {
+            SkDebugf("OHOS resource in isInNonpurgeableCache, do not add again!");
         }
     } else if (!resource->cacheAccess().hasRefOrCommandBufferUsage() &&
                resource->resourcePriv().budgetedType() == GrBudgetedType::kBudgeted) {
@@ -476,6 +476,7 @@ void GrResourceCache::notifyARefCntReachedZero(GrGpuResource* resource,
     SkASSERT(fNonpurgeableResources[*resource->cacheAccess().accessCacheIndex()] == resource);
     if (!resource || resource->wasDestroyed() || this->isInPurgeableCache(resource) ||
         !this->isInNonpurgeableCache(resource)) {
+        SkDebugf("OHOS GrResourceCache::notifyARefCntReachedZero return!");
         return;
     }
     if (removedRef == GrGpuResource::LastRemovedRef::kMainRef) {
@@ -620,6 +621,10 @@ void GrResourceCache::purgeAsNeeded() {
     bool stillOverbudget = this->overBudget();
     while (stillOverbudget && fPurgeableQueue.count()) {
         GrGpuResource* resource = fPurgeableQueue.peek();
+        if (!resource->resourcePriv().isPurgeable()) {
+            SkDebugf("OHOS GrResourceCache::purgeAsNeeded() resource is nonPurgeable");
+            continue;
+        }
         SkASSERT(resource->resourcePriv().isPurgeable());
         resource->cacheAccess().release();
         stillOverbudget = this->overBudget();
@@ -631,6 +636,10 @@ void GrResourceCache::purgeAsNeeded() {
         stillOverbudget = this->overBudget();
         while (stillOverbudget && fPurgeableQueue.count()) {
             GrGpuResource* resource = fPurgeableQueue.peek();
+            if (!resource->resourcePriv().isPurgeable()) {
+                SkDebugf("OHOS GrResourceCache::purgeAsNeeded() resource is nonPurgeable after dropUniqueRefs");
+                continue;
+            }
             SkASSERT(resource->resourcePriv().isPurgeable());
             resource->cacheAccess().release();
             stillOverbudget = this->overBudget();
@@ -1167,7 +1176,7 @@ bool GrResourceCache::isInPurgeableCache(const GrGpuResource* resource) const {
     if (index < fPurgeableQueue.count() && fPurgeableQueue.at(index) == resource) {
         return true;
     }
-    SkDEBUGFAIL("Resource index should be -1 or the resource should be in the cache.");
+    SkDEBUGFAIL("OHOS Resource index should be -1 or the resource should be in the cache.");
     return false;
 }
 
@@ -1179,7 +1188,7 @@ bool GrResourceCache::isInNonpurgeableCache(const GrGpuResource* resource) const
     if (index < fNonpurgeableResources.count() && fNonpurgeableResources[index] == resource) {
         return true;
     }
-    SkDEBUGFAIL("Resource index should be -1 or the resource should be in the cache.");
+    SkDEBUGFAIL("OHOS Resource index should be -1 or the resource should be in the cache.");
     return false;
 }
 
