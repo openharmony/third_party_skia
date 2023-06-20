@@ -55,7 +55,12 @@ class GrPaint;
 #endif
 #if GR_OP_SPEW
     #define GrOP_SPEW(code) code
-    #define GrOP_INFO(...) SkDebugf(__VA_ARGS__)
+    #define GrOP_INFO(...) \
+        do { \
+            if (SkOHOSTraceUtil::getEnableHiLog()) { \
+                SkDebugf(__VA_ARGS__); \
+            } \
+        } while (0)
 #else
     #define GrOP_SPEW(code)
     #define GrOP_INFO(...)
