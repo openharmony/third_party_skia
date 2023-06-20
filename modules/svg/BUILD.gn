@@ -18,9 +18,6 @@ if (skia_enable_svg && skia_use_expat) {
         "${skia_modules_dir}/skshaper/include",
       ]
     }
-    if (is_ohos) {
-      include_dirs += [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
-    }
   }
 
   ohos_source_set("svg") {
