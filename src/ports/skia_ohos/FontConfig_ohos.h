@@ -227,6 +227,8 @@ private:
     FontConfig_OHOS& operator = (const FontConfig_OHOS&) = delete;
     FontConfig_OHOS(FontConfig_OHOS&&) = delete;
     FontConfig_OHOS& operator = (FontConfig_OHOS&&) = delete;
+    int checkProductFile(const char* fname);
+    bool judgeFileExist();
 };
 
 #endif /* FONTCONFIG_OHOS_H */
