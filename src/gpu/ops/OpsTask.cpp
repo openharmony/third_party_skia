@@ -219,7 +219,7 @@ OpsTask::OpChain::List OpsTask::OpChain::DoConcat(List chainA, List chainB, cons
                 auto result = a->combineIfPossible(chainB.head(), opsTaskArena, caps);
                 SkASSERT(result != GrOp::CombineResult::kCannotCombine);
                 merged = (result == GrOp::CombineResult::kMerged);
-                GrOP_INFO("\t\t: (%{public}s opID: %{public}u) -> Combining with (%{public}s, opID: %{public}u)\n",
+                GrOP_INFO("\t\t: (%s opID: %u) -> Combining with (%s, opID: %u)\n",
                           chainB.head()->name(), chainB.head()->uniqueID(), a->name(),
                           a->uniqueID());
             }
@@ -310,7 +310,7 @@ bool OpsTask::OpChain::tryConcat(
                 SkASSERT(list->empty());
                 break;
             case GrOp::CombineResult::kMerged: {
-                GrOP_INFO("\t\t: (%{public}s opID: %{public}u) -> Combining with (%{public}s, opID: %{public}u)\n",
+                GrOP_INFO("\t\t: (%s opID: %u) -> Combining with (%s, opID: %u)\n",
                           list->tail()->name(), list->tail()->uniqueID(), list->head()->name(),
                           list->head()->uniqueID());
                 GR_AUDIT_TRAIL_OPS_RESULT_COMBINED(auditTrail, fList.tail(), list->head());
@@ -659,11 +659,6 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
                 grGpu->setCurrentGrResourceTag(tag);
             }
 
-#ifdef SK_BUILD_TRACE_FOR_OHOS
-        if (SkOHOSTraceUtil::getEnableTracing()) {
-            SkOHOSTraceUtil::addOpsCountMerged(chain.head()->name());
-        }
-#endif
         GrOpFlushState::OpArgs opArgs(chain.head(),
                                       dstView,
                                       fUsesMSAASurface,
@@ -1005,8 +1000,8 @@ void OpsTask::recordOp(
     // 2) intersect with something
     // 3) find a 'blocker'
     GR_AUDIT_TRAIL_ADD_OP(fAuditTrail, op.get(), proxy->uniqueID());
-    GrOP_INFO("opsTask: %{public}d Recording (%{public}s, opID: %{public}u)\n"
-              "\tBounds [L: %{public}.2f, T: %{public}.2f R: %{public}.2f B: %{public}.2f]\n",
+    GrOP_INFO("opsTask: %d Recording (%s, opID: %u)\n"
+              "\tBounds [L: %.2f, T: %.2f R: %.2f B: %.2f]\n",
                this->uniqueID(),
                op->name(),
                op->uniqueID(),
@@ -1014,11 +1009,6 @@ void OpsTask::recordOp(
                op->bounds().fRight, op->bounds().fBottom);
     GrOP_INFO(SkTabString(op->dumpInfo(), 1).c_str());
     GrOP_INFO("\tOutcome:\n");
-#ifdef SK_BUILD_TRACE_FOR_OHOS
-    if (SkOHOSTraceUtil::getEnableTracing()) {
-        SkOHOSTraceUtil::addOpsCountUnmerged(op->name());
-    }
-#endif
     int maxCandidates = std::min(kMaxOpChainDistance, fOpChains.count());
     if (maxCandidates) {
         int i = 0;
@@ -1031,22 +1021,12 @@ void OpsTask::recordOp(
             }
             // Stop going backwards if we would cause a painter's order violation.
             if (!can_reorder(candidate.bounds(), op->bounds())) {
-                GrOP_INFO("\t\tBackward: Intersects with chain (%{public}s, head opID: %{public}u)\n",
+                GrOP_INFO("\t\tBackward: Intersects with chain (%s, head opID: %u)\n",
                           candidate.head()->name(), candidate.head()->uniqueID());
-#ifdef SK_BUILD_TRACE_FOR_OHOS
-                if (SkOHOSTraceUtil::getEnableTracing()) {
-                    SkOHOSTraceUtil::addCauseOrderViolationOpsCount();
-                }
-#endif
                 break;
             }
             if (++i == maxCandidates) {
-                GrOP_INFO("\t\tBackward: Reached max lookback or beginning of op array %{public}d\n", i);
-#ifdef SK_BUILD_TRACE_FOR_OHOS
-                if (SkOHOSTraceUtil::getEnableTracing()) {
-                    SkOHOSTraceUtil::addReachMaxCandidatesOpsCount();
-                }
-#endif
+                GrOP_INFO("\t\tBackward: Reached max lookback or beginning of op array %d\n", i);
                 break;
             }
         }
@@ -1062,7 +1042,7 @@ void OpsTask::recordOp(
 
 void OpsTask::forwardCombine(const GrCaps& caps) {
     SkASSERT(!this->isClosed());
-    GrOP_INFO("opsTask: %{public}d ForwardCombine %{public}d ops:\n", this->uniqueID(), fOpChains.count());
+    GrOP_INFO("opsTask: %d ForwardCombine %d ops:\n", this->uniqueID(), fOpChains.count());
 
     for (int i = 0; i < fOpChains.count() - 1; ++i) {
         OpChain& chain = fOpChains[i];
@@ -1076,15 +1056,14 @@ void OpsTask::forwardCombine(const GrCaps& caps) {
             // Stop traversing if we would cause a painter's order violation.
             if (!can_reorder(chain.bounds(), candidate.bounds())) {
                 GrOP_INFO(
-                        "\t\t%{public}d: chain (%{public}s head opID: %{public}u) -> "
-                        "Intersects with chain (%{public}s, head opID: %{public}u)\n",
+                        "\t\t%d: chain (%s head opID: %u) -> "
+                        "Intersects with chain (%s, head opID: %u)\n",
                         i, chain.head()->name(), chain.head()->uniqueID(), candidate.head()->name(),
                         candidate.head()->uniqueID());
                 break;
             }
             if (++j > maxCandidateIdx) {
-                GrOP_INFO("\t\t%{public}d: chain (%{public}s opID: %{public}u) -> "
-                          "Reached max lookahead or end of array\n",
+                GrOP_INFO("\t\t%d: chain (%s opID: %u) -> Reached max lookahead or end of array\n",
                           i, chain.head()->name(), chain.head()->uniqueID());
                 break;
             }

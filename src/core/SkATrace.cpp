@@ -79,15 +79,5 @@ bool SkAndroidFrameworkTraceUtil::gEnableAndroidTracing = false;
 
 #endif //SK_BUILD_FOR_ANDROID_FRAMEWORK
 
-#ifdef SK_BUILD_TRACE_FOR_OHOS
 
-bool SkOHOSTraceUtil::gEnableTracing = false;
-bool SkOHOSTraceUtil::gEnableHiLog = false;
-uint64_t SkOHOSTraceUtil::opsCountMerged = 0;
-uint64_t SkOHOSTraceUtil::opsCountUnmerged = 0;
-uint64_t SkOHOSTraceUtil::causeOrderViolationOpsCount = 0;
-uint64_t SkOHOSTraceUtil::reachMaxCandidatesOpsCount = 0;
-std::unordered_map<std::string, uint64_t> SkOHOSTraceUtil::opsCountUmapMerged = {};
-std::unordered_map<std::string, uint64_t> SkOHOSTraceUtil::opsCountUmapUnmerged = {};
 
-#endif // SK_BUILD_TRACE_FOR_OHOS
