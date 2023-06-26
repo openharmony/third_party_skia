@@ -19,7 +19,9 @@
 #define JPEGLIB_H
 
 /* Begin chromium edits */
+#ifdef HAS_CHROMIUM
 #include "jpeglibmangler.h"
+#endif
 /* End chromium edits */
 
 /*
