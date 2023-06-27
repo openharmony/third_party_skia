@@ -105,7 +105,7 @@ declare_args() {
   skia_use_libfuzzer_defaults = true
 
   # TODO: move to ace feature gni when ace feature is ready
-  ace_enable_skia_small_page_texture = false
+  ace_enable_skia_small_page_texture = true
 }
 
 declare_args() {

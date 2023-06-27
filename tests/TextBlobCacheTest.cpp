@@ -171,17 +171,29 @@ static void text_blob_cache_inner(skiatest::Reporter* reporter, GrDirectContext*
     draw(canvas, 1, blobs);
 }
 
+#ifdef SK_ENABLE_SMALL_PAGE
+DEF_GPUTEST_FOR_MOCK_CONTEXT(TextBlobCache, reporter, ctxInfo) {
+    text_blob_cache_inner(reporter, ctxInfo.directContext(), 1024, 256, 30, true, true);
+}
+#else
 DEF_GPUTEST_FOR_MOCK_CONTEXT(TextBlobCache, reporter, ctxInfo) {
     text_blob_cache_inner(reporter, ctxInfo.directContext(), 1024, 256, 30, true, false);
 }
+#endif
 
 DEF_GPUTEST_FOR_MOCK_CONTEXT(TextBlobStressCache, reporter, ctxInfo) {
     text_blob_cache_inner(reporter, ctxInfo.directContext(), 256, 256, 10, true, true);
 }
 
+#ifdef SK_ENABLE_SMALL_PAGE
+DEF_GPUTEST_FOR_MOCK_CONTEXT(TextBlobAbnormal, reporter, ctxInfo) {
+    text_blob_cache_inner(reporter, ctxInfo.directContext(), 256, 256, 10, false, true);
+}
+#else
 DEF_GPUTEST_FOR_MOCK_CONTEXT(TextBlobAbnormal, reporter, ctxInfo) {
     text_blob_cache_inner(reporter, ctxInfo.directContext(), 256, 256, 10, false, false);
 }
+#endif
 
 DEF_GPUTEST_FOR_MOCK_CONTEXT(TextBlobStressAbnormal, reporter, ctxInfo) {
     text_blob_cache_inner(reporter, ctxInfo.directContext(), 256, 256, 10, false, true);
