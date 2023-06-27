@@ -331,6 +331,7 @@ DEF_GPUTEST(GrDrawOpAtlasConfig_Basic, reporter, options) {
     test_atlas_config(reporter, 65536, 3 * 1024 * 1024, kA8_GrMaskFormat,
                       { 2048, 1024 }, { 512, 256 });
 #endif
+
     // minimum size
     test_atlas_config(reporter, 65536, 0, kARGB_GrMaskFormat,
                       { 256, 256 }, { 256, 256 });
