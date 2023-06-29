@@ -606,6 +606,7 @@ optional("fontmgr_mac_ct_factory") {
   enabled = skia_use_fonthost_mac
   deps = [ ":fontmgr_mac_ct" ]
   sources = [ "src/ports/SkFontMgr_mac_ct_factory.cpp" ]
+  defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
 }
 
 optional("fontmgr_win") {
@@ -690,6 +691,7 @@ optional("fontmgr_win_factory") {
   enabled = skia_enable_fontmgr_win
   deps = [ ":fontmgr_win" ]
   sources = [ "src/ports/SkFontMgr_win_dw_factory.cpp" ]
+  defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
 }
 
 optional("fontmgr_win_gdi") {
