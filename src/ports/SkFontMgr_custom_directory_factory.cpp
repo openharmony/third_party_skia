@@ -17,16 +17,12 @@
 #endif
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
-#include "src/ports/SkFontMgr_preview.h"
 std::string SkFontMgr::runtimeOS = "OHOS";
-SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS2(const char *path);
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS(const char *path);
 sk_sp<SkFontMgr> SkFontMgr::Factory()
 {
     if (SkFontMgr::runtimeOS == "OHOS") {
-        return SkFontMgr_New_OHOS2(nullptr);
-    }
-    if (SkFontMgr::runtimeOS == "OHOS_Container") {
-        return SkFontMgr_New_Preview();
+        return SkFontMgr_New_OHOS(nullptr);
     }
     return SkFontMgr_New_Custom_Directory(SK_FONT_FILE_PREFIX);
 }
