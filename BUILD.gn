@@ -1595,7 +1595,7 @@ if (use_oh_skia) {
     }
     if (is_ohos) {
       sources += [ "//third_party/skia/src/ports/SkDebug_ohos.cpp" ]
-      external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+      external_deps = [ "hilog:libhilog" ]
     }
 
     if (is_android) {
