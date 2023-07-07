@@ -669,7 +669,7 @@ if (use_oh_skia) {
 
     deps += [ ":ohos_fontconfig.json" ]
 
-    if (graphic_standard_feature_wuji_enable) {
+    if (graphic_2d_feature_wuji_enable) {
       deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
     } else if (ace_engine_standard_fonts_enable) {
       deps += [ "//base/global/system_resources:ohos_fonts" ]
