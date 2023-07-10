@@ -9,7 +9,7 @@ sed -i '/"thirdparty"/{n;d}' ${target_file}
 
 target_line='   "components": [\
         {\
-          "component": "third_party_skia",\
+          "component": "skia",\
           "features": []\
         },'
 

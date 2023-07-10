@@ -11,7 +11,7 @@
     "scripts": {},
     "licensePath": "COPYING",
     "component": {
-        "name": "third_party_skia",
+        "name": "skia",
         "subsystem": "thirdparty",
         "syscap": [],
         "features": [],
