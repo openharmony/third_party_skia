@@ -626,7 +626,7 @@ optional("fontmgr_win") {
 if (use_oh_skia) {
   ohos_prebuilt_etc("ohos_fontconfig.json") {
     source = "//third_party/skia/src/ports/skia_ohos/config/fontconfig.json"
-    part_name = "third_party_skia"
+    part_name = "skia"
     subsystem_name = "thirdparty"
   }
 
@@ -1422,7 +1422,7 @@ if (use_oh_skia) {
   template("make_skia_deps") {
     forward_variables_from(invoker, "*")
     ohos_source_set("skia_$platform") {
-      part_name = "third_party_skia"
+      part_name = "skia"
       subsystem_name = "thirdparty"
       license_file = "//third_party/skia/LICENSE"
       public_configs = [
@@ -1436,7 +1436,7 @@ if (use_oh_skia) {
   }
 
   ohos_shared_library("skia_canvaskit") {
-    part_name = "third_party_skia"
+    part_name = "skia"
     innerapi_tags = [ "platformsdk" ]
     subsystem_name = "thirdparty"
 
