@@ -466,7 +466,6 @@ optional("fontmgr_custom_directory_factory") {
   enabled = skia_enable_fontmgr_custom_directory
   deps = [ ":fontmgr_custom_directory" ]
   sources = [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
-  defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
 }
 
 optional("fontmgr_custom_embedded") {
