@@ -6,7 +6,9 @@
 
 #include "include/core/SkTypes.h"
 #include "include/utils/SkTraceEventPhase.h"
-
+#ifdef SKIA_OHOS_DEBUG
+#include "hitrace_meter.h"
+#endif
 // Trace events are for tracking application performance and resource usage.
 // Macros are provided to track:
 //    Duration of scoped regions
@@ -197,6 +199,23 @@ public:
 
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this does nothing.
+#ifdef SKIA_OHOS_DEBUG
+#define TRACE_EVENT0(category_group, name) \
+  HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
+
+#define TRACE_EVENT0_ALWAYS(category_group, name) \
+  HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
+
+#define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
+  HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \  
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
+
+#define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
+  HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \  
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val)
+#else
 #define TRACE_EVENT0(category_group, name) \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
 
@@ -208,7 +227,7 @@ public:
 
 #define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val)
-
+#endif
 // Records a single event called "name" immediately, with 0, 1 or 2 associated arguments. If the
 // category is not enabled, then this does nothing.
 #define TRACE_EVENT_INSTANT0(category_group, name, scope)                   \
