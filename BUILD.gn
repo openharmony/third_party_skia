@@ -55,6 +55,10 @@ config("skia_public") {
   include_dirs = [ "." ]
 
   defines = [ "NEW_SKIA" ]
+  if (defined(skia_ohos_debug) && skia_ohos_debug) {
+    include_dirs += [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+    defines += [ "SKIA_OHOS_DEBUG" ]
+  }
   cflags_objcc = []
   if (is_skia_dev_build) {
     defines += [ "GR_TEST_UTILS=1" ]
@@ -1596,6 +1600,9 @@ if (use_oh_skia) {
     if (is_ohos) {
       sources += [ "//third_party/skia/src/ports/SkDebug_ohos.cpp" ]
       external_deps = [ "hilog:libhilog" ]
+      if (defined(skia_ohos_debug) && skia_ohos_debug) {
+        external_deps += [ "hitrace_native:hitrace_meter" ]
+      }
     }
 
     if (is_android) {

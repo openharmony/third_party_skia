@@ -77,7 +77,7 @@ declare_args() {
   skia_use_xps = true
   skia_enable_graphite = false
   skia_use_zlib = true
-
+  skia_ohos_debug = false
   skia_vtune_path = ""
 
   if (is_ios) {
