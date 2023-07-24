@@ -290,6 +290,11 @@ if (skia_use_system_harfbuzz) {
 
     if (is_cross_platform_build || use_oh_skia) {
       deps = [ "../icu" ]
+      if (is_cross_platform_build) {
+        deps -= [ "../icu" ]
+        deps += [ "//third_party/icu/icu4c:static_icuuc" ]
+        public_include_dirs += [ "//third_party/icu/icu4c/source/common" ]
+      }
 
       defines += [
         "HAVE_ICU",
