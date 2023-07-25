@@ -420,7 +420,7 @@ private:
     SkDEBUGCODE(GrGpuResource*          fNewlyPurgeableResourceForValidation = nullptr;)
 
     //Indicates the cached resource tags.
-    std::stack<GrGpuResourceTag> GrResourceCacheStack;
+    std::stack<GrGpuResourceTag> grResourceTagCacheStack;
 };
 
 class GrResourceCache::ResourceAccess {
