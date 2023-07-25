@@ -98,6 +98,10 @@ config("skia_public") {
     defines += [ "SK_ENABLE_SMALL_PAGE" ]
   }
 
+  if (is_ohos) {
+    defines += [ "SK_DEBUG_CHECK" ]
+  }
+
   # Some older versions of the Clang toolchain change the visibility of
   # symbols decorated with API_AVAILABLE macro to be visible. Users of such
   # toolchains suppress the use of this macro till toolchain updates are made.
@@ -1017,6 +1021,8 @@ optional("gpu") {
           "//third_party/openGLES/api",
         ]
         deps += [ "//foundation/graphic/graphic_2d:libgl" ]
+        deps += [ "//base/hiviewdfx/faultloggerd/interfaces/innerkits/dump_catcher:libdfx_dumpcatcher" ]
+        include_dirs += [ "//base/hiviewdfx/faultloggerd/interfaces/innerkits/dump_catcher/include/" ]
       } else {
         libs += [ "EGL" ]
       }
@@ -2045,6 +2051,8 @@ if (skia_enable_tools) {
         if (is_ohos) {
           include_dirs = [ "//third_party/EGL/api" ]
           deps += [ "//foundation/graphic/graphic_2d:libgl" ]
+          deps += [ "//base/hiviewdfx/faultloggerd/interfaces/innerkits/dump_catcher:libdfx_dumpcatcher" ]
+          include_dirs += [ "//base/hiviewdfx/faultloggerd/interfaces/innerkits/dump_catcher/include/" ]
         } else {
           libs += [ "EGL" ]
         }

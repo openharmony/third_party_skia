@@ -898,6 +898,7 @@ public:
     */
     void flushAndSubmit(bool syncCpu = false);
 
+    void checkThreadId();
     enum class BackendSurfaceAccess {
         kNoAccess,  //!< back-end object will not be used by client
         kPresent,   //!< back-end surface will be used for presenting to screen
