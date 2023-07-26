@@ -282,7 +282,7 @@ void GrResourceCache::releaseByTag(const GrGpuResourceTag tag) {
             recycleVector.emplace_back(resource);
             if (resource->getUniqueKey().isValid()) {
                 fProxyProvider->processInvalidUniqueKey(resource->getUniqueKey(), nullptr,
-                                                        GrProxyProvider::InvalidateGPUResource::kNo);
+                    GrProxyProvider::InvalidateGPUResource::kNo);
             }
         }
     }
@@ -293,7 +293,7 @@ void GrResourceCache::releaseByTag(const GrGpuResourceTag tag) {
             recycleVector.emplace_back(resource);
             if (resource->getUniqueKey().isValid()) {
                 fProxyProvider->processInvalidUniqueKey(resource->getUniqueKey(), nullptr,
-                                                        GrProxyProvider::InvalidateGPUResource::kNo);
+                    GrProxyProvider::InvalidateGPUResource::kNo);
             }
         }
     }
