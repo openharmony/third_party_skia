@@ -470,6 +470,12 @@ optional("fontmgr_custom_directory_factory") {
   enabled = skia_enable_fontmgr_custom_directory
   deps = [ ":fontmgr_custom_directory" ]
   sources = [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines = [ "USE_ROSEN_DRAWING" ]
+    if (use_linux) {
+      defines += [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
+    }
+  }
 }
 
 optional("fontmgr_custom_embedded") {
