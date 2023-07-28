@@ -480,6 +480,9 @@ optional("fontmgr_custom_directory_factory") {
       defines += [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
     }
   }
+  if (is_cross_platform_build) {
+    sources -= [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
+  }
 }
 
 optional("fontmgr_custom_embedded") {
@@ -621,6 +624,9 @@ optional("fontmgr_mac_ct_factory") {
   deps = [ ":fontmgr_mac_ct" ]
   sources = [ "src/ports/SkFontMgr_mac_ct_factory.cpp" ]
   defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+  if (is_cross_platform_build) {
+    defines += [ "USE_DEFAULT_FONT" ]
+  }
 }
 
 optional("fontmgr_win") {
@@ -637,7 +643,7 @@ optional("fontmgr_win") {
   ]
 }
 
-if (use_oh_skia) {
+if (use_oh_skia && !is_cross_platform_build) {
   ohos_prebuilt_etc("ohos_fontconfig.json") {
     source = "//third_party/skia/src/ports/skia_ohos/config/fontconfig.json"
     part_name = "skia"
@@ -1447,7 +1453,176 @@ if (use_oh_skia) {
         ":icu_config",
       ]
 
-      public_deps = [ ":skia_canvaskit" ]
+      if (is_cross_platform_build) {
+        public_deps = [ ":skia_canvaskit_static" ]
+      } else {
+        public_deps = [ ":skia_canvaskit" ]
+      }
+    }
+  }
+
+  ohos_source_set("skia_canvaskit_static") {
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+
+    include_dirs = [ "${skia_third_party_dir}/externals/libgifcodec" ]
+    public_configs = [ ":skia_public" ]
+    configs = skia_library_configs
+    public_deps = [
+      ":fontmgr_FontConfigInterface",
+      ":fontmgr_android",
+      ":fontmgr_custom_directory",
+      ":fontmgr_custom_directory_factory",
+      ":fontmgr_custom_embedded",
+      ":fontmgr_fontconfig",
+      ":skcms",
+      ":xps",
+    ]
+
+    if (is_ios) {
+      public_deps += [ ":gpu" ]
+    } else {
+      if (defined(ace_enable_gpu) && ace_enable_gpu) {
+        public_deps += [ ":gpu" ]
+      }
+    }
+    deps = [
+      ":android_utils",
+      ":arm64",
+      ":armv7",
+      ":avx",
+      ":crc32",
+      ":fontmgr_factory",
+      ":gif",
+      ":heif",
+      ":hsw",
+      ":jpeg_decode",
+      ":jpeg_encode",
+      ":none",
+      ":png_decode",
+      ":png_encode",
+      ":skvm_jit",
+      ":skx",
+      ":sse2",
+      ":sse41",
+      ":sse42",
+      ":ssse3",
+      ":webp_decode",
+      ":webp_encode",
+      ":xml",
+      "modules/skresources",
+      "modules/skshaper",
+      "modules/skunicode",
+      "modules/svg",
+    ]
+
+    public = skia_core_public
+    public += skia_utils_public
+    public += skia_effects_public
+    public += skia_effects_imagefilter_public
+
+    sources = []
+    sources += skia_core_sources
+    sources += skia_utils_sources
+    sources += skia_effects_sources
+    sources += skia_effects_imagefilter_sources
+    sources += [
+      "src/android/SkAndroidFrameworkUtils.cpp",
+      "src/android/SkAnimatedImage.cpp",
+      "src/codec/SkAndroidCodec.cpp",
+      "src/codec/SkAndroidCodecAdapter.cpp",
+      "src/codec/SkBmpBaseCodec.cpp",
+      "src/codec/SkBmpCodec.cpp",
+      "src/codec/SkBmpMaskCodec.cpp",
+      "src/codec/SkBmpRLECodec.cpp",
+      "src/codec/SkBmpStandardCodec.cpp",
+      "src/codec/SkCodec.cpp",
+      "src/codec/SkCodecImageGenerator.cpp",
+      "src/codec/SkColorTable.cpp",
+      "src/codec/SkEncodedInfo.cpp",
+      "src/codec/SkMaskSwizzler.cpp",
+      "src/codec/SkMasks.cpp",
+      "src/codec/SkParseEncodedOrigin.cpp",
+      "src/codec/SkSampledCodec.cpp",
+      "src/codec/SkSampler.cpp",
+      "src/codec/SkStreamBuffer.cpp",
+      "src/codec/SkSwizzler.cpp",
+      "src/codec/SkWbmpCodec.cpp",
+      "src/images/SkImageEncoder.cpp",
+      "src/ports/SkDiscardableMemory_none.cpp",
+      "src/ports/SkGlobalInitialization_default.cpp",
+      "src/ports/SkImageGenerator_skia.cpp",
+      "src/ports/SkMemory_malloc.cpp",
+      "src/ports/SkOSFile_stdio.cpp",
+      "src/sfnt/SkOTTable_name.cpp",
+      "src/sfnt/SkOTUtils.cpp",
+    ]
+
+    defines = skia_common_defines
+    cflags = skia_common_cflags
+    if (!defined(ace_enable_gpu) || !ace_enable_gpu) {
+      defines += [
+        "SK_BUILD_FOR_UNIX",
+        "SK_SUPPORT_GPU=0",
+      ]
+      defines -= [ "SK_GL" ]
+    }
+    cflags_cc = [ "-Wno-unknown-pragmas" ]
+    libs = []
+
+    if (skia_enable_sksl) {
+      deps += [ ":dehydrate_sksl" ]
+      sources += skia_sksl_sources
+    }
+
+    if (is_android) {
+      deps += [ "${skia_third_party_dir}/expat" ]
+      if (defined(ndk) && ndk != "") {
+        deps += [ "${skia_third_party_dir}/cpu-features" ]
+      }
+      sources += [ "src/ports/SkDebug_android.cpp" ]
+      libs += [
+        "EGL",
+        "GLESv2",
+        "log",
+      ]
+    }
+
+    if (is_mac) {
+      public += [ "include/ports/SkCFObject.h" ]
+      sources += [
+        "src/ports/SkDebug_stdio.cpp",
+        "src/ports/SkImageEncoder_CG.cpp",
+        "src/ports/SkImageGeneratorCG.cpp",
+      ]
+      frameworks = [
+        "ApplicationServices.framework",
+        "OpenGL.framework",
+      ]
+    }
+
+    if (is_ios) {
+      public += [ "include/ports/SkCFObject.h" ]
+      sources += [
+        "src/ports/SkDebug_stdio.cpp",
+        "src/ports/SkImageEncoder_CG.cpp",
+        "src/ports/SkImageGeneratorCG.cpp",
+      ]
+      frameworks = [
+        "CoreFoundation.framework",
+        "ImageIO.framework",
+        "MobileCoreServices.framework",
+      ]
+    }
+
+    if (is_win) {
+      sources += [ "src/ports/SkOSFile_win.cpp" ]
+    } else {
+      sources += [ "src/ports/SkOSFile_posix.cpp" ]
+    }
+
+    if (skia_include_multiframe_procs) {
+      sources += [ "tools/SkSharingProc.cpp" ]
     }
   }
 
@@ -1474,6 +1649,11 @@ if (use_oh_skia) {
       ":skcms",
       ":xps",
     ]
+
+    if (is_cross_platform_build) {
+      public_deps -= [ ":fontmgr_ohos" ]
+    }
+
     if (is_ios) {
       public_deps += [ ":gpu" ]
     } else {
