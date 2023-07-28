@@ -462,6 +462,7 @@
 #ifndef SkDebugf
     extern SK_API void SkDebugf(const char format[], ...) SK_PRINTF_LIKE(1, 2);
 #endif
+    extern SK_API void SkDebugInfo(const char format[], ...) SK_PRINTF_LIKE(1, 2);
 
 // SkASSERT, SkASSERTF and SkASSERT_RELEASE can be used as stand alone assertion expressions, e.g.
 //    uint32_t foo(int x) {
