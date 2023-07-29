@@ -598,6 +598,16 @@ optional("fontmgr_mac_ct") {
     "src/ports/SkTypeface_mac_ct.cpp",
     "src/ports/SkTypeface_mac_ct.h",
   ]
+  if (use_oh_skia) {
+    # Use hos font
+    sources += [
+      "//third_party/skia/src/ports/SkFontMgr_config_parser.cpp",
+      "//third_party/skia/src/ports/SkFontMgr_config_parser.h",
+      "//third_party/skia/src/ports/SkFontMgr_preview.cpp",
+      "//third_party/skia/src/ports/SkFontMgr_preview.h",
+    ]
+    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+  }
   sources_for_tests = [ "tests/TypefaceMacTest.cpp" ]
 
   if (is_mac) {
@@ -641,6 +651,17 @@ optional("fontmgr_win") {
     "src/ports/SkTypeface_win_dw.cpp",
     "src/ports/SkTypeface_win_dw.h",
   ]
+  if (use_oh_skia) {
+    # Use hos font
+    sources += [
+      "//third_party/skia/src/ports/SkFontMgr_config_parser.cpp",
+      "//third_party/skia/src/ports/SkFontMgr_config_parser.h",
+      "//third_party/skia/src/ports/SkFontMgr_preview.cpp",
+      "//third_party/skia/src/ports/SkFontMgr_preview.h",
+    ]
+    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
+    deps = [ "${skia_third_party_dir}/expat" ]
+  }
 }
 
 if (use_oh_skia && !is_cross_platform_build) {
