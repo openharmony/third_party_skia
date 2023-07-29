@@ -99,7 +99,7 @@ public:
     GrTextureProxyPriv texPriv();
     const GrTextureProxyPriv texPriv() const;  // NOLINT(readability-const-return-type)
 
-    void setUserCacheTarget(const bool cacheFlag) const { fUserCacheTaget = cacheFlag; }
+    void setUserCacheTarget(const bool cacheFlag) { fUserCacheTaget = cacheFlag; }
     bool getUserCacheTarget() const { return fUserCacheTaget; }
 
     SkDEBUGCODE(GrDDLProvider creatingProvider() const { return fCreatingProvider; })
