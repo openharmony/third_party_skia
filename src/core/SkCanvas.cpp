@@ -522,12 +522,14 @@ SkISize SkCanvas::getBaseLayerSize() const {
 
 SkBaseDevice* SkCanvas::topDevice() const {
     SkASSERT(fMCRec->fDevice);
+#if SK_SUPPORT_GPU
     if (auto gpuDevice = fMCRec->fDevice->asGpuDevice()) {
         auto context = gpuDevice->recordingContext();
         if (context) {
             context->checkThreadId();
         }
     }
+#endif
     return fMCRec->fDevice;
 }
 
