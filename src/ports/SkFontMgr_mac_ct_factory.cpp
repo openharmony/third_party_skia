@@ -16,12 +16,14 @@ std::string SkFontMgr::runtimeOS = "OHOS";
 SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS(const char *path);
 
 sk_sp<SkFontMgr> SkFontMgr::Factory() {
+#if !defined(USE_DEFAULT_FONT)
     if (SkFontMgr::runtimeOS == "OHOS") {
         return SkFontMgr_New_OHOS(nullptr);
     }
     if (SkFontMgr::runtimeOS == "OHOS_Container") {
         return SkFontMgr_New_Preview();
     }
+#endif
     return SkFontMgr_New_CoreText(nullptr);
 }
 

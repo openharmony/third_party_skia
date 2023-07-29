@@ -162,7 +162,8 @@ declare_args() {
 }
 
 # Our tools require static linking (they use non-exported symbols), and the GPU backend.
-skia_enable_tools = skia_enable_tools && !is_component_build && skia_enable_gpu
+skia_enable_tools = skia_enable_tools && !is_component_build &&
+                    skia_enable_gpu && !is_cross_platform_build
 
 # The GPU build requires SkSL
 skia_enable_sksl = skia_enable_sksl || skia_enable_gpu

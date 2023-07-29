@@ -373,6 +373,7 @@ void SkSurface::flush() {} // Flush is a no-op for CPU surfaces
 
 void SkSurface::flushAndSubmit(bool syncCpu) {}
 
+void SkSurface::checkThreadId() {}
 // TODO(kjlubick, scroggo) Remove this once Android is updated.
 sk_sp<SkSurface> SkSurface::MakeRenderTarget(GrRecordingContext*, SkBudgeted, const SkImageInfo&,
                                              int, GrSurfaceOrigin, const SkSurfaceProps*, bool) {
