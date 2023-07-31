@@ -112,8 +112,7 @@ public:
         SkArenaAlloc* fRecordTimeAllocator;
         GrSubRunAllocator* fRecordTimeSubRunAllocator;
     };
-    void checkThreadId() const;
-    void dumpStack() const;
+
 protected:
     friend class GrRecordingContextPriv;    // for hidden functions
     friend class SkDeferredDisplayList;     // for OwnedArenas
@@ -262,9 +261,7 @@ private:
 #if GR_TEST_UTILS
     int fSuppressWarningMessages = 0;
 #endif
-#ifdef SK_DEBUG_CHECK
-    int32_t threadId_;
-#endif
+
     using INHERITED = GrImageContext;
 };
 

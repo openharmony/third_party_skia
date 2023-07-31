@@ -397,7 +397,7 @@ sk_sp<SkSurface> SkSurface::MakeRenderTarget(GrRecordingContext* rContext,
     if (!rContext || !c.isValid()) {
         return nullptr;
     }
-    rContext->dumpStack();
+
     if (c.usesGLFBO0()) {
         // If we are making the surface we will never use FBO0.
         return nullptr;
@@ -459,7 +459,6 @@ sk_sp<SkSurface> SkSurface::MakeRenderTarget(GrRecordingContext* rContext, SkBud
     if (!rContext) {
         return nullptr;
     }
-    rContext->dumpStack();
     sampleCount = std::max(1, sampleCount);
     GrMipmapped mipMapped = shouldCreateWithMips ? GrMipmapped::kYes : GrMipmapped::kNo;
 
@@ -526,7 +525,7 @@ bool SkSurface_Gpu::onReplaceBackendTexture(const GrBackendTexture& backendTextu
                                             TextureReleaseProc releaseProc,
                                             ReleaseContext releaseContext) {
     auto releaseHelper = GrRefCntedCallback::Make(releaseProc, releaseContext);
-    checkThreadId();
+
     auto rContext = fDevice->recordingContext();
     if (rContext->abandoned()) {
         return false;
@@ -643,7 +642,6 @@ sk_sp<SkSurface> SkSurface::MakeFromAHardwareBuffer(GrDirectContext* dContext,
                                                     sk_sp<SkColorSpace> colorSpace,
                                                     const SkSurfaceProps* surfaceProps) {
     AHardwareBuffer_Desc bufferDesc;
-    checkThreadId();
     AHardwareBuffer_describe(hardwareBuffer, &bufferDesc);
 
     if (!SkToBool(bufferDesc.usage & AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT)) {
@@ -699,18 +697,11 @@ sk_sp<SkSurface> SkSurface::MakeFromAHardwareBuffer(GrDirectContext* dContext,
 
 void SkSurface::flushAndSubmit(bool syncCpu) {
     this->flush(BackendSurfaceAccess::kNoAccess, GrFlushInfo());
-    checkThreadId();
+
     auto direct = GrAsDirectContext(this->recordingContext());
     if (direct) {
         direct->submit(syncCpu);
     }
 }
 
-void SkSurface::checkThreadId()
-{
-    auto context = this->recordingContext();
-    if (context) {
-        context->checkThreadId();
-    }
-}
 #endif

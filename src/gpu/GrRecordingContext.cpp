@@ -22,9 +22,7 @@
 #include "src/gpu/effects/GrSkSLFP.h"
 #include "src/gpu/text/GrTextBlob.h"
 #include "src/gpu/text/GrTextBlobCache.h"
-#include "base/hiviewdfx/faultloggerd/interfaces/innerkits/dump_catcher/include/dfx_dump_catcher.h"
-#include <sstream>
-#include <string>
+
 #if SK_GPU_V1
 #include "src/gpu/ops/AtlasTextOp.h"
 #endif
@@ -45,53 +43,13 @@ GrRecordingContext::ProgramData::~ProgramData() = default;
 GrRecordingContext::GrRecordingContext(sk_sp<GrContextThreadSafeProxy> proxy, bool ddlRecording)
         : INHERITED(std::move(proxy))
         , fAuditTrail(new GrAuditTrail())
-        , fArenas(ddlRecording)
-#ifdef SK_DEBUG_CHECK
-        , threadId_(gettid())
-#endif
-{
+        , fArenas(ddlRecording) {
     fProxyProvider = std::make_unique<GrProxyProvider>(this);
 }
 
 GrRecordingContext::~GrRecordingContext() {
 #if SK_GPU_V1
     skgpu::v1::AtlasTextOp::ClearCache();
-#endif
-}
-
-void tokenize2(std::string const &str, const char delim, std::vector<std::string> &out)
-{
-    std::stringstream ss(str);
-    std::string s;
-    while(std::getline(ss, s, delim)) {
-        out.push_back(s);
-    }
-}
-
-void GrRecordingContext::dumpStack() const {
-#ifdef SK_DEBUG_CHECK
-    OHOS::HiviewDFX::DfxDumpCatcher dumplog;
-    std::string msg = "";
-    SkDebugInfo("dumpStack current id %{public}d", gettid());
-    auto ret = dumplog.DumpCatch(getpid(), gettid(), msg);
-    if (ret) {
-        std::vector<std::string> out;
-        tokenize2(msg, '\n', out);
-        for (auto const& line : out) {
-            SkDebugInfo("dumpStack %{public}s", line.c_str());
-        }
-    }
-#endif
-}
-
-void GrRecordingContext::checkThreadId() const {
-#ifdef SK_DEBUG_CHECK
-    auto id = gettid();
-    if (id == threadId_) {
-        return;
-    }
-    SkDebugInfo("checkThreadId %{public}d threadId_ %{public}d", id, threadId_);
-    abort();
 #endif
 }
 
