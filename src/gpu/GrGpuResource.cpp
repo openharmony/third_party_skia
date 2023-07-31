@@ -211,6 +211,19 @@ void GrGpuResource::makeUnbudgeted() {
     }
 }
 
+void GrGpuResource::userRegisterResource()
+{
+    if (this->wasDestroyed()) {
+        return;
+    }
+    SkASSERT(!fScratchKey.isValid());
+    SkASSERT(!fUniqueKey.isValid());
+    if (fCacheArrayIndex >= 0 && fBudgetedType == GrBudgetedType::kUnbudgetedUncacheable) {
+        this->computeScratchKey(&fScratchKey);
+        makeBudgeted();
+    }
+}
+
 uint32_t GrGpuResource::CreateUniqueID() {
     static std::atomic<uint32_t> nextID{1};
     uint32_t id;

@@ -73,6 +73,8 @@ public:
 
     void generatingSurfaceIsDeleted() override;
 
+    void hintCacheGpuResource() override;
+
 private:
     SkImage_Gpu(sk_sp<GrDirectContext>,
                 GrSurfaceProxyView volatileSrc,
