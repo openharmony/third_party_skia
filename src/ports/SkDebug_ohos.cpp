@@ -35,18 +35,3 @@ void SkDebugf(const char format[], ...) {
 
     va_end(args1);
 }
-
-void SkDebugInfo(const char format[], ...) {
-        va_list args1, args2;
-    va_start(args1, format);
-
-    if (gSkDebugToStdOut) {
-        va_copy(args2, args1);
-        vprintf(format, args2);
-        va_end(args2);
-    }
-
-    HiLogPrintArgs(LOG_CORE, LogLevel::LOG_INFO, 0xD003900, LOG_TAG, format, args1);
-
-    va_end(args1);
-}
