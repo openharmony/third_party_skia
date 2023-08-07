@@ -30,7 +30,7 @@ class SkTaskGroup;
 /** Class that adds methods to GrDirectContext that are only intended for use internal to Skia.
     This class is purely a privileged window into GrDirectContext. It should never have additional
     data members or virtual methods. */
-class GrDirectContextPriv : public GrRecordingContextPriv {
+class SK_API GrDirectContextPriv : public GrRecordingContextPriv {
 public:
     GrDirectContext* context() { return static_cast<GrDirectContext*>(fContext); }
     const GrDirectContext* context() const { return static_cast<const GrDirectContext*>(fContext); }

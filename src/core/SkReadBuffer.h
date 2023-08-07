@@ -33,7 +33,7 @@
 class SkData;
 class SkImage;
 
-class SkReadBuffer {
+class SK_API SkReadBuffer {
 public:
     SkReadBuffer() = default;
     SkReadBuffer(const void* data, size_t size) {

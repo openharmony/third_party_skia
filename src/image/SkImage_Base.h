@@ -33,7 +33,7 @@ enum {
     kNeedNewImageUniqueID = 0
 };
 
-class SkImage_Base : public SkImage {
+class SK_API SkImage_Base : public SkImage {
 public:
     ~SkImage_Base() override;
 
