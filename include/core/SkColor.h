@@ -257,7 +257,7 @@ static_assert(0 == (kGray_SkColorChannelFlag & kRGBA_SkColorChannelFlags), "bitf
     as SkColor4f.
 */
 template <SkAlphaType kAT>
-struct SkRGBA4f {
+struct SK_API SkRGBA4f {
     float fR;  //!< red component
     float fG;  //!< green component
     float fB;  //!< blue component

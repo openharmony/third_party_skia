@@ -18,7 +18,7 @@ struct SkVertices_DeprecatedBone { float values[6]; };
 /** Class that adds methods to SkVertices that are only intended for use internal to Skia.
     This class is purely a privileged window into SkVertices. It should never have additional
     data members or virtual methods. */
-class SkVerticesPriv {
+class SK_API SkVerticesPriv {
 public:
     SkVertices::VertexMode mode() const { return fVertices->fMode; }
 
