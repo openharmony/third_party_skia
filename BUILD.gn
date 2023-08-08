@@ -1879,6 +1879,10 @@ if (use_oh_skia) {
     if (skia_include_multiframe_procs) {
       sources += [ "tools/SkSharingProc.cpp" ]
     }
+
+    if (defined(ddgr_ext_configs)) {
+      defines += ddgr_ext_configs.ddgr_defines
+    }
   }
 
   foreach(item, ace_platforms) {
