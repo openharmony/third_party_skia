@@ -196,6 +196,7 @@ public:
 
 #if defined (ENABLE_DDGR_OPTIMIZE)
     void TextBlobSetShareParas(int fId, int fSize, void* fPtr);
+    void TextBlobFlatten(SkWriteBuffer& buffer);
 #endif
 
     class SK_API Iter {
