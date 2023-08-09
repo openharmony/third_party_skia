@@ -870,6 +870,11 @@ void SkTextBlob::TextBlobSetShareParas(int fId, int fSize, void* fPtr)
     fdSize_ = fSize;
     fdPtr_ = fPtr;
 }
+
+void SkTextBlob::TextBlobFlatten(SkWriteBuffer& buffer)
+{
+    SkTextBlobPriv::Flatten(*this, buffer);
+}
 #endif
 
 void SkTextBlob::dump(std::string& desc, int depth) const {
