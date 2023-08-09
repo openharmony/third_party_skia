@@ -25,8 +25,8 @@ class SkSVGLength;
 
 class SkSVGLengthContext {
 public:
-    SkSVGLengthContext(const SkSize& viewport, SkScalar dpi = 90)
-        : fViewport(viewport), fDPI(dpi) {}
+    SkSVGLengthContext(const SkSize& viewport, uint32_t resizePercentage = 100, SkScalar dpi = 90)
+        : fViewport(viewport), fResizePercentage(resizePercentage), fDPI(dpi) {}
 
     enum class LengthType {
         kHorizontal,
@@ -43,6 +43,7 @@ public:
 
 private:
     SkSize   fViewport;
+    uint32_t  fResizePercentage;
     SkScalar fDPI;
 };
 

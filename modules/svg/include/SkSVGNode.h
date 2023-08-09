@@ -99,6 +99,10 @@ public:
     SkSVGTag tag() const { return fTag; }
 
     virtual void appendChild(sk_sp<SkSVGNode>) = 0;
+    virtual std::vector<sk_sp<SkSVGNode>> getChild() {
+        std::vector<sk_sp<SkSVGNode>> res;
+        return res;
+    }
 
     void render(const SkSVGRenderContext&) const;
     bool asPaint(const SkSVGRenderContext&, SkPaint*) const;
