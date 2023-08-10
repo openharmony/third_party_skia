@@ -456,7 +456,7 @@ SkSVGDOM::SkSVGDOM(sk_sp<SkSVGSVG> root, sk_sp<SkFontMgr> fmgr,
     , fFontMgr(std::move(fmgr))
     , fResourceProvider(std::move(rp))
     , fIDMapper(std::move(mapper))
-    , fSVGResizePercentage(100)
+    , fSVGResizePercentage(DEFAULT_RESIZE_PERCENTAGE)
     , fContainerSize(fRoot->intrinsicSize(SkSVGLengthContext(SkSize::Make(0, 0))))
 {
     SkASSERT(fResourceProvider);
@@ -475,8 +475,8 @@ void SkSVGDOM::render(SkCanvas* canvas) const {
 void SkSVGDOM::setResizePercentage(uint32_t resizePercentage)
 {
     fSVGResizePercentage = resizePercentage;
-    fContainerSize.fWidth *= resizePercentage / 100;
-    fContainerSize.fHeight *= resizePercentage / 100;
+    fContainerSize.fWidth *= resizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    fContainerSize.fHeight *= resizePercentage / DEFAULT_RESIZE_PERCENTAGE;
 }
 
 const SkSize& SkSVGDOM::containerSize() const {
