@@ -602,7 +602,7 @@ optional("fontmgr_mac_ct") {
     "src/ports/SkTypeface_mac_ct.cpp",
     "src/ports/SkTypeface_mac_ct.h",
   ]
-  if (use_oh_skia) {
+  if (use_oh_skia && !is_cross_platform_build) {
     # Use hos font
     sources += [
       "//third_party/skia/src/ports/SkFontMgr_config_parser.cpp",
