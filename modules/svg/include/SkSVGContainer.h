@@ -14,6 +14,7 @@
 class SkSVGContainer : public SkSVGTransformableNode {
 public:
     void appendChild(sk_sp<SkSVGNode>) override;
+    std::vector<sk_sp<SkSVGNode>> getChild() override;
 
 protected:
     explicit SkSVGContainer(SkSVGTag);

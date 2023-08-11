@@ -17,6 +17,14 @@ void SkSVGContainer::appendChild(sk_sp<SkSVGNode> node) {
     fChildren.push_back(std::move(node));
 }
 
+std::vector<sk_sp<SkSVGNode>> SkSVGContainer::getChild() {
+    std::vector<sk_sp<SkSVGNode>> res;
+    for (int i = 0; i < fChildren.count(); ++i) {
+        res.emplace_back(fChildren[i]);
+    }
+    return res;
+}
+
 bool SkSVGContainer::hasChildren() const {
     return !fChildren.empty();
 }

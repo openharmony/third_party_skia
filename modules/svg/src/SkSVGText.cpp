@@ -501,6 +501,13 @@ void SkSVGTextContainer::appendChild(sk_sp<SkSVGNode> child) {
     }
 }
 
+
+std::vector<sk_sp<SkSVGNode>> SkSVGTextContainer::getChild() {
+    std::vector<sk_sp<SkSVGNode>> res;
+    res.assign(fChildren.begin(),fChildren.end());
+    return res;
+}
+
 void SkSVGTextContainer::onShapeText(const SkSVGRenderContext& ctx, SkSVGTextContext* tctx,
                                      SkSVGXmlSpace) const {
     SkASSERT(tctx);
