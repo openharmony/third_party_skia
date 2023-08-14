@@ -107,8 +107,19 @@ protected:
         return false;
     }
 
+    static std::string RemoveEmptyChar(const char text[], int len) {
+        std::vector<char> textVector(text, text + len);
+        std::vector<char> output;
+        for (auto i = textVector.begin(); i != textVector.end(); i++) {
+            if (!((*i == ' ') || (*i == '\n') || (*i == '\t'))) {
+                output.push_back(*i);
+            }
+        }
+        return std::string(output.begin(), output.end());
+    }
+
     bool onText(const char text[], int len) override {
-        std::string style(text, len);
+        std::string style = RemoveEmptyChar(text, len);
         this->startCommon(style.c_str(), len, SkDOM::kText_Type);
         this->SkSVGDOMParser::onEndElement(style.c_str());
         if (fProcessingStyle && !style.empty() && style.front() == '.') {
