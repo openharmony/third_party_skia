@@ -473,10 +473,12 @@ void SkSVGDOM::render(SkCanvas* canvas) const {
 }
 
 void SkSVGDOM::setResizePercentage(uint32_t resizePercentage)
-{
-    fSVGResizePercentage = resizePercentage;
-    fContainerSize.fWidth *= resizePercentage / DEFAULT_RESIZE_PERCENTAGE;
-    fContainerSize.fHeight *= resizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+{   
+    resizePercentage = static_cast<float>(resizePercentage);
+    fSVGResizePercentage *= resizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    fContainerSize.fWidth *= fSVGResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    fContainerSize.fHeight *= fSVGResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    fSVGResizePercentage = static_cast<uint32_t>(fSVGResizePercentage);
 }
 
 const SkSize& SkSVGDOM::containerSize() const {
