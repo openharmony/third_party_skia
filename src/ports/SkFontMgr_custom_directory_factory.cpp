@@ -17,21 +17,6 @@
 #endif
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
-#ifndef USE_ROSEN_DRAWING
-#include "src/ports/SkFontMgr_preview.h"
-std::string SkFontMgr::runtimeOS = "OHOS";
-SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS2(const char *path);
-sk_sp<SkFontMgr> SkFontMgr::Factory()
-{
-    if (SkFontMgr::runtimeOS == "OHOS") {
-        return SkFontMgr_New_OHOS2(nullptr);
-    }
-    if (SkFontMgr::runtimeOS == "OHOS_Container") {
-        return SkFontMgr_New_Preview();
-    }
-    return SkFontMgr_New_Custom_Directory(SK_FONT_FILE_PREFIX);
-}
-#else
 std::string SkFontMgr::runtimeOS = "OHOS";
 SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS(const char *path);
 sk_sp<SkFontMgr> SkFontMgr::Factory()
@@ -41,7 +26,6 @@ sk_sp<SkFontMgr> SkFontMgr::Factory()
     }
     return SkFontMgr_New_Custom_Directory(SK_FONT_FILE_PREFIX);
 }
-#endif
 #else
 sk_sp<SkFontMgr> SkFontMgr::Factory()
 {
