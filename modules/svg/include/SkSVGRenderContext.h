@@ -20,13 +20,13 @@
 #include "modules/svg/include/SkSVGIDMapper.h"
 #include "src/core/SkTLazy.h"
 
-static constexpr uint32_t DEFAULT_RESIZE_PERCENTAGE = 100;
+static constexpr float DEFAULT_RESIZE_PERCENTAGE = 100;
 class SkCanvas;
 class SkSVGLength;
 
 class SkSVGLengthContext {
 public:
-    SkSVGLengthContext(const SkSize& viewport, uint32_t resizePercentage = DEFAULT_RESIZE_PERCENTAGE, SkScalar dpi = 90)
+    SkSVGLengthContext(const SkSize& viewport, float resizePercentage = DEFAULT_RESIZE_PERCENTAGE, SkScalar dpi = 90)
         : fViewport(viewport), fResizePercentage(resizePercentage), fDPI(dpi) {}
 
     enum class LengthType {
@@ -44,7 +44,7 @@ public:
 
 private:
     SkSize   fViewport;
-    uint32_t  fResizePercentage;
+    float  fResizePercentage;
     SkScalar fDPI;
 };
 

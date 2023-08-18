@@ -67,7 +67,7 @@ public:
      */
     void setContainerSize(const SkSize&);
 
-    void setResizePercentage(uint32_t resizePercentage);
+    void setResizePercentage(float resizePercentage);
     /**
      * DEPRECATED: use getRoot()->intrinsicSize() to query the root element intrinsic size.
      *
@@ -95,8 +95,8 @@ private:
     const sk_sp<SkFontMgr>                     fFontMgr;
     const sk_sp<skresources::ResourceProvider> fResourceProvider;
     const SkSVGIDMapper                        fIDMapper;
-    uint32_t                                   fSVGResizePercentage;
-    SkSize                 fContainerSize;
+    float                                      fSVGResizePercentage;
+    SkSize                                     fContainerSize;
 };
 
 #endif // SkSVGDOM_DEFINED
