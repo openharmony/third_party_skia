@@ -24,6 +24,7 @@ bool SkSVGImage::parseAndSetAttribute(const char* n, const char* v) {
                    "preserveAspectRatio", n, v));
 }
 
+
 bool SkSVGImage::onPrepareToRender(SkSVGRenderContext* ctx) const {
     // Width or height of 0 disables rendering per spec:
     // https://www.w3.org/TR/SVG11/struct.html#ImageElement
