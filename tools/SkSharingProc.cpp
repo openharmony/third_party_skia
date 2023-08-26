@@ -24,6 +24,7 @@ namespace {
     }
 }
 
+__attribute__((visibility("default")))
 void SkSharingSerialContext::collectNonTextureImagesFromPicture(
     const SkPicture* pic, SkSharingSerialContext* sharingCtx) {
     SkSerialProcs tempProc;
@@ -33,6 +34,7 @@ void SkSharingSerialContext::collectNonTextureImagesFromPicture(
     pic->serialize(&ns, &tempProc);
 }
 
+__attribute__((visibility("default")))
 sk_sp<SkData> SkSharingSerialContext::serializeImage(SkImage* img, void* ctx) {
     SkSharingSerialContext* context = reinterpret_cast<SkSharingSerialContext*>(ctx);
     uint32_t id = img->uniqueID(); // get this process's id for the image. these are not hashes.
@@ -53,6 +55,7 @@ sk_sp<SkData> SkSharingSerialContext::serializeImage(SkImage* img, void* ctx) {
     return SkData::MakeWithCopy(&fid, sizeof(fid));
 }
 
+__attribute__((visibility("default")))
 sk_sp<SkImage> SkSharingDeserialContext::deserializeImage(
   const void* data, size_t length, void* ctx) {
     if (!data || !length || !ctx) {
