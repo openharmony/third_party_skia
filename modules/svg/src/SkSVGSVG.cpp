@@ -15,7 +15,7 @@ bool SkSVGSVG::onPrepareToRender(SkSVGRenderContext* ctx) const {
     const auto x = fType == Type::kInner ? fX : SkSVGLength(0);
     const auto y = fType == Type::kInner ? fY : SkSVGLength(0);
 
-    auto viewPortRect  = ctx->lengthContext().resolveRect(x, y, fWidth, fHeight);
+    auto viewPortRect  = ctx->lengthContext().resolveRectForSVG(x, y, fWidth, fHeight);
     auto contentMatrix = SkMatrix::Translate(viewPortRect.x(), viewPortRect.y());
     auto viewPort      = SkSize::Make(viewPortRect.width(), viewPortRect.height());
 
@@ -90,6 +90,6 @@ SkSize SkSVGSVG::intrinsicSize(const SkSVGLengthContext& lctx) const {
         return SkSize::Make(0, 0);
     }
 
-    return SkSize::Make(lctx.resolve(fWidth, SkSVGLengthContext::LengthType::kHorizontal),
-                        lctx.resolve(fHeight, SkSVGLengthContext::LengthType::kVertical));
+    return SkSize::Make(lctx.resolveForSVG(fWidth, SkSVGLengthContext::LengthType::kHorizontal),
+                        lctx.resolveForSVG(fHeight, SkSVGLengthContext::LengthType::kVertical));
 }

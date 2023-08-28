@@ -35,11 +35,15 @@ public:
         kOther,
     };
 
+    const float& getResizePercentage() const { return fResizePercentage; }
     const SkSize& viewPort() const { return fViewport; }
     void setViewPort(const SkSize& viewport) { fViewport = viewport; }
 
     SkScalar resolve(const SkSVGLength&, LengthType) const;
+    SkScalar resolveForSVG(const SkSVGLength&, LengthType) const;
     SkRect   resolveRect(const SkSVGLength& x, const SkSVGLength& y,
+                         const SkSVGLength& w, const SkSVGLength& h) const;
+    SkRect   resolveRectForSVG(const SkSVGLength& x, const SkSVGLength& y,
                          const SkSVGLength& w, const SkSVGLength& h) const;
 
 private:
