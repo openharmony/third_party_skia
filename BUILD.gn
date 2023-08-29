@@ -43,6 +43,11 @@ config("skia_wno") {
     "-Wno-unused-variable",
     "-Wno-c++17-extensions",
   ]
+
+  if (target_cpu == "arm") {
+    cflags += [ "-flto=thin" ]
+  }
+
   ldflags = [
     "--stdlib=libc++",
     "-lc++",
