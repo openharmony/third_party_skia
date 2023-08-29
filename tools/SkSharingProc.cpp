@@ -24,8 +24,7 @@ namespace {
     }
 }
 
-__attribute__((visibility("default")))
-void SkSharingSerialContext::collectNonTextureImagesFromPicture(
+__attribute__((visibility("default"))) void SkSharingSerialContext::collectNonTextureImagesFromPicture(
     const SkPicture* pic, SkSharingSerialContext* sharingCtx) {
     SkSerialProcs tempProc;
     tempProc.fImageCtx = sharingCtx;
@@ -34,8 +33,7 @@ void SkSharingSerialContext::collectNonTextureImagesFromPicture(
     pic->serialize(&ns, &tempProc);
 }
 
-__attribute__((visibility("default")))
-sk_sp<SkData> SkSharingSerialContext::serializeImage(SkImage* img, void* ctx) {
+__attribute__((visibility("default"))) sk_sp<SkData> SkSharingSerialContext::serializeImage(SkImage* img, void* ctx) {
     SkSharingSerialContext* context = reinterpret_cast<SkSharingSerialContext*>(ctx);
     uint32_t id = img->uniqueID(); // get this process's id for the image. these are not hashes.
     // find out if we have already serialized this, and if so, what its in-file id is.
@@ -55,8 +53,7 @@ sk_sp<SkData> SkSharingSerialContext::serializeImage(SkImage* img, void* ctx) {
     return SkData::MakeWithCopy(&fid, sizeof(fid));
 }
 
-__attribute__((visibility("default")))
-sk_sp<SkImage> SkSharingDeserialContext::deserializeImage(
+__attribute__((visibility("default"))) sk_sp<SkImage> SkSharingDeserialContext::deserializeImage(
   const void* data, size_t length, void* ctx) {
     if (!data || !length || !ctx) {
         SkDebugf("SkSharingDeserialContext::deserializeImage arguments invalid %p %zu %p.\n",
