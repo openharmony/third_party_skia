@@ -43,8 +43,7 @@ config("skia_wno") {
     "-Wno-unused-variable",
     "-Wno-c++17-extensions",
   ]
-
-  if (target_cpu == "arm") {
+  if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
     cflags += [ "-flto=thin" ]
   }
 
