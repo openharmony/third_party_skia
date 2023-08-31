@@ -17,13 +17,28 @@
 #include "SkString.h"
 
 using namespace ErrorCode;
+static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
+
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
 static const char* OHOS_DEFAULT_CONFIG = "fontconfig.json";
+/*! Constructor
+ * \param fontScanner the scanner to get the font information from a font file
+ * \param fname the full name of system font configuration document.
+ *     \n The default value is '/system/etc/fontconfig.json', if fname is given null
+ */
+FontConfig_OHOS::FontConfig_OHOS(const SkTypeface_FreeType::Scanner& fontScanner,
+    const char* fname)
+{
+    int err = parseConfig(fname);
+    if (err != NO_ERROR) {
+        return;
+    }
+    scanFonts(fontScanner);
+    resetGenericValue();
+    resetFallbackValue();
+}
 #else
 static const char* OHOS_DEFAULT_CONFIG = "/system/etc/fontconfig.json";
-#endif
-
-static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
 /*! Constructor
  * \param fontScanner the scanner to get the font information from a font file
  * \param fname the full name of system font configuration document.
@@ -40,6 +55,7 @@ FontConfig_OHOS::FontConfig_OHOS(const SkTypeface_FreeType::Scanner& fontScanner
     resetGenericValue();
     resetFallbackValue();
 }
+#endif
 
 /*! To get the fallbackForMap
  *  \return The reference of fallbackForMap
