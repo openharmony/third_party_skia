@@ -1884,6 +1884,11 @@ if (use_oh_skia) {
     if (defined(ddgr_ext_configs)) {
       defines += ddgr_ext_configs.ddgr_defines
     }
+
+    #Bisheng control is required in the future
+    if (is_ohos) {
+      ldflags = [ "-Wl,-Bsymbolic" ]
+    }
   }
 
   foreach(item, ace_platforms) {
