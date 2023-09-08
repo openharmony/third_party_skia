@@ -11,7 +11,6 @@
 #include "include/private/GrResourceKey.h"
 #include "include/private/GrTypesPriv.h"
 #include "include/private/SkNoncopyable.h"
-#include <mutex>
 
 class GrGpu;
 class GrResourceCache;
@@ -385,7 +384,7 @@ private:
 
     // An index into a heap when this resource is purgeable or an array when not. This is maintained
     // by the cache.
-    int fCacheArrayIndex = -1;
+    int fCacheArrayIndex;
     // This value reflects how recently this resource was accessed in the cache. This is maintained
     // by the cache.
     uint32_t fTimestamp;
@@ -408,7 +407,6 @@ private:
     using INHERITED = GrIORef<GrGpuResource>;
     friend class GrIORef<GrGpuResource>; // to access notifyRefCntWillBeZero and
                                          // notifyARefCntIsZero.
-    std::mutex mutex_; // The gpu cache is released abnormally due to multi threads.
 };
 
 class GrGpuResource::ProxyAccess {

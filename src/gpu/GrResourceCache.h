@@ -159,12 +159,10 @@ public:
      */
     GrGpuResource* findAndRefUniqueResource(const GrUniqueKey& key) {
         GrGpuResource* resource = fUniqueHash.find(key);
-        if (resource && this->isInCache(resource)) {
+        if (resource) {
             this->refAndMakeResourceMRU(resource);
-            return resource;
         }
-        SkDebugf("OHOS resource is not in cache, return nullptr!");
-        return nullptr;
+        return resource;
     }
 
     /**
@@ -308,10 +306,9 @@ private:
 
     void purgeUnlockedResources(const GrStdSteadyClock::time_point* purgeTime,
                                 bool scratchResourcesOnly);
-    bool isInCache(const GrGpuResource* r) const;
-    bool isInPurgeableCache(const GrGpuResource* r) const;
-    bool isInNonpurgeableCache(const GrGpuResource* r) const;
+
 #ifdef SK_DEBUG
+    bool isInCache(const GrGpuResource* r) const;
     void validate() const;
 #else
     void validate() const {}
