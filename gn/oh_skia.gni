@@ -46,6 +46,13 @@ skia_common_cflags = [
   "-Wno-unknown-warning-option",
 ]
 
+if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
+  skia_common_cflags += [
+    "-flto=thin",
+    "-fwhole-program-vtables",
+  ]
+}
+
 declare_args() {
   use_oh_skia = true
   skia_use_freetype2 = true
