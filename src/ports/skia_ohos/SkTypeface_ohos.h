@@ -14,7 +14,7 @@
 /*!
  * \brief The implementation of SkTypeface for ohos platform
  */
-class SkTypeface_OHOS : public SkTypeface_FreeType {
+class SK_API SkTypeface_OHOS : public SkTypeface_FreeType {
 public:
     SkTypeface_OHOS(const SkString& specifiedName, FontInfo& info);
     explicit SkTypeface_OHOS(FontInfo& info);

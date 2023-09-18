@@ -19,7 +19,7 @@
 /*!
  * \brief To implement the SkFontMgr for ohos platform
  */
-class SkFontMgr_OHOS : public SkFontMgr {
+class SK_API SkFontMgr_OHOS : public SkFontMgr {
 public:
     explicit SkFontMgr_OHOS(const char* path = nullptr);
     virtual ~SkFontMgr_OHOS() override = default;

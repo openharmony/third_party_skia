@@ -13,7 +13,7 @@
 /*!
  * \brief To implement SkFontStyleSet for ohos platform
  */
-class SkFontStyleSet_OHOS : public SkFontStyleSet {
+class SK_API SkFontStyleSet_OHOS : public SkFontStyleSet {
 public:
     SkFontStyleSet_OHOS(const std::shared_ptr<FontConfig_OHOS>& fontConfig,
         int index, bool isFallback = false);
