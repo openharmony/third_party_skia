@@ -48,6 +48,16 @@ public:
      */
     class ProgramImpl;
 
+    // Advanced Filter: Get Advanced Filter status, only GrSkSLFP overwrite isAFEnabled
+    virtual bool isAFEnabled() const
+    {
+        return false;
+    }
+
+    // Advanced Filter: Check Advanced Filter is enabled or not, by visiting its children recursively
+    // If one of its children enables AF, return true
+    bool checkAFRecursively() const;
+
     /** Always returns 'color'. */
     static std::unique_ptr<GrFragmentProcessor> MakeColor(SkPMColor4f color);
 

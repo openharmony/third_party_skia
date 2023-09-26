@@ -276,6 +276,9 @@ struct SK_API GrContextOptions {
      */
     bool fReducedShaderVariations = false;
 
+    // Advanced Filter: Record process name, so that we can get it in other places easily.
+    std::string fProcessName;
+
 #if GR_TEST_UTILS
     /**
      * Private options that are only meant for testing within Skia's tools.
