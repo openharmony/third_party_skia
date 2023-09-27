@@ -227,6 +227,7 @@ SkRuntimeEffect::Result SkRuntimeEffect::MakeFromSource(SkString sksl,
         settings.fInlineThreshold = 0;
         settings.fForceNoInline = options.forceNoInline;
         settings.fEnforceES2Restrictions = options.enforceES2Restrictions;
+        settings.fUseAF = options.useAF;
         program = compiler->convertProgram(kind, SkSL::String(sksl.c_str(), sksl.size()), settings);
 
         if (!program) {
@@ -234,6 +235,15 @@ SkRuntimeEffect::Result SkRuntimeEffect::MakeFromSource(SkString sksl,
         }
     }
     return MakeInternal(std::move(program), options, kind);
+}
+
+// Advanced Filter
+bool SkRuntimeEffect::getAF() const
+{
+    if (fBaseProgram == nullptr || fBaseProgram->fConfig == nullptr) {
+        return false;
+    }
+    return fBaseProgram->fConfig->fSettings.fUseAF;
 }
 
 SkRuntimeEffect::Result SkRuntimeEffect::MakeFromDSL(std::unique_ptr<SkSL::Program> program,
@@ -516,7 +526,7 @@ SkRuntimeEffect::SkRuntimeEffect(std::unique_ptr<SkSL::Program> baseProgram,
     // be accounted for in `fHash`. If you've added a new field to Options and caused the static-
     // assert below to trigger, please incorporate your field into `fHash` and update KnownOptions
     // to match the layout of Options.
-    struct KnownOptions { bool forceNoInline, enforceES2Restrictions, allowFragCoord; };
+    struct KnownOptions { bool forceNoInline, enforceES2Restrictions, allowFragCoord, useAF; };
     static_assert(sizeof(Options) == sizeof(KnownOptions));
     fHash = SkOpts::hash_fn(&options.forceNoInline,
                       sizeof(options.forceNoInline), fHash);
@@ -524,6 +534,8 @@ SkRuntimeEffect::SkRuntimeEffect(std::unique_ptr<SkSL::Program> baseProgram,
                       sizeof(options.enforceES2Restrictions), fHash);
     fHash = SkOpts::hash_fn(&options.allowFragCoord,
                       sizeof(options.allowFragCoord), fHash);
+    // Advanced Filter
+    fHash = SkOpts::hash_fn(&options.useAF, sizeof(options.useAF), fHash);
 
     fFilterColorProgram = SkFilterColorProgram::Make(this);
 }

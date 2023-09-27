@@ -205,6 +205,31 @@ void GrGLProgramBuilder::storeShaderInCache(const SkSL::Program::Inputs& inputs,
     }
 }
 
+// Advanced Filter: Replace glsl shader of blur effect if AF is enabled
+// In passthrough mode, uv transformed by Matrix in vert shader, and frag shader will use it directly
+// Besides, uvOffset will be discarded by skia compiler, so the frag shader is mismatched with original shader
+// Here we replace the shader by adding uvOffset
+static void ApplyAdvancedFilter(std::string& glsl)
+{
+    glsl = "#version 320 es\n"
+        "precision mediump float;\n"
+        "precision mediump sampler2D;\n"
+        "out mediump vec4 sk_FragColor;\n"
+        "mediump vec4 inColor_Stage1_c0;\n"
+        "uniform highp mat3 umatrix_S1_c0;\n"
+        "uniform highp vec2 uin_blurOffset_S1[5];\n"
+        "uniform sampler2D uTextureSampler_0_S1;\n"
+        "in highp vec2 vLocalCoord_S0;\n"
+        "in highp vec2 vTransformedCoords_3_S0;\n"
+        "void main() {\n"
+        "    mediump vec4 _1_c = vec4(0.0, 0.0, 0.0, 0.0);\n"
+        "    for (highp int _2_i = 0; _2_i < 5; ++_2_i) {\n"
+        "        _1_c += texture(uTextureSampler_0_S1, vTransformedCoords_3_S0 + uin_blurOffset_S1[_2_i]);\n"
+        "    }\n"
+        "    sk_FragColor = vec4(_1_c.xyz * 0.2, 1.0);\n"
+        "}\n";
+}
+
 sk_sp<GrGLProgram> GrGLProgramBuilder::finalize(const GrGLPrecompiledProgram* precompiledProgram) {
     TRACE_EVENT0("skia.shaders", TRACE_FUNC);
 
@@ -343,6 +368,13 @@ sk_sp<GrGLProgram> GrGLProgramBuilder::finalize(const GrGLPrecompiledProgram* pr
         }
 
         this->addInputVars(inputs);
+
+        // Advanced Filter: Only when process name is render_service, check AF enabled or not
+        // If AF is enabled, replace the shader, previous code make sure gpu()->getContext() not null
+        if (gpu()->getContext()->getProcessName() == "render_service" && fProgramInfo.pipeline().checkAFRecursively()) {
+            ApplyAdvancedFilter(glsl[kFragment_GrShaderType]);
+        }
+
         if (!this->compileAndAttachShaders(glsl[kFragment_GrShaderType], programID,
                                            GR_GL_FRAGMENT_SHADER, &shadersToDelete, errorHandler)) {
             cleanup_program(fGpu, programID, shadersToDelete);

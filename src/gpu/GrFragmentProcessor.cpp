@@ -19,6 +19,22 @@
 #include "src/gpu/glsl/GrGLSLProgramDataManager.h"
 #include "src/gpu/glsl/GrGLSLUniformHandler.h"
 
+// Advanced Filter
+bool GrFragmentProcessor::checkAFRecursively() const
+{
+    if (isAFEnabled()) {
+        return true;
+    }
+
+    for (int i = 0; i < numChildProcessors(); ++i) {
+        const GrFragmentProcessor* fChildFp = childProcessor(i);
+        if (fChildFp != nullptr && fChildFp->checkAFRecursively()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool GrFragmentProcessor::isEqual(const GrFragmentProcessor& that) const {
     if (this->classID() != that.classID()) {
         return false;

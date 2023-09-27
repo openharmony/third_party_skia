@@ -79,6 +79,8 @@ public:
 
     std::string constructor() const;
 
+    void setKind(Kind kind) { fKind = kind; }
+
 private:
     Kind fKind = Kind::kNone;
     bool fHasPerspective = false;  // Only valid if fKind is kUniformMatrix

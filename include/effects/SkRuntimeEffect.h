@@ -97,6 +97,10 @@ public:
         // run the inliner directly, but they still get an inlining pass once they are painted.)
         bool forceNoInline = false;
 
+        // Advanced Filter: It indicates whether AF is enabled
+        // The value will pass to ProgramSettings::fUseAF.
+        bool useAF = false;
+
     private:
         friend class SkRuntimeEffect;
         friend class SkRuntimeEffectPriv;
@@ -222,6 +226,9 @@ public:
 
     // Returns pointer to the named child's description, or nullptr if not found
     const Child* findChild(const char* name) const;
+
+    // Advanced Filter: get AF state
+    bool getAF() const;
 
     static void RegisterFlattenables();
     ~SkRuntimeEffect() override;

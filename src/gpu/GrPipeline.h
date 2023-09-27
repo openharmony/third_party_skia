@@ -199,6 +199,8 @@ public:
     void setDstTextureUniforms(const GrGLSLProgramDataManager& pdm,
                                GrGLSLBuiltinUniformHandles* fBuiltinUniformHandles) const;
 
+    // Advanced Filter: Check fFragmentProcessors recursively to find out AF status
+    bool checkAFRecursively() const;
 private:
     inline static constexpr uint8_t kLastInputFlag =
             (uint8_t)InputFlags::kSnapVerticesToPixelCenters;

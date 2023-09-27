@@ -315,6 +315,11 @@ SampleUsage Analysis::GetSampleUsage(const Program& program,
     if (elidedSampleCoordCount) {
         *elidedSampleCoordCount += visitor.elidedSampleCoordCount();
     }
+
+    // If AF is enabled, force to use PassThrough mode
+    if (program.fConfig != nullptr && program.fConfig->fSettings.fUseAF) {
+        result.setKind(SampleUsage::Kind::kPassThrough);
+    }
     return result;
 }
 
