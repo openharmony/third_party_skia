@@ -148,7 +148,8 @@
                 <filteritem type="filepath" name= "README.chromium" desc="License matcher rules, not license header"/> 
                 <filteritem type="filepath" name= "third_party/externals/brotli/js/decode.min.js " desc="License matcher rules, not license header"/> 
                 <filteritem type="filepath" name= "third_party/externals/dawn/README.chromium" desc="License matcher rules, not license header"/>
-                <filteritem type="filepath" name= "third_party/externals/egl-registry/sdk/docs/man/xhtml/ctop.xsl " desc="W3C License"/>       	
+                <filteritem type="filepath" name= "third_party/externals/egl-registry/sdk/docs/man/xhtml/ctop.xsl" desc="W3C License"/>
+                <filteritem type="filepath" name= "third_party/externals/imgui/imstb_textedit.h" desc="mit or public domain"/>  	
             </filefilter>
 
             <filefilter name="copyrightPolicyFilter" desc="Filters for copyright header policies">
@@ -219,9 +220,6 @@
                 " desc=""/>
             <licensetext name="
                 /* This file is part of volk library; see volk.h for version/license details */
-                " desc=""/>
-                <licensetext name="
-                    // [DEAR IMGUI]
                 " desc=""/>
         </licensematcher> 
         <licensematcher name="LicenseRef-scancode-khronos" desc="License for freetpye">
