@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//build/ohos_var.gni")
+
 skia_common_defines = [
   "SK_HAS_ANDROID_CODEC",
   "SK_CODEC_DECODES_JPEG",
@@ -47,10 +49,10 @@ skia_common_cflags = [
 ]
 
 if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
-  skia_common_cflags += [
-    "-flto=thin",
-    "-fwhole-program-vtables",
-  ]
+  skia_common_cflags += [ "-flto=thin" ]
+  if (enhanced_opt) {
+    skia_common_cflags += [ "-fwhole-program-vtables" ]
+  }
 }
 
 declare_args() {
