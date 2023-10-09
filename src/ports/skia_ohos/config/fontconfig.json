@@ -62,13 +62,70 @@
           "zh-Hant": "HarmonyOS Sans TC"
         },
         {
-          "und-Arab": "HarmonyOS Sans Naskh Arabic UI"
+          "": "HMOS Color Emoji"
+        },
+        {
+          "": "HMOS Color Emoji Flags"
+        },
+        {
+          "": "Noto Sans Symbols"
+        },
+        {
+          "": "Noto Sans Symbols 2"
         },
         {
           "ja": "Noto Sans JP"
         },
         {
           "ko": "Noto Sans KR"
+        },
+        {
+          "und-Mymr": "Noto Sans Myanmar"
+        },
+        {
+          "und-Thai": "Noto Sans Thai"
+        },
+        {
+          "und-Laoo": "Noto Sans Lao"
+        },
+        {
+          "und-Khmr": "Noto Sans Khmer"
+        },
+        {
+          "und-Arab": "HarmonyOS Sans Naskh Arabic"
+        },
+        {
+          "und-Hebr": "Noto Sans Hebrew"
+        },
+        {
+          "und-Geor": "Noto Sans Georgian"
+        },
+        {
+          "und-Sinh": "Noto Sans Sinhala"
+        },
+        {
+          "und-Deva": "Noto Sans Devanagari"
+        },
+        {
+          "und-Ethi": "Noto Sans Ethiopic"
+        },
+        {
+          "und-Telu": "Noto Sans Telugu"
+        },
+        {
+          "und-Taml": "Noto Sans Tamil"
+        },
+        {
+          "und-Gujr": "Noto Sans Gujarati"
+        },
+        {
+          "und-Knda": "Noto Sans Kannada"
+        },
+        {
+          "und-Mlym": "Noto Sans Malayalam"
+        },
+        {
+          "und-Beng": "Noto Sans Bengali"
         }
       ]
     }
