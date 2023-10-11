@@ -1820,7 +1820,7 @@ if (use_oh_skia) {
       sources += [ "//third_party/skia/src/ports/SkDebug_ohos.cpp" ]
       external_deps = [ "hilog:libhilog" ]
       if (defined(skia_ohos_debug) && skia_ohos_debug) {
-        external_deps += [ "hitrace_native:hitrace_meter" ]
+        external_deps += [ "hitrace:hitrace_meter" ]
       }
     }
 
