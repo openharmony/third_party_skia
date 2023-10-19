@@ -739,7 +739,9 @@ bool GrGLFormatIsCompressed(GrGLFormat format) {
         case GrGLFormat::kCOMPRESSED_RGB8_ETC2:
         case GrGLFormat::kCOMPRESSED_RGB8_BC1:
         case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
-        case GrGLFormat::kCOMPRESSED_ASTC_RGBA8:
+        case GrGLFormat::kCOMPRESSED_ASTC_RGBA8_4x4:
+        case GrGLFormat::kCOMPRESSED_ASTC_RGBA8_6x6:
+        case GrGLFormat::kCOMPRESSED_ASTC_RGBA8_8x8:
             return true;
 
         case GrGLFormat::kRGBA8:

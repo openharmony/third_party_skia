@@ -42,8 +42,12 @@ SkImage::CompressionType GrBackendFormatToCompressionType(const GrBackendFormat&
                     return SkImage::CompressionType::kBC1_RGB8_UNORM;
                 case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
                     return SkImage::CompressionType::kBC1_RGBA8_UNORM;
-                case GrGLFormat::kCOMPRESSED_ASTC_RGBA8:
-                    return SkImage::CompressionType::kASTC_RGBA8_UNORM;
+                case GrGLFormat::kCOMPRESSED_ASTC_RGBA8_4x4:
+                    return SkImage::CompressionType::kASTC_RGBA8_4x4;
+                case GrGLFormat::kCOMPRESSED_ASTC_RGBA8_6x6:
+                    return SkImage::CompressionType::kASTC_RGBA8_6x6;
+                case GrGLFormat::kCOMPRESSED_ASTC_RGBA8_8x8:
+                    return SkImage::CompressionType::kASTC_RGBA8_8x8;
                 default:
                     return SkImage::CompressionType::kNone;
             }
