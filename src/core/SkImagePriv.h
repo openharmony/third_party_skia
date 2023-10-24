@@ -76,7 +76,7 @@ extern const SkPixelRef* SkBitmapImageGetPixelRef(const SkImage* rasterImage);
  *
  *  @return true if the image was successfully uploaded and locked into a texture
  */
-bool SkImage_pinAsTexture(const SkImage*, GrRecordingContext*);
+extern SK_SPI bool SkImage_pinAsTexture(const SkImage*, GrRecordingContext*);
 
 /**
  *  The balancing call to a successful invokation of SkImage_pinAsTexture.  When a balanced number of
@@ -86,6 +86,6 @@ bool SkImage_pinAsTexture(const SkImage*, GrRecordingContext*);
  *
  *  The context passed to unpin must match the one passed to pin.
  */
-void SkImage_unpinAsTexture(const SkImage*, GrRecordingContext*);
+extern SK_SPI void SkImage_unpinAsTexture(const SkImage*, GrRecordingContext*);
 
 #endif
