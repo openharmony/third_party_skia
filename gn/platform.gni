@@ -11,10 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-is_cross_platform_build =
-    defined(build_cross_platform_version) && build_cross_platform_version
-
-if (is_cross_platform_build) {
+if (defined(is_arkui_x) && is_arkui_x) {
   import("//build/config/config.gni")
   if (is_android) {
     ndk = aosp_ndk_root

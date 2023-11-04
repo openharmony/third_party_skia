@@ -66,7 +66,7 @@ config("skia_public") {
   if (is_skia_component_build) {
     defines += [ "SKIA_DLL" ]
   }
-  if (is_cross_platform_build && defined(is_android) && is_android) {
+  if (is_arkui_x && defined(is_android) && is_android) {
     defines += [ "SK_BUILD_FOR_ANDROID" ]
   }
   defines += [ "SK_BUILD_FOR_OHOS" ]
@@ -484,7 +484,7 @@ optional("fontmgr_custom_directory_factory") {
       defines += [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
     }
   }
-  if (is_cross_platform_build) {
+  if (is_arkui_x) {
     sources -= [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
   }
 }
@@ -602,7 +602,7 @@ optional("fontmgr_mac_ct") {
     "src/ports/SkTypeface_mac_ct.cpp",
     "src/ports/SkTypeface_mac_ct.h",
   ]
-  if (use_oh_skia && !is_cross_platform_build) {
+  if (use_oh_skia && !is_arkui_x) {
     # Use hos font
     sources += [
       "//third_party/skia/src/ports/SkFontMgr_config_parser.cpp",
@@ -638,7 +638,7 @@ optional("fontmgr_mac_ct_factory") {
   deps = [ ":fontmgr_mac_ct" ]
   sources = [ "src/ports/SkFontMgr_mac_ct_factory.cpp" ]
   defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
-  if (is_cross_platform_build) {
+  if (is_arkui_x) {
     defines += [ "USE_DEFAULT_FONT" ]
   }
 }
@@ -668,7 +668,7 @@ optional("fontmgr_win") {
   }
 }
 
-if (use_oh_skia && !is_cross_platform_build) {
+if (use_oh_skia && !is_arkui_x) {
   ohos_prebuilt_etc("ohos_fontconfig.json") {
     source = "//third_party/skia/src/ports/skia_ohos/config/fontconfig.json"
     part_name = "skia"
@@ -1476,7 +1476,7 @@ if (use_oh_skia) {
         ":icu_config",
       ]
 
-      if (is_cross_platform_build) {
+      if (is_arkui_x) {
         public_deps = [ ":skia_canvaskit_static" ]
       } else {
         public_deps = [ ":skia_canvaskit" ]
@@ -1673,7 +1673,7 @@ if (use_oh_skia) {
       ":xps",
     ]
 
-    if (is_cross_platform_build) {
+    if (is_arkui_x) {
       public_deps -= [ ":fontmgr_ohos" ]
     }
 
