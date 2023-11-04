@@ -33,7 +33,7 @@ declare_args() {
     target_cxx = cxx
   }
 
-  if (!is_cross_platform_build) {
+  if (!is_arkui_x) {
     cc_wrapper = ""
   }
 
