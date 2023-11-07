@@ -288,9 +288,9 @@ if (skia_use_system_harfbuzz) {
       "$_src/hb-uniscribe.h",
     ]
 
-    if (is_cross_platform_build || use_oh_skia) {
+    if (is_arkui_x || use_oh_skia) {
       deps = [ "../icu" ]
-      if (is_cross_platform_build) {
+      if (is_arkui_x) {
         deps -= [ "../icu" ]
         deps += [ "//third_party/icu/icu4c:static_icuuc" ]
         public_include_dirs += [ "//third_party/icu/icu4c/source/common" ]
@@ -312,7 +312,7 @@ if (skia_use_system_harfbuzz) {
     assert(unused_sources != [])
   }
 
-  if (is_cross_platform_build) {
+  if (is_arkui_x) {
     config("harfbuzz_config") {
       visibility = [ ":*" ]
 
