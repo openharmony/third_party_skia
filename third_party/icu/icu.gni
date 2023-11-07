@@ -871,8 +871,7 @@ icu_sources = [
   "$_src/i18n/ztrans.h",
 ]
 
-if ((defined(build_cross_platform_version) && build_cross_platform_version) ||
-    use_oh_skia) {
+if ((defined(is_arkui_x) && is_arkui_x) || use_oh_skia) {
   icu_sources += [
     "$_src/i18n/double-conversion-double-to-string.cpp",
     "$_src/i18n/double-conversion-string-to-double.cpp",

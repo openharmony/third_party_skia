@@ -71,7 +71,7 @@ template("third_party") {
     _mode = "source_set"
   }
 
-  if (is_cross_platform_build) {
+  if (is_arkui_x) {
     _mode = "source_set"
   }
 
