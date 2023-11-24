@@ -1106,6 +1106,9 @@ optional("gpu") {
         public_deps += [ "${skia_root_dir}/src/graphics/lib/vulkan" ]
       }
     }
+    if (skia_vk_enable_partialrender) {
+      public_defines += [ "SK_VK_PARTIALRENDER" ]
+    }
   }
 
   if (is_android && (skia_use_gl || skia_use_vulkan)) {

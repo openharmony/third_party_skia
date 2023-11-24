@@ -21,6 +21,10 @@
 #include "src/gpu/vk/GrVkRenderPass.h"
 #include "src/gpu/vk/GrVkRenderTarget.h"
 #include "src/gpu/vk/GrVkUtil.h"
+#ifdef SK_VK_PARTIALRENDER
+#include "src/gpu/vk/GrVkDrawAreaManager.h"
+#include "src/gpu/vk/vulkan_header_ext_huawei.h"
+#endif
 
 void GrVkCommandBuffer::invalidateState() {
     for (auto& boundInputBuffer : fBoundInputBuffers) {
@@ -481,6 +485,29 @@ bool GrVkPrimaryCommandBuffer::beginRenderPass(GrVkGpu* gpu,
 
     VkSubpassContents contents = forSecondaryCB ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
                                                 : VK_SUBPASS_CONTENTS_INLINE;
+
+#ifdef SK_VK_PARTIALRENDER
+    VkRenderPassDamageRegionBeginInfo renderPassDamageRegionBeginInfo {};
+    std::vector<VkRect2D> regions;
+
+    if (target) {
+        GrRenderTarget* renderTarget = const_cast<GrRenderTarget*>(target->asRenderTarget());
+        std::vector<SkIRect>& renderAreas = GrVkDrawAreaManager::getInstance().getDrawingArea(renderTarget);
+        if (!renderAreas.empty()) {
+            renderPassDamageRegionBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_DAMAGE_REGION_BEGIN_INFO_TYPE;
+            renderPassDamageRegionBeginInfo.pNext = nullptr;
+
+            for (auto &rect : renderAreas) {
+                VkRect2D vkRect = {{rect.fLeft, rect.fTop}, {rect.width(), rect.height()}};
+                regions.push_back(vkRect);
+            }
+
+            renderPassDamageRegionBeginInfo.regionCount = static_cast<uint32_t>(regions.size());
+            renderPassDamageRegionBeginInfo.regions = regions.data();
+            beginInfo.pNext = &renderPassDamageRegionBeginInfo;
+        }
+    }
+#endif
 
     GR_VK_CALL(gpu->vkInterface(), CmdBeginRenderPass(fCmdBuffer, &beginInfo, contents));
     fActiveRenderPass = renderPass;
