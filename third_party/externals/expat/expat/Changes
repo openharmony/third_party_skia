@@ -2,6 +2,12 @@ NOTE: We are looking for help with a few things:
       https://github.com/libexpat/libexpat/labels/help%20wanted
       If you can help, please get in touch.  Thanks!
 
+Release 2.4.9 Thur Oct 27 2022
+        Security fixes:
+  #616 #649 #650  CVE-2022-43680 -- Fix heap use-after-free after overeager
+                    destruction of a shared DTD in function
+                    XML_ExternalEntityParserCreate in out-of-memory situations
+                    
 Release 2.4.9 Wed Sep 14 2022
         Security fixes:
        #629 #640  CVE-2022-40674 -- Heap use-after-free vulnerability in
