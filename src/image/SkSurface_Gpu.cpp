@@ -28,6 +28,10 @@
 #include "src/image/SkImage_Gpu.h"
 #include "src/image/SkSurface_Base.h"
 
+#ifdef SK_VK_PARTIALRENDER
+#include "src/gpu/vk/GrVkDrawAreaManager.h"
+#endif
+
 #if SK_SUPPORT_GPU
 
 SkSurface_Gpu::SkSurface_Gpu(sk_sp<skgpu::BaseDevice> device)
@@ -37,6 +41,9 @@ SkSurface_Gpu::SkSurface_Gpu(sk_sp<skgpu::BaseDevice> device)
 }
 
 SkSurface_Gpu::~SkSurface_Gpu() {
+#ifdef SK_VK_PARTIALRENDER
+    GrVkDrawAreaManager::getInstance().clearSurface(this);
+#endif
 }
 
 GrRecordingContext* SkSurface_Gpu::onGetRecordingContext() {

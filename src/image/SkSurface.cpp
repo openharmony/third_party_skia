@@ -19,6 +19,10 @@
 #include "include/gpu/GrBackendSurface.h"
 #endif
 
+#ifdef SK_VK_PARTIALRENDER
+#include "src/gpu/vk/GrVkDrawAreaManager.h"
+#endif
+
 SkSurfaceProps::SkSurfaceProps() : fFlags(0), fPixelGeometry(kUnknown_SkPixelGeometry) {}
 
 SkSurfaceProps::SkSurfaceProps(uint32_t flags, SkPixelGeometry pg)
@@ -377,6 +381,12 @@ void SkSurface::flushAndSubmit(bool syncCpu) {}
 sk_sp<SkSurface> SkSurface::MakeRenderTarget(GrRecordingContext*, SkBudgeted, const SkImageInfo&,
                                              int, GrSurfaceOrigin, const SkSurfaceProps*, bool) {
     return nullptr;
+}
+#endif
+
+#ifdef SK_VK_PARTIALRENDER
+void SkSurface::setDrawingArea(const std::vector<SkIRect>& rects) {
+    GrVkDrawAreaManager::getInstance().bindDrawingArea(this, rects);
 }
 #endif
 
