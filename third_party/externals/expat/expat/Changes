@@ -2,6 +2,12 @@ NOTE: We are looking for help with a few things:
       https://github.com/libexpat/libexpat/labels/help%20wanted
       If you can help, please get in touch.  Thanks!
 
+Release 2.4.9 Wed Sep 14 2022
+        Security fixes:
+       #629 #640  CVE-2022-40674 -- Heap use-after-free vulnerability in
+                    function doContent. Expected impact is denial of service
+                    or potentially arbitrary code execution.
+
 Release 2.4.1 Sun May 23 2021
         Bug fixes:
        #488 #490  Autotools: Fix installed header expat_config.h for multilib
@@ -83,11 +89,14 @@ Release 2.4.0 Sun May 23 2021
 
         Special thanks to:
             Dimitry Andric
+            Felix Wilhelm
             Eero Helenius
+            Rhodri James
             Nick Wellnhofer
             Rhodri James
             Tomas Korbar
             Yury Gribov
+            Google Project Zero
                  and
             Clang LeakSan
             JetBrains
