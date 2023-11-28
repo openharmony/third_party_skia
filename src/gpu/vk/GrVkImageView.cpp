@@ -35,6 +35,15 @@ sk_sp<const GrVkImageView> GrVkImageView::Make(GrVkGpu* gpu,
         pNext = &conversionInfo;
     }
 
+    VkImageViewASTCDecodeModeEXT astcDecodeMode;
+    if (format == VK_FORMAT_ASTC_4x4_UNORM_BLOCK || format == VK_FORMAT_ASTC_6x6_UNORM_BLOCK ||
+        format == VK_FORMAT_ASTC_8x8_UNORM_BLOCK) {
+        astcDecodeMode.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT;
+        astcDecodeMode.pNext = nullptr;
+        astcDecodeMode.decodeMode = VK_FORMAT_R8G8B8A8_UNORM;
+        pNext = &astcDecodeMode;
+    }
+
     VkImageView imageView;
     // Create the VkImageView
     VkImageViewCreateInfo viewInfo = {
