@@ -17,7 +17,7 @@ class SkMatrix;
 class SkPath;
 struct SkRect;
 
-struct SkDrawShadowRec {
+struct SK_API SkDrawShadowRec {
     SkPoint3    fZPlaneParams;
     SkPoint3    fLightPos;
     SkScalar    fLightRadius;

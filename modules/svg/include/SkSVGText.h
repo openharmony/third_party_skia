@@ -46,6 +46,7 @@ public:
     SVG_ATTR(XmlSpace, SkSVGXmlSpace, SkSVGXmlSpace::kDefault)
 
     void appendChild(sk_sp<SkSVGNode>) final;
+    std::vector<sk_sp<SkSVGNode>> getChild() final;
 
 protected:
     explicit SkSVGTextContainer(SkSVGTag t) : INHERITED(t) {}

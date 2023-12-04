@@ -864,3 +864,14 @@ std::unique_ptr<GrFragmentProcessor> SkImage_Gpu::onAsFragmentProcessor(
 GrSurfaceProxyView SkImage_Gpu::makeView(GrRecordingContext* rContext) const {
     return {fChooser.chooseProxy(rContext), fOrigin, fSwizzle};
 }
+
+void SkImage_Gpu::hintCacheGpuResource() {
+    auto dContext = fContext->asDirectContext();
+    if (!dContext) {
+        return;
+    }
+    GrTextureProxy* texProxy = this->makeView(dContext).asTextureProxy();
+    if (texProxy) {
+        texProxy->setUserCacheTarget(true);
+    }
+}

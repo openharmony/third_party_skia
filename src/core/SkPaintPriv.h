@@ -13,7 +13,7 @@
 class SkReadBuffer;
 class SkWriteBuffer;
 
-class SkPaintPriv {
+class SK_API SkPaintPriv {
 public:
     enum ShaderOverrideOpacity {
         kNone_ShaderOverrideOpacity,        //!< there is no overriding shader (bitmap or image)

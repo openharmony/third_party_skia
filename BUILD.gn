@@ -43,6 +43,13 @@ config("skia_wno") {
     "-Wno-unused-variable",
     "-Wno-c++17-extensions",
   ]
+  if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
+    cflags += [ "-flto=thin" ]
+    if (enhanced_opt) {
+      cflags += [ "-fwhole-program-vtables" ]
+    }
+  }
+
   ldflags = [
     "--stdlib=libc++",
     "-lc++",
@@ -55,6 +62,10 @@ config("skia_public") {
   include_dirs = [ "." ]
 
   defines = [ "NEW_SKIA" ]
+  if (defined(skia_ohos_debug) && skia_ohos_debug) {
+    include_dirs += [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+    defines += [ "SKIA_OHOS_DEBUG" ]
+  }
   cflags_objcc = []
   if (is_skia_dev_build) {
     defines += [ "GR_TEST_UTILS=1" ]
@@ -62,7 +73,7 @@ config("skia_public") {
   if (is_skia_component_build) {
     defines += [ "SKIA_DLL" ]
   }
-  if (is_cross_platform_build && defined(is_android) && is_android) {
+  if (is_arkui_x && defined(is_android) && is_android) {
     defines += [ "SK_BUILD_FOR_ANDROID" ]
   }
   defines += [ "SK_BUILD_FOR_OHOS" ]
@@ -120,8 +131,16 @@ config("skia_public") {
 config("skia_private") {
   visibility = [ "./*" ]
 
-  cflags = [ "-Wno-format" ]
-  cflags_cc = [ "-Wno-array-parameter" ]
+  cflags = [
+    "-Wno-format",
+    "-fvisibility=hidden",
+  ]
+
+  cflags_cc = [
+    "-Wno-array-parameter",
+    "-fvisibility-inlines-hidden",
+  ]
+
   defines = [ "SK_GAMMA_APPLY_TO_A8" ]
   if (target_cpu == "x86_64" || current_os == "windows" ||
       current_os == "mac" || current_os == "linux" || current_os == "ios") {
@@ -466,6 +485,12 @@ optional("fontmgr_custom_directory_factory") {
   enabled = skia_enable_fontmgr_custom_directory
   deps = [ ":fontmgr_custom_directory" ]
   sources = [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
+  if (use_linux) {
+    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
+  }
+  if (is_arkui_x) {
+    sources -= [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
+  }
 }
 
 optional("fontmgr_custom_embedded") {
@@ -581,6 +606,16 @@ optional("fontmgr_mac_ct") {
     "src/ports/SkTypeface_mac_ct.cpp",
     "src/ports/SkTypeface_mac_ct.h",
   ]
+  if (use_oh_skia && !is_arkui_x) {
+    # Use hos font
+    sources += [
+      "//third_party/skia/src/ports/SkFontMgr_config_parser.cpp",
+      "//third_party/skia/src/ports/SkFontMgr_config_parser.h",
+      "//third_party/skia/src/ports/SkFontMgr_preview.cpp",
+      "//third_party/skia/src/ports/SkFontMgr_preview.h",
+    ]
+    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+  }
   sources_for_tests = [ "tests/TypefaceMacTest.cpp" ]
 
   if (is_mac) {
@@ -607,6 +642,9 @@ optional("fontmgr_mac_ct_factory") {
   deps = [ ":fontmgr_mac_ct" ]
   sources = [ "src/ports/SkFontMgr_mac_ct_factory.cpp" ]
   defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+  if (is_arkui_x) {
+    defines += [ "USE_DEFAULT_FONT" ]
+  }
 }
 
 optional("fontmgr_win") {
@@ -621,9 +659,20 @@ optional("fontmgr_win") {
     "src/ports/SkTypeface_win_dw.cpp",
     "src/ports/SkTypeface_win_dw.h",
   ]
+  if (use_oh_skia) {
+    # Use hos font
+    sources += [
+      "//third_party/skia/src/ports/SkFontMgr_config_parser.cpp",
+      "//third_party/skia/src/ports/SkFontMgr_config_parser.h",
+      "//third_party/skia/src/ports/SkFontMgr_preview.cpp",
+      "//third_party/skia/src/ports/SkFontMgr_preview.h",
+    ]
+    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
+    deps = [ "${skia_third_party_dir}/expat" ]
+  }
 }
 
-if (use_oh_skia) {
+if (use_oh_skia && !is_arkui_x) {
   ohos_prebuilt_etc("ohos_fontconfig.json") {
     source = "//third_party/skia/src/ports/skia_ohos/config/fontconfig.json"
     part_name = "skia"
@@ -1057,6 +1106,9 @@ optional("gpu") {
         public_deps += [ "${skia_root_dir}/src/graphics/lib/vulkan" ]
       }
     }
+    if (skia_vk_enable_partialrender) {
+      public_defines += [ "SK_VK_PARTIALRENDER" ]
+    }
   }
 
   if (is_android && (skia_use_gl || skia_use_vulkan)) {
@@ -1431,7 +1483,189 @@ if (use_oh_skia) {
         ":icu_config",
       ]
 
-      public_deps = [ ":skia_canvaskit" ]
+      if (is_arkui_x) {
+        public_deps = [ ":skia_canvaskit_static" ]
+      } else {
+        public_deps = [ ":skia_canvaskit" ]
+      }
+    }
+  }
+
+  ohos_source_set("skia_canvaskit_static") {
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+
+    include_dirs = [ "${skia_third_party_dir}/externals/libgifcodec" ]
+    public_configs = [ ":skia_public" ]
+    configs = skia_library_configs
+    public_deps = [
+      ":fontmgr_FontConfigInterface",
+      ":fontmgr_android",
+      ":fontmgr_custom_directory",
+      ":fontmgr_custom_directory_factory",
+      ":fontmgr_custom_embedded",
+      ":fontmgr_fontconfig",
+      ":skcms",
+      ":xps",
+    ]
+
+    if (is_ios) {
+      public_deps += [ ":gpu" ]
+    } else {
+      if (defined(ace_enable_gpu) && ace_enable_gpu) {
+        public_deps += [ ":gpu" ]
+      }
+    }
+    deps = [
+      ":android_utils",
+      ":arm64",
+      ":armv7",
+      ":avx",
+      ":crc32",
+      ":fontmgr_factory",
+      ":gif",
+      ":heif",
+      ":hsw",
+      ":jpeg_decode",
+      ":jpeg_encode",
+      ":none",
+      ":png_decode",
+      ":png_encode",
+      ":skvm_jit",
+      ":skx",
+      ":sse2",
+      ":sse41",
+      ":sse42",
+      ":ssse3",
+      ":webp_decode",
+      ":webp_encode",
+      ":xml",
+      "modules/skresources",
+      "modules/skshaper",
+      "modules/skunicode",
+      "modules/svg",
+    ]
+
+    public = skia_core_public
+    public += skia_utils_public
+    public += skia_effects_public
+    public += skia_effects_imagefilter_public
+
+    sources = []
+    sources += skia_core_sources
+    sources += skia_utils_sources
+    sources += skia_effects_sources
+    sources += skia_effects_imagefilter_sources
+    sources += [
+      "src/android/SkAndroidFrameworkUtils.cpp",
+      "src/android/SkAnimatedImage.cpp",
+      "src/codec/SkAndroidCodec.cpp",
+      "src/codec/SkAndroidCodecAdapter.cpp",
+      "src/codec/SkBmpBaseCodec.cpp",
+      "src/codec/SkBmpCodec.cpp",
+      "src/codec/SkBmpMaskCodec.cpp",
+      "src/codec/SkBmpRLECodec.cpp",
+      "src/codec/SkBmpStandardCodec.cpp",
+      "src/codec/SkCodec.cpp",
+      "src/codec/SkCodecImageGenerator.cpp",
+      "src/codec/SkColorTable.cpp",
+      "src/codec/SkEncodedInfo.cpp",
+      "src/codec/SkMaskSwizzler.cpp",
+      "src/codec/SkMasks.cpp",
+      "src/codec/SkParseEncodedOrigin.cpp",
+      "src/codec/SkSampledCodec.cpp",
+      "src/codec/SkSampler.cpp",
+      "src/codec/SkStreamBuffer.cpp",
+      "src/codec/SkSwizzler.cpp",
+      "src/codec/SkWbmpCodec.cpp",
+      "src/images/SkImageEncoder.cpp",
+      "src/ports/SkDiscardableMemory_none.cpp",
+      "src/ports/SkGlobalInitialization_default.cpp",
+      "src/ports/SkImageGenerator_skia.cpp",
+      "src/ports/SkMemory_malloc.cpp",
+      "src/ports/SkOSFile_stdio.cpp",
+      "src/sfnt/SkOTTable_name.cpp",
+      "src/sfnt/SkOTUtils.cpp",
+    ]
+
+    defines = skia_common_defines
+    cflags = skia_common_cflags
+    if (!defined(ace_enable_gpu) || !ace_enable_gpu) {
+      defines += [
+        "SK_BUILD_FOR_UNIX",
+        "SK_SUPPORT_GPU=0",
+      ]
+      defines -= [ "SK_GL" ]
+    }
+    cflags_cc = [ "-Wno-unknown-pragmas" ]
+    libs = []
+
+    if (skia_enable_sksl) {
+      deps += [ ":dehydrate_sksl" ]
+      sources += skia_sksl_sources
+    }
+
+    if (is_android) {
+      deps += [ "${skia_third_party_dir}/expat" ]
+      if (defined(ndk) && ndk != "") {
+        deps += [ "${skia_third_party_dir}/cpu-features" ]
+      }
+      sources += [ "src/ports/SkDebug_android.cpp" ]
+      libs += [
+        "EGL",
+        "GLESv2",
+        "log",
+      ]
+    }
+
+    if (is_mac) {
+      public += [ "include/ports/SkCFObject.h" ]
+      sources += [
+        "src/ports/SkDebug_stdio.cpp",
+        "src/ports/SkImageEncoder_CG.cpp",
+        "src/ports/SkImageGeneratorCG.cpp",
+      ]
+      frameworks = [
+        "ApplicationServices.framework",
+        "OpenGL.framework",
+      ]
+    }
+
+    if (is_ios) {
+      public += [ "include/ports/SkCFObject.h" ]
+      sources += [
+        "src/ports/SkDebug_stdio.cpp",
+        "src/ports/SkImageEncoder_CG.cpp",
+        "src/ports/SkImageGeneratorCG.cpp",
+      ]
+      frameworks = [
+        "CoreFoundation.framework",
+        "ImageIO.framework",
+        "MobileCoreServices.framework",
+      ]
+    }
+
+    if (is_win) {
+      sources += [ "src/ports/SkOSFile_win.cpp" ]
+    } else {
+      sources += [ "src/ports/SkOSFile_posix.cpp" ]
+    }
+
+    if (skia_include_multiframe_procs) {
+      sources += [ "tools/SkSharingProc.cpp" ]
+    }
+  }
+
+  config("skia_canvaskit_link_config") {
+    if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
+      ldflags = [
+        "-Wl,--lto-O2",
+        "-Wl,-mllvm",
+        "-Wl,-import-instr-limit=5",
+        "-Wl,-mllvm",
+        "-Wl,-wholeprogramdevirt-check=fallback",
+        "-Wl,-Bsymbolic",
+      ]
     }
   }
 
@@ -1443,6 +1677,9 @@ if (use_oh_skia) {
     include_dirs = [ "${skia_third_party_dir}/externals/libgifcodec" ]
     public_configs = [ ":skia_public" ]
     configs = skia_library_configs
+    if (enhanced_opt) {
+      configs += [ ":skia_canvaskit_link_config" ]
+    }
     public_deps = [
       ":fontmgr_FontConfigInterface",
       ":fontmgr_android",
@@ -1458,6 +1695,11 @@ if (use_oh_skia) {
       ":skcms",
       ":xps",
     ]
+
+    if (is_arkui_x) {
+      public_deps -= [ ":fontmgr_ohos" ]
+    }
+
     if (is_ios) {
       public_deps += [ ":gpu" ]
     } else {
@@ -1596,6 +1838,9 @@ if (use_oh_skia) {
     if (is_ohos) {
       sources += [ "//third_party/skia/src/ports/SkDebug_ohos.cpp" ]
       external_deps = [ "hilog:libhilog" ]
+      if (defined(skia_ohos_debug) && skia_ohos_debug) {
+        external_deps += [ "hitrace:hitrace_meter" ]
+      }
     }
 
     if (is_android) {
@@ -1656,6 +1901,10 @@ if (use_oh_skia) {
 
     if (skia_include_multiframe_procs) {
       sources += [ "tools/SkSharingProc.cpp" ]
+    }
+
+    if (defined(ddgr_ext_configs)) {
+      defines += ddgr_ext_configs.ddgr_defines
     }
   }
 

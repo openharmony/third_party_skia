@@ -19,7 +19,10 @@
         "rom": "",
         "ram": "",
         "deps": {
-            "components": [],
+            "components": [
+                "hilog",
+                "hitrace"
+            ],
             "third_party": []
         },
         "build": {

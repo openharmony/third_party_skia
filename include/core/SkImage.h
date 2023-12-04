@@ -202,8 +202,10 @@ public:
 
         kBC1_RGB8_UNORM,
         kBC1_RGBA8_UNORM,
-        kASTC_RGBA8_UNORM,
-        kLast = kASTC_RGBA8_UNORM,
+        kASTC_RGBA8_4x4,
+        kASTC_RGBA8_6x6,
+        kASTC_RGBA8_8x8,
+        kLast = kASTC_RGBA8_8x8,
     };
 
     static constexpr int kCompressionTypeCount = static_cast<int>(CompressionType::kLast) + 1;

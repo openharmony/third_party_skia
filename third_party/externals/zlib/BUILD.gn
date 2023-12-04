@@ -436,11 +436,12 @@ if (build_with_chromium) {
     data = [ "google/test/data/" ]
 
     deps = [
+      ":minizip",
       ":zlib",
-      "google:compression_utils",
-      "google:zip",
       "${skia_root_dir}/base/test:test_support",
       "${skia_root_dir}/testing/gtest",
+      "google:compression_utils",
+      "google:zip",
     ]
 
     include_dirs = [

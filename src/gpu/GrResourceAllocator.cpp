@@ -13,6 +13,7 @@
 #include "src/gpu/GrResourceProvider.h"
 #include "src/gpu/GrSurfaceProxy.h"
 #include "src/gpu/GrSurfaceProxyPriv.h"
+#include "src/gpu/GrTextureProxy.h"
 
 #ifdef SK_DEBUG
 #include <atomic>
@@ -104,6 +105,14 @@ static bool can_proxy_use_scratch(const GrCaps& caps, GrSurfaceProxy* proxy) {
     return caps.reuseScratchTextures() || proxy->asRenderTargetProxy();
 }
 
+static bool user_cache_proxy(GrSurfaceProxy* proxy) {
+    GrTextureProxy* texProxy = proxy->asTextureProxy();
+    if (texProxy) {
+        return texProxy->getUserCacheTarget();
+    }
+    return false;
+}
+
 GrResourceAllocator::Register::Register(GrSurfaceProxy* originatingProxy,
                                         GrScratchKey scratchKey,
                                         GrResourceProvider* provider)
@@ -114,7 +123,8 @@ GrResourceAllocator::Register::Register(GrSurfaceProxy* originatingProxy,
     SkASSERT(!originatingProxy->isLazy());
     SkDEBUGCODE(fUniqueID = CreateUniqueID();)
     if (scratchKey.isValid()) {
-        if (can_proxy_use_scratch(*provider->caps(), originatingProxy)) {
+        if (can_proxy_use_scratch(*provider->caps(), originatingProxy) ||
+            user_cache_proxy(originatingProxy)) {
             fExistingSurface = provider->findAndRefScratchTexture(fScratchKey);
         }
     } else {

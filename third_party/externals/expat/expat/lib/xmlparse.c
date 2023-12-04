@@ -1065,6 +1065,14 @@ parserCreate(const XML_Char *encodingName,
   parserInit(parser, encodingName);
 
   if (encodingName && ! parser->m_protocolEncodingName) {
+    if (dtd) {
+      // We need to stop the upcoming call to XML_ParserFree from happily
+      // destroying parser->m_dtd because the DTD is shared with the parent
+      // parser and the only guard that keeps XML_ParserFree from destroying
+      // parser->m_dtd is parser->m_isParamEntity but it will be set to
+      // XML_TRUE only later in XML_ExternalEntityParserCreate (or not at all).
+      parser->m_dtd = NULL;
+    }
     XML_ParserFree(parser);
     return NULL;
   }
@@ -5542,10 +5550,15 @@ internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
   {
     parser->m_processor = contentProcessor;
     /* see externalEntityContentProcessor vs contentProcessor */
-    return doContent(parser, parser->m_parentParser ? 1 : 0, parser->m_encoding,
-                     s, end, nextPtr,
-                     (XML_Bool)! parser->m_parsingStatus.finalBuffer,
-                     XML_ACCOUNT_DIRECT);
+    result = doContent(parser, parser->m_parentParser ? 1 : 0,
+                       parser->m_encoding, s, end, nextPtr,
+                       (XML_Bool)! parser->m_parsingStatus.finalBuffer,
+                       XML_ACCOUNT_DIRECT);
+    if (result == XML_ERROR_NONE) {
+      if (! storeRawNames(parser))
+        return XML_ERROR_NO_MEMORY;
+    }
+    return result;
   }
 }
 

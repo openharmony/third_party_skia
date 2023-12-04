@@ -80,6 +80,9 @@ struct ProgramSettings {
     // symbol table of the Program, but ownership is *not* transferred. It is up to the caller to
     // keep them alive.
     const std::vector<std::unique_ptr<ExternalFunction>>* fExternalFunctions = nullptr;
+    // Advanced Filter: It's a flag for skia to passthrough uv coord from vert stage to frag stage
+    // It's the same value with SkRuntimeEffect::fUseAF
+    bool fUseAF = false;
 };
 
 /**

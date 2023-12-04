@@ -77,7 +77,7 @@ declare_args() {
   skia_use_xps = true
   skia_enable_graphite = false
   skia_use_zlib = true
-
+  skia_ohos_debug = false
   skia_vtune_path = ""
 
   if (is_ios) {
@@ -101,6 +101,7 @@ declare_args() {
     skia_use_vulkan = false
   }
 
+  skia_vk_enable_partialrender = false
   skia_build_fuzzers = is_clang && is_linux && target_cpu == "x64"
   skia_use_libfuzzer_defaults = true
 
@@ -162,7 +163,8 @@ declare_args() {
 }
 
 # Our tools require static linking (they use non-exported symbols), and the GPU backend.
-skia_enable_tools = skia_enable_tools && !is_component_build && skia_enable_gpu
+skia_enable_tools =
+    skia_enable_tools && !is_component_build && skia_enable_gpu && !is_arkui_x
 
 # The GPU build requires SkSL
 skia_enable_sksl = skia_enable_sksl || skia_enable_gpu
@@ -176,7 +178,7 @@ skia_enable_sksl = skia_enable_sksl || skia_enable_gpu
 # Other projects may optionally set these configs as they see fit.
 template("component") {
   _component_mode = "static_library"
-  if (is_cross_platform_build) {
+  if (is_arkui_x) {
     _component_mode = "source_set"
   }
 
@@ -195,7 +197,7 @@ set_defaults("component") {
     if (defined(default_compiler_configs)) {
       configs += default_compiler_configs
     }
-    if (!is_cross_platform_build) {
+    if (!is_arkui_x) {
       complete_static_lib = true
     }
   } else {

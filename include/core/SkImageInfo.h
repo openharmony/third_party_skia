@@ -34,7 +34,7 @@ class SkWriteBuffer;
     value is the original RGB multiplied by alpha. Premultiplied color
     components improve performance.
 */
-enum SkAlphaType : int {
+enum SK_API SkAlphaType : int {
     kUnknown_SkAlphaType,                          //!< uninitialized
     kOpaque_SkAlphaType,                           //!< pixel is opaque
     kPremul_SkAlphaType,                           //!< pixel components are premultiplied by alpha

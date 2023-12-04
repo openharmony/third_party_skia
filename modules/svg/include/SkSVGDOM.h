@@ -21,7 +21,7 @@ class SkStream;
 class SkSVGNode;
 class SkSVGSVG;
 
-class SkSVGDOM : public SkRefCnt {
+class SK_API SkSVGDOM : public SkRefCnt {
 public:
     class Builder final {
     public:
@@ -67,6 +67,7 @@ public:
      */
     void setContainerSize(const SkSize&);
 
+    void setResizePercentage(float resizePercentage);
     /**
      * DEPRECATED: use getRoot()->intrinsicSize() to query the root element intrinsic size.
      *
@@ -94,8 +95,8 @@ private:
     const sk_sp<SkFontMgr>                     fFontMgr;
     const sk_sp<skresources::ResourceProvider> fResourceProvider;
     const SkSVGIDMapper                        fIDMapper;
-
-    SkSize                 fContainerSize;
+    float                                      fSVGResizePercentage;
+    SkSize                                     fContainerSize;
 };
 
 #endif // SkSVGDOM_DEFINED

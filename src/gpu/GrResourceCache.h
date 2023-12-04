@@ -418,10 +418,9 @@ private:
     // This resource is allowed to be in the nonpurgeable array for the sake of validate() because
     // we're in the midst of converting it to purgeable status.
     SkDEBUGCODE(GrGpuResource*          fNewlyPurgeableResourceForValidation = nullptr;)
-    std::stack<GrGpuResourceTag> grResourceTagCacheStack;
 
     //Indicates the cached resource tags.
-    std::stack<GrGpuResourceTag> GrResourceCacheStack;
+    std::stack<GrGpuResourceTag> grResourceTagCacheStack;
 };
 
 class GrResourceCache::ResourceAccess {

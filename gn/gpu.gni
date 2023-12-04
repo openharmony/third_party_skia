@@ -7,6 +7,8 @@
 _src = get_path_info("../src", "abspath")
 _include = get_path_info("../include", "abspath")
 
+import("skia.gni")
+
 skia_gpu_sources = [
   "$_include/gpu/GrBackendDrawableInfo.h",
   "$_include/gpu/GrBackendSemaphore.h",
@@ -664,6 +666,13 @@ skia_vk_sources = [
   "$_src/gpu/vk/GrVkVaryingHandler.cpp",
   "$_src/gpu/vk/GrVkVaryingHandler.h",
 ]
+
+if (skia_vk_enable_partialrender) {
+  skia_vk_sources += [
+    "$_src/gpu/vk/GrVkDrawAreaManager.cpp",
+    "$_src/gpu/vk/GrVkDrawAreaManager.h",
+  ]
+}
 
 skia_direct3d_sources = [
   "$_include/gpu/d3d/GrD3DBackendContext.h",

@@ -194,6 +194,11 @@ public:
     static sk_sp<SkTextBlob> Deserialize(const void* data, size_t size,
                                          const SkDeserialProcs& procs);
 
+#if defined (ENABLE_DDGR_OPTIMIZE)
+    void TextBlobSetShareParas(int fId, int fSize, void* fPtr);
+    void TextBlobFlatten(SkWriteBuffer& buffer);
+#endif
+
     class SK_API Iter {
     public:
         struct Run {
@@ -273,6 +278,12 @@ private:
     // (see the .cpp for more details)
 
     using INHERITED = SkRefCnt;
+
+#if defined (ENABLE_DDGR_OPTIMIZE)
+    int fd_ = -1;
+    int fdSize_ = 0;
+    void* fdPtr_ = nullptr;
+#endif
 };
 
 /** \class SkTextBlobBuilder

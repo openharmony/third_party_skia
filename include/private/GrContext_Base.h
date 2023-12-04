@@ -52,6 +52,9 @@ public:
     GrBaseContextPriv priv();
     const GrBaseContextPriv priv() const;  // NOLINT(readability-const-return-type)
 
+    // Advanced Filter: Record process name, so that we can get it in other places easily.
+    const std::string& getProcessName() const;
+
 protected:
     friend class GrBaseContextPriv; // for hidden functions
 

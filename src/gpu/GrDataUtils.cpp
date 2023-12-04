@@ -120,6 +120,16 @@ static int num_4x4_blocks(int size) {
     return ((size + 3) & ~3) >> 2;
 }
 
+static int num_6x6_blocks(int size) {
+    // Divide the image size by 6, rounding down
+    return ((size + 5) & ~5) / 6;
+}
+
+static int num_8x8_blocks(int size) {
+    // Divide the image size by 8, rounding down
+    return ((size + 7) & ~7) >> 3;
+}
+
 static int num_ETC1_blocks(int w, int h) {
     w = num_4x4_blocks(w);
     h = num_4x4_blocks(h);
@@ -165,9 +175,21 @@ size_t GrNumBlocks(SkImage::CompressionType type, SkISize baseDimensions) {
         case SkImage::CompressionType::kETC2_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGBA8_UNORM:
-        case SkImage::CompressionType::kASTC_RGBA8_UNORM: {
+        case SkImage::CompressionType::kASTC_RGBA8_4x4: {
             int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
             int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
+
+            return numBlocksWidth * numBlocksHeight;
+        }
+        case SkImage::CompressionType::kASTC_RGBA8_6x6: {
+            int numBlocksWidth = num_6x6_blocks(baseDimensions.width());
+            int numBlocksHeight = num_6x6_blocks(baseDimensions.height());
+
+            return numBlocksWidth * numBlocksHeight;
+        }
+        case SkImage::CompressionType::kASTC_RGBA8_8x8: {
+            int numBlocksWidth = num_8x8_blocks(baseDimensions.width());
+            int numBlocksHeight = num_8x8_blocks(baseDimensions.height());
 
             return numBlocksWidth * numBlocksHeight;
         }
@@ -187,10 +209,22 @@ size_t GrCompressedRowBytes(SkImage::CompressionType type, int width) {
             static_assert(sizeof(ETC1Block) == sizeof(BC1Block));
             return numBlocksWidth * sizeof(ETC1Block);
         }
-        case SkImage::CompressionType::kASTC_RGBA8_UNORM: {
+        case SkImage::CompressionType::kASTC_RGBA8_4x4: {
             int numBlocksWidth = num_4x4_blocks(width);
 
             // The evil number 16 here is the constant size of ASTC 4x4 block
+            return numBlocksWidth * 16;
+        }
+        case SkImage::CompressionType::kASTC_RGBA8_6x6: {
+            int numBlocksWidth = num_6x6_blocks(width);
+
+            // The evil number 16 here is the constant size of ASTC 6x6 block
+            return numBlocksWidth * 16;
+        }
+        case SkImage::CompressionType::kASTC_RGBA8_8x8: {
+            int numBlocksWidth = num_8x8_blocks(width);
+
+            // The evil number 16 here is the constant size of ASTC 8x8 block
             return numBlocksWidth * 16;
         }
     }
@@ -204,12 +238,26 @@ SkISize GrCompressedDimensions(SkImage::CompressionType type, SkISize baseDimens
         case SkImage::CompressionType::kETC2_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGBA8_UNORM:
-        case SkImage::CompressionType::kASTC_RGBA8_UNORM: {
+        case SkImage::CompressionType::kASTC_RGBA8_4x4: {
             int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
             int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
 
             // Each BC1_RGB8_UNORM and ETC1 block and ASTC 4x4 block has 16 pixels
             return { 4 * numBlocksWidth, 4 * numBlocksHeight };
+        }
+        case SkImage::CompressionType::kASTC_RGBA8_6x6: {
+            int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
+            int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
+
+            // Each BC1_RGB8_UNORM and ETC1 block and ASTC 4x4 block has 16 pixels
+            return { 6 * numBlocksWidth, 6 * numBlocksHeight };
+        }
+        case SkImage::CompressionType::kASTC_RGBA8_8x8: {
+            int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
+            int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
+
+            // Each BC1_RGB8_UNORM and ETC1 block and ASTC 4x4 block has 16 pixels
+            return { 8 * numBlocksWidth, 8 * numBlocksHeight };
         }
     }
     SkUNREACHABLE;

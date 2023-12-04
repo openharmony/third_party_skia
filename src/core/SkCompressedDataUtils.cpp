@@ -237,7 +237,9 @@ bool SkDecompress(sk_sp<SkData> data,
         case Type::kETC2_RGB8_UNORM:  return decompress_etc1(dimensions, bytes, dst);
         case Type::kBC1_RGB8_UNORM:   return decompress_bc1(dimensions, bytes, true, dst);
         case Type::kBC1_RGBA8_UNORM:  return decompress_bc1(dimensions, bytes, false, dst);
-        case Type::kASTC_RGBA8_UNORM: return false;
+        case Type::kASTC_RGBA8_4x4: return false;
+        case Type::kASTC_RGBA8_6x6: return false;
+        case Type::kASTC_RGBA8_8x8: return false;
     }
 
     SkUNREACHABLE;
@@ -275,10 +277,22 @@ size_t SkCompressedDataSize(SkImage::CompressionType type, SkISize dimensions,
             }
             break;
         }
-        case SkImage::CompressionType::kASTC_RGBA8_UNORM: {
+        case SkImage::CompressionType::kASTC_RGBA8_4x4: {
             // The evil number 16 here is the size of each ASTC block, which is constant for the ASTC 4x4 format,
             // while the ASTC 4x4 format also explain the evil number 4.0f above
             totalSize = std::ceil(dimensions.width() / 4.0f) * std::ceil(dimensions.height() / 4.0f) * 16;
+            break;
+        }
+        case SkImage::CompressionType::kASTC_RGBA8_6x6: {
+            // The evil number 16 here is the size of each ASTC block, which is constant for the ASTC 4x4 format,
+            // while the ASTC 6x6 format also explain the evil number 6.0f above
+            totalSize = std::ceil(dimensions.width() / 6.0f) * std::ceil(dimensions.height() / 6.0f) * 16;
+            break;
+        }
+        case SkImage::CompressionType::kASTC_RGBA8_8x8: {
+            // The evil number 16 here is the size of each ASTC block, which is constant for the ASTC 4x4 format,
+            // while the ASTC 8x8 format also explain the evil number 8.0f above
+            totalSize = std::ceil(dimensions.width() / 8.0f) * std::ceil(dimensions.height() / 8.0f) * 16;
             break;
         }
     }
@@ -295,8 +309,10 @@ size_t SkCompressedBlockSize(SkImage::CompressionType type) {
         case SkImage::CompressionType::kBC1_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGBA8_UNORM:
             return sizeof(BC1Block);
-        case SkImage::CompressionType::kASTC_RGBA8_UNORM:
-            // The evil number 16 here is the constant size of ASTC 4x4 format
+        case SkImage::CompressionType::kASTC_RGBA8_4x4:
+        case SkImage::CompressionType::kASTC_RGBA8_6x6:
+        case SkImage::CompressionType::kASTC_RGBA8_8x8:
+            // The evil number 16 here is the constant size of ASTC format
             return 16;
     }
     SkUNREACHABLE;

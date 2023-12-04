@@ -126,3 +126,14 @@ void GrPipeline::setDstTextureUniforms(const GrGLSLProgramDataManager& pdm,
         SkASSERT(!fBuiltinUniformHandles->fDstTextureCoordsUni.isValid());
     }
 }
+
+// Advanced Filter
+bool GrPipeline::checkAFRecursively() const
+{
+    for (const auto& fp : fFragmentProcessors) {
+        if (fp != nullptr && fp->checkAFRecursively()) {
+            return true;
+        }
+    }
+    return false;
+}

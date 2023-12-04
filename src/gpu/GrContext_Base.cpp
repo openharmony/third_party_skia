@@ -51,6 +51,11 @@ sk_sp<const GrCaps> GrBaseContextPriv::refCaps() const {
     return this->context()->refCaps();
 }
 
+const std::string& GrContext_Base::getProcessName() const
+{
+    return options().fProcessName;
+}
+
 GrContextOptions::ShaderErrorHandler* GrBaseContextPriv::getShaderErrorHandler() const {
     const GrContextOptions& options(this->options());
     return options.fShaderErrorHandler ? options.fShaderErrorHandler

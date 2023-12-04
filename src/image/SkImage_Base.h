@@ -33,7 +33,7 @@ enum {
     kNeedNewImageUniqueID = 0
 };
 
-class SkImage_Base : public SkImage {
+class SK_API SkImage_Base : public SkImage {
 public:
     ~SkImage_Base() override;
 
@@ -117,6 +117,9 @@ public:
     // If this image is the current cached image snapshot of a surface then this is called when the
     // surface is destroyed to indicate no further writes may happen to surface backing store.
     virtual void generatingSurfaceIsDeleted() {}
+
+    // tell skia try to cache gpu resource when texture resource create.
+    virtual void hintCacheGpuResource() {}
 
     virtual GrBackendTexture onGetBackendTexture(bool flushPendingGrContextIO,
                                                  GrSurfaceOrigin* origin) const;

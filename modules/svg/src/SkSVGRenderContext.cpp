@@ -48,6 +48,39 @@ constexpr SkScalar kCMMultiplier = kMMMultiplier * 10;
 
 }  // namespace
 
+SkScalar SkSVGLengthContext::resolveForSVG(const SkSVGLength& l, LengthType t) const {
+    switch (l.unit()) {
+    case SkSVGLength::Unit::kNumber:
+        // Fall through.
+    case SkSVGLength::Unit::kPX:
+        return l.value() * fResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    case SkSVGLength::Unit::kPercentage:
+        return l.value() * length_size_for_type(fViewport, t) / 100 * fResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    case SkSVGLength::Unit::kCM:
+        return l.value() * fDPI * kCMMultiplier * fResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    case SkSVGLength::Unit::kMM:
+        return l.value() * fDPI * kMMMultiplier * fResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    case SkSVGLength::Unit::kIN:
+        return l.value() * fDPI * kINMultiplier * fResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    case SkSVGLength::Unit::kPT:
+        return l.value() * fDPI * kPTMultiplier * fResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    case SkSVGLength::Unit::kPC:
+        return l.value() * fDPI * kPCMultiplier * fResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    default:
+        SkDebugf("unsupported unit type: <%d>\n", (int)l.unit());
+        return 0;
+    }
+}
+
+SkRect SkSVGLengthContext::resolveRectForSVG(const SkSVGLength& x, const SkSVGLength& y,
+                                       const SkSVGLength& w, const SkSVGLength& h) const {
+    return SkRect::MakeXYWH(
+        this->resolveForSVG(x, SkSVGLengthContext::LengthType::kHorizontal),
+        this->resolveForSVG(y, SkSVGLengthContext::LengthType::kVertical),
+        this->resolveForSVG(w, SkSVGLengthContext::LengthType::kHorizontal),
+        this->resolveForSVG(h, SkSVGLengthContext::LengthType::kVertical));
+}
+
 SkScalar SkSVGLengthContext::resolve(const SkSVGLength& l, LengthType t) const {
     switch (l.unit()) {
     case SkSVGLength::Unit::kNumber:

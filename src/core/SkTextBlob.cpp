@@ -26,6 +26,10 @@
 #include "src/gpu/text/GrTextBlobCache.h"
 #endif
 
+#if defined (ENABLE_DDGR_OPTIMIZE)
+#include <sys/mman.h>
+#endif
+
 namespace {
 struct RunFontStorageEquivalent {
     SkScalar fSize, fScaleX;
@@ -160,6 +164,17 @@ SkTextBlob::~SkTextBlob() {
         run->~RunRecord();
         run = nextRun;
     } while (run);
+
+#if defined (ENABLE_DDGR_OPTIMIZE)
+    if (fdPtr_ != nullptr) {
+        ::munmap(fdPtr_, fdSize_);
+        fdPtr_ = nullptr;
+    }
+    if (fd_ > 0) {
+        ::close(fd_);
+        fd_ = -1;
+    }
+#endif
 }
 
 namespace {
@@ -847,6 +862,20 @@ sk_sp<SkTextBlob> SkTextBlob::Deserialize(const void* data, size_t length,
     buffer.setDeserialProcs(procs);
     return SkTextBlobPriv::MakeFromBuffer(buffer);
 }
+
+#if defined (ENABLE_DDGR_OPTIMIZE)
+void SkTextBlob::TextBlobSetShareParas(int fId, int fSize, void* fPtr)
+{
+    fd_ = fId;
+    fdSize_ = fSize;
+    fdPtr_ = fPtr;
+}
+
+void SkTextBlob::TextBlobFlatten(SkWriteBuffer& buffer)
+{
+    SkTextBlobPriv::Flatten(*this, buffer);
+}
+#endif
 
 void SkTextBlob::dump(std::string& desc, int depth) const {
     std::string split(depth, '\t');

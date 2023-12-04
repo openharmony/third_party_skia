@@ -25,6 +25,8 @@ class SkJpegCodec : public SkCodec {
 public:
     static bool IsJpeg(const void*, size_t);
 
+    JpegDecoderMgr* decoderMgr() {return fDecoderMgr.get();}
+
     /*
      * Assumes IsJpeg was called and returned true
      * Takes ownership of the stream

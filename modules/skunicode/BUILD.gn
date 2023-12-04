@@ -39,6 +39,11 @@ if (skia_use_icu) {
     } else {
       sources += skia_unicode_builtin_icu_sources
       deps += [ "${skia_third_party_dir}/icu" ]
+      if (is_arkui_x) {
+        deps -= [ "${skia_third_party_dir}/icu" ]
+        deps += [ "//third_party/icu/icu4c:static_icuuc" ]
+        include_dirs += [ "//third_party/icu/icu4c/source/common" ]
+      }
     }
 
     configs += [

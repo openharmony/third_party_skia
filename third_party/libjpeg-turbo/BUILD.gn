@@ -7,7 +7,15 @@ declare_args() {
   skia_use_system_libjpeg_turbo = is_official_build
 }
 
+import("//build/ohos_var.gni")
 import("../third_party.gni")
+
+config("libjpeg-turbo-inline") {
+  cflags = [
+    "-mllvm",
+    "-inline-threshold=325",
+  ]
+}
 
 if (skia_use_system_libjpeg_turbo) {
   system("libjpeg") {
@@ -15,6 +23,10 @@ if (skia_use_system_libjpeg_turbo) {
   }
 } else {
   third_party("libjpeg") {
+    if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64") &&
+        enhanced_opt) {
+      configs = [ ":libjpeg-turbo-inline" ]
+    }
     public_include_dirs = [
       ".",
       "../externals/libjpeg-turbo",
