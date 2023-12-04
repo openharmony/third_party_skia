@@ -174,3 +174,10 @@ size_t GrVkTextureRenderTarget::onGpuMemorySize() const {
     return GrSurface::ComputeSize(this->backendFormat(), this->dimensions(),
                                   1 /*colorSamplesPerPixel*/, this->mipmapped());
 }
+
+void GrVkTextureRenderTarget::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
+    SkString resourceName = this->getResourceName();
+    resourceName.append("/texture_renderbuffer");
+    this->dumpMemoryStatisticsPriv(traceMemoryDump, resourceName, "RenderTarget",
+        this->gpuMemorySize());
+}

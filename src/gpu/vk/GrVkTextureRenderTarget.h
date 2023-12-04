@@ -47,6 +47,8 @@ public:
 
     GrBackendFormat backendFormat() const override { return GrVkTexture::backendFormat(); }
 
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const override;
+
 protected:
     void onAbandon() override {
         // In order to correctly handle calling texture idle procs, GrVkTexture must go first.

@@ -57,6 +57,8 @@ public:
 
     void addDescriptorSetToCache(const GrVkDescriptorSet*, GrSamplerState);
 
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const override;
+
 protected:
     GrVkTexture(GrVkGpu*,
                 SkISize dimensions,

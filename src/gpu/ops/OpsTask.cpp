@@ -276,12 +276,6 @@ bool OpsTask::OpChain::tryConcat(
     SkASSERT(fProcessorAnalysis.requiresDstTexture() == SkToBool(fDstProxyView.proxy()));
     SkASSERT(processorAnalysis.requiresDstTexture() == SkToBool(dstProxyView.proxy()));
     // All returns use explicit tuple constructor rather than {a, b} to work around old GCC bug.
-    if (fList.empty() || list->empty() ||
-        fProcessorAnalysis.requiresDstTexture() != SkToBool(fDstProxyView.proxy()) ||
-        processorAnalysis.requiresDstTexture() != SkToBool(dstProxyView.proxy())) {
-        SkDebugf("OHOS OpsTask::OpChain::tryConcat failed, return!!!");
-        return;
-    }
     if (fList.head()->classID() != list->head()->classID() ||
         SkToBool(fAppliedClip) != SkToBool(appliedClip) ||
         (fAppliedClip && *fAppliedClip != *appliedClip) ||
@@ -1005,10 +999,6 @@ void OpsTask::recordOp(
     // 1) check every op
     // 2) intersect with something
     // 3) find a 'blocker'
-    if (!fAuditTrail) {
-        SkDebugf("OHOS fAuditTrail is nullptr, return!!!");
-        return;
-    }
     GR_AUDIT_TRAIL_ADD_OP(fAuditTrail, op.get(), proxy->uniqueID());
     GrOP_INFO("opsTask: %d Recording (%s, opID: %u)\n"
               "\tBounds [L: %.2f, T: %.2f R: %.2f B: %.2f]\n",
@@ -1052,10 +1042,6 @@ void OpsTask::recordOp(
 
 void OpsTask::forwardCombine(const GrCaps& caps) {
     SkASSERT(!this->isClosed());
-    if (this->isClosed()) {
-        SkDebugf("OHOS OpsTask::forwardCombine return!!!");
-        return;
-    }
     GrOP_INFO("opsTask: %d ForwardCombine %d ops:\n", this->uniqueID(), fOpChains.count());
 
     for (int i = 0; i < fOpChains.count() - 1; ++i) {
