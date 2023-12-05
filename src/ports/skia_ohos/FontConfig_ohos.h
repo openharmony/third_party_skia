@@ -129,11 +129,11 @@ public:
 
     static const char* errToString(int err);
 private:
-    const uint32_t DEFAULT_COLOR_HEX_LEN = 9;
-    const uint32_t DEFAULT_COLOR_STR_LEN = 7;
-    const uint32_t HEX_FLAG = 16;
-    const uint32_t TWO_BYTES_BITS_LEN = 16;
-    const uint32_t ONE_BYTE_BITS_LEN = 8;
+    const uint32_t defaultColorHexLen = 9;
+    const uint32_t defaultColorStrLen = 7;
+    const uint32_t hexFlag = 16;
+    const uint32_t twoBytesBitsLen = 16;
+    const uint32_t oneByteBitsLen = 8;
 
     struct AliasInfo;
     struct AdjustInfo;
