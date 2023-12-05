@@ -1788,11 +1788,11 @@ void FontConfig_OHOS::parseLayerOrMaskIndexes(const Json::Value& root, std::vect
 
 void FontConfig_OHOS::parseDefaultColor(const char* defaultColorStr, RenderGroup& renderGroup)
 {
-    char defaultColorHex[DEFAULT_COLOR_HEX_LEN];
+    char defaultColorHex[defaultColorHexLen];
     defaultColorHex[0] = '0';
     defaultColorHex[1] = 'X';
-    if (strlen(defaultColorStr) == DEFAULT_COLOR_STR_LEN) {
-        for (unsigned int i = 1; i < DEFAULT_COLOR_STR_LEN; i++) {
+    if (strlen(defaultColorStr) == defaultColorStrLen) {
+        for (unsigned int i = 1; i < defaultColorStrLen; i++) {
             defaultColorHex[i + 1] = defaultColorStr[i];
         }
     } else {
@@ -1801,9 +1801,9 @@ void FontConfig_OHOS::parseDefaultColor(const char* defaultColorStr, RenderGroup
     }
 
     char* endPtr;
-    int defaultColorInt = strtol(defaultColorHex, &endPtr, HEX_FLAG);
-    renderGroup.color_.r_ = (defaultColorInt >> TWO_BYTES_BITS_LEN) & 0xFF;
-    renderGroup.color_.g_ = (defaultColorInt >> ONE_BYTE_BITS_LEN) & 0xFF;
+    int defaultColorInt = strtol(defaultColorHex, &endPtr, hexFlag);
+    renderGroup.color_.r_ = (defaultColorInt >> twoBytesBitsLen) & 0xFF;
+    renderGroup.color_.g_ = (defaultColorInt >> oneByteBitsLen) & 0xFF;
     renderGroup.color_.b_ = defaultColorInt & 0xFF;
 }
 
