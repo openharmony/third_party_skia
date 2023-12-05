@@ -1355,9 +1355,9 @@ int FontConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontDir)
     }
 
     const char* key = nullptr;
-    const char* tags[] = {"common_animations", "special_animations", "symbol_layers_grouping"};
-    for (unsigned int i = 0; i < sizeof(tags) / sizeof(char*); i++) {
-        key = tags[i];
+    std::string tags[] = {"common_animations", "special_animations", "symbol_layers_grouping"};
+    for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
+        key = tags[i].c_str();
         if (!root.isMember(key)) {
             continue;
         }
@@ -1431,9 +1431,9 @@ void FontConfig_OHOS::parseSymbolAnimationParas(const Json::Value& root, std::ve
 void FontConfig_OHOS::parseSymbolAnimationPara(const Json::Value& root, AnimationPara& animationPara)
 {
     const char* key = nullptr;
-    const char* tags[] = {"animation_mode", "sub_type", "group_parameters"};
-    for (unsigned int i = 0; i < sizeof(tags) / sizeof(char*); i++) {
-        key = tags[i];
+    std::string tags[] = {"animation_mode", "sub_type", "group_parameters"};
+    for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
+        key = tags[i].c_str();
         if (!root.isMember(key)) {
             continue;
         }
@@ -1499,9 +1499,9 @@ void FontConfig_OHOS::parseSymbolGroupParas(const Json::Value& root,
 void FontConfig_OHOS::parseSymbolPiecewisePara(const Json::Value& root, PiecewiseParameter& piecewiseParameter)
 {
     const char* key = nullptr;
-    const char* tags[] = {"curve", "curve_args", "duration", "delay", "properties"};
-    for (unsigned int i = 0; i < sizeof(tags) / sizeof(char*); i++) {
-        key = tags[i];
+    std::string tags[] = {"curve", "curve_args", "duration", "delay", "properties"};
+    for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
+        key = tags[i].c_str();
         if (!root.isMember(key)) {
             continue;
         }
@@ -1602,11 +1602,11 @@ void FontConfig_OHOS::parseOneSymbol(const Json::Value& root,
     std::unordered_map<uint32_t, SymbolLayersGroups>* hmSymbolConfig)
 {
     const char* key = nullptr;
-    const char* tags[] = {"native_glyph_id", "symbol_glyph_id", "layers", "render_modes", "animation_settings"};
+    std::string tags[] = {"native_glyph_id", "symbol_glyph_id", "layers", "render_modes", "animation_settings"};
     uint32_t nativeGlyphId;
     SymbolLayersGroups symbolLayersGroups;
-    for (unsigned int i = 0; i < sizeof(tags) / sizeof(char*); i++) {
-        key = tags[i];
+    for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
+        key = tags[i].c_str();
         if (!root.isMember(key)) {
             continue;
         }
