@@ -14,7 +14,7 @@ source_set("vulkanmemoryallocator") {
 
   include_dirs = [
     "../..",
-    "../../include/third_party/vulkan",
+    "//third_party/vulkan-headers/include",
   ]
 
   if (skia_disable_vma_stl_shared_mutex) {
