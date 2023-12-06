@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos_var.gni")
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 skia_common_defines = [
   "SK_HAS_ANDROID_CODEC",
@@ -52,6 +53,21 @@ if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
   skia_common_cflags += [ "-flto=thin" ]
   if (enhanced_opt) {
     skia_common_cflags += [ "-fwhole-program-vtables" ]
+    if (graphic_2d_feature_enable_pgo &&
+        graphic_2d_feature_product != "default") {
+      skia_common_cflags += [
+        "-fprofile-use=" + rebase_path(
+                "${graphic_2d_feature_pgo_path}/libskia_canvaskit.profdata",
+                root_build_dir),
+        "-Wno-error=backend-plugin",
+        "-Wno-profile-instr-out-of-date",
+        "-Wno-profile-instr-unprofiled",
+      ]
+    }
+    if (graphic_2d_feature_product == "pc" && target_cpu == "arm64" &&
+        current_cpu == "arm64") {
+      skia_common_cflags += [ "-moutline-atomics" ]
+    }
   }
 }
 

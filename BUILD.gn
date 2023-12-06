@@ -47,6 +47,21 @@ config("skia_wno") {
     cflags += [ "-flto=thin" ]
     if (enhanced_opt) {
       cflags += [ "-fwhole-program-vtables" ]
+      if (graphic_2d_feature_enable_pgo &&
+          graphic_2d_feature_product != "default") {
+        cflags += [
+          "-fprofile-use=" + rebase_path(
+                  "${graphic_2d_feature_pgo_path}/libskia_canvaskit.profdata",
+                  root_build_dir),
+          "-Wno-error=backend-plugin",
+          "-Wno-profile-instr-out-of-date",
+          "-Wno-profile-instr-unprofiled",
+        ]
+      }
+      if (graphic_2d_feature_product == "pc" && target_cpu == "arm64" &&
+          current_cpu == "arm64") {
+        cflags += [ "-moutline-atomics" ]
+      }
     }
   }
 
@@ -1657,8 +1672,6 @@ if (use_oh_skia) {
     if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
       ldflags = [
         "-Wl,--lto-O2",
-        "-Wl,-mllvm",
-        "-Wl,-import-instr-limit=5",
         "-Wl,-mllvm",
         "-Wl,-wholeprogramdevirt-check=fallback",
         "-Wl,-Bsymbolic",
