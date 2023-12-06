@@ -179,3 +179,11 @@ void GrVkTexture::addDescriptorSetToCache(const GrVkDescriptorSet* descSet, GrSa
     descSet->ref();
     fDescSetCache.insert(state, std::make_unique<DescriptorCacheEntry>(descSet, this->getVkGpu()));
 }
+
+void GrVkTexture::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
+    size_t size = GrSurface::ComputeSize(this->backendFormat(), this->dimensions(), 1,
+                                         this->mipmapped());
+    SkString resourceName = this->getResourceName();
+    resourceName.append("/texture");
+    this->dumpMemoryStatisticsPriv(traceMemoryDump, resourceName, "Texture", size);
+}
