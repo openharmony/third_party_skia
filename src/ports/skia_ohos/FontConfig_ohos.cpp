@@ -1430,13 +1430,13 @@ void FontConfig_OHOS::parseSymbolAnimations(const Json::Value& root, std::vector
             continue;
         }
         const char* animationType = root[i][ANIMATION_TYPE].asCString();
-        parseAnimationType(animationType, animationInfo.animationType_);
+        parseAnimationType(animationType, animationInfo.animationType);
 
         if (!root[i][ANIMATION_PARAMETERS].isArray()) {
             SkDebugf("animation_parameters is not array!");
             continue;
         }
-        parseSymbolAnimationParas(root[i][ANIMATION_PARAMETERS], animationInfo.animationParas_);
+        parseSymbolAnimationParas(root[i][ANIMATION_PARAMETERS], animationInfo.animationParas);
         animationInfos->push_back(animationInfo);
     }
 }
@@ -1469,20 +1469,20 @@ void FontConfig_OHOS::parseSymbolAnimationPara(const Json::Value& root, Animatio
                 SkDebugf("animation_mode is not int!");
                 continue;
             }
-            animationPara.animationMode_ = root[key].asInt();
+            animationPara.animationMode = root[key].asInt();
         } else if (!strcmp(key, SUB_TYPE)) {
             if (!root[key].isString()) {
                 SkDebugf("sub_type is not string!");
                 continue;
             }
             const char* subTypeStr = root[key].asCString();
-            parseSymbolAnimationSubType(subTypeStr, animationPara.subType_);
+            parseSymbolAnimationSubType(subTypeStr, animationPara.subType);
         } else {
             if (!root[key].isArray()) {
                 SkDebugf("group_parameters is not array!");
                 continue;
             }
-            parseSymbolGroupParas(root[key], animationPara.groupParameters_);
+            parseSymbolGroupParas(root[key], animationPara.groupParameters);
         }
     }
 }
@@ -1538,9 +1538,9 @@ void FontConfig_OHOS::parseSymbolPiecewisePara(const Json::Value& root, Piecewis
                 continue;
             }
             if (!strcmp(root[key].asCString(), "spring")) {
-                piecewiseParameter.curveType_ = CurveType::SPRING;
+                piecewiseParameter.curveType = CurveType::SPRING;
             } else if (!strcmp(root[key].asCString(), "linear")) {
-                piecewiseParameter.curveType_ = CurveType::LINEAR;
+                piecewiseParameter.curveType = CurveType::LINEAR;
             } else {
                 SkDebugf("curve is invalid value!");
             }
@@ -1549,25 +1549,25 @@ void FontConfig_OHOS::parseSymbolPiecewisePara(const Json::Value& root, Piecewis
                 SkDebugf("curve_args is not object!");
                 continue;
             }
-            parseSymbolCurveArgs(root[key], piecewiseParameter.curveArgs_);
+            parseSymbolCurveArgs(root[key], piecewiseParameter.curveArgs);
         } else if (!strcmp(key, DURATION)) {
             if (!root[key].isInt()) {
                 SkDebugf("duration is not int!");
                 continue;
             }
-            piecewiseParameter.duration_ = root[key].asInt();
+            piecewiseParameter.duration = root[key].asInt();
         } else if (!strcmp(key, DELAY)) {
             if (!root[key].isInt()) {
                 SkDebugf("delay is not int!");
                 continue;
             }
-            piecewiseParameter.delay_ = root[key].asInt();
+            piecewiseParameter.delay = root[key].asInt();
         } else {
             if (!root[key].isObject()) {
                 SkDebugf("properties is not object!");
                 continue;
             }
-            parseSymbolProperties(root[key], piecewiseParameter.properties_);
+            parseSymbolProperties(root[key], piecewiseParameter.properties);
         }
     }
 }
@@ -1648,25 +1648,25 @@ void FontConfig_OHOS::parseOneSymbol(const Json::Value& root,
                 SkDebugf("symbol_glyph_id is not int!");
                 continue;
             }
-            symbolLayersGroups.symbolGlyphId_ = root[key].asInt();
+            symbolLayersGroups.symbolGlyphId = root[key].asInt();
         } else if (!strcmp(key, LAYERS)) {
             if (!root[key].isArray()) {
                 SkDebugf("layers is not array!");
                 continue;
             }
-            parseLayers(root[key], symbolLayersGroups.layers_);
+            parseLayers(root[key], symbolLayersGroups.layers);
         } else if (!strcmp(key, RENDER_MODES)) {
             if (!root[key].isArray()) {
                 SkDebugf("render_modes is not array!");
                 continue;
             }
-            parseRenderModes(root[key], symbolLayersGroups.renderModeGroups_);
+            parseRenderModes(root[key], symbolLayersGroups.renderModeGroups);
         } else {
             if (!root[key].isArray()) {
                 SkDebugf("animation_settings is not array!");
                 continue;
             }
-            parseAnimationSettings(root[key], symbolLayersGroups.animationSettings_);
+            parseAnimationSettings(root[key], symbolLayersGroups.animationSettings);
         }
     }
 
@@ -1759,7 +1759,7 @@ void FontConfig_OHOS::parseRenderGroups(const Json::Value& root, std::vector<Ren
                 SkDebugf("group_indexes is not array!");
                 continue;
             }
-            parseGroupIndexes(root[i][GROUP_INDEXES], renderGroup.groupInfos_);
+            parseGroupIndexes(root[i][GROUP_INDEXES], renderGroup.groupInfos);
         }
         if (root[i].isMember(DEFAULT_COLOR)) {
             if (!root[i][DEFAULT_COLOR].isString()) {
@@ -1773,7 +1773,7 @@ void FontConfig_OHOS::parseRenderGroups(const Json::Value& root, std::vector<Ren
                 SkDebugf("fix_alpha is not double!");
                 continue;
             }
-            renderGroup.color_.a_ = root[i][FIX_ALPHA].asFloat();
+            renderGroup.color.a = root[i][FIX_ALPHA].asFloat();
         }
         renderGroups.push_back(renderGroup);
     }
@@ -1788,14 +1788,14 @@ void FontConfig_OHOS::parseGroupIndexes(const Json::Value& root, std::vector<Gro
                 SkDebugf("layer_indexes is not array!");
                 continue;
             }
-            parseLayerOrMaskIndexes(root[i][LAYER_INDEXES], groupInfo.layerIndexes_);
+            parseLayerOrMaskIndexes(root[i][LAYER_INDEXES], groupInfo.layerIndexes);
         }
         if (root[i].isMember(MASK_INDEXES)) {
             if (!root[i][MASK_INDEXES].isArray()) {
                 SkDebugf("mask_indexes is not array!");
                 continue;
             }
-            parseLayerOrMaskIndexes(root[i][MASK_INDEXES], groupInfo.maskIndexes_);
+            parseLayerOrMaskIndexes(root[i][MASK_INDEXES], groupInfo.maskIndexes);
         }
         groupInfos.push_back(groupInfo);
     }
@@ -1828,9 +1828,9 @@ void FontConfig_OHOS::parseDefaultColor(const char* defaultColorStr, RenderGroup
 
     char* endPtr;
     int defaultColorInt = strtol(defaultColorHex, &endPtr, hexFlag);
-    renderGroup.color_.r_ = (defaultColorInt >> twoBytesBitsLen) & 0xFF;
-    renderGroup.color_.g_ = (defaultColorInt >> oneByteBitsLen) & 0xFF;
-    renderGroup.color_.b_ = defaultColorInt & 0xFF;
+    renderGroup.color.r = (defaultColorInt >> twoBytesBitsLen) & 0xFF;
+    renderGroup.color.g = (defaultColorInt >> oneByteBitsLen) & 0xFF;
+    renderGroup.color.b = defaultColorInt & 0xFF;
 }
 
 void FontConfig_OHOS::parseAnimationSettings(const Json::Value& root, std::vector<AnimationSetting>& animationSettings)
@@ -1852,7 +1852,7 @@ void FontConfig_OHOS::parseAnimationSetting(const Json::Value& root, AnimationSe
         if (!root[ANIMATION_TYPE].isString()) {
             SkDebugf("animation_type is not string!");
         } else {
-            parseAnimationType(root[ANIMATION_TYPE].asCString(), animationSetting.animationType_);
+            parseAnimationType(root[ANIMATION_TYPE].asCString(), animationSetting.animationType);
         }
     }
 
@@ -1860,7 +1860,7 @@ void FontConfig_OHOS::parseAnimationSetting(const Json::Value& root, AnimationSe
         if (!root[SUB_TYPE].isString()) {
             SkDebugf("sub_type is not string!");
         } else {
-            parseSymbolAnimationSubType(root[SUB_TYPE].asCString(), animationSetting.animationSubType_);
+            parseSymbolAnimationSubType(root[SUB_TYPE].asCString(), animationSetting.animationSubType);
         }
     }
 
@@ -1868,7 +1868,7 @@ void FontConfig_OHOS::parseAnimationSetting(const Json::Value& root, AnimationSe
         if (!root[ANIMATION_MODE].isInt()) {
             SkDebugf("animation_mode is not int!");
         } else {
-            animationSetting.animationMode_ = root[ANIMATION_MODE].asInt();
+            animationSetting.animationMode = root[ANIMATION_MODE].asInt();
         }
     }
 
@@ -1876,7 +1876,7 @@ void FontConfig_OHOS::parseAnimationSetting(const Json::Value& root, AnimationSe
         if (!root[GROUP_SETTINGS].isArray()) {
             SkDebugf("group_settings is not array!");
         } else {
-            parseGroupSettings(root[GROUP_SETTINGS], animationSetting.groupSettings_);
+            parseGroupSettings(root[GROUP_SETTINGS], animationSetting.groupSettings);
         }
     }
 }
@@ -1911,7 +1911,7 @@ void FontConfig_OHOS::parseGroupSetting(const Json::Value& root, GroupSetting& g
         if (!root[GROUP_INDEXES].isArray()) {
             SkDebugf("group_indexes is not array!");
         } else {
-            parseGroupIndexes(root[GROUP_INDEXES], groupSetting.groupInfos_);
+            parseGroupIndexes(root[GROUP_INDEXES], groupSetting.groupInfos);
         }
     }
 
@@ -1919,7 +1919,7 @@ void FontConfig_OHOS::parseGroupSetting(const Json::Value& root, GroupSetting& g
         if (!root[ANIMATION_INDEX].isInt()) {
             SkDebugf("animation_index is not int!");
         } else {
-            groupSetting.animationIndex_ = root[ANIMATION_INDEX].asInt();
+            groupSetting.animationIndex = root[ANIMATION_INDEX].asInt();
         }
     }
 }

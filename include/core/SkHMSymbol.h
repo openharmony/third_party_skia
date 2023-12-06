@@ -52,57 +52,57 @@ enum CurveType {
 };
 
 using PiecewiseParameter = struct PiecewiseParameter {
-    CurveType curveType_;
-    std::map<std::string, double_t> curveArgs_;
-    uint32_t duration_;
-    uint32_t delay_;
-    std::map<std::string, std::vector<double_t>> properties_;
+    CurveType curveType;
+    std::map<std::string, double_t> curveArgs;
+    uint32_t duration;
+    uint32_t delay;
+    std::map<std::string, std::vector<double_t>> properties;
 };
 
 using AnimationPara = struct AnimationPara {
-    uint32_t animationMode_;
-    AnimationSubType subType_;
-    std::vector<std::vector<PiecewiseParameter>> groupParameters_;
+    uint32_t animationMode;
+    AnimationSubType subType;
+    std::vector<std::vector<PiecewiseParameter>> groupParameters;
 };
 
 using AnimationInfo = struct AnimationInfo {
-    AnimationType animationType_;
-    std::vector<AnimationPara> animationParas_;
+    AnimationType animationType;
+    std::vector<AnimationPara> animationParas;
 };
 
 using SColor = struct SColor {
-    float a_ = 1;
-    U8CPU r_ = 0;
-    U8CPU g_ = 0;
-    U8CPU b_ = 0;
+    float a = 1;
+    U8CPU r = 0;
+    U8CPU g = 0;
+    U8CPU b = 0;
 };
 
 using GroupInfo = struct GroupInfo {
-    std::vector<size_t> layerIndexes_;
-    std::vector<size_t> maskIndexes_;
+    std::vector<size_t> layerIndexes;
+    std::vector<size_t> maskIndexes;
 };
 
 using GroupSetting = struct GroupSetting {
-    std::vector<GroupInfo> groupInfos_;
-    uint32_t animationIndex_;
+    std::vector<GroupInfo> groupInfos;
+    uint32_t animationIndex;
 };
 
 using AnimationSetting = struct AnimationSetting {
-    AnimationType animationType_;
-    AnimationSubType animationSubType_;
-    uint32_t animationMode_;
-    std::vector<GroupSetting> groupSettings_;
+    AnimationType animationType;
+    AnimationSubType animationSubType;
+    uint32_t animationMode;
+    std::vector<GroupSetting> groupSettings;
 };
 
 using RenderGroup = struct RenderGroup {
-    std::vector<GroupInfo> groupInfos_;
-    SColor color_;
+    std::vector<GroupInfo> groupInfos;
+    SColor color;
 };
 
 using SymbolLayers = struct SymbolLayers {
-    uint32_t symbolGlyphId_;
-    std::vector<std::vector<size_t>> layers_;
-    std::vector<RenderGroup> renderGroups_;
+    uint32_t symbolGlyphId;
+    std::vector<std::vector<size_t>> layers;
+    std::vector<RenderGroup> renderGroups;
 };
 
 enum SymbolRenderingStrategy {
@@ -120,10 +120,10 @@ enum EffectStrategy {
 };
 
 using SymbolLayersGroups = struct SymbolLayersGroups {
-    uint32_t symbolGlyphId_;
-    std::vector<std::vector<size_t>> layers_;
-    std::map<SymbolRenderingStrategy, std::vector<RenderGroup>> renderModeGroups_;
-    std::vector<AnimationSetting> animationSettings_;
+    uint32_t symbolGlyphId;
+    std::vector<std::vector<size_t>> layers;
+    std::map<SymbolRenderingStrategy, std::vector<RenderGroup>> renderModeGroups;
+    std::vector<AnimationSetting> animationSettings;
 };
 
 class SK_API HMSymbolData
