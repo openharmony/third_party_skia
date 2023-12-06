@@ -388,6 +388,10 @@ sk_sp<SkSurface> SkSurface::MakeRenderTarget(GrRecordingContext*, SkBudgeted, co
 void SkSurface::setDrawingArea(const std::vector<SkIRect>& rects) {
     GrVkDrawAreaManager::getInstance().bindDrawingArea(this, rects);
 }
+
+void SkSurface::clearDrawingArea() {
+    GrVkDrawAreaManager::getInstance().clearDrawingArea(this);
+}
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////

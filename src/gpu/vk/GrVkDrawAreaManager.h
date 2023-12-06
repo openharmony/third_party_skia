@@ -35,5 +35,5 @@ private:
     virtual ~GrVkDrawAreaManager() = default;
 
     std::map<GrRenderTarget*, std::vector<SkIRect>> mRtmap;
-}
+};
 #endif
