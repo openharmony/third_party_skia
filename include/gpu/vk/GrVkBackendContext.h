@@ -22,6 +22,7 @@ enum GrVkExtensionFlags {
     kKHR_win32_surface_GrVkExtensionFlag   = 0x0010,
     kKHR_android_surface_GrVkExtensionFlag = 0x0020,
     kKHR_xcb_surface_GrVkExtensionFlag     = 0x0040,
+    kKHR_ohos_surface_GrVkExtensionFlag    = 0x0080,
 };
 
 enum GrVkFeatureFlags {

@@ -1107,6 +1107,7 @@ optional("gpu") {
     if (skia_use_vma) {
       deps += [ "third_party/vulkanmemoryallocator" ]
     }
+    deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     sources += skia_vk_sources
     if (skia_enable_vulkan_debug_layers) {
       public_defines += [ "SK_ENABLE_VK_LAYERS" ]
@@ -2030,7 +2031,7 @@ group("experimental") {
 }
 
 config("our_vulkan_headers") {
-  include_dirs = [ "include/third_party/vulkan" ]
+  include_dirs = [ "//third_party/vulkan_headers/include" ]
 }
 
 # Targets guarded by skia_enable_tools may use //third_party freely.

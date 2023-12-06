@@ -10,12 +10,10 @@
 
 #include "include/core/SkTypes.h"
 
-#if SKIA_IMPLEMENTATION || !defined(SK_VULKAN)
-#include "include/third_party/vulkan/vulkan/vulkan_core.h"
-#else
-// For google3 builds we don't set SKIA_IMPLEMENTATION so we need to make sure that the vulkan
-// headers stay up to date for our needs
-#include <vulkan/vulkan_core.h>
+#include "third_party/vulkan-headers/include/vulkan/vulkan_core.h"
+
+#ifdef VK_USE_PLATFORM_OHOS
+#include <vulkan/vulkan_ohos.h>
 #endif
 
 #ifdef SK_BUILD_FOR_ANDROID

@@ -390,7 +390,7 @@ void SkSurface::setDrawingArea(const std::vector<SkIRect>& rects) {
 }
 
 void SkSurface::clearDrawingArea() {
-    GrVkDrawAreaManager::getInstance().clearDrawingArea(this);
+    GrVkDrawAreaManager::getInstance().clearSurface(this);
 }
 #endif
 
