@@ -519,7 +519,7 @@ private:
 };
 
 /** function GetGlyphIDforTextBlob:
- * Obtain the path of the first glyph from SkTextBlob blob
+    Obtain the path of the first glyph from SkTextBlob blob
 */
 SK_API void GetGlyphIDforTextBlob(const SkTextBlob* blob, std::vector<SkGlyphID>& glyphIds);
 

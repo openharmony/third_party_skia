@@ -144,9 +144,6 @@ public:
 
     static void MultilayerPath(const std::vector<std::vector<size_t>>& multMap,
         const std::vector<SkPath>& paths, std::vector<SkPath>& multPaths);
-
-private:
-
 };
 
 #endif
