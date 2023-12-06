@@ -70,6 +70,11 @@ std::unique_ptr<SkCodec> SkIcoCodec::MakeFromStream(std::unique_ptr<SkStream> st
     struct Entry {
         uint32_t offset;
         uint32_t size;
+#ifdef ICO_CODEC_HW_HIGH_QUALITY_DECODE
+        uint16_t bitsPerPixel;
+        int width;
+        int height;
+#endif
     };
     SkAutoFree dirEntryBuffer(sk_malloc_canfail(sizeof(Entry) * numImages));
     if (!dirEntryBuffer) {
@@ -106,6 +111,25 @@ std::unique_ptr<SkCodec> SkIcoCodec::MakeFromStream(std::unique_ptr<SkStream> st
         // Save the vital fields
         directoryEntries[i].offset = offset;
         directoryEntries[i].size = size;
+#ifdef ICO_CODEC_HW_HIGH_QUALITY_DECODE
+        // store bitsPerPixel, width, height and save the vital fields
+        uint16_t bitsPerPixel = get_short(entryBuffer, 6);
+        // Storing them in int (instead of matching uint8_t) is so we can record
+        // dimensions of size 256 (which is what a zero byte really means)
+        static const int maxSize = 256;
+        int width = static_cast<int>(get_byte(entryBuffer, 0));
+        int height = static_cast<int>(get_byte(entryBuffer, 1));
+        if (width == 0) {
+            width = maxSize;
+        }
+        if (height == 0) {
+            height = maxSize;
+        }
+
+        directoryEntries[i].bitsPerPixel = bitsPerPixel;
+        directoryEntries[i].width = width;
+        directoryEntries[i].height = height;
+#endif
     }
 
     // Default Result, if no valid embedded codecs are found.
@@ -115,6 +139,16 @@ std::unique_ptr<SkCodec> SkIcoCodec::MakeFromStream(std::unique_ptr<SkStream> st
     // increasing offset.  However, the specification does not indicate that
     // they must be stored in this order, so we will not trust that this is the
     // case.  Here we sort the embedded images by increasing offset.
+#ifdef ICO_CODEC_HW_HIGH_QUALITY_DECODE
+    struct EntryGreaterThan {
+        bool operator()(Entry a, Entry b) const {
+            return (a.width * a.height == b.width * b.height) ? (a.bitsPerPixel > b.bitsPerPixel) :
+                (a.width * a.height > b.width * b.height);
+        }
+    };
+    EntryGreaterThan greaterThan;
+    SkTQSort(directoryEntries, directoryEntries + numImages, greaterThan);
+#else
     struct EntryLessThan {
         bool operator() (Entry a, Entry b) const {
             return a.offset < b.offset;
@@ -122,6 +156,7 @@ std::unique_ptr<SkCodec> SkIcoCodec::MakeFromStream(std::unique_ptr<SkStream> st
     };
     EntryLessThan lessThan;
     SkTQSort(directoryEntries, directoryEntries + numImages, lessThan);
+#endif
 
     // Now will construct a candidate codec for each of the embedded images
     uint32_t bytesRead = kIcoDirectoryBytes + numImages * kIcoDirEntryBytes;
@@ -212,7 +247,12 @@ SkISize SkIcoCodec::onGetScaledDimensions(float desiredScale) const {
     // will decode.
     int origWidth = this->dimensions().width();
     int origHeight = this->dimensions().height();
+#ifdef ICO_CODEC_HW_HIGH_QUALITY_DECODE
+    // desiredScale is max(desireWidth/origWidth, desireHeight/origHeight)
+    float desiredSize = desiredScale * origWidth * desiredScale * origHeight;
+#else
     float desiredSize = desiredScale * origWidth * origHeight;
+#endif
     // At least one image will have smaller error than this initial value
     float minError = ((float) (origWidth * origHeight)) - desiredSize + 1.0f;
     int32_t minIndex = -1;

@@ -1327,6 +1327,8 @@ optional("png_decode") {
     "src/codec/SkIcoCodec.cpp",
     "src/codec/SkPngCodec.cpp",
   ]
+
+  defines = [ "ICO_CODEC_HW_HIGH_QUALITY_DECODE" ]
 }
 
 optional("png_encode") {
