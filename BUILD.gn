@@ -1289,7 +1289,7 @@ optional("pdf") {
   enabled = skia_use_zlib && skia_enable_pdf
   public_defines = [ "SK_SUPPORT_PDF" ]
 
-  if (is_mingw) {
+  if (use_oh_skia) {
     deps = [ "//third_party/zlib:libz" ]
   } else {
     deps = [ "${skia_third_party_dir}/zlib" ]
