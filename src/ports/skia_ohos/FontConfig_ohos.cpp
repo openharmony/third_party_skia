@@ -1359,7 +1359,8 @@ int FontConfig_OHOS::checkProductFile(const char* fname)
 
 int FontConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontDir)
 {
-    int len = strlen(fname) + (fontDir.size() + 2);
+    const int fontEndSize = 2;
+    int len = strlen(fname) + (fontDir.size() + fontEndSize);
     char fullname[len];
     memset_s(fullname, len, 0, len);
     strcpy_s(fullname, len, fontDir.c_str());
