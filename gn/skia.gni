@@ -5,6 +5,7 @@
 import("../build_overrides/skia.gni")
 import("oh_skia.gni")
 import("platform.gni")
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 if (!defined(is_skia_standalone)) {
   is_skia_standalone = true
@@ -93,15 +94,19 @@ declare_args() {
     skia_gl_standard = ""
   }
 
+  skia_vk_enable_partialrender = false
   if (is_android) {
     skia_use_vulkan = defined(ndk_api) && ndk_api >= 24
   } else if (is_fuchsia) {
     skia_use_vulkan = true
   } else {
     skia_use_vulkan = false
+    if (graphic_2d_feature_enable_vulkan) {
+      skia_use_vulkan = true
+      skia_vk_enable_partialrender = true
+    }
   }
 
-  skia_vk_enable_partialrender = false
   skia_build_fuzzers = is_clang && is_linux && target_cpu == "x64"
   skia_use_libfuzzer_defaults = true
 
