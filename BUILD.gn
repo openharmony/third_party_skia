@@ -697,12 +697,14 @@ if (use_oh_skia && !is_arkui_x) {
     public = [
       "src/ports/skia_ohos/FontConfig_ohos.h",
       "src/ports/skia_ohos/FontInfo_ohos.h",
+      "src/ports/skia_ohos/HmSymbolConfig_ohos.h",
       "src/ports/skia_ohos/SkFontMgr_ohos.h",
       "src/ports/skia_ohos/SkFontStyleSet_ohos.h",
       "src/ports/skia_ohos/SkTypeface_ohos.h",
     ]
     sources = [
       "src/ports/skia_ohos/FontConfig_ohos.cpp",
+      "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp",
       "src/ports/skia_ohos/SkFontMgr_ohos.cpp",
       "src/ports/skia_ohos/SkFontMgr_ohos_factory.cpp",
       "src/ports/skia_ohos/SkFontStyleSet_ohos.cpp",

@@ -64,6 +64,9 @@ class SkSurface_Base;
 class SkTextBlob;
 class SkVertices;
 
+class HMSymbolData;
+class HMSymbol;
+
 namespace skstd {
     template<typename T> class optional;
 }
@@ -1867,6 +1870,15 @@ public:
         this->drawTextBlob(blob.get(), x, y, paint);
     }
 
+    /** Draws HMSymbol at locate wih paint.
+        @param symbol  HMSymbol information
+        @param locate  draw locate
+        @param paint  blend, color, stroking, and so on, used to draw
+    */
+    void drawSymbol(const HMSymbolData& symbol, SkPoint locate, const SkPaint& paint) {
+        this->onDrawSymbol(symbol, locate, paint);
+    }
+
     /** Draws SkPicture picture, using clip and SkMatrix.
         Clip and SkMatrix are unchanged by picture contents, as if
         save() was called before and restore() was called after drawPicture().
@@ -2239,6 +2251,8 @@ protected:
 
     virtual void onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y,
                                 const SkPaint& paint);
+
+    virtual void onDrawSymbol(const HMSymbolData& symbol, SkPoint locate, const SkPaint& paint) {}
 
     virtual void onDrawGlyphRunList(const SkGlyphRunList& glyphRunList, const SkPaint& paint);
 

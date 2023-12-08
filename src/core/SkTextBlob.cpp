@@ -1041,3 +1041,26 @@ bool SkTextBlob::Iter::experimentalNext(ExperimentalRun* rec) {
     }
     return false;
 }
+
+void GetGlyphIDforTextBlob(const SkTextBlob* blob, std::vector<SkGlyphID>& glyphIds)
+{
+    SkTextBlobRunIterator it(blob);
+    if (!it.done()) {
+        size_t runSize = it.glyphCount();
+        auto glyphIDs = it.glyphs();
+        for (size_t i = 0; i < runSize; ++i) {
+            glyphIds.push_back(glyphIDs[i]);
+        }
+    }
+}
+
+SkPath GetPathforTextBlob(const SkGlyphID& glyphId, const SkTextBlob* blob)
+{
+    SkPath path;
+    SkTextBlobRunIterator it(blob);
+    if (!it.done()) {
+        SkFont font = it.font();
+        font.getPath(glyphId, &path);
+    }
+    return path;
+}

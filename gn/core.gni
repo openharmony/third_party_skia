@@ -93,6 +93,7 @@ skia_core_public = [
   "$_include/core/SkVertices.h",
   "$_include/core/SkYUVAInfo.h",
   "$_include/core/SkYUVAPixmaps.h",
+  "$_include/core/SkHMSymbol.h",
 ]
 
 skia_core_sources = [
@@ -230,6 +231,7 @@ skia_core_sources = [
   "$_src/core/SkGpuBlurUtils.cpp",
   "$_src/core/SkGpuBlurUtils.h",
   "$_src/core/SkGraphics.cpp",
+  "$_src/core/SkHMSymbol.cpp",
   "$_src/core/SkHalf.cpp",
   "$_src/core/SkICC.cpp",
   "$_src/core/SkIDChangeListener.cpp",
