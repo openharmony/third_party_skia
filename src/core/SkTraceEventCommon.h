@@ -6,7 +6,7 @@
 
 #include "include/core/SkTypes.h"
 #include "include/utils/SkTraceEventPhase.h"
-#ifdef SKIA_OHOS_DEBUG
+#ifdef SKIA_BUILD_FOR_OHOS
 #include "hitrace_meter.h"
 #endif
 // Trace events are for tracking application performance and resource usage.
@@ -199,6 +199,11 @@ public:
 
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this does nothing.
+
+// print ohos trace without SKIA_OHOS_DEBUG macro
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) \
+  HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
 #ifdef SKIA_OHOS_DEBUG
 #define TRACE_EVENT0(category_group, name) \
   HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \

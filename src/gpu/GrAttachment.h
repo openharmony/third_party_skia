@@ -79,9 +79,8 @@ protected:
             , fMipmapped(mipmapped)
             , fMemoryless(memoryless) {}
 
+    virtual size_t onGpuMemorySize() const override;
 private:
-    size_t onGpuMemorySize() const final;
-
     void computeScratchKey(GrScratchKey*) const final;
 
     const char* getResourceType() const override {

@@ -205,6 +205,7 @@ public:
     static VkPipelineStageFlags LayoutToPipelineSrcStageFlags(const VkImageLayout layout);
     static VkAccessFlags LayoutToSrcAccessMask(const VkImageLayout layout);
 
+    size_t onGpuMemorySize() const override;
 #if GR_TEST_UTILS
     void setCurrentQueueFamilyToGraphicsQueue(GrVkGpu* gpu);
 #endif
