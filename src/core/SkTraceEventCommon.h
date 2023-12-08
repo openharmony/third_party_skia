@@ -6,7 +6,7 @@
 
 #include "include/core/SkTypes.h"
 #include "include/utils/SkTraceEventPhase.h"
-#ifdef SKIA_BUILD_FOR_OHOS
+#ifdef SK_BUILD_FOR_OHOS
 #include "hitrace_meter.h"
 #endif
 // Trace events are for tracking application performance and resource usage.
