@@ -2,10 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("../build_overrides/skia.gni")
 import("oh_skia.gni")
 import("platform.gni")
-import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 if (!defined(is_skia_standalone)) {
   is_skia_standalone = true
