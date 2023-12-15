@@ -24,12 +24,14 @@ void GrVkDrawAreaManager::bindDrawingArea(SkSurface* surface, const std::vector<
         return;
     }
 
-    mRtmap[gpuDeviceProxy->peekRenderTarget()] = skIRects;
+    SkAutoMutexExclusive lock(fMutex);
+    fRtmap[gpuDeviceProxy->peekRenderTarget()] = skIRects;
 }
 
 std::vector<SkIRect>& GrVkDrawAreaManager::getDrawingArea(GrRenderTarget* rt) {
-    std::map<GrRenderTarget*, std::vector<SkIRect>>::iterator iter = mRtmap.find(rt);
-    if (iter != mRtmap.end()) {
+    SkAutoMutexExclusive lock(fMutex);
+    std::map<GrRenderTarget*, std::vector<SkIRect>>::iterator iter = fRtmap.find(rt);
+    if (iter != fRtmap.end()) {
         return iter->second;
     } else {
         static std::vector<SkIRect> emptyVec = {};
@@ -52,9 +54,11 @@ void GrVkDrawAreaManager::clearSurface(SkSurface* surface) {
         return;
     }
 
-    mRtmap.erase(gpuDeviceProxy->peekRenderTarget());
+    SkAutoMutexExclusive lock(fMutex);
+    fRtmap.erase(gpuDeviceProxy->peekRenderTarget());
 }
 
 void GrVkDrawAreaManager::clearAll() {
-    mRtmap.clear();
+    SkAutoMutexExclusive lock(fMutex);
+    fRtmap.clear();
 }

@@ -9,6 +9,7 @@
 
 #include <map>
 #include "include/core/SkSurface.h"
+#include "include/private/SkMutex.h"
 
 class SK_API GrVkDrawAreaManager {
 public:
@@ -34,6 +35,8 @@ private:
     GrVkDrawAreaManager() = default;
     virtual ~GrVkDrawAreaManager() = default;
 
-    std::map<GrRenderTarget*, std::vector<SkIRect>> mRtmap;
+    std::map<GrRenderTarget*, std::vector<SkIRect>> fRtmap;
+
+    SkMutex fMutex;
 };
 #endif
