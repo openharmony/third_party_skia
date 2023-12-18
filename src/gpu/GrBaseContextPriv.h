@@ -13,7 +13,7 @@
 /** Class that exposes methods on GrContext_Base that are only intended for use internal to Skia.
     This class is purely a privileged window into GrContext_Base. It should never have
     additional data members or virtual methods. */
-class GrBaseContextPriv {
+class SK_API GrBaseContextPriv {
 public:
     GrContext_Base* context() { return fContext; }
     const GrContext_Base* context() const { return fContext; }

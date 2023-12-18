@@ -49,7 +49,7 @@ namespace SkSL {
     class Compiler;
 }
 
-class GrGpu : public SkRefCnt {
+class SK_API GrGpu : public SkRefCnt {
 public:
     GrGpu(GrDirectContext* direct);
     ~GrGpu() override;

@@ -15,7 +15,7 @@ class GrResourceProvider;
 /** Class that adds methods to GrSurfaceProxy that are only intended for use internal to Skia.
     This class is purely a privileged window into GrSurfaceProxy. It should never have additional
     data members or virtual methods. */
-class GrSurfaceProxyPriv {
+class SK_API GrSurfaceProxyPriv {
 public:
     void computeScratchKey(const GrCaps& caps, GrScratchKey* key) const {
         return fProxy->computeScratchKey(caps, key);

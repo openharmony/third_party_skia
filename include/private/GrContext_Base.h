@@ -20,7 +20,7 @@ class GrDirectContext;
 class GrImageContext;
 class GrRecordingContext;
 
-class GrContext_Base : public SkRefCnt {
+class SK_API GrContext_Base : public SkRefCnt {
 public:
     ~GrContext_Base() override;
 

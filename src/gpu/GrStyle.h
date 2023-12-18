@@ -21,7 +21,7 @@
  *
  * This will replace GrStrokeInfo as GrStyledShape is deployed.
  */
-class GrStyle {
+class SK_API GrStyle {
 public:
     /**
      * A style object that represents a fill with no path effect.

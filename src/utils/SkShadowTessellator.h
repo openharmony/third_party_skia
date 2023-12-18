@@ -27,7 +27,7 @@ typedef std::function<SkScalar(SkScalar, SkScalar)> HeightFunc;
  * the radius, and setting inner and outer colors to umbraColor and penumbraColor, respectively.
  * If transparent is true, then the center of the ambient shadow will be filled in.
  */
-sk_sp<SkVertices> MakeAmbient(const SkPath& path, const SkMatrix& ctm,
+SK_API sk_sp<SkVertices> MakeAmbient(const SkPath& path, const SkMatrix& ctm,
                               const SkPoint3& zPlane, bool transparent);
 
 /**
@@ -35,7 +35,7 @@ sk_sp<SkVertices> MakeAmbient(const SkPath& path, const SkMatrix& ctm,
  * further transforming by the scale and translation, and outsetting and insetting by a radius.
  * The center will be clipped against the original path unless transparent is true.
  */
-sk_sp<SkVertices> MakeSpot(const SkPath& path, const SkMatrix& ctm, const SkPoint3& zPlane,
+SK_API sk_sp<SkVertices> MakeSpot(const SkPath& path, const SkMatrix& ctm, const SkPoint3& zPlane,
                            const SkPoint3& lightPos, SkScalar lightRadius, bool transparent,
                            bool directional);
 

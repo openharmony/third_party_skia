@@ -19,7 +19,7 @@ class GrVkGpu;
 class GrVkImageView;
 struct GrVkImageInfo;
 
-class GrVkTexture : public GrTexture {
+class SK_API GrVkTexture : public GrTexture {
 public:
     static sk_sp<GrVkTexture> MakeNewTexture(GrVkGpu*,
                                              SkBudgeted budgeted,

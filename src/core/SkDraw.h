@@ -30,7 +30,7 @@ struct SkRect;
 class SkRRect;
 class SkVertices;
 
-class SkDraw : public SkGlyphRunListPainter::BitmapDevicePainter {
+class SK_API SkDraw : public SkGlyphRunListPainter::BitmapDevicePainter {
 public:
     SkDraw();
 

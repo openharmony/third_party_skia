@@ -41,7 +41,7 @@ public:
     // Determines how many levels a SkMipmap will have without creating that mipmap.
     // This does not include the base mipmap level that the user provided when
     // creating the SkMipmap.
-    static int ComputeLevelCount(int baseWidth, int baseHeight);
+    static int SK_API ComputeLevelCount(int baseWidth, int baseHeight);
     static int ComputeLevelCount(SkISize s) { return ComputeLevelCount(s.width(), s.height()); }
 
     // Determines the size of a given mipmap level.
