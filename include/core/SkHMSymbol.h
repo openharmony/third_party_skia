@@ -55,7 +55,7 @@ using PiecewiseParameter = struct PiecewiseParameter {
     CurveType curveType;
     std::map<std::string, double_t> curveArgs;
     uint32_t duration;
-    uint32_t delay;
+    int delay;
     std::map<std::string, std::vector<double_t>> properties;
 };
 
@@ -99,10 +99,19 @@ using RenderGroup = struct RenderGroup {
     SColor color;
 };
 
+enum EffectStrategy {
+    INVALID_EFFECT_STRATEGY = 0,
+    NONE = 1,
+    SCALE = 2,
+    HIERARCHICAL = 3,
+};
+
 using SymbolLayers = struct SymbolLayers {
     uint32_t symbolGlyphId;
     std::vector<std::vector<size_t>> layers;
     std::vector<RenderGroup> renderGroups;
+    EffectStrategy effect;
+    AnimationSetting animationSetting;
 };
 
 enum SymbolRenderingStrategy {
@@ -112,12 +121,6 @@ enum SymbolRenderingStrategy {
     MULTIPLE_OPACITY = 3,
 };
 
-enum EffectStrategy {
-    INVALID_EFFECT_STRATEGY = 0,
-    NONE = 1,
-    SCALE = 2,
-    HIERARCHICAL = 3,
-};
 
 using SymbolLayersGroups = struct SymbolLayersGroups {
     uint32_t symbolGlyphId;
