@@ -404,7 +404,7 @@ void GrVkCaps::init(const GrContextOptions& contextOptions, const GrVkInterface*
     // we do expect this to be a big win on tilers.
     //
     // On ARM devices we are seeing an average perf win of around 50%-60% across the board.
-    if (kARM_VkVendor == properties.vendorID) {
+    if (kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) {
         fPreferDiscardableMSAAAttachment = true;
         fSupportsMemorylessAttachments = true;
     }
@@ -508,13 +508,13 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
     }
 
     // On Mali galaxy s7 we see lots of rendering issues when we suballocate VkImages.
-    if (kARM_VkVendor == properties.vendorID && androidAPIVersion <= 28) {
+    if ((kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) && androidAPIVersion <= 28) {
         fShouldAlwaysUseDedicatedImageMemory = true;
     }
 
     // On Mali galaxy s7 and s9 we see lots of rendering issues with image filters dropping out when
     // using only primary command buffers. We also see issues on the P30 running android 28.
-    if (kARM_VkVendor == properties.vendorID && androidAPIVersion <= 28) {
+    if ((kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) && androidAPIVersion <= 28) {
         fPreferPrimaryOverSecondaryCommandBuffers = false;
         // If we are using secondary command buffers our code isn't setup to insert barriers into
         // the secondary cb so we need to disable support for them.
@@ -533,7 +533,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
     // On Mali G series GPUs, applying transfer functions in the fragment shader with half-floats
     // produces answers that are much less accurate than expected/required. This forces full floats
     // for some intermediate values to get acceptable results.
-    if (kARM_VkVendor == properties.vendorID) {
+    if (kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) {
         fShaderCaps->fColorSpaceMathNeedsFloat = true;
     }
 
@@ -547,7 +547,8 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
     // On Qualcomm and Arm the gpu resolves an area larger than the render pass bounds when using
     // discardable msaa attachments. This causes the resolve to resolve uninitialized data from the
     // msaa image into the resolve image.
-    if (kQualcomm_VkVendor == properties.vendorID || kARM_VkVendor == properties.vendorID) {
+    if (kQualcomm_VkVendor == properties.vendorID || kARM_VkVendor == properties.vendorID
+        || kHisi_VkVendor == properties.vendorID) {
         fMustLoadFullImageWithDiscardableMSAA = true;
     }
 
@@ -578,6 +579,10 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
         fAvoidWritePixelsFastPath = true; // bugs.skia.org/8064
     }
 
+    if (kHisi_VkVendor == properties.vendorID) {
+        fAvoidWritePixelsFastPath = false; // bugs.skia.org/8064
+    }
+
     // AMD advertises support for MAX_UINT vertex input attributes, but in reality only supports 32.
     if (kAMD_VkVendor == properties.vendorID) {
         fMaxVertexAttributes = std::min(fMaxVertexAttributes, 32);
@@ -591,7 +596,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
 
     // On ARM indirect draws are broken on Android 9 and earlier. This was tested on a P30 and
     // Mate 20x running android 9.
-    if (properties.vendorID == kARM_VkVendor && androidAPIVersion <= 28) {
+    if ((properties.vendorID == kARM_VkVendor || kHisi_VkVendor == properties.vendorID) && androidAPIVersion <= 28) {
         fNativeDrawIndirectSupport = false;
     }
 
@@ -680,7 +685,7 @@ void GrVkCaps::initGrCaps(const GrVkInterface* vkInterface,
         }
     }
 
-    if (kARM_VkVendor == properties.vendorID) {
+    if (kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) {
         fShouldCollapseSrcOverToSrcWhenAble = true;
     }
 
@@ -710,7 +715,7 @@ void GrVkCaps::initShaderCaps(const VkPhysicalDeviceProperties& properties,
 
     // ARM GPUs calculate `matrix * vector` in SPIR-V at full precision, even when the inputs are
     // RelaxedPrecision. Rewriting the multiply as a sum of vector*scalar fixes this. (skia:11769)
-    shaderCaps->fRewriteMatrixVectorMultiply = (kARM_VkVendor == properties.vendorID);
+    shaderCaps->fRewriteMatrixVectorMultiply = (kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID);
 
     shaderCaps->fDualSourceBlendingSupport = features.features.dualSrcBlend;
 
