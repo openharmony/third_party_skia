@@ -280,6 +280,7 @@ private:
     enum VkVendor {
         kAMD_VkVendor = 4098,
         kARM_VkVendor = 5045,
+        kHisi_VkVendor = 6629,
         kImagination_VkVendor = 4112,
         kIntel_VkVendor = 32902,
         kNvidia_VkVendor = 4318,
