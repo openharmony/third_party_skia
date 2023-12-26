@@ -16,6 +16,21 @@
 #include "include/private/SkOnce.h"
 #include "HmSymbolConfig_ohos.h"
 
+#ifdef SK_BUILD_FONT_MGR_FOR_OHOS
+#include <parameters.h>
+#endif
+
+bool HmSymbolConfig_OHOS::getHmSymbolEnable()
+{
+#ifdef SK_BUILD_FONT_MGR_FOR_OHOS
+    static bool isHMSymbolEnable =
+        (std::atoi(OHOS::system::GetParameter("persist.sys.graphic.hmsymbolcfg.enable", "1").c_str()) != 0);
+    return isHMSymbolEnable;
+#else
+    return true;
+#endif
+}
+
 HmSymbolConfig_OHOS* HmSymbolConfig_OHOS::getInstance()
 {
     static SkOnce once;

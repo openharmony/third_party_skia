@@ -17,6 +17,7 @@
 #define LIB_HW_SYMBOL_CONFIG_H_
 
 #include <unordered_map>
+#include <mutex>
 #include "include/core/SkTypes.h"
 #include "include/core/HMSymbol.h"
 
@@ -32,10 +33,35 @@ public:
     std::vector<AnimationInfo>* getSpecialAnimationInfos();
 
     SymbolLayersGroups* getSymbolLayersGroups(uint32_t glyphId);
+
+    bool getHmSymbolEnable();
+
+    bool getInit() const
+    {
+        return isInit_;
+    }
+
+    void setInit(const bool init)
+    {
+        std::lock_guard<std::mutex> lock(hmSymbolMut_);
+        isInit_ = init;
+    }
+
+    void lock()
+    {
+        hmSymbolMut_.lock();
+    }
+
+    void unlock()
+    {
+        hmSymbolMut_.unlock();
+    }
 private:
     std::unordered_map<uint32_t, SymbolLayersGroups> hmSymbolConfig_;
     std::vector<AnimationInfo> commonAnimationInfos_;
     std::vector<AnimationInfo> specialAnimationInfos_;
+    std::mutex hmSymbolMut_;
+    bool isInit_ = false;
 };
 
 #endif

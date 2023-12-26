@@ -748,6 +748,7 @@ if (use_oh_skia && !is_arkui_x) {
     } else if (use_linux) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
     } else if (is_ohos) {
+      deps += [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
       defines = [ "SK_BUILD_FONT_MGR_FOR_OHOS" ]
     }
   }
