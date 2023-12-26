@@ -1519,6 +1519,7 @@ void FontConfig_OHOS::parseSymbolGroupParas(const Json::Value& root,
             parseSymbolPiecewisePara(root[i][j], piecewiseParameter);
             piecewiseParameters.push_back(piecewiseParameter);
         }
+
         groupParameters.push_back(piecewiseParameters);
     }
 }
@@ -1580,7 +1581,8 @@ void FontConfig_OHOS::parseSymbolCurveArgs(const Json::Value& root, std::map<std
     }
 
     for (Json::Value::const_iterator iter = root.begin(); iter != root.end(); iter++) {
-        const char* memberName = iter.name().c_str();
+        std::string name = iter.name();
+        const char* memberName = name.c_str();
         if (!root[memberName].isNumeric()) {
             SkDebugf("%{public}s is not numeric!", memberName);
             continue;
@@ -1593,7 +1595,8 @@ void FontConfig_OHOS::parseSymbolProperties(const Json::Value& root,
     std::map<std::string, std::vector<double_t>>& properties)
 {
     for (Json::Value::const_iterator iter = root.begin(); iter != root.end(); iter++) {
-        const char* memberName = iter.name().c_str();
+        std::string name = iter.name();
+        const char* memberName = name.c_str();
         if (!root[memberName].isArray()) {
             SkDebugf("%{public}s is not array!", memberName);
             continue;

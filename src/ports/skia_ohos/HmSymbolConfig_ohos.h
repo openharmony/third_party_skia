@@ -18,7 +18,7 @@
 
 #include <unordered_map>
 #include "include/core/SkTypes.h"
-#include "include/core/SkHMSymbol.h"
+#include "include/core/HMSymbol.h"
 
 class SK_API HmSymbolConfig_OHOS
 {

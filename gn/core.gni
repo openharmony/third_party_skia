@@ -8,6 +8,7 @@ _src = get_path_info("../src", "abspath")
 _include = get_path_info("../include", "abspath")
 
 skia_core_public = [
+  "$_include/core/HMSymbol.h",
   "$_include/core/SkAnnotation.h",
   "$_include/core/SkBBHFactory.h",
   "$_include/core/SkBitmap.h",
@@ -93,7 +94,6 @@ skia_core_public = [
   "$_include/core/SkVertices.h",
   "$_include/core/SkYUVAInfo.h",
   "$_include/core/SkYUVAPixmaps.h",
-  "$_include/core/SkHMSymbol.h",
 ]
 
 skia_core_sources = [
@@ -101,6 +101,7 @@ skia_core_sources = [
   "$_src/c/sk_paint.cpp",
   "$_src/c/sk_surface.cpp",
   "$_src/c/sk_types_priv.h",
+  "$_src/core/HMSymbol.cpp",
   "$_src/core/Sk4px.h",
   "$_src/core/SkAAClip.cpp",
   "$_src/core/SkASAN.h",
@@ -231,7 +232,6 @@ skia_core_sources = [
   "$_src/core/SkGpuBlurUtils.cpp",
   "$_src/core/SkGpuBlurUtils.h",
   "$_src/core/SkGraphics.cpp",
-  "$_src/core/SkHMSymbol.cpp",
   "$_src/core/SkHalf.cpp",
   "$_src/core/SkICC.cpp",
   "$_src/core/SkIDChangeListener.cpp",

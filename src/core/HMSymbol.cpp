@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "include/core/SkHMSymbol.h"
+#include "include/core/HMSymbol.h"
 
 void HMSymbol::PathOutlineDecompose(const SkPath& path, std::vector<SkPath>& paths)
 {
