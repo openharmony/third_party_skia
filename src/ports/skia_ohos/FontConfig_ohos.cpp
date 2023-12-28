@@ -1360,10 +1360,12 @@ int FontConfig_OHOS::checkProductFile(const char* fname)
 
 int FontConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontDir)
 {
+    HmSymbolConfig_OHOS::getInstance()->lock();
     if (HmSymbolConfig_OHOS::getInstance()->getInit()) {
+        HmSymbolConfig_OHOS::getInstance()->unlock();
         return NO_ERROR;
     }
-    HmSymbolConfig_OHOS::getInstance()->lock();
+    HmSymbolConfig_OHOS::getInstance()->clear();
     const int fontEndSize = 2;
     int len = strlen(fname) + (fontDir.size() + fontEndSize);
     char fullname[len];
@@ -1406,8 +1408,8 @@ int FontConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontDir)
         }
     }
     root.clear();
-    HmSymbolConfig_OHOS::getInstance()->unlock();
     HmSymbolConfig_OHOS::getInstance()->setInit(true);
+    HmSymbolConfig_OHOS::getInstance()->unlock();
     return NO_ERROR;
 }
 
