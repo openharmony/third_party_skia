@@ -44,6 +44,7 @@ const char LAYER_INDEXES[] = "layer_indexes";
 const char MASK_INDEXES[] = "mask_indexes";
 const char GROUP_SETTINGS[] = "group_settings";
 const char ANIMATION_INDEX[] = "animation_index";
+const bool G_IS_HMSYMBOL_ENABLE = HmSymbolConfig_OHOS::getInstance()->getHmSymbolEnable();
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
 static const char* OHOS_DEFAULT_CONFIG = "fontconfig.json";
@@ -1076,7 +1077,7 @@ int FontConfig_OHOS::scanFonts(const SkTypeface_FreeType::Scanner& fontScanner)
 #endif
             const char* fname = node->d_name;
 
-            if (strcmp(fname, "hm_symbol_config.json") == 0) {
+            if (G_IS_HMSYMBOL_ENABLE && (strcmp(fname, "hm_symbol_config.json") == 0)) {
                 parseConfigOfHmSymbol(fname, fontDirSet[i]);
                 continue;
             }
@@ -1359,6 +1360,10 @@ int FontConfig_OHOS::checkProductFile(const char* fname)
 
 int FontConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontDir)
 {
+    if (HmSymbolConfig_OHOS::getInstance()->getInit()) {
+        return NO_ERROR;
+    }
+    HmSymbolConfig_OHOS::getInstance()->lock();
     const int fontEndSize = 2;
     int len = strlen(fname) + (fontDir.size() + fontEndSize);
     char fullname[len];
@@ -1378,6 +1383,7 @@ int FontConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontDir)
     Json::Value root;
     int err = checkConfigFile(fullname, root);
     if (err != NO_ERROR) {
+        HmSymbolConfig_OHOS::getInstance()->unlock();
         return err;
     }
 
@@ -1399,9 +1405,9 @@ int FontConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontDir)
             parseSymbolLayersGrouping(root[key]);
         }
     }
-
     root.clear();
-
+    HmSymbolConfig_OHOS::getInstance()->unlock();
+    HmSymbolConfig_OHOS::getInstance()->setInit(true);
     return NO_ERROR;
 }
 
@@ -1519,6 +1525,7 @@ void FontConfig_OHOS::parseSymbolGroupParas(const Json::Value& root,
             parseSymbolPiecewisePara(root[i][j], piecewiseParameter);
             piecewiseParameters.push_back(piecewiseParameter);
         }
+
         groupParameters.push_back(piecewiseParameters);
     }
 }
@@ -1580,7 +1587,8 @@ void FontConfig_OHOS::parseSymbolCurveArgs(const Json::Value& root, std::map<std
     }
 
     for (Json::Value::const_iterator iter = root.begin(); iter != root.end(); iter++) {
-        const char* memberName = iter.name().c_str();
+        std::string name = iter.name();
+        const char* memberName = name.c_str();
         if (!root[memberName].isNumeric()) {
             SkDebugf("%{public}s is not numeric!", memberName);
             continue;
@@ -1593,7 +1601,8 @@ void FontConfig_OHOS::parseSymbolProperties(const Json::Value& root,
     std::map<std::string, std::vector<double_t>>& properties)
 {
     for (Json::Value::const_iterator iter = root.begin(); iter != root.end(); iter++) {
-        const char* memberName = iter.name().c_str();
+        std::string name = iter.name();
+        const char* memberName = name.c_str();
         if (!root[memberName].isArray()) {
             SkDebugf("%{public}s is not array!", memberName);
             continue;
