@@ -359,7 +359,7 @@ public:
     bool isPromiseProxy() { return fIsPromiseProxy; }
 
     // Get the proxy tag.
-    void setGrProxyTag(const GrGpuResourceTag tag) { fGrProxyTag = tag; }
+    void setGrProxyTag(const GrGpuResourceTag& tag) { fGrProxyTag = tag; }
 
 protected:
     // Deferred version - takes a new UniqueID from the shared resource/proxy pool.

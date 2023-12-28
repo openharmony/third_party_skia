@@ -57,9 +57,16 @@ public:
     GrDirectContext* getContext() { return fContext; }
     const GrDirectContext* getContext() const { return fContext; }
 
-void setCurrentGrResourceTag(const GrGpuResourceTag tag) {
+void setCurrentGrResourceTag(const GrGpuResourceTag& tag) {
     if (fContext) {
         fContext->setCurrentGrResourceTag(tag);
+    }
+}
+
+void popGrResourceTag()
+{
+    if (fContext) {
+        fContext->popGrResourceTag();
     }
 }
 
