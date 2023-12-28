@@ -43,7 +43,6 @@ public:
 
     void setInit(const bool init)
     {
-        std::lock_guard<std::mutex> lock(hmSymbolMut_);
         isInit_ = init;
     }
 
@@ -55,6 +54,14 @@ public:
     void unlock()
     {
         hmSymbolMut_.unlock();
+    }
+
+    void clear()
+    {
+        hmSymbolConfig_.clear();
+        commonAnimationInfos_.clear();
+        specialAnimationInfos_.clear();
+        isInit_ = false;
     }
 private:
     std::unordered_map<uint32_t, SymbolLayersGroups> hmSymbolConfig_;
