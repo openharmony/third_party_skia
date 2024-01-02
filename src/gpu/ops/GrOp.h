@@ -255,9 +255,9 @@ public:
     virtual void validate() const {}
 #endif
 
-    GrGpuResourceTag getGrOpTag() const { return fGrOpTag; }
+    const GrGpuResourceTag& getGrOpTag() const { return fGrOpTag; }
 
-    void setGrOpTag(const GrGpuResourceTag tag) { fGrOpTag = tag; }
+    void setGrOpTag(const GrGpuResourceTag& tag) { fGrOpTag = tag; }
 
 protected:
     GrOp(uint32_t classID);
