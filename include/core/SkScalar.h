@@ -178,6 +178,13 @@ static inline SkScalar SkScalarInterp(SkScalar A, SkScalar B, SkScalar t) {
 SkScalar SkScalarInterpFunc(SkScalar searchKey, const SkScalar keys[],
                             const SkScalar values[], int length);
 
+// warning: comparing floating point with == or != is unsafe
+// storing and comparing against same constants ok.
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
 /*
  *  Helper to compare an array of scalars.
  */

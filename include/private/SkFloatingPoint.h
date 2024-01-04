@@ -91,6 +91,13 @@ static inline bool sk_floats_are_finite(float a, float b) {
     return sk_float_isfinite(a) && sk_float_isfinite(b);
 }
 
+// warning: comparing floating point with == or != is unsafe
+// storing and comparing against same constants ok.
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
 static inline bool sk_floats_are_finite(const float array[], int count) {
     float prod = 0;
     for (int i = 0; i < count; ++i) {
