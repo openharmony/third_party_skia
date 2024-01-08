@@ -96,7 +96,7 @@ bool GrCompileVkShaderModule(GrVkGpu* gpu,
                              SkSL::String* outSPIRV,
                              SkSL::Program::Inputs* outInputs) {
 #ifndef SKIA_OHOS_DEBUG
-    SKIA_OHOS_TRACE_PRIV("skia.shaders", "OHOS_CompileVkShaderModule");
+    SKIA_OHOS_TRACE_PRIV("skia.shaders", "OHOS_CompileSpriV");
 #endif
     TRACE_EVENT0("skia.shaders", "CompileVkShaderModule");
     auto errorHandler = gpu->getContext()->priv().getShaderErrorHandler();
