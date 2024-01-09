@@ -579,7 +579,6 @@ void GrVkResourceProvider::storePipelineCacheData() {
     if (dataSize == fPipelineCacheSize) {
         return;
     }
-    fPipelineCacheSize = dataSize;
     std::unique_ptr<uint8_t[]> data(new uint8_t[dataSize]);
 
     GR_VK_CALL_RESULT(fGpu, result, GetPipelineCacheData(fGpu->device(), this->pipelineCache(),
@@ -587,7 +586,7 @@ void GrVkResourceProvider::storePipelineCacheData() {
     if (result != VK_SUCCESS) {
         return;
     }
-
+    fPipelineCacheSize = dataSize;
     uint32_t key = GrVkGpu::kPipelineCache_PersistentCacheKeyType;
     sk_sp<SkData> keyData = SkData::MakeWithoutCopy(&key, sizeof(uint32_t));
 
