@@ -22,7 +22,8 @@
 
 GrVkResourceProvider::GrVkResourceProvider(GrVkGpu* gpu)
     : fGpu(gpu)
-    , fPipelineCache(VK_NULL_HANDLE) {
+    , fPipelineCache(VK_NULL_HANDLE)
+    , fPipelineCacheSize(0) {
     fPipelineStateCache = sk_make_sp<PipelineStateCache>(gpu);
 }
 
@@ -574,7 +575,10 @@ void GrVkResourceProvider::storePipelineCacheData() {
     if (result != VK_SUCCESS) {
         return;
     }
-
+    // store VkPipelineCache when cache size update
+    if (dataSize == fPipelineCacheSize) {
+        return;
+    }
     std::unique_ptr<uint8_t[]> data(new uint8_t[dataSize]);
 
     GR_VK_CALL_RESULT(fGpu, result, GetPipelineCacheData(fGpu->device(), this->pipelineCache(),
@@ -582,10 +586,11 @@ void GrVkResourceProvider::storePipelineCacheData() {
     if (result != VK_SUCCESS) {
         return;
     }
-
+    fPipelineCacheSize = dataSize;
     uint32_t key = GrVkGpu::kPipelineCache_PersistentCacheKeyType;
     sk_sp<SkData> keyData = SkData::MakeWithoutCopy(&key, sizeof(uint32_t));
 
+    SkDebugf("store vkPipelineCache, data size:%zu", fPipelineCacheSize);
     fGpu->getContext()->priv().getPersistentCache()->store(
             *keyData, *SkData::MakeWithoutCopy(data.get(), dataSize), SkString("VkPipelineCache"));
 }
