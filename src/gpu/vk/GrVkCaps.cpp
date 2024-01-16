@@ -514,7 +514,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
 
     // On Mali galaxy s7 and s9 we see lots of rendering issues with image filters dropping out when
     // using only primary command buffers. We also see issues on the P30 running android 28.
-    if ((kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) && androidAPIVersion <= 28) {
+    if ((kARM_VkVendor == properties.vendorID) && androidAPIVersion <= 28) {
         fPreferPrimaryOverSecondaryCommandBuffers = false;
         // If we are using secondary command buffers our code isn't setup to insert barriers into
         // the secondary cb so we need to disable support for them.
