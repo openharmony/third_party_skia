@@ -29,7 +29,12 @@ if (skia_use_icu || skia_use_client_icu) {
     check_includes = false
     public_configs = [ ":public_config" ]
     public = skia_unicode_public
-    deps = [ "../..:skia" ]
+    if (!use_oh_skia) {
+      deps = [ "../..:skia" ]
+    } else {
+      include_dirs = [ "//third_party/skia" ]
+      deps = []
+    }
     defines = [ "SKUNICODE_IMPLEMENTATION=1" ]
     sources = skia_unicode_sources
     defines += [ "SK_UNICODE_AVAILABLE" ]
@@ -42,10 +47,15 @@ if (skia_use_icu || skia_use_client_icu) {
       # only available for Android at the moment
       if (skia_use_runtime_icu && (is_android || is_linux)) {
         sources += skia_unicode_runtime_icu_sources
-        deps += [ "//third_party/icu:headers" ]
+        deps += [ "${skia_third_party_dir}/icu:headers" ]
       } else {
         sources += skia_unicode_builtin_icu_sources
-        deps += [ "//third_party/icu" ]
+        deps += [ "${skia_third_party_dir}/icu" ]
+        if (is_arkui_x) {
+          deps -= [ "${skia_third_party_dir}/icu" ]
+          deps += [ "//third_party/icu/icu4c:static_icuuc" ]
+          include_dirs += [ "//third_party/icu/icu4c/source/common" ]
+        }
       }
       configs += [ "../../third_party/icu/config:no_cxx" ]
     } else if (skia_use_client_icu) {
