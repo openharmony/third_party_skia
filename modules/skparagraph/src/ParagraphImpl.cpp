@@ -6,8 +6,8 @@
 #include "include/core/SkPictureRecorder.h"
 #include "include/core/SkSpan.h"
 #include "include/core/SkTypeface.h"
-#include "include/private/base/SkTFitsIn.h"
-#include "include/private/base/SkTo.h"
+#include "include/private/SkTFitsIn.h"
+#include "include/private/SkTo.h"
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
@@ -19,12 +19,10 @@
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skparagraph/src/TextWrapper.h"
-#include "src/base/SkUTF.h"
+#include "src/utils/SkUTF.h"
 #include <math.h>
 #include <algorithm>
 #include <utility>
-
-using namespace skia_private;
 
 namespace skia {
 namespace textlayout {
@@ -66,8 +64,8 @@ Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
 
 ParagraphImpl::ParagraphImpl(const SkString& text,
                              ParagraphStyle style,
-                             TArray<Block, true> blocks,
-                             TArray<Placeholder, true> placeholders,
+                             SkTArray<Block, true> blocks,
+                             SkTArray<Placeholder, true> placeholders,
                              sk_sp<FontCollection> fonts,
                              std::shared_ptr<SkUnicode> unicode)
         : Paragraph(std::move(style), std::move(fonts))
@@ -90,8 +88,8 @@ ParagraphImpl::ParagraphImpl(const SkString& text,
 
 ParagraphImpl::ParagraphImpl(const std::u16string& utf16text,
                              ParagraphStyle style,
-                             TArray<Block, true> blocks,
-                             TArray<Placeholder, true> placeholders,
+                             SkTArray<Block, true> blocks,
+                             SkTArray<Placeholder, true> placeholders,
                              sk_sp<FontCollection> fonts,
                              std::shared_ptr<SkUnicode> unicode)
         : ParagraphImpl(SkString(),
@@ -159,16 +157,16 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
                     fState = kIndexed;
                 }
             }
-            this->fRuns.clear();
-            this->fClusters.clear();
-            this->fClustersIndexFromCodeUnit.clear();
+            this->fRuns.reset();
+            this->fClusters.reset();
+            this->fClustersIndexFromCodeUnit.reset();
             this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
             if (!this->shapeTextIntoEndlessLine()) {
                 this->resetContext();
                 // TODO: merge the two next calls - they always come together
                 this->resolveStrut();
                 this->computeEmptyMetrics();
-                this->fLines.clear();
+                this->fLines.reset();
 
                 // Set the important values that are not zero
                 fWidth = floorWidth;
@@ -198,7 +196,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->resetContext();
         this->resolveStrut();
         this->computeEmptyMetrics();
-        this->fLines.clear();
+        this->fLines.reset();
         this->breakShapedTextIntoLines(floorWidth);
         fState = kLineBroken;
     }
@@ -490,7 +488,7 @@ void ParagraphImpl::buildClusterTable() {
         fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
         fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
     }
-    fClusters.reserve_exact(fClusters.size() + cluster_count);
+    fClusters.reserve_back(fClusters.size() + cluster_count);
 
     // Walk through all the run in the direction of input text
     for (auto& run : fRuns) {
@@ -539,7 +537,7 @@ bool ParagraphImpl::shapeTextIntoEndlessLine() {
     }
 
     fUnresolvedCodepoints.clear();
-    fFontSwitches.clear();
+    fFontSwitches.reset();
 
     OneLineShaper oneLineShaper(this);
     auto result = oneLineShaper.shape();
@@ -655,7 +653,7 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
     if (!SkScalarIsFinite(maxWidth) && !isLeftAligned) {
         // Special case: clean all text in case of maxWidth == INF & align != left
         // We had to go through shaping though because we need all the measurement numbers
-        fLines.clear();
+        fLines.reset();
         return;
     }
 
@@ -953,12 +951,12 @@ void ParagraphImpl::setState(InternalState state) {
             [[fallthrough]];
 
         case kIndexed:
-            fRuns.clear();
-            fClusters.clear();
+            fRuns.reset();
+            fClusters.reset();
             [[fallthrough]];
 
         case kShaped:
-            fLines.clear();
+            fLines.reset();
             [[fallthrough]];
 
         case kLineBroken:
@@ -1083,9 +1081,9 @@ void ParagraphImpl::updateBackgroundPaint(size_t from, size_t to, SkPaint paint)
     }
 }
 
-TArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
+SkTArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
     textRange = textRange.intersection({0, fText.size()});
-    TArray<TextIndex> graphemes;
+    SkTArray<TextIndex> graphemes;
     if ((fCodeUnitProperties[textRange.start] & SkUnicode::CodeUnitFlags::kGraphemeStart) == 0) {
         // Count the previous partial grapheme
         graphemes.emplace_back(textRange.start);
@@ -1147,7 +1145,7 @@ void ParagraphImpl::visit(const Visitor& visitor) {
             SkTextBlob::Iter iter(*rec.fBlob);
             SkTextBlob::Iter::ExperimentalRun run;
 
-            STArray<128, uint32_t> clusterStorage;
+            SkSTArray<128, uint32_t> clusterStorage;
             const Run* R = rec.fVisitor_Run;
             const uint32_t* clusterPtr = &R->fClusterIndexes[0];
 

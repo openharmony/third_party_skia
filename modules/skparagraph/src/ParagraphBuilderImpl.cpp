@@ -201,7 +201,7 @@ std::unique_ptr<Paragraph> ParagraphBuilderImpl::Build() {
 
 SkSpan<char> ParagraphBuilderImpl::getText() {
     this->finalize();
-    return SkSpan<char>(fUtf8.isEmpty() ? nullptr : fUtf8.data(), fUtf8.size());
+    return SkSpan<char>(fUtf8.isEmpty() ? nullptr : const_cast<char*>(fUtf8.c_str()), fUtf8.size());
 }
 
 const ParagraphStyle& ParagraphBuilderImpl::getParagraphStyle() const {
@@ -288,10 +288,10 @@ void ParagraphBuilderImpl::setLineBreaksUtf16(std::vector<SkUnicode::LineBreakBe
 
 void ParagraphBuilderImpl::Reset() {
 
-    fTextStyles.clear();
+    fTextStyles.reset();
     fUtf8.reset();
-    fStyledBlocks.clear();
-    fPlaceholders.clear();
+    fStyledBlocks.reset();
+    fPlaceholders.reset();
 #if defined(SK_UNICODE_CLIENT_IMPLEMENTATION)
     fUTF8IndexForUTF16Index.clear();
     fUTF16IndexForUTF8Index.clear();

@@ -5,7 +5,6 @@
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 
-using namespace skia_private;
 
 namespace skia {
 namespace textlayout {
@@ -59,8 +58,8 @@ private:
     uint32_t computeHash() const;
 
     SkString fText;
-    TArray<Placeholder, true> fPlaceholders;
-    TArray<Block, true> fTextStyles;
+    SkTArray<Placeholder, true> fPlaceholders;
+    SkTArray<Block, true> fTextStyles;
     ParagraphStyle fParagraphStyle;
     uint32_t fHash;
 };
@@ -83,11 +82,11 @@ public:
     ParagraphCacheKey fKey;
 
     // Shaped results
-    TArray<Run, false> fRuns;
-    TArray<Cluster, true> fClusters;
-    TArray<size_t, true> fClustersIndexFromCodeUnit;
+    SkTArray<Run, false> fRuns;
+    SkTArray<Cluster, true> fClusters;
+    SkTArray<size_t, true> fClustersIndexFromCodeUnit;
     // ICU results
-    TArray<SkUnicode::CodeUnitFlags, true> fCodeUnitProperties;
+    SkTArray<SkUnicode::CodeUnitFlags, true> fCodeUnitProperties;
     std::vector<size_t> fWords;
     std::vector<SkUnicode::BidiRegion> fBidiRegions;
     bool fHasLineBreaks;
@@ -253,7 +252,7 @@ ParagraphCache::~ParagraphCache() { }
 
 void ParagraphCache::updateTo(ParagraphImpl* paragraph, const Entry* entry) {
 
-    paragraph->fRuns.clear();
+    paragraph->fRuns.reset();
     paragraph->fRuns = entry->fValue->fRuns;
     paragraph->fClusters = entry->fValue->fClusters;
     paragraph->fClustersIndexFromCodeUnit = entry->fValue->fClustersIndexFromCodeUnit;

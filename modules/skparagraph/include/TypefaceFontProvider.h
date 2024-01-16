@@ -2,8 +2,8 @@
 #ifndef TypefaceFontProvider_DEFINED
 #define TypefaceFontProvider_DEFINED
 
-#include "include/private/base/SkTArray.h"
-#include "src/core/SkTHash.h"
+#include "include/private/SkTArray.h"
+#include "include/private/SkTHash.h"
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -20,15 +20,15 @@ public:
 
     int count() override;
     void getStyle(int index, SkFontStyle*, SkString* name) override;
-    sk_sp<SkTypeface> createTypeface(int index) override;
-    sk_sp<SkTypeface> matchStyle(const SkFontStyle& pattern) override;
+    SkTypeface* createTypeface(int index) override;
+    SkTypeface* matchStyle(const SkFontStyle& pattern) override;
 
     SkString getFamilyName() const { return fFamilyName; }
     SkString getAlias() const { return fAlias; }
     void appendTypeface(sk_sp<SkTypeface> typeface);
 
 private:
-    skia_private::TArray<sk_sp<SkTypeface>> fStyles;
+    SkTArray<sk_sp<SkTypeface>> fStyles;
     SkString fFamilyName;
     SkString fAlias;
 };
@@ -42,13 +42,13 @@ public:
 
     void onGetFamilyName(int index, SkString* familyName) const override;
 
-    sk_sp<SkFontStyleSet> onMatchFamily(const char familyName[]) const override;
+    SkFontStyleSet* onMatchFamily(const char familyName[]) const override;
 
-    sk_sp<SkFontStyleSet> onCreateStyleSet(int) const override { return nullptr; }
-    sk_sp<SkTypeface> onMatchFamilyStyle(const char[], const SkFontStyle&) const override {
+    SkFontStyleSet* onCreateStyleSet(int) const override { return nullptr; }
+    SkTypeface* onMatchFamilyStyle(const char[], const SkFontStyle&) const override {
         return nullptr;
     }
-    sk_sp<SkTypeface> onMatchFamilyStyleCharacter(const char[], const SkFontStyle&,
+    SkTypeface* onMatchFamilyStyleCharacter(const char[], const SkFontStyle&,
                                                   const char*[], int,
                                                   SkUnichar) const override {
         return nullptr;
@@ -71,8 +71,8 @@ public:
     }
 
 private:
-    skia_private::THashMap<SkString, sk_sp<TypefaceFontStyleSet>> fRegisteredFamilies;
-    skia_private::TArray<SkString> fFamilyNames;
+    SkTHashMap<SkString, sk_sp<TypefaceFontStyleSet>> fRegisteredFamilies;
+    SkTArray<SkString> fFamilyNames;
 };
 
 }  // namespace textlayout

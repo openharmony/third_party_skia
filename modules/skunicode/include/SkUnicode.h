@@ -10,9 +10,9 @@
 #include "include/core/SkString.h"
 #include "include/core/SkTypes.h"
 #include "include/private/SkBitmaskEnum.h" // IWYU pragma: keep
-#include "include/private/base/SkTArray.h"
-#include "include/private/base/SkTo.h"
-#include "src/base/SkUTF.h"
+#include "include/private/SkTArray.h"
+#include "include/private/SkTo.h"
+#include "src/utils/SkUTF.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -149,10 +149,10 @@ class SKUNICODE_API SkUnicode {
                               std::vector<Position>* results) = 0;
         virtual bool computeCodeUnitFlags(
                 char utf8[], int utf8Units, bool replaceTabs,
-                skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results) = 0;
+                SkTArray<SkUnicode::CodeUnitFlags, true>* results) = 0;
         virtual bool computeCodeUnitFlags(
                 char16_t utf16[], int utf16Units, bool replaceTabs,
-                skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results) = 0;
+                SkTArray<SkUnicode::CodeUnitFlags, true>* results) = 0;
 
         static SkString convertUtf16ToUtf8(const char16_t * utf16, int utf16Units);
         static SkString convertUtf16ToUtf8(const std::u16string& utf16);

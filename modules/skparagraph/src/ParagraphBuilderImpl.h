@@ -6,8 +6,8 @@
 #include <stack>
 #include <string>
 #include <tuple>
-#include "include/private/base/SkOnce.h"
-#include "include/private/base/SkTArray.h"
+#include "include/private/SkOnce.h"
+#include "include/private/SkTArray.h"
 #include "modules/skparagraph/include/FontCollection.h"
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/include/ParagraphBuilder.h"
@@ -96,9 +96,9 @@ protected:
     void finalize();
 
     SkString fUtf8;
-    skia_private::STArray<4, TextStyle, true> fTextStyles;
-    skia_private::STArray<4, Block, true> fStyledBlocks;
-    skia_private::STArray<4, Placeholder, true> fPlaceholders;
+    SkSTArray<4, TextStyle, true> fTextStyles;
+    SkSTArray<4, Block, true> fStyledBlocks;
+    SkSTArray<4, Placeholder, true> fPlaceholders;
     sk_sp<FontCollection> fFontCollection;
     ParagraphStyle fParagraphStyle;
 
@@ -106,8 +106,8 @@ protected:
 private:
     SkOnce fillUTF16MappingOnce;
     void ensureUTF16Mapping();
-    skia_private::TArray<TextIndex, true> fUTF8IndexForUTF16Index;
-    skia_private::TArray<TextIndex, true> fUTF16IndexForUTF8Index;
+    SkTArray<TextIndex, true> fUTF8IndexForUTF16Index;
+    SkTArray<TextIndex, true> fUTF16IndexForUTF8Index;
 #if defined(SK_UNICODE_CLIENT_IMPLEMENTATION)
     bool fTextIsFinalized;
     bool fUsingClientInfo;

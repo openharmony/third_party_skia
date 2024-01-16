@@ -8,17 +8,16 @@
 #include "include/core/SkString.h"
 #include "include/core/SkTypes.h"
 #include "include/private/SkBitmaskEnum.h"
-#include "include/private/base/SkDebug.h"
-#include "include/private/base/SkMutex.h"
-#include "include/private/base/SkOnce.h"
-#include "include/private/base/SkTArray.h"
-#include "include/private/base/SkTemplates.h"
-#include "include/private/base/SkTo.h"
+#include "include/private/SkMutex.h"
+#include "include/private/SkOnce.h"
+#include "include/private/SkTArray.h"
+#include "include/private/SkTemplates.h"
+#include "include/private/SkTo.h"
 #include "modules/skunicode/include/SkUnicode.h"
 #include "modules/skunicode/src/SkUnicode_icu.h"
 #include "modules/skunicode/src/SkUnicode_icu_bidi.h"
-#include "src/base/SkUTF.h"
-#include "src/core/SkTHash.h"
+#include "src/utils/SkUTF.h"
+#include "include/private/SkTHash.h"
 #include <unicode/umachine.h>
 #include <functional>
 #include <string>
@@ -28,8 +27,6 @@
 #if defined(SK_USING_THIRD_PARTY_ICU)
 #include "SkLoadICU.h"
 #endif
-
-using namespace skia_private;
 
 static const SkICULib* ICULib() {
     static const auto gICU = SkLoadICULib();
@@ -164,7 +161,7 @@ class SkBreakIterator_icu : public SkBreakIterator {
 };
 
 class SkIcuBreakIteratorCache {
-    THashMap<SkUnicode::BreakType, ICUBreakIterator> fBreakCache;
+    SkTHashMap<SkUnicode::BreakType, ICUBreakIterator> fBreakCache;
     SkMutex fBreakCacheMutex;
 
  public:
@@ -352,7 +349,7 @@ public:
             return SkString();
         }
 
-        AutoSTArray<128, uint16_t> upper16(upper16len);
+        SkAutoSTArray<128, uint16_t> upper16(upper16len);
         icu_err = U_ZERO_ERROR;
         sk_u_strToUpper((UChar*)(upper16.get()), SkToS32(upper16.size()),
                         (UChar*)(str16.c_str()), str16.size(),
@@ -378,8 +375,8 @@ public:
     }
 
     bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs,
-                          TArray<SkUnicode::CodeUnitFlags, true>* results) override {
-        results->clear();
+                          SkTArray<SkUnicode::CodeUnitFlags, true>* results) override {
+        results->reset();
         results->push_back_n(utf8Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
 
         SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kLines, [&](int pos,
@@ -425,8 +422,8 @@ public:
     }
 
     bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs,
-                          TArray<SkUnicode::CodeUnitFlags, true>* results) override {
-        results->clear();
+                          SkTArray<SkUnicode::CodeUnitFlags, true>* results) override {
+        results->reset();
         results->push_back_n(utf16Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
 
         // Get white spaces

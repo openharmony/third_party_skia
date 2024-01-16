@@ -9,8 +9,8 @@
 #include "include/core/SkString.h"
 #include "include/core/SkTextBlob.h"
 #include "include/core/SkTypes.h"
-#include "include/private/base/SkTemplates.h"
-#include "include/private/base/SkTo.h"
+#include "include/private/SkTemplates.h"
+#include "include/private/SkTo.h"
 #include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
@@ -31,8 +31,6 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
-
-using namespace skia_private;
 
 namespace skia {
 namespace textlayout {
@@ -140,7 +138,7 @@ TextLine::TextLine(ParagraphImpl* owner,
 
     // This is just chosen to catch the common/fast cases. Feel free to tweak.
     constexpr int kPreallocCount = 4;
-    AutoSTArray<kPreallocCount, SkUnicode::BidiLevel> runLevels(numRuns);
+    SkAutoSTArray<kPreallocCount, SkUnicode::BidiLevel> runLevels(numRuns);
     std::vector<RunIndex> placeholdersInOriginalOrder;
     size_t runLevelsIndex = 0;
     // Placeholders must be laid out using the original order in which they were added
@@ -157,7 +155,7 @@ TextLine::TextLine(ParagraphImpl* owner,
     }
     SkASSERT(runLevelsIndex == numRuns);
 
-    AutoSTArray<kPreallocCount, int32_t> logicalOrder(numRuns);
+    SkAutoSTArray<kPreallocCount, int32_t> logicalOrder(numRuns);
 
     // TODO: hide all these logic in SkUnicode?
     fOwner->getUnicode()->reorderVisual(runLevels.data(), numRuns, logicalOrder.data());

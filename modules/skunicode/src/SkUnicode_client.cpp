@@ -8,12 +8,12 @@
 #include "include/core/SkString.h"
 #include "include/core/SkTypes.h"
 #include "include/private/SkBitmaskEnum.h"
-#include "include/private/base/SkTArray.h"
-#include "include/private/base/SkTo.h"
+#include "include/private/SkTArray.h"
+#include "include/private/SkTo.h"
 #include "modules/skunicode/include/SkUnicode.h"
 #include "modules/skunicode/src/SkUnicode_client.h"
 #include "modules/skunicode/src/SkUnicode_icu_bidi.h"
-#include "src/base/SkUTF.h"
+#include "src/utils/SkUTF.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -31,7 +31,6 @@
 #include <unicode/utext.h>
 #include <unicode/utypes.h>
 
-using namespace skia_private;
 
 #ifndef SK_UNICODE_ICU_IMPLEMENTATION
 
@@ -209,7 +208,7 @@ public:
     bool computeCodeUnitFlags(char utf8[],
                               int utf8Units,
                               bool replaceTabs,
-                              TArray<SkUnicode::CodeUnitFlags, true>* results) override {
+                              SkTArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->clear();
         results->push_back_n(utf8Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
         for (auto& lineBreak : fData->fLineBreaks) {
@@ -251,7 +250,7 @@ public:
     }
 
     bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs,
-                          TArray<SkUnicode::CodeUnitFlags, true>* results) override {
+                          SkTArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->clear();
         results->push_back_n(utf16Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
         for (auto& lineBreak : fData->fLineBreaks) {

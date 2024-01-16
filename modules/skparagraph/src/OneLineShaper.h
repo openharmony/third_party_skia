@@ -58,7 +58,7 @@ private:
     bool iterateThroughShapingRegions(const ShapeVisitor& shape);
 
     using ShapeSingleFontVisitor =
-            std::function<void(Block, skia_private::TArray<SkShaper::Feature>)>;
+            std::function<void(Block, SkTArray<SkShaper::Feature>)>;
     void iterateThroughFontStyles(
             TextRange textRange, SkSpan<Block> styleSpan, const ShapeSingleFontVisitor& visitor);
 
@@ -135,7 +135,7 @@ private:
             uint32_t operator()(const FontKey& key) const;
         };
     };
-    skia_private::THashMap<FontKey, sk_sp<SkTypeface>, FontKey::Hasher> fFallbackFonts;
+    SkTHashMap<FontKey, sk_sp<SkTypeface>, FontKey::Hasher> fFallbackFonts;
 };
 
 }  // namespace textlayout
