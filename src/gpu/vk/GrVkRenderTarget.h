@@ -144,6 +144,11 @@ private:
     GrVkImage* dynamicMSAAAttachment();
     GrVkImage* msaaAttachment();
 
+    // This return since the memory should all be handled by the attachments
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const override {
+        return;
+    }
+
     std::pair<const GrVkRenderPass*, GrVkResourceProvider::CompatibleRPHandle>
         createSimpleRenderPass(bool withResolve,
                                bool withStencil,
