@@ -55,7 +55,8 @@ template <typename T, T* P> struct SkFunctionWrapper {
         return P(std::forward<Args>(args)...);
     }
 };
-
+template <auto F> using SkFunctionObject =
+    SkFunctionWrapper<std::remove_pointer_t<decltype(F)>, F>;
 /** \class SkAutoTCallVProc
 
     Call a function when this goes out of scope. The template uses two

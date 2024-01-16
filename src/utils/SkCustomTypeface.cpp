@@ -68,7 +68,7 @@ private:
     std::unique_ptr<SkStreamAsset> onOpenStream(int*) const override;
 
     // trivial
-
+    std::unique_ptr<SkStreamAsset> onOpenExistingStream(int*) const override { return nullptr; }
     sk_sp<SkTypeface> onMakeClone(const SkFontArguments& args) const override {
         return sk_ref_sp(this);
     }

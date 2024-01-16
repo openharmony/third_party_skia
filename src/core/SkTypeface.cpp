@@ -232,6 +232,19 @@ sk_sp<SkTypeface> SkTypeface::MakeDeserialize(SkStream* stream) {
     return SkTypeface::MakeFromName(desc.getFamilyName(), desc.getStyle());
 }
 
+std::unique_ptr<SkStreamAsset> SkTypeface::openExistingStream(int* ttcIndex) const {
+    int ttcIndexStorage;
+    if (nullptr == ttcIndex) {
+        // So our subclasses don't need to check for null param
+        ttcIndex = &ttcIndexStorage;
+    }
+    return this->onOpenExistingStream(ttcIndex);
+}
+
+std::unique_ptr<SkStreamAsset> SkTypeface::onOpenExistingStream(int* ttcIndex) const {
+    return this->onOpenStream(ttcIndex);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 bool SkTypeface::glyphMaskNeedsCurrentColor() const {
