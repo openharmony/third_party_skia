@@ -17,7 +17,8 @@
 #include <vector>
 
 namespace {
-using SkUnicodeBidi = std::unique_ptr<UBiDi, SkFunctionObject<SkUnicode_IcuBidi::bidi_close>>;
+using SkUnicodeBidi = std::unique_ptr<UBiDi, SkFunctionWrapper<decltype(ubidi_close),
+                                                               SkUnicode_IcuBidi::bidi_close>>;
 
 class SkBidiIterator_icu : public SkBidiIterator {
 public:

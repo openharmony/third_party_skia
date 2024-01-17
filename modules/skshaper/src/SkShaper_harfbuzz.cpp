@@ -25,7 +25,6 @@
 #include "include/private/SkTArray.h"
 #include "include/private/SkTFitsIn.h"
 #include "include/private/SkTo.h"
-#include "include/private/SkTypeTraits.h"
 #include "modules/skshaper/include/SkShaper.h"
 #include "modules/skunicode/include/SkUnicode.h"
 #include "src/core/SkTDPQueue.h"
@@ -55,10 +54,11 @@ template <> struct is_bitmask_enum<hb_buffer_flags_t> : std::true_type {};
 }  // namespace sknonstd
 
 namespace {
-using HBBlob   = std::unique_ptr<hb_blob_t  , SkFunctionObject<hb_blob_destroy>  >;
-using HBFace   = std::unique_ptr<hb_face_t  , SkFunctionObject<hb_face_destroy>  >;
-using HBFont   = std::unique_ptr<hb_font_t  , SkFunctionObject<hb_font_destroy>  >;
-using HBBuffer = std::unique_ptr<hb_buffer_t, SkFunctionObject<hb_buffer_destroy>>;
+template <typename T,typename P,P* p> using resource = std::unique_ptr<T, SkFunctionWrapper<P, p>>;
+using HBBlob   = resource<hb_blob_t     , decltype(hb_blob_destroy)  , hb_blob_destroy  >;
+using HBFace   = resource<hb_face_t     , decltype(hb_face_destroy)  , hb_face_destroy  >;
+using HBFont   = resource<hb_font_t     , decltype(hb_font_destroy)  , hb_font_destroy  >;
+using HBBuffer = resource<hb_buffer_t   , decltype(hb_buffer_destroy), hb_buffer_destroy>;
 
 using SkUnicodeBidi = std::unique_ptr<SkBidiIterator>;
 using SkUnicodeBreak = std::unique_ptr<SkBreakIterator>;
@@ -526,14 +526,6 @@ struct ShapedRun {
     std::unique_ptr<ShapedGlyph[]> fGlyphs;
     size_t fNumGlyphs;
     SkVector fAdvance;
-
-    static_assert(::sk_is_trivially_relocatable<decltype(fUtf8Range)>::value);
-    // static_assert(::sk_is_trivially_relocatable<decltype(fFont)>::value);
-    static_assert(::sk_is_trivially_relocatable<decltype(fLevel)>::value);
-    static_assert(::sk_is_trivially_relocatable<decltype(fGlyphs)>::value);
-    static_assert(::sk_is_trivially_relocatable<decltype(fAdvance)>::value);
-
-    using sk_is_trivially_relocatable = std::true_type;
 };
 struct ShapedLine {
     SkTArray<ShapedRun> runs;
@@ -1295,6 +1287,8 @@ public:
     }
     HBLockedFaceCache(const HBLockedFaceCache&) = delete;
     HBLockedFaceCache& operator=(const HBLockedFaceCache&) = delete;
+    // Required until C++17 copy elision
+    HBLockedFaceCache(HBLockedFaceCache&&) = default;
     HBLockedFaceCache& operator=(HBLockedFaceCache&&) = delete;
 
     ~HBLockedFaceCache() {
@@ -1392,7 +1386,7 @@ ShapedRun ShaperHarfBuzz::shape(char const * const utf8,
     }
 
     SkSTArray<32, hb_feature_t> hbFeatures;
-    for (const auto& feature : SkSpan(features, featuresSize)) {
+    for (const auto& feature : SkMakeSpan(features, featuresSize)) {
         if (feature.end < SkTo<size_t>(utf8Start - utf8) ||
                           SkTo<size_t>(utf8End   - utf8)  <= feature.start)
         {
