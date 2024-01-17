@@ -493,7 +493,7 @@ void GrDirectContext::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) c
                                       this->getTextBlobCache()->usedBytes());
 }
 
-void GrDirectContext::dumpMemoryStatisticsByTag(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag& tag) const {
+void GrDirectContext::dumpMemoryStatisticsByTag(SkTraceMemoryDump* traceMemoryDump, const GrGpuResourceTag& tag) const {
     ASSERT_SINGLE_OWNER
     fResourceCache->dumpMemoryStatistics(traceMemoryDump, tag);
     traceMemoryDump->dumpNumericValue("skia/gr_text_blob_cache", "size", "bytes",

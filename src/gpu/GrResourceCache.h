@@ -279,7 +279,7 @@ public:
 
     // Enumerates all cached resources and dumps their details to traceMemoryDump.
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
-    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag& tag) const;
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump, const GrGpuResourceTag& tag) const;
 
     void setProxyProvider(GrProxyProvider* proxyProvider) { fProxyProvider = proxyProvider; }
     void setThreadSafeCache(GrThreadSafeCache* threadSafeCache) {
