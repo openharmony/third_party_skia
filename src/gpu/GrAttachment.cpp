@@ -34,6 +34,24 @@ size_t GrAttachment::onGpuMemorySize() const {
     return 0;
 }
 
+void GrAttachment::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
+    SkString type;
+    if (fSupportedUsages == UsageFlags::kStencilAttachment) {
+        type = "StencilAttachment";
+    }
+
+    if (fSupportedUsages & UsageFlags::kTexture) {
+        // This return since the memory should all be handled by the textures
+        return;
+    } else if (fSupportedUsages & UsageFlags::kColorAttachment) {
+        type = "ColorAttachment";
+    }
+
+    SkString resourceName = this->getResourceName();
+    resourceName.append("/attachment");
+    this->dumpMemoryStatisticsPriv(traceMemoryDump, resourceName, type.c_str(), onGpuMemorySize());
+}
+
 static void build_key(GrResourceKey::Builder* builder,
                       const GrCaps& caps,
                       const GrBackendFormat& format,

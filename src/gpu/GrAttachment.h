@@ -80,6 +80,8 @@ protected:
             , fMemoryless(memoryless) {}
 
     virtual size_t onGpuMemorySize() const override;
+
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const override;
 private:
     void computeScratchKey(GrScratchKey*) const final;
 
