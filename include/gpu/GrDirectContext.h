@@ -411,7 +411,7 @@ public:
     /** Enumerates all cached GPU resources and dumps their memory to traceMemoryDump. */
     // Chrome is using this!
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
-    void dumpMemoryStatisticsByTag(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag& tag) const;
+    void dumpMemoryStatisticsByTag(SkTraceMemoryDump* traceMemoryDump, const GrGpuResourceTag& tag) const;
 
     bool supportsDistanceFieldText() const;
 
