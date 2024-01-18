@@ -134,6 +134,7 @@ class SK_API HMSymbolData
 public:
     SymbolLayers symbolInfo_;
     SkPath path_;
+    uint64_t symbolId_ = 0;
 };
 
 class SK_API HMSymbol
