@@ -17,8 +17,8 @@
 #ifdef SK_UNICODE_AVAILABLE
 #include "modules/skunicode/include/SkUnicode.h"
 #endif
-#include "src/core/SkTextBlobPriv.h"
 #include "src/utils/SkUTF.h"
+#include "src/core/SkTextBlobPriv.h"
 
 #include <limits.h>
 #include <string.h>
@@ -30,6 +30,10 @@ std::unique_ptr<SkShaper> SkShaper::Make(sk_sp<SkFontMgr> fontmgr) {
 #ifdef SK_SHAPER_HARFBUZZ_AVAILABLE
     std::unique_ptr<SkShaper> shaper = SkShaper::MakeShaperDrivenWrapper(std::move(fontmgr));
     if (shaper) {
+        return shaper;
+    }
+#elif defined(SK_SHAPER_CORETEXT_AVAILABLE)
+    if (auto shaper = SkShaper::MakeCoreText()) {
         return shaper;
     }
 #endif
@@ -69,7 +73,7 @@ SkShaper::MakeScriptRunIterator(const char* utf8, size_t utf8Bytes, SkFourByteTa
         return nullptr;
     }
     std::unique_ptr<SkShaper::ScriptRunIterator> script =
-        SkShaper::MakeSkUnicodeHbScriptRunIterator(unicode.get(), utf8, utf8Bytes);
+        SkShaper::MakeSkUnicodeHbScriptRunIterator(utf8, utf8Bytes, scriptTag);
     if (script) {
         return script;
     }

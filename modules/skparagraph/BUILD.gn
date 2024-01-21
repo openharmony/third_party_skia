@@ -2,6 +2,8 @@
 
 import("../../gn/skia.gni")
 import("../skshaper/skshaper.gni")
+import("../skunicode/skunicode.gni")
+import("skparagraph.gni")
 
 declare_args() {
   skia_enable_skparagraph = true
@@ -10,7 +12,7 @@ declare_args() {
   paragraph_bench_enabled = false
 }
 
-if (skia_enable_skparagraph && skia_enable_skshaper && skia_use_icu &&
+if (skia_enable_skparagraph && skia_enable_skshaper && skia_enable_skunicode &&
     skia_use_harfbuzz) {
   config("public_config") {
     defines = [ "SK_ENABLE_PARAGRAPH" ]
@@ -46,8 +48,8 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_use_icu &&
   }
 
   if (defined(is_skia_standalone) && skia_enable_tools) {
+    import("skparagraph.gni")
     skia_source_set("utils") {
-      import("skparagraph.gni")
       public_configs = [ ":utils_config" ]
       configs = [ "../../:skia_private" ]
       sources = skparagraph_utils
@@ -58,7 +60,7 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_use_icu &&
     }
 
     skia_source_set("gm") {
-      if (paragraph_gms_enabled) {
+      if (paragraph_gms_enabled && skia_use_icu) {
         testonly = true
         sources = [ "gm/simple_gm.cpp" ]
         if (use_oh_skia) {
@@ -80,9 +82,9 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_use_icu &&
     }
 
     skia_source_set("tests") {
-      if (paragraph_tests_enabled) {
+      if (paragraph_tests_enabled && skia_use_icu) {
         testonly = true
-        sources = [ "tests/SkParagraphTest.cpp" ]
+        sources = skparagraph_tests
         if (is_ohos) {
           include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
         }
@@ -105,7 +107,7 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_use_icu &&
     }
 
     skia_source_set("bench") {
-      if (paragraph_bench_enabled) {
+      if (paragraph_bench_enabled && skia_use_icu) {
         testonly = true
         sources = [ "bench/ParagraphBench.cpp" ]
         deps = [
@@ -139,7 +141,5 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_use_icu &&
   group("tests") {
   }
   group("bench") {
-  }
-  group("samples") {
   }
 }

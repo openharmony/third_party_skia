@@ -49,8 +49,8 @@ public:
         return nullptr;
     }
     SkTypeface* onMatchFamilyStyleCharacter(const char[], const SkFontStyle&,
-                                            const char*[], int,
-                                            SkUnichar) const override {
+                                                  const char*[], int,
+                                                  SkUnichar) const override {
         return nullptr;
     }
 

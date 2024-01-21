@@ -132,6 +132,9 @@ public:
     /** Return the default fontmgr. */
     static sk_sp<SkFontMgr> RefDefault();
 
+    /* Returns an empty font manager without any typeface dependencies */
+    static sk_sp<SkFontMgr> RefEmpty();
+
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
     defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
     /** Set the runtimeOS and container font base path */
