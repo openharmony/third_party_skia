@@ -302,8 +302,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     InternalLineMetrics maxRunMetrics;
     bool needEllipsis = false;
     while (fEndLine.endCluster() != end) {
-
-        this->lookAhead(maxWidth, end, parent->getApplyRoundingHack());
+        float newWidth = maxWidth - parent->detectIndents(fLineNumber-1);
+        this->lookAhead(newWidth, end, parent->getApplyRoundingHack());
 
         auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
         needEllipsis = hasEllipsis && !endlessLine && lastLine;
@@ -392,7 +392,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 textIncludingNewlines, clusters, clustersWithGhosts, widthWithSpaces,
                 fEndLine.startPos(),
                 fEndLine.endPos(),
-                SkVector::Make(0, fHeight),
+                SkVector::Make(parent->detectIndents(fLineNumber - 1), fHeight),
                 SkVector::Make(fEndLine.width(), lineHeight),
                 fEndLine.metrics(),
                 needEllipsis && !fHardLineBreak);

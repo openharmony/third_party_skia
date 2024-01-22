@@ -211,6 +211,7 @@ public:
 
     void visit(const Visitor&) override;
 
+    void setIndents(const std::vector<float>& indents) override;
     int getLineNumberAt(TextIndex codeUnitIndex) const override;
     bool getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) const override;
     TextRange getActualTextRange(int lineNumber, bool includeSpaces) const override;
@@ -237,6 +238,8 @@ public:
     }
 
     SkUnicode* getUnicode() { return fUnicode.get(); }
+
+    float detectIndents(size_t index);
 
 private:
     friend class ParagraphBuilder;
@@ -267,6 +270,7 @@ private:
     SkTArray<SkUnicode::CodeUnitFlags, true> fCodeUnitProperties;
     SkTArray<size_t, true> fClustersIndexFromCodeUnit;
     std::vector<size_t> fWords;
+    std::vector<float> indents_;
     std::vector<SkUnicode::BidiRegion> fBidiRegions;
     // These two arrays are used in measuring methods (getRectsForRange, getGlyphPositionAtCoordinate)
     // They are filled lazily whenever they need and cached

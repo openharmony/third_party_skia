@@ -163,6 +163,8 @@ public:
      */
     virtual std::vector<FontInfo> getFonts() const = 0;
 
+    virtual void setIndents(const std::vector<float>& indents) = 0;
+
 protected:
     sk_sp<FontCollection> fFontCollection;
     ParagraphStyle fParagraphStyle;

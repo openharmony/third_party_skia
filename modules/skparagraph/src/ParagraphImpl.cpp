@@ -548,6 +548,23 @@ bool ParagraphImpl::shapeTextIntoEndlessLine() {
     return result;
 }
 
+void ParagraphImpl::setIndents(const std::vector<float>& indents)
+{
+    indents_ = indents;
+}
+
+float ParagraphImpl::detectIndents(size_t index)
+{
+    float indent = 0.0;
+    if (indents_.size() > 0 && index < indents_.size()) {
+        indent = indents_[index];
+    } else {
+        indent = indents_.size() > 0 ? indents_.back() : 0.0;
+    }
+
+    return indent;
+}
+
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
 
     if (!fHasLineBreaks &&
