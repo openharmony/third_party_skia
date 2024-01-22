@@ -1035,6 +1035,10 @@ SkString ParagraphImpl::getEllipsis() const {
     }
 }
 
+WordBreakType ParagraphImpl::getWordBreakType() const {
+    return fParagraphStyle.getStrutStyle().getWordBreakType();
+}
+
 void ParagraphImpl::updateFontSize(size_t from, size_t to, SkScalar fontSize) {
 
   SkASSERT(from == 0 && to == fText.size());

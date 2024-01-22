@@ -161,6 +161,7 @@ public:
     InternalLineMetrics strutMetrics() const { return fStrutMetrics; }
 
     SkString getEllipsis() const;
+    WordBreakType getWordBreakType() const;
 
     SkSpan<const char> text(TextRange textRange);
     SkSpan<Cluster> clusters(ClusterRange clusterRange);

@@ -1,4 +1,5 @@
 // Copyright 2019 Google LLC.
+#include "include/ParagraphStyle.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextWrapper.h"
 
@@ -178,12 +179,13 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     }
 }
 
-void TextWrapper::moveForward(bool hasEllipsis) {
+void TextWrapper::moveForward(bool hasEllipsis, bool breakAll) {
 
     // We normally break lines by words.
     // The only way we may go to clusters is if the word is too long or
     // it's the first word and it has an ellipsis attached to it.
     // If nothing fits we show the clipping.
+    fTooLongWord = breakAll;
     if (!fWords.empty()) {
         fEndLine.extend(fWords);
 #ifdef SK_IGNORE_SKPARAGRAPH_ELLIPSIS_FIX
@@ -308,7 +310,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
         needEllipsis = hasEllipsis && !endlessLine && lastLine;
 
-        this->moveForward(needEllipsis);
+        this->moveForward(needEllipsis, parent->getWordBreakType() == WordBreakType::BREAK_ALL);
         needEllipsis &= fEndLine.endCluster() < end - 1; // Only if we have some text to ellipsize
 
         // Do not trim end spaces on the naturally last line of the left aligned text
