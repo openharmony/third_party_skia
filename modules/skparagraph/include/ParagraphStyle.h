@@ -18,6 +18,12 @@
 namespace skia {
 namespace textlayout {
 
+enum class WordBreakType {
+    NORMAL,     // to be done.
+    BREAK_ALL,  // break occur after any characters.
+    BREAK_WORD, // break only occur after word.
+};
+
 struct StrutStyle {
     StrutStyle();
 
@@ -48,6 +54,9 @@ struct StrutStyle {
     void setHalfLeading(bool halfLeading) { fHalfLeading = halfLeading; }
     bool getHalfLeading() const { return fHalfLeading; }
 
+    void setWordBreakType(const WordBreakType& wordBreakType) { fWordBreakType = wordBreakType; }
+    WordBreakType getWordBreakType() const { return fWordBreakType; }
+
     bool operator==(const StrutStyle& rhs) const {
         return this->fEnabled == rhs.fEnabled &&
                this->fHeightOverride == rhs.fHeightOverride &&
@@ -73,6 +82,7 @@ private:
     // true: half leading.
     // false: scale ascent/descent with fHeight.
     bool fHalfLeading;
+    WordBreakType fWordBreakType;
 };
 
 struct ParagraphStyle {
