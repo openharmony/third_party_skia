@@ -1064,3 +1064,24 @@ SkPath GetPathforTextBlob(const SkGlyphID& glyphId, const SkTextBlob* blob)
     }
     return path;
 }
+
+void GetPointsForTextBlob(const SkTextBlob* blob, std::vector<SkPoint>& points)
+{
+    SkTextBlobRunIterator run(blob);
+    if (!run.done()) {
+        const auto glyphCount = run.glyphCount();
+        switch (run.positioning()) {
+            case SkTextBlobRunIterator::kFull_Positioning: {
+                for (auto i = 0; i < glyphCount; i++) {
+                    const SkPoint* glyphPoints = run.points();
+                    const auto* point = glyphPoints + i;
+                    points.push_back(*point);
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        run.next();
+    }
+}

@@ -525,4 +525,6 @@ SK_API void GetGlyphIDforTextBlob(const SkTextBlob* blob, std::vector<SkGlyphID>
 
 SK_API SkPath GetPathforTextBlob(const SkGlyphID& glyphId, const SkTextBlob* blob);
 
+SK_API void GetPointsForTextBlob(const SkTextBlob* blob, std::vector<SkPoint>& points);
+
 #endif // SkTextBlob_DEFINED
