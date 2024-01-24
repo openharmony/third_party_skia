@@ -548,12 +548,29 @@ bool ParagraphImpl::shapeTextIntoEndlessLine() {
     return result;
 }
 
+void ParagraphImpl::setIndents(const std::vector<float>& indents)
+{
+    indents_ = indents;
+}
+
+float ParagraphImpl::detectIndents(size_t index)
+{
+    float indent = 0.0;
+    if (indents_.size() > 0 && index < indents_.size()) {
+        indent = indents_[index];
+    } else {
+        indent = indents_.size() > 0 ? indents_.back() : 0.0;
+    }
+
+    return indent;
+}
+
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
 
     if (!fHasLineBreaks &&
         !fHasWhitespacesInside &&
         fPlaceholders.size() == 1 &&
-        fRuns.size() == 1 && fRuns[0].fAdvance.fX <= maxWidth) {
+        fRuns.size() == 1 && fRuns[0].fAdvance.fX <= maxWidth - (this->detectIndents(std::numeric_limits<size_t>::max()))) {
         // This is a short version of a line breaking when we know that:
         // 1. We have only one line of text
         // 2. It's shaped into a single run
@@ -596,7 +613,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
         advance.fY = metrics.height();
         auto clusterRange = ClusterRange(0, trailingSpaces);
         auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
-        this->addLine(SkPoint::Make(0, 0), advance,
+        this->addLine(SkPoint::Make(this->detectIndents(std::numeric_limits<size_t>::max()), 0), advance,
                       textExcludingSpaces, textRange, textRange,
                       clusterRange, clusterRangeWithGhosts, run.advance().x(),
                       metrics);
