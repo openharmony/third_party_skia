@@ -127,6 +127,7 @@ void ParagraphImpl::addUnresolvedCodepoints(TextRange textRange) {
 }
 
 void ParagraphImpl::layout(SkScalar rawWidth) {
+    fLineNumber = 1;
     // TODO: This rounding is done to match Flutter tests. Must be removed...
     auto floorWidth = rawWidth;
     if (getApplyRoundingHack()) {
@@ -229,6 +230,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         fMaxIntrinsicWidth = fMinIntrinsicWidth;
     }
 
+    fLineNumber = std::max(size_t(1), fLines.size());
     //SkDebugf("layout('%s', %f): %f %f\n", fText.c_str(), rawWidth, fMinIntrinsicWidth, fMaxIntrinsicWidth);
 }
 
