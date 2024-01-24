@@ -120,7 +120,7 @@ public:
 
     bool getApplyRoundingHack() const { return fApplyRoundingHack; }
 
-    size_t lineNumber() override { return fLines.size(); }
+    size_t lineNumber() override { return fLineNumber; }
 
     TextLine& addLine(SkVector offset, SkVector advance,
                       TextRange textExcludingSpaces, TextRange text, TextRange textIncludingNewlines,
@@ -294,6 +294,8 @@ private:
     bool fHasWhitespacesInside;
     TextIndex fTrailingSpaces;
     bool fApplyRoundingHack = std::getenv("SKPARAGRAPH_REMOVE_ROUNDING_HACK") == nullptr;
+
+    size_t fLineNumber;
 };
 }  // namespace textlayout
 }  // namespace skia
