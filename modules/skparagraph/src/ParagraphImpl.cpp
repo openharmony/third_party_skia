@@ -134,6 +134,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
 
+    if (fParagraphStyle.getMaxLines() == 0) {
+        fText.reset();
+    }
+
     if ((!SkScalarIsFinite(rawWidth) || fLongestLine <= floorWidth) &&
         fState >= kLineBroken &&
          fLines.size() == 1 && fLines.front().ellipsis() == nullptr) {
@@ -176,6 +180,9 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
                     fParagraphStyle.getStrutStyle().getForceStrutHeight()) {
                     fHeight = fStrutMetrics.height();
                 }
+                if (fParagraphStyle.getMaxLines() == 0) {
+                    fHeight = 0;
+                }
                 fAlphabeticBaseline = fEmptyMetrics.alphabeticBaseline();
                 fIdeographicBaseline = fEmptyMetrics.ideographicBaseline();
                 fLongestLine = FLT_MIN - FLT_MAX;  // That is what flutter has
@@ -207,6 +214,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->resetShifts();
         this->formatLines(fWidth);
         fState = kFormatted;
+    }
+
+    if (fParagraphStyle.getMaxLines() == 0) {
+        fHeight = 0;
     }
 
     this->fOldWidth = floorWidth;
