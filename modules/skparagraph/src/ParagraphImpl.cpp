@@ -631,7 +631,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                       clusterRange, clusterRangeWithGhosts, run.advance().x(),
                       metrics);
 
-        fLongestLine = nearlyZero(advance.fX) ? run.advance().fX : advance.fX;
+        fLongestLine = std::max(run.advance().fX, advance.fX);
         fHeight = advance.fY;
         fWidth = maxWidth;
         fMaxIntrinsicWidth = run.advance().fX;
@@ -663,7 +663,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 if (addEllipsis) {
                     line.createEllipsis(maxWidth, this->getEllipsis(), true);
                 }
-                fLongestLine = std::max(fLongestLine, nearlyZero(advance.fX) ? widthWithSpaces : advance.fX);
+                fLongestLine = std::max(fLongestLine, std::max(advance.fX, widthWithSpaces));
             });
 
     fHeight = textWrapper.height();
