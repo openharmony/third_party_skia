@@ -165,6 +165,8 @@ public:
 
     virtual void setIndents(const std::vector<float>& indents) = 0;
 
+    virtual float getTextSplitRatio() const = 0;
+
 protected:
     sk_sp<FontCollection> fFontCollection;
     ParagraphStyle fParagraphStyle;
