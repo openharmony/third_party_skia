@@ -242,6 +242,8 @@ public:
 
     float detectIndents(size_t index);
 
+    float getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); };
+
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
