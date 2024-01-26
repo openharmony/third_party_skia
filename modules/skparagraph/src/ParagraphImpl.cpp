@@ -626,11 +626,8 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
         advance.fY = metrics.height();
         auto clusterRange = ClusterRange(0, trailingSpaces);
         auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
-        float indentActual = 0.0;
-        if (static_cast<int>(this->paragraphStyle().getTextAlign()) < 2) {
-            indentActual = this->detectIndents(std::numeric_limits<size_t>::max());
-        }
-        this->addLine(SkPoint::Make(indentActual, 0), advance,
+
+        this->addLine(SkPoint::Make(this->detectIndents(std::numeric_limits<size_t>::max()), 0), advance,
                       textExcludingSpaces, textRange, textRange,
                       clusterRange, clusterRangeWithGhosts, run.advance().x(),
                       metrics);
