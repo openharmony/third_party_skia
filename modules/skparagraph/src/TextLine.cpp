@@ -207,7 +207,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
                 (TextRange textRange, const TextStyle& style, const ClipContext& context) {
                     this->paintShadow(painter, x, y, textRange, style, context);
                 });
-                return true;
+            return true;
             });
     }
 
