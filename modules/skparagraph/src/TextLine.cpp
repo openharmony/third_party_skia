@@ -692,12 +692,14 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
         std::unique_ptr<SkShaper> shaper = SkShaper::MakeShapeDontWrapOrReorder(
                             fOwner->getUnicode()->copy(),
                             fallback ? SkFontMgr::RefDefault() : SkFontMgr::RefEmpty());
-        shaper->shape(ellipsis.c_str(),
-                      ellipsis.size(),
-                      font,
-                      true,
-                      std::numeric_limits<SkScalar>::max(),
-                      &handler);
+        SkString specialEllipsis = SkUnicode::convertUtf16ToUtf8(u"\u2026");
+        if (!ellipsis.size()) {
+            shaper->shape(ellipsis.c_str(), ellipsis.size(), font, true, std::numeric_limits<SkScalar>::max(),
+                        &handler);
+        } else {
+            shaper->shape(specialEllipsis.c_str(), specialEllipsis.size(), font, true,
+                        std::numeric_limits<SkScalar>::max(), &handler);            
+        }
         auto ellipsisRun = handler.run();
         ellipsisRun->fTextRange = TextRange(0, ellipsis.size());
         ellipsisRun->fOwner = fOwner;

@@ -399,13 +399,16 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
             needEllipsis = true;
             fHardLineBreak = false;
         }
-
+        float indentActual = 0.0;
+        if (static_cast<int>(parent->paragraphStyle().getTextAlign()) < 2) {
+            indentActual = parent->detectIndents(std::numeric_limits<size_t>::max());
+        }
         addLine(textExcludingSpaces,
                 text,
                 textIncludingNewlines, clusters, clustersWithGhosts, widthWithSpaces,
                 fEndLine.startPos(),
                 fEndLine.endPos(),
-                SkVector::Make(parent->detectIndents(fLineNumber - 1), fHeight),
+                SkVector::Make(indentActual, fHeight),
                 SkVector::Make(fEndLine.width(), lineHeight),
                 fEndLine.metrics(),
                 needEllipsis && !fHardLineBreak);
