@@ -25,6 +25,8 @@ TextStyle TextStyle::cloneForPlaceholder() {
     result.fHalfLeading = fHalfLeading;
     result.fBaselineShift = fBaselineShift;
     result.fFontArguments = fFontArguments;
+    result.fBackgroundRect = fBackgroundRect;
+    result.fStyleId = fStyleId;
     return result;
 }
 

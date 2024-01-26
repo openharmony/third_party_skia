@@ -34,6 +34,7 @@
 
 namespace skia {
 namespace textlayout {
+#define MAX_INT_VALUE 0x7FFFFFFF
 
 namespace {
 
@@ -180,18 +181,38 @@ TextLine::TextLine(ParagraphImpl* owner,
 }
 
 void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
-    if (fHasBackground) {
-        this->iterateThroughVisualRuns(false,
-            [painter, x, y, this]
-            (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
-                *runWidthInLine = this->iterateThroughSingleRunByStyles(
-                TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
-                [painter, x, y, this](TextRange textRange, const TextStyle& style, const ClipContext& context) {
-                    this->paintBackground(painter, x, y, textRange, style, context);
-                });
-            return true;
+    this->iterateThroughVisualRuns(false,
+        [this](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
+            *runWidthInLine = this->iterateThroughSingleRunByStyles(
+            TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
+            [run, this](TextRange textRange, const TextStyle& style, const ClipContext& context) {
+                roundRectAttrs.push_back({style.getStyleId(), style.getBackgroundRect(), context.clip});
             });
+            return true;
+        });
+
+    std::vector<Run*> groupRuns;
+    int index = 0;
+    int preIndex = -1;
+    for (auto& runIndex : fRunsInVisualOrder) {
+        auto run = &this->fOwner->run(runIndex);
+        run->setIndexInLine(index);
+        computeRoundRect(index, preIndex, groupRuns, run);
     }
+
+    this->iterateThroughVisualRuns(false,
+        [painter, x, y, this]
+        (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
+            *runWidthInLine = this->iterateThroughSingleRunByStyles(
+            TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
+            [painter, x, y, run, this](TextRange textRange, const TextStyle& style, const ClipContext& context) {
+                if (fHasBackground) {
+                    this->paintBackground(painter, x, y, textRange, style, context);
+                }
+                paintRoundRect(painter, x, y, run);
+            });
+        return true;
+        });
 
     if (fHasShadows) {
         this->iterateThroughVisualRuns(false,
@@ -228,10 +249,69 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 }
 
+bool TextLine::hasBackgroundRect(const RoundRectAttr& attr) {
+    return attr.roundRectStyle.color != 0 && attr.rect.width() > 0;
+}
+
+void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run) {
+    int runCount = roundRectAttrs.size();
+    if (index >= runCount) {
+        return;
+    }
+
+    bool leftRound = false;
+    bool rightRound = false;
+    if (hasBackgroundRect(roundRectAttrs[index])) {
+        int styleId = roundRectAttrs[index].styleId;
+        // index - 1 is previous index, -1 is the invalid styleId
+        int preStyleId = index == 0 ? -1 : roundRectAttrs[index - 1].styleId;
+        // runCount - 1 is the last run index, index + 1 is next run index, -1 is the invalid styleId
+        int nextStyleId = index == runCount - 1 ? -1 : roundRectAttrs[index + 1].styleId;
+        // index - preIndex > 1 means the left run has no background rect
+        leftRound = (preIndex < 0 || index - preIndex > 1 || preStyleId != styleId);
+        // runCount - 1 is the last run index
+        rightRound = (index == runCount - 1 || !hasBackgroundRect(roundRectAttrs[index + 1]) ||
+            nextStyleId != styleId);
+        preIndex = index;
+        groupRuns.push_back(run);
+    } else if (!groupRuns.empty()) {
+        groupRuns.erase(groupRuns.begin(), groupRuns.end());
+    }
+    if (leftRound && rightRound) {
+        run->setRoundRectType(RoundRectType::ALL);
+    } else if (leftRound) {
+        run->setRoundRectType(RoundRectType::LEFT_ONLY);
+    } else if (rightRound) {
+        run->setRoundRectType(RoundRectType::RIGHT_ONLY);
+    } else {
+        run->setRoundRectType(RoundRectType::NONE);
+    }
+
+    if (rightRound && !groupRuns.empty()) {
+        double maxRoundRectRadius = MAX_INT_VALUE;
+        double minTop = MAX_INT_VALUE;
+        double maxBottom = 0;
+        for (auto &gRun : groupRuns) {
+            RoundRectAttr& attr = roundRectAttrs[gRun->getIndexInLine()];
+            maxRoundRectRadius = std::fmin(std::fmin(attr.rect.width(), attr.rect.height()), maxRoundRectRadius);
+            minTop = std::fmin(minTop, attr.rect.top());
+            maxBottom = std::fmax(maxBottom, attr.rect.bottom());
+        }
+        for (auto &gRun : groupRuns) {
+            gRun->setMaxRoundRectRadius(maxRoundRectRadius);
+            gRun->setTopInGroup(minTop - gRun->offset().y());
+            gRun->setBottomInGroup(maxBottom - gRun->offset().y());
+        }
+        groupRuns.erase(groupRuns.begin(), groupRuns.end());
+    }
+    index++;
+}
+
 void TextLine::ensureTextBlobCachePopulated() {
     if (fTextBlobCachePopulated) {
         return;
     }
+    roundRectAttrs.clear();
     if (fBlockRange.width() == 1 &&
         fRunsInVisualOrder.size() == 1 &&
         fEllipsis == nullptr &&
@@ -399,6 +479,39 @@ void TextLine::paintBackground(ParagraphPainter* painter,
         painter->drawRect(context.clip.makeOffset(this->offset() + SkPoint::Make(x, y)),
                           style.getBackgroundPaintOrID());
     }
+}
+
+void TextLine::paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y, const Run* run) const {
+    size_t index = run->getIndexInLine();
+    if (index >= roundRectAttrs.size()) {
+        return;
+    }
+
+    const RoundRectAttr& attr = roundRectAttrs[index];
+    if (attr.roundRectStyle.color == 0) {
+        return;
+    }
+
+    SkScalar ltRadius = 0.0f;
+    SkScalar rtRadius = 0.0f;
+    SkScalar rbRadius = 0.0f;
+    SkScalar lbRadius = 0.0f;
+    RoundRectType rType = run->getRoundRectType();
+    if (rType == RoundRectType::ALL || rType == RoundRectType::LEFT_ONLY) {
+        ltRadius = std::fmin(attr.roundRectStyle.leftTopRadius, run->getMaxRoundRectRadius());
+        lbRadius = std::fmin(attr.roundRectStyle.leftBottomRadius, run->getMaxRoundRectRadius());
+    }
+    if (rType == RoundRectType::ALL || rType == RoundRectType::RIGHT_ONLY) {
+        rtRadius = std::fmin(attr.roundRectStyle.rightTopRadius, run->getMaxRoundRectRadius());
+        rbRadius = std::fmin(attr.roundRectStyle.rightBottomRadius, run->getMaxRoundRectRadius());
+    }
+    const SkVector radii[4] = {{ltRadius, ltRadius}, {rtRadius, rtRadius}, {rbRadius, rbRadius}, {lbRadius, lbRadius}};
+    SkRect skRect(SkRect::MakeLTRB(attr.rect.left(), run->getTopInGroup(), attr.rect.right(),
+        run->getBottomInGroup()));
+    SkRRect skRRect;
+    skRRect.setRectRadii(skRect, radii);
+    skRRect.offset(x + fOffset.x(), y + fOffset.y());
+    painter->drawRRect(skRRect, attr.roundRectStyle.color);
 }
 
 void TextLine::paintShadow(ParagraphPainter* painter,
