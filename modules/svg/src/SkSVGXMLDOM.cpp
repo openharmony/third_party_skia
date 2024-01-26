@@ -120,7 +120,7 @@ protected:
 
     bool onText(const char text[], int len) override {
         std::string style = RemoveEmptyChar(text, len);
-        this->startCommon(style.c_str(), len, SkDOM::kText_Type);
+        this->startCommon(style.c_str(), style.size(), SkDOM::kText_Type);
         this->SkSVGDOMParser::onEndElement(style.c_str());
         if (fProcessingStyle && !style.empty() && style.front() == '.') {
             fStyleParser.parseCssStyle(style);
