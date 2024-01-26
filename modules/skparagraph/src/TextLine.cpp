@@ -307,7 +307,7 @@ void TextLine::prepareRoundRect() {
     int preIndex = -1;
     for (auto& runIndex : fRunsInVisualOrder) {
         auto run = &this->fOwner->run(runIndex);
-        run->setIndexInLine(index);
+        run->setIndexInLine(static_cast<size_t>(index));
         computeRoundRect(index, preIndex, groupRuns, run);
     }
 }
