@@ -602,11 +602,12 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             continue;
         }
         // We found enough room for the ellipsis
-        fAdvance.fX += ellipsisRun->advance().fX;
+        fAdvance.fX = width + ellipsisRun->advance().fX;
         fEllipsis = std::move(ellipsisRun);
         fEllipsis->setOwner(fOwner);
 
         fClusterRange.start = clusterIndex;
+        fClusterRange.end = fGhostClusterRange.end;
         fGhostClusterRange.start = fClusterRange.start;
         fEllipsis->fClusterStart = fText.start;
         fText.start = cluster.textRange().start;
