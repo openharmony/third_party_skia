@@ -134,6 +134,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
 
+    if (fParagraphStyle.getMaxLines() == 0) {
+        fText.reset();
+    }
+
     if ((!SkScalarIsFinite(rawWidth) || fLongestLine <= floorWidth) &&
         fState >= kLineBroken &&
          fLines.size() == 1 && fLines.front().ellipsis() == nullptr) {
@@ -176,6 +180,9 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
                     fParagraphStyle.getStrutStyle().getForceStrutHeight()) {
                     fHeight = fStrutMetrics.height();
                 }
+                if (fParagraphStyle.getMaxLines() == 0) {
+                    fHeight = 0;
+                }
                 fAlphabeticBaseline = fEmptyMetrics.alphabeticBaseline();
                 fIdeographicBaseline = fEmptyMetrics.ideographicBaseline();
                 fLongestLine = FLT_MIN - FLT_MAX;  // That is what flutter has
@@ -207,6 +214,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->resetShifts();
         this->formatLines(fWidth);
         fState = kFormatted;
+    }
+
+    if (fParagraphStyle.getMaxLines() == 0) {
+        fHeight = 0;
     }
 
     this->fOldWidth = floorWidth;
@@ -624,7 +635,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                       clusterRange, clusterRangeWithGhosts, run.advance().x(),
                       metrics);
 
-        fLongestLine = nearlyZero(advance.fX) ? run.advance().fX : advance.fX;
+        fLongestLine = std::max(run.advance().fX, advance.fX);
         fHeight = advance.fY;
         fWidth = maxWidth;
         fMaxIntrinsicWidth = run.advance().fX;
@@ -658,7 +669,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
                     line.createHeadEllipsis(maxWidth, this->getEllipsis(), true);
                 }
-                fLongestLine = std::max(fLongestLine, nearlyZero(advance.fX) ? widthWithSpaces : advance.fX);
+                fLongestLine = std::max(fLongestLine, std::max(advance.fX, widthWithSpaces));
             });
 
     fHeight = textWrapper.height();
