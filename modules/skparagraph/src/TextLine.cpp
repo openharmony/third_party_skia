@@ -602,14 +602,17 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             continue;
         }
         // We found enough room for the ellipsis
-        fAdvance.fX = width + ellipsisRun->advance().fX;
+        fAdvance.fX += ellipsisRun->advance().fX;
         fEllipsis = std::move(ellipsisRun);
         fEllipsis->setOwner(fOwner);
 
         fClusterRange.start = clusterIndex;
         fClusterRange.end = fGhostClusterRange.end;
-        fGhostClusterRange.start = fClusterRange.start;
-        fEllipsis->fClusterStart = fText.start;
+        if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
+            fEllipsis->fClusterStart = fText.start;
+        } else {
+            fEllipsis->fClusterStart = 0;
+        }
         fText.start = cluster.textRange().start;
         fTextIncludingNewlines.start = cluster.textRange().start;
         fTextExcludingSpaces.start = cluster.textRange().start;
@@ -692,14 +695,12 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
         std::unique_ptr<SkShaper> shaper = SkShaper::MakeShapeDontWrapOrReorder(
                             fOwner->getUnicode()->copy(),
                             fallback ? SkFontMgr::RefDefault() : SkFontMgr::RefEmpty());
-        SkString specialEllipsis = SkUnicode::convertUtf16ToUtf8(u"\u2026");
-        if (!ellipsis.size()) {
-            shaper->shape(ellipsis.c_str(), ellipsis.size(), font, true, std::numeric_limits<SkScalar>::max(),
-                        &handler);
-        } else {
-            shaper->shape(specialEllipsis.c_str(), specialEllipsis.size(), font, true,
-                        std::numeric_limits<SkScalar>::max(), &handler);            
-        }
+        shaper->shape(ellipsis.c_str(),
+                      ellipsis.size(),
+                      font,
+                      true,
+                      std::numeric_limits<SkScalar>::max(),
+                      &handler);
         auto ellipsisRun = handler.run();
         ellipsisRun->fTextRange = TextRange(0, ellipsis.size());
         ellipsisRun->fOwner = fOwner;
