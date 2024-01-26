@@ -94,6 +94,7 @@ struct ParagraphStyle {
                this->fEllipsisUtf16 == rhs.fEllipsisUtf16 &&
                this->fTextDirection == rhs.fTextDirection && this->fTextAlign == rhs.fTextAlign &&
                this->fDefaultTextStyle == rhs.fDefaultTextStyle &&
+               this->ellipsisModal_ == rhs.ellipsisModal_ &&
                this->fReplaceTabCharacters == rhs.fReplaceTabCharacters;
     }
 
@@ -134,6 +135,8 @@ struct ParagraphStyle {
     bool getReplaceTabCharacters() const { return fReplaceTabCharacters; }
     void setReplaceTabCharacters(bool value) { fReplaceTabCharacters = value; }
 
+    skia::textlayout::EllipsisModal getEllipsisMod() const { return ellipsisModal_; }
+    void setEllipsisMod(skia::textlayout::EllipsisModal ellipsisModel) { ellipsisModal_ = ellipsisModel; }
     float getTextSplitRatio() const { return textSplitRatio; }
     void setTextSplitRatio(float textSplitRatio) { this->textSplitRatio = textSplitRatio; }
 
@@ -149,6 +152,7 @@ private:
     TextHeightBehavior fTextHeightBehavior;
     bool fHintingIsOn;
     bool fReplaceTabCharacters;
+    skia::textlayout::EllipsisModal ellipsisModal_;
     float textSplitRatio = 0.5f;
 };
 }  // namespace textlayout

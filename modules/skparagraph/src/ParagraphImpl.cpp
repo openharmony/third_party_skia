@@ -626,6 +626,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
         advance.fY = metrics.height();
         auto clusterRange = ClusterRange(0, trailingSpaces);
         auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
+
         this->addLine(SkPoint::Make(this->detectIndents(std::numeric_limits<size_t>::max()), 0), advance,
                       textExcludingSpaces, textRange, textRange,
                       clusterRange, clusterRangeWithGhosts, run.advance().x(),
@@ -660,8 +661,10 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 bool addEllipsis) {
                 // TODO: Take in account clipped edges
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
-                if (addEllipsis) {
+                if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
                     line.createEllipsis(maxWidth, this->getEllipsis(), true);
+                } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
+                    line.createHeadEllipsis(maxWidth, this->getEllipsis(), true);
                 }
                 fLongestLine = std::max(fLongestLine, std::max(advance.fX, widthWithSpaces));
             });

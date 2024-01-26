@@ -63,6 +63,12 @@ enum class TextDirection {
     kLtr,
 };
 
+enum class EllipsisModal {
+    HEAD = 0,
+    MIDDLE = 1,
+    TAIL = 2,
+};
+
 struct PositionWithAffinity {
     int32_t position;
     Affinity affinity;
