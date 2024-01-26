@@ -181,24 +181,7 @@ TextLine::TextLine(ParagraphImpl* owner,
 }
 
 void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
-    this->iterateThroughVisualRuns(false,
-        [this](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
-            *runWidthInLine = this->iterateThroughSingleRunByStyles(
-            TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
-            [run, this](TextRange textRange, const TextStyle& style, const ClipContext& context) {
-                roundRectAttrs.push_back({style.getStyleId(), style.getBackgroundRect(), context.clip});
-            });
-            return true;
-        });
-
-    std::vector<Run*> groupRuns;
-    int index = 0;
-    int preIndex = -1;
-    for (auto& runIndex : fRunsInVisualOrder) {
-        auto run = &this->fOwner->run(runIndex);
-        run->setIndexInLine(index);
-        computeRoundRect(index, preIndex, groupRuns, run);
-    }
+    prepareRoundRect();
 
     this->iterateThroughVisualRuns(false,
         [painter, x, y, this]
@@ -307,11 +290,32 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
     index++;
 }
 
+void TextLine::prepareRoundRect() {
+    roundRectAttrs.clear();
+    this->iterateThroughVisualRuns(false,
+        [this](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
+            *runWidthInLine = this->iterateThroughSingleRunByStyles(
+            TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
+            [run, this](TextRange textRange, const TextStyle& style, const ClipContext& context) {
+                roundRectAttrs.push_back({style.getStyleId(), style.getBackgroundRect(), context.clip});
+            });
+            return true;
+        });
+
+    std::vector<Run*> groupRuns;
+    int index = 0;
+    int preIndex = -1;
+    for (auto& runIndex : fRunsInVisualOrder) {
+        auto run = &this->fOwner->run(runIndex);
+        run->setIndexInLine(index);
+        computeRoundRect(index, preIndex, groupRuns, run);
+    }
+}
+
 void TextLine::ensureTextBlobCachePopulated() {
     if (fTextBlobCachePopulated) {
         return;
     }
-    roundRectAttrs.clear();
     if (fBlockRange.width() == 1 &&
         fRunsInVisualOrder.size() == 1 &&
         fEllipsis == nullptr &&

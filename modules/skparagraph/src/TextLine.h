@@ -176,6 +176,7 @@ private:
     void shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
     bool hasBackgroundRect(const RoundRectAttr& attr);
     void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
+    void prepareRoundRect();
 
     ParagraphImpl* fOwner;
     BlockRange fBlockRange;
