@@ -406,7 +406,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 textIncludingNewlines, clusters, clustersWithGhosts, widthWithSpaces,
                 fEndLine.startPos(),
                 fEndLine.endPos(),
-                SkVector::Make(parent->detectIndents(std::numeric_limits<size_t>::max()), fHeight),
+                SkVector::Make(parent->detectIndents(fLineNumber - 1), fHeight),
                 SkVector::Make(fEndLine.width(), lineHeight),
                 fEndLine.metrics(),
                 needEllipsis && !fHardLineBreak);
