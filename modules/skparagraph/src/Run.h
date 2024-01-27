@@ -52,6 +52,13 @@ class DirText {
     size_t end;
 };
 
+enum class RoundRectType {
+    NONE,
+    LEFT_ONLY,
+    RIGHT_ONLY,
+    ALL,
+};
+
 class Run {
 public:
     Run(ParagraphImpl* owner,
@@ -165,6 +172,22 @@ public:
     }
 
     bool isResolved() const;
+
+    RoundRectType getRoundRectType() const { return fRoundRectType; }
+    void setRoundRectType(RoundRectType type) { fRoundRectType = type; }
+
+    SkScalar getTopInGroup() const { return fTopInGroup; }
+    void setTopInGroup(SkScalar top) { fTopInGroup = top; }
+
+    SkScalar getBottomInGroup() const { return fBottomInGroup; }
+    void setBottomInGroup(SkScalar bottom) { fBottomInGroup = bottom; }
+
+    SkScalar getMaxRoundRectRadius() const { return fMaxRoundRectRadius; }
+    void setMaxRoundRectRadius(SkScalar radius) { fMaxRoundRectRadius = radius; }
+
+    size_t getIndexInLine() const { return indexInLine; }
+    void setIndexInLine(size_t index) { indexInLine = index; }
+
 private:
     friend class ParagraphImpl;
     friend class TextLine;
@@ -211,6 +234,12 @@ private:
 
     bool fEllipsis;
     uint8_t fBidiLevel;
+
+    RoundRectType fRoundRectType = RoundRectType::NONE;
+    SkScalar fTopInGroup = 0.0f;
+    SkScalar fBottomInGroup = 0.0f;
+    SkScalar fMaxRoundRectRadius = 0.0f;
+    size_t indexInLine;
 };
 
 template<typename Visitor>

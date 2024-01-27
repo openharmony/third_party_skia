@@ -60,6 +60,13 @@ void CanvasParagraphPainter::drawRect(const SkRect& rect, const SkPaintOrID& pai
     fCanvas->drawRect(rect, std::get<SkPaint>(paint));
 }
 
+void CanvasParagraphPainter::drawRRect(const SkRRect& rrect, const SkColor color) {
+    SkPaint paint;
+    paint.setColor(color);
+    paint.setAntiAlias(false);
+    fCanvas->drawRRect(rrect, paint);
+}
+
 void CanvasParagraphPainter::drawFilledRect(const SkRect& rect, const DecorationStyle& decorStyle) {
     SkPaint p(decorStyle.skPaint());
     p.setStroke(false);
