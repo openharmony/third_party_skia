@@ -63,9 +63,15 @@ struct StyleBlock {
 
 struct ResolvedFontDescriptor {
 
+#ifndef USE_ROSEN_DRAWING
     ResolvedFontDescriptor(TextIndex index, SkFont font)
         : fFont(font), fTextStart(index) { }
     SkFont fFont;
+#else
+    ResolvedFontDescriptor(TextIndex index, RSFont font)
+        : fFont(font), fTextStart(index) { }
+    RSFont fFont;
+#endif
     TextIndex fTextStart;
 };
 
@@ -220,7 +226,11 @@ public:
     bool getClosestGlyphClusterAt(SkScalar dx,
                                   SkScalar dy,
                                   GlyphClusterInfo* glyphInfo) override;
+#ifndef USE_ROSEN_DRAWING
     SkFont getFontAt(TextIndex codeUnitIndex) const override;
+#else
+    RSFont getFontAt(TextIndex codeUnitIndex) const override;
+#endif
     std::vector<FontInfo> getFonts() const override;
 
     InternalLineMetrics getEmptyMetrics() const { return fEmptyMetrics; }

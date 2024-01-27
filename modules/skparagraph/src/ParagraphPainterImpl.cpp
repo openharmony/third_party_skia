@@ -39,6 +39,8 @@ ParagraphPainter::DecorationStyle::DecorationStyle(
 CanvasParagraphPainter::CanvasParagraphPainter(SkCanvas* canvas)
     : fCanvas(canvas) {}
 
+
+#ifndef USE_ROSEN_DRAWING
 void CanvasParagraphPainter::drawTextBlob(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) {
     SkASSERT(std::holds_alternative<SkPaint>(paint));
     fCanvas->drawTextBlob(blob, x, y, std::get<SkPaint>(paint));
@@ -54,6 +56,7 @@ void CanvasParagraphPainter::drawTextShadow(const sk_sp<SkTextBlob>& blob, SkSca
     }
     fCanvas->drawTextBlob(blob, x, y, paint);
 }
+#endif
 
 void CanvasParagraphPainter::drawRect(const SkRect& rect, const SkPaintOrID& paint) {
     SkASSERT(std::holds_alternative<SkPaint>(paint));
@@ -73,9 +76,11 @@ void CanvasParagraphPainter::drawFilledRect(const SkRect& rect, const Decoration
     fCanvas->drawRect(rect, p);
 }
 
+#ifndef USE_ROSEN_DRAWING
 void CanvasParagraphPainter::drawPath(const SkPath& path, const DecorationStyle& decorStyle) {
     fCanvas->drawPath(path, decorStyle.skPaint());
 }
+#endif
 
 void CanvasParagraphPainter::drawLine(SkScalar x0, SkScalar y0, SkScalar x1, SkScalar y1, const DecorationStyle& decorStyle) {
     fCanvas->drawLine(x0, y0, x1, y1, decorStyle.skPaint());

@@ -7,6 +7,7 @@
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
 #include <unordered_set>
+#include "drawing.h"
 
 class SkCanvas;
 
@@ -149,6 +150,7 @@ public:
                                           SkScalar dy,
                                           GlyphClusterInfo* glyphInfo) = 0;
 
+#ifndef USE_ROSEN_DRAWING
     struct FontInfo {
         FontInfo(const SkFont font, const TextRange textRange)
             : fFont(font), fTextRange(textRange) { }
@@ -157,13 +159,27 @@ public:
         SkFont fFont;
         TextRange fTextRange;
     };
+#else
+    struct FontInfo {
+        FontInfo(const RSFont font, const TextRange textRange)
+            : fFont(font), fTextRange(textRange) { }
+        virtual ~FontInfo() = default;
+        FontInfo(const FontInfo& ) = default;
+        RSFont fFont;
+        TextRange fTextRange;
+    };
+#endif
 
     /** Returns the font that is used to shape the text at the position
      *
      * @param codeUnitIndex   text index
      * @return                font info or an empty font info if the text is not found
      */
+#ifndef USE_ROSEN_DRAWING
     virtual SkFont getFontAt(TextIndex codeUnitIndex) const = 0;
+#else
+    virtual RSFont getFontAt(TextIndex codeUnitIndex) const = 0;
+#endif
 
     /** Returns the information about all the fonts used to shape the paragraph text
      *

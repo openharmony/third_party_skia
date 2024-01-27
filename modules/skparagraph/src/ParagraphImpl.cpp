@@ -707,15 +707,21 @@ void ParagraphImpl::resolveStrut() {
         return;
     }
 
-    std::vector<sk_sp<SkTypeface>> typefaces = fFontCollection->findTypefaces(strutStyle.getFontFamilies(), strutStyle.getFontStyle(), std::nullopt);
+    auto typefaces = fFontCollection->findTypefaces(strutStyle.getFontFamilies(), strutStyle.getFontStyle(), std::nullopt);
     if (typefaces.empty()) {
         SkDEBUGF("Could not resolve strut font\n");
         return;
     }
 
+#ifndef USE_ROSEN_DRAWING
     SkFont font(typefaces.front(), strutStyle.getFontSize());
     SkFontMetrics metrics;
     font.getMetrics(&metrics);
+#else
+    RSFont font(typefaces.front(), strutStyle.getFontSize(), 1, 0);
+    RSFontMetrics metrics;
+    font.GetMetrics(&metrics);
+#endif
 
     if (strutStyle.getHeightOverride()) {
         auto strutHeight = metrics.fDescent - metrics.fAscent;
@@ -1025,7 +1031,11 @@ void ParagraphImpl::computeEmptyMetrics() {
       textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
     auto typeface = typefaces.empty() ? nullptr : typefaces.front();
 
+#ifndef USE_ROSEN_DRAWING
     SkFont font(typeface, textStyle.getFontSize());
+#else
+    RSFont font(typeface, textStyle.getFontSize(), 1, 0);
+#endif
     fEmptyMetrics = InternalLineMetrics(font, paragraphStyle().getStrutStyle().getForceStrutHeight());
 
     if (!paragraphStyle().getStrutStyle().getForceStrutHeight() &&
@@ -1181,6 +1191,7 @@ void ParagraphImpl::ensureUTF16Mapping() {
 }
 
 void ParagraphImpl::visit(const Visitor& visitor) {
+#ifndef USE_ROSEN_DRAWING
     int lineNumber = 0;
     for (auto& line : fLines) {
         line.ensureTextBlobCachePopulated();
@@ -1220,6 +1231,7 @@ void ParagraphImpl::visit(const Visitor& visitor) {
         visitor(lineNumber, nullptr);   // signal end of line
         lineNumber += 1;
     }
+#endif
 }
 
 int ParagraphImpl::getLineNumberAt(TextIndex codeUnitIndex) const {
@@ -1291,6 +1303,7 @@ bool ParagraphImpl::getClosestGlyphClusterAt(SkScalar dx,
     }
 }
 
+#ifndef USE_ROSEN_DRAWING
 SkFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
     for (auto& run : fRuns) {
         if (run.textRange().contains({codeUnitIndex, codeUnitIndex})) {
@@ -1299,6 +1312,16 @@ SkFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
     }
     return SkFont();
 }
+#else
+RSFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
+    for (auto& run : fRuns) {
+        if (run.textRange().contains({codeUnitIndex, codeUnitIndex})) {
+            return run.font();
+        }
+    }
+    return RSFont();
+}
+#endif
 
 std::vector<Paragraph::FontInfo> ParagraphImpl::getFonts() const {
     std::vector<FontInfo> results;

@@ -99,7 +99,11 @@ public:
     SkScalar correctAscent() const { return fCorrectAscent + fBaselineShift; }
     SkScalar correctDescent() const { return fCorrectDescent + fBaselineShift; }
     SkScalar correctLeading() const { return fCorrectLeading; }
+#ifndef USE_ROSEN_DRAWING
     const SkFont& font() const { return fFont; }
+#else
+    const RSFont& font() const { return fFont; }
+#endif
     bool leftToRight() const { return fBidiLevel % 2 == 0; }
     TextDirection getTextDirection() const { return leftToRight() ? TextDirection::kLtr : TextDirection::kRtl; }
     size_t index() const { return fIndex; }
@@ -141,7 +145,11 @@ public:
     }
     SkScalar calculateWidth(size_t start, size_t end, bool clip) const;
 
+#ifndef USE_ROSEN_DRAWING
     void copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const;
+#else
+    void copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const;
+#endif
 
     template<typename Visitor>
     void iterateThroughClustersInTextOrder(Visitor visitor);
@@ -199,7 +207,11 @@ private:
     TextRange fTextRange;
     ClusterRange fClusterRange;
 
+#ifndef USE_ROSEN_DRAWING
     SkFont fFont;
+#else
+    RSFont fFont;
+#endif
     size_t fPlaceholderIndex;
     size_t fIndex;
     SkVector fAdvance;
@@ -224,7 +236,11 @@ private:
     SkSTArray<64, SkPoint, true> fJustificationShifts; // For justification
                                                                    // (current and prev shifts)
 
+#ifndef USE_ROSEN_DRAWING
     SkFontMetrics fFontMetrics;
+#else
+    RSFontMetrics fFontMetrics;
+#endif
     const SkScalar fHeightMultiplier;
     const bool fUseHalfLeading;
     const SkScalar fBaselineShift;
@@ -357,7 +373,11 @@ public:
 
     Run* runOrNull() const;
     Run& run() const;
+#ifndef USE_ROSEN_DRAWING
     SkFont font() const;
+#else
+    RSFont font() const;
+#endif
 
     SkScalar trimmedWidth(size_t pos) const;
 
@@ -424,9 +444,15 @@ public:
         fForceStrut = false;
     }
 
+#ifndef USE_ROSEN_DRAWING
     InternalLineMetrics(const SkFont& font, bool forceStrut) {
         SkFontMetrics metrics;
         font.getMetrics(&metrics);
+#else
+    InternalLineMetrics(const RSFont& font, bool forceStrut) {
+        RSFontMetrics metrics;
+        font.GetMetrics(&metrics);
+#endif
         fAscent = metrics.fAscent;
         fDescent = metrics.fDescent;
         fLeading = metrics.fLeading;
