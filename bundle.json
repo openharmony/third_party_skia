@@ -23,7 +23,9 @@
                 "hilog",
                 "hitrace"
             ],
-            "third_party": []
+            "third_party": [
+                "vulkan-headers"
+            ]
         },
         "build": {
             "sub_component": [
