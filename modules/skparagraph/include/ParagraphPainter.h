@@ -3,6 +3,7 @@
 #define ParagraphPainter_DEFINED
 
 #include "include/core/SkPaint.h"
+#include "include/core/SkRRect.h"
 #include "include/core/SkTextBlob.h"
 
 #include <optional>
@@ -46,6 +47,7 @@ public:
     virtual void drawTextBlob(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) = 0;
     virtual void drawTextShadow(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) = 0;
     virtual void drawRect(const SkRect& rect, const SkPaintOrID& paint) = 0;
+    virtual void drawRRect(const SkRRect& rrect, const SkColor color) = 0;
     virtual void drawFilledRect(const SkRect& rect, const DecorationStyle& decorStyle) = 0;
     virtual void drawPath(const SkPath& path, const DecorationStyle& decorStyle) = 0;
     virtual void drawLine(SkScalar x0, SkScalar y0, SkScalar x1, SkScalar y1, const DecorationStyle& decorStyle) = 0;

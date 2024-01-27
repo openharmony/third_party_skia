@@ -143,6 +143,12 @@ public:
     bool endsWithHardLineBreak() const;
 
 private:
+    struct RoundRectAttr {
+        int styleId;
+        RectStyle roundRectStyle;
+        SkRect rect;
+    };
+
     std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
     void justify(SkScalar maxWidth);
 
@@ -153,6 +159,7 @@ private:
                          TextRange textRange,
                          const TextStyle& style,
                          const ClipContext& context) const;
+    void paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y, const Run* run) const;
     void paintShadow(ParagraphPainter* painter,
                      SkScalar x,
                      SkScalar y,
@@ -167,6 +174,9 @@ private:
                           const ClipContext& context) const;
 
     void shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
+    bool hasBackgroundRect(const RoundRectAttr& attr);
+    void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
+    void prepareRoundRect();
 
     ParagraphImpl* fOwner;
     BlockRange fBlockRange;
@@ -206,6 +216,8 @@ private:
         size_t     fVisitor_Pos;
     };
     bool fTextBlobCachePopulated;
+
+    std::vector<RoundRectAttr> roundRectAttrs = {};
 public:
     std::vector<TextBlobRecord> fTextBlobCache;
 };
