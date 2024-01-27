@@ -148,6 +148,14 @@ struct PlaceholderStyle {
     SkScalar fBaselineOffset = 0;
 };
 
+struct RectStyle {
+    SkColor color = 0;
+    SkScalar leftTopRadius = 0.0f;
+    SkScalar rightTopRadius = 0.0f;
+    SkScalar rightBottomRadius = 0.0f;
+    SkScalar leftBottomRadius = 0.0f;
+};
+
 class TextStyle {
 public:
     TextStyle() = default;
@@ -286,6 +294,12 @@ public:
     bool isPlaceholder() const { return fIsPlaceholder; }
     void setPlaceholder() { fIsPlaceholder = true; }
 
+    int getStyleId() const { return fStyleId; }
+    void setStyleId(int styleId) { fStyleId = styleId; }
+
+    RectStyle getBackgroundRect() const { return fBackgroundRect; }
+    void setBackgroundRect(RectStyle rect) { fBackgroundRect = rect; }
+
 private:
     static const std::vector<SkString>* kDefaultFontFamilies;
 
@@ -311,6 +325,8 @@ private:
     // false: scale ascent/descent with fHeight.
     bool fHalfLeading = false;
     SkString fLocale = {};
+    RectStyle fBackgroundRect = {0, 0.0f, 0.0f, 0.0f, 0.0f};
+    SkColor fStyleId = 0;
     SkScalar fLetterSpacing = 0.0;
     SkScalar fWordSpacing = 0.0;
 
