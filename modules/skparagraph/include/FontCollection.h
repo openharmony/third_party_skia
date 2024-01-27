@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <unordered_map>
 #include "include/core/SkFontMgr.h"
 #include "include/core/SkRefCnt.h"
 #include "modules/skparagraph/include/FontArguments.h"
