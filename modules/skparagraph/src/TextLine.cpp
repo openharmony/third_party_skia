@@ -641,13 +641,37 @@ void TextLine::shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar pre
     }
 }
 
-void TextLine::createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool) {
+void TextLine::createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType) {
     // Replace some clusters with the ellipsis
     // Go through the clusters in the reverse logical order
     // taking off cluster by cluster until the ellipsis fits
     SkScalar width = fAdvance.fX;
     RunIndex lastRun = EMPTY_RUN;
     std::unique_ptr<Run> ellipsisRun;
+    int wordCount = 0;
+
+    for (auto clusterIndex = fGhostClusterRange.end; clusterIndex > fGhostClusterRange.start; --clusterIndex) {
+        auto& cluster = fOwner->cluster(clusterIndex - 1);
+        if (cluster.isHardBreak() || cluster.isSoftBreak() || cluster.isWhitespaceBreak() ||
+            cluster.run().isPlaceholder()) {
+            ++wordCount;
+        }
+    }
+    if (wordCount == 0) {
+        wordCount = 1;
+    }
+
+    if (wordCount == 1 && wordBreakType == WordBreakType::NORMAL) {
+        fClusterRange.end = fClusterRange.start;
+        fGhostClusterRange.end = fClusterRange.start;
+        fText.end = fText.start;
+        fTextIncludingNewlines.end = fTextIncludingNewlines.start;
+        fTextExcludingSpaces.end = fTextExcludingSpaces.start;
+        fAdvance.fX = 0;
+        return;
+    }
+
+    bool iterForWord = false;
     for (auto clusterIndex = fGhostClusterRange.end; clusterIndex > fGhostClusterRange.start; --clusterIndex) {
         auto& cluster = fOwner->cluster(clusterIndex - 1);
         // Shape the ellipsis if the run has changed
@@ -667,8 +691,22 @@ void TextLine::createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool)
         if (width + ellipsisRun->advance().fX > maxWidth) {
             width -= cluster.width();
             // Continue if the ellipsis does not fit
+            iterForWord = (
+                wordBreakType != WordBreakType::BREAK_ALL &&
+                !cluster.isHardBreak() &&
+                !cluster.isSoftBreak() &&
+                !cluster.isWhitespaceBreak() &&
+                !cluster.run().isPlaceholder() &&
+                wordCount != 1
+            );
             continue;
         }
+
+        if (iterForWord && !cluster.isHardBreak() && !cluster.isSoftBreak() && !cluster.isWhitespaceBreak()) {
+            width -= cluster.width();
+            continue;
+        }
+
         // We found enough room for the ellipsis
         fAdvance.fX = width;
         fEllipsis = std::move(ellipsisRun);

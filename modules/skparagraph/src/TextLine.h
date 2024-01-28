@@ -2,6 +2,7 @@
 #ifndef TextLine_DEFINED
 #define TextLine_DEFINED
 
+#include "include/ParagraphStyle.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkScalar.h"
@@ -107,7 +108,7 @@ public:
     void visit(SkScalar x, SkScalar y);
     void ensureTextBlobCachePopulated();
 
-    void createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
+    void createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
 
     // For testing internal structures
     void scanStyles(StyleType style, const RunStyleVisitor& visitor);
