@@ -51,7 +51,7 @@ struct LineBreakerWithLittleRounding {
 
 // Since we allow cluster clipping when they don't fit
 // we have to work with stretches - parts of clusters
-void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack) {
+void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType) {
 
     reset();
     fEndLine.metrics().clean();
@@ -59,21 +59,29 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     fClusters.startFrom(fEndLine.startCluster(), fEndLine.startPos());
     fClip.startFrom(fEndLine.startCluster(), fEndLine.startPos());
 
+    bool isFirstWord = true;
+
     LineBreakerWithLittleRounding breaker(maxWidth, applyRoundingHack);
     Cluster* nextNonBreakingSpace = nullptr;
     for (auto cluster = fEndLine.endCluster(); cluster < endOfClusters; ++cluster) {
         if (cluster->isHardBreak()) {
+            if (cluster != fEndLine.endCluster()) {
+                isFirstWord = false;
+            }
         } else if (
                 // TODO: Trying to deal with flutter rounding problem. Must be removed...
                 SkScalar width = fWords.width() + fClusters.width() + cluster->width();
+                (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
                 breaker.breakLine(width)) {
             if (cluster->isWhitespaceBreak()) {
                 // It's the end of the word
+                isFirstWord = false;
                 fClusters.extend(cluster);
                 fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, this->getClustersTrimmedWidth());
                 fWords.extend(fClusters);
                 continue;
             } else if (cluster->run().isPlaceholder()) {
+                isFirstWord = false;
                 if (!fClusters.empty()) {
                     // Placeholder ends the previous word
                     fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, this->getClustersTrimmedWidth());
@@ -151,6 +159,10 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 fTooLongWord = true;
             }
             break;
+        }
+
+        if (cluster->isSoftBreak() || cluster->isWhitespaceBreak()) {
+            isFirstWord = false;
         }
 
         if (cluster->run().isPlaceholder()) {
@@ -311,7 +323,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         } else {
             newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         }
-        this->lookAhead(newWidth, end, parent->getApplyRoundingHack());
+        this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType());
 
         auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
         needEllipsis = hasEllipsis && !endlessLine && lastLine;
