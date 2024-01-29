@@ -13,8 +13,8 @@ StrutStyle::StrutStyle() {
     fFontStyle = SkFontStyle::Normal();
 #else
     fFontStyle = RSFontStyle(
-        RSFontStyle::NORMAL_WEIGHT, 
-        RSFontStyle::NORMAL_WIDTH, 
+        RSFontStyle::NORMAL_WEIGHT,
+        RSFontStyle::NORMAL_WIDTH,
         RSFontStyle::UPRIGHT_SLANT);
 #endif
     fFontSize = 14;
