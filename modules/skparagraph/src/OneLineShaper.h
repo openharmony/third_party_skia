@@ -68,7 +68,7 @@ private:
         Everything
     };
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     using TypefaceVisitor = std::function<Resolved(sk_sp<SkTypeface> typeface)>;
 #else
     using TypefaceVisitor = std::function<Resolved(std::shared_ptr<RSTypeface> typeface)>;
@@ -127,7 +127,7 @@ private:
 
         FontKey() {}
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         FontKey(SkUnichar unicode, SkFontStyle fontStyle, SkString locale)
             : fUnicode(unicode), fFontStyle(fontStyle), fLocale(locale) { }
 #else
@@ -136,7 +136,7 @@ private:
 #endif
 
         SkUnichar fUnicode;
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         SkFontStyle fFontStyle;
 #else
         RSFontStyle fFontStyle;
@@ -150,7 +150,7 @@ private:
         };
     };
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     SkTHashMap<FontKey, sk_sp<SkTypeface>, FontKey::Hasher> fFallbackFonts;
 #else
     std::unordered_map<FontKey, std::shared_ptr<RSTypeface>, FontKey::Hasher> fFallbackFonts;

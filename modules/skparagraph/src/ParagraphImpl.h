@@ -63,7 +63,7 @@ struct StyleBlock {
 
 struct ResolvedFontDescriptor {
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     ResolvedFontDescriptor(TextIndex index, SkFont font)
         : fFont(font), fTextStart(index) { }
     SkFont fFont;
@@ -226,7 +226,7 @@ public:
     bool getClosestGlyphClusterAt(SkScalar dx,
                                   SkScalar dy,
                                   GlyphClusterInfo* glyphInfo) override;
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     SkFont getFontAt(TextIndex codeUnitIndex) const override;
 #else
     RSFont getFontAt(TextIndex codeUnitIndex) const override;

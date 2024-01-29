@@ -25,7 +25,7 @@ public:
 
     size_t getFontManagersCount() const;
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     void setAssetFontManager(sk_sp<SkFontMgr> fontManager);
     void setDynamicFontManager(sk_sp<SkFontMgr> fontManager);
     void setTestFontManager(sk_sp<SkFontMgr> fontManager);
@@ -66,7 +66,7 @@ public:
     void clearCaches();
 
 private:
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     std::vector<sk_sp<SkFontMgr>> getFontManagerOrder() const;
 
     sk_sp<SkTypeface> matchTypeface(const SkString& familyName, SkFontStyle fontStyle);
@@ -77,7 +77,7 @@ private:
 #endif
 
     struct FamilyKey {
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         FamilyKey(const std::vector<SkString>& familyNames, SkFontStyle style, const std::optional<FontArguments>& args)
                 : fFamilyNames(familyNames), fFontStyle(style), fFontArguments(args) {}
 #else
@@ -88,7 +88,7 @@ private:
         FamilyKey() {}
 
         std::vector<SkString> fFamilyNames;
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         SkFontStyle fFontStyle;
 #else
         RSFontStyle fFontStyle;
@@ -103,7 +103,7 @@ private:
     };
 
     bool fEnableFontFallback;
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     SkTHashMap<FamilyKey, std::vector<sk_sp<SkTypeface>>, FamilyKey::Hasher> fTypefaces;
     sk_sp<SkFontMgr> fDefaultFontManager;
     sk_sp<SkFontMgr> fAssetFontManager;

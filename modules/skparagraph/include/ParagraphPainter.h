@@ -45,7 +45,7 @@ public:
 
     virtual ~ParagraphPainter() = default;
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     virtual void drawTextBlob(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) = 0;
     virtual void drawTextShadow(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) = 0;
 #else
@@ -55,7 +55,7 @@ public:
     virtual void drawRect(const SkRect& rect, const SkPaintOrID& paint) = 0;
     virtual void drawRRect(const SkRRect& rrect, const SkColor color) = 0;
     virtual void drawFilledRect(const SkRect& rect, const DecorationStyle& decorStyle) = 0;
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     virtual void drawPath(const SkPath& path, const DecorationStyle& decorStyle) = 0;
 #else
     virtual void drawPath(const RSPath& path, const DecorationStyle& decorStyle) = 0;

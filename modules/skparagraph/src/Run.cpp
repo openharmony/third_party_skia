@@ -46,7 +46,7 @@ Run::Run(ParagraphImpl* owner,
     fPositions.push_back_n(info.glyphCount + 1);
     fOffsets.push_back_n(info.glyphCount + 1);
     fClusterIndexes.push_back_n(info.glyphCount + 1);
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     info.fFont.getMetrics(&fFontMetrics);
 #else
     info.fFont.GetMetrics(&fFontMetrics);
@@ -69,7 +69,7 @@ void Run::calculateMetrics() {
     if (SkScalarNearlyZero(fHeightMultiplier)) {
         return;
     }
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     const auto runHeight = fHeightMultiplier * fFont.getSize();
 #else
     const auto runHeight = fHeightMultiplier * fFont.GetSize();
@@ -93,7 +93,7 @@ SkShaper::RunHandler::Buffer Run::newRunBuffer() {
     return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset};
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 void Run::copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const {
     SkASSERT(pos + size <= this->size());
     const auto& blobBuffer = builder.allocRunPos(fFont, SkToInt(size));
@@ -363,7 +363,7 @@ Run& Cluster::run() const {
     return fOwner->run(fRunIndex);
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 SkFont Cluster::font() const {
 #else
 RSFont Cluster::font() const {

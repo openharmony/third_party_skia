@@ -20,7 +20,7 @@ public:
     FontArguments& operator=(const FontArguments&) = default;
     FontArguments& operator=(FontArguments&&) = default;
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     sk_sp<SkTypeface> CloneTypeface(sk_sp<SkTypeface> typeface) const;
 #else
     std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface) const;

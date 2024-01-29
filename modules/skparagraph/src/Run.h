@@ -99,7 +99,7 @@ public:
     SkScalar correctAscent() const { return fCorrectAscent + fBaselineShift; }
     SkScalar correctDescent() const { return fCorrectDescent + fBaselineShift; }
     SkScalar correctLeading() const { return fCorrectLeading; }
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     const SkFont& font() const { return fFont; }
 #else
     const RSFont& font() const { return fFont; }
@@ -145,7 +145,7 @@ public:
     }
     SkScalar calculateWidth(size_t start, size_t end, bool clip) const;
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     void copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const;
 #else
     void copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const;
@@ -207,7 +207,7 @@ private:
     TextRange fTextRange;
     ClusterRange fClusterRange;
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     SkFont fFont;
 #else
     RSFont fFont;
@@ -236,7 +236,7 @@ private:
     SkSTArray<64, SkPoint, true> fJustificationShifts; // For justification
                                                                    // (current and prev shifts)
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     SkFontMetrics fFontMetrics;
 #else
     RSFontMetrics fFontMetrics;
@@ -373,7 +373,7 @@ public:
 
     Run* runOrNull() const;
     Run& run() const;
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     SkFont font() const;
 #else
     RSFont font() const;
@@ -444,7 +444,7 @@ public:
         fForceStrut = false;
     }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     InternalLineMetrics(const SkFont& font, bool forceStrut) {
         SkFontMetrics metrics;
         font.getMetrics(&metrics);

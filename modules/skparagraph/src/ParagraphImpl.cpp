@@ -713,7 +713,7 @@ void ParagraphImpl::resolveStrut() {
         return;
     }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     SkFont font(typefaces.front(), strutStyle.getFontSize());
     SkFontMetrics metrics;
     font.getMetrics(&metrics);
@@ -1031,7 +1031,7 @@ void ParagraphImpl::computeEmptyMetrics() {
       textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
     auto typeface = typefaces.empty() ? nullptr : typefaces.front();
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     SkFont font(typeface, textStyle.getFontSize());
 #else
     RSFont font(typeface, textStyle.getFontSize(), 1, 0);
@@ -1191,7 +1191,7 @@ void ParagraphImpl::ensureUTF16Mapping() {
 }
 
 void ParagraphImpl::visit(const Visitor& visitor) {
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     int lineNumber = 0;
     for (auto& line : fLines) {
         line.ensureTextBlobCachePopulated();
@@ -1303,7 +1303,7 @@ bool ParagraphImpl::getClosestGlyphClusterAt(SkScalar dx,
     }
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 SkFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
     for (auto& run : fRuns) {
         if (run.textRange().contains({codeUnitIndex, codeUnitIndex})) {

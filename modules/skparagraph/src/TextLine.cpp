@@ -84,7 +84,7 @@ int compareRound(SkScalar a, SkScalar b, bool applyRoundingHack) {
     }
 }
 
-#ifdef USE_ROSEN_DRAWING
+#ifdef USE_SKIA_TXT
 bool IsRSFontEquals(const RSFont& font0, const RSFont& font1) {
     auto f0 = const_cast<RSFont&>(font0);
     auto f1 = const_cast<RSFont&>(font1);
@@ -455,7 +455,7 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
     record.fVisitor_Pos = context.pos;
 
     // TODO: This is the change for flutter, must be removed later
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     SkTextBlobBuilder builder;
 #else
     RSTextBlobBuilder builder;
@@ -470,7 +470,7 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
 
     SkASSERT(nearlyEqual(context.run->baselineShift(), style.getBaselineShift()));
     SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getBaselineShift() +  0.5);
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     record.fBlob = builder.make();
     if (record.fBlob != nullptr) {
         record.fBounds.joinPossiblyEmptyRect(record.fBlob->bounds());
@@ -558,7 +558,7 @@ void TextLine::paintShadow(ParagraphPainter* painter,
     for (TextShadow shadow : style.getShadows()) {
         if (!shadow.hasShadow()) continue;
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         SkTextBlobBuilder builder;
 #else
         RSTextBlobBuilder builder;
@@ -572,7 +572,7 @@ void TextLine::paintShadow(ParagraphPainter* painter,
             clip.offset(this->offset());
             painter->clipRect(clip);
         }
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         auto blob = builder.make();
 #else
         auto blob = builder.Make();
@@ -867,13 +867,13 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
         }
     }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     auto shaped = [&](sk_sp<SkTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
 #else
     auto shaped = [&](std::shared_ptr<RSTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
 #endif
         ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), ellipsis);
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         SkFont font(typeface, textStyle.getFontSize());
         font.setEdging(SkFont::Edging::kAntiAlias);
         font.setHinting(SkFontHinting::kSlight);
@@ -885,7 +885,7 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
         font.SetSubpixel(true);
 #endif
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         std::unique_ptr<SkShaper> shaper = SkShaper::MakeShapeDontWrapOrReorder(
                             fOwner->getUnicode()->copy(),
                             fallback ? SkFontMgr::RefDefault() : SkFontMgr::RefEmpty());
@@ -932,7 +932,7 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
     }
 
     // Check the current font
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     auto ellipsisRun = shaped(run.fFont.refTypeface(), false);
 #else
     auto ellipsisRun = shaped(const_cast<RSFont&>(run.fFont).GetTypeface(), false);
@@ -1331,7 +1331,7 @@ LineMetrics TextLine::getMetrics() const {
         *runWidthInLine = this->iterateThroughSingleRunByStyles(
         TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kForeground,
         [&result, &run](TextRange textRange, const TextStyle& style, const ClipContext& context) {
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
             SkFontMetrics fontMetrics;
             run->fFont.getMetrics(&fontMetrics);
 #else
@@ -1510,7 +1510,7 @@ void TextLine::getRectsForRange(TextRange textRange0,
                     context.run->placeholderStyle() == nullptr &&
                     nearlyEqual(lastRun->heightMultiplier(),
                                 context.run->heightMultiplier()) &&
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
                     lastRun->font() == context.run->font())
 #else
                     IsRSFontEquals(lastRun->font(), context.run->font()))

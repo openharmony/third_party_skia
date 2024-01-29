@@ -205,7 +205,7 @@ private:
     struct TextBlobRecord {
         void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         sk_sp<SkTextBlob> fBlob;
 #else
         std::shared_ptr<RSTextBlob> fBlob;

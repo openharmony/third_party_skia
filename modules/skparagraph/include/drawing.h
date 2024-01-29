@@ -16,7 +16,7 @@
 #ifndef Drawing_DEFINED
 #define Drawing_DEFINED
 
-#ifdef USE_ROSEN_DRAWING
+#ifdef USE_SKIA_TXT
 
 #include "draw/path.h"
 #include "effect/mask_filter.h"

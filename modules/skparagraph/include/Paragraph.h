@@ -150,7 +150,7 @@ public:
                                           SkScalar dy,
                                           GlyphClusterInfo* glyphInfo) = 0;
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     struct FontInfo {
         FontInfo(const SkFont font, const TextRange textRange)
             : fFont(font), fTextRange(textRange) { }
@@ -175,7 +175,7 @@ public:
      * @param codeUnitIndex   text index
      * @return                font info or an empty font info if the text is not found
      */
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     virtual SkFont getFontAt(TextIndex codeUnitIndex) const = 0;
 #else
     virtual RSFont getFontAt(TextIndex codeUnitIndex) const = 0;

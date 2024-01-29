@@ -12,7 +12,7 @@ class CanvasParagraphPainter : public ParagraphPainter {
 public:
     CanvasParagraphPainter(SkCanvas* canvas);
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     void drawTextBlob(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) override;
     void drawTextShadow(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) override;
 #else
@@ -22,7 +22,7 @@ public:
     void drawRect(const SkRect& rect, const SkPaintOrID& paint) override;
     void drawRRect(const SkRRect& rrect, const SkColor color) override;
     void drawFilledRect(const SkRect& rect, const DecorationStyle& decorStyle) override;
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     void drawPath(const SkPath& path, const DecorationStyle& decorStyle) override;
 #else
     void drawPath(const RSPath& path, const DecorationStyle& decorStyle) override {}

@@ -16,7 +16,7 @@ class Decorations {
 
     private:
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     void calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface);
 #else
     void calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface);
@@ -29,7 +29,7 @@ class Decorations {
     SkScalar fThickness;
     SkScalar fPosition;
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     SkFontMetrics fFontMetrics;
     ParagraphPainter::DecorationStyle fDecorStyle;
     SkPath fPath;

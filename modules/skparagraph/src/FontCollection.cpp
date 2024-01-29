@@ -9,7 +9,7 @@ namespace skia {
 namespace textlayout {
 
 namespace {
-#ifdef USE_ROSEN_DRAWING
+#ifdef USE_SKIA_TXT
 std::shared_ptr<RSTypeface> RSLegacyMakeTypeface(std::shared_ptr<RSFontMgr> fontMgr, const char familyName[], RSFontStyle style)
 {
     RSTypeface* typeface = fontMgr->MatchFamilyStyle(familyName, style);
@@ -36,7 +36,7 @@ size_t FontCollection::FamilyKey::Hasher::operator()(const FontCollection::Famil
     for (const SkString& family : key.fFamilyNames) {
         hash ^= std::hash<std::string>()(family.c_str());
     }
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     return hash ^
            std::hash<uint32_t>()(key.fFontStyle.weight()) ^
            std::hash<uint32_t>()(key.fFontStyle.slant()) ^
@@ -55,7 +55,7 @@ FontCollection::FontCollection()
 
 size_t FontCollection::getFontManagersCount() const { return this->getFontManagerOrder().size(); }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 void FontCollection::setAssetFontManager(sk_sp<SkFontMgr> font_manager) {
 #else
 void FontCollection::setAssetFontManager(std::shared_ptr<RSFontMgr> font_manager) {
@@ -63,7 +63,7 @@ void FontCollection::setAssetFontManager(std::shared_ptr<RSFontMgr> font_manager
     fAssetFontManager = font_manager;
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 void FontCollection::setDynamicFontManager(sk_sp<SkFontMgr> font_manager) {
 #else
 void FontCollection::setDynamicFontManager(std::shared_ptr<RSFontMgr> font_manager) {
@@ -71,7 +71,7 @@ void FontCollection::setDynamicFontManager(std::shared_ptr<RSFontMgr> font_manag
     fDynamicFontManager = font_manager;
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 void FontCollection::setTestFontManager(sk_sp<SkFontMgr> font_manager) {
 #else
 void FontCollection::setTestFontManager(std::shared_ptr<RSFontMgr> font_manager) {
@@ -79,7 +79,7 @@ void FontCollection::setTestFontManager(std::shared_ptr<RSFontMgr> font_manager)
     fTestFontManager = font_manager;
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager,
                                            const char defaultFamilyName[]) {
 #else
@@ -90,7 +90,7 @@ void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManage
     fDefaultFamilyNames.emplace_back(defaultFamilyName);
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager,
                                            const std::vector<SkString>& defaultFamilyNames) {
 #else
@@ -101,7 +101,7 @@ void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManage
     fDefaultFamilyNames = defaultFamilyNames;
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager) {
 #else
 void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager) {
@@ -110,7 +110,7 @@ void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManage
 }
 
 // Return the available font managers in the order they should be queried.
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 std::vector<sk_sp<SkFontMgr>> FontCollection::getFontManagerOrder() const {
     std::vector<sk_sp<SkFontMgr>> order;
 #else
@@ -132,7 +132,7 @@ std::vector<std::shared_ptr<RSFontMgr>> FontCollection::getFontManagerOrder() co
     return order;
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames, SkFontStyle fontStyle) {
 #else
 std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames, RSFontStyle fontStyle) {
@@ -140,7 +140,7 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
     return findTypefaces(familyNames, fontStyle, std::nullopt);
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames, SkFontStyle fontStyle, const std::optional<FontArguments>& fontArgs) {
     // Look inside the font collections cache first
     FamilyKey familyKey(familyNames, fontStyle, fontArgs);
@@ -230,7 +230,7 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
 }
 #endif
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 sk_sp<SkTypeface> FontCollection::matchTypeface(const SkString& familyName, SkFontStyle fontStyle) {
     for (const auto& manager : this->getFontManagerOrder()) {
         sk_sp<SkFontStyleSet> set(manager->matchFamily(familyName.c_str()));
@@ -266,7 +266,7 @@ std::shared_ptr<RSTypeface> FontCollection::matchTypeface(const SkString& family
 
 
 // Find ANY font in available font managers that resolves the unicode codepoint
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 sk_sp<SkTypeface> FontCollection::defaultFallback(SkUnichar unicode, SkFontStyle fontStyle, const SkString& locale) {
 #else
 std::shared_ptr<RSTypeface> FontCollection::defaultFallback(SkUnichar unicode, RSFontStyle fontStyle, const SkString& locale) {
@@ -277,7 +277,7 @@ std::shared_ptr<RSTypeface> FontCollection::defaultFallback(SkUnichar unicode, R
         if (!locale.isEmpty()) {
             bcp47.push_back(locale.c_str());
         }
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         sk_sp<SkTypeface> typeface(manager->matchFamilyStyleCharacter(
                 nullptr, fontStyle, bcp47.data(), bcp47.size(), unicode));
 #else
@@ -291,7 +291,7 @@ std::shared_ptr<RSTypeface> FontCollection::defaultFallback(SkUnichar unicode, R
     return nullptr;
 }
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
 sk_sp<SkTypeface> FontCollection::defaultFallback() {
     if (fDefaultFontManager == nullptr) {
         return nullptr;
@@ -326,7 +326,7 @@ void FontCollection::enableFontFallback() { fEnableFontFallback = true; }
 
 void FontCollection::clearCaches() {
     fParagraphCache.reset();
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     fTypefaces.reset();
 #else
     fTypefaces.clear();

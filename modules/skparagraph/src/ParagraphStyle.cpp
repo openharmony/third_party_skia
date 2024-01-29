@@ -9,7 +9,7 @@ namespace skia {
 namespace textlayout {
 
 StrutStyle::StrutStyle() {
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     fFontStyle = SkFontStyle::Normal();
 #else
     fFontStyle = RSFontStyle(

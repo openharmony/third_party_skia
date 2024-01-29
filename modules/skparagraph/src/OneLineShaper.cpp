@@ -418,7 +418,7 @@ void OneLineShaper::iterateThroughFontStyles(TextRange textRange,
 
 void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                                        const TypefaceVisitor& visitor) {
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
     std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
 #else
     std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
@@ -464,14 +464,14 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                 SkASSERT(unicode != -1);
 
                 // First try to find in in a cache
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
                 sk_sp<SkTypeface> typeface;
 #else
                 std::shared_ptr<RSTypeface> typeface;
 #endif
                 FontKey fontKey(unicode, textStyle.getFontStyle(), textStyle.getLocale());
                 auto found = fFallbackFonts.find(fontKey);
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
                 if (found != nullptr) {
                     typeface = *found;
 #else
@@ -486,7 +486,7 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                         // There is no fallback font for this character, so move on to the next character.
                         continue;
                     }
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
                     fFallbackFonts.set(fontKey, typeface);
 #else
                     fFallbackFonts.emplace(fontKey, typeface);
@@ -494,7 +494,7 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                 }
 
                 // Check if we already tried this font on this text range
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
                 if (!alreadyTriedTypefaces.contains(typeface->uniqueID())) {
                     alreadyTriedTypefaces.add(typeface->uniqueID());
 #else
@@ -578,7 +578,7 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
             placeholder.fTextStyle.getFontStyle(),
             placeholder.fTextStyle.getFontArguments());
         auto typeface = typefaces.size() ? typefaces.front() : nullptr;
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
         SkFont font(typeface, placeholder.fTextStyle.getFontSize());
 #else
         RSFont font(typeface, placeholder.fTextStyle.getFontSize(), 1, 0);
@@ -643,14 +643,14 @@ bool OneLineShaper::shape() {
             fCurrentText = block.fRange;
             fUnresolvedBlocks.emplace_back(RunBlock(block.fRange));
 
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
             this->matchResolvedFonts(block.fStyle, [&](sk_sp<SkTypeface> typeface) {
 #else
             this->matchResolvedFonts(block.fStyle, [&](std::shared_ptr<RSTypeface> typeface) {
 #endif
 
                 // Create one more font to try
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
                 SkFont font(std::move(typeface), block.fStyle.getFontSize());
                 font.setEdging(SkFont::Edging::kAntiAlias);
                 font.setHinting(SkFontHinting::kSlight);
@@ -664,7 +664,7 @@ bool OneLineShaper::shape() {
 
                 // Apply fake bold and/or italic settings to the font if the
                 // typeface's attributes do not match the intended font style.
-#ifndef USE_ROSEN_DRAWING
+#ifndef USE_SKIA_TXT
                 int wantedWeight = block.fStyle.getFontStyle().weight();
                 bool fakeBold =
                     wantedWeight >= SkFontStyle::kSemiBold_Weight &&
