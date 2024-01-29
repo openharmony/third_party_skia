@@ -1506,7 +1506,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                 auto clusterEnd8 = context.run->globalClusterIndex(found + 1);
                 auto graphemes = fOwner->countSurroundingGraphemes({clusterIndex8, clusterEnd8});
 
-                SkScalar center = glyphemePosLeft + glyphemesWidth / 2;
+                SkScalar center = glyphemePosLeft + glyphemesWidth * fOwner->getTextSplitRatio();
                 if (graphemes.size() > 1) {
                     // Calculate the position proportionally based on grapheme count
                     SkScalar averageGraphemeWidth = glyphemesWidth / graphemes.size();
@@ -1515,7 +1515,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                                          ? 0
                                          : SkScalarFloorToInt(delta / averageGraphemeWidth);
                     auto graphemeCenter = glyphemePosLeft + graphemeIndex * averageGraphemeWidth +
-                                          averageGraphemeWidth / 2;
+                                          averageGraphemeWidth * fOwner->getTextSplitRatio();
                     auto graphemeUtf8Index = graphemes[graphemeIndex];
                     if ((dx < graphemeCenter) == context.run->leftToRight()) {
                         size_t utf16Index = fOwner->getUTF16Index(graphemeUtf8Index);
