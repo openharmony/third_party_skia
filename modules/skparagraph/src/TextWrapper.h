@@ -3,6 +3,7 @@
 #define TextWrapper_DEFINED
 
 #include <string>
+#include "include/ParagraphStyle.h"
 #include "include/core/SkSpan.h"
 #include "modules/skparagraph/src/TextLine.h"
 
@@ -213,7 +214,7 @@ private:
         fHardLineBreak = false;
     }
 
-    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack);
+    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType);
     void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
     void trimEndSpaces(TextAlign align);
     std::tuple<Cluster*, size_t, SkScalar> trimStartSpaces(Cluster* endOfClusters);
