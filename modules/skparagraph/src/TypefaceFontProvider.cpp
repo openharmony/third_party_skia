@@ -41,12 +41,23 @@ size_t TypefaceFontProvider::registerTypeface(sk_sp<SkTypeface> typeface, const 
     }
 
     auto found = fRegisteredFamilies.find(familyName);
-    if (found == nullptr) {
-        found = fRegisteredFamilies.set(familyName, sk_make_sp<TypefaceFontStyleSet>(familyName));
-        fFamilyNames.emplace_back(familyName);
-    }
+    if (typeface != nullptr) {
+        if (found == nullptr) {
+            found = fRegisteredFamilies.set(familyName, sk_make_sp<TypefaceFontStyleSet>(familyName));
+            fFamilyNames.emplace_back(familyName);
+        }
 
-    (*found)->appendTypeface(std::move(typeface));
+        (*found)->appendTypeface(std::move(typeface));
+    } else if (found != nullptr) {
+        (*found)->clearTypefaces();
+        fRegisteredFamilies.remove(familyName);
+        for (int i = 0; i < fFamilyNames.size(); i++) {
+            if (fFamilyNames[i] == familyName) {
+                fFamilyNames.removeShuffle(i);
+                break;
+            }
+        }
+    }
 
     return 1;
 }
@@ -79,6 +90,10 @@ void TypefaceFontStyleSet::appendTypeface(sk_sp<SkTypeface> typeface) {
     if (typeface.get() != nullptr) {
         fStyles.emplace_back(std::move(typeface));
     }
+}
+
+void TypefaceFontStyleSet::clearTypefaces() {
+    fStyles.reset();
 }
 
 }  // namespace textlayout
