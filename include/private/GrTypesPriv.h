@@ -1242,6 +1242,23 @@ static constexpr SkColorType GrCompressionTypeToSkColorType(SkImage::Compression
     SkUNREACHABLE;
 }
 
+static constexpr SkAlphaType GrCompressionTypeToSkAlphaType(SkImage::CompressionType compression) {
+    switch (compression) {
+        case SkImage::CompressionType::kNone:
+            return kUnknown_SkAlphaType;
+        case SkImage::CompressionType::kETC2_RGB8_UNORM:
+        case SkImage::CompressionType::kBC1_RGB8_UNORM:
+        case SkImage::CompressionType::kBC1_RGBA8_UNORM:
+            return kOpaque_SkAlphaType;
+        case SkImage::CompressionType::kASTC_RGBA8_4x4:
+        case SkImage::CompressionType::kASTC_RGBA8_6x6:
+        case SkImage::CompressionType::kASTC_RGBA8_8x8:
+            return kPremul_SkAlphaType;
+    }
+
+    SkUNREACHABLE;
+}
+
 static constexpr GrColorType GrMaskFormatToColorType(GrMaskFormat format) {
     switch (format) {
         case kA8_GrMaskFormat:

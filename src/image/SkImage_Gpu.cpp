@@ -522,11 +522,12 @@ sk_sp<SkImage> SkImage::MakeTextureFromCompressed(GrDirectContext* direct, sk_sp
     GrSurfaceProxyView view(std::move(proxy));
 
     SkColorType colorType = GrCompressionTypeToSkColorType(type);
+    SkAlphaType alphaType = GrCompressionTypeToSkAlphaType(type);
 
     return sk_make_sp<SkImage_Gpu>(sk_ref_sp(direct),
                                    kNeedNewImageUniqueID,
                                    std::move(view),
-                                   SkColorInfo(colorType, kOpaque_SkAlphaType, nullptr));
+                                   SkColorInfo(colorType, alphaType, nullptr));
 }
 
 sk_sp<SkImage> SkImage::makeTextureImage(GrDirectContext* dContext,
