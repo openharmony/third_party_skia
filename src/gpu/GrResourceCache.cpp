@@ -732,6 +732,9 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
     SkTDArray<GrGpuResource*> scratchResources;
     for (int i = 0; i < fPurgeableQueue.count(); i++) {
         GrGpuResource* resource = fPurgeableQueue.at(i);
+        if (!resource) {
+            continue;
+        }
         SkASSERT(resource->resourcePriv().isPurgeable());
         if (!resource->getUniqueKey().isValid()) {
             *scratchResources.append() = resource;
