@@ -242,6 +242,8 @@ public:
 
     float detectIndents(size_t index);
 
+    SkFontMetrics measureText() override;
+
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
