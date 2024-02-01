@@ -244,6 +244,8 @@ public:
 
     float getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); };
 
+    SkFontMetrics measureText() override;
+
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
