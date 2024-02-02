@@ -1242,10 +1242,10 @@ static constexpr SkColorType GrCompressionTypeToSkColorType(SkImage::Compression
     SkUNREACHABLE;
 }
 
+// modify for support astc texture format
 static constexpr SkAlphaType GrCompressionTypeToSkAlphaType(SkImage::CompressionType compression) {
     switch (compression) {
         case SkImage::CompressionType::kNone:
-            return kUnknown_SkAlphaType;
         case SkImage::CompressionType::kETC2_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGB8_UNORM:
         case SkImage::CompressionType::kBC1_RGBA8_UNORM:
