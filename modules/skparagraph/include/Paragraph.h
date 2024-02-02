@@ -36,6 +36,14 @@ public:
 
     SkScalar getLongestLine() { return fLongestLine; }
 
+    SkScalar getGlyphsBoundsTop() { return fGlyphsBoundsTop; }
+
+    SkScalar getGlyphsBoundsBottom() { return fGlyphsBoundsBottom; }
+
+    SkScalar getGlyphsBoundsLeft() { return fGlyphsBoundsLeft; }
+
+    SkScalar getGlyphsBoundsRight() { return fGlyphsBoundsRight; }
+
     bool didExceedMaxLines() { return fExceededMaxLines; }
 
     virtual void layout(SkScalar width) = 0;
@@ -166,6 +174,7 @@ public:
     virtual void setIndents(const std::vector<float>& indents) = 0;
 
     virtual float getTextSplitRatio() const = 0;
+    virtual SkFontMetrics measureText() = 0;
 
 protected:
     sk_sp<FontCollection> fFontCollection;
@@ -174,6 +183,10 @@ protected:
     // Things for Flutter
     SkScalar fAlphabeticBaseline;
     SkScalar fIdeographicBaseline;
+    SkScalar fGlyphsBoundsTop;
+    SkScalar fGlyphsBoundsBottom;
+    SkScalar fGlyphsBoundsLeft;
+    SkScalar fGlyphsBoundsRight;
     SkScalar fHeight;
     SkScalar fWidth;
     SkScalar fMaxIntrinsicWidth;

@@ -5,6 +5,7 @@
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPictureRecorder.h"
 #include "include/core/SkSpan.h"
+#include "include/core/SkTypes.h"
 #include "include/core/SkTypeface.h"
 #include "include/private/SkTFitsIn.h"
 #include "include/private/SkTo.h"
@@ -631,7 +632,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                       clusterRange, clusterRangeWithGhosts, run.advance().x(),
                       metrics);
 
-        fLongestLine = nearlyZero(advance.fX) ? run.advance().fX : advance.fX;
+        fLongestLine = std::max(run.advance().fX, advance.fX);
         fHeight = advance.fY;
         fWidth = maxWidth;
         fMaxIntrinsicWidth = run.advance().fX;
@@ -661,9 +662,9 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 // TODO: Take in account clipped edges
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
                 if (addEllipsis) {
-                    line.createEllipsis(maxWidth, this->getEllipsis(), true);
+                    line.createEllipsis(maxWidth, this->getEllipsis(), true, this->getWordBreakType());
                 }
-                fLongestLine = std::max(fLongestLine, nearlyZero(advance.fX) ? widthWithSpaces : advance.fX);
+                fLongestLine = std::max(fLongestLine, std::max(advance.fX, widthWithSpaces));
             });
 
     fHeight = textWrapper.height();
@@ -1297,6 +1298,37 @@ std::vector<Paragraph::FontInfo> ParagraphImpl::getFonts() const {
         results.emplace_back(run.font(), run.textRange());
     }
     return results;
+}
+
+SkFontMetrics ParagraphImpl::measureText() {
+    SkFontMetrics metrics;
+    const auto& firstFont = fRuns.front().font();
+    SkRect firstBounds;
+    auto firstStr = text(fRuns.front().textRange());
+    firstFont.getMetrics(&metrics);
+    firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
+    fGlyphsBoundsTop = firstBounds.top();
+    fGlyphsBoundsBottom = firstBounds.bottom();
+    fGlyphsBoundsLeft = firstBounds.left();
+    SkScalar realWidth = 0;
+    for (size_t i = 0; i < fRuns.size(); ++i) {
+        auto run = fRuns[i];
+        const auto& font = run.font();
+        SkRect bounds;
+        auto str = text(run.textRange());
+        auto advance = font.measureText(str.data(), str.size(), SkTextEncoding::kUTF8, &bounds, nullptr);
+        realWidth += advance;
+        if (i == 0) {
+            realWidth -= ((advance - (bounds.right() - bounds.left())) / 2);
+        }
+        if (i == (fRuns.size() - 1)) {
+            realWidth -= ((advance - (bounds.right() - bounds.left())) / 2);
+        }
+        fGlyphsBoundsTop = std::min(fGlyphsBoundsTop, bounds.top());
+        fGlyphsBoundsBottom = std::max(fGlyphsBoundsBottom, bounds.bottom());
+    }
+    fGlyphsBoundsRight = realWidth + fGlyphsBoundsLeft;
+    return metrics;
 }
 
 }  // namespace textlayout

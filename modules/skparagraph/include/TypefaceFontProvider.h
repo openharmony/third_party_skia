@@ -26,6 +26,7 @@ public:
     SkString getFamilyName() const { return fFamilyName; }
     SkString getAlias() const { return fAlias; }
     void appendTypeface(sk_sp<SkTypeface> typeface);
+    void clearTypefaces();
 
 private:
     SkTArray<sk_sp<SkTypeface>> fStyles;
