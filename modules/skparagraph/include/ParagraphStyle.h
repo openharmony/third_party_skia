@@ -137,8 +137,8 @@ struct ParagraphStyle {
 
     skia::textlayout::EllipsisModal getEllipsisMod() const { return ellipsisModal_; }
     void setEllipsisMod(skia::textlayout::EllipsisModal ellipsisModel) { ellipsisModal_ = ellipsisModel; }
-    float getTextSplitRatio() const { return textSplitRatio; }
-    void setTextSplitRatio(float textSplitRatio) { this->textSplitRatio = textSplitRatio; }
+    SkScalar getTextSplitRatio() const { return textSplitRatio; }
+    void setTextSplitRatio(SkScalar textSplitRatio) { this->textSplitRatio = textSplitRatio; }
 
 private:
     StrutStyle fStrutStyle;
@@ -153,7 +153,7 @@ private:
     bool fHintingIsOn;
     bool fReplaceTabCharacters;
     skia::textlayout::EllipsisModal ellipsisModal_;
-    float textSplitRatio = 0.5f;
+    SkScalar textSplitRatio = 0.5f;
 };
 }  // namespace textlayout
 }  // namespace skia

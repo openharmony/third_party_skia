@@ -316,7 +316,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     auto start = span.begin();
     InternalLineMetrics maxRunMetrics;
     bool needEllipsis = false;
-    float newWidth = 0.0;
+    SkScalar newWidth = 0.0;
     while (fEndLine.endCluster() != end) {
         if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() != EllipsisModal::TAIL) {
             newWidth = FLT_MAX;
@@ -413,12 +413,17 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
             fHardLineBreak = false;
         }
 
+        SkScalar offsetX = 0.0f;
+        TextAlign align = parent->paragraphStyle().effective_align();
+        if (align == TextAlign::kLeft || align == TextAlign::kJustify) {
+            offsetX = parent->detectIndents(fLineNumber - 1);
+        }
         addLine(textExcludingSpaces,
                 text,
                 textIncludingNewlines, clusters, clustersWithGhosts, widthWithSpaces,
                 fEndLine.startPos(),
                 fEndLine.endPos(),
-                SkVector::Make(parent->detectIndents(fLineNumber - 1), fHeight),
+                SkVector::Make(offsetX, fHeight),
                 SkVector::Make(fEndLine.width(), lineHeight),
                 fEndLine.metrics(),
                 needEllipsis && !fHardLineBreak);
