@@ -562,14 +562,14 @@ bool ParagraphImpl::shapeTextIntoEndlessLine() {
     return result;
 }
 
-void ParagraphImpl::setIndents(const std::vector<float>& indents)
+void ParagraphImpl::setIndents(const std::vector<SkScalar>& indents)
 {
     indents_ = indents;
 }
 
-float ParagraphImpl::detectIndents(size_t index)
+SkScalar ParagraphImpl::detectIndents(size_t index)
 {
-    float indent = 0.0;
+    SkScalar indent = 0.0;
     if (indents_.size() > 0 && index < indents_.size()) {
         indent = indents_[index];
     } else {
@@ -627,7 +627,12 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
         advance.fY = metrics.height();
         auto clusterRange = ClusterRange(0, trailingSpaces);
         auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
-        this->addLine(SkPoint::Make(this->detectIndents(std::numeric_limits<size_t>::max()), 0), advance,
+        SkScalar offsetX = 0.0f;
+        TextAlign align = fParagraphStyle.effective_align();
+        if (align == TextAlign::kLeft || align == TextAlign::kJustify) {
+            offsetX = this->detectIndents(std::numeric_limits<size_t>::max());
+        }
+        this->addLine(SkPoint::Make(offsetX, 0), advance,
                       textExcludingSpaces, textRange, textRange,
                       clusterRange, clusterRangeWithGhosts, run.advance().x(),
                       metrics);
