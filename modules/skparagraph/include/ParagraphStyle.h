@@ -134,8 +134,8 @@ struct ParagraphStyle {
     bool getReplaceTabCharacters() const { return fReplaceTabCharacters; }
     void setReplaceTabCharacters(bool value) { fReplaceTabCharacters = value; }
 
-    float getTextSplitRatio() const { return textSplitRatio; }
-    void setTextSplitRatio(float textSplitRatio) { this->textSplitRatio = textSplitRatio; }
+    SkScalar getTextSplitRatio() const { return textSplitRatio; }
+    void setTextSplitRatio(SkScalar textSplitRatio) { this->textSplitRatio = textSplitRatio; }
 
 private:
     StrutStyle fStrutStyle;
@@ -149,7 +149,7 @@ private:
     TextHeightBehavior fTextHeightBehavior;
     bool fHintingIsOn;
     bool fReplaceTabCharacters;
-    float textSplitRatio = 0.5f;
+    SkScalar textSplitRatio = 0.5f;
 };
 }  // namespace textlayout
 }  // namespace skia

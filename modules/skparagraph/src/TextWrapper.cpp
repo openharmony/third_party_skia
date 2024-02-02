@@ -316,7 +316,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     InternalLineMetrics maxRunMetrics;
     bool needEllipsis = false;
     while (fEndLine.endCluster() != end) {
-        float newWidth = maxWidth - parent->detectIndents(fLineNumber-1);
+        SkScalar newWidth = maxWidth - parent->detectIndents(fLineNumber-1);
         this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType());
 
         auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
@@ -401,12 +401,17 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         // In case of a force wrapping we don't have a break cluster and have to use the end cluster
         text.end = std::max(text.end, textExcludingSpaces.end);
 
+        SkScalar offsetX = 0.0f;
+        TextAlign align = parent->paragraphStyle().effective_align();
+        if (align == TextAlign::kLeft || align == TextAlign::kJustify) {
+            offsetX = parent->detectIndents(fLineNumber - 1);
+        }
         addLine(textExcludingSpaces,
                 text,
                 textIncludingNewlines, clusters, clustersWithGhosts, widthWithSpaces,
                 fEndLine.startPos(),
                 fEndLine.endPos(),
-                SkVector::Make(parent->detectIndents(fLineNumber - 1), fHeight),
+                SkVector::Make(offsetX, fHeight),
                 SkVector::Make(fEndLine.width(), lineHeight),
                 fEndLine.metrics(),
                 needEllipsis && !fHardLineBreak);
