@@ -173,6 +173,7 @@ public:
 
     virtual void setIndents(const std::vector<float>& indents) = 0;
 
+    virtual float getTextSplitRatio() const = 0;
     virtual SkFontMetrics measureText() = 0;
 
 protected:

@@ -242,6 +242,7 @@ public:
 
     float detectIndents(size_t index);
 
+    float getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); };
     SkFontMetrics measureText() override;
 
 private:
