@@ -191,7 +191,11 @@ public:
 
     virtual SkScalar getTextSplitRatio() const = 0;
 
+#ifndef USE_SKIA_TXT
     virtual SkFontMetrics measureText() = 0;
+#else
+    virtual RSFontMetrics measureText() = 0;
+#endif
 
 protected:
     sk_sp<FontCollection> fFontCollection;

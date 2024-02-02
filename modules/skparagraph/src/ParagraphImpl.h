@@ -254,7 +254,11 @@ public:
 
     SkScalar getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); }
 
+#ifndef USE_SKIA_TXT
     SkFontMetrics measureText() override;
+#else
+    RSFontMetrics measureText() override;
+#endif
 
 private:
     friend class ParagraphBuilder;

@@ -1331,6 +1331,7 @@ std::vector<Paragraph::FontInfo> ParagraphImpl::getFonts() const {
     return results;
 }
 
+#ifndef USE_SKIA_TXT
 SkFontMetrics ParagraphImpl::measureText() {
     SkFontMetrics metrics;
     if (fRuns.empty()) {
@@ -1365,6 +1366,42 @@ SkFontMetrics ParagraphImpl::measureText() {
     fGlyphsBoundsRight = realWidth + fGlyphsBoundsLeft;
     return metrics;
 }
+#else
+RSFontMetrics ParagraphImpl::measureText() {
+    RSFontMetrics metrics;
+    if (fRuns.empty()) {
+        return metrics;
+    }
+
+    auto& firstFont = const_cast<RSFont&>(fRuns.front().font());
+    RSRect firstBounds;
+    auto firstStr = text(fRuns.front().textRange());
+    firstFont.GetMetrics(&metrics);
+    firstFont.MeasureText(firstStr.data(), firstStr.size(), RSDrawing::TextEncoding::UTF8, &firstBounds);
+    fGlyphsBoundsTop = firstBounds.GetTop();
+    fGlyphsBoundsBottom = firstBounds.GetBottom();
+    fGlyphsBoundsLeft = firstBounds.GetLeft();
+    float realWidth = 0;
+    for (size_t i = 0; i < fRuns.size(); ++i) {
+        auto run = fRuns[i];
+        auto& font = const_cast<RSFont&>(run.font());
+        RSRect bounds;
+        auto str = text(run.textRange());
+        auto advance = font.MeasureText(str.data(), str.size(), RSDrawing::TextEncoding::UTF8, &bounds);
+        realWidth += advance;
+        if (i == 0) {
+            realWidth -= ((advance - (bounds.GetRight() - bounds.GetLeft())) / 2);
+        }
+        if (i == (fRuns.size() - 1)) {
+            realWidth -= ((advance - (bounds.GetRight() - bounds.GetLeft())) / 2);
+        }
+        fGlyphsBoundsTop = std::min(fGlyphsBoundsTop, bounds.GetTop());
+        fGlyphsBoundsBottom = std::max(fGlyphsBoundsBottom, bounds.GetBottom());
+    }
+    fGlyphsBoundsRight = realWidth + fGlyphsBoundsLeft;
+    return metrics;
+}
+#endif
 
 }  // namespace textlayout
 }  // namespace skia
