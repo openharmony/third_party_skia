@@ -12,11 +12,11 @@ void draw_line_as_rect(ParagraphPainter* painter, SkScalar x, SkScalar y, SkScal
     SkASSERT(decorStyle.skPaint().getStrokeCap() == SkPaint::kButt_Cap);
     SkASSERT(decorStyle.skPaint().getStrokeWidth() > 0);   // this trick won't work for hairlines
 
-    float radius = decorStyle.getStrokeWidth() * 0.5f;
+    SkScalar radius = decorStyle.getStrokeWidth() * 0.5f;
     painter->drawFilledRect({x, y - radius, x + width, y + radius}, decorStyle);
 }
 
-const float kDoubleDecorationSpacing = 3.0f;
+const SkScalar kDoubleDecorationSpacing = 3.0f;
 }  // namespace
 
 void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, const TextLine::ClipContext& context, SkScalar baseline) {

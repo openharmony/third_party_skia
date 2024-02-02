@@ -171,9 +171,9 @@ public:
      */
     virtual std::vector<FontInfo> getFonts() const = 0;
 
-    virtual void setIndents(const std::vector<float>& indents) = 0;
+    virtual void setIndents(const std::vector<SkScalar>& indents) = 0;
 
-    virtual float getTextSplitRatio() const = 0;
+    virtual SkScalar getTextSplitRatio() const = 0;
 
     virtual SkFontMetrics measureText() = 0;
 

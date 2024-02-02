@@ -173,7 +173,7 @@ public:
                                                   TextRange textIncludingNewlines,
                                                   ClusterRange clusters,
                                                   ClusterRange clustersWithGhosts,
-                                                  SkScalar AddLineToParagraph,
+                                                  SkScalar addLineToParagraph,
                                                   size_t startClip,
                                                   size_t endClip,
                                                   SkVector offset,
