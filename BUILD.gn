@@ -1490,6 +1490,10 @@ if (use_oh_skia) {
 
   config("icu_config") {
     include_dirs = [ "${skia_third_party_dir}/externals/icu/source/common" ]
+    if (is_arkui_x) {
+      include_dirs = []
+      include_dirs = [ "//third_party/icu/icu4c/source/common" ]
+    }
   }
 
   template("make_skia_deps") {
