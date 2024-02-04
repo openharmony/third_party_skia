@@ -109,7 +109,7 @@ public:
     void ensureTextBlobCachePopulated();
 
     void createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
-
+    void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
     // For testing internal structures
     void scanStyles(StyleType style, const RunStyleVisitor& visitor);
 

@@ -564,16 +564,16 @@ bool ParagraphImpl::shapeTextIntoEndlessLine() {
 
 void ParagraphImpl::setIndents(const std::vector<SkScalar>& indents)
 {
-    indents_ = indents;
+    fIndents = indents;
 }
 
 SkScalar ParagraphImpl::detectIndents(size_t index)
 {
     SkScalar indent = 0.0;
-    if (indents_.size() > 0 && index < indents_.size()) {
-        indent = indents_[index];
+    if (fIndents.size() > 0 && index < fIndents.size()) {
+        indent = fIndents[index];
     } else {
-        indent = indents_.size() > 0 ? indents_.back() : 0.0;
+        indent = fIndents.size() > 0 ? fIndents.back() : 0.0;
     }
 
     return indent;
@@ -627,6 +627,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
         advance.fY = metrics.height();
         auto clusterRange = ClusterRange(0, trailingSpaces);
         auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
+
         SkScalar offsetX = 0.0f;
         TextAlign align = fParagraphStyle.effective_align();
         if (align == TextAlign::kLeft || align == TextAlign::kJustify) {
@@ -666,8 +667,10 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 bool addEllipsis) {
                 // TODO: Take in account clipped edges
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
-                if (addEllipsis) {
+                if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
                     line.createEllipsis(maxWidth, this->getEllipsis(), true, this->getWordBreakType());
+                } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
+                    line.createHeadEllipsis(maxWidth, this->getEllipsis(), true);
                 }
                 fLongestLine = std::max(fLongestLine, std::max(advance.fX, widthWithSpaces));
             });

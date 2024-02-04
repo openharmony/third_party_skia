@@ -2,6 +2,7 @@
 #include "include/ParagraphStyle.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextWrapper.h"
+#include <float.h>
 
 namespace skia {
 namespace textlayout {
@@ -315,8 +316,13 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     auto start = span.begin();
     InternalLineMetrics maxRunMetrics;
     bool needEllipsis = false;
+    SkScalar newWidth = 0.0;
     while (fEndLine.endCluster() != end) {
-        SkScalar newWidth = maxWidth - parent->detectIndents(fLineNumber-1);
+        if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() != EllipsisModal::TAIL) {
+            newWidth = FLT_MAX;
+        } else {
+            newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
+        }
         this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType());
 
         auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
@@ -400,6 +406,12 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
 
         // In case of a force wrapping we don't have a break cluster and have to use the end cluster
         text.end = std::max(text.end, textExcludingSpaces.end);
+
+        if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
+            hasEllipsis) {
+            needEllipsis = true;
+            fHardLineBreak = false;
+        }
 
         SkScalar offsetX = 0.0f;
         TextAlign align = parent->paragraphStyle().effective_align();

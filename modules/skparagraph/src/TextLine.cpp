@@ -733,6 +733,58 @@ void TextLine::createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool 
     }
 }
 
+void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool) {
+    SkScalar width = fAdvance.fX;
+    std::unique_ptr<Run> ellipsisRun;
+    RunIndex lastRun = EMPTY_RUN;
+    for (auto clusterIndex = fGhostClusterRange.start; clusterIndex < fGhostClusterRange.end; ++clusterIndex) {
+        auto& cluster = fOwner->cluster(clusterIndex);
+        // Shape the ellipsis if the run has changed
+        if (lastRun != cluster.runIndex()) {
+            ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
+            if (ellipsisRun->advance().fX > maxWidth) {
+                lastRun = EMPTY_RUN;
+                continue;
+            } else {
+                // We may need to continue
+                lastRun = cluster.runIndex();
+            }
+        }
+        // See if it fits
+        if (width + ellipsisRun->advance().fX > maxWidth) {
+            width -= cluster.width();
+            // Continue if the ellipsis does not fit
+            continue;
+        }
+        // We found enough room for the ellipsis
+        fAdvance.fX += ellipsisRun->advance().fX;
+        fEllipsis = std::move(ellipsisRun);
+        fEllipsis->setOwner(fOwner);
+
+        fClusterRange.start = clusterIndex;
+        fClusterRange.end = fGhostClusterRange.end;
+        if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
+            fEllipsis->fClusterStart = fText.start;
+        } else {
+            fEllipsis->fClusterStart = 0;
+        }
+        fText.start = cluster.textRange().start;
+        fTextIncludingNewlines.start = cluster.textRange().start;
+        fTextExcludingSpaces.start = cluster.textRange().start;
+        break;
+    }
+
+    if (!fEllipsis) {
+        // Weird situation: ellipsis does not fit; no ellipsis then
+        fClusterRange.start = fClusterRange.start;
+        fGhostClusterRange.start = fClusterRange.start;
+        fText.end = fText.start;
+        fTextIncludingNewlines.start = fTextIncludingNewlines.start;
+        fTextExcludingSpaces.start = fTextExcludingSpaces.start;
+        fAdvance.fX = 0;
+    }
+}
+
 static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
     SkUnichar val = SkUTF::NextUTF8(ptr, end);
     return val < 0 ? 0xFFFD : val;
@@ -1131,12 +1183,22 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
     SkScalar width = 0;
     SkScalar runOffset = 0;
     SkScalar totalWidth = 0;
+    bool ellipsisModeIsHead = fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD;
+    bool isAlreadyUseEllipsis = false;
     auto textRange = includingGhostSpaces ? this->textWithNewlines() : this->trimmedText();
 
-    if (this->ellipsis() != nullptr && fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
+    if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl &&
+        this->ellipsis() != nullptr && !ellipsisModeIsHead) {
+        isAlreadyUseEllipsis = true;
         runOffset = this->ellipsis()->offset().fX;
         if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
         }
+    } else if (ellipsisModeIsHead && this->ellipsis() != nullptr &&
+                fOwner->paragraphStyle().getTextDirection() == TextDirection::kLtr) {
+        isAlreadyUseEllipsis = true;
+        runOffset = this->ellipsis()->offset().fX;
+        if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
+        }        
     }
 
     for (auto& runIndex : fRunsInVisualOrder) {
@@ -1168,7 +1230,7 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
     runOffset += width;
     totalWidth += width;
 
-    if (this->ellipsis() != nullptr && fOwner->paragraphStyle().getTextDirection() == TextDirection::kLtr) {
+    if (this->ellipsis() != nullptr && !isAlreadyUseEllipsis) {
         if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
             totalWidth += width;
         }

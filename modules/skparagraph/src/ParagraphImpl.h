@@ -243,6 +243,7 @@ public:
     SkScalar detectIndents(size_t index);
 
     SkScalar getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); }
+
     SkFontMetrics measureText() override;
 
 private:
@@ -274,7 +275,7 @@ private:
     SkTArray<SkUnicode::CodeUnitFlags, true> fCodeUnitProperties;
     SkTArray<size_t, true> fClustersIndexFromCodeUnit;
     std::vector<size_t> fWords;
-    std::vector<SkScalar> indents_;
+    std::vector<SkScalar> fIndents;
     std::vector<SkUnicode::BidiRegion> fBidiRegions;
     // These two arrays are used in measuring methods (getRectsForRange, getGlyphPositionAtCoordinate)
     // They are filled lazily whenever they need and cached
