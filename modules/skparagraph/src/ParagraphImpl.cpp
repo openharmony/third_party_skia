@@ -564,16 +564,16 @@ bool ParagraphImpl::shapeTextIntoEndlessLine() {
 
 void ParagraphImpl::setIndents(const std::vector<SkScalar>& indents)
 {
-    indents_ = indents;
+    fIndents = indents;
 }
 
 SkScalar ParagraphImpl::detectIndents(size_t index)
 {
     SkScalar indent = 0.0;
-    if (indents_.size() > 0 && index < indents_.size()) {
-        indent = indents_[index];
+    if (fIndents.size() > 0 && index < fIndents.size()) {
+        indent = fIndents[index];
     } else {
-        indent = indents_.size() > 0 ? indents_.back() : 0.0;
+        indent = fIndents.size() > 0 ? fIndents.back() : 0.0;
     }
 
     return indent;
