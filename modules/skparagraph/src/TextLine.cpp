@@ -1188,7 +1188,7 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
     auto textRange = includingGhostSpaces ? this->textWithNewlines() : this->trimmedText();
 
     if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl &&
-            this->ellipsis() != nullptr && !ellipsisModeIsHead) {
+        this->ellipsis() != nullptr && !ellipsisModeIsHead) {
         isAlreadyUseEllipsis = true;
         runOffset = this->ellipsis()->offset().fX;
         if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
