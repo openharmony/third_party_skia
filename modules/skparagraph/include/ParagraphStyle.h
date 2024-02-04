@@ -94,7 +94,7 @@ struct ParagraphStyle {
                this->fEllipsisUtf16 == rhs.fEllipsisUtf16 &&
                this->fTextDirection == rhs.fTextDirection && this->fTextAlign == rhs.fTextAlign &&
                this->fDefaultTextStyle == rhs.fDefaultTextStyle &&
-               this->ellipsisModal_ == rhs.ellipsisModal_ &&
+               this->fEllipsisModal == rhs.fEllipsisModal &&
                this->fReplaceTabCharacters == rhs.fReplaceTabCharacters;
     }
 
