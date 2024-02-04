@@ -16,7 +16,7 @@ static_assert(1 == static_cast<int>(SkPathFillType::kEvenOdd), "fill_type_mismat
 static_assert(2 == static_cast<int>(SkPathFillType::kInverseWinding), "fill_type_mismatch");
 static_assert(3 == static_cast<int>(SkPathFillType::kInverseEvenOdd), "fill_type_mismatch");
 
-class SkPathPriv {
+class SK_API SkPathPriv {
 public:
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
     static const int kPathRefGenIDBitCnt = 30; // leave room for the fill type (skbug.com/1762)

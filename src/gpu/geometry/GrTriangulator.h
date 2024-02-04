@@ -23,7 +23,7 @@ struct SkRect;
 /**
  * Provides utility functions for converting paths to a collection of triangles.
  */
-class GrTriangulator {
+class SK_API GrTriangulator {
 public:
     constexpr static int kArenaDefaultChunkSize = 16 * 1024;
 

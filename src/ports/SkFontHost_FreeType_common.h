@@ -64,7 +64,7 @@ private:
     using INHERITED = SkScalerContext;
 };
 
-class SkTypeface_FreeType : public SkTypeface {
+class SK_API SkTypeface_FreeType : public SkTypeface {
 public:
     /** For SkFontMgrs to make use of our ability to extract
      *  name and style from a stream, using FreeType's API.

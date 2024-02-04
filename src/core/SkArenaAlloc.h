@@ -103,7 +103,7 @@ private:
 // recursion of the RunDtorsOnBlock to be limited to O(log size-of-memory). Block size grow using
 // the Fibonacci sequence which means that for 2^32 memory there are 48 allocations, and for 2^48
 // there are 71 allocations.
-class SkArenaAlloc {
+class SK_API SkArenaAlloc {
 public:
     SkArenaAlloc(char* block, size_t blockSize, size_t firstHeapAllocation);
 

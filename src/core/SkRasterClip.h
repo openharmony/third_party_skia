@@ -20,7 +20,7 @@ class SkRRect;
  *  Wraps a SkRegion and SkAAClip, so we have a single object that can represent either our
  *  BW or antialiased clips.
  */
-class SkRasterClip {
+class SK_API SkRasterClip {
 public:
     SkRasterClip();
     explicit SkRasterClip(const SkIRect&);

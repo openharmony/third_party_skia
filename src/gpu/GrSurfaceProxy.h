@@ -25,7 +25,7 @@ class GrSurfaceProxyPriv;
 class GrSurfaceProxyView;
 class GrTextureProxy;
 
-class GrSurfaceProxy : public SkNVRefCnt<GrSurfaceProxy> {
+class SK_API GrSurfaceProxy : public SkNVRefCnt<GrSurfaceProxy> {
 public:
     virtual ~GrSurfaceProxy();
 

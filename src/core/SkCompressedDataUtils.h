@@ -30,8 +30,8 @@ static constexpr bool SkCompressionTypeIsOpaque(SkImage::CompressionType compres
     SkUNREACHABLE;
 }
 
-size_t SkCompressedDataSize(SkImage::CompressionType, SkISize baseDimensions,
-                            SkTArray<size_t>* individualMipOffsets, bool mipMapped);
+size_t SK_API SkCompressedDataSize(SkImage::CompressionType, SkISize baseDimensions,
+                                   SkTArray<size_t>* individualMipOffsets, bool mipMapped);
 size_t SkCompressedBlockSize(SkImage::CompressionType type);
 
 /**
