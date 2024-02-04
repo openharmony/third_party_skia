@@ -243,6 +243,7 @@ public:
     SkScalar detectIndents(size_t index);
 
     SkScalar getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); }
+
     SkFontMetrics measureText() override;
 
 private:
