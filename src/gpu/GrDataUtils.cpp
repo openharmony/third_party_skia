@@ -122,7 +122,7 @@ static int num_4x4_blocks(int size) {
 
 static int num_6x6_blocks(int size) {
     // Divide the image size by 6, rounding down
-    return ((size + 5) & ~5) / 6;
+    return (size + 5) / 6;
 }
 
 static int num_8x8_blocks(int size) {
@@ -246,17 +246,17 @@ SkISize GrCompressedDimensions(SkImage::CompressionType type, SkISize baseDimens
             return { 4 * numBlocksWidth, 4 * numBlocksHeight };
         }
         case SkImage::CompressionType::kASTC_RGBA8_6x6: {
-            int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
-            int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
+            int numBlocksWidth = num_6x6_blocks(baseDimensions.width());
+            int numBlocksHeight = num_6x6_blocks(baseDimensions.height());
 
-            // Each BC1_RGB8_UNORM and ETC1 block and ASTC 4x4 block has 16 pixels
+            // Each ASTC 6x6 block has 36 pixels
             return { 6 * numBlocksWidth, 6 * numBlocksHeight };
         }
         case SkImage::CompressionType::kASTC_RGBA8_8x8: {
-            int numBlocksWidth = num_4x4_blocks(baseDimensions.width());
-            int numBlocksHeight = num_4x4_blocks(baseDimensions.height());
+            int numBlocksWidth = num_8x8_blocks(baseDimensions.width());
+            int numBlocksHeight = num_8x8_blocks(baseDimensions.height());
 
-            // Each BC1_RGB8_UNORM and ETC1 block and ASTC 4x4 block has 16 pixels
+            // Each ASTC 8x8 block has 64 pixels
             return { 8 * numBlocksWidth, 8 * numBlocksHeight };
         }
     }
