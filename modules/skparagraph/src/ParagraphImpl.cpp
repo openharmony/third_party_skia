@@ -1310,6 +1310,10 @@ std::vector<Paragraph::FontInfo> ParagraphImpl::getFonts() const {
 
 SkFontMetrics ParagraphImpl::measureText() {
     SkFontMetrics metrics;
+    if (fRuns.empty()) {
+        return metrics;
+    }
+
     const auto& firstFont = fRuns.front().font();
     SkRect firstBounds;
     auto firstStr = text(fRuns.front().textRange());
