@@ -66,7 +66,8 @@ struct StrutStyle {
                nearlyEqual(this->fHeight, rhs.fHeight) &&
                nearlyEqual(this->fFontSize, rhs.fFontSize) &&
                this->fFontStyle == rhs.fFontStyle &&
-               this->fFontFamilies == rhs.fFontFamilies;
+               this->fFontFamilies == rhs.fFontFamilies &&
+               this->fWordBreakType == rhs.fWordBreakType;
     }
 
 private:
@@ -95,7 +96,8 @@ struct ParagraphStyle {
                this->fTextDirection == rhs.fTextDirection && this->fTextAlign == rhs.fTextAlign &&
                this->fDefaultTextStyle == rhs.fDefaultTextStyle &&
                this->fEllipsisModal == rhs.fEllipsisModal &&
-               this->fReplaceTabCharacters == rhs.fReplaceTabCharacters;
+               this->fReplaceTabCharacters == rhs.fReplaceTabCharacters &&
+               nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
     }
 
     const StrutStyle& getStrutStyle() const { return fStrutStyle; }
