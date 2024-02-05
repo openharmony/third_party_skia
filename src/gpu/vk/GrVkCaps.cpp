@@ -1724,13 +1724,13 @@ GrBackendFormat GrVkCaps::getBackendFormatFromCompressionType(
             }
             return {};
         case SkImage::CompressionType::kASTC_RGBA8_6x6:
-            if (this->isVkFormatTexturable(VK_FORMAT_ASTC_4x4_UNORM_BLOCK)) {
-                return GrBackendFormat::MakeVk(VK_FORMAT_ASTC_4x4_UNORM_BLOCK);
+            if (this->isVkFormatTexturable(VK_FORMAT_ASTC_6x6_UNORM_BLOCK)) {
+                return GrBackendFormat::MakeVk(VK_FORMAT_ASTC_6x6_UNORM_BLOCK);
             }
             return {};
         case SkImage::CompressionType::kASTC_RGBA8_8x8:
-            if (this->isVkFormatTexturable(VK_FORMAT_ASTC_4x4_UNORM_BLOCK)) {
-                return GrBackendFormat::MakeVk(VK_FORMAT_ASTC_4x4_UNORM_BLOCK);
+            if (this->isVkFormatTexturable(VK_FORMAT_ASTC_8x8_UNORM_BLOCK)) {
+                return GrBackendFormat::MakeVk(VK_FORMAT_ASTC_8x8_UNORM_BLOCK);
             }
             return {};
     }
