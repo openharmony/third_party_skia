@@ -218,7 +218,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 
     if (fHasDecorations) {
-        this->iterateThroughVisualRuns(false,
+        this->iterateThroughVisualRuns(true,
             [painter, x, y, this]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
                 *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -649,26 +649,16 @@ void TextLine::createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool 
     RunIndex lastRun = EMPTY_RUN;
     std::unique_ptr<Run> ellipsisRun;
     int wordCount = 0;
+    bool inWord = false;
 
-    for (auto clusterIndex = fGhostClusterRange.end; clusterIndex > fGhostClusterRange.start; --clusterIndex) {
-        auto& cluster = fOwner->cluster(clusterIndex - 1);
-        if (cluster.isHardBreak() || cluster.isSoftBreak() || cluster.isWhitespaceBreak() ||
-            cluster.run().isPlaceholder()) {
+    for (auto clusterIndex = fGhostClusterRange.start; clusterIndex < fGhostClusterRange.end; ++clusterIndex) {
+        auto& cluster = fOwner->cluster(clusterIndex);
+        if (cluster.isWordBreak()) {
+            inWord = false;
+        } else if (!inWord) {
             ++wordCount;
+            inWord = true;
         }
-    }
-    if (wordCount == 0) {
-        wordCount = 1;
-    }
-
-    if (wordCount == 1 && wordBreakType == WordBreakType::NORMAL) {
-        fClusterRange.end = fClusterRange.start;
-        fGhostClusterRange.end = fClusterRange.start;
-        fText.end = fText.start;
-        fTextIncludingNewlines.end = fTextIncludingNewlines.start;
-        fTextExcludingSpaces.end = fTextExcludingSpaces.start;
-        fAdvance.fX = 0;
-        return;
     }
 
     bool iterForWord = false;
@@ -687,22 +677,22 @@ void TextLine::createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool 
                 lastRun = cluster.runIndex();
             }
         }
+        
+        if (!cluster.isWordBreak()) {
+            inWord = true;
+        } else if (inWord) {
+            --wordCount;
+            inWord = false;
+        }
         // See if it fits
         if (width + ellipsisRun->advance().fX > maxWidth) {
             width -= cluster.width();
             // Continue if the ellipsis does not fit
-            iterForWord = (
-                wordBreakType != WordBreakType::BREAK_ALL &&
-                !cluster.isHardBreak() &&
-                !cluster.isSoftBreak() &&
-                !cluster.isWhitespaceBreak() &&
-                !cluster.run().isPlaceholder() &&
-                wordCount != 1
-            );
+            iterForWord = (wordCount != 1 && wordBreakType != WordBreakType::BREAK_ALL && !cluster.isWordBreak());
             continue;
         }
 
-        if (iterForWord && !cluster.isHardBreak() && !cluster.isSoftBreak() && !cluster.isWhitespaceBreak()) {
+        if (iterForWord && !cluster.isWordBreak()) {
             width -= cluster.width();
             continue;
         }
@@ -1077,7 +1067,7 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
                                                    const RunStyleVisitor& visitor) const {
     auto correctContext = [&](TextRange textRange, SkScalar textOffsetInRun) -> ClipContext {
         auto result = this->measureTextInsideOneRun(
-                textRange, run, runOffset, textOffsetInRun, false, textAdjustment);
+                textRange, run, runOffset, textOffsetInRun, styleType == StyleType::kDecorations, textAdjustment);
         if (styleType == StyleType::kDecorations) {
             // Decorations are drawn based on the real font metrics (regardless of styles and strut)
             result.clip.fTop = this->sizes().runTop(run, LineMetricStyle::CSS);
