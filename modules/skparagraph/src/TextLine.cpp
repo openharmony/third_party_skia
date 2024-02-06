@@ -852,17 +852,11 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
         return ellipsisRun;
     };
 
-    // Check the current font
-    auto ellipsisRun = shaped(run.fFont.refTypeface(), false);
-    if (ellipsisRun->isResolved()) {
-        return ellipsisRun;
-    }
-
     // Check all allowed fonts
     std::vector<sk_sp<SkTypeface>> typefaces = fOwner->fontCollection()->findTypefaces(
             textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
     for (const auto& typeface : typefaces) {
-        ellipsisRun = shaped(typeface, false);
+        auto ellipsisRun = shaped(typeface, false);
         if (ellipsisRun->isResolved()) {
             return ellipsisRun;
         }
@@ -873,14 +867,20 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
         const char* ch = ellipsis.c_str();
         SkUnichar unicode = nextUtf8Unit(&ch, ellipsis.c_str() + ellipsis.size());
 
-       auto typeface = fOwner->fontCollection()->defaultFallback(
-                    unicode, textStyle.getFontStyle(), textStyle.getLocale());
+        auto typeface = fOwner->fontCollection()->defaultFallback(
+            unicode, textStyle.getFontStyle(), textStyle.getLocale());
         if (typeface) {
-            ellipsisRun = shaped(typeface, true);
+            auto ellipsisRun = shaped(typeface, true);
             if (ellipsisRun->isResolved()) {
                 return ellipsisRun;
             }
         }
+    }
+
+    // Check the current font
+    auto ellipsisRun = shaped(run.fFont.refTypeface(), false);
+    if (ellipsisRun->isResolved()) {
+        return ellipsisRun;
     }
     return ellipsisRun;
 }
