@@ -125,7 +125,7 @@ extern void ZLIB_INTERNAL copy_with_crc(z_streamp strm, Bytef *dst, long size);
 
 #define NIL 0
 /* Tail of hash chains */
-
+#define ACTUAL_MIN_MATCH 4
 #ifndef TOO_FAR
 #  define TOO_FAR 4096
 #endif
@@ -1286,7 +1286,7 @@ local uInt longest_match(s, cur_match)
     register Bytef *scan = s->window + s->strstart; /* current string */
     register Bytef *match;                      /* matched string */
     register int len;                           /* length of current match */
-    int best_len = (int)s->prev_length;         /* best match length so far */
+    int best_len = (s->prev_length == 0) ? ACTUAL_MIN_MATCH-1 : s->prev_length;         /* best match length so far */
     int nice_match = s->nice_match;             /* stop if match long enough */
     IPos limit = s->strstart > (IPos)MAX_DIST(s) ?
         s->strstart - (IPos)MAX_DIST(s) : NIL;
