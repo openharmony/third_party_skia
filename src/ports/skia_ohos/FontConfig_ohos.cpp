@@ -56,6 +56,7 @@ static const char* OHOS_DEFAULT_CONFIG = "fontconfig.json";
 FontConfig_OHOS::FontConfig_OHOS(const SkTypeface_FreeType::Scanner& fontScanner,
     const char* fname)
 {
+    std::lock_guard<std::mutex> lock(fontMutex);
     int err = parseConfig(fname);
     if (err != NO_ERROR) {
         return;
@@ -233,12 +234,22 @@ int FontConfig_OHOS::getStyleIndex(const char* familyName, bool& isFallback) con
         isFallback = false;
         return 0;
     }
+
+    std::lock_guard<std::mutex> lock(fontMutex);
+    if (genericNames.count() == 0) {
+        return -1;
+    }
+
     SkString fname(familyName);
     int* p = genericNames.find(fname);
     if (p) {
         isFallback = false;
         return *p;
     } else {
+        if (fallbackNames.count() == 0) {
+            return -1;
+        }
+
         p = fallbackNames.find(fname);
         if (p) {
             isFallback = true;
@@ -973,6 +984,7 @@ bool FontConfig_OHOS::insertVariableFont(const AxisDefinitions& axisDefs, FontIn
 TypefaceSet* FontConfig_OHOS::getTypefaceSet(const SkString& familyName,
     SkString& specifiedName) const
 {
+    std::lock_guard<std::mutex> lock(fontMutex);
     if (aliasMap.find(familyName) != nullptr) {
         const std::vector<AliasInfo>& aliasSet = *(aliasMap.find(familyName));
         if (aliasSet.size()) {
@@ -1338,6 +1350,7 @@ bool FontConfig_OHOS::judgeFileExist()
 
 int FontConfig_OHOS::checkProductFile(const char* fname)
 {
+    std::lock_guard<std::mutex> lock(fontMutex);
     int err = parseConfig(PRODUCT_DEFAULT_CONFIG);
     SkDebugf("parse productfontconfig json file err = %d", err);
     if ((err != NO_ERROR) || (!judgeFileExist())) {

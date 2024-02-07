@@ -7,6 +7,7 @@
 
 #include <json/json.h>
 #include <vector>
+#include <mutex>
 
 #include "SkFontDescriptor.h"
 #include "SkFontHost_FreeType_common.h"
@@ -203,6 +204,8 @@ private:
     AjdustMap adjustMap; // to save adjust information temporarily
     VariationMap variationMap; // to save variation information temporarily
     TtcIndexMap ttcIndexMap; // to save 'index' information temporarily
+
+    mutable std::mutex fontMutex;
 
     int parseConfig(const char* fname);
     int checkConfigFile(const char* fname, Json::Value& root);
