@@ -643,37 +643,63 @@ void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar 
 }
 
 void TextLine::justify(SkScalar maxWidth) {
-    // Count words and the extra spaces to spread across the line
-    // TODO: do it at the line breaking?..
-    size_t whitespacePatches = 0;
+    int whitespacePatches = 0;
     SkScalar textLen = 0;
+    SkScalar whitespaceLen = 0;
     bool whitespacePatch = false;
+    // Take leading whitespaces width but do not increment a whitespace patch number
+    bool leadingWhitespaces = false;
     this->iterateThroughClustersInGlyphsOrder(false, false,
-        [&whitespacePatches, &textLen, &whitespacePatch](const Cluster* cluster, bool ghost) {
+        [&](const Cluster* cluster, ClusterIndex index, bool ghost) {
             if (cluster->isWhitespaceBreak()) {
-                if (!whitespacePatch) {
-                    whitespacePatch = true;
+                if (index == 0) {
+                    leadingWhitespaces = true;
+                } else if (!whitespacePatch && !leadingWhitespaces) {
+                    // We only count patches BETWEEN words, not before
                     ++whitespacePatches;
                 }
+                whitespacePatch = !leadingWhitespaces;
+                whitespaceLen += cluster->width();
+            } else if (cluster->isIdeographic()) {
+                // Whitespace break before and after
+                if (!whitespacePatch && index != 0) {
+                    // We only count patches BETWEEN words, not before
+                    ++whitespacePatches; // before
+                }
+                whitespacePatch = true;
+                leadingWhitespaces = false;
+                ++whitespacePatches;    // after
             } else {
                 whitespacePatch = false;
+                leadingWhitespaces = false;
             }
             textLen += cluster->width();
             return true;
         });
 
+    if (whitespacePatch) {
+        // We only count patches BETWEEN words, not after
+        --whitespacePatches;
+    }
     if (whitespacePatches == 0) {
+        if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
+            // Justify -> Right align
+            fShift = maxWidth - textLen;
+        }
         return;
     }
 
-    SkScalar step = (maxWidth - textLen) / whitespacePatches;
-    SkScalar shift = 0;
+    SkScalar step = (maxWidth - textLen + whitespaceLen) / whitespacePatches;
+    SkScalar shift = 0.0f;
+    SkScalar prevShift = 0.0f;
 
     // Deal with the ghost spaces
     auto ghostShift = maxWidth - this->fAdvance.fX;
     // Spread the extra whitespaces
     whitespacePatch = false;
-    this->iterateThroughClustersInGlyphsOrder(false, true, [&](const Cluster* cluster, bool ghost) {
+    // Do not break on leading whitespaces
+    leadingWhitespaces = false;
+    this->iterateThroughClustersInGlyphsOrder(false, true, [&](const Cluster* cluster, ClusterIndex index, bool ghost) {
 
         if (ghost) {
             if (cluster->run().leftToRight()) {
@@ -682,19 +708,41 @@ void TextLine::justify(SkScalar maxWidth) {
             return true;
         }
 
-        auto prevShift = shift;
         if (cluster->isWhitespaceBreak()) {
-            if (!whitespacePatch) {
+            if (index == 0) {
+                leadingWhitespaces = true;
+            } else if (!whitespacePatch && !leadingWhitespaces) {
                 shift += step;
                 whitespacePatch = true;
                 --whitespacePatches;
             }
+            shift -= cluster->width();
+        } else if (cluster->isIdeographic()) {
+            if (!whitespacePatch && index != 0) {
+                shift += step;
+               --whitespacePatches;
+            }
+            whitespacePatch = false;
+            leadingWhitespaces = false;
         } else {
             whitespacePatch = false;
+            leadingWhitespaces = false;
         }
-        shiftCluster(cluster, shift, prevShift);
+        this->shiftCluster(cluster, shift, prevShift);
+        prevShift = shift;
+        // We skip ideographic whitespaces
+        if (!cluster->isWhitespaceBreak() && cluster->isIdeographic()) {
+            shift += step;
+            whitespacePatch = true;
+            --whitespacePatches;
+        }
         return true;
     });
+
+    if (whitespacePatch && whitespacePatches < 0) {
+        whitespacePatches++;
+        shift -= step;
+    }
 
     SkAssertResult(nearlyEqual(shift, maxWidth - textLen));
     SkASSERT(whitespacePatches == 0);
@@ -1138,6 +1186,7 @@ void TextLine::iterateThroughClustersInGlyphsOrder(bool reversed,
     // Walk through the clusters in the logical order (or reverse)
     SkSpan<const size_t> runs(fRunsInVisualOrder.data(), fRunsInVisualOrder.size());
     bool ignore = false;
+    ClusterIndex index = 0;
     directional_for_each(runs, !reversed, [&](decltype(runs[0]) r) {
         if (ignore) return;
         auto run = this->fOwner->run(r);
@@ -1153,7 +1202,8 @@ void TextLine::iterateThroughClustersInGlyphsOrder(bool reversed,
             if (!includeGhosts && ghost) {
                 return;
             }
-            if (!visitor(&cluster, ghost)) {
+            if (!visitor(&cluster, index++, ghost)) {
+
                 ignore = true;
                 return;
             }

@@ -86,6 +86,7 @@ class SKUNICODE_API SkUnicode {
             kControl = 0x20,
             kTabulation = 0x40,
             kGlyphClusterStart = 0x80,
+            kIdeographic = 0x100,
         };
         enum class TextDirection {
             kLTR,
@@ -137,6 +138,7 @@ class SKUNICODE_API SkUnicode {
         static bool isGraphemeStart(SkUnicode::CodeUnitFlags flags);
         static bool isControl(SkUnicode::CodeUnitFlags flags);
         static bool isPartOfWhiteSpaceBreak(SkUnicode::CodeUnitFlags flags);
+        static bool isIdeographic(SkUnichar utf8);
         static bool extractBidi(const char utf8[],
                                 int utf8Units,
                                 TextDirection dir,
