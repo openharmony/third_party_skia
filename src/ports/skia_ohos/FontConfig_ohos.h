@@ -240,33 +240,6 @@ private:
     FontConfig_OHOS& operator = (FontConfig_OHOS&&) = delete;
     int checkProductFile(const char* fname);
     bool judgeFileExist();
-
-    void parseSymbolAnimations(const Json::Value& root, const char* key);
-    void parseSymbolAnimations(const Json::Value& root, std::vector<AnimationInfo>* animationInfos);
-    void parseSymbolAnimationParas(const Json::Value& root, std::vector<AnimationPara>& animationParas);
-    void parseSymbolAnimationPara(const Json::Value& root, AnimationPara& animationPara);
-    void parseSymbolGroupParas(const Json::Value& root, std::vector<std::vector<PiecewiseParameter>>& groupParameters);
-    void parseSymbolPiecewisePara(const Json::Value& root, PiecewiseParameter& piecewiseParameter);
-    void parseSymbolAnimationSubType(const char* subTypeStr, AnimationSubType& subType);
-    void parseSymbolCurveArgs(const Json::Value& root, std::map<std::string, double_t>& curveArgs);
-    void parseSymbolProperties(const Json::Value& root, std::map<std::string, std::vector<double_t>>& properties);
-
-    int parseConfigOfHmSymbol(const char* fname, SkString fontDir);
-    void parseSymbolLayersGrouping(const Json::Value& root);
-    void parseOneSymbol(const Json::Value& root, std::unordered_map<uint32_t, SymbolLayersGroups>* hmSymbolConfig);
-    void parseLayers(const Json::Value& root, std::vector<std::vector<size_t>>& layers);
-    void parseRenderModes(const Json::Value& root, std::map<SymbolRenderingStrategy,
-        std::vector<RenderGroup>>& renderModesGroups);
-    void parseComponets(const Json::Value& root, std::vector<size_t>& components);
-    void parseRenderGroups(const Json::Value& root, std::vector<RenderGroup>& renderGroups);
-    void parseGroupIndexes(const Json::Value& root, std::vector<GroupInfo>& groupInfos);
-    void parseLayerOrMaskIndexes(const Json::Value& root, std::vector<size_t>& indexes);
-    void parseDefaultColor(const char* defaultColorStr, RenderGroup& renderGroup);
-    void parseAnimationSettings(const Json::Value& root, std::vector<AnimationSetting>& animationSettings);
-    void parseAnimationSetting(const Json::Value& root, AnimationSetting& animationSetting);
-    void parseAnimationType(const char* animationTypeStr, AnimationType& animationType);
-    void parseGroupSettings(const Json::Value& root, std::vector<GroupSetting>& groupSettings);
-    void parseGroupSetting(const Json::Value& root, GroupSetting& groupSetting);
 };
 
 #endif /* FONTCONFIG_OHOS_H */
