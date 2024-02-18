@@ -134,17 +134,12 @@ void ParagraphImpl::MiddleEllipsisDeal()
     const char *ellStr = ellipsis.c_str();
     size_t start = 0;
     size_t end = 0;
-    SkDebugf("CrashTest | One");
-    SkDebugf("MeasureCut | begin  fClusters.size=%zu ftext =%s  fText Size=%zu ellStr.c_str()=%s siez=%zu start=%zu ,end=%zu",
-        fClusters.size(), fText.c_str(),fText.size(), ellStr,ellipsis.size(),start,end);
     if (fRuns.begin()->leftToRight()) {
         scanTextCutPoint(ltrTextSize, &start, &end);
         if (start != end) {
             fText.remove(ltrTextSize[start - 1].charbegin, ltrTextSize[end + 3].charbegin - ltrTextSize[start - 1].charbegin);
             fText.insert(ltrTextSize[start - 1].charbegin, ellStr);
             ltrTextSize.clear();
-            SkDebugf("MeasureCut | LTR  fClusters.size=%zu  ftext =%s  fText Size=%zu ellStr.c_str()=%s siez=%zu",
-            fClusters.size(), fText.c_str(),fText.size(), ellStr,ellipsis.size());
         }
     } else if (!fRuns.begin()->leftToRight()) {
         scanTextCutPoint(rtlTextSize, &start, &end);
@@ -152,11 +147,8 @@ void ParagraphImpl::MiddleEllipsisDeal()
             fText.remove(rtlTextSize[start + 1].charbegin, rtlTextSize[end].charbegin - rtlTextSize[start].charbegin);
             fText.insert(rtlTextSize[start + 1].charbegin, ellStr);
             rtlTextSize.clear();
-            SkDebugf("MeasureCut | RTLrtlTextSize[start].charOver=%zu  fClusters.size=%zu   start =%zu end =%zu ftext =%s  fText Size=%zu newText.c_str()=%s siez=%zu",
-            rtlTextSize[start].charOver, fClusters.size(),start,end, fText.c_str(),fText.size(), ellStr,ellipsis.size());
         }
     }
-    SkDebugf("CrashTest | Four");
     textNotOverflower = start == end ? true : false;
     do {
         if (textNotOverflower) {
@@ -167,17 +159,14 @@ void ParagraphImpl::MiddleEllipsisDeal()
         this->fClusters.reset();
         this->fClustersIndexFromCodeUnit.reset();
         this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
-        SkDebugf("CrashTest | Five");
         fMaxIntrinsicWidth = 0;
         this->shapeTextIntoEndlessLine();
     } while(textNotOverflower);
-    SkDebugf("CrashTest | Seven");
     this->resetContext();
     this->resolveStrut();
     this->computeEmptyMetrics();
     this->fLines.reset();
     this->breakShapedTextIntoLines(fOldMaxWidth);
-    SkDebugf("CrashTest | Eight");
     this->resetShifts();
     this->formatLines(fWidth);
     fText.reset();
@@ -185,7 +174,6 @@ void ParagraphImpl::MiddleEllipsisDeal()
 
 void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, size_t *start, size_t *end)
 {
-    SkDebugf("CrashTest | Two");
     float measureWidth = runTimeEllipsisWidth;
     if (fRuns.begin()->leftToRight()) {
         size_t begin = 0;
@@ -233,9 +221,6 @@ void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, siz
             *end = 0;
         } 
     }
-    SkDebugf("CrashTest | Three");
-    SkDebugf("MeasureCut |rawTextSize = %zu  runTimeEllipsisWidth =%f measureWidth=%f  fOldMaxWidth =%f  *start =%zu rawTextSize[*start].charstart=%zu  *end=%zu rawTextSize[*end].charend=%zu",
-    rawTextSize.size(),runTimeEllipsisWidth, measureWidth,fOldMaxWidth, *start, rawTextSize[*start].charOver,*end, rawTextSize[*end].charOver);
     return;
 }
 
@@ -248,7 +233,6 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
         fOldMaxWidth = SkScalarFloorToScalar(floorWidth);
         isMiddleEllipsis = true;
-        SkDebugf("SetSomething | Layout Start");
     }
     if (getApplyRoundingHack()) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
@@ -660,9 +644,7 @@ void ParagraphImpl::buildClusterTable() {
                     textCount.charbegin = charStart;
                     textCount.charOver = charEnd;
                     textCount.phraseWidth = width;
-                    this->ltrTextSize.emplace_back(textCount);
-                SkDebugf("NewSit|LTR runIndex=%zu charStart = %zu charEnd=%zu glyphStart=%zu glyphEnd =%zu fGlyphs.size()=%zu calculateWidth=%f rtlTextSize=%zu fClusters.size()=%zu fText.c_str()=%s run.advance().fX=%f",
-                         runIndex, charStart,charEnd,glyphStart, glyphEnd,run.size(), width,rtlTextSize.size(),fClusters.size(),fText.c_str(),run.advance().fX);                    
+                    this->ltrTextSize.emplace_back(textCount);                
                 } else if (isMiddleEllipsis && !run.leftToRight()) {
                     TextCutRecord textCount;
                     textCount.charbegin = charStart;
