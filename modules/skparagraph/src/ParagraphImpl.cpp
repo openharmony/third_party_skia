@@ -628,7 +628,7 @@ void ParagraphImpl::buildClusterTable() {
             fCodeUnitProperties[run.textRange().end] |= SkUnicode::CodeUnitFlags::kSoftLineBreakBefore;
         } else {
             // Walk through the glyph in the direction of input text
-            run.iterateThroughClustersInTextOrder([runIndex, this](size_t glyphStart,
+            run.iterateThroughClustersInTextOrder([&run, runIndex, this](size_t glyphStart,
                                                                    size_t glyphEnd,
                                                                    size_t charStart,
                                                                    size_t charEnd,
@@ -644,7 +644,7 @@ void ParagraphImpl::buildClusterTable() {
                     textCount.charbegin = charStart;
                     textCount.charOver = charEnd;
                     textCount.phraseWidth = width;
-                    this->ltrTextSize.emplace_back(textCount);                
+                    this->ltrTextSize.emplace_back(textCount);
                 } else if (isMiddleEllipsis && !run.leftToRight()) {
                     TextCutRecord textCount;
                     textCount.charbegin = charStart;
