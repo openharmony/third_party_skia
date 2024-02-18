@@ -185,7 +185,7 @@ SkScalar Run::addSpacesEvenly(SkScalar space, Cluster* cluster) {
     for (size_t i = cluster->startPos(); i < cluster->endPos(); ++i) {
         fPositions[i].fX += shift;
         if (this->index() == 0) {
-            fPositions[i].fX += space / 2;
+            fPositions[i].fX += space / 2; // offset by space / 2
         }
         shift += space;
     }
