@@ -142,7 +142,7 @@ public:
     void setDescentStyle(LineMetricStyle style) { fDescentStyle = style; }
 
     bool endsWithHardLineBreak() const;
-
+    std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
 private:
     struct RoundRectAttr {
         int styleId;
@@ -150,7 +150,6 @@ private:
         SkRect rect;
     };
 
-    std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
     void justify(SkScalar maxWidth);
 
     void buildTextBlob(TextRange textRange, const TextStyle& style, const ClipContext& context);

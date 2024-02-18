@@ -158,6 +158,12 @@ public:
         TextRange fTextRange;
     };
 
+    struct TextCutRecord {
+        size_t charbegin;
+        size_t charOver;
+        SkScalar phraseWidth;
+    };
+
     /** Returns the font that is used to shape the text at the position
      *
      * @param codeUnitIndex   text index
