@@ -235,21 +235,12 @@ int FontConfig_OHOS::getStyleIndex(const char* familyName, bool& isFallback) con
         return 0;
     }
 
-    std::lock_guard<std::mutex> lock(fontMutex);
-    if (genericNames.count() == 0) {
-        return -1;
-    }
-
     SkString fname(familyName);
     int* p = genericNames.find(fname);
     if (p) {
         isFallback = false;
         return *p;
     } else {
-        if (fallbackNames.count() == 0) {
-            return -1;
-        }
-
         p = fallbackNames.find(fname);
         if (p) {
             isFallback = true;
