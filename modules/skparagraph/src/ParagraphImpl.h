@@ -236,7 +236,7 @@ public:
     }
 
     void scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, size_t *start, size_t *end);
-    void MiddleEllipsisDeal();
+    void middleEllipsisDeal();
     bool codeUnitHasProperty(size_t index, SkUnicode::CodeUnitFlags property) const {
         return (fCodeUnitProperties[index] & property) == property;
     }
