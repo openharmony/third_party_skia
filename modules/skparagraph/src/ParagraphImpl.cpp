@@ -154,7 +154,8 @@ void ParagraphImpl::MiddleEllipsisDeal()
         if (textNotOverflower) {
             break;
         }
-        //updateLayout = true;
+        this->fBidiRegions.clear();
+        this->computeCodeUnitProperties();
         this->fRuns.reset();
         this->fClusters.reset();
         this->fClustersIndexFromCodeUnit.reset();
@@ -167,9 +168,6 @@ void ParagraphImpl::MiddleEllipsisDeal()
     this->computeEmptyMetrics();
     this->fLines.reset();
     this->breakShapedTextIntoLines(fOldMaxWidth);
-    this->resetShifts();
-    this->formatLines(fWidth);
-    fText.reset();
 }
 
 void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, size_t *start, size_t *end)
