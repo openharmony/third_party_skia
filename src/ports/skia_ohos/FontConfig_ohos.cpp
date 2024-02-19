@@ -56,7 +56,6 @@ static const char* OHOS_DEFAULT_CONFIG = "fontconfig.json";
 FontConfig_OHOS::FontConfig_OHOS(const SkTypeface_FreeType::Scanner& fontScanner,
     const char* fname)
 {
-    std::lock_guard<std::mutex> lock(fontMutex);
     int err = parseConfig(fname);
     if (err != NO_ERROR) {
         return;
@@ -235,12 +234,21 @@ int FontConfig_OHOS::getStyleIndex(const char* familyName, bool& isFallback) con
         return 0;
     }
 
+    std::lock_guard<std::mutex> lock(fontMutex);
+    if (genericNames.count() == 0) {
+        return -1;
+    }
+
     SkString fname(familyName);
     int* p = genericNames.find(fname);
     if (p) {
         isFallback = false;
         return *p;
     } else {
+        if (fallbackNames.count() == 0) {
+            return -1;
+        }
+
         p = fallbackNames.find(fname);
         if (p) {
             isFallback = true;
