@@ -126,7 +126,8 @@ void ParagraphImpl::addUnresolvedCodepoints(TextRange textRange) {
         }
     );
 }
-void ParagraphImpl::MiddleEllipsisDeal()
+
+void ParagraphImpl::middleEllipsisDeal()
 {
     isMiddleEllipsis = false;
     bool textNotOverflower = false;
@@ -304,7 +305,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 
     if (fParagraphStyle.getMaxLines() == 1 &&
         fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
-        MiddleEllipsisDeal();
+        middleEllipsisDeal();
         fState = kLineBroken;
     }
 
