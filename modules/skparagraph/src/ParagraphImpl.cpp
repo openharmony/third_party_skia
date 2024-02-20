@@ -145,8 +145,8 @@ void ParagraphImpl::middleEllipsisDeal()
     } else if (!fRuns.begin()->leftToRight()) {
         scanTextCutPoint(rtlTextSize, &start, &end);
         if (end) {
-            fText.remove(rtlTextSize[start].charOver, rtlTextSize[end].charbegin - rtlTextSize[start].charbegin);
-            fText.insert(rtlTextSize[start].charOver, ellStr);
+            fText.remove(rtlTextSize[start - 1].charbegin, rtlTextSize[end + 2].charbegin - rtlTextSize[start - 1].charbegin);
+            fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
             rtlTextSize.clear();
         }
     }
