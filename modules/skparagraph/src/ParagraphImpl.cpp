@@ -137,14 +137,14 @@ void ParagraphImpl::middleEllipsisDeal()
     size_t end = 0;
     if (fRuns.begin()->leftToRight()) {
         scanTextCutPoint(ltrTextSize, &start, &end);
-        if (start != end) {
-            fText.remove(ltrTextSize[start - 1].charbegin, ltrTextSize[end + 3].charbegin - ltrTextSize[start - 1].charbegin);
+        if (start && end)) {
+            fText.remove(ltrTextSize[start - 1].charbegin, ltrTextSize[end + 2].charbegin - ltrTextSize[start - 1].charbegin);
             fText.insert(ltrTextSize[start - 1].charbegin, ellStr);
             ltrTextSize.clear();
         }
     } else if (!fRuns.begin()->leftToRight()) {
         scanTextCutPoint(rtlTextSize, &start, &end);
-        if (start != end) {
+        if (start && end)) {
             fText.remove(rtlTextSize[start + 1].charbegin, rtlTextSize[end].charbegin - rtlTextSize[start].charbegin);
             fText.insert(rtlTextSize[start + 1].charbegin, ellStr);
             rtlTextSize.clear();
@@ -184,7 +184,7 @@ void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, siz
             } else {
                 break;
             }
-            while (last > begin && measureWidth < fOldMaxWidth) {
+            while (last >= begin && measureWidth < fOldMaxWidth) {
                 measureWidth += rawTextSize[last].phraseWidth;
                 last--;
                 break;
@@ -192,8 +192,11 @@ void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, siz
         }
         if (measureWidth >= fOldMaxWidth) {
             *start = begin;
+            if (last < begin) {
+                last = begin;
+            }
             *end = last;
-        } else if(last == begin || measureWidth < fOldMaxWidth) {
+        } else {
             *start = 0;
             *end = 0;
         }
@@ -206,7 +209,7 @@ void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, siz
             } else {
                 break;
             }
-            while (right > left && measureWidth < fOldMaxWidth) {
+            while (right >= left && measureWidth < fOldMaxWidth) {
                 measureWidth += rawTextSize[right].phraseWidth;
                 right--;
                 break;
@@ -214,8 +217,11 @@ void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, siz
         }
         if (measureWidth >= fOldMaxWidth) {
             *start = left;
+            if (right < left) {
+                right = left;
+            }
             *end = right;
-        } else if(left == right || measureWidth < fOldMaxWidth) {
+        } else {
             *start = 0;
             *end = 0;
         } 
