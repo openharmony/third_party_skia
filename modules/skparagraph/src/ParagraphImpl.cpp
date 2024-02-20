@@ -137,20 +137,21 @@ void ParagraphImpl::middleEllipsisDeal()
     size_t end = 0;
     if (fRuns.begin()->leftToRight()) {
         scanTextCutPoint(ltrTextSize, &start, &end);
-        if (start && end)) {
+        if (end) {
             fText.remove(ltrTextSize[start - 1].charbegin, ltrTextSize[end + 2].charbegin - ltrTextSize[start - 1].charbegin);
             fText.insert(ltrTextSize[start - 1].charbegin, ellStr);
             ltrTextSize.clear();
         }
     } else if (!fRuns.begin()->leftToRight()) {
         scanTextCutPoint(rtlTextSize, &start, &end);
-        if (start && end)) {
-            fText.remove(rtlTextSize[start + 1].charbegin, rtlTextSize[end].charbegin - rtlTextSize[start].charbegin);
-            fText.insert(rtlTextSize[start + 1].charbegin, ellStr);
+        if (end) {
+            fText.remove(rtlTextSize[start].charOver, rtlTextSize[end].charbegin - rtlTextSize[start].charbegin);
+            fText.insert(rtlTextSize[start].charOver, ellStr);
             rtlTextSize.clear();
         }
     }
-    textNotOverflower = start == end ? true : false;
+
+    textNotOverflower = end == 0 ? true : false;
     do {
         if (textNotOverflower) {
             break;
@@ -177,24 +178,21 @@ void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, siz
     if (fRuns.begin()->leftToRight()) {
         size_t begin = 0;
         size_t last = rawTextSize.size() - 1;
-        while (begin < rawTextSize.size() && begin < last) {
-            if (measureWidth < fOldMaxWidth) {
-                measureWidth += rawTextSize[begin].phraseWidth;
-                begin++;
-            } else {
-                break;
-            }
-            while (last >= begin && measureWidth < fOldMaxWidth) {
-                measureWidth += rawTextSize[last].phraseWidth;
-                last--;
+        while (begin < rawTextSize.size() && begin <= last && measureWidth < fOldMaxWidth) {
+            SkDebugf("Foreaing | begin=%zu last=%zu",begin,last);
+            measureWidth += rawTextSize[begin++].phraseWidth;
+            while (last > begin && measureWidth < fOldMaxWidth) {
+                measureWidth += rawTextSize[last--].phraseWidth;
                 break;
             }
         }
-        if (measureWidth >= fOldMaxWidth) {
+
+        if (last < begin) {
+            last = begin;
+        }
+
+        if (measureWidth >= fOldMaxWidth || fParagraphStyle.getTextOverflower()) {
             *start = begin;
-            if (last < begin) {
-                last = begin;
-            }
             *end = last;
         } else {
             *start = 0;
@@ -203,23 +201,20 @@ void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, siz
     } else {
         size_t left = 0;
         size_t right = rawTextSize.size() - 1;
-        while (left < rawTextSize.size() - 1) {
-            if (measureWidth < fOldMaxWidth) {
-                measureWidth += rawTextSize[left].phraseWidth;
-            } else {
-                break;
-            }
-            while (right >= left && measureWidth < fOldMaxWidth) {
-                measureWidth += rawTextSize[right].phraseWidth;
-                right--;
+        while (left < rawTextSize.size() && measureWidth < fOldMaxWidth && left <= right) {
+            measureWidth += rawTextSize[left++].phraseWidth;
+            while (right > left && measureWidth < fOldMaxWidth) {
+                measureWidth += rawTextSize[right--].phraseWidth;
                 break;
             }               
         }
-        if (measureWidth >= fOldMaxWidth) {
+
+        if (right < left) {
+            right = left;
+        }
+
+        if (measureWidth >= fOldMaxWidth || fParagraphStyle.getTextOverflower()) {
             *start = left;
-            if (right < left) {
-                right = left;
-            }
             *end = right;
         } else {
             *start = 0;
@@ -236,7 +231,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 
     if (fParagraphStyle.getMaxLines() == 1 &&
         fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
-        fOldMaxWidth = SkScalarFloorToScalar(floorWidth);
+        fOldMaxWidth = rawWidth;
         isMiddleEllipsis = true;
     }
     if (getApplyRoundingHack()) {
