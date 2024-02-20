@@ -38,6 +38,19 @@ bool SkJpegCodec::IsJpeg(const void* buffer, size_t bytesRead) {
 
 const uint32_t kExifHeaderSize = 14;
 const uint32_t kExifMarker = JPEG_APP0 + 1;
+const uint32_t kApp3Marker = JPEG_APP0 + 3;
+const uint32_t kApp4Marker = JPEG_APP0 + 4;
+const uint32_t kApp5Marker = JPEG_APP0 + 5;
+const uint32_t kApp6Marker = JPEG_APP0 + 6;
+const uint32_t kApp7Marker = JPEG_APP0 + 7;
+const uint32_t kApp8Marker = JPEG_APP0 + 8;
+const uint32_t kApp9Marker = JPEG_APP0 + 9;
+const uint32_t kApp10Marker = JPEG_APP0 + 10;
+const uint32_t kApp11Marker = JPEG_APP0 + 11;
+const uint32_t kApp12Marker = JPEG_APP0 + 12;
+const uint32_t kApp13Marker = JPEG_APP0 + 13;
+const uint32_t kApp14Marker = JPEG_APP0 + 14;
+const uint32_t kApp15Marker = JPEG_APP0 + 15;
 
 static bool is_orientation_marker(jpeg_marker_struct* marker, SkEncodedOrigin* orientation) {
     if (kExifMarker != marker->marker || marker->data_length < kExifHeaderSize) {
@@ -167,6 +180,20 @@ SkCodec::Result SkJpegCodec::ReadHeader(SkStream* stream, SkCodec** codecOut,
     if (codecOut) {
         jpeg_save_markers(dinfo, kExifMarker, 0xFFFF);
         jpeg_save_markers(dinfo, kICCMarker, 0xFFFF);
+        jpeg_save_markers(dinfo, JPEG_APP0, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp3Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp4Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp5Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp6Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp7Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp8Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp9Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp10Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp11Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp12Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp13Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp14Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp15Marker, 0xFFFF);
     }
 
     // Read the jpeg header
