@@ -126,6 +126,8 @@ set(EXPAT_CONTEXT_BYTES 1024 CACHE STRING "Define to specify how much context to
 mark_as_advanced(EXPAT_CONTEXT_BYTES)
 option(EXPAT_DTD "Define to make parameter entity parsing functionality available" ON)
 mark_as_advanced(EXPAT_DTD)
+expat_shy_set(EXPAT_GE ON CACHE BOOL "Define to make general entity parsing functionality available")
+mark_as_advanced(EXPAT_GE)
 option(EXPAT_NS "Define to make XML Namespaces functionality available" ON)
 mark_as_advanced(EXPAT_NS)
 option(EXPAT_WARNINGS_AS_ERRORS "Treat all compiler warnings as errors" OFF)
@@ -156,6 +158,11 @@ endif()
 #
 # Environment checks
 #
+if(EXPAT_DTD AND NOT EXPAT_GE)
+    message(SEND_ERROR "Option EXPAT_DTD requires that EXPAT_GE is also enabled.")
+    message(SEND_ERROR "Please either enable option EXPAT_GE (recommended) or disable EXPAT_DTD also.")
+endif()
+
 if(EXPAT_WITH_LIBBSD)
     find_library(LIB_BSD NAMES bsd)
     if(NOT LIB_BSD)
@@ -258,6 +265,7 @@ endif()
 
 _expat_copy_bool_int(EXPAT_ATTR_INFO        XML_ATTR_INFO)
 _expat_copy_bool_int(EXPAT_DTD              XML_DTD)
+_expat_copy_bool_int(EXPAT_GE               XML_GE)
 _expat_copy_bool_int(EXPAT_LARGE_SIZE       XML_LARGE_SIZE)
 _expat_copy_bool_int(EXPAT_MIN_SIZE         XML_MIN_SIZE)
 _expat_copy_bool_int(EXPAT_NS               XML_NS)
@@ -332,7 +340,13 @@ if(WIN32)
             set(_POSTFIX_CRT "MD")
         endif()
     endif()
+    if(EXPAT_DTD OR EXPAT_GE)
+            set(_EXPAT_DTD_OR_GE TRUE)
+        else()
+            set(_EXPAT_DTD_OR_GE FALSE)
+        endif()
 
+        _expat_def_file_toggle(_EXPAT_DTD_OR_GE _EXPAT_COMMENT_DTD_OR_GE)
     foreach(postfix_var
             CMAKE_DEBUG_POSTFIX
             CMAKE_RELEASE_POSTFIX
@@ -758,6 +772,7 @@ message(STATUS "    // Advanced options, changes not advised")
 message(STATUS "    Attributes info .......... ${EXPAT_ATTR_INFO}")
 message(STATUS "    Context bytes ............ ${EXPAT_CONTEXT_BYTES}")
 message(STATUS "    DTD support .............. ${EXPAT_DTD}")
+message(STATUS "    General entities ......... ${EXPAT_GE}")
 message(STATUS "    Large size ............... ${EXPAT_LARGE_SIZE}")
 message(STATUS "    Minimum size ............. ${EXPAT_MIN_SIZE}")
 message(STATUS "    Namespace support ........ ${EXPAT_NS}")
