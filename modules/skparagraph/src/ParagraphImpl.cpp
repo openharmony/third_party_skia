@@ -136,11 +136,18 @@ void ParagraphImpl::middleEllipsisDeal()
     size_t start = 0;
     size_t end = 0;
     if (fRuns.begin()->leftToRight()) {
-        scanTextCutPoint(ltrTextSize, &start, &end);
-        if (end) {
-            fText.remove(ltrTextSize[start - 1].charbegin, ltrTextSize[end + 2].charbegin - ltrTextSize[start - 1].charbegin);
-            fText.insert(ltrTextSize[start - 1].charbegin, ellStr);
-            ltrTextSize.clear();
+        if (runTimeEllipsisWidth + ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
+            fText.reset();
+            fText.insert(0, ellStr);
+        } else {
+            scanTextCutPoint(ltrTextSize, &start, &end);
+            if (end) {
+                fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charbegin - ltrTextSize[start].charbegin);
+                fText.insert(ltrTextSize[start].charbegin, ellStr);
+                ltrTextSize.clear();
+                SkDebugf("MeasureCut | LTR  fClusters.size=%zu  ftext =%s  fText Size=%zu ellStr.c_str()=%s siez=%zu",
+                fClusters.size(), fText.c_str(),fText.size(), ellStr,ellipsis.size());
+            }
         }
     } else if (!fRuns.begin()->leftToRight()) {
         scanTextCutPoint(rtlTextSize, &start, &end);
@@ -178,17 +185,22 @@ void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, siz
     if (fRuns.begin()->leftToRight()) {
         size_t begin = 0;
         size_t last = rawTextSize.size() - 1;
-        while (begin < rawTextSize.size() && begin <= last && measureWidth < fOldMaxWidth) {
+        bool rightExit = false;
+        while (begin < last && !rightExit && measureWidth < fOldMaxWidth) {
             SkDebugf("Foreaing | begin=%zu last=%zu",begin,last);
             measureWidth += rawTextSize[begin++].phraseWidth;
-            while (last > begin && measureWidth < fOldMaxWidth) {
-                measureWidth += rawTextSize[last--].phraseWidth;
+            if (measureWidth >= fOldMaxWidth) {
+                --begin;
                 break;
             }
-        }
-
-        if (last < begin) {
-            last = begin;
+            while (last > begin && measureWidth < fOldMaxWidth) {
+                measureWidth += rawTextSize[last--].phraseWidth;
+                if (measureWidth >= fOldMaxWidth) {
+                    rightExit = true;
+                    ++last;
+                }
+                break;
+            }
         }
 
         if (measureWidth >= fOldMaxWidth || fParagraphStyle.getTextOverflower()) {
