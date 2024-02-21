@@ -139,10 +139,13 @@ void ParagraphImpl::middleEllipsisDeal()
         if (runTimeEllipsisWidth + ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
             fText.reset();
             fText.insert(0, ellStr);
+            end = 1;
+            ltrTextSize.clear();
+            SkDebugf("MeasureCut |>= fOldMaxWidt");
         } else {
             scanTextCutPoint(ltrTextSize, &start, &end);
             if (end) {
-                fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charbegin - ltrTextSize[start].charbegin);
+                fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end + 1].charOver - ltrTextSize[start].charbegin);
                 fText.insert(ltrTextSize[start].charbegin, ellStr);
                 ltrTextSize.clear();
                 SkDebugf("MeasureCut | LTR  fClusters.size=%zu  ftext =%s  fText Size=%zu ellStr.c_str()=%s siez=%zu",
@@ -177,6 +180,7 @@ void ParagraphImpl::middleEllipsisDeal()
     this->computeEmptyMetrics();
     this->fLines.reset();
     this->breakShapedTextIntoLines(fOldMaxWidth);
+    this->fText.reset();
 }
 
 void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, size_t *start, size_t *end)
