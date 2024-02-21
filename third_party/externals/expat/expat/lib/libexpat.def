@@ -78,3 +78,5 @@ EXPORTS
 ; added with version 2.4.0
   XML_SetBillionLaughsAttackProtectionActivationThreshold @69
   XML_SetBillionLaughsAttackProtectionMaximumAmplification @70
+@_EXPAT_COMMENT_DTD_OR_GE@ XML_SetBillionLaughsAttackProtectionActivationThreshold @71
+@_EXPAT_COMMENT_DTD_OR_GE@ XML_SetBillionLaughsAttackProtectionMaximumAmplification @72
