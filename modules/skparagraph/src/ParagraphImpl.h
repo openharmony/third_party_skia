@@ -249,6 +249,7 @@ public:
 
     SkFontMetrics measureText() override;
 
+    bool &getEllipsisState() { return isMiddleEllipsis; }
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
