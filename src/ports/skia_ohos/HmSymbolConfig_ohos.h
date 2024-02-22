@@ -38,6 +38,9 @@ public:
 
     SymbolLayersGroups* getSymbolLayersGroups(uint32_t glyphId);
 
+    std::vector<std::vector<PiecewiseParameter>>* getGroupParameters(AnimationType type,
+        AnimationSubType subType, int animationMode);
+
     int parseConfigOfHmSymbol(const char* fname, SkString fontDir);
 
     bool getHmSymbolEnable();
@@ -81,6 +84,8 @@ private:
     const uint32_t hexFlag = 16;
     const uint32_t twoBytesBitsLen = 16;
     const uint32_t oneByteBitsLen = 8;
+
+    AnimationInfo* getAnimationInfo(AnimationType type);
 
     int checkConfigFile(const char* fname, Json::Value& root);
 

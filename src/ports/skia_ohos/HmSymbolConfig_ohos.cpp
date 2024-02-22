@@ -208,6 +208,36 @@ SymbolLayersGroups* HmSymbolConfig_OHOS::getSymbolLayersGroups(uint32_t glyphId)
     return nullptr;
 }
 
+std::vector<std::vector<PiecewiseParameter>>* HmSymbolConfig_OHOS::getGroupParameters(AnimationType type,
+    AnimationSubType subType, int animationMode)
+{
+    auto info = getAnimationInfo(type);
+    if (info == nullptr) {
+        return nullptr;
+    }
+    for (auto &para : info->animationParas) {
+        if (para.subType == subType && para.animationMode == animationMode) {
+            return &para.groupParameters;
+        }
+    }
+    return nullptr;
+}
+
+AnimationInfo* HmSymbolConfig_OHOS::getAnimationInfo(AnimationType type)
+{
+    for (auto &info : commonAnimationInfos_) {
+        if (info.animationType == type) {
+            return &info;
+        }
+    }
+    for (auto &info : specialAnimationInfos_) {
+        if (info.animationType == type) {
+            return &info;
+        }
+    }
+    return nullptr;
+}
+
 /*! check the system font configuration document
  * \param fname the full name of the font configuration document
  * \return NO_ERROR successful
