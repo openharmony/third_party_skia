@@ -141,16 +141,12 @@ void ParagraphImpl::middleEllipsisDeal()
             fText.set(ellStr);
             end = 1;
             ltrTextSize.clear();
-            SkDebugf("MeasureCut |>= fOldMaxWidt");
         } else {
             scanTextCutPoint(ltrTextSize, &start, &end);
             if (end) {
-                fText.remove(ltrTextSize[start - 1].charbegin, ltrTextSize[end + 1].charbegin - ltrTextSize[start - 1].charbegin);
-                fText.insert(ltrTextSize[start - 1].charbegin, ellStr);
-                SkDebugf("DemoTest | start =%zu end =%zu ftext =%s ", start,end, fText.c_str());
+                fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
+                fText.insert(ltrTextSize[start].charbegin, ellStr);
                 ltrTextSize.clear();
-                SkDebugf("MeasureCut | LTR  fClusters.size=%zu  ftext =%s  fText Size=%zu ellStr.c_str()=%s siez=%zu",
-                fClusters.size(), fText.c_str(),fText.size(), ellStr,ellipsis.size());
             }
         }
     } else if (!fRuns.begin()->leftToRight()) {
@@ -194,7 +190,6 @@ void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, siz
         size_t last = rawTextSize.size() - 1;
         bool rightExit = false;
         while (begin < last && !rightExit && measureWidth < fOldMaxWidth) {
-            SkDebugf("Foreaing | begin=%zu last=%zu",begin,last);
             measureWidth += rawTextSize[begin++].phraseWidth;
             if (measureWidth >= fOldMaxWidth) {
                 --begin;
