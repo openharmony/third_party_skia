@@ -737,8 +737,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
         !fHasWhitespacesInside &&
         fPlaceholders.size() == 1 &&
         fRuns.size() == 1 &&
-        fRuns[0].fAdvance.fX <= maxWidth - (this->detectIndents(std::numeric_limits<size_t>::max())) &&
-        fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE) {
+        fRuns[0].fAdvance.fX <= maxWidth - (this->detectIndents(std::numeric_limits<size_t>::max()))) {
         // This is a short version of a line breaking when we know that:
         // 1. We have only one line of text
         // 2. It's shaped into a single run
