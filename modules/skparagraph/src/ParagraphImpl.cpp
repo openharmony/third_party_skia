@@ -584,7 +584,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     if (!fHasLineBreaks &&
         !fHasWhitespacesInside &&
         fPlaceholders.size() == 1 &&
-        fRuns.size() == 1 && fRuns[0].fAdvance.fX <= maxWidth - (this->detectIndents(std::numeric_limits<size_t>::max()))) {
+        fRuns.size() == 1 && fRuns[0].fAdvance.fX <= maxWidth - (this->detectIndents(0))) {
         // This is a short version of a line breaking when we know that:
         // 1. We have only one line of text
         // 2. It's shaped into a single run
@@ -631,7 +631,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
         SkScalar offsetX = 0.0f;
         TextAlign align = fParagraphStyle.effective_align();
         if (align == TextAlign::kLeft || align == TextAlign::kJustify) {
-            offsetX = this->detectIndents(std::numeric_limits<size_t>::max());
+            offsetX = this->detectIndents(0);
         }
         this->addLine(SkPoint::Make(offsetX, 0), advance,
                       textExcludingSpaces, textRange, textRange,
