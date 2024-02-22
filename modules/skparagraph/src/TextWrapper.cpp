@@ -192,7 +192,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     }
 }
 
-void TextWrapper::moveForward(bool hasEllipsis, bool breakAll) {
+void TextWrapper::moveForward(bool hasEllipsis, bool breakAll, size_t maxLines) {
 
     // We normally break lines by words.
     // The only way we may go to clusters is if the word is too long or
@@ -201,11 +201,7 @@ void TextWrapper::moveForward(bool hasEllipsis, bool breakAll) {
     fTooLongWord = breakAll;
     if (!fWords.empty()) {
         fEndLine.extend(fWords);
-#ifdef SK_IGNORE_SKPARAGRAPH_ELLIPSIS_FIX
-        if (!fTooLongWord || hasEllipsis) { // Ellipsis added to a word
-#else
-        if (!fTooLongWord && !hasEllipsis) { // Ellipsis added to a grapheme
-#endif
+        if (!fTooLongWord || hasEllipsis || maxLines > 1) {
             return;
         }
     }
@@ -328,8 +324,10 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
         needEllipsis = hasEllipsis && !endlessLine && lastLine;
 
-        this->moveForward(needEllipsis, parent->getWordBreakType() == WordBreakType::BREAK_ALL);
-        needEllipsis &= fEndLine.endCluster() < end - 1; // Only if we have some text to ellipsize
+        this->moveForward(needEllipsis, parent->getWordBreakType() == WordBreakType::BREAK_ALL, maxLines);
+        if (fEndLine.endCluster() > fEndLine.startCluster() || maxLines > 1) {
+            needEllipsis &= fEndLine.endCluster() < end - 1; // Only if we have some text to ellipsize
+        }
 
         // Do not trim end spaces on the naturally last line of the left aligned text
         this->trimEndSpaces(align);
@@ -407,10 +405,11 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         // In case of a force wrapping we don't have a break cluster and have to use the end cluster
         text.end = std::max(text.end, textExcludingSpaces.end);
 
-        if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
-            hasEllipsis) {
-            needEllipsis = true;
-            fHardLineBreak = false;
+        if (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD && hasEllipsis) {
+            needEllipsis = maxLines <= 1;
+            if (needEllipsis) {
+                fHardLineBreak = false;
+            }
         }
 
         SkScalar offsetX = 0.0f;
