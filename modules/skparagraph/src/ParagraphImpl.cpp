@@ -138,15 +138,16 @@ void ParagraphImpl::middleEllipsisDeal()
     if (fRuns.begin()->leftToRight()) {
         if (runTimeEllipsisWidth + ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
             fText.reset();
-            fText.insert(0, ellStr);
+            fText.set(ellStr);
             end = 1;
             ltrTextSize.clear();
             SkDebugf("MeasureCut |>= fOldMaxWidt");
         } else {
             scanTextCutPoint(ltrTextSize, &start, &end);
             if (end) {
-                fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end + 1].charOver - ltrTextSize[start].charbegin);
-                fText.insert(ltrTextSize[start].charbegin, ellStr);
+                fText.remove(ltrTextSize[start - 1].charbegin, ltrTextSize[end + 1].charbegin - ltrTextSize[start - 1].charbegin);
+                fText.insert(ltrTextSize[start - 1].charbegin, ellStr);
+                SkDebugf("DemoTest | start =%zu end =%zu ftext =%s ", start,end, fText.c_str());
                 ltrTextSize.clear();
                 SkDebugf("MeasureCut | LTR  fClusters.size=%zu  ftext =%s  fText Size=%zu ellStr.c_str()=%s siez=%zu",
                 fClusters.size(), fText.c_str(),fText.size(), ellStr,ellipsis.size());
@@ -167,6 +168,8 @@ void ParagraphImpl::middleEllipsisDeal()
             break;
         }
         this->fBidiRegions.clear();
+        this->fCodeUnitProperties.reset();
+        this->fClustersIndexFromCodeUnit.reset();
         this->computeCodeUnitProperties();
         this->fRuns.reset();
         this->fClusters.reset();
