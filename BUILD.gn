@@ -486,32 +486,6 @@ optional("fontmgr_custom") {
   sources = [ "src/ports/SkFontMgr_custom.cpp" ]
 }
 
-optional("fontmgr_symbol_load") {
-  enabled = skia_enable_fontmgr_ohos || skia_enable_fontmgr_win ||
-            skia_use_fonthost_mac
-  include_dirs = [
-    "//third_party/skia/include/private",
-    "//third_party/skia/include/core",
-    "//third_party/skia/src/core",
-    "//third_party/skia/src/ports",
-    "//third_party/skia/src/ports/skia_ohos",
-  ]
-  deps = [
-    ":typeface_freetype",
-    "${skia_third_party_dir}/expat",
-    "//third_party/jsoncpp:jsoncpp_static",
-  ]
-  if (is_component_build) {
-    deps += [ "//third_party/bounds_checking_function:libsec_shared" ]
-  } else {
-    deps += [ "//third_party/bounds_checking_function:libsec_static" ]
-  }
-
-  deps += [ ":ohos_fontconfig.json" ]
-  public = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.h" ]
-  sources = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
-}
-
 optional("fontmgr_custom_directory") {
   enabled = skia_enable_fontmgr_custom_directory
 
@@ -655,19 +629,7 @@ optional("fontmgr_mac_ct") {
       "//third_party/skia/src/ports/SkFontMgr_preview.cpp",
       "//third_party/skia/src/ports/SkFontMgr_preview.h",
     ]
-    include_dirs = [
-      "//third_party/skia/include/core",
-      "//third_party/skia/include/private",
-      "//third_party/skia/src/core",
-      "//third_party/skia/src/ports",
-      "//third_party/skia/src/ports/skia_ohos",
-    ]
     defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
-    deps = [
-      ":fontmgr_symbol_load",
-      "${skia_third_party_dir}/expat",
-      "//third_party/jsoncpp:jsoncpp_static",
-    ]
   }
   sources_for_tests = [ "tests/TypefaceMacTest.cpp" ]
 
@@ -720,20 +682,8 @@ optional("fontmgr_win") {
       "//third_party/skia/src/ports/SkFontMgr_preview.cpp",
       "//third_party/skia/src/ports/SkFontMgr_preview.h",
     ]
-
-    include_dirs = [
-      "//third_party/skia/include/core",
-      "//third_party/skia/include/private",
-      "//third_party/skia/src/core",
-      "//third_party/skia/src/ports",
-      "//third_party/skia/src/ports/skia_ohos",
-    ]
     defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
-    deps = [
-      ":fontmgr_symbol_load",
-      "${skia_third_party_dir}/expat",
-      "//third_party/jsoncpp:jsoncpp_static",
-    ]
+    deps = [ "${skia_third_party_dir}/expat" ]
   }
 }
 
@@ -750,12 +700,14 @@ if (use_oh_skia && !is_arkui_x) {
     public = [
       "src/ports/skia_ohos/FontConfig_ohos.h",
       "src/ports/skia_ohos/FontInfo_ohos.h",
+      "src/ports/skia_ohos/HmSymbolConfig_ohos.h",
       "src/ports/skia_ohos/SkFontMgr_ohos.h",
       "src/ports/skia_ohos/SkFontStyleSet_ohos.h",
       "src/ports/skia_ohos/SkTypeface_ohos.h",
     ]
     sources = [
       "src/ports/skia_ohos/FontConfig_ohos.cpp",
+      "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp",
       "src/ports/skia_ohos/SkFontMgr_ohos.cpp",
       "src/ports/skia_ohos/SkFontMgr_ohos_factory.cpp",
       "src/ports/skia_ohos/SkFontStyleSet_ohos.cpp",
@@ -771,7 +723,6 @@ if (use_oh_skia && !is_arkui_x) {
     ]
 
     deps = [
-      ":fontmgr_symbol_load",
       ":typeface_freetype",
       "${skia_third_party_dir}/expat",
       "//third_party/jsoncpp:jsoncpp_static",
