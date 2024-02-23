@@ -146,8 +146,8 @@ void ParagraphImpl::middleEllipsisDeal()
             if (end) {
                 fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
                 fText.insert(ltrTextSize[start].charbegin, ellStr);
-                ltrTextSize.clear();
             }
+            ltrTextSize.clear();
         }
     } else {
         scanTextCutPoint(rtlTextSize, &start, &end);
@@ -186,7 +186,6 @@ void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord> rawTextSiz
 {
     if (allTextWidth <= fOldMaxWidth || !rawTextSize.size()) {
         allTextWidth = 0;
-        *end = 0;
         return;
     }
 
@@ -197,13 +196,13 @@ void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord> rawTextSiz
         bool rightExit = false;
         while (begin < last && !rightExit && measureWidth < fOldMaxWidth) {
             measureWidth += rawTextSize[begin++].phraseWidth;
-            if (measureWidth >= fOldMaxWidth) {
+            if (measureWidth > fOldMaxWidth) {
                 --begin;
                 break;
             }
             while (last > begin && measureWidth < fOldMaxWidth) {
                 measureWidth += rawTextSize[last--].phraseWidth;
-                if (measureWidth >= fOldMaxWidth) {
+                if (measureWidth > fOldMaxWidth) {
                     rightExit = true;
                     ++last;
                 }
