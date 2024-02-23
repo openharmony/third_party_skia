@@ -149,7 +149,7 @@ void ParagraphImpl::middleEllipsisDeal()
                 ltrTextSize.clear();
             }
         }
-    } else if (!fRuns.begin()->leftToRight()) {
+    } else {
         scanTextCutPoint(rtlTextSize, &start, &end);
         if (end) {
             fText.remove(rtlTextSize[start - 1].charbegin, rtlTextSize[end + 2].charbegin - rtlTextSize[start - 1].charbegin);
@@ -173,7 +173,7 @@ void ParagraphImpl::middleEllipsisDeal()
         this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
         fMaxIntrinsicWidth = 0;
         this->shapeTextIntoEndlessLine();
-    } while(textNotOverflower);
+    } while (textNotOverflower);
     this->resetContext();
     this->resolveStrut();
     this->computeEmptyMetrics();
@@ -182,11 +182,11 @@ void ParagraphImpl::middleEllipsisDeal()
     this->fText.reset();
 }
 
-void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, size_t *start, size_t *end)
+void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord> rawTextSize, size_t *start, size_t *end)
 {
     if (allTextWidth <= fOldMaxWidth || !rawTextSize.size()) {
         allTextWidth = 0;
-        end = 0;
+        *end = 0;
         return;
     }
 
@@ -659,20 +659,18 @@ void ParagraphImpl::buildClusterTable() {
                 for (auto i = charStart; i < charEnd; ++i) {
                   fClustersIndexFromCodeUnit[i] = fClusters.size();
                 }
-                if (isMiddleEllipsis && run.leftToRight()) {
+
+                if (isMiddleEllipsis) {
                     TextCutRecord textCount;
                     textCount.charbegin = charStart;
                     textCount.charOver = charEnd;
                     textCount.phraseWidth = width;
                     allTextWidth += width;
-                    this->ltrTextSize.emplace_back(textCount);
-                } else if (isMiddleEllipsis && !run.leftToRight()) {
-                    TextCutRecord textCount;
-                    textCount.charbegin = charStart;
-                    textCount.charOver = charEnd;
-                    textCount.phraseWidth = width;
-                    allTextWidth += width;
-                    this->rtlTextSize.emplace_back(textCount);
+                    if (run.leftToRight()) {
+                        this->ltrTextSize.emplace_back(textCount);
+                    } else {
+                        this->rtlTextSize.emplace_back(textCount);
+                    }
                 }
                 SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
                 fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
