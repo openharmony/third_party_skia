@@ -184,6 +184,12 @@ void ParagraphImpl::middleEllipsisDeal()
 
 void ParagraphImpl::scanTextCutPoint(std::vector<TextCutRecord> rawTextSize, size_t *start, size_t *end)
 {
+    if (allTextWidth <= fOldMaxWidth || !rawTextSize.size()) {
+        allTextWidth = 0;
+        end = 0;
+        return;
+    }
+
     float measureWidth = runTimeEllipsisWidth;
     if (fRuns.begin()->leftToRight()) {
         size_t begin = 0;
@@ -658,12 +664,14 @@ void ParagraphImpl::buildClusterTable() {
                     textCount.charbegin = charStart;
                     textCount.charOver = charEnd;
                     textCount.phraseWidth = width;
+                    allTextWidth += width;
                     this->ltrTextSize.emplace_back(textCount);
                 } else if (isMiddleEllipsis && !run.leftToRight()) {
                     TextCutRecord textCount;
                     textCount.charbegin = charStart;
                     textCount.charOver = charEnd;
                     textCount.phraseWidth = width;
+                    allTextWidth += width;
                     this->rtlTextSize.emplace_back(textCount);
                 }
                 SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);

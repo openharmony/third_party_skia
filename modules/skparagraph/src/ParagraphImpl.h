@@ -305,6 +305,7 @@ private:
     SkScalar runTimeEllipsisWidth;
     SkScalar fMaxWidthWithTrailingSpaces;
     SkScalar fOldMaxWidth;
+    SkScalar allTextWidth;
     std::shared_ptr<SkUnicode> fUnicode;
     bool fHasLineBreaks;
     bool fHasWhitespacesInside;
