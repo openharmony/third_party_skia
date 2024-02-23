@@ -107,8 +107,8 @@ public:
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
     void visit(SkScalar x, SkScalar y);
     void ensureTextBlobCachePopulated();
-    void setParagraphImpl(ParagraphImpl* newpara) { fOwner = newpara; }
-    void createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
+
+    void createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
     // For testing internal structures
     void scanStyles(StyleType style, const RunStyleVisitor& visitor);
@@ -204,7 +204,11 @@ private:
     struct TextBlobRecord {
         void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
 
+#ifndef USE_SKIA_TXT
         sk_sp<SkTextBlob> fBlob;
+#else
+        std::shared_ptr<RSTextBlob> fBlob;
+#endif
         SkPoint fOffset = SkPoint::Make(0.0f, 0.0f);
         ParagraphPainter::SkPaintOrID fPaint;
         SkRect fBounds = SkRect::MakeEmpty();

@@ -15,6 +15,10 @@
 #include "include/core/SkTextBlob.h"
 #include "include/core/SkTypes.h"
 
+#ifdef USE_SKIA_TXT
+#include "modules/skparagraph/include/drawing.h"
+#endif
+
 #include <memory>
 
 #if !defined(SKSHAPER_IMPLEMENTATION)
@@ -45,17 +49,28 @@ class SKSHAPER_API SkShaper {
 public:
     static std::unique_ptr<SkShaper> MakePrimitive();
     #ifdef SK_SHAPER_HARFBUZZ_AVAILABLE
+#ifndef USE_SKIA_TXT
     static std::unique_ptr<SkShaper> MakeShaperDrivenWrapper(sk_sp<SkFontMgr> = nullptr);
     static std::unique_ptr<SkShaper> MakeShapeThenWrap(sk_sp<SkFontMgr> = nullptr);
     static std::unique_ptr<SkShaper> MakeShapeDontWrapOrReorder(std::unique_ptr<SkUnicode> unicode,
                                                                 sk_sp<SkFontMgr> = nullptr);
+#else
+    static std::unique_ptr<SkShaper> MakeShaperDrivenWrapper(std::shared_ptr<RSFontMgr> = nullptr);
+    static std::unique_ptr<SkShaper> MakeShapeThenWrap(std::shared_ptr<RSFontMgr> = nullptr);
+    static std::unique_ptr<SkShaper> MakeShapeDontWrapOrReorder(std::unique_ptr<SkUnicode> unicode,
+                                                                std::shared_ptr<RSFontMgr> = nullptr);
+#endif
     static void PurgeHarfBuzzCache();
     #endif
     #ifdef SK_SHAPER_CORETEXT_AVAILABLE
     static std::unique_ptr<SkShaper> MakeCoreText();
     #endif
 
+#ifndef USE_SKIA_TXT
     static std::unique_ptr<SkShaper> Make(sk_sp<SkFontMgr> = nullptr);
+#else
+    static std::unique_ptr<SkShaper> Make(std::shared_ptr<RSFontMgr> = nullptr);
+#endif
     static void PurgeCaches();
 
     SkShaper();
@@ -73,7 +88,11 @@ public:
     };
     class FontRunIterator : public RunIterator {
     public:
+#ifndef USE_SKIA_TXT
         virtual const SkFont& currentFont() const = 0;
+#else
+        virtual const RSFont& currentFont() const = 0;
+#endif
     };
     class BiDiRunIterator : public RunIterator {
     public:
@@ -112,6 +131,7 @@ private:
     };
 
 public:
+#ifndef USE_SKIA_TXT
     static std::unique_ptr<FontRunIterator>
     MakeFontMgrRunIterator(const char* utf8, size_t utf8Bytes,
                            const SkFont& font, sk_sp<SkFontMgr> fallback);
@@ -128,6 +148,24 @@ public:
     private:
         SkFont fFont;
     };
+#else
+    static std::unique_ptr<FontRunIterator>
+    MakeFontMgrRunIterator(const char* utf8, size_t utf8Bytes,
+                           const RSFont& font, std::shared_ptr<RSFontMgr> fallback);
+    static std::unique_ptr<SkShaper::FontRunIterator>
+    MakeFontMgrRunIterator(const char* utf8, size_t utf8Bytes,
+                           const RSFont& font, std::shared_ptr<RSFontMgr> fallback,
+                           const char* requestName, RSFontStyle requestStyle,
+                           const SkShaper::LanguageRunIterator*);
+    class TrivialFontRunIterator : public TrivialRunIterator<FontRunIterator> {
+    public:
+        TrivialFontRunIterator(const RSFont& font, size_t utf8Bytes)
+            : TrivialRunIterator(utf8Bytes), fFont(font) {}
+        const RSFont& currentFont() const override { return fFont; }
+    private:
+        RSFont fFont;
+    };
+#endif
 
     static std::unique_ptr<BiDiRunIterator>
     MakeBiDiRunIterator(const char* utf8, size_t utf8Bytes, uint8_t bidiLevel);
@@ -192,7 +230,11 @@ public:
         };
 
         struct RunInfo {
+#ifndef USE_SKIA_TXT
             const SkFont& fFont;
+#else
+            const RSFont& fFont;
+#endif
             uint8_t fBidiLevel;
             SkVector fAdvance;
             size_t glyphCount;
@@ -228,7 +270,11 @@ public:
     };
 
     virtual void shape(const char* utf8, size_t utf8Bytes,
+#ifndef USE_SKIA_TXT
                        const SkFont& srcFont,
+#else
+                       const RSFont& srcFont,
+#endif
                        bool leftToRight,
                        SkScalar width,
                        RunHandler*) const = 0;
@@ -255,6 +301,7 @@ private:
     SkShaper& operator=(const SkShaper&) = delete;
 };
 
+#ifndef USE_SKIA_TXT
 /**
  * Helper for shaping text directly into a SkTextBlob.
  */
@@ -285,5 +332,6 @@ private:
     SkPoint fCurrentPosition;
     SkPoint fOffset;
 };
+#endif
 
 #endif  // SkShaper_DEFINED
