@@ -68,7 +68,11 @@ private:
         Everything
     };
 
+#ifndef USE_SKIA_TXT
     using TypefaceVisitor = std::function<Resolved(sk_sp<SkTypeface> typeface)>;
+#else
+    using TypefaceVisitor = std::function<Resolved(std::shared_ptr<RSTypeface> typeface)>;
+#endif
     void matchResolvedFonts(const TextStyle& textStyle, const TypefaceVisitor& visitor);
 #ifdef SK_DEBUG
     void printState();
@@ -123,10 +127,20 @@ private:
 
         FontKey() {}
 
+#ifndef USE_SKIA_TXT
         FontKey(SkUnichar unicode, SkFontStyle fontStyle, SkString locale)
             : fUnicode(unicode), fFontStyle(fontStyle), fLocale(locale) { }
+#else
+        FontKey(SkUnichar unicode, RSFontStyle fontStyle, SkString locale)
+            : fUnicode(unicode), fFontStyle(fontStyle), fLocale(locale) { }
+#endif
+
         SkUnichar fUnicode;
+#ifndef USE_SKIA_TXT
         SkFontStyle fFontStyle;
+#else
+        RSFontStyle fFontStyle;
+#endif
         SkString fLocale;
 
         bool operator==(const FontKey& other) const;
@@ -135,7 +149,12 @@ private:
             uint32_t operator()(const FontKey& key) const;
         };
     };
+
+#ifndef USE_SKIA_TXT
     SkTHashMap<FontKey, sk_sp<SkTypeface>, FontKey::Hasher> fFallbackFonts;
+#else
+    std::unordered_map<FontKey, std::shared_ptr<RSTypeface>, FontKey::Hasher> fFallbackFonts;
+#endif
 };
 
 }  // namespace textlayout
