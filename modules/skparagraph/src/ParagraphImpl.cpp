@@ -140,15 +140,14 @@ void ParagraphImpl::middleEllipsisDeal()
             fText.reset();
             fText.set(ellStr);
             end = 1;
-            ltrTextSize.clear();
         } else {
             scanTextCutPoint(ltrTextSize, &start, &end);
             if (end) {
                 fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
                 fText.insert(ltrTextSize[start].charbegin, ellStr);
             }
-            ltrTextSize.clear();
         }
+        ltrTextSize.clear();
     } else {
         scanTextCutPoint(rtlTextSize, &start, &end);
         if (end) {
