@@ -189,6 +189,8 @@ public:
 
     virtual void setIndents(const std::vector<SkScalar>& indents) = 0;
 
+    virtual SkScalar detectIndents(size_t index) = 0;
+
     virtual SkScalar getTextSplitRatio() const = 0;
 
 #ifndef USE_SKIA_TXT
