@@ -192,7 +192,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     }
 }
 
-void TextWrapper::moveForward(bool hasEllipsis, bool breakAll, size_t maxLines) {
+void TextWrapper::moveForward(bool hasEllipsis, bool breakAll, size_t maxLines, bool &isMiddleEllipsis) {
 
     // We normally break lines by words.
     // The only way we may go to clusters is if the word is too long or
@@ -201,7 +201,7 @@ void TextWrapper::moveForward(bool hasEllipsis, bool breakAll, size_t maxLines) 
     fTooLongWord = breakAll;
     if (!fWords.empty()) {
         fEndLine.extend(fWords);
-        if (!fTooLongWord || hasEllipsis || maxLines > 1) {
+        if ((!fTooLongWord || hasEllipsis || maxLines > 1) && !isMiddleEllipsis) {
             return;
         }
     }
@@ -324,7 +324,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
         needEllipsis = hasEllipsis && !endlessLine && lastLine;
 
-        this->moveForward(needEllipsis, parent->getWordBreakType() == WordBreakType::BREAK_ALL, maxLines);
+        this->moveForward(needEllipsis, parent->getWordBreakType() == WordBreakType::BREAK_ALL,
+            maxLines, parent->getEllipsisState());
         if (fEndLine.endCluster() > fEndLine.startCluster() || maxLines > 1) {
             needEllipsis &= fEndLine.endCluster() < end - 1; // Only if we have some text to ellipsize
         }
