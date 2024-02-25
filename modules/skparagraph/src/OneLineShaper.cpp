@@ -418,11 +418,7 @@ void OneLineShaper::iterateThroughFontStyles(TextRange textRange,
 
 void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                                        const TypefaceVisitor& visitor) {
-#ifndef USE_SKIA_TXT
     std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
-#else
-    std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
-#endif
 
     for (const auto& typeface : typefaces) {
         if (visitor(typeface) == Resolved::Everything) {
@@ -464,20 +460,11 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                 SkASSERT(unicode != -1);
 
                 // First try to find in in a cache
-#ifndef USE_SKIA_TXT
                 sk_sp<SkTypeface> typeface;
-#else
-                std::shared_ptr<RSTypeface> typeface;
-#endif
                 FontKey fontKey(unicode, textStyle.getFontStyle(), textStyle.getLocale());
                 auto found = fFallbackFonts.find(fontKey);
-#ifndef USE_SKIA_TXT
                 if (found != nullptr) {
                     typeface = *found;
-#else
-                if (found != fFallbackFonts.end()) {
-                    typeface = found->second;
-#endif
                 } else {
                     typeface = fParagraph->fFontCollection->defaultFallback(
                             unicode, textStyle.getFontStyle(), textStyle.getLocale());
@@ -486,21 +473,12 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                         // There is no fallback font for this character, so move on to the next character.
                         continue;
                     }
-#ifndef USE_SKIA_TXT
                     fFallbackFonts.set(fontKey, typeface);
-#else
-                    fFallbackFonts.emplace(fontKey, typeface);
-#endif
                 }
 
                 // Check if we already tried this font on this text range
-#ifndef USE_SKIA_TXT
                 if (!alreadyTriedTypefaces.contains(typeface->uniqueID())) {
                     alreadyTriedTypefaces.add(typeface->uniqueID());
-#else
-                if (!alreadyTriedTypefaces.contains(typeface->GetUniqueID())) {
-                    alreadyTriedTypefaces.add(typeface->GetUniqueID());
-#endif
                 } else {
                     continue;
                 }
@@ -573,16 +551,12 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
         }
 
         // Get the placeholder font
-        auto typefaces = fParagraph->fFontCollection->findTypefaces(
+        std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
             placeholder.fTextStyle.getFontFamilies(),
             placeholder.fTextStyle.getFontStyle(),
             placeholder.fTextStyle.getFontArguments());
-        auto typeface = typefaces.size() ? typefaces.front() : nullptr;
-#ifndef USE_SKIA_TXT
+        sk_sp<SkTypeface> typeface = typefaces.size() ? typefaces.front() : nullptr;
         SkFont font(typeface, placeholder.fTextStyle.getFontSize());
-#else
-        RSFont font(typeface, placeholder.fTextStyle.getFontSize(), 1, 0);
-#endif
 
         // "Shape" the placeholder
         uint8_t bidiLevel = (bidiIndex < fParagraph->fBidiRegions.size())
@@ -643,28 +617,16 @@ bool OneLineShaper::shape() {
             fCurrentText = block.fRange;
             fUnresolvedBlocks.emplace_back(RunBlock(block.fRange));
 
-#ifndef USE_SKIA_TXT
             this->matchResolvedFonts(block.fStyle, [&](sk_sp<SkTypeface> typeface) {
-#else
-            this->matchResolvedFonts(block.fStyle, [&](std::shared_ptr<RSTypeface> typeface) {
-#endif
 
                 // Create one more font to try
-#ifndef USE_SKIA_TXT
                 SkFont font(std::move(typeface), block.fStyle.getFontSize());
                 font.setEdging(SkFont::Edging::kAntiAlias);
                 font.setHinting(SkFontHinting::kSlight);
                 font.setSubpixel(true);
-#else
-                RSFont font(std::move(typeface), block.fStyle.getFontSize(), 1, 0);
-                font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
-                font.SetHinting(RSDrawing::FontHinting::SLIGHT);
-                font.SetSubpixel(true);
-#endif
 
                 // Apply fake bold and/or italic settings to the font if the
                 // typeface's attributes do not match the intended font style.
-#ifndef USE_SKIA_TXT
                 int wantedWeight = block.fStyle.getFontStyle().weight();
                 bool fakeBold =
                     wantedWeight >= SkFontStyle::kSemiBold_Weight &&
@@ -674,17 +636,6 @@ bool OneLineShaper::shape() {
                     font.getTypeface()->fontStyle().slant() != SkFontStyle::kItalic_Slant;
                 font.setEmbolden(fakeBold);
                 font.setSkewX(fakeItalic ? -SK_Scalar1 / 4 : 0);
-#else
-                int wantedWeight = block.fStyle.getFontStyle().GetWeight();
-                bool fakeBold =
-                    wantedWeight >= RSFontStyle::SEMI_BOLD_WEIGHT &&
-                    wantedWeight - font.GetTypeface()->GetFontStyle().GetWeight() >= 200;
-                bool fakeItalic =
-                    block.fStyle.getFontStyle().GetSlant() == RSFontStyle::ITALIC_SLANT &&
-                    font.GetTypeface()->GetFontStyle().GetSlant() != RSFontStyle::ITALIC_SLANT;
-                font.SetEmbolden(fakeBold);
-                font.SetSkewX(fakeItalic ? -SK_Scalar1 / 4 : 0);
-#endif
 
                 // Walk through all the currently unresolved blocks
                 // (ignoring those that appear later)

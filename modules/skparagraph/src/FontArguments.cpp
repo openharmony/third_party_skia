@@ -55,7 +55,6 @@ bool operator!=(const skia::textlayout::FontArguments& a, const skia::textlayout
     return !(a == b);
 }
 
-#ifndef USE_SKIA_TXT
 sk_sp<SkTypeface> FontArguments::CloneTypeface(sk_sp<SkTypeface> typeface) const {
     SkFontArguments::VariationPosition position{
         fCoordinates.data(),
@@ -75,11 +74,6 @@ sk_sp<SkTypeface> FontArguments::CloneTypeface(sk_sp<SkTypeface> typeface) const
 
     return typeface->makeClone(args);
 }
-#else
-std::shared_ptr<RSTypeface> FontArguments::CloneTypeface(std::shared_ptr<RSTypeface> typeface) const {
-    return typeface;
-}
-#endif
 
 }  // namespace textlayout
 }  // namespace skia

@@ -46,11 +46,7 @@ Run::Run(ParagraphImpl* owner,
     fPositions.push_back_n(info.glyphCount + 1);
     fOffsets.push_back_n(info.glyphCount + 1);
     fClusterIndexes.push_back_n(info.glyphCount + 1);
-#ifndef USE_SKIA_TXT
     info.fFont.getMetrics(&fFontMetrics);
-#else
-    info.fFont.GetMetrics(&fFontMetrics);
-#endif
 
     this->calculateMetrics();
 
@@ -69,11 +65,7 @@ void Run::calculateMetrics() {
     if (SkScalarNearlyZero(fHeightMultiplier)) {
         return;
     }
-#ifndef USE_SKIA_TXT
     const auto runHeight = fHeightMultiplier * fFont.getSize();
-#else
-    const auto runHeight = fHeightMultiplier * fFont.GetSize();
-#endif
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
     if (fUseHalfLeading) {
         const auto extraLeading = (runHeight - fontIntrinsicHeight) / 2;
@@ -93,7 +85,6 @@ SkShaper::RunHandler::Buffer Run::newRunBuffer() {
     return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset};
 }
 
-#ifndef USE_SKIA_TXT
 void Run::copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const {
     SkASSERT(pos + size <= this->size());
     const auto& blobBuffer = builder.allocRunPos(fFont, SkToInt(size));
@@ -108,23 +99,6 @@ void Run::copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const {
         blobBuffer.points()[i] = point;
     }
 }
-#else
-void Run::copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const {
-    SkASSERT(pos + size <= this->size());
-    const auto& blobBuffer = builder.AllocRunPos(fFont, SkToInt(size));
-    sk_careful_memcpy(blobBuffer.glyphs, fGlyphs.data() + pos, size * sizeof(SkGlyphID));
-    auto points = reinterpret_cast<SkPoint*>(blobBuffer.pos);
-
-    for (size_t i = 0; i < size; ++i) {
-        auto point = fPositions[i + pos];
-        if (!fJustificationShifts.empty()) {
-            point.fX += fJustificationShifts[i + pos].fX;
-        }
-        point += fOffsets[i + pos];
-        points[i] = point;
-    }
-}
-#endif
 
 // Find a cluster range from text range (within one run)
 // Cluster range is normalized ([start:end) start < end regardless of TextDirection
@@ -363,11 +337,7 @@ Run& Cluster::run() const {
     return fOwner->run(fRunIndex);
 }
 
-#ifndef USE_SKIA_TXT
 SkFont Cluster::font() const {
-#else
-RSFont Cluster::font() const {
-#endif
     SkASSERT(fRunIndex < fOwner->runs().size());
     return fOwner->run(fRunIndex).font();
 }
