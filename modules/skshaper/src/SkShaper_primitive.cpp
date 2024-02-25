@@ -12,8 +12,6 @@
 #include "modules/skshaper/include/SkShaper.h"
 #include "src/utils/SkUTF.h"
 
-#ifndef USE_SKIA_TXT
-
 class SkShaperPrimitive : public SkShaper {
 public:
     SkShaperPrimitive() {}
@@ -240,5 +238,3 @@ void SkShaperPrimitive::shape(const char* utf8, size_t utf8Bytes,
 
     return;
 }
-
-#endif

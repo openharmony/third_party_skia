@@ -166,24 +166,12 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
     }
 }
 
-#ifndef USE_SKIA_TXT
 void TextStyle::getFontMetrics(SkFontMetrics* metrics) const {
-#else
-void TextStyle::getFontMetrics(RSFontMetrics* metrics) const {
-#endif
-#ifndef USE_SKIA_TXT
     SkFont font(fTypeface, fFontSize);
     font.setEdging(SkFont::Edging::kAntiAlias);
     font.setSubpixel(true);
     font.setHinting(SkFontHinting::kSlight);
     font.getMetrics(metrics);
-#else
-    RSFont font(fTypeface, fFontSize, 1, 0);
-    font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
-    font.SetHinting(RSDrawing::FontHinting::SLIGHT);
-    font.SetSubpixel(true);
-    font.GetMetrics(metrics);
-#endif
     if (fHeightOverride) {
         auto multiplier = fHeight * fFontSize;
         auto height = metrics->fDescent - metrics->fAscent + metrics->fLeading;

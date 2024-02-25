@@ -63,15 +63,9 @@ struct StyleBlock {
 
 struct ResolvedFontDescriptor {
 
-#ifndef USE_SKIA_TXT
     ResolvedFontDescriptor(TextIndex index, SkFont font)
         : fFont(font), fTextStart(index) { }
     SkFont fFont;
-#else
-    ResolvedFontDescriptor(TextIndex index, RSFont font)
-        : fFont(font), fTextStart(index) { }
-    RSFont fFont;
-#endif
     TextIndex fTextStart;
 };
 
@@ -226,11 +220,7 @@ public:
     bool getClosestGlyphClusterAt(SkScalar dx,
                                   SkScalar dy,
                                   GlyphClusterInfo* glyphInfo) override;
-#ifndef USE_SKIA_TXT
     SkFont getFontAt(TextIndex codeUnitIndex) const override;
-#else
-    RSFont getFontAt(TextIndex codeUnitIndex) const override;
-#endif
     std::vector<FontInfo> getFonts() const override;
 
     InternalLineMetrics getEmptyMetrics() const { return fEmptyMetrics; }
@@ -254,11 +244,7 @@ public:
 
     SkScalar getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); }
 
-#ifndef USE_SKIA_TXT
     SkFontMetrics measureText() override;
-#else
-    RSFontMetrics measureText() override;
-#endif
 
 private:
     friend class ParagraphBuilder;

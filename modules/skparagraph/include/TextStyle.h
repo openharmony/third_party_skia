@@ -14,7 +14,6 @@
 #include "modules/skparagraph/include/FontArguments.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
 #include "modules/skparagraph/include/TextShadow.h"
-#include "drawing.h"
 
 // TODO: Make it external so the other platforms (Android) could use it
 #define DEFAULT_FONT_FAMILY "sans-serif"
@@ -232,13 +231,8 @@ public:
     void setDecorationThicknessMultiplier(SkScalar m) { fDecoration.fThicknessMultiplier = m; }
 
     // Weight/Width/Slant
-#ifndef USE_SKIA_TXT
     SkFontStyle getFontStyle() const { return fFontStyle; }
     void setFontStyle(SkFontStyle fontStyle) { fFontStyle = fontStyle; }
-#else
-    RSFontStyle getFontStyle() const { return fFontStyle; }
-    void setFontStyle(RSFontStyle fontStyle) { fFontStyle = fontStyle; }
-#endif
 
     // Shadows
     size_t getShadowNumber() const { return fTextShadows.size(); }
@@ -285,15 +279,9 @@ public:
     void setWordSpacing(SkScalar wordSpacing) { fWordSpacing = wordSpacing; }
     SkScalar getWordSpacing() const { return fWordSpacing; }
 
-#ifndef USE_SKIA_TXT
     SkTypeface* getTypeface() const { return fTypeface.get(); }
     sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
     void setTypeface(sk_sp<SkTypeface> typeface) { fTypeface = std::move(typeface); }
-#else
-    RSTypeface* getTypeface() const { return fTypeface.get(); }
-    std::shared_ptr<RSTypeface> refTypeface() const { return fTypeface; }
-    void setTypeface(std::shared_ptr<RSTypeface> typeface) { fTypeface = std::move(typeface); }
-#endif
 
     SkString getLocale() const { return fLocale; }
     void setLocale(const SkString& locale) { fLocale = locale; }
@@ -301,11 +289,7 @@ public:
     TextBaseline getTextBaseline() const { return fTextBaseline; }
     void setTextBaseline(TextBaseline baseline) { fTextBaseline = baseline; }
 
-#ifndef USE_SKIA_TXT
     void getFontMetrics(SkFontMetrics* metrics) const;
-#else
-    void getFontMetrics(RSFontMetrics* metrics) const;
-#endif
 
     bool isPlaceholder() const { return fIsPlaceholder; }
     void setPlaceholder() { fIsPlaceholder = true; }
@@ -329,11 +313,7 @@ private:
             // Thickness is applied as a multiplier to the default thickness of the font.
             1.0f};
 
-#ifndef USE_SKIA_TXT
     SkFontStyle fFontStyle;
-#else
-    RSFontStyle fFontStyle;
-#endif
 
     std::vector<SkString> fFontFamilies = *kDefaultFontFamilies;
 
@@ -360,11 +340,7 @@ private:
 
     std::vector<TextShadow> fTextShadows;
 
-#ifndef USE_SKIA_TXT
     sk_sp<SkTypeface> fTypeface;
-#else
-    std::shared_ptr<RSTypeface> fTypeface;
-#endif
     bool fIsPlaceholder = false;
 
     std::vector<FontFeature> fFontFeatures;
