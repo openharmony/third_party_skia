@@ -1316,7 +1316,6 @@ LineMetrics TextLine::getMetrics() const {
     result.fWidthWithSpaces = fWidthWithSpaces;
     result.fTopHeight = this->offset().fY;
 
-
     // Fill out the style parts
     this->iterateThroughVisualRuns(false,
         [this, &result]
