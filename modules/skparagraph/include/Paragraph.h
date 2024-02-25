@@ -173,6 +173,8 @@ public:
 
     virtual void setIndents(const std::vector<SkScalar>& indents) = 0;
 
+    virtual SkScalar detectIndents(size_t index) = 0;
+
     virtual SkScalar getTextSplitRatio() const = 0;
 
     virtual SkFontMetrics measureText() = 0;

@@ -85,6 +85,10 @@ public:
     double fBaseline = 0.0;
     // Zero indexed line number
     size_t fLineNumber = 0;
+    // Width include spaces
+    double fWidthWithSpaces = 0.0;
+    // Height from the top
+    double fTopHeight = 0.0;
 
     // Mapping between text index ranges and the FontMetrics associated with
     // them. The first run will be keyed under start_index. The metrics here

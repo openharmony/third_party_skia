@@ -240,7 +240,7 @@ public:
 
     SkUnicode* getUnicode() { return fUnicode.get(); }
 
-    SkScalar detectIndents(size_t index);
+    SkScalar detectIndents(size_t index) override;
 
     SkScalar getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); }
 
