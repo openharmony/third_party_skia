@@ -158,10 +158,7 @@ void ParagraphImpl::middleEllipsisDeal()
     }
 
     textNotOverflower = end == 0 ? true : false;
-    do {
-        if (textNotOverflower) {
-            break;
-        }
+    if (!textNotOverflower) {
         this->fBidiRegions.clear();
         this->fCodeUnitProperties.reset();
         this->fClustersIndexFromCodeUnit.reset();
@@ -170,9 +167,8 @@ void ParagraphImpl::middleEllipsisDeal()
         this->fClusters.reset();
         this->fClustersIndexFromCodeUnit.reset();
         this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
-        fMaxIntrinsicWidth = 0;
         this->shapeTextIntoEndlessLine();
-    } while (textNotOverflower);
+    }
     this->resetContext();
     this->resolveStrut();
     this->computeEmptyMetrics();
