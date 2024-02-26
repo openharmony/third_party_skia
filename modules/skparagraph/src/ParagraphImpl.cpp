@@ -130,7 +130,6 @@ void ParagraphImpl::addUnresolvedCodepoints(TextRange textRange) {
 void ParagraphImpl::middleEllipsisDeal()
 {
     isMiddleEllipsis = false;
-    bool textNotOverflower = false;
     SkString ellipsis = SkUnicode::convertUtf16ToUtf8(u"\u2026");
     const char *ellStr = ellipsis.c_str();
     size_t start = 0;
@@ -157,8 +156,8 @@ void ParagraphImpl::middleEllipsisDeal()
         }
     }
 
-    textNotOverflower = end == 0; // end = 0 means the text does not exceed the width limit
-    if (!textNotOverflower) {
+    // end = 0 means the text does not exceed the width limit
+    if (end != 0) {
         this->fBidiRegions.clear();
         this->fCodeUnitProperties.reset();
         this->fClustersIndexFromCodeUnit.reset();
