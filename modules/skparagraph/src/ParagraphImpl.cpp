@@ -177,7 +177,7 @@ void ParagraphImpl::middleEllipsisDeal()
     this->fText.reset();
 }
 
-void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord> rawTextSize, size_t *start, size_t *end)
+void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end)
 {
     if (allTextWidth <= fOldMaxWidth || !rawTextSize.size()) {
         allTextWidth = 0;
