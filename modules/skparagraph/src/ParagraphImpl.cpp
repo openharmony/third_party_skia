@@ -157,7 +157,7 @@ void ParagraphImpl::middleEllipsisDeal()
         }
     }
 
-    textNotOverflower = end == 0 ? true : false;
+    textNotOverflower = end == 0; // end = 0 means the text does not exceed the width limit
     if (!textNotOverflower) {
         this->fBidiRegions.clear();
         this->fCodeUnitProperties.reset();
