@@ -140,7 +140,7 @@ void ParagraphImpl::middleEllipsisDeal()
             fText.set(ellStr);
             end = 1;
         } else {
-            scanTextCutPoint(ltrTextSize, &start, &end);
+            scanTextCutPoint(ltrTextSize, start, end);
             if (end) {
                 fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
                 fText.insert(ltrTextSize[start].charbegin, ellStr);
@@ -148,7 +148,7 @@ void ParagraphImpl::middleEllipsisDeal()
         }
         ltrTextSize.clear();
     } else {
-        scanTextCutPoint(rtlTextSize, &start, &end);
+        scanTextCutPoint(rtlTextSize, start, end);
         if (end) {
             fText.remove(rtlTextSize[start - 1].charbegin, rtlTextSize[end + 2].charbegin - rtlTextSize[start - 1].charbegin);
             fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
@@ -205,11 +205,11 @@ void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSi
         }
 
         if (measureWidth >= fOldMaxWidth || fParagraphStyle.getTextOverflower()) {
-            *start = begin;
-            *end = last;
+            start = begin;
+            end = last;
         } else {
-            *start = 0;
-            *end = 0;
+            start = 0;
+            end = 0;
         }
     } else {
         size_t left = 0;
@@ -227,11 +227,11 @@ void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSi
         }
 
         if (measureWidth >= fOldMaxWidth || fParagraphStyle.getTextOverflower()) {
-            *start = left;
-            *end = right;
+            start = left;
+            end = right;
         } else {
-            *start = 0;
-            *end = 0;
+            start = 0;
+            end = 0;
         } 
     }
     return;
