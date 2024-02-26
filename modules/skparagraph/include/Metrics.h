@@ -4,7 +4,6 @@
 
 #include <map>
 #include "modules/skparagraph/include/TextStyle.h"
-#include "drawing.h"
 
 namespace skia {
 namespace textlayout {
@@ -12,13 +11,8 @@ class StyleMetrics {
 public:
     StyleMetrics(const TextStyle* style) : text_style(style) {}
 
-#ifndef USE_SKIA_TXT
     StyleMetrics(const TextStyle* style, SkFontMetrics& metrics)
             : text_style(style), font_metrics(metrics) {}
-#else
-    StyleMetrics(const TextStyle* style, RSFontMetrics& metrics)
-            : text_style(style), font_metrics(metrics) {}
-#endif
 
     const TextStyle* text_style;
 
@@ -39,11 +33,7 @@ public:
     // * UnderlinePosition   underline position relative to baseline
     // * StrikeoutThickness  strikeout thickness
     // * StrikeoutPosition   strikeout position relative to baseline
-#ifndef USE_SKIA_TXT
     SkFontMetrics font_metrics;
-#else
-    RSFontMetrics font_metrics;
-#endif
 };
 
 class LineMetrics {
@@ -95,6 +85,10 @@ public:
     double fBaseline = 0.0;
     // Zero indexed line number
     size_t fLineNumber = 0;
+    // Width include spaces
+    double fWidthWithSpaces = 0.0;
+    // Height from the top
+    double fTopHeight = 0.0;
 
     // Mapping between text index ranges and the FontMetrics associated with
     // them. The first run will be keyed under start_index. The metrics here

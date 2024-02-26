@@ -204,11 +204,7 @@ private:
     struct TextBlobRecord {
         void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
 
-#ifndef USE_SKIA_TXT
         sk_sp<SkTextBlob> fBlob;
-#else
-        std::shared_ptr<RSTextBlob> fBlob;
-#endif
         SkPoint fOffset = SkPoint::Make(0.0f, 0.0f);
         ParagraphPainter::SkPaintOrID fPaint;
         SkRect fBounds = SkRect::MakeEmpty();

@@ -7,7 +7,6 @@
 #include "include/core/SkString.h"
 #include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#include "drawing.h"
 
 #include <stddef.h>
 #include <algorithm>
@@ -31,13 +30,8 @@ struct StrutStyle {
     const std::vector<SkString>& getFontFamilies() const { return fFontFamilies; }
     void setFontFamilies(std::vector<SkString> families) { fFontFamilies = std::move(families); }
 
-#ifndef USE_SKIA_TXT
     SkFontStyle getFontStyle() const { return fFontStyle; }
     void setFontStyle(SkFontStyle fontStyle) { fFontStyle = fontStyle; }
-#else
-    RSFontStyle getFontStyle() const { return fFontStyle; }
-    void setFontStyle(RSFontStyle fontStyle) { fFontStyle = fontStyle; }
-#endif
 
     SkScalar getFontSize() const { return fFontSize; }
     void setFontSize(SkScalar size) { fFontSize = size; }
@@ -79,11 +73,7 @@ struct StrutStyle {
 private:
 
     std::vector<SkString> fFontFamilies;
-#ifndef USE_SKIA_TXT
     SkFontStyle fFontStyle;
-#else
-    RSFontStyle fFontStyle;
-#endif
     SkScalar fFontSize;
     SkScalar fHeight;
     SkScalar fLeading;

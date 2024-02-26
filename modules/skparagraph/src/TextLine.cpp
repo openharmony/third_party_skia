@@ -84,19 +84,6 @@ int compareRound(SkScalar a, SkScalar b, bool applyRoundingHack) {
     }
 }
 
-#ifdef USE_SKIA_TXT
-bool IsRSFontEquals(const RSFont& font0, const RSFont& font1) {
-    auto f0 = const_cast<RSFont&>(font0);
-    auto f1 = const_cast<RSFont&>(font1);
-    return f0.GetTypeface().get() == f1.GetTypeface().get() &&
-        f0.GetSize() == f1.GetSize() &&
-        f0.GetScaleX() == f1.GetScaleX() &&
-        f0.GetSkewX() == f1.GetSkewX() &&
-        f0.GetEdging() == f1.GetEdging() &&
-        f0.GetHinting() == f1.GetHinting();
-}
-#endif
-
 }  // namespace
 
 TextLine::TextLine(ParagraphImpl* owner,
@@ -455,11 +442,7 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
     record.fVisitor_Pos = context.pos;
 
     // TODO: This is the change for flutter, must be removed later
-#ifndef USE_SKIA_TXT
     SkTextBlobBuilder builder;
-#else
-    RSTextBlobBuilder builder;
-#endif
     context.run->copyTo(builder, SkToU32(context.pos), context.size);
     record.fClippingNeeded = context.clippingNeeded;
     if (context.clippingNeeded) {
@@ -470,22 +453,10 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
 
     SkASSERT(nearlyEqual(context.run->baselineShift(), style.getBaselineShift()));
     SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getBaselineShift() +  0.5);
-#ifndef USE_SKIA_TXT
     record.fBlob = builder.make();
     if (record.fBlob != nullptr) {
         record.fBounds.joinPossiblyEmptyRect(record.fBlob->bounds());
     }
-#else
-    record.fBlob = builder.Make();
-    if (record.fBlob != nullptr) {
-        auto bounds = record.fBlob->Bounds();
-        if (bounds) {
-            record.fBounds.joinPossiblyEmptyRect(SkRect::MakeLTRB(
-                bounds->left_, bounds->top_, bounds->right_, bounds->bottom_
-            ));
-        }
-    }
-#endif
 
     record.fOffset = SkPoint::Make(this->offset().fX + context.fTextShift,
                                    this->offset().fY + correctedBaseline);
@@ -558,11 +529,7 @@ void TextLine::paintShadow(ParagraphPainter* painter,
     for (TextShadow shadow : style.getShadows()) {
         if (!shadow.hasShadow()) continue;
 
-#ifndef USE_SKIA_TXT
         SkTextBlobBuilder builder;
-#else
-        RSTextBlobBuilder builder;
-#endif
         context.run->copyTo(builder, context.pos, context.size);
 
         if (context.clippingNeeded) {
@@ -572,11 +539,7 @@ void TextLine::paintShadow(ParagraphPainter* painter,
             clip.offset(this->offset());
             painter->clipRect(clip);
         }
-#ifndef USE_SKIA_TXT
         auto blob = builder.make();
-#else
-        auto blob = builder.Make();
-#endif
         painter->drawTextShadow(blob,
             x + this->offset().fX + shadow.fOffset.x() + context.fTextShift,
             y + this->offset().fY + shadow.fOffset.y() + correctedBaseline,
@@ -861,33 +824,16 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
         }
     }
 
-#ifndef USE_SKIA_TXT
     auto shaped = [&](sk_sp<SkTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
-#else
-    auto shaped = [&](std::shared_ptr<RSTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
-#endif
         ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), ellipsis);
-#ifndef USE_SKIA_TXT
         SkFont font(typeface, textStyle.getFontSize());
         font.setEdging(SkFont::Edging::kAntiAlias);
         font.setHinting(SkFontHinting::kSlight);
         font.setSubpixel(true);
-#else
-        RSFont font(typeface, textStyle.getFontSize(), 1, 0);
-        font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
-        font.SetHinting(RSDrawing::FontHinting::SLIGHT);
-        font.SetSubpixel(true);
-#endif
 
-#ifndef USE_SKIA_TXT
         std::unique_ptr<SkShaper> shaper = SkShaper::MakeShapeDontWrapOrReorder(
                             fOwner->getUnicode()->copy(),
                             fallback ? SkFontMgr::RefDefault() : SkFontMgr::RefEmpty());
-#else
-        std::unique_ptr<SkShaper> shaper = SkShaper::MakeShapeDontWrapOrReorder(
-                            fOwner->getUnicode()->copy(),
-                            fallback ? RSFontMgr::CreateDefaultFontMgr() : RSFontMgr::CreateDefaultFontMgr());
-#endif
         shaper->shape(ellipsis.c_str(),
                       ellipsis.size(),
                       font,
@@ -901,7 +847,7 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
     };
 
     // Check all allowed fonts
-    auto typefaces = fOwner->fontCollection()->findTypefaces(
+    std::vector<sk_sp<SkTypeface>> typefaces = fOwner->fontCollection()->findTypefaces(
             textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
     for (const auto& typeface : typefaces) {
         auto ellipsisRun = shaped(typeface, false);
@@ -926,11 +872,7 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
     }
 
     // Check the current font
-#ifndef USE_SKIA_TXT
     auto ellipsisRun = shaped(run.fFont.refTypeface(), false);
-#else
-    auto ellipsisRun = shaped(const_cast<RSFont&>(run.fFont).GetTypeface(), false);
-#endif
     if (ellipsisRun->isResolved()) {
         return ellipsisRun;
     }
@@ -1313,6 +1255,8 @@ LineMetrics TextLine::getMetrics() const {
     // This is Flutter definition of a baseline
     result.fBaseline = this->offset().fY + this->height() - this->sizes().descent();
     result.fLineNumber = this - fOwner->lines().begin();
+    result.fWidthWithSpaces = fWidthWithSpaces;
+    result.fTopHeight = this->offset().fY;
 
     // Fill out the style parts
     this->iterateThroughVisualRuns(false,
@@ -1325,13 +1269,8 @@ LineMetrics TextLine::getMetrics() const {
         *runWidthInLine = this->iterateThroughSingleRunByStyles(
         TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kForeground,
         [&result, &run](TextRange textRange, const TextStyle& style, const ClipContext& context) {
-#ifndef USE_SKIA_TXT
             SkFontMetrics fontMetrics;
             run->fFont.getMetrics(&fontMetrics);
-#else
-            RSFontMetrics fontMetrics;
-            run->fFont.GetMetrics(&fontMetrics);
-#endif
             StyleMetrics styleMetrics(&style, fontMetrics);
             result.fLineMetrics.emplace(textRange.start, styleMetrics);
         });
@@ -1504,11 +1443,7 @@ void TextLine::getRectsForRange(TextRange textRange0,
                     context.run->placeholderStyle() == nullptr &&
                     nearlyEqual(lastRun->heightMultiplier(),
                                 context.run->heightMultiplier()) &&
-#ifndef USE_SKIA_TXT
                     lastRun->font() == context.run->font())
-#else
-                    IsRSFontEquals(lastRun->font(), context.run->font()))
-#endif
                 {
                     auto& lastBox = boxes.back();
                     if (nearlyEqual(lastBox.rect.fTop, clip.fTop) &&

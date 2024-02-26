@@ -735,8 +735,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     if (!fHasLineBreaks &&
         !fHasWhitespacesInside &&
         fPlaceholders.size() == 1 &&
-        fRuns.size() == 1 &&
-        fRuns[0].fAdvance.fX <= maxWidth - (this->detectIndents(std::numeric_limits<size_t>::max()))) {
+        fRuns.size() == 1 && fRuns[0].fAdvance.fX <= maxWidth - (this->detectIndents(0))) {
         // This is a short version of a line breaking when we know that:
         // 1. We have only one line of text
         // 2. It's shaped into a single run
@@ -783,7 +782,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
         SkScalar offsetX = 0.0f;
         TextAlign align = fParagraphStyle.effective_align();
         if (align == TextAlign::kLeft || align == TextAlign::kJustify) {
-            offsetX = this->detectIndents(std::numeric_limits<size_t>::max());
+            offsetX = this->detectIndents(0);
         }
         this->addLine(SkPoint::Make(offsetX, 0), advance,
                       textExcludingSpaces, textRange, textRange,
@@ -859,21 +858,15 @@ void ParagraphImpl::resolveStrut() {
         return;
     }
 
-    auto typefaces = fFontCollection->findTypefaces(strutStyle.getFontFamilies(), strutStyle.getFontStyle(), std::nullopt);
+    std::vector<sk_sp<SkTypeface>> typefaces = fFontCollection->findTypefaces(strutStyle.getFontFamilies(), strutStyle.getFontStyle(), std::nullopt);
     if (typefaces.empty()) {
         SkDEBUGF("Could not resolve strut font\n");
         return;
     }
 
-#ifndef USE_SKIA_TXT
     SkFont font(typefaces.front(), strutStyle.getFontSize());
     SkFontMetrics metrics;
     font.getMetrics(&metrics);
-#else
-    RSFont font(typefaces.front(), strutStyle.getFontSize(), 1, 0);
-    RSFontMetrics metrics;
-    font.GetMetrics(&metrics);
-#endif
 
     if (strutStyle.getHeightOverride()) {
         auto strutHeight = metrics.fDescent - metrics.fAscent;
@@ -1183,11 +1176,7 @@ void ParagraphImpl::computeEmptyMetrics() {
       textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
     auto typeface = typefaces.empty() ? nullptr : typefaces.front();
 
-#ifndef USE_SKIA_TXT
     SkFont font(typeface, textStyle.getFontSize());
-#else
-    RSFont font(typeface, textStyle.getFontSize(), 1, 0);
-#endif
     fEmptyMetrics = InternalLineMetrics(font, paragraphStyle().getStrutStyle().getForceStrutHeight());
 
     if (!paragraphStyle().getStrutStyle().getForceStrutHeight() &&
@@ -1343,7 +1332,6 @@ void ParagraphImpl::ensureUTF16Mapping() {
 }
 
 void ParagraphImpl::visit(const Visitor& visitor) {
-#ifndef USE_SKIA_TXT
     int lineNumber = 0;
     for (auto& line : fLines) {
         line.ensureTextBlobCachePopulated();
@@ -1383,7 +1371,6 @@ void ParagraphImpl::visit(const Visitor& visitor) {
         visitor(lineNumber, nullptr);   // signal end of line
         lineNumber += 1;
     }
-#endif
 }
 
 int ParagraphImpl::getLineNumberAt(TextIndex codeUnitIndex) const {
@@ -1455,7 +1442,6 @@ bool ParagraphImpl::getClosestGlyphClusterAt(SkScalar dx,
     }
 }
 
-#ifndef USE_SKIA_TXT
 SkFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
     for (auto& run : fRuns) {
         if (run.textRange().contains({codeUnitIndex, codeUnitIndex})) {
@@ -1464,16 +1450,6 @@ SkFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
     }
     return SkFont();
 }
-#else
-RSFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
-    for (auto& run : fRuns) {
-        if (run.textRange().contains({codeUnitIndex, codeUnitIndex})) {
-            return run.font();
-        }
-    }
-    return RSFont();
-}
-#endif
 
 std::vector<Paragraph::FontInfo> ParagraphImpl::getFonts() const {
     std::vector<FontInfo> results;
@@ -1483,7 +1459,6 @@ std::vector<Paragraph::FontInfo> ParagraphImpl::getFonts() const {
     return results;
 }
 
-#ifndef USE_SKIA_TXT
 SkFontMetrics ParagraphImpl::measureText() {
     SkFontMetrics metrics;
     if (fRuns.empty()) {
@@ -1518,42 +1493,6 @@ SkFontMetrics ParagraphImpl::measureText() {
     fGlyphsBoundsRight = realWidth + fGlyphsBoundsLeft;
     return metrics;
 }
-#else
-RSFontMetrics ParagraphImpl::measureText() {
-    RSFontMetrics metrics;
-    if (fRuns.empty()) {
-        return metrics;
-    }
-
-    auto& firstFont = const_cast<RSFont&>(fRuns.front().font());
-    RSRect firstBounds;
-    auto firstStr = text(fRuns.front().textRange());
-    firstFont.GetMetrics(&metrics);
-    firstFont.MeasureText(firstStr.data(), firstStr.size(), RSDrawing::TextEncoding::UTF8, &firstBounds);
-    fGlyphsBoundsTop = firstBounds.GetTop();
-    fGlyphsBoundsBottom = firstBounds.GetBottom();
-    fGlyphsBoundsLeft = firstBounds.GetLeft();
-    float realWidth = 0;
-    for (size_t i = 0; i < fRuns.size(); ++i) {
-        auto run = fRuns[i];
-        auto& font = const_cast<RSFont&>(run.font());
-        RSRect bounds;
-        auto str = text(run.textRange());
-        auto advance = font.MeasureText(str.data(), str.size(), RSDrawing::TextEncoding::UTF8, &bounds);
-        realWidth += advance;
-        if (i == 0) {
-            realWidth -= ((advance - (bounds.GetRight() - bounds.GetLeft())) / 2);
-        }
-        if (i == (fRuns.size() - 1)) {
-            realWidth -= ((advance - (bounds.GetRight() - bounds.GetLeft())) / 2);
-        }
-        fGlyphsBoundsTop = std::min(fGlyphsBoundsTop, bounds.GetTop());
-        fGlyphsBoundsBottom = std::max(fGlyphsBoundsBottom, bounds.GetBottom());
-    }
-    fGlyphsBoundsRight = realWidth + fGlyphsBoundsLeft;
-    return metrics;
-}
-#endif
 
 }  // namespace textlayout
 }  // namespace skia
