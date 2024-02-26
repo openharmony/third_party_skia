@@ -195,6 +195,7 @@ public:
     sk_sp<SkPicture> getPicture() { return fPicture; }
 
     SkScalar widthWithTrailingSpaces() { return fMaxWidthWithTrailingSpaces; }
+    SkScalar getMaxWidth() { return fOldMaxWidth; }
 
     void resetContext();
     void resolveStrut();
@@ -234,6 +235,8 @@ public:
         }
     }
 
+    void scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
+    void middleEllipsisDeal();
     bool codeUnitHasProperty(size_t index, SkUnicode::CodeUnitFlags property) const {
         return (fCodeUnitProperties[index] & property) == property;
     }
@@ -246,6 +249,7 @@ public:
 
     SkFontMetrics measureText() override;
 
+    bool &getEllipsisState() { return isMiddleEllipsis; }
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
@@ -276,6 +280,8 @@ private:
     SkTArray<size_t, true> fClustersIndexFromCodeUnit;
     std::vector<size_t> fWords;
     std::vector<SkScalar> fIndents;
+    std::vector<TextCutRecord> rtlTextSize;
+    std::vector<TextCutRecord> ltrTextSize;
     std::vector<SkUnicode::BidiRegion> fBidiRegions;
     // These two arrays are used in measuring methods (getRectsForRange, getGlyphPositionAtCoordinate)
     // They are filled lazily whenever they need and cached
@@ -283,6 +289,7 @@ private:
     SkTArray<size_t, true> fUTF16IndexForUTF8Index;
     SkOnce fillUTF16MappingOnce;
     size_t fUnresolvedGlyphs;
+    bool isMiddleEllipsis;
     std::unordered_set<SkUnichar> fUnresolvedCodepoints;
 
     SkTArray<TextLine, false> fLines;   // kFormatted   (cached: width, max lines, ellipsis, text align)
@@ -295,8 +302,10 @@ private:
 
     SkScalar fOldWidth;
     SkScalar fOldHeight;
+    SkScalar runTimeEllipsisWidth;
     SkScalar fMaxWidthWithTrailingSpaces;
-
+    SkScalar fOldMaxWidth;
+    SkScalar allTextWidth;
     std::shared_ptr<SkUnicode> fUnicode;
     bool fHasLineBreaks;
     bool fHasWhitespacesInside;

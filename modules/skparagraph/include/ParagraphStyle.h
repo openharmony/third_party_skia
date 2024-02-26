@@ -96,6 +96,7 @@ struct ParagraphStyle {
                this->fTextDirection == rhs.fTextDirection && this->fTextAlign == rhs.fTextAlign &&
                this->fDefaultTextStyle == rhs.fDefaultTextStyle &&
                this->fEllipsisModal == rhs.fEllipsisModal &&
+               this->fTextOverflower == rhs.fTextOverflower &&
                this->fReplaceTabCharacters == rhs.fReplaceTabCharacters &&
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
     }
@@ -142,6 +143,8 @@ struct ParagraphStyle {
     SkScalar getTextSplitRatio() const { return fTextSplitRatio; }
     void setTextSplitRatio(SkScalar textSplitRatio) { fTextSplitRatio = textSplitRatio; }
 
+    bool getTextOverflower() const { return fTextOverflower; }
+    void setTextOverflower(bool textOverflowerFlag) { fTextOverflower = textOverflowerFlag; }
 private:
     StrutStyle fStrutStyle;
     TextStyle fDefaultTextStyle;
@@ -154,6 +157,7 @@ private:
     TextHeightBehavior fTextHeightBehavior;
     bool fHintingIsOn;
     bool fReplaceTabCharacters;
+    bool fTextOverflower;
     skia::textlayout::EllipsisModal fEllipsisModal;
     SkScalar fTextSplitRatio = 0.5f;
 };

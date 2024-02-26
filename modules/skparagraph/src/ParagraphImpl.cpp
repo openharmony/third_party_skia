@@ -127,10 +127,126 @@ void ParagraphImpl::addUnresolvedCodepoints(TextRange textRange) {
     );
 }
 
+void ParagraphImpl::middleEllipsisDeal()
+{
+    isMiddleEllipsis = false;
+    SkString ellipsis = SkUnicode::convertUtf16ToUtf8(u"\u2026");
+    const char *ellStr = ellipsis.c_str();
+    size_t start = 0;
+    size_t end = 0;
+    if (fRuns.begin()->leftToRight()) {
+        if (runTimeEllipsisWidth + ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
+            fText.reset();
+            fText.set(ellStr);
+            end = 1;
+        } else {
+            scanTextCutPoint(ltrTextSize, start, end);
+            if (end) {
+                fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
+                fText.insert(ltrTextSize[start].charbegin, ellStr);
+            }
+        }
+        ltrTextSize.clear();
+    } else {
+        scanTextCutPoint(rtlTextSize, start, end);
+        if (end) {
+            fText.remove(rtlTextSize[start - 1].charbegin, rtlTextSize[end + 2].charbegin - rtlTextSize[start - 1].charbegin);
+            fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
+            rtlTextSize.clear();
+        }
+    }
+
+    // end = 0 means the text does not exceed the width limit
+    if (end != 0) {
+        this->fBidiRegions.clear();
+        this->fCodeUnitProperties.reset();
+        this->fClustersIndexFromCodeUnit.reset();
+        this->computeCodeUnitProperties();
+        this->fRuns.reset();
+        this->fClusters.reset();
+        this->fClustersIndexFromCodeUnit.reset();
+        this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
+        this->shapeTextIntoEndlessLine();
+    }
+    this->resetContext();
+    this->resolveStrut();
+    this->computeEmptyMetrics();
+    this->fLines.reset();
+    this->breakShapedTextIntoLines(fOldMaxWidth);
+    this->fText.reset();
+}
+
+void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end)
+{
+    if (allTextWidth <= fOldMaxWidth || !rawTextSize.size()) {
+        allTextWidth = 0;
+        return;
+    }
+
+    float measureWidth = runTimeEllipsisWidth;
+    if (fRuns.begin()->leftToRight()) {
+        size_t begin = 0;
+        size_t last = rawTextSize.size() - 1;
+        bool rightExit = false;
+        while (begin < last && !rightExit && measureWidth < fOldMaxWidth) {
+            measureWidth += rawTextSize[begin++].phraseWidth;
+            if (measureWidth > fOldMaxWidth) {
+                --begin;
+                break;
+            }
+            while (last > begin && measureWidth < fOldMaxWidth) {
+                measureWidth += rawTextSize[last--].phraseWidth;
+                if (measureWidth > fOldMaxWidth) {
+                    rightExit = true;
+                    ++last;
+                }
+                break;
+            }
+        }
+
+        if (measureWidth >= fOldMaxWidth || fParagraphStyle.getTextOverflower()) {
+            start = begin;
+            end = last;
+        } else {
+            start = 0;
+            end = 0;
+        }
+    } else {
+        size_t left = 0;
+        size_t right = rawTextSize.size() - 1;
+        while (left < rawTextSize.size() && measureWidth < fOldMaxWidth && left <= right) {
+            measureWidth += rawTextSize[left++].phraseWidth;
+            while (right > left && measureWidth < fOldMaxWidth) {
+                measureWidth += rawTextSize[right--].phraseWidth;
+                break;
+            }               
+        }
+
+        if (right < left) {
+            right = left;
+        }
+
+        if (measureWidth >= fOldMaxWidth || fParagraphStyle.getTextOverflower()) {
+            start = left;
+            end = right;
+        } else {
+            start = 0;
+            end = 0;
+        } 
+    }
+    return;
+}
+
 void ParagraphImpl::layout(SkScalar rawWidth) {
     fLineNumber = 1;
     // TODO: This rounding is done to match Flutter tests. Must be removed...
     auto floorWidth = rawWidth;
+
+    if (fParagraphStyle.getMaxLines() == 1 &&
+        fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
+        fOldMaxWidth = rawWidth;
+        isMiddleEllipsis = true;
+    }
     if (getApplyRoundingHack()) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
@@ -199,6 +315,12 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
             }
         }
         fState = kShaped;
+    }
+
+    if (fParagraphStyle.getMaxLines() == 1 &&
+        fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
+        middleEllipsisDeal();
+        fState = kLineBroken;
     }
 
     if (fState == kShaped) {
@@ -519,7 +641,7 @@ void ParagraphImpl::buildClusterTable() {
             fCodeUnitProperties[run.textRange().end] |= SkUnicode::CodeUnitFlags::kSoftLineBreakBefore;
         } else {
             // Walk through the glyph in the direction of input text
-            run.iterateThroughClustersInTextOrder([runIndex, this](size_t glyphStart,
+            run.iterateThroughClustersInTextOrder([&run, runIndex, this](size_t glyphStart,
                                                                    size_t glyphEnd,
                                                                    size_t charStart,
                                                                    size_t charEnd,
@@ -529,6 +651,19 @@ void ParagraphImpl::buildClusterTable() {
                 // Add info to cluster indexes table (text -> cluster)
                 for (auto i = charStart; i < charEnd; ++i) {
                   fClustersIndexFromCodeUnit[i] = fClusters.size();
+                }
+
+                if (isMiddleEllipsis) {
+                    TextCutRecord textCount;
+                    textCount.charbegin = charStart;
+                    textCount.charOver = charEnd;
+                    textCount.phraseWidth = width;
+                    allTextWidth += width;
+                    if (run.leftToRight()) {
+                        this->ltrTextSize.emplace_back(textCount);
+                    } else {
+                        this->rtlTextSize.emplace_back(textCount);
+                    }
                 }
                 SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
                 fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
@@ -542,6 +677,17 @@ void ParagraphImpl::buildClusterTable() {
     }
     fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
     fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
+    if (isMiddleEllipsis && fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
+        float ellipsisWidth = 0.0;
+        TextLine textLine;
+        const SkString& ellipsis = SkUnicode::convertUtf16ToUtf8(u"\u2026");
+        std::unique_ptr<Run> ellipsisRun;
+        textLine.setParagraphImpl(this);
+        ellipsisRun = textLine.shapeEllipsis(ellipsis, &this->cluster(0));
+        runTimeEllipsisWidth = ellipsisRun->fAdvanceX();
+        ellipsisWidth = ellipsisRun->fAdvanceX();
+        ellipsisRun.reset();
+    }
 }
 
 bool ParagraphImpl::shapeTextIntoEndlessLine() {

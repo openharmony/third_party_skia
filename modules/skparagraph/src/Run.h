@@ -89,6 +89,7 @@ public:
         fOffset.fX += shiftX;
         fOffset.fY += shiftY;
     }
+    SkScalar fAdvanceX() const { return fAdvance.fX; }
     SkVector advance() const {
         return SkVector::Make(fAdvance.fX, fFontMetrics.fDescent - fFontMetrics.fAscent + fFontMetrics.fLeading);
     }
