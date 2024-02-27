@@ -110,25 +110,25 @@
           "und-Mymr": "Noto Sans Myanmar"
         },
         {
+          "und-Tibt": "Noto Sans Tibetan"
+        },
+        {
           "ja": "Noto Sans JP"
         },
         {
           "ko": "Noto Sans KR"
         },
         {
-          "": "HMOS Color Emoji"
+          "und-Zsye": "HMOS Color Emoji"
         },
         {
-          "": "HMOS Color Emoji Flags"
+          "und-Zsye": "HMOS Color Emoji Flags"
         },
         {
-          "": "Noto Sans Symbols"
+          "und-Zsym": "Noto Sans Symbols"
         },
         {
-          "": "Noto Sans Symbols 2"
-        },
-        {
-          "": "HM Symbol"
+          "und-Zsym": "HM Symbol"
         }
       ]
     }
