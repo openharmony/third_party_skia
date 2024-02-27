@@ -501,7 +501,7 @@ public:
     }
 
     SkScalar height() const {
-        return ::ceil((double)fDescent - fAscent + fLeading);
+        return ::round((double)fDescent - fAscent + fLeading);
     }
 
     void update(SkScalar a, SkScalar d, SkScalar l) {
