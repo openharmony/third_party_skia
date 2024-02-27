@@ -4,6 +4,7 @@
 
 #include <map>
 #include "modules/skparagraph/include/TextStyle.h"
+#include "drawing.h"
 
 namespace skia {
 namespace textlayout {
@@ -11,8 +12,13 @@ class StyleMetrics {
 public:
     StyleMetrics(const TextStyle* style) : text_style(style) {}
 
+#ifndef USE_SKIA_TXT
     StyleMetrics(const TextStyle* style, SkFontMetrics& metrics)
             : text_style(style), font_metrics(metrics) {}
+#else
+    StyleMetrics(const TextStyle* style, RSFontMetrics& metrics)
+            : text_style(style), font_metrics(metrics) {}
+#endif
 
     const TextStyle* text_style;
 
@@ -33,7 +39,11 @@ public:
     // * UnderlinePosition   underline position relative to baseline
     // * StrikeoutThickness  strikeout thickness
     // * StrikeoutPosition   strikeout position relative to baseline
+#ifndef USE_SKIA_TXT
     SkFontMetrics font_metrics;
+#else
+    RSFontMetrics font_metrics;
+#endif
 };
 
 class LineMetrics {

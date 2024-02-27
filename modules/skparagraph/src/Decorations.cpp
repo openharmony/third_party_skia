@@ -25,7 +25,11 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
     }
 
     // Get thickness and position
+#ifndef USE_SKIA_TXT
     calculateThickness(textStyle, context.run->font().refTypeface());
+#else
+    calculateThickness(textStyle, const_cast<RSFont&>(context.run->font()).GetTypeface());
+#endif
 
     for (auto decoration : AllTextDecorations) {
         if ((textStyle.getDecorationType() & decoration) == 0) {
@@ -49,7 +53,11 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         switch (textStyle.getDecorationStyle()) {
           case TextDecorationStyle::kWavy: {
               calculateWaves(textStyle, context.clip);
+#ifndef USE_SKIA_TXT
               fPath.offset(x, y);
+#else
+              fPath.Offset(x, y);
+#endif
               painter->drawPath(fPath, fDecorStyle);
               break;
           }
@@ -96,6 +104,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
 
 void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRect& rect,
                                 SkScalar baseline, SkScalar halo) {
+#ifndef USE_SKIA_TXT
     // Create a special text blob for decorations
     SkTextBlobBuilder builder;
     context.run->copyTo(builder,
@@ -131,23 +140,36 @@ void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRe
         path.lineTo(rect.fRight, rect.fTop);
     }
     fPath = path.detach();
+#endif
 }
 
 // This is how flutter calculates the thickness
+#ifndef USE_SKIA_TXT
 void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface) {
+#else
+void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface) {
+#endif
 
     textStyle.setTypeface(typeface);
     textStyle.getFontMetrics(&fFontMetrics);
 
     fThickness = textStyle.getFontSize() / 14.0f;
 
+#ifndef USE_SKIA_TXT
     if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kUnderlineThicknessIsValid_Flag) &&
+#else
+    if ((fFontMetrics.fFlags & RSFontMetrics::FontMetricsFlags::UNDERLINE_THICKNESS_IS_VALID_FLAG) &&
+#endif
          fFontMetrics.fUnderlineThickness > 0) {
         fThickness = fFontMetrics.fUnderlineThickness;
     }
 
     if (textStyle.getDecorationType() == TextDecoration::kLineThrough) {
+#ifndef USE_SKIA_TXT
         if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutThicknessIsValid_Flag) &&
+#else
+        if ((fFontMetrics.fFlags & RSFontMetrics::FontMetricsFlags::STRIKEOUT_THICKNESS_IS_VALID_FLAG) &&
+#endif
              fFontMetrics.fStrikeoutThickness > 0) {
             fThickness = fFontMetrics.fStrikeoutThickness;
         }
@@ -159,7 +181,11 @@ void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> type
 void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent) {
     switch (decoration) {
       case TextDecoration::kUnderline:
+#ifndef USE_SKIA_TXT
           if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kUnderlinePositionIsValid_Flag) &&
+#else
+          if ((fFontMetrics.fFlags & RSFontMetrics::FontMetricsFlags::UNDERLINE_POSITION_IS_VALID_FLAG) &&
+#endif
                fFontMetrics.fUnderlinePosition > 0) {
             fPosition  = fFontMetrics.fUnderlinePosition;
           } else {
@@ -171,7 +197,11 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent) 
           fPosition = fThickness / 2.0f - ascent;
         break;
       case TextDecoration::kLineThrough: {
+#ifndef USE_SKIA_TXT
           fPosition = (fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutPositionIsValid_Flag)
+#else
+          fPosition = (fFontMetrics.fFlags & RSFontMetrics::FontMetricsFlags::STRIKEOUT_POSITION_IS_VALID_FLAG)
+#endif
                      ? fFontMetrics.fStrikeoutPosition
                      : fFontMetrics.fXHeight / -2;
           fPosition -= ascent;
@@ -212,16 +242,32 @@ void Decorations::calculatePaint(const TextStyle& textStyle) {
 
 void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
 
+#ifndef USE_SKIA_TXT
     fPath.reset();
+#else
+    fPath.Reset();
+#endif
     int wave_count = 0;
     SkScalar x_start = 0;
     SkScalar quarterWave = fThickness;
+#ifndef USE_SKIA_TXT
     fPath.moveTo(0, 0);
+#else
+    fPath.MoveTo(0, 0);
+#endif
+
     while (x_start + quarterWave * 2 < clip.width()) {
+#ifndef USE_SKIA_TXT
         fPath.rQuadTo(quarterWave,
                      wave_count % 2 != 0 ? quarterWave : -quarterWave,
                      quarterWave * 2,
                      0);
+#else
+        fPath.RQuadTo(quarterWave,
+                     wave_count % 2 != 0 ? quarterWave : -quarterWave,
+                     quarterWave * 2,
+                     0);
+#endif
         x_start += quarterWave * 2;
         ++wave_count;
     }
@@ -234,7 +280,11 @@ void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
         double x2 = remaining;
         double y2 = (remaining - remaining * remaining / (quarterWave * 2)) *
                     (wave_count % 2 == 0 ? -1 : 1);
+#ifndef USE_SKIA_TXT
         fPath.rQuadTo(x1, y1, x2, y2);
+#else
+        fPath.RQuadTo(x1, y1, x2, y2);
+#endif
     }
 }
 
