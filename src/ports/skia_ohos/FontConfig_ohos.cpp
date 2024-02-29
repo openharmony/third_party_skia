@@ -363,6 +363,9 @@ int FontConfig_OHOS::parseConfig(const char* fname)
 {
     if (fname == nullptr) {
         fname = OHOS_DEFAULT_CONFIG;
+    } else {
+        std::string const& temp = std::string(fname) + std::string(OHOS_DEFAULT_CONFIG);
+        fname = temp.c_str();
     }
     Json::Value root;
     int err = checkConfigFile(fname, root);
