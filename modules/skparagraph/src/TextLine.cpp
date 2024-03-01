@@ -678,7 +678,7 @@ void TextLine::shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar pre
     }
 }
 
-void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType) {
+void TextLine::createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType) {
     // Replace some clusters with the ellipsis
     // Go through the clusters in the reverse logical order
     // taking off cluster by cluster until the ellipsis fits
@@ -704,7 +704,15 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         // Shape the ellipsis if the run has changed
         if (lastRun != cluster.runIndex()) {
             ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
-            lastRun = cluster.runIndex();
+            if (ellipsisRun->advance().fX > maxWidth) {
+                // Ellipsis is bigger than the entire line; no way we can add it at all
+                // BUT! We can keep scanning in case the next run will give us better results
+                lastRun = EMPTY_RUN;
+                continue;
+            } else {
+                // We may need to continue;
+                lastRun = cluster.runIndex();
+            }
         }
         
         if (!cluster.isWordBreak()) {
@@ -716,18 +724,14 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         // See if it fits
         if (width + ellipsisRun->advance().fX > maxWidth) {
             width -= cluster.width();
+            // Continue if the ellipsis does not fit
             iterForWord = (wordCount != 1 && wordBreakType != WordBreakType::BREAK_ALL && !cluster.isWordBreak());
-            if (std::floor(width) > 0) {
-                // Continue if the ellipsis does not fit
-                continue;
-            }
+            continue;
         }
 
         if (iterForWord && !cluster.isWordBreak()) {
             width -= cluster.width();
-            if (std::floor(width) > 0) {
-                continue;
-            }
+            continue;
         }
 
         // We found enough room for the ellipsis
@@ -757,9 +761,6 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 }
 
 void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool) {
-    if (fAdvance.fX <= maxWidth) {
-        return;
-    }
     SkScalar width = fAdvance.fX;
     std::unique_ptr<Run> ellipsisRun;
     RunIndex lastRun = EMPTY_RUN;
@@ -768,21 +769,26 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         // Shape the ellipsis if the run has changed
         if (lastRun != cluster.runIndex()) {
             ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
-            lastRun = cluster.runIndex();
+            if (ellipsisRun->advance().fX > maxWidth) {
+                lastRun = EMPTY_RUN;
+                continue;
+            } else {
+                // We may need to continue
+                lastRun = cluster.runIndex();
+            }
         }
         // See if it fits
         if (width + ellipsisRun->advance().fX > maxWidth) {
             width -= cluster.width();
-            if (std::floor(width) > 0) {
-                // Continue if the ellipsis does not fit
-                continue;
-            }
+            // Continue if the ellipsis does not fit
+            continue;
         }
         // We found enough room for the ellipsis
-        fAdvance.fX = width + ellipsisRun->advance().fX;
+        fAdvance.fX += ellipsisRun->advance().fX;
         fEllipsis = std::move(ellipsisRun);
         fEllipsis->setOwner(fOwner);
         fClusterRange.start = clusterIndex;
+        fClusterRange.end = fGhostClusterRange.end;
         fGhostClusterRange.start = fClusterRange.start;
         if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
             fEllipsis->fClusterStart = fText.start;
@@ -797,11 +803,11 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     if (!fEllipsis) {
         // Weird situation: ellipsis does not fit; no ellipsis then
-        fClusterRange.start = fClusterRange.end;
-        fGhostClusterRange.start = fClusterRange.end;
-        fText.start = fText.end;
-        fTextIncludingNewlines.start = fTextIncludingNewlines.end;
-        fTextExcludingSpaces.start = fTextExcludingSpaces.end;
+        fClusterRange.start = fClusterRange.start;
+        fGhostClusterRange.start = fClusterRange.start;
+        fText.end = fText.start;
+        fTextIncludingNewlines.start = fTextIncludingNewlines.start;
+        fTextExcludingSpaces.start = fTextExcludingSpaces.start;
         fAdvance.fX = 0;
     }
 }

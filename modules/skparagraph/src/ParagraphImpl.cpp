@@ -814,7 +814,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 // TODO: Take in account clipped edges
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
                 if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
-                    line.createTailEllipsis(maxWidth, this->getEllipsis(), true, this->getWordBreakType());
+                    line.createEllipsis(maxWidth, this->getEllipsis(), true, this->getWordBreakType());
                 } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
                     line.createHeadEllipsis(maxWidth, this->getEllipsis(), true);
                 }
