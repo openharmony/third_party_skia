@@ -215,8 +215,7 @@ private:
     }
 
     void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType);
-    // breakAll = true, break occurs after each character
-    void moveForward(bool hasEllipsis, bool breakAll);
+    void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
     void trimEndSpaces(TextAlign align);
     std::tuple<Cluster*, size_t, SkScalar> trimStartSpaces(Cluster* endOfClusters);
     SkScalar getClustersTrimmedWidth();
