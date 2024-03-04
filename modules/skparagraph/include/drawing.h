@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef Drawing_DEFINED
-#define Drawing_DEFINED
+#ifndef DRAWING_DEFINED
+#define DRAWING_DEFINED
 
 #ifdef USE_SKIA_TXT
 
@@ -59,4 +59,4 @@ using RSTypeface = RSDrawing::Typeface;
 
 #endif
 
-#endif  // Drawing_DEFINED
+#endif  // DRAWING_DEFINED

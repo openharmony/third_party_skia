@@ -50,8 +50,10 @@ public:
 
     std::shared_ptr<RSFontMgr> getFallbackManager() const { return fDefaultFontManager; }
 
-    std::vector<std::shared_ptr<RSTypeface>> findTypefaces(const std::vector<SkString>& familyNames, RSFontStyle fontStyle);
-    std::vector<std::shared_ptr<RSTypeface>> findTypefaces(const std::vector<SkString>& familyNames, RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs);
+    std::vector<std::shared_ptr<RSTypeface>> findTypefaces(
+        const std::vector<SkString>& familyNames, RSFontStyle fontStyle);
+    std::vector<std::shared_ptr<RSTypeface>> findTypefaces(
+        const std::vector<SkString>& familyNames, RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs);
 
     std::shared_ptr<RSTypeface> defaultFallback(SkUnichar unicode, RSFontStyle fontStyle, const SkString& locale);
     std::shared_ptr<RSTypeface> defaultFallback();
@@ -81,7 +83,8 @@ private:
         FamilyKey(const std::vector<SkString>& familyNames, SkFontStyle style, const std::optional<FontArguments>& args)
                 : fFamilyNames(familyNames), fFontStyle(style), fFontArguments(args) {}
 #else
-        FamilyKey(const std::vector<SkString>& familyNames, RSFontStyle style, const std::optional<FontArguments>& args)
+        FamilyKey(
+            const std::vector<SkString>& familyNames, RSFontStyle style, const std::optional<FontArguments>& args)
                 : fFamilyNames(familyNames), fFontStyle(style), fFontArguments(args) {}
 #endif
 

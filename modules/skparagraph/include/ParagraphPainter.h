@@ -49,8 +49,10 @@ public:
     virtual void drawTextBlob(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) = 0;
     virtual void drawTextShadow(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) = 0;
 #else
-    virtual void drawTextBlob(const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) = 0;
-    virtual void drawTextShadow(const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) = 0;
+    virtual void drawTextBlob(
+        const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) = 0;
+    virtual void drawTextShadow(
+        const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) = 0;
 #endif
     virtual void drawRect(const SkRect& rect, const SkPaintOrID& paint) = 0;
     virtual void drawRRect(const SkRRect& rrect, const SkColor color) = 0;

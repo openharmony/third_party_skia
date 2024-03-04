@@ -10,7 +10,8 @@ namespace textlayout {
 
 namespace {
 #ifdef USE_SKIA_TXT
-std::shared_ptr<RSTypeface> RSLegacyMakeTypeface(std::shared_ptr<RSFontMgr> fontMgr, const char familyName[], RSFontStyle style)
+std::shared_ptr<RSTypeface> RSLegacyMakeTypeface(
+    std::shared_ptr<RSFontMgr> fontMgr, const char familyName[], RSFontStyle style)
 {
     RSTypeface* typeface = fontMgr->MatchFamilyStyle(familyName, style);
     if (typeface == nullptr && familyName != nullptr) {
@@ -74,7 +75,8 @@ void FontCollection::setDynamicFontManager(std::shared_ptr<RSFontMgr> font_manag
 #ifndef USE_SKIA_TXT
 void FontCollection::setTestFontManager(sk_sp<SkFontMgr> font_manager) {
 #else
-void FontCollection::setTestFontManager(std::shared_ptr<RSFontMgr> font_manager) {
+void FontCollection::setTestFontManager(std::shared_ptr<RSFontMgr> font_manager)
+{
 #endif
     fTestFontManager = font_manager;
 }
@@ -135,7 +137,9 @@ std::vector<std::shared_ptr<RSFontMgr>> FontCollection::getFontManagerOrder() co
 #ifndef USE_SKIA_TXT
 std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames, SkFontStyle fontStyle) {
 #else
-std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames, RSFontStyle fontStyle) {
+std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(
+    const std::vector<SkString>& familyNames, RSFontStyle fontStyle)
+{
 #endif
     return findTypefaces(familyNames, fontStyle, std::nullopt);
 }
@@ -185,7 +189,9 @@ std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<S
     return typefaces;
 }
 #else
-std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames, RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs) {
+std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(
+    const std::vector<SkString>& familyNames, RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs)
+{
     // Look inside the font collections cache first
     FamilyKey familyKey(familyNames, fontStyle, fontArgs);
     auto found = fTypefaces.find(familyKey);
@@ -269,7 +275,9 @@ std::shared_ptr<RSTypeface> FontCollection::matchTypeface(const SkString& family
 #ifndef USE_SKIA_TXT
 sk_sp<SkTypeface> FontCollection::defaultFallback(SkUnichar unicode, SkFontStyle fontStyle, const SkString& locale) {
 #else
-std::shared_ptr<RSTypeface> FontCollection::defaultFallback(SkUnichar unicode, RSFontStyle fontStyle, const SkString& locale) {
+std::shared_ptr<RSTypeface> FontCollection::defaultFallback(
+    SkUnichar unicode, RSFontStyle fontStyle, const SkString& locale)
+{
 #endif
 
     for (const auto& manager : this->getFontManagerOrder()) {
@@ -311,8 +319,8 @@ std::shared_ptr<RSTypeface> FontCollection::defaultFallback() {
         return nullptr;
     }
     for (const auto& familyName : fDefaultFamilyNames) {
-        std::shared_ptr<RSTypeface> match = std::shared_ptr<RSTypeface>(fDefaultFontManager->MatchFamilyStyle(familyName.c_str(),
-                                                                        RSFontStyle()));
+        std::shared_ptr<RSTypeface> match = std::shared_ptr<RSTypeface>(
+            fDefaultFontManager->MatchFamilyStyle(familyName.c_str(), RSFontStyle()));
         if (match) {
             return match;
         }

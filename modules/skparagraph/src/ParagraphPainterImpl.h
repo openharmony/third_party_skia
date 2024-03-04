@@ -16,8 +16,10 @@ public:
     void drawTextBlob(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) override;
     void drawTextShadow(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) override;
 #else
-    void drawTextBlob(const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) override {}
-    void drawTextShadow(const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) override {}
+    void drawTextBlob(
+        const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) override {}
+    void drawTextShadow(
+        const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) override {}
 #endif
     void drawRect(const SkRect& rect, const SkPaintOrID& paint) override;
     void drawRRect(const SkRRect& rrect, const SkColor color) override;
