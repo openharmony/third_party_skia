@@ -655,8 +655,8 @@ struct ShapedRun {
 struct ShapedRun {
     ShapedRun(SkShaper::RunHandler::Range utf8Range, const RSFont& font, SkBidiIterator::Level level,
               std::unique_ptr<ShapedGlyph[]> glyphs, size_t numGlyphs, SkVector advance = {0, 0})
-        : fUtf8Range(utf8Range), fFont(font), fLevel(level)
-        , fGlyphs(std::move(glyphs)), fNumGlyphs(numGlyphs), fAdvance(advance)
+        : fUtf8Range(utf8Range), fFont(font), fLevel(level),
+            fGlyphs(std::move(glyphs)), fNumGlyphs(numGlyphs), fAdvance(advance)
     {}
 
     SkShaper::RunHandler::Range fUtf8Range;

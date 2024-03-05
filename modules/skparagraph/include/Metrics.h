@@ -17,7 +17,7 @@ public:
             : text_style(style), font_metrics(metrics) {}
 #else
     StyleMetrics(const TextStyle* style, RSFontMetrics& metrics)
-            : text_style(style), font_metrics(metrics) {}
+        : text_style(style), font_metrics(metrics) {}
 #endif
 
     const TextStyle* text_style;

@@ -1459,7 +1459,8 @@ SkFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
     return SkFont();
 }
 #else
-RSFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
+RSFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const
+{
     for (auto& run : fRuns) {
         if (run.textRange().contains({codeUnitIndex, codeUnitIndex})) {
             return run.font();
@@ -1513,7 +1514,8 @@ SkFontMetrics ParagraphImpl::measureText() {
     return metrics;
 }
 #else
-RSFontMetrics ParagraphImpl::measureText() {
+RSFontMetrics ParagraphImpl::measureText()
+{
     RSFontMetrics metrics;
     if (fRuns.empty()) {
         return metrics;

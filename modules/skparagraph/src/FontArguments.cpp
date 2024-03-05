@@ -76,7 +76,8 @@ sk_sp<SkTypeface> FontArguments::CloneTypeface(sk_sp<SkTypeface> typeface) const
     return typeface->makeClone(args);
 }
 #else
-std::shared_ptr<RSTypeface> FontArguments::CloneTypeface(std::shared_ptr<RSTypeface> typeface) const {
+std::shared_ptr<RSTypeface> FontArguments::CloneTypeface(std::shared_ptr<RSTypeface> typeface) const
+{
     return typeface;
 }
 #endif

@@ -222,8 +222,9 @@ public:
     }
     FontMgrRunIterator(const char* utf8, size_t utf8Bytes,
                        const RSFont& font, std::shared_ptr<RSFontMgr> fallbackMgr)
-        : FontMgrRunIterator(utf8, utf8Bytes, font, std::move(fallbackMgr),
-                             nullptr, GetRSTypefaceOrDefault(const_cast<RSFont&>(font).GetTypeface())->GetFontStyle(), nullptr)
+        : FontMgrRunIterator(
+            utf8, utf8Bytes, font, std::move(fallbackMgr), nullptr,
+            GetRSTypefaceOrDefault(const_cast<RSFont&>(font).GetTypeface())->GetFontStyle(), nullptr)
     {}
 
     void consume() override {
@@ -253,7 +254,6 @@ public:
         while (fCurrent < fEnd) {
             const char* prev = fCurrent;
             u = utf8_next(&fCurrent, fEnd);
-
             // End run if not using initial typeface and initial typeface has this character.
             if (fCurrentFont->GetTypeface() != fFont.GetTypeface() && fFont.UnicharToGlyph(u)) {
                 fCurrent = prev;

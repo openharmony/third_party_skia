@@ -429,7 +429,8 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
 #ifndef USE_SKIA_TXT
     std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
 #else
-    std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
+    std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
+        textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
 #endif
 
     for (const auto& typeface : typefaces) {
