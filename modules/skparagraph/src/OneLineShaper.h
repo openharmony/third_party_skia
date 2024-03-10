@@ -103,6 +103,7 @@ private:
     void sortOutGlyphs(std::function<void(GlyphRange)>&& sortOutUnresolvedBLock);
     ClusterRange normalizeTextRange(GlyphRange glyphRange);
     void fillGaps(size_t);
+    BlockRange generateBlockRange(const Block& block, const TextRange& textRange);
 
     ParagraphImpl* fParagraph;
     TextRange fCurrentText;
