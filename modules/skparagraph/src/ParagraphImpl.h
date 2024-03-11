@@ -274,6 +274,14 @@ private:
     friend class OneLineShaper;
 
     void computeEmptyMetrics();
+    void middleEllipsisAddText(size_t charStart,
+                               size_t charEnd,
+                               SkScalar& allTextWidth,
+                               SkScalar width,
+                               bool isLeftToRight);
+    void setRunTimeEllipsisWidthForMiddleEllipsis();
+    void scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
+    void scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
 
     // Input
     SkTArray<StyleBlock<SkScalar>> fLetterSpaceStyles;

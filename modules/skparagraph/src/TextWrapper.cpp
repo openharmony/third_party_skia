@@ -2,7 +2,7 @@
 #include "include/ParagraphStyle.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextWrapper.h"
-#include <float.h>
+#include <cfloat>
 
 namespace skia {
 namespace textlayout {

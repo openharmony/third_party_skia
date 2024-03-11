@@ -710,7 +710,7 @@ void TextLine::createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool 
                 lastRun = EMPTY_RUN;
                 continue;
             } else {
-                // We may need to continue;
+                // We may need to continue
                 lastRun = cluster.runIndex();
             }
         }
@@ -789,7 +789,6 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         fEllipsis->setOwner(fOwner);
         fClusterRange.start = clusterIndex;
         fClusterRange.end = fGhostClusterRange.end;
-        fGhostClusterRange.start = fClusterRange.start;
         if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
             fEllipsis->fClusterStart = fText.start;
         } else {
