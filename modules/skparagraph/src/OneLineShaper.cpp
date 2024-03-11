@@ -359,6 +359,18 @@ void OneLineShaper::sortOutGlyphs(std::function<void(GlyphRange)>&& sortOutUnres
     }
 }
 
+BlockRange OneLineShaper::generateBlockRange(const Block& block, const TextRange& textRange)
+{
+    size_t start = std::max(block.fRange.start, textRange.start);
+    size_t end = std::min(block.fRange.end, textRange.end);
+    if (fParagraph->fParagraphStyle.getMaxLines() == 1 &&
+        fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
+        !fParagraph->getEllipsisState()) {
+        end = fParagraph->fText.size();
+    }
+    return BlockRange(start, end);
+}
+
 void OneLineShaper::iterateThroughFontStyles(TextRange textRange,
                                              SkSpan<Block> styleSpan,
                                              const ShapeSingleFontVisitor& visitor) {
@@ -388,7 +400,7 @@ void OneLineShaper::iterateThroughFontStyles(TextRange textRange,
     };
 
     for (auto& block : styleSpan) {
-        BlockRange blockRange(std::max(block.fRange.start, textRange.start), std::min(block.fRange.end, textRange.end));
+        BlockRange blockRange = generateBlockRange(block, textRange);
         if (blockRange.empty()) {
             continue;
         }
@@ -525,6 +537,11 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
                 SkUnicode::BidiRegion& bidiRegion = fParagraph->fBidiRegions[bidiIndex];
                 auto start = std::max(bidiRegion.start, placeholder.fTextBefore.start);
                 auto end = std::min(bidiRegion.end, placeholder.fTextBefore.end);
+                if (fParagraph->fParagraphStyle.getMaxLines() == 1
+                    && fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE
+                    && !fParagraph->getEllipsisState()) {
+                    end = fParagraph->fText.size();
+                }
 
                 // Set up the iterators (the style iterator points to a bigger region that it could
                 TextRange textRange(start, end);

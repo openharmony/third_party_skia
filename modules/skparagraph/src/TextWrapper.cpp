@@ -2,7 +2,7 @@
 #include "include/ParagraphStyle.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextWrapper.h"
-#include <float.h>
+#include <cfloat>
 
 namespace skia {
 namespace textlayout {
@@ -318,7 +318,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     bool needEllipsis = false;
     SkScalar newWidth = 0.0;
     while (fEndLine.endCluster() != end) {
-        if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() != EllipsisModal::TAIL) {
+        if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
             newWidth = FLT_MAX;
         } else {
             newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
