@@ -96,7 +96,7 @@ GrTextureProxy::~GrTextureProxy() {
     // message to (Note: in this case we don't want to remove its cached resource).
     if (fUniqueKey.isValid() && fProxyProvider) {
         fProxyProvider->processInvalidUniqueKey(fUniqueKey, this,
-                                                GrProxyProvider::InvalidateGPUResource::kYes);
+                                                GrProxyProvider::InvalidateGPUResource::kNo);
     } else {
         SkASSERT(!fProxyProvider);
     }
