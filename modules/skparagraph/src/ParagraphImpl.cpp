@@ -252,6 +252,8 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     fLineNumber = 1;
     // TODO: This rounding is done to match Flutter tests. Must be removed...
     auto floorWidth = rawWidth;
+    LOGD("paragraph layout begin, addr = %{public}p, rawWidth = %{public}f, fText size = %{public}lu",
+        this, rawWidth, static_cast<unsigned long>(fText.size()));
 
     if (fParagraphStyle.getMaxLines() == 1 &&
         fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
@@ -318,7 +320,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
                 fMaxIntrinsicWidth = 0;
                 this->fOldWidth = floorWidth;
                 this->fOldHeight = this->fHeight;
-
+                LOGD("paragraph layout end, addr = %{public}p, shape failed, fHeight = %{public}f", this, fHeight);
                 return;
             } else {
                 // Add the paragraph to the cache
@@ -377,6 +379,8 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 
     fLineNumber = std::max(size_t(1), fLines.size());
     //SkDebugf("layout('%s', %f): %f %f\n", fText.c_str(), rawWidth, fMinIntrinsicWidth, fMaxIntrinsicWidth);
+    LOGD("paragraph layout end, addr = %{public}p, fLineNumber = %{public}lu, fHeight = %{public}f",
+        this, static_cast<unsigned long>(fLineNumber), fHeight);
 }
 
 void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
@@ -385,9 +389,11 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 }
 
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
+    LOGD("paragraph paint begin, addr = %{public}p", this);
     for (auto& line : fLines) {
         line.paint(painter, x, y);
     }
+    LOGD("paragraph paint end, addr = %{public}p", this);
 }
 
 void ParagraphImpl::resetContext() {
