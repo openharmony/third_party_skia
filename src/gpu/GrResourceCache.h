@@ -191,6 +191,7 @@ public:
     }
 
     void purgeUnlockedResourcesByTag(bool scratchResourceOnly, const GrGpuResourceTag& tag);
+    void purgeUnlockedResourcesByPid(bool scratchResourceOnly, const std::set<int>& exitedPidSet);
     void purgeUnlockAndSafeCacheGpuResources();
 
     // Purge unlocked resources not used since the passed point in time. If 'scratchResourcesOnly'
