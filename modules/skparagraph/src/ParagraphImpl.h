@@ -27,6 +27,7 @@
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skunicode/include/SkUnicode.h"
 #include "include/private/SkTHash.h"
+#include <hilog/log.h>
 
 #include <memory>
 #include <string>
@@ -36,6 +37,9 @@ class SkCanvas;
 
 namespace skia {
 namespace textlayout {
+#define LOGD(fmt, ...) \
+    ::OHOS::HiviewDFX::HiLog::Debug(::OHOS::HiviewDFX::HiLogLabel \
+        { LOG_CORE, 0xD001402, "2DGraphics" }, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
 
 class LineMetrics;
 class TextLine;
