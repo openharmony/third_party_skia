@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <cstring>
 
 #include "securec.h"
 
@@ -519,7 +520,12 @@ int FontConfig_OHOS::parseFontDir(const Json::Value& root)
 {
     for (unsigned int i = 0; i < root.size(); i++) {
         if (root[i].isString()) {
+#if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
+    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
+            const char* dir = strcmp(root[i].asCString(), "/system/fonts/") ? root[i].asCString() : "fonts";
+#else
             const char* dir = root[i].asCString();
+#endif
             fontDirSet.emplace_back(SkString(dir));
         } else {
             SkString text;
@@ -1041,7 +1047,12 @@ int FontConfig_OHOS::scanFonts(const SkTypeface_FreeType::Scanner& fontScanner)
 {
     int err = NO_ERROR;
     if (fontDirSet.size() == 0) {
+#if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
+    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
+        fontDirSet.emplace_back(SkString("fonts"));
+#else
         fontDirSet.emplace_back(SkString("/system/fonts/"));
+#endif        
     }
     for (unsigned int i = 0; i < fontDirSet.size(); i++) {
         DIR* dir = opendir(fontDirSet[i].c_str());
