@@ -67,6 +67,8 @@ inline void GetSpotParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY, 
     SkScalar zRatio = divide_and_pin(occluderZ, lightZ - occluderZ, 0.0f, 0.95f);
     *blurRadius = lightRadius*zRatio;
     *scale = divide_and_pin(lightZ, lightZ - occluderZ, 1.0f, 1.95f);
+    *scale = 1.0;
+    zRatio = 0.0f;
     *translate = SkVector::Make(-zRatio * lightX, -zRatio * lightY);
 }
 
