@@ -287,7 +287,7 @@ private:
                                SkScalar& allTextWidth,
                                SkScalar width,
                                bool isLeftToRight);
-    void setRunTimeEllipsisWidthForMiddleEllipsis();
+    SkScalar resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex);
     void scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
     void scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
 
@@ -332,7 +332,6 @@ private:
 
     SkScalar fOldWidth;
     SkScalar fOldHeight;
-    SkScalar runTimeEllipsisWidth;
     SkScalar fMaxWidthWithTrailingSpaces;
     SkScalar fOldMaxWidth;
     SkScalar allTextWidth;
