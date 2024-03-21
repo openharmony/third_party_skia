@@ -272,8 +272,6 @@ public:
     std::vector<RSFontMetrics> GetLineFontMetrics(size_t lineNumber,
         size_t* charNumber, bool* success) override;
 #endif
-
-
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
