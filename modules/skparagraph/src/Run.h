@@ -196,6 +196,7 @@ public:
 
     size_t getIndexInLine() const { return indexInLine; }
     void setIndexInLine(size_t index) { indexInLine = index; }
+
 private:
     friend class ParagraphImpl;
     friend class TextLine;

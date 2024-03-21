@@ -118,19 +118,20 @@ int32_t ParagraphImpl::unresolvedGlyphs() {
 }
 
 #ifndef USE_SKIA_TXT
-std::vector<SkFontMetrics> ParagraphImpl::GetLineFontMetricsResult(size_t lineNumber,
+std::vector<SkFontMetrics> ParagraphImpl::GetLineFontMetrics(size_t lineNumber,
     size_t* charNumber, bool* success) {
     std::vector<SkFontMetrics> lineFontMetricsResult;
 #else
-std::vector<RSFontMetrics> ParagraphImpl::GetLineFontMetricsResult(size_t lineNumber,
+std::vector<RSFontMetrics> ParagraphImpl::GetLineFontMetrics(size_t lineNumber,
     size_t* charNumber, bool* success) {
     std::vector<RSFontMetrics> lineFontMetricsResult;
 #endif
-    size_t currentLineRuns = fLines[lineNumber - 1].getLineAllRuns().size();
-    if (lineNumber > fLines.size() || !currentLineRuns) {
+    if (lineNumber > fLines.size() || !lineNumber ||
+        !fLines[lineNumber - 1].getLineAllRuns().size()) {
         *success = false;
         return lineFontMetricsResult;
     }
+
     size_t textRange = 0;
     size_t lineCharCount = fLines[lineNumber - 1].clusters().end -
         fLines[lineNumber - 1].clusters().start;
@@ -144,13 +145,13 @@ std::vector<RSFontMetrics> ParagraphImpl::GetLineFontMetricsResult(size_t lineNu
             if(++runClock > currentRunCharNumber) {
                 break;
             }
-            #ifndef USE_SKIA_TXT
+#ifndef USE_SKIA_TXT
             SkFontMetrics fontMetrics;
             targetRun.fFont.getMetrics(&fontMetrics);
-            #else
+#else
             RSFontMetrics fontMetrics;
             targetRun.fFont.GetMetrics(&fontMetrics);
-            #endif
+#endif
             lineFontMetricsResult.emplace_back(fontMetrics);
         }
     }
@@ -417,7 +418,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     if (fMaxIntrinsicWidth < fMinIntrinsicWidth) {
         fMaxIntrinsicWidth = fMinIntrinsicWidth;
     }
-
+    //SkDebugf("layout('%s', %f): %f %f\n", fText.c_str(), rawWidth, fMinIntrinsicWidth, fMaxIntrinsicWidth);
     fLineNumber = std::max(size_t(1), fLines.size());
 }
 
@@ -711,6 +712,7 @@ void ParagraphImpl::buildClusterTable() {
         fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
     }
     fClusters.reserve_back(fClusters.size() + cluster_count);
+
     // Walk through all the run in the direction of input text
     for (auto& run : fRuns) {
         auto runIndex = run.index();
@@ -737,6 +739,7 @@ void ParagraphImpl::buildClusterTable() {
                 for (auto i = charStart; i < charEnd; ++i) {
                   fClustersIndexFromCodeUnit[i] = fClusters.size();
                 }
+
                 middleEllipsisAddText(charStart, charEnd, allTextWidth, width, run.leftToRight());
                 SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
                 fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
@@ -744,6 +747,7 @@ void ParagraphImpl::buildClusterTable() {
             });
         }
         fCodeUnitProperties[run.textRange().start] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
+
         run.setClusterRange(runStart, fClusters.size());
         fMaxIntrinsicWidth += run.advance().fX;
     }

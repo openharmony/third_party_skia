@@ -206,10 +206,10 @@ public:
 #endif
 
 #ifndef USE_SKIA_TXT
-    virtual std::vector<SkFontMetrics> GetLineFontMetricsResult(size_t lineNumber,
+    virtual std::vector<SkFontMetrics> GetLineFontMetrics(size_t lineNumber,
     size_t* charNumber, bool* success) = 0;
 #else
-    virtual std::vector<RSFontMetrics> GetLineFontMetricsResult(size_t lineNumber,
+    virtual std::vector<RSFontMetrics> GetLineFontMetrics(size_t lineNumber,
     size_t* charNumber, bool* success) = 0;
 #endif
 protected:
