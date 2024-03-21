@@ -207,10 +207,10 @@ public:
 
 #ifndef USE_SKIA_TXT
     virtual std::vector<SkFontMetrics> GetLineFontMetrics(size_t lineNumber,
-    size_t* charNumber, bool* success) = 0;
+    size_t& charNumber, bool& success) = 0;
 #else
     virtual std::vector<RSFontMetrics> GetLineFontMetrics(size_t lineNumber,
-    size_t* charNumber, bool* success) = 0;
+    size_t& charNumber, bool& success) = 0;
 #endif
 protected:
     sk_sp<FontCollection> fFontCollection;

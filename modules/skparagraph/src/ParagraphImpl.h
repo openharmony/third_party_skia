@@ -267,10 +267,10 @@ public:
 
 #ifndef USE_SKIA_TXT
     std::vector<SkFontMetrics> GetLineFontMetrics(size_t lineNumber,
-        size_t* charNumber, bool* success) override;
+        size_t& charNumber, bool& success) override;
 #else
     std::vector<RSFontMetrics> GetLineFontMetrics(size_t lineNumber,
-        size_t* charNumber, bool* success) override;
+        size_t& charNumber, bool& success) override;
 #endif
 private:
     friend class ParagraphBuilder;
