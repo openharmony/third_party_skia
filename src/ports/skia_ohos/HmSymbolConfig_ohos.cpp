@@ -494,7 +494,7 @@ void HmSymbolConfig_OHOS::parseSymbolCurveArgs(const Json::Value& root, std::map
         return;
     }
 
-    for (Json::Value::const_iterator iter = root.begin(); iter != root.end(); iter++) {
+    for (Json::Value::const_iterator iter = root.begin(); iter != root.end(); ++iter) {
         std::string name = iter.name();
         const char* memberName = name.c_str();
         if (!root[memberName].isNumeric()) {
@@ -508,7 +508,7 @@ void HmSymbolConfig_OHOS::parseSymbolCurveArgs(const Json::Value& root, std::map
 void HmSymbolConfig_OHOS::parseSymbolProperties(const Json::Value& root,
     std::map<std::string, std::vector<double_t>>& properties)
 {
-    for (Json::Value::const_iterator iter = root.begin(); iter != root.end(); iter++) {
+    for (Json::Value::const_iterator iter = root.begin(); iter != root.end(); ++iter) {
         std::string name = iter.name();
         const char* memberName = name.c_str();
         if (!root[memberName].isArray()) {
