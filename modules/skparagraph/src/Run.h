@@ -255,7 +255,7 @@ private:
     SkScalar fTopInGroup = 0.0f;
     SkScalar fBottomInGroup = 0.0f;
     SkScalar fMaxRoundRectRadius = 0.0f;
-    size_t indexInLine = 0;
+    size_t indexInLine;
 };
 
 template<typename Visitor>

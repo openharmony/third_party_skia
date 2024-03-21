@@ -330,7 +330,6 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
                 // This only happens once at the first layout; the text is immutable
                 // and there is no reason to repeat it
                 if (this->computeCodeUnitProperties()) {
-                    rcordingRunCurrentChar = 0;
                     fState = kIndexed;
                 }
             }
@@ -420,17 +419,6 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     }
 
     fLineNumber = std::max(size_t(1), fLines.size());
-    for (int i = 0; i<fLines.size();i++) {
-        SkDebugf("LayoutNextFurther | fRunsSize=%zu fLinesSize=%zu LineNumber=%d LineRuns=%zu"
-        "runTextLeft=%zu runTextRight=%zu",
-            fRuns.size(),fLines.size(),i+1, fLines[i].getLineAllRuns().size(),
-                fLines[i].clusters().start, fLines[i].clusters().end);
-            for (auto& runIndex : fLines[i].getLineAllRuns()) {
-                SkDebugf("LayoutNextFurther | Start Current Lines Run runIndex=%zu runUTF8Left=%zu runUTF8Right=%zu",
-                    runIndex,this->run(runIndex).textRange().start,this->run(runIndex).textRange().end);
-            }
-    }
-
 }
 
 void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
