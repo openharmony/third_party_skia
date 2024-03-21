@@ -117,6 +117,48 @@ int32_t ParagraphImpl::unresolvedGlyphs() {
     return fUnresolvedGlyphs;
 }
 
+#ifndef USE_SKIA_TXT
+std::vector<SkFontMetrics> ParagraphImpl::GetLineFontMetricsResult(size_t lineNumber,
+    size_t* charNumber, bool* success) {
+    std::vector<SkFontMetrics> lineFontMetricsResult;
+#else
+std::vector<RSFontMetrics> ParagraphImpl::GetLineFontMetricsResult(size_t lineNumber,
+    size_t* charNumber, bool* success) {
+    std::vector<RSFontMetrics> lineFontMetricsResult;
+#endif
+    size_t currentLineRuns = fLines[lineNumber - 1].getLineAllRuns().size();
+    if (lineNumber > fLines.size() || !currentLineRuns) {
+        *success = false;
+        return lineFontMetricsResult;
+    }
+    size_t textRange = 0;
+    size_t lineCharCount = fLines[lineNumber - 1].clusters().end -
+        fLines[lineNumber - 1].clusters().start;
+
+    for (auto& runIndex : fLines[lineNumber - 1].getLineAllRuns()) {
+        Run& targetRun = this->run(runIndex);
+        size_t runClock = 0;
+        size_t currentRunCharNumber = targetRun.clusterRange().end -
+            targetRun.clusterRange().start;
+        for (;textRange < lineCharCount; textRange++) {
+            if(++runClock > currentRunCharNumber) {
+                break;
+            }
+            #ifndef USE_SKIA_TXT
+            SkFontMetrics fontMetrics;
+            targetRun.fFont.getMetrics(&fontMetrics);
+            #else
+            RSFontMetrics fontMetrics;
+            targetRun.fFont.GetMetrics(&fontMetrics);
+            #endif
+            lineFontMetricsResult.emplace_back(fontMetrics);
+        }
+    }
+    *charNumber = lineCharCount;
+    *success = true;
+    return lineFontMetricsResult;
+}
+
 std::unordered_set<SkUnichar> ParagraphImpl::unresolvedCodepoints() {
     return fUnresolvedCodepoints;
 }
@@ -288,6 +330,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
                 // This only happens once at the first layout; the text is immutable
                 // and there is no reason to repeat it
                 if (this->computeCodeUnitProperties()) {
+                    rcordingRunCurrentChar = 0;
                     fState = kIndexed;
                 }
             }
@@ -377,7 +420,17 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     }
 
     fLineNumber = std::max(size_t(1), fLines.size());
-    //SkDebugf("layout('%s', %f): %f %f\n", fText.c_str(), rawWidth, fMinIntrinsicWidth, fMaxIntrinsicWidth);
+    for (int i = 0; i<fLines.size();i++) {
+        SkDebugf("LayoutNextFurther | fRunsSize=%zu fLinesSize=%zu LineNumber=%d LineRuns=%zu"
+        "runTextLeft=%zu runTextRight=%zu",
+            fRuns.size(),fLines.size(),i+1, fLines[i].getLineAllRuns().size(),
+                fLines[i].clusters().start, fLines[i].clusters().end);
+            for (auto& runIndex : fLines[i].getLineAllRuns()) {
+                SkDebugf("LayoutNextFurther | Start Current Lines Run runIndex=%zu runUTF8Left=%zu runUTF8Right=%zu",
+                    runIndex,this->run(runIndex).textRange().start,this->run(runIndex).textRange().end);
+            }
+    }
+
 }
 
 void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
@@ -670,7 +723,6 @@ void ParagraphImpl::buildClusterTable() {
         fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
     }
     fClusters.reserve_back(fClusters.size() + cluster_count);
-
     // Walk through all the run in the direction of input text
     for (auto& run : fRuns) {
         auto runIndex = run.index();
@@ -697,7 +749,6 @@ void ParagraphImpl::buildClusterTable() {
                 for (auto i = charStart; i < charEnd; ++i) {
                   fClustersIndexFromCodeUnit[i] = fClusters.size();
                 }
-
                 middleEllipsisAddText(charStart, charEnd, allTextWidth, width, run.leftToRight());
                 SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
                 fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
@@ -705,7 +756,6 @@ void ParagraphImpl::buildClusterTable() {
             });
         }
         fCodeUnitProperties[run.textRange().start] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
-
         run.setClusterRange(runStart, fClusters.size());
         fMaxIntrinsicWidth += run.advance().fX;
     }

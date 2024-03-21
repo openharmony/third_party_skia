@@ -196,7 +196,6 @@ public:
 
     size_t getIndexInLine() const { return indexInLine; }
     void setIndexInLine(size_t index) { indexInLine = index; }
-
 private:
     friend class ParagraphImpl;
     friend class TextLine;
@@ -256,7 +255,7 @@ private:
     SkScalar fTopInGroup = 0.0f;
     SkScalar fBottomInGroup = 0.0f;
     SkScalar fMaxRoundRectRadius = 0.0f;
-    size_t indexInLine;
+    size_t indexInLine = 0;
 };
 
 template<typename Visitor>

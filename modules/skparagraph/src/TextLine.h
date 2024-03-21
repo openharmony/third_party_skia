@@ -143,6 +143,8 @@ public:
 
     bool endsWithHardLineBreak() const;
     std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
+
+    SkSTArray<1, size_t, true> getLineAllRuns() const { return fRunsInVisualOrder; };
 private:
     struct RoundRectAttr {
         int styleId;
