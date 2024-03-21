@@ -329,7 +329,9 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         needEllipsis = hasEllipsis && !endlessLine && lastLine;
 
         this->moveForward(needEllipsis, parent->getWordBreakType() == WordBreakType::BREAK_ALL);
-        needEllipsis &= fEndLine.endCluster() < end - 1; // Only if we have some text to ellipsize
+        if (fEndLine.endCluster() >= fEndLine.startCluster() || maxLines > 1) {
+            needEllipsis &= fEndLine.endCluster() < end - 1; // Only if we have some text to ellipsize
+        }
 
         // Do not trim end spaces on the naturally last line of the left aligned text
         this->trimEndSpaces(align);
@@ -359,7 +361,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 continue;
             }
             lastRun = r;
-            if (lastRun->placeholderStyle() != nullptr) {
+            if (lastRun != nullptr && lastRun->placeholderStyle() != nullptr) {
                 SkASSERT(lastRun->size() == 1);
                 // Update the placeholder metrics so we can get the placeholder positions later
                 // and the line metrics (to make sure the placeholder fits)
@@ -407,10 +409,11 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         // In case of a force wrapping we don't have a break cluster and have to use the end cluster
         text.end = std::max(text.end, textExcludingSpaces.end);
 
-        if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
-            hasEllipsis) {
-            needEllipsis = true;
-            fHardLineBreak = false;
+        if (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD && hasEllipsis) {
+            needEllipsis = maxLines <= 1;
+            if (needEllipsis) {
+                fHardLineBreak = false;
+            }
         }
 
         SkScalar offsetX = 0.0f;
