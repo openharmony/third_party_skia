@@ -118,18 +118,17 @@ int32_t ParagraphImpl::unresolvedGlyphs() {
 }
 
 #ifndef USE_SKIA_TXT
-std::vector<SkFontMetrics> ParagraphImpl::GetLineFontMetrics(size_t lineNumber,
-    size_t& charNumber, bool& success) {
+bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+    std::vector<SkFontMetrics>& fontMetrics) {
     std::vector<SkFontMetrics> lineFontMetricsResult;
 #else
-std::vector<RSFontMetrics> ParagraphImpl::GetLineFontMetrics(size_t lineNumber,
-    size_t& charNumber, bool& success) {
+bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+    std::vector<RSFontMetrics>& fontMetrics) {
     std::vector<RSFontMetrics> lineFontMetricsResult;
 #endif
     if (lineNumber > fLines.size() || !lineNumber ||
         !fLines[lineNumber - 1].getLineAllRuns().size()) {
-        success = false;
-        return lineFontMetricsResult;
+        return false;
     }
 
     size_t textRange = 0;
@@ -156,8 +155,7 @@ std::vector<RSFontMetrics> ParagraphImpl::GetLineFontMetrics(size_t lineNumber,
         }
     }
     charNumber = lineCharCount;
-    success = true;
-    return lineFontMetricsResult;
+    return true;
 }
 
 std::unordered_set<SkUnichar> ParagraphImpl::unresolvedCodepoints() {

@@ -266,11 +266,11 @@ public:
     bool &getEllipsisState() { return isMiddleEllipsis; }
 
 #ifndef USE_SKIA_TXT
-    std::vector<SkFontMetrics> GetLineFontMetrics(size_t lineNumber,
-        size_t& charNumber, bool& success) override;
+    bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<SkFontMetrics>& fontMetrics) override;
 #else
-    std::vector<RSFontMetrics> GetLineFontMetrics(size_t lineNumber,
-        size_t& charNumber, bool& success) override;
+    bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<RSFontMetrics>& fontMetrics) override;
 #endif
 private:
     friend class ParagraphBuilder;
