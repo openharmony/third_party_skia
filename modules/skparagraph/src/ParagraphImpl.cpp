@@ -120,11 +120,9 @@ int32_t ParagraphImpl::unresolvedGlyphs() {
 #ifndef USE_SKIA_TXT
 bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
     std::vector<SkFontMetrics>& fontMetrics) {
-    std::vector<SkFontMetrics> lineFontMetricsResult;
 #else
 bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
     std::vector<RSFontMetrics>& fontMetrics) {
-    std::vector<RSFontMetrics> lineFontMetricsResult;
 #endif
     if (lineNumber > fLines.size() || !lineNumber ||
         !fLines[lineNumber - 1].getLineAllRuns().size()) {
@@ -145,15 +143,16 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
                 break;
             }
 #ifndef USE_SKIA_TXT
-            SkFontMetrics fontMetrics;
-            targetRun.fFont.getMetrics(&fontMetrics);
+            SkFontMetrics newFontMetrics;
+            targetRun.fFont.getMetrics(&newFontMetrics);
 #else
-            RSFontMetrics fontMetrics;
-            targetRun.fFont.GetMetrics(&fontMetrics);
+            RSFontMetrics newFontMetrics;
+            targetRun.fFont.GetMetrics(&newFontMetrics);
 #endif
-            lineFontMetricsResult.emplace_back(fontMetrics);
+            fontMetrics.emplace_back(newFontMetrics);
         }
     }
+
     charNumber = lineCharCount;
     return true;
 }
