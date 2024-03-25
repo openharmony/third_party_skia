@@ -15,7 +15,7 @@
 
 #include "include/private/SkOnce.h"
 #include "HmSymbolConfig_ohos.h"
-
+#include <functional>
 #include "securec.h"
 
 #ifdef SK_BUILD_FONT_MGR_FOR_OHOS
@@ -38,6 +38,10 @@
 #define LOGW        SkDEBUGF
 
 #endif
+
+using PiecewiseParaKeyFunc = std::function<void(const char*, const Json::Value&, PiecewiseParameter&)>;
+using SymbolKeyFunc = std::function<void(const char*, const Json::Value&, SymbolLayersGroups&)>;
+using SymnolAniFunc = std::function<void(const char*, const Json::Value&, AnimationPara&)>;
 
 const char SPECIAL_ANIMATIONS[] = "special_animations";
 const char COMMON_ANIMATIONS[] = "common_animations";
@@ -266,17 +270,18 @@ int HmSymbolConfig_OHOS::checkConfigFile(const char* fname, Json::Value& root)
 
 int HmSymbolConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontDir)
 {
-    lock();
+    std::lock_guard<std::mutex> lock(hmSymbolMut_);
     if (getInit()) {
-        unlock();
         return NO_ERROR;
     }
     clear();
     const int fontEndSize = 2;
     int len = strlen(fname) + (fontDir.size() + fontEndSize);
     char fullname[len];
-    memset_s(fullname, len, 0, len);
-    strcpy_s(fullname, len, fontDir.c_str());
+    if (memset_s(fullname, len, 0, len) != 0 ||
+        strcpy_s(fullname, len, fontDir.c_str()) != 0) {
+        return ERROR_CONFIG_NOT_FOUND;
+    }
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN)
     if (fontDir[fontDir.size() - 1] != '\\') {
         strcat_s(fullname, len, "\\");
@@ -286,12 +291,13 @@ int HmSymbolConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontD
         strcat_s(fullname, len, "/");
     }
 #endif
-    strcat_s(fullname, len, fname);
+    if (strcat_s(fullname, len, fname) != 0) {
+        return ERROR_CONFIG_NOT_FOUND;
+    }
 
     Json::Value root;
     int err = checkConfigFile(fullname, root);
     if (err != NO_ERROR) {
-        unlock();
         return err;
     }
 
@@ -299,11 +305,7 @@ int HmSymbolConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontD
     std::string tags[] = {COMMON_ANIMATIONS, SPECIAL_ANIMATIONS, SYMBOL_LAYERS_GROUPING};
     for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
         key = tags[i].c_str();
-        if (!root.isMember(key)) {
-            continue;
-        }
-        if (!root[key].isArray()) {
-            SkDebugf("%{public}s is not array!", key);
+        if (!root.isMember(key) || !root[key].isArray()) {
             continue;
         }
 
@@ -315,7 +317,6 @@ int HmSymbolConfig_OHOS::parseConfigOfHmSymbol(const char* fname, SkString fontD
     }
     root.clear();
     setInit(true);
-    unlock();
     return NO_ERROR;
 }
 
@@ -373,46 +374,76 @@ void HmSymbolConfig_OHOS::parseSymbolAnimationPara(const Json::Value& root, Anim
 {
     const char* key = nullptr;
     std::string tags[] = {ANIMATION_MODE, SUB_TYPE, GROUP_PARAMETERS};
+    using SymnolAniFuncMap = std::unordered_map<std::string, SymnolAniFunc>;
+    SymnolAniFuncMap funcMap = {
+        {ANIMATION_MODE, [](const char* key, const Json::Value& root, AnimationPara& animationPara)
+            {
+                if (!root[key].isInt()) {
+                    SkDebugf("animation_mode is not int!");
+                    return;
+                }
+                animationPara.animationMode = root[key].asInt();
+            }
+        },
+        {SUB_TYPE, [this](const char* key, const Json::Value& root, AnimationPara& animationPara)
+            {
+                if (!root[key].isString()) {
+                    SkDebugf("sub_type is not string!");
+                    return;
+                }
+                const char* subTypeStr = root[key].asCString();
+                parseSymbolAnimationSubType(subTypeStr, animationPara.subType);
+            }
+        },
+        {GROUP_PARAMETERS, [this](const char* key, const Json::Value& root, AnimationPara& animationPara)
+            {
+                if (!root[key].isArray()) {
+                    SkDebugf("group_parameters is not array!");
+                    return;
+                }
+                parseSymbolGroupParas(root[key], animationPara.groupParameters);
+            }
+        }
+    };
     for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
         key = tags[i].c_str();
         if (!root.isMember(key)) {
             continue;
         }
-
-        if (!strcmp(key, ANIMATION_MODE)) {
-            if (!root[key].isInt()) {
-                SkDebugf("animation_mode is not int!");
-                continue;
-            }
-            animationPara.animationMode = root[key].asInt();
-        } else if (!strcmp(key, SUB_TYPE)) {
-            if (!root[key].isString()) {
-                SkDebugf("sub_type is not string!");
-                continue;
-            }
-            const char* subTypeStr = root[key].asCString();
-            parseSymbolAnimationSubType(subTypeStr, animationPara.subType);
-        } else {
-            if (!root[key].isArray()) {
-                SkDebugf("group_parameters is not array!");
-                continue;
-            }
-            parseSymbolGroupParas(root[key], animationPara.groupParameters);
+        if (funcMap.count(key) > 0) {
+            funcMap[key](key, root, animationPara);
         }
     }
 }
 
 void HmSymbolConfig_OHOS::parseSymbolAnimationSubType(const char* subTypeStr, AnimationSubType& subType)
 {
-    if (!strcmp(subTypeStr, "unit")) {
-        subType = AnimationSubType::UNIT;
-    } else if (!strcmp(subTypeStr, "variable_3_group")) {
-        subType = AnimationSubType::VARIABLE_3_GROUP;
-    } else if (!strcmp(subTypeStr, "variable_4_group")) {
-        subType = AnimationSubType::VARIABLE_4_GROUP;
-    } else {
-        SkDebugf("%{public}s is invalid value!", subTypeStr);
+    using SymbolAniSubFuncMap = std::unordered_map<std::string, std::function<void(AnimationSubType&)>>;
+    SymbolAniSubFuncMap funcMap = {
+        {
+            "unit",
+            [](AnimationSubType& subType) {
+                subType = AnimationSubType::UNIT;
+            }
+        },
+        {
+            "variable_3_group",
+            [](AnimationSubType& subType) {
+                subType = AnimationSubType::VARIABLE_3_GROUP;
+            }
+        },
+        {
+            "variable_4_group",
+            [](AnimationSubType& subType) {
+                subType = AnimationSubType::VARIABLE_4_GROUP;
+            }
+        }
+    };
+    if (funcMap.count(subTypeStr) > 0) {
+        funcMap[subTypeStr](subType);
+        return;
     }
+    SkDebugf("%{public}s is invalid value!", subTypeStr);
 }
 
 void HmSymbolConfig_OHOS::parseSymbolGroupParas(const Json::Value& root,
@@ -438,52 +469,79 @@ void HmSymbolConfig_OHOS::parseSymbolGroupParas(const Json::Value& root,
     }
 }
 
+
+static void PiecewiseParaCurveCase(const char* key, const Json::Value& root, PiecewiseParameter& piecewiseParameter)
+{
+    if (!root[key].isString()) {
+        SkDebugf("curve is not string!");
+        return;
+    }
+    if (!strcmp(root[key].asCString(), "spring")) {
+        piecewiseParameter.curveType = CurveType::SPRING;
+        return;
+    } 
+    if (!strcmp(root[key].asCString(), "linear")) {
+        piecewiseParameter.curveType = CurveType::LINEAR;
+        return;
+    }
+    SkDebugf("curve is invalid value!");
+}
+
+static void PiecewiseParaDurationCase(const char* key, const Json::Value& root,
+    PiecewiseParameter& piecewiseParameter)
+{
+    if (!root[key].isInt()) {
+        SkDebugf("duration is not int!");
+        return;
+    }
+    piecewiseParameter.duration = root[key].asInt();
+}
+
+static void PiecewiseParaDelayCase(const char* key, const Json::Value& root, PiecewiseParameter& piecewiseParameter)
+{
+    if (!root[key].isInt()) {
+        SkDebugf("delay is not int!");
+        return;
+    }
+    piecewiseParameter.delay = root[key].asInt();
+}
+
 void HmSymbolConfig_OHOS::parseSymbolPiecewisePara(const Json::Value& root, PiecewiseParameter& piecewiseParameter)
 {
     const char* key = nullptr;
     std::string tags[] = {CURVE, CURVE_ARGS, DURATION, DELAY, "properties"};
+    using PiecewiseFuncMap = std::unordered_map<std::string, PiecewiseParaKeyFunc>;
+    PiecewiseFuncMap funcMap = {
+        {CURVE, PiecewiseParaCurveCase},
+        {CURVE_ARGS, [this](const char* key, const Json::Value& root, PiecewiseParameter& piecewiseParameter)
+            {
+                if (!root[key].isObject()) {
+                    SkDebugf("curve_args is not object!");
+                    return;
+                }
+                parseSymbolCurveArgs(root[key], piecewiseParameter.curveArgs);
+            }
+        },
+        {DURATION, PiecewiseParaDurationCase},
+        {DELAY, PiecewiseParaDelayCase},
+        {"properties", [this](const char* key, const Json::Value& root, PiecewiseParameter& piecewiseParameter)
+            {
+                if (!root[key].isObject()) {
+                    SkDebugf("properties is not object!");
+                    return;
+                }
+                parseSymbolProperties(root[key], piecewiseParameter.properties);
+            }
+        }
+    };
+
     for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
         key = tags[i].c_str();
         if (!root.isMember(key)) {
             continue;
         }
-
-        if (!strcmp(key, CURVE)) {
-            if (!root[key].isString()) {
-                SkDebugf("curve is not string!");
-                continue;
-            }
-            if (!strcmp(root[key].asCString(), "spring")) {
-                piecewiseParameter.curveType = CurveType::SPRING;
-            } else if (!strcmp(root[key].asCString(), "linear")) {
-                piecewiseParameter.curveType = CurveType::LINEAR;
-            } else {
-                SkDebugf("curve is invalid value!");
-            }
-        } else if (!strcmp(key, CURVE_ARGS)) {
-            if (!root[key].isObject()) {
-                SkDebugf("curve_args is not object!");
-                continue;
-            }
-            parseSymbolCurveArgs(root[key], piecewiseParameter.curveArgs);
-        } else if (!strcmp(key, DURATION)) {
-            if (!root[key].isInt()) {
-                SkDebugf("duration is not int!");
-                continue;
-            }
-            piecewiseParameter.duration = root[key].asInt();
-        } else if (!strcmp(key, DELAY)) {
-            if (!root[key].isInt()) {
-                SkDebugf("delay is not int!");
-                continue;
-            }
-            piecewiseParameter.delay = root[key].asInt();
-        } else {
-            if (!root[key].isObject()) {
-                SkDebugf("properties is not object!");
-                continue;
-            }
-            parseSymbolProperties(root[key], piecewiseParameter.properties);
+        if (funcMap.count(key) > 0) {
+            funcMap[key](key, root, piecewiseParameter);
         }
     }
 }
@@ -542,6 +600,15 @@ void HmSymbolConfig_OHOS::parseSymbolLayersGrouping(const Json::Value& root)
     }
 }
 
+static void SymbolGlyphCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups)
+{
+    if (!root[key].isInt()) {
+        SkDebugf("symbol_glyph_id is not int!");
+        return;
+    }
+    symbolLayersGroups.symbolGlyphId = root[key].asInt();
+}
+
 void HmSymbolConfig_OHOS::parseOneSymbol(const Json::Value& root,
     std::unordered_map<uint32_t, SymbolLayersGroups>* hmSymbolConfig)
 {
@@ -549,45 +616,56 @@ void HmSymbolConfig_OHOS::parseOneSymbol(const Json::Value& root,
     std::string tags[] = {NATIVE_GLYPH_ID, SYMBOL_GLYPH_ID, LAYERS, RENDER_MODES, "animation_settings"};
     uint32_t nativeGlyphId;
     SymbolLayersGroups symbolLayersGroups;
+    using SymbolKeyFuncMap = std::unordered_map<std::string, SymbolKeyFunc>;
+    SymbolKeyFuncMap funcMap = {
+        {NATIVE_GLYPH_ID, [this, &nativeGlyphId](const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups)
+            {
+                if (!root[key].isInt()) {
+                    SkDebugf("native_glyph_id is not int!");
+                    return;
+                }
+                nativeGlyphId = root[key].asInt();
+            }
+        },
+        {SYMBOL_GLYPH_ID, SymbolGlyphCase},
+        {LAYERS, [this](const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups)
+            {
+                if (!root[key].isArray()) {
+                    SkDebugf("layers is not array!");
+                    return;
+                }
+                parseLayers(root[key], symbolLayersGroups.layers);
+            }
+        },
+        {RENDER_MODES, [this](const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups)
+            {
+                if (!root[key].isArray()) {
+                    SkDebugf("render_modes is not array!");
+                    return;
+                }
+                parseRenderModes(root[key], symbolLayersGroups.renderModeGroups);
+            }
+        },
+        {"animation_settings", [this](const char* key, const Json::Value& root,
+            SymbolLayersGroups& symbolLayersGroups)
+            {
+                if (!root[key].isArray()) {
+                    SkDebugf("animation_settings is not array!");
+                    return;
+                }
+                parseAnimationSettings(root[key], symbolLayersGroups.animationSettings);
+            }
+        }
+    };
     for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
         key = tags[i].c_str();
         if (!root.isMember(key)) {
             continue;
         }
-
-        if (!strcmp(key, NATIVE_GLYPH_ID)) {
-            if (!root[key].isInt()) {
-                SkDebugf("native_glyph_id is not int!");
-                continue;
-            }
-            nativeGlyphId = root[key].asInt();
-        } else if (!strcmp(key, SYMBOL_GLYPH_ID)) {
-            if (!root[key].isInt()) {
-                SkDebugf("symbol_glyph_id is not int!");
-                continue;
-            }
-            symbolLayersGroups.symbolGlyphId = root[key].asInt();
-        } else if (!strcmp(key, LAYERS)) {
-            if (!root[key].isArray()) {
-                SkDebugf("layers is not array!");
-                continue;
-            }
-            parseLayers(root[key], symbolLayersGroups.layers);
-        } else if (!strcmp(key, RENDER_MODES)) {
-            if (!root[key].isArray()) {
-                SkDebugf("render_modes is not array!");
-                continue;
-            }
-            parseRenderModes(root[key], symbolLayersGroups.renderModeGroups);
-        } else {
-            if (!root[key].isArray()) {
-                SkDebugf("animation_settings is not array!");
-                continue;
-            }
-            parseAnimationSettings(root[key], symbolLayersGroups.animationSettings);
+        if (funcMap.count(key) > 0) {
+            funcMap[key](key, root, symbolLayersGroups);
         }
     }
-
     hmSymbolConfig->insert({nativeGlyphId, symbolLayersGroups});
 }
 
@@ -627,6 +705,11 @@ void HmSymbolConfig_OHOS::parseComponets(const Json::Value& root, std::vector<si
 void HmSymbolConfig_OHOS::parseRenderModes(const Json::Value& root, std::map<SymbolRenderingStrategy,
     std::vector<RenderGroup>>& renderModesGroups)
 {
+    std::unordered_map<std::string, SymbolRenderingStrategy> strategeMap = {
+        {"monochrome", SymbolRenderingStrategy::SINGLE},
+        {"multicolor", SymbolRenderingStrategy::MULTIPLE_COLOR},
+        {"hierarchical", SymbolRenderingStrategy::MULTIPLE_OPACITY},
+    };
     for (unsigned int i = 0; i < root.size(); i++) {
         if (!root[i].isObject()) {
             SkDebugf("render_mode is not object!");
@@ -640,15 +723,11 @@ void HmSymbolConfig_OHOS::parseRenderModes(const Json::Value& root, std::map<Sym
                 SkDebugf("mode is not string!");
                 continue;
             }
-            const char* modeValue = root[i][MODE].asCString();
-            if (!strcmp(modeValue, "monochrome")) {
-                renderingStrategy = SymbolRenderingStrategy::SINGLE;
-            } else if (!strcmp(modeValue, "multicolor")) {
-                renderingStrategy = SymbolRenderingStrategy::MULTIPLE_COLOR;
-            } else if (!strcmp(modeValue, "hierarchical")) {
-                renderingStrategy = SymbolRenderingStrategy::MULTIPLE_OPACITY;
+            std::string modeValue = root[i][MODE].asCString();
+            if (strategeMap.count(modeValue) > 0) {
+                renderingStrategy = strategeMap[modeValue];
             } else {
-                SkDebugf("%{public}s is invalid value!", modeValue);
+                SkDebugf("%{public}s is invalid value!", modeValue.c_str());
                 continue;
             }
         }
@@ -672,25 +751,13 @@ void HmSymbolConfig_OHOS::parseRenderGroups(const Json::Value& root, std::vector
         }
 
         RenderGroup renderGroup;
-        if (root[i].isMember(GROUP_INDEXES)) {
-            if (!root[i][GROUP_INDEXES].isArray()) {
-                SkDebugf("group_indexes is not array!");
-                continue;
-            }
+        if (root[i].isMember(GROUP_INDEXES) && root[i][GROUP_INDEXES].isArray()) {
             parseGroupIndexes(root[i][GROUP_INDEXES], renderGroup.groupInfos);
         }
-        if (root[i].isMember(DEFAULT_COLOR)) {
-            if (!root[i][DEFAULT_COLOR].isString()) {
-                SkDebugf("default_color is not string!");
-                continue;
-            }
+        if (root[i].isMember(DEFAULT_COLOR) && root[i][DEFAULT_COLOR].isString()) {
             parseDefaultColor(root[i][DEFAULT_COLOR].asCString(), renderGroup);
         }
-        if (root[i].isMember(FIX_ALPHA)) {
-            if (!root[i][FIX_ALPHA].isDouble()) {
-                SkDebugf("fix_alpha is not double!");
-                continue;
-            }
+        if (root[i].isMember(FIX_ALPHA) && root[i][FIX_ALPHA].isDouble()) {
             renderGroup.color.a = root[i][FIX_ALPHA].asFloat();
         }
         renderGroups.push_back(renderGroup);
@@ -766,36 +833,20 @@ void HmSymbolConfig_OHOS::parseAnimationSettings(const Json::Value& root, std::v
 
 void HmSymbolConfig_OHOS::parseAnimationSetting(const Json::Value& root, AnimationSetting& animationSetting)
 {
-    if (root.isMember(ANIMATION_TYPE)) {
-        if (!root[ANIMATION_TYPE].isString()) {
-            SkDebugf("animation_type is not string!");
-        } else {
-            parseAnimationType(root[ANIMATION_TYPE].asCString(), animationSetting.animationType);
-        }
+    if (root.isMember(ANIMATION_TYPE) && root[ANIMATION_TYPE].isString()) {
+        parseAnimationType(root[ANIMATION_TYPE].asCString(), animationSetting.animationType);
     }
 
-    if (root.isMember(SUB_TYPE)) {
-        if (!root[SUB_TYPE].isString()) {
-            SkDebugf("sub_type is not string!");
-        } else {
-            parseSymbolAnimationSubType(root[SUB_TYPE].asCString(), animationSetting.animationSubType);
-        }
+    if (root.isMember(SUB_TYPE) && root[SUB_TYPE].isString()) {
+        parseSymbolAnimationSubType(root[SUB_TYPE].asCString(), animationSetting.animationSubType);
     }
 
-    if (root.isMember(ANIMATION_MODE)) {
-        if (!root[ANIMATION_MODE].isInt()) {
-            SkDebugf("animation_mode is not int!");
-        } else {
-            animationSetting.animationMode = root[ANIMATION_MODE].asInt();
-        }
+    if (root.isMember(ANIMATION_MODE) && root[ANIMATION_MODE].isInt()) {
+        animationSetting.animationMode = root[ANIMATION_MODE].asInt();
     }
 
-    if (root.isMember(GROUP_SETTINGS)) {
-        if (!root[GROUP_SETTINGS].isArray()) {
-            SkDebugf("group_settings is not array!");
-        } else {
-            parseGroupSettings(root[GROUP_SETTINGS], animationSetting.groupSettings);
-        }
+    if (root.isMember(GROUP_SETTINGS) && root[GROUP_SETTINGS].isArray()) {
+        parseGroupSettings(root[GROUP_SETTINGS], animationSetting.groupSettings);
     }
 }
 
@@ -803,11 +854,13 @@ void HmSymbolConfig_OHOS::parseAnimationType(const char* animationTypeStr, Anima
 {
     if (!strcmp(animationTypeStr, "scale")) {
         animationType = AnimationType::SCALE_EFFECT;
-    } else if (!strcmp(animationTypeStr, "variable_color")) {
-        animationType = AnimationType::VARIABLE_COLOR;
-    } else {
-        SkDebugf("%{public}s is invalid value!", animationTypeStr);
+        return;
     }
+    if (!strcmp(animationTypeStr, "variable_color")) {
+        animationType = AnimationType::VARIABLE_COLOR;
+        return;
+    }
+    SkDebugf("%{public}s is invalid value!", animationTypeStr);
 }
 
 void HmSymbolConfig_OHOS::parseGroupSettings(const Json::Value& root, std::vector<GroupSetting>& groupSettings)
