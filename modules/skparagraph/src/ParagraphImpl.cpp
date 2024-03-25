@@ -117,6 +117,46 @@ int32_t ParagraphImpl::unresolvedGlyphs() {
     return fUnresolvedGlyphs;
 }
 
+#ifndef USE_SKIA_TXT
+bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+    std::vector<SkFontMetrics>& fontMetrics) {
+#else
+bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+    std::vector<RSFontMetrics>& fontMetrics) {
+#endif
+    if (lineNumber > fLines.size() || !lineNumber ||
+        !fLines[lineNumber - 1].getLineAllRuns().size()) {
+        return false;
+    }
+
+    size_t textRange = 0;
+    size_t lineCharCount = fLines[lineNumber - 1].clusters().end -
+        fLines[lineNumber - 1].clusters().start;
+
+    for (auto& runIndex : fLines[lineNumber - 1].getLineAllRuns()) {
+        Run& targetRun = this->run(runIndex);
+        size_t runClock = 0;
+        size_t currentRunCharNumber = targetRun.clusterRange().end -
+            targetRun.clusterRange().start;
+        for (;textRange < lineCharCount; textRange++) {
+            if(++runClock > currentRunCharNumber) {
+                break;
+            }
+#ifndef USE_SKIA_TXT
+            SkFontMetrics newFontMetrics;
+            targetRun.fFont.getMetrics(&newFontMetrics);
+#else
+            RSFontMetrics newFontMetrics;
+            targetRun.fFont.GetMetrics(&newFontMetrics);
+#endif
+            fontMetrics.emplace_back(newFontMetrics);
+        }
+    }
+
+    charNumber = lineCharCount;
+    return true;
+}
+
 std::unordered_set<SkUnichar> ParagraphImpl::unresolvedCodepoints() {
     return fUnresolvedCodepoints;
 }

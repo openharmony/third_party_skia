@@ -205,6 +205,13 @@ public:
     virtual RSFontMetrics measureText() = 0;
 #endif
 
+#ifndef USE_SKIA_TXT
+    virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<SkFontMetrics>& fontMetrics) = 0;
+#else
+    virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<RSFontMetrics>& fontMetrics) = 0;
+#endif
 protected:
     sk_sp<FontCollection> fFontCollection;
     ParagraphStyle fParagraphStyle;
