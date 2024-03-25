@@ -13,10 +13,13 @@
  * limitations under the License.
  */
 
-#include "include/private/SkOnce.h"
 #include "HmSymbolConfig_ohos.h"
+
 #include <functional>
+
 #include "securec.h"
+
+#include "include/private/SkOnce.h"
 
 #ifdef SK_BUILD_FONT_MGR_FOR_OHOS
 #include <parameters.h>
@@ -43,6 +46,7 @@ using PiecewiseParaKeyFunc = std::function<void(const char*, const Json::Value&,
 using SymbolKeyFunc = std::function<void(const char*, const Json::Value&, SymbolLayersGroups&)>;
 using SymnolAniFunc = std::function<void(const char*, const Json::Value&, AnimationPara&)>;
 
+using SymbolKeyFuncMap = std::unordered_map<std::string, SymbolKeyFunc>;
 const char SPECIAL_ANIMATIONS[] = "special_animations";
 const char COMMON_ANIMATIONS[] = "common_animations";
 const char SYMBOL_LAYERS_GROUPING[] = "symbol_layers_grouping";
@@ -479,7 +483,7 @@ static void PiecewiseParaCurveCase(const char* key, const Json::Value& root, Pie
     if (!strcmp(root[key].asCString(), "spring")) {
         piecewiseParameter.curveType = CurveType::SPRING;
         return;
-    } 
+    }
     if (!strcmp(root[key].asCString(), "linear")) {
         piecewiseParameter.curveType = CurveType::LINEAR;
         return;
@@ -609,6 +613,46 @@ static void SymbolGlyphCase(const char* key, const Json::Value& root, SymbolLaye
     symbolLayersGroups.symbolGlyphId = root[key].asInt();
 }
 
+void HmSymbolConfig_OHOS::parseOneSymbolNativeCase(const char* key, const Json::Value& root,
+    SymbolLayersGroups& symbolLayersGroups, uint32_t& nativeGlyphId)
+{
+    if (!root[key].isInt()) {
+        SkDebugf("native_glyph_id is not int!");
+        return;
+    }
+    nativeGlyphId = root[key].asInt();
+}
+
+void HmSymbolConfig_OHOS::parseOneSymbolLayerCase(const char* key, const Json::Value& root,
+    SymbolLayersGroups& symbolLayersGroups)
+{
+    if (!root[key].isArray()) {
+        SkDebugf("layers is not array!");
+        return;
+    }
+    parseLayers(root[key], symbolLayersGroups.layers);
+}
+
+void HmSymbolConfig_OHOS::parseOneSymbolRenderCase(const char* key, const Json::Value& root,
+    SymbolLayersGroups& symbolLayersGroups)
+{
+    if (!root[key].isArray()) {
+        SkDebugf("render_modes is not array!");
+        return;
+    }
+    parseRenderModes(root[key], symbolLayersGroups.renderModeGroups);
+}
+
+void HmSymbolConfig_OHOS::parseOneSymbolAnimateCase(const char* key, const Json::Value& root,
+    SymbolLayersGroups& symbolLayersGroups)
+{
+    if (!root[key].isArray()) {
+        SkDebugf("animation_settings is not array!");
+        return;
+    }
+    parseAnimationSettings(root[key], symbolLayersGroups.animationSettings);
+}
+
 void HmSymbolConfig_OHOS::parseOneSymbol(const Json::Value& root,
     std::unordered_map<uint32_t, SymbolLayersGroups>* hmSymbolConfig)
 {
@@ -616,44 +660,29 @@ void HmSymbolConfig_OHOS::parseOneSymbol(const Json::Value& root,
     std::string tags[] = {NATIVE_GLYPH_ID, SYMBOL_GLYPH_ID, LAYERS, RENDER_MODES, "animation_settings"};
     uint32_t nativeGlyphId;
     SymbolLayersGroups symbolLayersGroups;
-    using SymbolKeyFuncMap = std::unordered_map<std::string, SymbolKeyFunc>;
+
     SymbolKeyFuncMap funcMap = {
-        {NATIVE_GLYPH_ID, [this, &nativeGlyphId](const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups)
+        {NATIVE_GLYPH_ID, [this, &nativeGlyphId](const char* key, const Json::Value& root,
+            SymbolLayersGroups& symbolLayersGroups)
             {
-                if (!root[key].isInt()) {
-                    SkDebugf("native_glyph_id is not int!");
-                    return;
-                }
-                nativeGlyphId = root[key].asInt();
+                parseOneSymbolNativeCase(key, root, symbolLayersGroups, nativeGlyphId);
             }
         },
         {SYMBOL_GLYPH_ID, SymbolGlyphCase},
         {LAYERS, [this](const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups)
             {
-                if (!root[key].isArray()) {
-                    SkDebugf("layers is not array!");
-                    return;
-                }
-                parseLayers(root[key], symbolLayersGroups.layers);
+                parseOneSymbolLayerCase(key, root, symbolLayersGroups);
             }
         },
         {RENDER_MODES, [this](const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups)
             {
-                if (!root[key].isArray()) {
-                    SkDebugf("render_modes is not array!");
-                    return;
-                }
-                parseRenderModes(root[key], symbolLayersGroups.renderModeGroups);
+                parseOneSymbolRenderCase(key, root, symbolLayersGroups);
             }
         },
         {"animation_settings", [this](const char* key, const Json::Value& root,
             SymbolLayersGroups& symbolLayersGroups)
             {
-                if (!root[key].isArray()) {
-                    SkDebugf("animation_settings is not array!");
-                    return;
-                }
-                parseAnimationSettings(root[key], symbolLayersGroups.animationSettings);
+                parseOneSymbolAnimateCase(key, root, symbolLayersGroups);
             }
         }
     };
