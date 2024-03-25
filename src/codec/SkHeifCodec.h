@@ -81,6 +81,7 @@ private:
             const Options& options) override;
     int onGetScanlines(void* dst, int count, size_t rowBytes) override;
     bool onSkipScanlines(int count) override;
+    static HeifDecoder* createHeifDecoder();
 
     std::unique_ptr<HeifDecoder>       fHeifDecoder;
     HeifFrameInfo                      fFrameInfo;
@@ -91,6 +92,7 @@ private:
     std::unique_ptr<SkSwizzler>        fSwizzler;
     bool                               fUseAnimation;
     const SkEncodedImageFormat         fFormat;
+    static void *heifImplHandle;
 
     class Frame : public SkFrame {
     public:

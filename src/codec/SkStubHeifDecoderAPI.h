@@ -14,8 +14,9 @@
 #include <memory>
 #include <stddef.h>
 #include <stdint.h>
+#include <vector>
 
-enum HeifColorFormat {
+enum SkHeifColorFormat {
     kHeifColorFormat_RGB565,
     kHeifColorFormat_RGBA_8888,
     kHeifColorFormat_BGRA_8888,
@@ -29,6 +30,8 @@ struct HeifStream {
     virtual bool   seek(size_t)        = 0;
     virtual bool   hasLength() const   = 0;
     virtual size_t getLength() const   = 0;
+    virtual bool   hasPosition() const = 0;
+    virtual size_t getPosition() const = 0;
 };
 
 struct HeifFrameInfo {
@@ -41,36 +44,60 @@ struct HeifFrameInfo {
 };
 
 struct HeifDecoder {
-    bool init(HeifStream* stream, HeifFrameInfo*) {
+    HeifDecoder() {}
+
+    virtual ~HeifDecoder() {}
+
+    virtual bool init(HeifStream* stream, HeifFrameInfo* frameInfo) = 0;
+
+    virtual bool getSequenceInfo(HeifFrameInfo* frameInfo, size_t *frameCount) = 0;
+
+    virtual bool decode(HeifFrameInfo* frameInfo) = 0;
+
+    virtual bool decodeSequence(int frameIndex, HeifFrameInfo* frameInfo) = 0;
+
+    virtual bool setOutputColor(SkHeifColorFormat colorFormat) = 0;
+
+    virtual void setDstBuffer(uint8_t *dstBuffer, size_t rowStride) = 0;
+
+    virtual bool getScanline(uint8_t* dst) = 0;
+
+    virtual size_t skipScanlines(int count) = 0;
+};
+
+struct StubHeifDecoder : HeifDecoder {
+    bool init(HeifStream* stream, HeifFrameInfo* frameInfo) override {
         delete stream;
         return false;
     }
 
-    bool getSequenceInfo(HeifFrameInfo* frameInfo, size_t *frameCount) {
+    bool getSequenceInfo(HeifFrameInfo* frameInfo, size_t *frameCount) override {
         return false;
     }
 
-    bool decode(HeifFrameInfo*) {
+    bool decode(HeifFrameInfo* frameInfo) override {
         return false;
     }
 
-    bool decodeSequence(int frameIndex, HeifFrameInfo* frameInfo) {
+    bool decodeSequence(int frameIndex, HeifFrameInfo* frameInfo) override {
         return false;
     }
 
-    bool setOutputColor(HeifColorFormat) {
+    bool setOutputColor(SkHeifColorFormat colorFormat) override {
         return false;
     }
 
-    bool getScanline(uint8_t*) {
+    void setDstBuffer(uint8_t *dstBuffer, size_t rowStride) override {
+        return;
+    }
+
+    bool getScanline(uint8_t* dst) override {
         return false;
     }
 
-    int skipScanlines(int) {
+    size_t skipScanlines(int count) override {
         return 0;
     }
 };
-
-static inline HeifDecoder* createHeifDecoder() { return new HeifDecoder; }
 
 #endif//SkStubHeifDecoderAPI_DEFINED

@@ -15,8 +15,14 @@
 #include "src/codec/SkHeifCodec.h"
 #include "src/core/SkEndian.h"
 
+#if !defined(WIN32) && !defined(_WIN32) && !defined(__WIN32__)
+#include <dlfcn.h>
+#endif
+
 #define FOURCC(c1, c2, c3, c4) \
     ((c1) << 24 | (c2) << 16 | (c3) << 8 | (c4))
+
+const static char *HEIF_IMPL_SO_NAME = "libheifimpl.z.so";
 
 bool SkHeifCodec::IsSupported(const void* buffer, size_t bytesRead,
                               SkEncodedImageFormat* format) {
@@ -132,6 +138,14 @@ struct SkHeifStreamWrapper : public HeifStream {
 
     size_t getLength() const override {
         return fStream->getLength();
+    }
+
+    bool hasPosition() const override {
+        return fStream->hasPosition();
+    }
+
+    size_t getPosition() const override {
+        return fStream->getPosition();
     }
 
 private:
@@ -378,6 +392,7 @@ SkCodec::Result SkHeifCodec::onGetPixels(const SkImageInfo& dstInfo,
         fFrameHolder.editFrameAt(options.fFrameIndex)->setDuration(
                 fFrameInfo.mDurationUs / 1000);
     } else {
+        fHeifDecoder->setDstBuffer((uint8_t *)dst, dstRowBytes);
         success = fHeifDecoder->decode(&fFrameInfo);
     }
 
@@ -485,6 +500,27 @@ int SkHeifCodec::onGetScanlines(void* dst, int count, size_t dstRowBytes) {
 
 bool SkHeifCodec::onSkipScanlines(int count) {
     return count == (int) fHeifDecoder->skipScanlines(count);
+}
+
+void *SkHeifCodec::heifImplHandle = nullptr;
+HeifDecoder* SkHeifCodec::createHeifDecoder() {
+#if !defined(WIN32) && !defined(_WIN32) && !defined(__WIN32__)
+    if (!heifImplHandle) {
+        heifImplHandle = dlopen(HEIF_IMPL_SO_NAME, RTLD_LAZY);
+    }
+    if (!heifImplHandle) {
+        return new StubHeifDecoder();
+    }
+    typedef HeifDecoder* (*CreateHeifDecoderImplT)();
+    HeifDecoder* decoder = nullptr;
+    CreateHeifDecoderImplT func = (CreateHeifDecoderImplT)dlsym(heifImplHandle, "CreateHeifDecoderImpl");
+    if (func) {
+        decoder = func();
+    }
+    return decoder != nullptr ? decoder : new StubHeifDecoder();
+#else
+    return new StubHeifDecoder();
+#endif
 }
 
 #endif // SK_HAS_HEIF_LIBRARY
