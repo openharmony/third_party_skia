@@ -114,6 +114,12 @@ private:
     void parseAnimationType(const char* animationTypeStr, AnimationType& animationType);
     void parseGroupSettings(const Json::Value& root, std::vector<GroupSetting>& groupSettings);
     void parseGroupSetting(const Json::Value& root, GroupSetting& groupSetting);
+
+    void parseOneSymbolNativeCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups,
+        uint32_t& nativeGlyphId);
+    void parseOneSymbolLayerCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups);
+    void parseOneSymbolRenderCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups);
+    void parseOneSymbolAnimateCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups);
 };
 
 #endif
