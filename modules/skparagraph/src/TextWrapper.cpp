@@ -429,7 +429,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 SkVector::Make(offsetX, fHeight),
                 SkVector::Make(fEndLine.width(), lineHeight),
                 fEndLine.metrics(),
-                needEllipsis && !fHardLineBreak);
+                needEllipsis);
 
         softLineMaxIntrinsicWidth += widthWithSpaces;
 

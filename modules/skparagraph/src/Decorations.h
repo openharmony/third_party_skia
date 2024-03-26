@@ -21,7 +21,7 @@ class Decorations {
 #else
     void calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface);
 #endif
-    void calculatePosition(TextDecoration decoration, SkScalar ascent);
+    void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle);
     void calculatePaint(const TextStyle& textStyle);
     void calculateWaves(const TextStyle& textStyle, SkRect clip);
     void calculateGaps(const TextLine::ClipContext& context, const SkRect& rect, SkScalar baseline, SkScalar halo);
