@@ -220,8 +220,28 @@ void ParagraphImpl::middleEllipsisDeal()
     this->fText.reset();
 }
 
+SkScalar ParagraphImpl::resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex)
+{
+    auto targetCluster = cluster(clusterIndex(textIndex));
+    if (lastRunIndex != targetCluster.runIndex()) {
+        TextLine textLine;
+        textLine.setParagraphImpl(this);
+        auto blockRange = findAllBlocks(TextRange(textIndex, textIndex + 1));
+        textLine.setBlockRange(blockRange);
+        const SkString& ellipsis = this->getEllipsis();
+        std::unique_ptr<Run> ellipsisRun;
+        ellipsisRun = textLine.shapeEllipsis(ellipsis, &targetCluster);
+        lastRunIndex = targetCluster.runIndex();
+        ellipsisWidth = ellipsisRun->fAdvanceX();
+        ellipsisRun.reset();
+    }
+    return ellipsisWidth;
+}
+
 void ParagraphImpl::scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end)
 {
+    size_t lastRunIndex = EMPTY_RUN;
+    auto runTimeEllipsisWidth = resetEllipsisWidth(0, lastRunIndex, 0);
     float measureWidth = runTimeEllipsisWidth;
     size_t left = 0;
     size_t right = rawTextSize.size() - 1;
@@ -230,6 +250,9 @@ void ParagraphImpl::scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTex
         if (right > left && measureWidth < fOldMaxWidth) {
             measureWidth += rawTextSize[right--].phraseWidth;
         }
+        measureWidth -= runTimeEllipsisWidth;
+        runTimeEllipsisWidth = resetEllipsisWidth(runTimeEllipsisWidth, lastRunIndex, left);
+        measureWidth += runTimeEllipsisWidth;
     }
 
     if (right < left) {
@@ -247,6 +270,8 @@ void ParagraphImpl::scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTex
 
 void ParagraphImpl::scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end)
 {
+    size_t lastRunIndex = EMPTY_RUN;
+    auto runTimeEllipsisWidth = resetEllipsisWidth(0, lastRunIndex, 0);
     float measureWidth = runTimeEllipsisWidth;
     size_t begin = 0;
     size_t last = rawTextSize.size() - 1;
@@ -264,6 +289,9 @@ void ParagraphImpl::scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTex
                 ++last;
             }
         }
+        measureWidth -= runTimeEllipsisWidth;
+        runTimeEllipsisWidth = resetEllipsisWidth(runTimeEllipsisWidth, lastRunIndex, begin);
+        measureWidth += runTimeEllipsisWidth;
     }
 
     if (measureWidth >= fOldMaxWidth || fParagraphStyle.getTextOverflower()) {
@@ -680,20 +708,6 @@ void ParagraphImpl::middleEllipsisAddText(size_t charStart,
     }
 }
 
-void ParagraphImpl::setRunTimeEllipsisWidthForMiddleEllipsis() {
-    if (isMiddleEllipsis && fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
-        float ellipsisWidth = 0.0;
-        TextLine textLine;
-        const SkString& ellipsis = this->getEllipsis();
-        std::unique_ptr<Run> ellipsisRun;
-        textLine.setParagraphImpl(this);
-        ellipsisRun = textLine.shapeEllipsis(ellipsis, &this->cluster(0));
-        runTimeEllipsisWidth = ellipsisRun->fAdvanceX();
-        ellipsisWidth = ellipsisRun->fAdvanceX();
-        ellipsisRun.reset();
-    }
-}
-
 // Clusters in the order of the input text
 void ParagraphImpl::buildClusterTable() {
     // It's possible that one grapheme includes few runs; we cannot handle it
@@ -751,7 +765,6 @@ void ParagraphImpl::buildClusterTable() {
     }
     fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
     fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
-    setRunTimeEllipsisWidthForMiddleEllipsis();
 }
 
 bool ParagraphImpl::shapeTextIntoEndlessLine() {
