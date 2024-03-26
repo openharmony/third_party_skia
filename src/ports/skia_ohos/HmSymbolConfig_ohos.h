@@ -39,7 +39,7 @@ public:
     SymbolLayersGroups* getSymbolLayersGroups(uint32_t glyphId);
 
     std::vector<std::vector<PiecewiseParameter>>* getGroupParameters(AnimationType type,
-        AnimationSubType subType, int animationMode);
+        uint16_t subType, uint16_t animationMode);
 
     int parseConfigOfHmSymbol(const char* fname, SkString fontDir);
 
@@ -95,7 +95,6 @@ private:
     void parseSymbolAnimationPara(const Json::Value& root, AnimationPara& animationPara);
     void parseSymbolGroupParas(const Json::Value& root, std::vector<std::vector<PiecewiseParameter>>& groupParameters);
     void parseSymbolPiecewisePara(const Json::Value& root, PiecewiseParameter& piecewiseParameter);
-    void parseSymbolAnimationSubType(const char* subTypeStr, AnimationSubType& subType);
     void parseSymbolCurveArgs(const Json::Value& root, std::map<std::string, double_t>& curveArgs);
     void parseSymbolProperties(const Json::Value& root, std::map<std::string, std::vector<double_t>>& properties);
 
@@ -111,7 +110,8 @@ private:
     void parseDefaultColor(const char* defaultColorStr, RenderGroup& renderGroup);
     void parseAnimationSettings(const Json::Value& root, std::vector<AnimationSetting>& animationSettings);
     void parseAnimationSetting(const Json::Value& root, AnimationSetting& animationSetting);
-    void parseAnimationType(const char* animationTypeStr, AnimationType& animationType);
+    void parseAnimationType(const std::string& animationTypeStr, AnimationType& animationType);
+    void parseAnimationTypes(const Json::Value& root, std::vector<AnimationType>& animationTypes);
     void parseGroupSettings(const Json::Value& root, std::vector<GroupSetting>& groupSettings);
     void parseGroupSetting(const Json::Value& root, GroupSetting& groupSetting);
 
