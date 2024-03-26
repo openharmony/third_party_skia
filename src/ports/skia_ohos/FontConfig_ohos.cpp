@@ -1075,7 +1075,7 @@ int FontConfig_OHOS::scanFonts(const SkTypeface_FreeType::Scanner& fontScanner)
 #endif
             const char* fname = node->d_name;
 
-            if (G_IS_HMSYMBOL_ENABLE && (strcmp(fname, "hm_symbol_config.json") == 0)) {
+            if (G_IS_HMSYMBOL_ENABLE && (strcmp(fname, "hm_symbol_config_next.json") == 0)) {
                 HmSymbolConfig_OHOS::getInstance()->parseConfigOfHmSymbol(fname, fontDirSet[i]);
                 continue;
             }

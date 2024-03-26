@@ -34,15 +34,11 @@
 
 enum AnimationType {
     INVALID_ANIMATION_TYPE = 0,
-    SCALE_EFFECT = 1,
-    VARIABLE_COLOR = 2,
-};
-
-enum AnimationSubType {
-    INVALID_ANIMATION_SUB_TYPE = 0,
-    UNIT = 1,
-    VARIABLE_3_GROUP = 2,
-    VARIABLE_4_GROUP = 3,
+    SCALE_TYPE = 1,
+    VARIABLE_COLOR_TYPE = 2,
+    APPEAR_TYPE = 3,
+    DISAPPEAR_TYPE = 4,
+    BOUNCE_TYPE = 5
 };
 
 enum CurveType {
@@ -60,8 +56,7 @@ using PiecewiseParameter = struct PiecewiseParameter {
 };
 
 using AnimationPara = struct AnimationPara {
-    uint32_t animationMode;
-    AnimationSubType subType;
+    uint16_t animationMode;
     std::vector<std::vector<PiecewiseParameter>> groupParameters;
 };
 
@@ -84,13 +79,11 @@ using GroupInfo = struct GroupInfo {
 
 using GroupSetting = struct GroupSetting {
     std::vector<GroupInfo> groupInfos;
-    uint32_t animationIndex;
+    int animationIndex;
 };
 
 using AnimationSetting = struct AnimationSetting {
-    AnimationType animationType;
-    AnimationSubType animationSubType;
-    uint32_t animationMode;
+    std::vector<AnimationType> animationTypes;
     std::vector<GroupSetting> groupSettings;
 };
 
@@ -100,25 +93,24 @@ using RenderGroup = struct RenderGroup {
 };
 
 enum EffectStrategy {
-    INVALID_EFFECT_STRATEGY = 0,
-    NONE = 1,
-    SCALE = 2,
-    HIERARCHICAL = 3,
+    NONE = 0,
+    SCALE = 1,
+    VARIABLE_COLOR = 2,
+    APPEAR = 3,
+    DISAPPEAR = 4,
+    BOUNCE = 5
 };
 
 using SymbolLayers = struct SymbolLayers {
     uint32_t symbolGlyphId;
     std::vector<std::vector<size_t>> layers;
     std::vector<RenderGroup> renderGroups;
-    EffectStrategy effect;
-    AnimationSetting animationSetting;
 };
 
 enum SymbolRenderingStrategy {
-    INVALID_RENDERING_STRATEGY = 0,
-    SINGLE = 1,
-    MULTIPLE_COLOR = 2,
-    MULTIPLE_OPACITY = 3,
+    SINGLE = 0,
+    MULTIPLE_COLOR = 1,
+    MULTIPLE_OPACITY = 2,
 };
 
 
