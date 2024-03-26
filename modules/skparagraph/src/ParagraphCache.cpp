@@ -4,7 +4,7 @@
 #include "modules/skparagraph/include/FontArguments.h"
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
-
+#include "log.h"
 
 namespace skia {
 namespace textlayout {
@@ -307,6 +307,9 @@ bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
 
     if (!entry) {
+#ifdef USE_SKIA_TXT
+        LOGD("ParagraphCache: cache miss, hash-%{public}d", key.hash());
+#endif
         // We have a cache miss
 #ifdef PARAGRAPH_CACHE_STATS
         ++fCacheMisses;
@@ -314,6 +317,9 @@ bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
         fChecker(paragraph, "missingParagraph", true);
         return false;
     }
+#ifdef USE_SKIA_TXT
+    LOGD("ParagraphCache: cache hit, hash-%{public}d", key.hash());
+#endif
     updateTo(paragraph, entry->get());
     fChecker(paragraph, "foundParagraph", true);
     return true;
