@@ -170,7 +170,7 @@ void ParagraphImpl::addUnresolvedCodepoints(TextRange textRange) {
     );
 }
 
-void ParagraphImpl::middleEllipsisDeal()
+bool ParagraphImpl::middleEllipsisDeal()
 {
     isMiddleEllipsis = false;
     const SkString& ell = this->getEllipsis();
@@ -201,23 +201,7 @@ void ParagraphImpl::middleEllipsisDeal()
     }
 
     // end = 0 means the text does not exceed the width limit
-    if (end != 0) {
-        this->fBidiRegions.clear();
-        this->fCodeUnitProperties.reset();
-        this->fClustersIndexFromCodeUnit.reset();
-        this->computeCodeUnitProperties();
-        this->fRuns.reset();
-        this->fClusters.reset();
-        this->fClustersIndexFromCodeUnit.reset();
-        this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
-        this->shapeTextIntoEndlessLine();
-    }
-    this->resetContext();
-    this->resolveStrut();
-    this->computeEmptyMetrics();
-    this->fLines.reset();
-    this->breakShapedTextIntoLines(fOldMaxWidth);
-    this->fText.reset();
+    return end != 0;
 }
 
 SkScalar ParagraphImpl::resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex)
@@ -317,6 +301,34 @@ void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSi
     }
 }
 
+bool ParagraphImpl::shapeForMiddleEllipsis(SkScalar rawWidth)
+{
+    if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE) {
+        return true;
+    }
+    fOldMaxWidth = rawWidth;
+    isMiddleEllipsis = true;
+    this->computeCodeUnitProperties();
+    this->fRuns.reset();
+    this->fClusters.reset();
+    this->fClustersIndexFromCodeUnit.reset();
+    this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
+    this->shapeTextIntoEndlessLine();
+    return middleEllipsisDeal();
+}
+
+void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
+{
+    if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE) {
+        return;
+    }
+    std::shared_ptr<ParagraphImpl> tmpParagraph = std::make_shared<ParagraphImpl>(fText, fParagraphStyle, fTextStyles,
+        fPlaceholders, fFontCollection, fUnicode);
+    if (tmpParagraph->shapeForMiddleEllipsis(rawWidth)) {
+        fText = tmpParagraph->fText;
+    }
+}
+
 void ParagraphImpl::layout(SkScalar rawWidth) {
     fLineNumber = 1;
     // TODO: This rounding is done to match Flutter tests. Must be removed...
@@ -349,6 +361,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         // Nothing changed case: we can reuse the data from the last layout
     }
 
+    this->prepareForMiddleEllipsis(rawWidth);
     if (fState < kShaped) {
         // Check if we have the text in the cache and don't need to shape it again
         if (!fFontCollection->getParagraphCache()->findParagraph(this)) {
@@ -395,12 +408,6 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
             }
         }
         fState = kShaped;
-    }
-
-    if (fParagraphStyle.getMaxLines() == 1 &&
-        fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
-        middleEllipsisDeal();
-        fState = kLineBroken;
     }
 
     if (fState == kShaped) {
