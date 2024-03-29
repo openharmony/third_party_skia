@@ -246,7 +246,7 @@ public:
     }
 
     void scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
-    void middleEllipsisDeal();
+    bool middleEllipsisDeal();
     bool codeUnitHasProperty(size_t index, SkUnicode::CodeUnitFlags property) const {
         return (fCodeUnitProperties[index] & property) == property;
     }
@@ -290,6 +290,8 @@ private:
     SkScalar resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex);
     void scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
     void scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
+    void prepareForMiddleEllipsis(SkScalar rawWidth);
+    bool shapeForMiddleEllipsis(SkScalar rawWidth);
 
     // Input
     SkTArray<StyleBlock<SkScalar>> fLetterSpaceStyles;
