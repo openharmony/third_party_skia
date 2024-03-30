@@ -270,6 +270,9 @@ public:
 
     sk_sp<GrTextureProxy> testingOnly_createWrapped(sk_sp<GrTexture>);
 #endif
+    GrImageContext* getfImageContext() {
+        return fImageContext;
+    }
 
 private:
     friend class GrAHardwareBufferImageGenerator; // for createWrapped

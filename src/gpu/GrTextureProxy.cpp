@@ -13,6 +13,7 @@
 #include "src/gpu/GrDirectContextPriv.h"
 #include "src/gpu/GrGpuResourcePriv.h"
 #include "src/gpu/GrProxyProvider.h"
+#include "src/gpu/GrResourceProvider.h"
 #include "src/gpu/GrSurface.h"
 #include "src/gpu/GrTexture.h"
 
@@ -95,8 +96,22 @@ GrTextureProxy::~GrTextureProxy() {
     // proxy provider has gone away. In that case there is noone to send the invalid key
     // message to (Note: in this case we don't want to remove its cached resource).
     if (fUniqueKey.isValid() && fProxyProvider) {
-        fProxyProvider->processInvalidUniqueKey(fUniqueKey, this,
-                                                GrProxyProvider::InvalidateGPUResource::kNo);
+        sk_sp<GrGpuResource> invalidGpuResource;
+        auto direct = fProxyProvider->getfImageContext()->asDirectContext();
+        if (direct) {
+            GrResourceProvider* resourceProvider = direct->priv().resourceProvider();
+            if (resourceProvider) {
+                invalidGpuResource = resourceProvider->findByUniqueKey<GrGpuResource>(fUniqueKey);
+            }
+        }
+        // less than 512 Bytes resources will be delated
+        if (invalidGpuResource && invalidGpuResource->gpuMemorySize() < 512) {
+            fProxyProvider->processInvalidUniqueKey(
+                fUniqueKey, this, GrProxyProvider::InvalidateGPUResource::kYes);
+        } else {
+            fProxyProvider->processInvalidUniqueKey(
+                fUniqueKey, this, GrProxyProvider::InvalidateGPUResource::kNo);
+        }
     } else {
         SkASSERT(!fProxyProvider);
     }
