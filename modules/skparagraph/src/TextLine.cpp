@@ -1338,7 +1338,7 @@ LineMetrics TextLine::getMetrics() const {
             run->fFont.GetMetrics(&fontMetrics);
 #endif
             StyleMetrics styleMetrics(&style, fontMetrics);
-            result.fLineMetrics.emplace(this->fClusterRange.start, styleMetrics);
+            result.fLineMetrics.emplace(textRange.start, styleMetrics);
         });
         return true;
     });
