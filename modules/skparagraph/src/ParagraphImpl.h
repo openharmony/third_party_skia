@@ -120,7 +120,7 @@ public:
                                           RectHeightStyle rectHeightStyle,
                                           RectWidthStyle rectWidthStyle) override;
     std::vector<TextBox> getRectsForPlaceholders() override;
-    void getLineMetrics(std::vector<LineMetrics>&) override;
+    void getLineMetrics(std::vector<LineMetrics>& metrics, std::vector<size_t>& startIndexs) override;
     PositionWithAffinity getGlyphPositionAtCoordinate(SkScalar dx, SkScalar dy) override;
     SkRange<size_t> getWordBoundary(unsigned offset) override;
 
@@ -221,7 +221,7 @@ public:
 
     void setIndents(const std::vector<SkScalar>& indents) override;
     int getLineNumberAt(TextIndex codeUnitIndex) const override;
-    bool getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) const override;
+    bool getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics, size_t& startIndex) const override;
     TextRange getActualTextRange(int lineNumber, bool includeSpaces) const override;
     bool getGlyphClusterAt(TextIndex codeUnitIndex, GlyphClusterInfo* glyphInfo) override;
     bool getClosestGlyphClusterAt(SkScalar dx,
