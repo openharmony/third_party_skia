@@ -155,6 +155,22 @@ struct RectStyle {
     SkScalar rightTopRadius = 0.0f;
     SkScalar rightBottomRadius = 0.0f;
     SkScalar leftBottomRadius = 0.0f;
+
+    bool operator ==(const RectStyle& rhs) const {
+        return color == rhs.color &&
+            leftTopRadius == rhs.leftTopRadius &&
+            rightTopRadius == rhs.rightTopRadius &&
+            rightBottomRadius == rhs.rightBottomRadius &&
+            leftBottomRadius == rhs.leftBottomRadius;
+    }
+
+    bool operator !=(const RectStyle& rhs) const {
+        return !(color == rhs.color &&
+            leftTopRadius == rhs.leftTopRadius &&
+            rightTopRadius == rhs.rightTopRadius &&
+            rightBottomRadius == rhs.rightBottomRadius &&
+            leftBottomRadius == rhs.leftBottomRadius);
+    }
 };
 
 class TextStyle {

@@ -97,6 +97,9 @@ bool TextStyle::equals(const TextStyle& other) const {
     if (fFontArguments != other.fFontArguments) {
         return false;
     }
+    if (fStyleId != other.fStyleId || fBackgroundRect != other.fBackgroundRect) {
+        return false;
+    }
 
     return true;
 }
@@ -113,7 +116,9 @@ bool TextStyle::equalsByFonts(const TextStyle& that) const {
            nearlyEqual(fHeight, that.fHeight) &&
            nearlyEqual(fBaselineShift, that.fBaselineShift) &&
            nearlyEqual(fFontSize, that.fFontSize) &&
-           fLocale == that.fLocale;
+           fLocale == that.fLocale &&
+           fStyleId == that.fStyleId &&
+           fBackgroundRect == that.fBackgroundRect;
 }
 
 bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) const {
@@ -159,7 +164,9 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
                    fHeight == other.fHeight &&
                    fHalfLeading == other.fHalfLeading &&
                    fBaselineShift == other.fBaselineShift &&
-                   fFontArguments == other.fFontArguments;
+                   fFontArguments == other.fFontArguments &&
+                   fStyleId == other.fStyleId &&
+                   fBackgroundRect == other.fBackgroundRect;
         default:
             SkASSERT(false);
             return false;
