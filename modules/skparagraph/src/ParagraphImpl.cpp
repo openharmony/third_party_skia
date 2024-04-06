@@ -170,6 +170,61 @@ void ParagraphImpl::addUnresolvedCodepoints(TextRange textRange) {
     );
 }
 
+TextRange ParagraphImpl::resetRangeWithDeletedRange(const TextRange& sourceRange,
+    const TextRange& deletedRange, const size_t& ellSize)
+{
+    if (sourceRange.end <= deletedRange.start) {
+        return sourceRange;
+    }
+    auto changeSize = ellSize - deletedRange.width();
+
+    if (sourceRange.start >= deletedRange.end) {
+        return TextRange(sourceRange.start + changeSize, sourceRange.end + changeSize);
+    }
+
+    TextRange target;
+    target.start = sourceRange.start <= deletedRange.start ? sourceRange.start : deletedRange.start + ellSize;
+    target.end = sourceRange.end <= deletedRange.end ? deletedRange.start + ellSize : sourceRange.end + changeSize;
+    return target.start <= target.end ? target : EMPTY_RANGE;
+}
+
+void ParagraphImpl::resetTextStyleRange(const TextRange& deletedRange)
+{
+    auto tmpTextStyle = fTextStyles;
+    fTextStyles.reset();
+    for (auto fs : tmpTextStyle) {
+        auto newTextRange = resetRangeWithDeletedRange(fs.fRange, deletedRange, this->getEllipsis().size());
+        if (newTextRange.width() == 0) {
+            continue;
+        }
+        fs.fRange = newTextRange;
+        fTextStyles.emplace_back(fs);
+    }
+}
+
+void ParagraphImpl::resetPlaceholderRange(const TextRange& deletedRange)
+{
+    // reset fRange && fTextBefore && fBlockBefore
+    auto ellSize = this->getEllipsis().size();
+    auto tmpPlaceholders = fPlaceholders;
+    fPlaceholders.reset();
+    for (auto ph : tmpPlaceholders) {
+        auto newTextRange = resetRangeWithDeletedRange(ph.fRange, deletedRange, ellSize);
+        if (newTextRange.empty()) {
+            continue;
+        }
+        ph.fRange = newTextRange;
+        newTextRange = ph.fTextBefore;
+        newTextRange.start = fPlaceholders.empty() ? 0 : fPlaceholders.back().fRange.end;
+        if (newTextRange.end > deletedRange.start) {
+            newTextRange.end = newTextRange.end <= deletedRange.end ?
+                deletedRange.start + ellSize : newTextRange.end + ellSize - deletedRange.width();
+        }
+        ph.fTextBefore = newTextRange;
+        fPlaceholders.emplace_back(ph);
+    }
+}
+
 bool ParagraphImpl::middleEllipsisDeal()
 {
     isMiddleEllipsis = false;
@@ -177,14 +232,19 @@ bool ParagraphImpl::middleEllipsisDeal()
     const char *ellStr = ell.c_str();
     size_t start = 0;
     size_t end = 0;
+    size_t charbegin = 0;
+    size_t charend = 0;
     if (fRuns.begin()->leftToRight()) {
         if (ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
             fText.reset();
             fText.set(ellStr);
             end = 1;
+            charend = ell.size();
         } else {
             scanTextCutPoint(ltrTextSize, start, end);
             if (end) {
+                charbegin = ltrTextSize[start].charbegin;
+                charend = ltrTextSize[end].charOver;
                 fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
                 fText.insert(ltrTextSize[start].charbegin, ellStr);
             }
@@ -192,12 +252,24 @@ bool ParagraphImpl::middleEllipsisDeal()
         ltrTextSize.clear();
     } else {
         scanTextCutPoint(rtlTextSize, start, end);
+        if (start < 1 || end + PARAM_DOUBLE >= rtlTextSize.size()) {
+            start = 0;
+            end = 0;
+        }
         if (end) {
+            charbegin = rtlTextSize[start - 1].charbegin;
+            charend = rtlTextSize[end + PARAM_DOUBLE].charbegin;
             fText.remove(rtlTextSize[start - 1].charbegin,
                 rtlTextSize[end + PARAM_DOUBLE].charbegin - rtlTextSize[start - 1].charbegin);
             fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
-            rtlTextSize.clear();
         }
+        rtlTextSize.clear();
+    }
+
+    if (end != 0) {
+        TextRange deletedRange(charbegin, charend);
+        resetTextStyleRange(deletedRange);
+        resetPlaceholderRange(deletedRange);
     }
 
     // end = 0 means the text does not exceed the width limit
@@ -326,11 +398,14 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
         fPlaceholders, fFontCollection, fUnicode);
     if (tmpParagraph->shapeForMiddleEllipsis(rawWidth)) {
         fText = tmpParagraph->fText;
+        fTextStyles = tmpParagraph->fTextStyles;
+        fPlaceholders = tmpParagraph->fPlaceholders;
     }
 }
 
 void ParagraphImpl::layout(SkScalar rawWidth) {
     fLineNumber = 1;
+    allTextWidth = 0;
     // TODO: This rounding is done to match Flutter tests. Must be removed...
     auto floorWidth = rawWidth;
 

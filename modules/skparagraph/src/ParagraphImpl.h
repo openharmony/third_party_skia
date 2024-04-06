@@ -292,6 +292,9 @@ private:
     void scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
     void prepareForMiddleEllipsis(SkScalar rawWidth);
     bool shapeForMiddleEllipsis(SkScalar rawWidth);
+    TextRange resetRangeWithDeletedRange(const TextRange& sourceRange, const TextRange& deletedRange, const size_t& ellSize);
+    void resetTextStyleRange(const TextRange& deletedRange);
+    void resetPlaceholderRange(const TextRange& deletedRange);
 
     // Input
     SkTArray<StyleBlock<SkScalar>> fLetterSpaceStyles;
