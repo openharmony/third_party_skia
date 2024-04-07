@@ -156,7 +156,8 @@ struct RectStyle {
     SkScalar rightBottomRadius = 0.0f;
     SkScalar leftBottomRadius = 0.0f;
 
-    bool operator ==(const RectStyle& rhs) const {
+    bool operator ==(const RectStyle& rhs) const
+    {
         return color == rhs.color &&
             leftTopRadius == rhs.leftTopRadius &&
             rightTopRadius == rhs.rightTopRadius &&
@@ -164,7 +165,8 @@ struct RectStyle {
             leftBottomRadius == rhs.leftBottomRadius;
     }
 
-    bool operator !=(const RectStyle& rhs) const {
+    bool operator !=(const RectStyle& rhs) const
+    {
         return !(color == rhs.color &&
             leftTopRadius == rhs.leftTopRadius &&
             rightTopRadius == rhs.rightTopRadius &&
