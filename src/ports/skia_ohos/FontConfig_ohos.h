@@ -127,7 +127,7 @@ public:
     int getErrorCount() const;
 
     static sk_sp<SkTypeface_OHOS> matchFontStyle(const TypefaceSet& typefaceSet, const SkFontStyle& pattern);
-    int scanFonts(const SkTypeface_FreeType::Scanner& fontScanner);
+
     static const char* errToString(int err);
 private:
     const uint32_t defaultColorHexLen = 9;
@@ -224,7 +224,7 @@ private:
     TypefaceSet* getTypefaceSet(const SkString& familyName, SkString& specifiedName) const;
 
     int loadFont(const SkTypeface_FreeType::Scanner& scanner, const char* fname);
-
+    int scanFonts(const SkTypeface_FreeType::Scanner& fontScanner);
     void resetGenericValue();
     void buildSubTypefaceSet(const std::shared_ptr<TypefaceSet>& typefaceSet,
         std::shared_ptr<TypefaceSet>& subSet, const SkString& familyName, int weight);
