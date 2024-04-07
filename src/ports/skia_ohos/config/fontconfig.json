@@ -2,6 +2,14 @@
   "fontdir": ["/system/fonts/"],
   "generic": [
     {
+      "family": "MiSans VF",
+      "alias": [
+        {
+          "MiSans-VF": 0
+        }
+      ]
+    },
+    {
       "family": "HarmonyOS Sans",
       "alias": [
         {
@@ -56,7 +64,7 @@
     {
       "": [
         {
-          "zh-Hans": "HarmonyOS Sans SC"
+          "zh-Hans": "MiSans VF"
         },
         {
           "zh-Hant": "HarmonyOS Sans TC"

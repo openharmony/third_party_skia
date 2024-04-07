@@ -13,7 +13,7 @@
 #include <cstring>
 
 #include "securec.h"
-
+#include "log.h"
 #include "SkFontStyle.h"
 #include "SkString.h"
 
@@ -217,6 +217,11 @@ int FontConfig_OHOS::getStyleIndex(const char* familyName, bool& isFallback) con
 
     SkString fname(familyName);
     int* p = genericNames.find(fname);
+
+    // for (auto kv: genericNames) {
+    //     SkDebugf("SystemFontLoad | GenericName =%s",kv.first.c_str());
+    // }
+
     if (p) {
         isFallback = false;
         return *p;

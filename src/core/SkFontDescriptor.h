@@ -85,6 +85,9 @@ public:
     const SkFontArguments::VariationPosition::Coordinate* getVariation() const {
         return fVariation.get();
     }
+    SkFontArguments::VariationPosition::Coordinate* getVariation() {
+        return fVariation.get();
+    }
 
     std::unique_ptr<SkStreamAsset> detachStream() { return std::move(fStream); }
     void setStream(std::unique_ptr<SkStreamAsset> stream) { fStream = std::move(stream); }

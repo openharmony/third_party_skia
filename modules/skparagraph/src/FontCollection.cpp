@@ -4,7 +4,7 @@
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skshaper/include/SkShaper.h"
-
+// #include "log.h"
 namespace skia {
 namespace textlayout {
 
@@ -145,7 +145,8 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(
 }
 
 #ifndef USE_SKIA_TXT
-std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames, SkFontStyle fontStyle, const std::optional<FontArguments>& fontArgs) {
+std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames,
+    SkFontStyle fontStyle, const std::optional<FontArguments>& fontArgs) {
     // Look inside the font collections cache first
     FamilyKey familyKey(familyNames, fontStyle, fontArgs);
     auto found = fTypefaces.find(familyKey);
@@ -189,8 +190,8 @@ std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<S
     return typefaces;
 }
 #else
-std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(
-    const std::vector<SkString>& familyNames, RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs)
+std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames,
+    RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs)
 {
     // Look inside the font collections cache first
     FamilyKey familyKey(familyNames, fontStyle, fontArgs);
@@ -214,10 +215,14 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(
         std::shared_ptr<RSTypeface> match;
         for (const auto& familyName : fDefaultFamilyNames) {
             match = matchTypeface(familyName, fontStyle);
+            if (fontArgs && match) {
+                match = fontArgs->CloneTypeface(match);
+            }
             if (match) {
                 break;
             }
         }
+
         if (!match) {
             for (const auto& manager : this->getFontManagerOrder()) {
                 match = RSLegacyMakeTypeface(manager, nullptr, fontStyle);

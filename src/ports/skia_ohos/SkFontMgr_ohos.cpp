@@ -5,6 +5,7 @@
 #include "SkFontMgr_ohos.h"
 
 #include "SkTypeface_ohos.h"
+#include "log.h"
 
 using namespace ErrorCode;
 
@@ -13,6 +14,7 @@ using namespace ErrorCode;
  */
 SkFontMgr_OHOS::SkFontMgr_OHOS(const char* path)
 {
+    LOGE1("SystemFontLoad| Create a new SkFontMgr_OHOS path =%s",path);
     fontConfig = std::make_shared<FontConfig_OHOS>(fontScanner, path);
     familyCount = fontConfig->getFamilyCount();
 }
@@ -424,7 +426,8 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::makeTypeface(std::unique_ptr<SkStreamAsset> st
 
     fontInfo.stream = std::move(stream);
     fontInfo.index = ttcIndex;
-    return sk_make_sp<SkTypeface_OHOS>(fontInfo);
+    auto tp = sk_make_sp<SkTypeface_OHOS>(fontInfo);
+    return tp;
 }
 
 /*! To create SkFontMgr object for Harmony platform
