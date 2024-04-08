@@ -26,6 +26,7 @@
 #include <math.h>
 #include <algorithm>
 #include <utility>
+#include "log.h"
 
 namespace skia {
 namespace textlayout {
@@ -194,6 +195,9 @@ void ParagraphImpl::resetTextStyleRange(const TextRange& deletedRange)
     fTextStyles.reset();
     for (auto fs : tmpTextStyle) {
         auto newTextRange = resetRangeWithDeletedRange(fs.fRange, deletedRange, this->getEllipsis().size());
+        LOGD("ParagraphImpl::resetTextStyleRange old = [%{public}lu,%{public}lu), new = [%{public}lu,%{public}lu)",
+            static_cast<unsigned long>(fs.fRange.start), static_cast<unsigned long>(fs.fRange.end),
+            static_cast<unsigned long>(newTextRange.start), static_cast<unsigned long>(newTextRange.end));
         if (newTextRange.width() == 0) {
             continue;
         }
@@ -210,6 +214,9 @@ void ParagraphImpl::resetPlaceholderRange(const TextRange& deletedRange)
     fPlaceholders.reset();
     for (auto ph : tmpPlaceholders) {
         auto newTextRange = resetRangeWithDeletedRange(ph.fRange, deletedRange, ellSize);
+        LOGD("ParagraphImpl::resetPlaceholderRange old = [%{public}lu,%{public}lu), new = [%{public}lu,%{public}lu)",
+            static_cast<unsigned long>(ph.fRange.start), static_cast<unsigned long>(ph.fRange.end),
+            static_cast<unsigned long>(newTextRange.start), static_cast<unsigned long>(newTextRange.end));
         if (newTextRange.empty()) {
             continue;
         }
@@ -227,6 +234,9 @@ void ParagraphImpl::resetPlaceholderRange(const TextRange& deletedRange)
 
 bool ParagraphImpl::middleEllipsisDeal()
 {
+    if (fRuns.empty()) {
+        return false;
+    }
     isMiddleEllipsis = false;
     const SkString& ell = this->getEllipsis();
     const char *ellStr = ell.c_str();
@@ -375,7 +385,8 @@ void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSi
 
 bool ParagraphImpl::shapeForMiddleEllipsis(SkScalar rawWidth)
 {
-    if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE) {
+    if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE ||
+        !fParagraphStyle.ellipsized()) {
         return true;
     }
     fOldMaxWidth = rawWidth;
@@ -385,13 +396,16 @@ bool ParagraphImpl::shapeForMiddleEllipsis(SkScalar rawWidth)
     this->fClusters.reset();
     this->fClustersIndexFromCodeUnit.reset();
     this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
-    this->shapeTextIntoEndlessLine();
+    if (!this->shapeTextIntoEndlessLine()) {
+        return false;
+    }
     return middleEllipsisDeal();
 }
 
 void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 {
-    if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE) {
+    if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE ||
+        !fParagraphStyle.ellipsized()) {
         return;
     }
     std::shared_ptr<ParagraphImpl> tmpParagraph = std::make_shared<ParagraphImpl>(fText, fParagraphStyle, fTextStyles,
