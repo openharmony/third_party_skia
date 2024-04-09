@@ -207,7 +207,6 @@ sk_sp<SkData> SkTypeface::serialize(SerializeBehavior behavior) const {
 }
 
 sk_sp<SkTypeface> SkTypeface::MakeDeserialize(SkStream* stream) {
-    SkDebugf("SystemFontLoad| into MakeDeserialize ");
     SkFontDescriptor desc;
     if (!SkFontDescriptor::Deserialize(stream, &desc)) {
         return nullptr;
