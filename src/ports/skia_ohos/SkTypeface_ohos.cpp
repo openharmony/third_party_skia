@@ -85,9 +85,10 @@ void SkTypeface_OHOS::onGetFontDescriptor(SkFontDescriptor* descriptor, bool* is
         descriptor->setFamilyName(familyName.c_str());
         descriptor->setStyle(this->fontStyle());
         descriptor->setVariationCoordinates(fontInfo->axisSet.axis.size());
-        //descriptor->setVariationCoordinates(1);
         for (int i = 0; i < fontInfo->axisSet.axis.size(); i++) {
             descriptor->getVariation()[i].axis = fontInfo->axisSet.range[i].fTag;
+            // The axis actual value need to dealt by SkFixedToFloat because the real-time value was
+            // changed in SkTypeface_FreeType::Scanner::computeAxisValues
             descriptor->getVariation()[i].value = SkFixedToFloat(fontInfo->axisSet.axis[i]);
         }
     }
