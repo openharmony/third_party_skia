@@ -790,7 +790,11 @@ if (use_oh_skia && !is_arkui_x) {
     if (graphic_2d_feature_wuji_enable) {
       deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
     } else if (ace_engine_standard_fonts_enable) {
-      deps += [ "//base/global/system_resources:ohos_fonts" ]
+      deps += [
+        "//base/global/system_resources:ohos_fonts",
+        "//third_party/noto-cjk:fonts_notocjk",
+        "//third_party/notofonts:fonts_notofonts",
+      ]
     }
 
     if (use_mingw_win) {
