@@ -13,14 +13,13 @@
 #include <cstring>
 
 #include "securec.h"
-
 #include "SkFontStyle.h"
 #include "SkString.h"
 
 using namespace ErrorCode;
 static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
 
-const bool G_IS_HMSYMBOL_ENABLE = HmSymbolConfig_OHOS::GetInstance()->GetHmSymbolEnable();
+const bool G_IS_HMSYMBOL_ENABLE = HmSymbolConfig_OHOS::getInstance()->getHmSymbolEnable();
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
 static const char* OHOS_DEFAULT_CONFIG = "fontconfig.json";
@@ -217,6 +216,7 @@ int FontConfig_OHOS::getStyleIndex(const char* familyName, bool& isFallback) con
 
     SkString fname(familyName);
     int* p = genericNames.find(fname);
+
     if (p) {
         isFallback = false;
         return *p;
@@ -1076,7 +1076,7 @@ int FontConfig_OHOS::scanFonts(const SkTypeface_FreeType::Scanner& fontScanner)
             const char* fname = node->d_name;
 
             if (G_IS_HMSYMBOL_ENABLE && (strcmp(fname, "hm_symbol_config_next.json") == 0)) {
-                HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol(fname, fontDirSet[i]);
+                HmSymbolConfig_OHOS::getInstance()->parseConfigOfHmSymbol(fname, fontDirSet[i]);
                 continue;
             }
 
