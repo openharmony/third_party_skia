@@ -291,7 +291,7 @@ bool SoftwarePathRenderer::onDrawPath(const DrawPathArgs& args) {
         builder[0] = boundsForMask->width();
         builder[1] = boundsForMask->height();
 
-#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK) || defined(SK_BUILD_FOR_OHOS)
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
         // Fractional translate does not affect caching on Android. This is done for better cache
         // hit ratio and speed, but it is matching HWUI behavior, which doesn't consider the matrix
         // at all when caching paths.
