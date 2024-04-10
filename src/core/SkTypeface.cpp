@@ -229,7 +229,18 @@ sk_sp<SkTypeface> SkTypeface::MakeDeserialize(SkStream* stream) {
         }
     }
 
-    return SkTypeface::MakeFromName(desc.getFamilyName(), desc.getStyle());
+    auto tp = SkTypeface::MakeFromName(desc.getFamilyName(), desc.getStyle());
+    if (desc.getVariationCoordinateCount() > 0 && tp) {
+        SkFontArguments args;
+        args.setCollectionIndex(desc.getCollectionIndex());
+        args.setVariationDesignPosition({desc.getVariation(), desc.getVariationCoordinateCount()});
+        int ttcIndex = args.getCollectionIndex();
+        auto stream = tp->openStream(&ttcIndex);
+        sk_sp<SkFontMgr> defaultFm = SkFontMgr::RefDefault();
+        tp = defaultFm->makeFromStream(std::move(stream), args);
+    }
+
+    return tp;
 }
 
 std::unique_ptr<SkStreamAsset> SkTypeface::openExistingStream(int* ttcIndex) const {

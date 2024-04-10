@@ -56,6 +56,7 @@ using RSScalar = RSDrawing::scalar;
 using RSTextBlob = RSDrawing::TextBlob;
 using RSTextBlobBuilder = RSDrawing::TextBlobBuilder;
 using RSTypeface = RSDrawing::Typeface;
+using RSFontArguments = RSDrawing::FontArguments;
 
 #endif
 

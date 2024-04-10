@@ -78,7 +78,23 @@ sk_sp<SkTypeface> FontArguments::CloneTypeface(sk_sp<SkTypeface> typeface) const
 #else
 std::shared_ptr<RSTypeface> FontArguments::CloneTypeface(std::shared_ptr<RSTypeface> typeface) const
 {
-    return typeface;
+    RSFontArguments::VariationPosition position{
+        (RSFontArguments::VariationPosition::Coordinate*)fCoordinates.data(),
+        static_cast<int>(fCoordinates.size())
+    };
+
+    RSFontArguments::Palette palette{
+        fPaletteIndex,
+        (RSFontArguments::Palette::Override*)fPaletteOverrides.data(),
+        static_cast<int>(fPaletteOverrides.size())
+    };
+
+    RSFontArguments args;
+    args.SetCollectionIndex(fCollectionIndex);
+    args.SetVariationDesignPosition(position);
+    args.SetPalette(palette);
+
+    return typeface->MakeClone(args);
 }
 #endif
 

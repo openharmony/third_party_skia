@@ -84,6 +84,13 @@ void SkTypeface_OHOS::onGetFontDescriptor(SkFontDescriptor* descriptor, bool* is
         onGetFamilyName(&familyName);
         descriptor->setFamilyName(familyName.c_str());
         descriptor->setStyle(this->fontStyle());
+        descriptor->setVariationCoordinates(fontInfo->axisSet.axis.size());
+        for (int i = 0; i < fontInfo->axisSet.axis.size(); i++) {
+            descriptor->getVariation()[i].axis = fontInfo->axisSet.range[i].fTag;
+            // The axis actual value need to dealt by SkFixedToFloat because the real-time value was
+            // changed in SkTypeface_FreeType::Scanner::computeAxisValues
+            descriptor->getVariation()[i].value = SkFixedToFloat(fontInfo->axisSet.axis[i]);
+        }
     }
 }
 
@@ -112,21 +119,20 @@ void SkTypeface_OHOS::onGetFamilyName(SkString* familyName) const
 sk_sp<SkTypeface> SkTypeface_OHOS::onMakeClone(const SkFontArguments& args) const
 {
     FontInfo info(*(fontInfo.get()));
-    info.index = args.getCollectionIndex();
-    unsigned int count = args.getVariationDesignPosition().coordinateCount;
-    if (count > 0 && count == fontInfo->axisSet.range.size()) {
-        SkFontArguments::VariationPosition position = args.getVariationDesignPosition();
+    unsigned int axisCount = args.getVariationDesignPosition().coordinateCount;
+    if (axisCount > 0) {
+        int ttcIndex = args.getCollectionIndex();
+        SkTypeface_FreeType::Scanner fontScanner;
         SkTypeface_FreeType::Scanner::AxisDefinitions axisDefs;
-        for (unsigned int i = 0; i < count; i++) {
-            axisDefs.push_back(fontInfo->axisSet.range[i]);
+        if (!fontScanner.scanFont(info.stream.get(), ttcIndex, &info.familyName, &info.style,
+            &info.isFixedWidth, &axisDefs)) {
+            return nullptr;
         }
-        SkFixed axisValues[count];
-        memset_s(axisValues, sizeof(axisValues), 0, sizeof(axisValues));
-        SkTypeface_FreeType::Scanner::computeAxisValues(axisDefs, position,
-            axisValues, fontInfo->familyName);
-        info.axisSet.axis.clear();
-        for (unsigned int i = 0; i < count; i++) {
-            info.axisSet.axis.emplace_back(axisValues[i]);
+        if (axisDefs.count() > 0) {
+            SkFixed axis[axisCount];
+            fontScanner.computeAxisValues(axisDefs, args.getVariationDesignPosition(),
+                axis, info.familyName);
+            info.setAxisSet(axisCount, axis, axisDefs.data());
         }
     }
     return sk_make_sp<SkTypeface_OHOS>(specifiedName, info);
