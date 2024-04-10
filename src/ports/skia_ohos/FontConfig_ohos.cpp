@@ -20,7 +20,7 @@
 using namespace ErrorCode;
 static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
 
-const bool G_IS_HMSYMBOL_ENABLE = HmSymbolConfig_OHOS::getInstance()->getHmSymbolEnable();
+const bool G_IS_HMSYMBOL_ENABLE = HmSymbolConfig_OHOS::GetInstance()->GetHmSymbolEnable();
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
 static const char* OHOS_DEFAULT_CONFIG = "fontconfig.json";
@@ -1075,8 +1075,8 @@ int FontConfig_OHOS::scanFonts(const SkTypeface_FreeType::Scanner& fontScanner)
 #endif
             const char* fname = node->d_name;
 
-            if (G_IS_HMSYMBOL_ENABLE && (strcmp(fname, "hm_symbol_config.json") == 0)) {
-                HmSymbolConfig_OHOS::getInstance()->parseConfigOfHmSymbol(fname, fontDirSet[i]);
+            if (G_IS_HMSYMBOL_ENABLE && (strcmp(fname, "hm_symbol_config_next.json") == 0)) {
+                HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol(fname, fontDirSet[i]);
                 continue;
             }
 
