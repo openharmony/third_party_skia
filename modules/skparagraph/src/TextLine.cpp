@@ -1119,9 +1119,10 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
                                                    TextRange textRange,
                                                    StyleType styleType,
                                                    const RunStyleVisitor& visitor) const {
+    auto includeGhostSpaces = (styleType == StyleType::kDecorations || styleType == StyleType::kNone);
     auto correctContext = [&](TextRange textRange, SkScalar textOffsetInRun) -> ClipContext {
         auto result = this->measureTextInsideOneRun(
-                textRange, run, runOffset, textOffsetInRun, styleType == StyleType::kDecorations, textAdjustment);
+            textRange, run, runOffset, textOffsetInRun, includeGhostSpaces, textAdjustment);
         if (styleType == StyleType::kDecorations) {
             // Decorations are drawn based on the real font metrics (regardless of styles and strut)
             result.clip.fTop = this->sizes().runTop(run, LineMetricStyle::CSS);
@@ -1328,7 +1329,7 @@ LineMetrics TextLine::getMetrics() const {
         }
         *runWidthInLine = this->iterateThroughSingleRunByStyles(
         TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kForeground,
-        [&result, &run](TextRange textRange, const TextStyle& style, const ClipContext& context) {
+        [&result, &run, this](TextRange textRange, const TextStyle& style, const ClipContext& context) {
 #ifndef USE_SKIA_TXT
             SkFontMetrics fontMetrics;
             run->fFont.getMetrics(&fontMetrics);

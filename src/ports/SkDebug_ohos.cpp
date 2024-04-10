@@ -31,7 +31,7 @@ void SkDebugf(const char format[], ...) {
         va_end(args2);
     }
 
-    HiLogPrintArgs(LOG_CORE, LogLevel::LOG_DEBUG, 0xD003900, LOG_TAG, format, args1);
+    HiLogPrintArgs(LOG_CORE, LogLevel::LOG_DEBUG, 0xD001406, LOG_TAG, format, args1);
 
     va_end(args1);
 }

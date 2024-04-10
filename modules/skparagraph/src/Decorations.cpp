@@ -39,7 +39,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
-                          : context.run->correctAscent());
+                          : context.run->correctAscent(), textStyle.getDecorationStyle());
 
         calculatePaint(textStyle);
 
@@ -62,7 +62,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
               break;
           }
           case TextDecorationStyle::kDouble: {
-              SkScalar bottom = y + kDoubleDecorationSpacing;
+              SkScalar bottom = y + kDoubleDecorationSpacing * fThickness / 2.0;
               if (drawGaps) {
                   SkScalar left = x - context.fTextShift;
                   painter->translate(context.fTextShift, 0);
@@ -178,7 +178,8 @@ void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSType
 }
 
 // This is how flutter calculates the positioning
-void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent) {
+void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
+    const TextDecorationStyle textDecorationStyle) {
     switch (decoration) {
       case TextDecoration::kUnderline:
 #ifndef USE_SKIA_TXT
@@ -194,8 +195,8 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent) 
           fPosition -= ascent;
           break;
       case TextDecoration::kOverline:
-          fPosition = fThickness / 2.0f - ascent;
-        break;
+          fPosition = (textDecorationStyle == TextDecorationStyle::kWavy ? fThickness : fThickness / 2.0f) - ascent;
+          break;
       case TextDecoration::kLineThrough: {
 #ifndef USE_SKIA_TXT
           fPosition = (fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutPositionIsValid_Flag)

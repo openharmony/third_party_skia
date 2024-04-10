@@ -555,7 +555,7 @@ void SkFontMgr_Config_Parser::GetSystemFontFamilies(SkTDArray<FontFamily*>& font
     }
     SkString basePath(containerFontBasePath.c_str());
     g_lmpSystemFontsFile = containerFontBasePath.append(SK_FONT_CONFIG_FILE_NAME);
-    HmSymbolConfig_OHOS::getInstance()->parseConfigOfHmSymbol("hm_symbol_config.json", basePath);
+    HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol("hm_symbol_config_next.json", basePath);
     append_system_font_families(fontFamilies, basePath);
 }
 

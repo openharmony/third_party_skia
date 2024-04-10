@@ -120,7 +120,7 @@ public:
                                           RectHeightStyle rectHeightStyle,
                                           RectWidthStyle rectWidthStyle) override;
     std::vector<TextBox> getRectsForPlaceholders() override;
-    void getLineMetrics(std::vector<LineMetrics>&) override;
+    void getLineMetrics(std::vector<LineMetrics>& metrics, std::vector<size_t>& startIndexs) override;
     PositionWithAffinity getGlyphPositionAtCoordinate(SkScalar dx, SkScalar dy) override;
     SkRange<size_t> getWordBoundary(unsigned offset) override;
 
@@ -221,7 +221,7 @@ public:
 
     void setIndents(const std::vector<SkScalar>& indents) override;
     int getLineNumberAt(TextIndex codeUnitIndex) const override;
-    bool getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) const override;
+    bool getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics, size_t& startIndex) const override;
     TextRange getActualTextRange(int lineNumber, bool includeSpaces) const override;
     bool getGlyphClusterAt(TextIndex codeUnitIndex, GlyphClusterInfo* glyphInfo) override;
     bool getClosestGlyphClusterAt(SkScalar dx,
@@ -246,7 +246,7 @@ public:
     }
 
     void scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
-    void middleEllipsisDeal();
+    bool middleEllipsisDeal();
     bool codeUnitHasProperty(size_t index, SkUnicode::CodeUnitFlags property) const {
         return (fCodeUnitProperties[index] & property) == property;
     }
@@ -287,9 +287,15 @@ private:
                                SkScalar& allTextWidth,
                                SkScalar width,
                                bool isLeftToRight);
-    void setRunTimeEllipsisWidthForMiddleEllipsis();
+    SkScalar resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex);
     void scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
     void scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
+    void prepareForMiddleEllipsis(SkScalar rawWidth);
+    bool shapeForMiddleEllipsis(SkScalar rawWidth);
+    TextRange resetRangeWithDeletedRange(const TextRange& sourceRange,
+        const TextRange& deletedRange, const size_t& ellSize);
+    void resetTextStyleRange(const TextRange& deletedRange);
+    void resetPlaceholderRange(const TextRange& deletedRange);
 
     // Input
     SkTArray<StyleBlock<SkScalar>> fLetterSpaceStyles;
@@ -332,7 +338,6 @@ private:
 
     SkScalar fOldWidth;
     SkScalar fOldHeight;
-    SkScalar runTimeEllipsisWidth;
     SkScalar fMaxWidthWithTrailingSpaces;
     SkScalar fOldMaxWidth;
     SkScalar allTextWidth;

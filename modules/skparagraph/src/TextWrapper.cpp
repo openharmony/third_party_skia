@@ -153,7 +153,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 }
             }
 
-            if (cluster->width() > maxWidth) {
+            if (breaker.breakLine(cluster->width())) {
                 fClusters.extend(cluster);
                 fTooLongCluster = true;
                 fTooLongWord = true;
@@ -429,7 +429,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 SkVector::Make(offsetX, fHeight),
                 SkVector::Make(fEndLine.width(), lineHeight),
                 fEndLine.metrics(),
-                needEllipsis && !fHardLineBreak);
+                needEllipsis);
 
         softLineMaxIntrinsicWidth += widthWithSpaces;
 

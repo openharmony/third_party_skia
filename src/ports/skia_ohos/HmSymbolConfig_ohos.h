@@ -28,50 +28,45 @@
 class SK_API HmSymbolConfig_OHOS
 {
 public:
-    static HmSymbolConfig_OHOS* getInstance();
+    static HmSymbolConfig_OHOS* GetInstance();
 
-    std::unordered_map<uint32_t, SymbolLayersGroups>* getHmSymbolConfig();
+    SymbolLayersGroups GetSymbolLayersGroups(uint32_t glyphId);
 
-    std::vector<AnimationInfo>* getCommonAnimationInfos();
+    std::vector<std::vector<PiecewiseParameter>> GetGroupParameters(AnimationType type, uint16_t groupSum,
+        uint16_t animationMode = 0, CommonSubType commonSubType = CommonSubType::UP);
 
-    std::vector<AnimationInfo>* getSpecialAnimationInfos();
+    int ParseConfigOfHmSymbol(const char* fname, SkString fontDir);
 
-    SymbolLayersGroups* getSymbolLayersGroups(uint32_t glyphId);
+    bool GetHmSymbolEnable();
 
-    std::vector<std::vector<PiecewiseParameter>>* getGroupParameters(AnimationType type,
-        AnimationSubType subType, int animationMode);
-
-    int parseConfigOfHmSymbol(const char* fname, SkString fontDir);
-
-    bool getHmSymbolEnable();
-
-    bool getInit() const
+    bool GetInit() const
     {
         return isInit_;
     }
 
-    void setInit(const bool init)
+    void SetInit(const bool init)
     {
         isInit_ = init;
     }
 
-    void lock()
+    void Lock()
     {
         hmSymbolMut_.lock();
     }
 
-    void unlock()
+    void Unlock()
     {
         hmSymbolMut_.unlock();
     }
 
-    void clear()
+    void Clear()
     {
         hmSymbolConfig_.clear();
         commonAnimationInfos_.clear();
         specialAnimationInfos_.clear();
         isInit_ = false;
     }
+
 private:
     std::unordered_map<uint32_t, SymbolLayersGroups> hmSymbolConfig_;
     std::vector<AnimationInfo> commonAnimationInfos_;
@@ -85,41 +80,42 @@ private:
     const uint32_t twoBytesBitsLen = 16;
     const uint32_t oneByteBitsLen = 8;
 
-    AnimationInfo* getAnimationInfo(AnimationType type);
+    AnimationInfo* GetAnimationInfo(AnimationType type);
 
-    int checkConfigFile(const char* fname, Json::Value& root);
+    int CheckConfigFile(const char* fname, Json::Value& root);
 
-    void parseSymbolAnimations(const Json::Value& root, const char* key);
-    void parseSymbolAnimations(const Json::Value& root, std::vector<AnimationInfo>* animationInfos);
-    void parseSymbolAnimationParas(const Json::Value& root, std::vector<AnimationPara>& animationParas);
-    void parseSymbolAnimationPara(const Json::Value& root, AnimationPara& animationPara);
-    void parseSymbolGroupParas(const Json::Value& root, std::vector<std::vector<PiecewiseParameter>>& groupParameters);
-    void parseSymbolPiecewisePara(const Json::Value& root, PiecewiseParameter& piecewiseParameter);
-    void parseSymbolAnimationSubType(const char* subTypeStr, AnimationSubType& subType);
-    void parseSymbolCurveArgs(const Json::Value& root, std::map<std::string, double_t>& curveArgs);
-    void parseSymbolProperties(const Json::Value& root, std::map<std::string, std::vector<double_t>>& properties);
+    void ParseSymbolAnimations(const Json::Value& root, const char* key);
+    void ParseSymbolAnimations(const Json::Value& root, std::vector<AnimationInfo>* animationInfos);
+    void ParseSymbolAnimationParas(const Json::Value& root, std::vector<AnimationPara>& animationParas);
+    void ParseSymbolAnimationPara(const Json::Value& root, AnimationPara& animationPara);
+    void ParseSymbolGroupParas(const Json::Value& root, std::vector<std::vector<PiecewiseParameter>>& groupParameters);
+    void ParseSymbolPiecewisePara(const Json::Value& root, PiecewiseParameter& piecewiseParameter);
+    void ParseSymbolCurveArgs(const Json::Value& root, std::map<std::string, double_t>& curveArgs);
+    void ParseSymbolProperties(const Json::Value& root, std::map<std::string, std::vector<double_t>>& properties);
 
-    void parseSymbolLayersGrouping(const Json::Value& root);
-    void parseOneSymbol(const Json::Value& root, std::unordered_map<uint32_t, SymbolLayersGroups>* hmSymbolConfig);
-    void parseLayers(const Json::Value& root, std::vector<std::vector<size_t>>& layers);
-    void parseRenderModes(const Json::Value& root, std::map<SymbolRenderingStrategy,
+    void ParseSymbolLayersGrouping(const Json::Value& root);
+    void ParseOneSymbol(const Json::Value& root, std::unordered_map<uint32_t, SymbolLayersGroups>* hmSymbolConfig);
+    void ParseLayers(const Json::Value& root, std::vector<std::vector<size_t>>& layers);
+    void ParseRenderModes(const Json::Value& root, std::map<SymbolRenderingStrategy,
         std::vector<RenderGroup>>& renderModesGroups);
-    void parseComponets(const Json::Value& root, std::vector<size_t>& components);
-    void parseRenderGroups(const Json::Value& root, std::vector<RenderGroup>& renderGroups);
-    void parseGroupIndexes(const Json::Value& root, std::vector<GroupInfo>& groupInfos);
-    void parseLayerOrMaskIndexes(const Json::Value& root, std::vector<size_t>& indexes);
-    void parseDefaultColor(const char* defaultColorStr, RenderGroup& renderGroup);
-    void parseAnimationSettings(const Json::Value& root, std::vector<AnimationSetting>& animationSettings);
-    void parseAnimationSetting(const Json::Value& root, AnimationSetting& animationSetting);
-    void parseAnimationType(const char* animationTypeStr, AnimationType& animationType);
-    void parseGroupSettings(const Json::Value& root, std::vector<GroupSetting>& groupSettings);
-    void parseGroupSetting(const Json::Value& root, GroupSetting& groupSetting);
+    void ParseComponets(const Json::Value& root, std::vector<size_t>& components);
+    void ParseRenderGroups(const Json::Value& root, std::vector<RenderGroup>& renderGroups);
+    void ParseGroupIndexes(const Json::Value& root, std::vector<GroupInfo>& groupInfos);
+    void ParseLayerOrMaskIndexes(const Json::Value& root, std::vector<size_t>& indexes);
+    void ParseDefaultColor(const char* defaultColorStr, RenderGroup& renderGroup);
+    void ParseAnimationSettings(const Json::Value& root, std::vector<AnimationSetting>& animationSettings);
+    void ParseAnimationSetting(const Json::Value& root, AnimationSetting& animationSetting);
+    void ParseAnimationType(const std::string& animationTypeStr, AnimationType& animationType);
+    void ParseAnimationTypes(const Json::Value& root, std::vector<AnimationType>& animationTypes);
+    void ParseGroupSettings(const Json::Value& root, std::vector<GroupSetting>& groupSettings);
+    void ParseGroupSetting(const Json::Value& root, GroupSetting& groupSetting);
+    void ParseSymbolCommonSubType(const char* subTypeStr, CommonSubType& commonSubType);
 
-    void parseOneSymbolNativeCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups,
+    void ParseOneSymbolNativeCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups,
         uint32_t& nativeGlyphId);
-    void parseOneSymbolLayerCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups);
-    void parseOneSymbolRenderCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups);
-    void parseOneSymbolAnimateCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups);
+    void ParseOneSymbolLayerCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups);
+    void ParseOneSymbolRenderCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups);
+    void ParseOneSymbolAnimateCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups);
 };
 
 #endif
