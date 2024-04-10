@@ -4,6 +4,7 @@
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skshaper/include/SkShaper.h"
+
 namespace skia {
 namespace textlayout {
 
