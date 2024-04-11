@@ -37,6 +37,10 @@ public:
             std::unique_ptr<SkStream>, SkCodec::SelectionPolicy selectionPolicy,
             SkEncodedImageFormat, Result*);
 
+    void *getHeifContext() override {
+        return fHeifDecoder.get();
+    }
+
 protected:
 
     Result onGetPixels(

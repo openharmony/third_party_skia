@@ -727,6 +727,8 @@ public:
         return this->onGetRepetitionCount();
     }
 
+    virtual void *getHeifContext() { return nullptr; }
+
     // Register a decoder at runtime by passing two function pointers:
     //    - peek() to return true if the span of bytes appears to be your encoded format;
     //    - make() to attempt to create an SkCodec from the given stream.
