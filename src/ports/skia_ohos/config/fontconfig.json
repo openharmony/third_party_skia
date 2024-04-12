@@ -50,16 +50,29 @@
           "HarmonyOS-Sans-Digit": 0
         }
       ]
+    },
+    {
+      "family": "Noto Serif",
+      "alias": [
+        {
+          "serif": 0
+        }
+      ]
+    },
+    {
+      "family": "Noto Sans Mono",
+      "alias": [
+        {
+          "monospace": 400
+        }
+      ]
     }
   ],
   "fallback": [
     {
       "": [
         {
-          "zh-Hans": "HarmonyOS Sans SC"
-        },
-        {
-          "zh-Hant": "HarmonyOS Sans TC"
+          "": "Noto Sans"
         },
         {
           "und-Arab": "HarmonyOS Sans Naskh Arabic UI"
@@ -74,13 +87,19 @@
           "und-Thai": "Noto Sans Thai"
         },
         {
-          "und-Geor": "Noto Sans Georgian"
+          "und-Armn": "Noto Sans Armenian"
+        },
+        {
+          "und-Geor,und-Geok": "Noto Sans Georgian"
         },
         {
           "und-Deva": "Noto Sans Devanagari"
         },
         {
           "und-Gujr": "Noto Sans Gujarati"
+        },
+        {
+          "und-Guru": "Noto Sans Gurmukhi"
         },
         {
           "und-Taml": "Noto Sans Tamil"
@@ -98,6 +117,9 @@
           "und-Knda": "Noto Sans Kannada"
         },
         {
+          "und-Orya": "Noto Sans Oriya"
+        },
+        {
           "und-Sinh": "Noto Sans Sinhala"
         },
         {
@@ -110,13 +132,225 @@
           "und-Mymr": "Noto Sans Myanmar"
         },
         {
-          "und-Tibt": "Noto Sans Tibetan"
+          "und-Thaa": "Noto Sans Thaana"
         },
         {
-          "ja": "Noto Sans JP"
+          "und-Cham": "Noto Sans Cham"
         },
         {
-          "ko": "Noto Sans KR"
+          "und-Ahom": "Noto Serif Ahom"
+        },
+        {
+          "und-Adlm": "Noto Sans Adlam"
+        },
+        {
+          "und-Avst": "Noto Sans Avestan"
+        },
+        {
+          "und-Bali": "Noto Sans Balinese"
+        },
+        {
+          "und-Bamu": "Noto Sans Bamum"
+        },
+        {
+          "und-Batk": "Noto Sans Batak"
+        },
+        {
+          "und-Brah": "Noto Sans Brahmi"
+        },
+        {
+          "und-Bugi": "Noto Sans Buginese"
+        },
+        {
+          "und-Buhd": "Noto Sans Buhid"
+        },
+        {
+          "und-Cans": "Noto Sans Canadian Aboriginal"
+        },
+        {
+          "und-Cari": "Noto Sans Carian"
+        },
+        {
+          "und-Cakm": "Noto Sans Chakma"
+        },
+        {
+          "und-Cher": "Noto Sans Cherokee"
+        },
+        {
+          "und-Copt": "Noto Sans Coptic"
+        },
+        {
+          "und-Xsux": "Noto Sans Cuneiform"
+        },
+        {
+          "und-Cprt": "Noto Sans Cypriot"
+        },
+        {
+          "und-Dsrt": "Noto Sans Deseret"
+        },
+        {
+          "und-Egyp": "Noto Sans Egyptian Hieroglyphs"
+        },
+        {
+          "und-Elba": "Noto Sans Elbasan"
+        },
+        {
+          "und-Glag": "Noto Sans Glagolitic"
+        },
+        {
+          "und-Goth": "Noto Sans Gothic"
+        },
+        {
+          "und-Hano": "Noto Sans Hanunoo"
+        },
+        {
+          "und-Armi": "Noto Sans Imperial Aramaic"
+        },
+        {
+          "und-Phli": "Noto Sans Inscriptional Pahlavi"
+        },
+        {
+          "und-Prti": "Noto Sans Inscriptional Parthian"
+        },
+        {
+          "und-Java": "Noto Sans Javanese"
+        },
+        {
+          "und-Kthi": "Noto Sans Kaithi"
+        },
+        {
+          "und-Kali": "Noto Sans Kayah Li"
+        },
+        {
+          "und-Khar": "Noto Sans Kharoshthi"
+        },
+        {
+          "und-Lepc": "Noto Sans Lepcha"
+        },
+        {
+          "und-Limb": "Noto Sans Limbu"
+        },
+        {
+          "und-Linb": "Noto Sans Linear B"
+        },
+        {
+          "und-Lisu": "Noto Sans Lisu"
+        },
+        {
+          "und-Lyci": "Noto Sans Lycian"
+        },
+        {
+          "und-Lydi": "Noto Sans Lydian"
+        },
+        {
+          "und-Mand": "Noto Sans Mandaic"
+        },
+        {
+          "und-Mtei": "Noto Sans Meetei Mayek"
+        },
+        {
+          "und-Talu": "Noto Sans New Tai Lue"
+        },
+        {
+          "und-Nkoo": "Noto Sans NKo"
+        },
+        {
+          "und-Ogam": "Noto Sans Ogham"
+        },
+        {
+          "und-Olck": "Noto Sans Ol Chiki"
+        },
+        {
+          "und-Ital": "Noto Sans Old Italic"
+        },
+        {
+          "und-Xpeo": "Noto Sans Old Persian"
+        },
+        {
+          "und-Sarb": "Noto Sans Old South Arabian"
+        },
+        {
+          "und-Orkh": "Noto Sans Old Turkic"
+        },
+        {
+          "und-Osge": "Noto Sans Osage"
+        },
+        {
+          "und-Osma": "Noto Sans Osmanya"
+        },
+        {
+          "und-Phnx": "Noto Sans Phoenician"
+        },
+        {
+          "und-Rjng": "Noto Sans Rejang"
+        },
+        {
+          "und-Runr": "Noto Sans Runic"
+        },
+        {
+          "und-Samr": "Noto Sans Samaritan"
+        },
+        {
+          "und-Saur": "Noto Sans Saurashtra"
+        },
+        {
+          "und-Shaw": "Noto Sans Shavian"
+        },
+        {
+          "und-Sund": "Noto Sans Sundanese"
+        },
+        {
+          "und-Sylo": "Noto Sans Syloti Nagri"
+        },
+        {
+          "und-Syrn": "Noto Sans Syriac Eastern"
+        },
+        {
+          "und-Syrj": "Noto Sans Syriac Western"
+        },
+        {
+          "und-Tglg": "Noto Sans Tagalog"
+        },
+        {
+          "und-Tagb": "Noto Sans Tagbanwa"
+        },
+        {
+          "und-Lana": "Noto Sans Tai Tham"
+        },
+        {
+          "und-Tavt": "Noto Sans Tai Viet"
+        },
+        {
+          "und-Tibt": "Noto Serif Tibetan"
+        },
+        {
+          "und-Tfng": "Noto Sans Tifinagh"
+        },
+        {
+          "und-Ugar": "Noto Sans Ugaritic"
+        },
+        {
+          "und-Vaii": "Noto Sans Vai"
+        },
+        {
+          "zh-Hans": "HarmonyOS Sans SC"
+        },
+        {
+          "zh-Hant": "HarmonyOS Sans TC"
+        },
+        {
+          "index": [
+            "Noto Sans CJK JP",
+            0
+          ],
+          "ja": "Noto Sans CJK JP"
+        },
+        {
+          "index": [
+            "Noto Sans CJK KR",
+            1
+          ],
+          "ko": "Noto Sans CJK JP"
         },
         {
           "und-Zsye": "HMOS Color Emoji"
@@ -126,6 +360,120 @@
         },
         {
           "und-Zsym": "Noto Sans Symbols"
+        },
+        {
+          "und-Zsym": "Noto Sans Symbols 2"
+        },
+        {
+          "und-Tale": "Noto Sans Tai Le"
+        },
+        {
+          "und-Yiii": "Noto Sans Yi"
+        },
+        {
+          "und-Mong": "Noto Sans Mongolian"
+        },
+        {
+          "und-Phag": "Noto Sans Phags-Pa"
+        },
+        {
+          "und-Hluw": "Noto Sans Anatolian Hieroglyphs"
+        },
+        {
+          "und-Bass": "Noto Sans Bassa Vah"
+        },
+        {
+          "und-Bhks": "Noto Sans Bhaiksuki"
+        },
+        {
+          "und-Hatr": "Noto Sans Hatran"
+        },
+        {
+          "und-Lina": "Noto Sans Linear A"
+        },
+        {
+          "und-Mani": "Noto Sans Manichaean"
+        },
+        {
+          "und-Marc": "Noto Sans Marchen"
+        },
+        {
+          "und-Merc": "Noto Sans Meroitic"
+        },
+        {
+          "und-Plrd": "Noto Sans Miao"
+        },
+        {
+          "und-Mroo": "Noto Sans Mro"
+        },
+        {
+          "und-Mult": "Noto Sans Multani"
+        },
+        {
+          "und-Nbat": "Noto Sans Nabataean"
+        },
+        {
+          "und-Newa": "Noto Sans Newa"
+        },
+        {
+          "und-Narb": "Noto Sans Old North Arabian"
+        },
+        {
+          "und-Perm": "Noto Sans Old Permic"
+        },
+        {
+          "und-Hmng": "Noto Sans Pahawh Hmong"
+        },
+        {
+          "und-Palm": "Noto Sans Palmyrene"
+        },
+        {
+          "und-Pauc": "Noto Sans Pau Cin Hau"
+        },
+        {
+          "und-Shrd": "Noto Sans Sharada"
+        },
+        {
+          "und-Sora": "Noto Sans Sora Sompeng"
+        },
+        {
+          "und-Gong": "Noto Sans Gunjala Gondi"
+        },
+        {
+          "und-Rohg": "Noto Sans Hanifi Rohingya"
+        },
+        {
+          "und-Khoj": "Noto Sans Khojki"
+        },
+        {
+          "und-Gonm": "Noto Sans Masaram Gondi"
+        },
+        {
+          "und-Wcho": "Noto Sans Wancho"
+        },
+        {
+          "und-Wara": "Noto Sans Warang Citi"
+        },
+        {
+          "und-Gran": "Noto Sans Grantha"
+        },
+        {
+          "und-Modi": "Noto Sans Modi"
+        },
+        {
+          "und-Dogr": "Noto Serif Dogra"
+        },
+        {
+          "und-Medf": "Noto Sans Medefaidrin"
+        },
+        {
+          "und-Soyo": "Noto Sans Soyombo"
+        },
+        {
+          "und-Takr": "Noto Sans Takri"
+        },
+        {
+          "und-Yezi": "Noto Serif Yezidi"
         },
         {
           "und-Zsym": "HM Symbol"
