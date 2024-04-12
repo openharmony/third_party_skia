@@ -392,7 +392,7 @@ SkCodec::Result SkHeifCodec::onGetPixels(const SkImageInfo& dstInfo,
         fFrameHolder.editFrameAt(options.fFrameIndex)->setDuration(
                 fFrameInfo.mDurationUs / 1000);
     } else {
-        fHeifDecoder->setDstBuffer((uint8_t *)dst, dstRowBytes);
+        fHeifDecoder->setDstBuffer((uint8_t *)dst, dstRowBytes, nullptr);
         success = fHeifDecoder->decode(&fFrameInfo);
     }
 

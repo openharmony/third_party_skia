@@ -20,6 +20,8 @@ enum SkHeifColorFormat {
     kHeifColorFormat_RGB565,
     kHeifColorFormat_RGBA_8888,
     kHeifColorFormat_BGRA_8888,
+    kHeifColorFormat_NV12,
+    kHeifColorFormat_NV21,
 };
 
 struct HeifStream {
@@ -58,7 +60,7 @@ struct HeifDecoder {
 
     virtual bool setOutputColor(SkHeifColorFormat colorFormat) = 0;
 
-    virtual void setDstBuffer(uint8_t *dstBuffer, size_t rowStride) = 0;
+    virtual void setDstBuffer(uint8_t *dstBuffer, size_t rowStride, void *context) = 0;
 
     virtual bool getScanline(uint8_t* dst) = 0;
 
@@ -87,7 +89,7 @@ struct StubHeifDecoder : HeifDecoder {
         return false;
     }
 
-    void setDstBuffer(uint8_t *dstBuffer, size_t rowStride) override {
+    void setDstBuffer(uint8_t *dstBuffer, size_t rowStride, void *context) override {
         return;
     }
 
