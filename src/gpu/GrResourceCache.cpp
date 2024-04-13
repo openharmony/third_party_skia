@@ -25,6 +25,9 @@
 #include "src/gpu/GrThreadSafeCache.h"
 #include "src/gpu/GrTracing.h"
 #include "src/gpu/SkGr.h"
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#include "hitrace_meter.h"
+#endif
 
 DECLARE_SKMESSAGEBUS_MESSAGE(GrUniqueKeyInvalidatedMessage, uint32_t, true);
 
@@ -164,6 +167,10 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
 #endif
     }
     SkASSERT(!resource->cacheAccess().isUsableAsScratch());
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over fBudgetedBytes:(%u),fMaxBytes:(%u)",
+        fBudgetedBytes, fMaxBytes);
+#endif
     this->purgeAsNeeded();
 }
 
