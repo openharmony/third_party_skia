@@ -197,6 +197,10 @@ public:
     size_t getIndexInLine() const { return indexInLine; }
     void setIndexInLine(size_t index) { indexInLine = index; }
 
+    std::vector<uint16_t> getGlyphs() const;
+    std::vector<RSPoint> getPositions() const;
+    std::vector<RSPoint> getOffsets() const;
+
 private:
     friend class ParagraphImpl;
     friend class TextLine;

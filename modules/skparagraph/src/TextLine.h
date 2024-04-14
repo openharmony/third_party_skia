@@ -11,6 +11,7 @@
 #include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
+#include "modules/skparagraph/include/RunBase.h"
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/src/Run.h"
 
@@ -145,6 +146,10 @@ public:
     bool endsWithHardLineBreak() const;
     std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
     SkSTArray<1, size_t, true> getLineAllRuns() const { return fRunsInVisualOrder; };
+
+    size_t getGlyphCount() const;
+    std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const;
+    TextLine CloneSelf();
 private:
     struct RoundRectAttr {
         int styleId;
@@ -220,6 +225,7 @@ private:
         // Extra fields only used for the (experimental) visitor
         const Run* fVisitor_Run;
         size_t     fVisitor_Pos;
+        size_t     fVisitor_Size;
     };
     bool fTextBlobCachePopulated;
 
