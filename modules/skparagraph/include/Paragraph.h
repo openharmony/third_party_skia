@@ -6,6 +6,7 @@
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
+#include "modules/skparagraph/include/TextLineBase.h"
 #include <unordered_set>
 #include "drawing.h"
 
@@ -19,6 +20,8 @@ class ParagraphPainter;
 class Paragraph {
 
 public:
+    Paragraph();
+
     Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts);
 
     virtual ~Paragraph() = default;
@@ -212,6 +215,9 @@ public:
     virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
         std::vector<RSFontMetrics>& fontMetrics) = 0;
 #endif
+    virtual std::vector<std::unique_ptr<TextLineBase>> GetTextLines() = 0;
+    virtual std::unique_ptr<Paragraph> CloneSelf() = 0;
+
 protected:
     sk_sp<FontCollection> fFontCollection;
     ParagraphStyle fParagraphStyle;

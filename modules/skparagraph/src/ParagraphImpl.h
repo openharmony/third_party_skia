@@ -23,6 +23,7 @@
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #include "modules/skparagraph/include/TextShadow.h"
 #include "modules/skparagraph/include/TextStyle.h"
+#include "modules/skparagraph/include/TextLineBase.h"
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skunicode/include/SkUnicode.h"
@@ -95,6 +96,8 @@ struct BidiRegion {
 class ParagraphImpl final : public Paragraph {
 
 public:
+
+    ParagraphImpl();
 
     ParagraphImpl(const SkString& text,
                   ParagraphStyle style,
@@ -272,6 +275,10 @@ public:
     bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
         std::vector<RSFontMetrics>& fontMetrics) override;
 #endif
+
+    std::vector<std::unique_ptr<TextLineBase>> GetTextLines() override;
+    std::unique_ptr<Paragraph> CloneSelf() override;
+
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;

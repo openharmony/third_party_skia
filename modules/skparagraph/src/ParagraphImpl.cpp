@@ -19,6 +19,7 @@
 #include "modules/skparagraph/src/OneLineShaper.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/ParagraphPainterImpl.h"
+#include "modules/skparagraph/src/TextLineBaseImpl.h"
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skparagraph/src/TextWrapper.h"
@@ -54,6 +55,9 @@ TextRange operator*(const TextRange& a, const TextRange& b) {
     return end > begin ? TextRange(begin, end) : EMPTY_TEXT;
 }
 
+Paragraph::Paragraph()
+{ }
+
 Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             : fFontCollection(std::move(fonts))
             , fParagraphStyle(std::move(style))
@@ -65,6 +69,9 @@ Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             , fMinIntrinsicWidth(0)
             , fLongestLine(0)
             , fExceededMaxLines(0)
+{ }
+
+ParagraphImpl::ParagraphImpl()
 { }
 
 ParagraphImpl::ParagraphImpl(const SkString& text,
@@ -1723,6 +1730,96 @@ RSFontMetrics ParagraphImpl::measureText()
     return metrics;
 }
 #endif
+
+std::vector<std::unique_ptr<TextLineBase>> ParagraphImpl::GetTextLines() {
+    std::vector<std::unique_ptr<TextLineBase>> textLineBases;
+    for (auto& line: fLines) {
+        std::unique_ptr<TextLineBaseImpl> textLineBaseImplPtr = std::make_unique<TextLineBaseImpl>(&line);
+        textLineBases.emplace_back(std::move(textLineBaseImplPtr));
+    }
+
+    return textLineBases;
+}
+
+std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
+{
+    std::unique_ptr<ParagraphImpl> paragraph = std::make_unique<ParagraphImpl>();
+
+    paragraph->fFontCollection = this->fFontCollection;
+    paragraph->fParagraphStyle = this->fParagraphStyle;
+    paragraph->fAlphabeticBaseline = this->fAlphabeticBaseline;
+    paragraph->fIdeographicBaseline = this->fIdeographicBaseline;
+    paragraph->fGlyphsBoundsTop = this->fGlyphsBoundsTop;
+    paragraph->fGlyphsBoundsBottom = this->fGlyphsBoundsBottom;
+    paragraph->fGlyphsBoundsLeft = this->fGlyphsBoundsLeft;
+    paragraph->fGlyphsBoundsRight = this->fGlyphsBoundsRight;
+    paragraph->fHeight = this->fHeight;
+    paragraph->fWidth = this->fWidth;
+    paragraph->fMaxIntrinsicWidth = this->fMaxIntrinsicWidth;
+    paragraph->fMinIntrinsicWidth = this->fMinIntrinsicWidth;
+    paragraph->fLongestLine = this->fLongestLine;
+    paragraph->fExceededMaxLines = this->fExceededMaxLines;
+
+    paragraph->fLetterSpaceStyles = this->fLetterSpaceStyles;
+    paragraph->fWordSpaceStyles = this->fWordSpaceStyles;
+    paragraph->fBackgroundStyles = this->fBackgroundStyles;
+    paragraph->fForegroundStyles = this->fForegroundStyles;
+    paragraph->fShadowStyles = this->fShadowStyles;
+    paragraph->fDecorationStyles = this->fDecorationStyles;
+    paragraph->fTextStyles = this->fTextStyles;
+    paragraph->fPlaceholders = this->fPlaceholders;
+    paragraph->fText = this->fText;
+
+    paragraph->fState = this->fState;
+    paragraph->fRuns = this->fRuns;
+    paragraph->fClusters = this->fClusters;
+    paragraph->fCodeUnitProperties = this->fCodeUnitProperties;
+    paragraph->fClustersIndexFromCodeUnit = this->fClustersIndexFromCodeUnit;
+
+    paragraph->fWords = this->fWords;
+    paragraph->fIndents = this->fIndents;
+    paragraph->rtlTextSize = this->rtlTextSize;
+    paragraph->ltrTextSize = this->ltrTextSize;
+    paragraph->fBidiRegions = this->fBidiRegions;
+
+    paragraph->fUTF8IndexForUTF16Index = this->fUTF8IndexForUTF16Index;
+    paragraph->fUTF16IndexForUTF8Index = this->fUTF16IndexForUTF8Index;
+    paragraph->fUnresolvedGlyphs = this->fUnresolvedGlyphs;
+    paragraph->isMiddleEllipsis = this->isMiddleEllipsis;
+    paragraph->fUnresolvedCodepoints = this->fUnresolvedCodepoints;
+
+    for (auto& line : this->fLines) {
+        paragraph->fLines.emplace_back(line.CloneSelf());
+    }
+
+    paragraph->fPicture = this->fPicture;
+    paragraph->fFontSwitches = this->fFontSwitches;
+    paragraph->fEmptyMetrics = this->fEmptyMetrics;
+    paragraph->fStrutMetrics = this->fStrutMetrics;
+
+    paragraph->fOldWidth = this->fOldWidth;
+    paragraph->fOldHeight = this->fOldHeight;
+    paragraph->fMaxWidthWithTrailingSpaces = this->fMaxWidthWithTrailingSpaces;
+    paragraph->fOldMaxWidth = this->fOldMaxWidth;
+    paragraph->allTextWidth = this->allTextWidth;
+
+    paragraph->fUnicode = this->fUnicode;
+    paragraph->fHasLineBreaks = this->fHasLineBreaks;
+    paragraph->fHasWhitespacesInside = this->fHasWhitespacesInside;
+    paragraph->fTrailingSpaces = this->fTrailingSpaces;
+    paragraph->fLineNumber = this->fLineNumber;
+
+    for (auto& run : paragraph->fRuns) {
+        run.setOwner(paragraph.get());
+    }
+    for (auto& cluster : paragraph->fClusters) {
+        cluster.setOwner(paragraph.get());
+    }
+    for (auto& line : paragraph->fLines) {
+        line.setParagraphImpl(paragraph.get());
+    }
+    return paragraph;
+}
 
 }  // namespace textlayout
 }  // namespace skia

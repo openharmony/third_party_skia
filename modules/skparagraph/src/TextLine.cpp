@@ -20,6 +20,7 @@
 #include "modules/skparagraph/src/Decorations.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/ParagraphPainterImpl.h"
+#include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skshaper/include/SkShaper.h"
 
@@ -453,6 +454,7 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
     }
     record.fVisitor_Run = context.run;
     record.fVisitor_Pos = context.pos;
+    record.fVisitor_Size = context.size;
 
     // TODO: This is the change for flutter, must be removed later
 #ifndef USE_SKIA_TXT
@@ -1728,6 +1730,59 @@ void TextLine::getRectsForPlaceholders(std::vector<TextBox>& boxes) {
             boxes.emplace_back(clip, run->getTextDirection());
             return true;
         });
+}
+
+size_t TextLine::getGlyphCount() const
+{
+    size_t glyphCount = 0;
+    for (auto& blob: fTextBlobCache) {
+        glyphCount += blob.fVisitor_Size;
+    }
+    return glyphCount;
+}
+
+std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
+{
+    std::vector<std::unique_ptr<RunBase>> runBases;
+    for (auto& blob: fTextBlobCache) {
+        std::unique_ptr<RunBaseImpl> runBaseImplPtr = std::make_unique<RunBaseImpl>(
+            blob.fBlob, blob.fOffset, blob.fPaint, blob.fClippingNeeded, blob.fClipRect,
+            blob.fVisitor_Run, blob.fVisitor_Pos, blob.fVisitor_Size);
+        runBases.emplace_back(std::move(runBaseImplPtr));
+    }
+    return runBases;
+}
+
+TextLine TextLine::CloneSelf()
+{
+    TextLine textLine;
+    textLine.fBlockRange = this->fBlockRange;
+    textLine.fTextExcludingSpaces = this->fTextExcludingSpaces;
+    textLine.fText = this->fText;
+    textLine.fTextIncludingNewlines = this->fTextIncludingNewlines;
+    textLine.fClusterRange = this->fClusterRange;
+
+    textLine.fGhostClusterRange = this->fGhostClusterRange;
+    textLine.fRunsInVisualOrder = this->fRunsInVisualOrder;
+    textLine.fAdvance = this->fAdvance;
+    textLine.fOffset = this->fOffset;
+    textLine.fShift = this->fShift;
+
+    textLine.fWidthWithSpaces = this->fWidthWithSpaces;
+    textLine.fEllipsis = std::make_unique<Run>(*this->fEllipsis);
+
+    textLine.fSizes = this->fSizes;
+    textLine.fMaxRunMetrics = this->fMaxRunMetrics;
+    textLine.fHasBackground = this->fHasBackground;
+    textLine.fHasShadows = this->fHasShadows;
+    textLine.fHasDecorations = this->fHasDecorations;
+    textLine.fAscentStyle = this->fAscentStyle;
+    textLine.fDescentStyle = this->fDescentStyle;
+    textLine.fTextBlobCachePopulated = this->fTextBlobCachePopulated;
+
+    textLine.roundRectAttrs = this->roundRectAttrs;
+    textLine.fTextBlobCache = this->fTextBlobCache;
+    return textLine;
 }
 }  // namespace textlayout
 }  // namespace skia
