@@ -1258,11 +1258,10 @@ SkRange<size_t> ParagraphImpl::getWordBoundary(unsigned offset) {
     return { SkToU32(start), SkToU32(end) };
 }
 
-void ParagraphImpl::getLineMetrics(std::vector<LineMetrics>& metrics, std::vector<size_t>& startIndexs) {
+void ParagraphImpl::getLineMetrics(std::vector<LineMetrics>& metrics) {
     metrics.clear();
     for (auto& line : fLines) {
         metrics.emplace_back(line.getMetrics());
-        startIndexs.emplace_back(line.text().start);
     }
 }
 
@@ -1569,14 +1568,13 @@ int ParagraphImpl::getLineNumberAt(TextIndex codeUnitIndex) const {
     return -1;
 }
 
-bool ParagraphImpl::getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics, size_t& startIndex) const {
+bool ParagraphImpl::getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) const {
     if (lineNumber < 0 || lineNumber >= fLines.size()) {
         return false;
     }
     auto& line = fLines[lineNumber];
     if (lineMetrics) {
         *lineMetrics = line.getMetrics();
-        startIndex = line.text().start;
     }
     return true;
 }

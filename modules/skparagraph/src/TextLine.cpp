@@ -1331,7 +1331,7 @@ LineMetrics TextLine::getMetrics() const {
         }
         *runWidthInLine = this->iterateThroughSingleRunByStyles(
         TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kForeground,
-        [&result, &run, this](TextRange textRange, const TextStyle& style, const ClipContext& context) {
+        [&result, &run](TextRange textRange, const TextStyle& style, const ClipContext& context) {
 #ifndef USE_SKIA_TXT
             SkFontMetrics fontMetrics;
             run->fFont.getMetrics(&fontMetrics);

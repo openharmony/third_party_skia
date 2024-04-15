@@ -73,7 +73,7 @@ public:
     // the glyph at index offset
     virtual SkRange<size_t> getWordBoundary(unsigned offset) = 0;
 
-    virtual void getLineMetrics(std::vector<LineMetrics>& metrics, std::vector<size_t>& startIndexs) = 0;
+    virtual void getLineMetrics(std::vector<LineMetrics>&) = 0;
 
     virtual size_t lineNumber() = 0;
 
@@ -118,7 +118,7 @@ public:
      * @param lineMetrics   an address to return the info (in case of null just skipped)
      * @return              true if the line is found; false if not
      */
-    virtual bool getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics, size_t& startIndex) const = 0;
+    virtual bool getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) const = 0;
 
     /* Returns the visible text on the line (excluding a possible ellipsis)
      *
