@@ -1,8 +1,11 @@
 // Copyright 2019 Google LLC.
+#include "commonlibrary/utils_lite/include/ohos_types.h"
 #include "include/ParagraphStyle.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextWrapper.h"
 #include <cfloat>
+#include "Run.h"
+#include "log.h"
 
 namespace skia {
 namespace textlayout {
@@ -288,6 +291,288 @@ std::tuple<Cluster*, size_t, SkScalar> TextWrapper::trimStartSpaces(Cluster* end
     return std::make_tuple(cluster, 0, width);
 }
 
+// calculate heuristics for different variants and select the least bad
+
+// calculate the total space required
+// define the goal for line numbers (max vs space required).
+// If text could fit, it has substantially larger score compared to nicer wrap with overflow
+
+// iterate: select nontrivial candidates with some maximum offset and set the penalty / benefit of variants
+// goals: 0) fit maximum amount of text
+//        1) fill lines
+//        2) make line lengths even
+//        2.5) define a cost for hyphenation - not done
+//        3) try to make it fast
+
+constexpr int64_t MINIMUM_FILL_RATIO = 75;
+constexpr int64_t MINIMUM_FILL_RATIO_SQUARED = MINIMUM_FILL_RATIO * MINIMUM_FILL_RATIO;
+constexpr int64_t GOOD_ENOUGH_LINE_SCORE = 95 * 95;
+constexpr int64_t UNDERFLOW_SCORE = 100;
+constexpr float BALANCED_LAST_LINE_MULTIPLIER = 1.4f;
+constexpr int64_t BEST_LOCAL_SCORE = -1000000;
+constexpr float  WIDTH_TOLERANCE = 5.f;
+constexpr int64 PARAM_2 = 2;
+constexpr int64 PARAM_10000 = 10000;
+
+// mkay, this makes an assumption that we do the scoring runs in a single thread and holds the variables during
+// recursion
+struct TextWrapScorer {
+    TextWrapScorer(SkScalar maxWidth, ParagraphImpl& parent, size_t maxLines)
+        : maxWidth_(maxWidth), currentTarget_(maxWidth), maxLines_(maxLines), parent_(parent)
+    {
+        // we trust that clusters are sorted on parent
+        bool prevWasWhitespace = false;
+        for (auto& cluster : parent.clusters()) {
+            auto len = cluster.width();
+            cumulativeLen_ += len;
+
+            if (cluster.isWhitespaceBreak()) {
+                breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
+                LOGD("{%{public}f, WHITE_SPACE, %{public}d},", cumulativeLen_, prevWasWhitespace);
+                prevWasWhitespace = true;
+            } else if (cluster.isHardBreak()) {
+                breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_HARD, false);
+                LOGD("{%{public}f, HARD, %{public}d},", cumulativeLen_, prevWasWhitespace);
+                prevWasWhitespace = true;
+            } else if (cluster.isIntraWordBreak()) {
+                breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_INTRA, false);
+                LOGD("{%{public}f, INTRA, %{public}d},", cumulativeLen_, prevWasWhitespace);
+                prevWasWhitespace = true;
+            } else {
+                prevWasWhitespace = false;
+            }
+        }
+    }
+
+    void Run() {
+        size_t targetLines = 1 + cumulativeLen_ / maxWidth_;
+
+        if (parent_.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
+            currentTarget_ = cumulativeLen_ / targetLines;
+        }
+
+        if (targetLines < PARAM_2) {
+            // need to have at least two lines for algo to do anything useful
+            return;
+        }
+        CalculateRecursive(0.f, 0, maxLines_, cumulativeLen_, targetLines);
+    }
+
+    int64_t CalculateRecursive(
+        SkScalar begin, size_t lineNumber, size_t maxLines, SkScalar remainingTextWidth, int64_t targetLines)
+    {
+        int64_t bestLocalScore = BEST_LOCAL_SCORE;
+
+        // have this in revesed order to avoid extra insertions
+        std::vector<SkScalar> currentBest;
+
+        if (maxLines == 0 || remainingTextWidth <= 1.f) {
+            return bestLocalScore;
+        }
+
+        // This should come precalculated
+        SkScalar currentMax = maxWidth_ - parent_.detectIndents(lineNumber);
+
+        int64_t score = 0;
+        int64_t overallScore = score;
+
+        // trim possible spaces at the beginning of line
+        while (lineNumber > 0 && lastBreakPos_ + 1 < breaks_.size() &&
+            breaks_[lastBreakPos_ + 1].subsequentWhitespace) {
+            remainingTextWidth += (begin - breaks_[++lastBreakPos_].width);
+            begin = breaks_[lastBreakPos_].width;
+        }
+
+        if (lastBreakPos_ < breaks_.size() && breaks_[lastBreakPos_].type == Break::BreakType::BREAKTYPE_FORCED) {
+            lastBreakPos_++;
+        }
+        size_t breakPos = lastBreakPos_;
+
+        while (breakPos < breaks_.size() && breaks_[breakPos].width < (begin + currentMax)) {
+            breakPos++;
+        }
+
+        bool forceThrough = false;
+        // if we cannot find a new break position
+        if (breakPos == lastBreakPos_) {
+            // but have more than a line of text remaining
+            if (remainingTextWidth > currentMax) {
+                LOGD("###### Could not find break, over line");
+                breaks_.insert(breaks_.cbegin() + breakPos,
+                    Break(begin + currentTarget_, Break::BreakType::BREAKTYPE_FORCED, false));
+                breakPos += 1;
+            } else {
+                LOGD("###### Could not find break");
+                forceThrough = true;
+            }
+        }
+
+        LOGD("Line %{public}lu about to loop %{public}f, %{public}lu, %{public}lu, max: %{public}f",
+            static_cast<unsigned long>(lineNumber), begin, static_cast<unsigned long>(breakPos),
+            static_cast<unsigned long>(lastBreakPos_), maxWidth_);
+
+        bool looped = false;
+        do {
+            // until the given threshold is crossed (minimum line fill rate)
+            // re-break this line, if a result is different, calculate score
+            SkScalar newWidth = currentMax;
+
+            if (!forceThrough) {
+                if (breakPos > 0 && begin < breaks_[breakPos - 1].width) {
+                    newWidth = breaks_[--breakPos].width - begin;
+                }
+
+                if (looped && ((lastBreakPos_ == breakPos) || (newWidth/currentMax < MINIMUM_FILL_RATIO))) {
+                    LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
+                        static_cast<unsigned long>(lineNumber), begin, static_cast<unsigned long>(breakPos), newWidth, maxWidth_);
+                    break;
+                }
+
+                lastBreakPos_ = breakPos;
+            }
+
+            SkScalar currentWidth = std::min(newWidth, remainingTextWidth);
+            Index index { lineNumber, begin, currentWidth };
+
+            // check cache
+            const auto& ite = cache_.find(index);
+            if (ite != cache_.cend()) {
+                cacheHits_++;
+                current_ = ite->second.widths;
+                overallScore = ite->second.score;
+            } else {
+                SkScalar scoref = std::min(1.f, abs(currentTarget_ - currentWidth) / currentTarget_);
+                score = int64_t((1.f - scoref) * UNDERFLOW_SCORE);
+                score *= score;
+
+                current_.clear();
+                overallScore = score;
+
+                // Handle last line
+                if (abs(currentWidth - remainingTextWidth) < 1.f) {
+                    // this is last line, with high-quality wrapping, relax the score a bit
+                    if (parent_.getLineBreakStrategy() == LineBreakStrategy::HIGH_QUALITY) {
+                        overallScore = std::max(MINIMUM_FILL_RATIO, overallScore);
+                    } else {
+                        overallScore *= BALANCED_LAST_LINE_MULTIPLIER;
+                    }
+
+                    // let's break the loop, under no same condition / fill-rate added rows can result to a better
+                    // score.
+                    currentWidth = currentMax;
+                    score = MINIMUM_FILL_RATIO_SQUARED - 1;
+                    LOGD("last line %{public}lu reached", static_cast<unsigned long>(lineNumber));
+
+                } else if (((remainingTextWidth - currentWidth) / maxWidth_) < maxLines) {
+                    // recursively calculate best score for children
+                    overallScore += CalculateRecursive(begin + currentWidth, lineNumber + 1, maxLines - lineNumber,
+                        remainingTextWidth - currentWidth, targetLines - 1);
+                    lastBreakPos_ = breakPos; // restore our ix
+                } else {
+                    // the text is not going to fit anyway (anymore), no need to push it
+                    break;
+                }
+
+                // we have exceeded target number of lines, add some penalty
+                if (targetLines < 0) {
+                    overallScore += targetLines * PARAM_10000; // MINIMUM_FILL_RATIO;
+                }
+
+                // We always hold the best possible score of children at this point
+                current_.push_back(currentWidth);
+                cache_[index] = { overallScore, current_ };
+            }
+
+            if (overallScore > bestLocalScore) {
+                bestLocalScore = overallScore;
+                currentBest = current_;
+            }
+            looped = true;
+        } while (!forceThrough && score > MINIMUM_FILL_RATIO_SQUARED &&
+            !(lineNumber == 0 && bestLocalScore > targetLines * GOOD_ENOUGH_LINE_SCORE));
+
+        current_ = currentBest;
+        return bestLocalScore;
+    }
+
+    std::vector<SkScalar>& GetResult()
+    {
+        return current_;
+    }
+
+private:
+    struct Index {
+        size_t lineNumber { 0 };
+        SkScalar begin { 0 };
+        SkScalar width { 0 };
+        bool operator==(const Index& other) const
+        {
+            return (
+                lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE && fabs(width - other.width) < WIDTH_TOLERANCE);
+        }
+        bool operator<(const Index& other) const
+        {
+            return lineNumber < other.lineNumber || (lineNumber == other.lineNumber && other.begin - begin > WIDTH_TOLERANCE) ||
+                (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE && other.width - width > WIDTH_TOLERANCE);
+        }
+    };
+
+    struct Score {
+        int64_t score { 0 };
+        // in reversed order
+        std::vector<SkScalar> widths;
+    };
+
+    // to be seen if unordered map would be better fit
+    std::map<Index, Score> cache_;
+
+    SkScalar maxWidth_ { 0 };
+    SkScalar currentTarget_ { 0 };
+    SkScalar cumulativeLen_ { 0 };
+    size_t maxLines_ { 0 };
+    ParagraphImpl& parent_;
+    std::vector<SkScalar> current_;
+
+    struct Break {
+        enum class BreakType {
+            BREAKTYPE_NONE,
+            BREAKTYPE_HARD,
+            BREAKTYPE_WHITE_SPACE,
+            BREAKTYPE_INTRA,
+            BREAKTYPE_FORCED
+        };
+        Break(SkScalar w, BreakType t, bool ssws) : width(w), type(t), subsequentWhitespace(ssws) {}
+
+        SkScalar width { 0.f };
+        BreakType type { BreakType::BREAKTYPE_NONE };
+        bool subsequentWhitespace { false };
+    };
+
+    std::vector<Break> breaks_;
+    size_t lastBreakPos_ { 0 };
+
+    uint64_t cacheHits_ { 0 };
+};
+
+uint64_t TextWrapper::CalculateBestScore(std::vector<SkScalar>& widthOut, SkScalar maxWidth,
+    ParagraphImpl* parent, size_t maxLines) {
+    if (maxLines == 0 || !parent || nearlyZero(maxWidth)) {
+        return -1;
+    }
+
+    TextWrapScorer* scorer = new TextWrapScorer(maxWidth, *parent, maxLines);
+    scorer->Run();
+    while (scorer && scorer->GetResult().size()) {
+        auto width = scorer->GetResult().back();
+        widthOut.push_back(width);
+        LOGD("width %{public}f", width);
+        scorer->GetResult().pop_back();
+    }
+
+    delete scorer;
+    return 0;
+}
+
 // TODO: refactor the code for line ending (with/without ellipsis)
 void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                                      SkScalar maxWidth,
@@ -310,6 +595,19 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     auto disableLastDescent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
     bool firstLine = true; // We only interested in fist line if we have to disable the first ascent
 
+    // Resolve balanced line widths
+    std::vector<SkScalar> balancedWidths;
+
+    // if word breaking strategy is nontrivial (balanced / optimal), AND word break mode is not BREAK_ALL
+    if (parent->getWordBreakType() != WordBreakType::BREAK_ALL && parent->getLineBreakStrategy() != LineBreakStrategy::GREEDY) {
+        if (CalculateBestScore(balancedWidths, maxWidth, parent, maxLines) < 0) {
+            // if the line breaking strategy returns a negative score, the algorithm could not fit or break the text
+            // fall back to default, greedy algorithm
+            balancedWidths.clear();
+        }
+    }
+    LOGD("Got %{public}lu", static_cast<unsigned long>(balancedWidths.size()));
+
     SkScalar softLineMaxIntrinsicWidth = 0;
     fEndLine = TextStretch(span.begin(), span.begin(), parent->strutForceHeight());
     auto end = span.end() - 1;
@@ -320,6 +618,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     while (fEndLine.endCluster() != end) {
         if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
             newWidth = FLT_MAX;
+        } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
+            newWidth = balancedWidths[fLineNumber - 1];
         } else {
             newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         }
