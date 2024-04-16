@@ -1214,6 +1214,15 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         if (clipContext.clip.height() == 0) {
             continue;
         }
+
+        RectStyle temp;
+        if (styleType == StyleType::kBackground &&
+            prevStyle->getBackgroundRect() != temp &&
+            prevStyle->getHeight() != 0) {
+                clipContext.clip.fTop = run->fFontMetrics.fAscent - run->fCorrectAscent;
+                clipContext.clip.fBottom = clipContext.clip.fTop + run->fFontMetrics.fDescent -
+                    run->fFontMetrics.fAscent;
+        }
         visitor(runStyleTextRange, *prevStyle, clipContext);
 
         // Start all over again
