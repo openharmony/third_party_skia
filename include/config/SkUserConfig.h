@@ -86,4 +86,16 @@
 //#define SK_HISTOGRAM_EXACT_LINEAR(name, sample, value_max)
 //#define SK_HISTOGRAM_MEMORY_KB(name, sample)
 
+#ifndef SK_GAMMA_APPLY_TO_A8
+#define SK_GAMMA_APPLY_TO_A8
+#endif
+
+#ifndef SK_GAMMA_CONTRAST
+#define SK_GAMMA_CONTRAST 0.0
+#endif
+
+#ifndef SK_GAMMA_EXPONENT
+#define SK_GAMMA_EXPONENT 1.0
+#endif
+
 #endif
