@@ -13,6 +13,7 @@
 
 namespace skia {
 namespace textlayout {
+constexpr SkScalar PARAM_TWO = 2.0;
 
 Run::Run(ParagraphImpl* owner,
          const SkShaper::RunHandler::RunInfo& info,
@@ -278,17 +279,19 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
             break;
 
         case PlaceholderAlignment::kTop:
+            fFontMetrics.fAscent = endlineMetrics->ascent();
             fFontMetrics.fDescent = height + fFontMetrics.fAscent;
             break;
 
         case PlaceholderAlignment::kBottom:
+            fFontMetrics.fDescent = endlineMetrics->descent();
             fFontMetrics.fAscent = fFontMetrics.fDescent - height;
             break;
 
         case PlaceholderAlignment::kMiddle:
-            auto mid = (-fFontMetrics.fDescent - fFontMetrics.fAscent)/2.0;
-            fFontMetrics.fDescent = height/2.0 - mid;
-            fFontMetrics.fAscent =  - height/2.0 - mid;
+            auto mid = (endlineMetrics->ascent() + endlineMetrics->descent()) / PARAM_TWO;
+            fFontMetrics.fDescent = mid + height / PARAM_TWO;
+            fFontMetrics.fAscent = mid - height / PARAM_TWO;
             break;
     }
 
