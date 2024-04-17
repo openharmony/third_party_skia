@@ -403,10 +403,15 @@ int StrokeFixedCountTessellator::prepare(GrMeshDrawTarget* target,
     // emit both because the join's edge is half-width and the stroke's is full-width.
     fFixedEdgeCount = maxEdgesInJoin + maxEdgesInStroke;
 
+#if !SK_GPU_V1
     // Don't draw more vertices than can be indexed by a signed short. We just have to draw the line
     // somewhere and this seems reasonable enough. (There are two vertices per edge, so 2^14 edges
     // make 2^15 vertices.)
     fFixedEdgeCount = std::min(fFixedEdgeCount, (1 << 14) - 1);
+#else
+    // Decrease the upper limit of edge/vertex numbers to avoid Vulkan GPU OOM and page fault with stream id 0x3
+    fFixedEdgeCount = std::min(fFixedEdgeCount, (1 << 10));
+#endif
 
     if (!target->caps().shaderCaps()->vertexIDSupport()) {
         // Our shader won't be able to use sk_VertexID. Bind a fallback vertex buffer with the IDs
