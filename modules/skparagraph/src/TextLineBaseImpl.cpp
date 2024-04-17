@@ -26,6 +26,7 @@ size_t TextLineBaseImpl::getGlyphCount() const
     if (!fVisitorTextLine) {
         return 0;
     }
+    fVisitorTextLine->ensureTextBlobCachePopulated();
     return fVisitorTextLine->getGlyphCount();
 }
 

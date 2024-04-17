@@ -1769,7 +1769,9 @@ TextLine TextLine::CloneSelf()
     textLine.fShift = this->fShift;
 
     textLine.fWidthWithSpaces = this->fWidthWithSpaces;
-    textLine.fEllipsis = std::make_unique<Run>(*this->fEllipsis);
+    if (this->fEllipsis) {
+        textLine.fEllipsis = std::make_unique<Run>(*this->fEllipsis);
+    }
 
     textLine.fSizes = this->fSizes;
     textLine.fMaxRunMetrics = this->fMaxRunMetrics;
