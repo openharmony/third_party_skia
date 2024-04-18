@@ -8,6 +8,7 @@
 #ifndef GrVkCommandBuffer_DEFINED
 #define GrVkCommandBuffer_DEFINED
 
+#include "include/core/SkBlurTypes.h"
 #include "include/gpu/vk/GrVkTypes.h"
 #include "src/gpu/GrManagedResource.h"
 #include "src/gpu/GrRefCnt.h"
@@ -319,6 +320,8 @@ public:
     }
 
     void recycleSecondaryCommandBuffers(GrVkCommandPool* cmdPool);
+
+    void drawBlurImage(const GrVkGpu* gpu, const GrVkImage* image, const SkBlurArg& blurArg);
 
 private:
     explicit GrVkPrimaryCommandBuffer(VkCommandBuffer cmdBuffer)

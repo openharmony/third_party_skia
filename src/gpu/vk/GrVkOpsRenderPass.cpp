@@ -875,3 +875,28 @@ void GrVkOpsRenderPass::onExecuteDrawable(std::unique_ptr<SkDrawable::GpuDrawHan
     drawable->draw(info);
     fGpu->addDrawable(std::move(drawable));
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlurArg& blurArg)
+{
+    if (!proxy) {
+        return;
+    }
+
+    GrVkImage* image = static_cast<GrVkTexture*>(proxy->peekTexture())->textureImage();
+    if (!image) {
+        return;
+    }
+
+    GrVkImageInfo imageInfo = image->vkImageInfo();
+
+    SkISize size = SkISize::Make(blurArg.srcRect.width(), blurArg.srcRect.height());
+    auto usageFlag = GrAttachment::UsageFlags::kTexture;
+    auto ownership = GrWrapOwnership::kBorrow_GrWrapOwnership;
+    auto cacheable = GrWrapCacheable::kNo;
+    auto blurImage = GrVkImage::MakeWrapped(fGpu, size, imageInfo, nullptr, usageFlag, ownership, cacheable, false);
+    fGpu->currentCommandBuffer()->drawBlurImage(fGpu, blurImage.get(), blurArg);
+    return;
+}

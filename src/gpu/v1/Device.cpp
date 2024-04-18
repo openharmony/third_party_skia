@@ -1063,4 +1063,14 @@ bool Device::android_utils_clipWithStencil() {
     return true;
 }
 
+bool Device::drawBlurImage(const SkImage* image, const SkBlurArg& blurArg)
+{
+    if (image == nullptr) {
+        return false;
+    }
+    if (auto[view, ct] = as_IB(image)->asView(this->recordingContext(), GrMipmapped::kNo); view) {
+        return fSurfaceDrawContext->drawBlurImage(std::move(view), blurArg);
+    }
+}
+
 } // namespace skgpu::v1

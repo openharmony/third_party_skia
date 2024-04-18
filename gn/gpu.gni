@@ -501,6 +501,8 @@ skia_skgpu_v1_sources = [
   "$_src/gpu/ops/AtlasRenderTask.h",
   "$_src/gpu/ops/AtlasTextOp.cpp",
   "$_src/gpu/ops/AtlasTextOp.h",
+  "$_src/gpu/ops/BlurOp.cpp",
+  "$_src/gpu/ops/BlurOp.h",
   "$_src/gpu/ops/ClearOp.cpp",
   "$_src/gpu/ops/ClearOp.h",
   "$_src/gpu/ops/DashLinePathRenderer.cpp",

@@ -8,6 +8,7 @@
 #ifndef SkDevice_DEFINED
 #define SkDevice_DEFINED
 
+#include "include/core/SkBlurTypes.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkRefCnt.h"
@@ -330,6 +331,8 @@ protected:
     virtual void drawFilteredImage(const skif::Mapping& mapping, SkSpecialImage* src,
                                    const SkImageFilter*, const SkSamplingOptions&, const SkPaint&);
 
+    virtual bool drawBlurImage(const SkImage* image, const SkBlurArg& blurArg) = 0;
+
     virtual sk_sp<SkSpecialImage> makeSpecial(const SkBitmap&);
     virtual sk_sp<SkSpecialImage> makeSpecial(const SkImage*);
 
@@ -523,6 +526,8 @@ protected:
 
     void drawFilteredImage(const skif::Mapping&, SkSpecialImage* src, const SkImageFilter*,
                            const SkSamplingOptions&, const SkPaint&) override {}
+
+    bool drawBlurImage(const SkImage* image, const SkBlurArg& blurArg) override { return false; }
 
     void onDrawGlyphRunList(const SkGlyphRunList& glyphRunList, const SkPaint& paint) override {}
 

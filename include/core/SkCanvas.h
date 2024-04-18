@@ -8,6 +8,7 @@
 #ifndef SkCanvas_DEFINED
 #define SkCanvas_DEFINED
 
+#include "include/core/SkBlurTypes.h"
 #include "include/core/SkBlendMode.h"
 #include "include/core/SkClipOp.h"
 #include "include/core/SkColor.h"
@@ -2198,6 +2199,22 @@ public:
 
     void private_draw_shadow_rec(const SkPath&, const SkDrawShadowRec&);
 
+    /** 
+     *   Draw SkImage image with Gaussian Blur algorithm by the separate X and Y sigma
+     *   onto destination canvas.  The provided tile mode is used when blur kernel goes
+     *   outside the input image, by default SkTileMode::kDecal is used.
+     *
+     *   @param image    SkImage containing pixels, dimensions, and format.
+     *   @param blurArg  parameter of blur.
+    */
+    bool drawBlurImage(const SkImage* image, const SkBlurArg& blurArg)
+    {
+        if (image == nullptr) {
+            return false;
+        }
+        return this->onDrawBlurImage(image, blurArg);
+    }
+
 
 protected:
     // default impl defers to getDevice()->newSurface(info)
@@ -2301,6 +2318,8 @@ protected:
     virtual void onResetClip();
 
     virtual void onDiscard();
+
+    virtual bool onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg);
 
 private:
 

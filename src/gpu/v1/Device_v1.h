@@ -8,6 +8,7 @@
 #ifndef SkGpuDevice_DEFINED
 #define SkGpuDevice_DEFINED
 
+#include "include/core/SkBlurTypes.h"
 #include "include/core/SkBitmap.h"
 #include "include/core/SkPicture.h"
 #include "include/core/SkRegion.h"
@@ -143,6 +144,8 @@ public:
     bool onAccessPixels(SkPixmap*) override;
 
     bool android_utils_clipWithStencil() override;
+
+    bool drawBlurImage(const SkImage* image, const SkBlurArg& blurArg) override;
 
 protected:
     bool onReadPixels(const SkPixmap&, int, int) override;

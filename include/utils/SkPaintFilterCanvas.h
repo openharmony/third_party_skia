@@ -92,6 +92,8 @@ protected:
     SkImageInfo onImageInfo() const override;
     bool onGetProps(SkSurfaceProps* props) const override;
 
+    bool onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg) override;
+
 private:
     class AutoPaintFilter;
 

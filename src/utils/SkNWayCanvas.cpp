@@ -371,3 +371,13 @@ void SkNWayCanvas::onFlush() {
         iter->flush();
     }
 }
+
+bool SkNWayCanvas::onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg) {
+    Iter iter(fList);
+    bool result = false;
+    while (iter.next()) {
+        result |= iter->drawBlurImage(image, blurArg);
+    }
+    result |= this->INHERITED::onDrawBlurImage(image, blurArg);
+    return result;
+}

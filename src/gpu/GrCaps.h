@@ -517,6 +517,8 @@ public:
     virtual std::vector<TestFormatColorTypeCombination> getTestingCombinations() const = 0;
 #endif
 
+    virtual bool supportsHpsBlur(const GrSurfaceProxyView* proxyViewPtr) const { return false; }
+
 protected:
     // Subclasses must call this at the end of their init method in order to do final processing on
     // the caps (including overrides requested by the client).

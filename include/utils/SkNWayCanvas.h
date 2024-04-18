@@ -9,6 +9,7 @@
 #ifndef SkNWayCanvas_DEFINED
 #define SkNWayCanvas_DEFINED
 
+#include "include/core/SkBlurTypes.h"
 #include "include/core/SkCanvasVirtualEnforcer.h"
 #include "include/private/SkTDArray.h"
 #include "include/utils/SkNoDrawCanvas.h"
@@ -82,6 +83,8 @@ protected:
                                const SkSamplingOptions&,const SkPaint*, SrcRectConstraint) override;
 
     void onFlush() override;
+
+    bool onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg) override;
 
     class Iter;
 

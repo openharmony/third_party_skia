@@ -8,6 +8,7 @@
 #ifndef SkNoDrawCanvas_DEFINED
 #define SkNoDrawCanvas_DEFINED
 
+#include "include/core/SkBlurTypes.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkCanvasVirtualEnforcer.h"
 
@@ -72,6 +73,8 @@ protected:
     void onDrawEdgeAAImageSet2(const ImageSetEntry[], int, const SkPoint[], const SkMatrix[],
                                const SkSamplingOptions&, const SkPaint*,
                                SrcRectConstraint) override {}
+
+    bool onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg) override { return false; }
 
 private:
     using INHERITED = SkCanvasVirtualEnforcer<SkCanvas>;

@@ -10,6 +10,7 @@
 
 #include "src/gpu/GrOpsRenderPass.h"
 
+#include "include/core/SkBlurTypes.h"
 #include "include/gpu/GrTypes.h"
 #include "include/gpu/vk/GrVkTypes.h"
 #include "src/gpu/GrColor.h"
@@ -92,6 +93,8 @@ private:
     void onClear(const GrScissorState& scissor, std::array<float, 4> color) override;
 
     void onClearStencilClip(const GrScissorState& scissor, bool insideStencilMask) override;
+
+    void onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlurArg& blurArg) override;
 
     using LoadFromResolve = GrVkRenderPass::LoadFromResolve;
 

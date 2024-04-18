@@ -317,6 +317,8 @@ filegroup(
         "ops/AtlasRenderTask.h",
         "ops/AtlasTextOp.cpp",
         "ops/AtlasTextOp.h",
+        "ops/BlurOp.cpp",
+        "ops/BlurOp.h",
         "ops/ClearOp.cpp",
         "ops/ClearOp.h",
         "ops/DashLinePathRenderer.cpp",
