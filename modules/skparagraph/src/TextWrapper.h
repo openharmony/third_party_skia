@@ -219,6 +219,8 @@ private:
     void trimEndSpaces(TextAlign align);
     std::tuple<Cluster*, size_t, SkScalar> trimStartSpaces(Cluster* endOfClusters);
     SkScalar getClustersTrimmedWidth();
+    uint64_t CalculateBestScore(std::vector<SkScalar>& widthOut,
+        SkScalar maxWidth, ParagraphImpl* parent, size_t maxLines);
 };
 }  // namespace textlayout
 }  // namespace skia

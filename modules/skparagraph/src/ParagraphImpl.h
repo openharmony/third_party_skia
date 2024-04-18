@@ -171,6 +171,7 @@ public:
 
     SkString getEllipsis() const;
     WordBreakType getWordBreakType() const;
+    LineBreakStrategy getLineBreakStrategy() const;
 
     SkSpan<const char> text(TextRange textRange);
     SkSpan<Cluster> clusters(ClusterRange clusterRange);

@@ -25,6 +25,12 @@ enum class WordBreakType {
     BREAK_WORD, // break only occur after word.
 };
 
+enum class LineBreakStrategy {
+    GREEDY,        // faster and linear.
+    HIGH_QUALITY,  // breaking tries to split the lines as efficiently as possible
+    BALANCED,      // breaking tries to make the line lengths even
+};
+
 struct StrutStyle {
     StrutStyle();
 
@@ -63,6 +69,9 @@ struct StrutStyle {
     void setWordBreakType(const WordBreakType& wordBreakType) { fWordBreakType = wordBreakType; }
     WordBreakType getWordBreakType() const { return fWordBreakType; }
 
+    void setLineBreakStrategy(const LineBreakStrategy& lineBreakStrategy) { fLineBreakStrategy = lineBreakStrategy; }
+    LineBreakStrategy getLineBreakStrategy() const { return fLineBreakStrategy; }
+
     bool operator==(const StrutStyle& rhs) const {
         return this->fEnabled == rhs.fEnabled &&
                this->fHeightOverride == rhs.fHeightOverride &&
@@ -73,7 +82,8 @@ struct StrutStyle {
                nearlyEqual(this->fFontSize, rhs.fFontSize) &&
                this->fFontStyle == rhs.fFontStyle &&
                this->fFontFamilies == rhs.fFontFamilies &&
-               this->fWordBreakType == rhs.fWordBreakType;
+               this->fWordBreakType == rhs.fWordBreakType &&
+               this->fLineBreakStrategy == rhs.fLineBreakStrategy;
     }
 
 private:
@@ -94,6 +104,7 @@ private:
     // false: scale ascent/descent with fHeight.
     bool fHalfLeading;
     WordBreakType fWordBreakType;
+    LineBreakStrategy fLineBreakStrategy { LineBreakStrategy::GREEDY };
 };
 
 struct ParagraphStyle {

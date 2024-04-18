@@ -1413,6 +1413,10 @@ WordBreakType ParagraphImpl::getWordBreakType() const {
     return fParagraphStyle.getStrutStyle().getWordBreakType();
 }
 
+LineBreakStrategy ParagraphImpl::getLineBreakStrategy() const {
+    return fParagraphStyle.getStrutStyle().getLineBreakStrategy();
+}
+
 void ParagraphImpl::updateFontSize(size_t from, size_t to, SkScalar fontSize) {
 
   SkASSERT(from == 0 && to == fText.size());
