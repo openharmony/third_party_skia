@@ -924,9 +924,7 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
         if (typeface) {
             if (textStyle.getFontArguments()) {
                 auto varTypeface = textStyle.getFontArguments()->CloneTypeface(typeface);
-                if (varTypeface) {
-                    typeface = varTypeface;
-                }
+                typeface = varTypeface ? varTypeface : typeface;
             }
             auto ellipsisRun = shaped(typeface, true);
             if (ellipsisRun->isResolved()) {
