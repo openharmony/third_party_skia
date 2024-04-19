@@ -607,9 +607,9 @@ void SkShadowUtils::DrawShadow(SkCanvas* canvas, const SkPath& path, const SkPoi
 }
 
 void SkShadowUtils::DrawShadowStyle(SkCanvas* canvas, const SkPath& path, const SkPoint3& zPlaneParams,
-                               const SkPoint3& lightPos, SkScalar lightRadius,
-                               SkColor ambientColor, SkColor spotColor,
-                               uint32_t flags, bool isShadowStyle) {
+                                    const SkPoint3& lightPos, SkScalar lightRadius,
+                                    SkColor ambientColor, SkColor spotColor,
+                                    uint32_t flags, bool isShadowStyle) {
     SkDrawShadowRec rec;
     rec.isShadowStyle = isShadowStyle;
     if (!fill_shadow_rec(path, zPlaneParams, lightPos, lightRadius, ambientColor, spotColor,

@@ -41,7 +41,7 @@ public:
      * @param flags  Options controlling opaque occluder optimizations, shadow appearance,
      *               and light position. See SkShadowFlags.
      * @param isShadowStyle  Indicates whether to limit the shadow range of the elevation mode.
-     *                        The default value is FALSE.
+     *                       The default value is FALSE.
      */
     static void DrawShadow(SkCanvas* canvas, const SkPath& path, const SkPoint3& zPlaneParams,
                            const SkPoint3& lightPos, SkScalar lightRadius,
@@ -49,10 +49,10 @@ public:
                            uint32_t flags = SkShadowFlags::kNone_ShadowFlag);
 
     static void DrawShadowStyle(SkCanvas* canvas, const SkPath& path, const SkPoint3& zPlaneParams,
-                           const SkPoint3& lightPos, SkScalar lightRadius,
-                           SkColor ambientColor, SkColor spotColor,
-                           uint32_t flags = SkShadowFlags::kNone_ShadowFlag,
-                           bool isShadowStyle = false);
+                                const SkPoint3& lightPos, SkScalar lightRadius,
+                                SkColor ambientColor, SkColor spotColor,
+                                uint32_t flags = SkShadowFlags::kNone_ShadowFlag,
+                                bool isShadowStyle = false);
 
     /**
      * Generate bounding box for shadows relative to path. Includes both the ambient and spot
