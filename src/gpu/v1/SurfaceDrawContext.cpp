@@ -1225,7 +1225,7 @@ bool SurfaceDrawContext::drawFastShadow(const GrClip* clip,
         } else {
             SkDrawShadowMetrics::GetSpotParams(occluderHeight, devLightPos.fX, devLightPos.fY,
                                                devLightPos.fZ, rec.fLightRadius,
-                                               &devSpaceSpotBlur, &spotScale, &spotOffset);
+                                               &devSpaceSpotBlur, &spotScale, &spotOffset, rec.isShadowStyle);
         }
         // handle scale of radius due to CTM
         const SkScalar srcSpaceSpotBlur = devSpaceSpotBlur * devToSrcScale;

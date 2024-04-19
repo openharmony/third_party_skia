@@ -24,6 +24,7 @@ struct SK_API SkDrawShadowRec {
     SkColor     fAmbientColor;
     SkColor     fSpotColor;
     uint32_t    fFlags;
+    bool        isShadowStyle = false;
 
     /** Writes text representation of SkDrawShadowRec to string.
 
@@ -63,12 +64,25 @@ inline SkScalar SpotBlurRadius(SkScalar occluderZ, SkScalar lightZ, SkScalar lig
 
 inline void GetSpotParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY, SkScalar lightZ,
                           SkScalar lightRadius,
-                          SkScalar* blurRadius, SkScalar* scale, SkVector* translate) {
+                          SkScalar* blurRadius, SkScalar* scale, SkVector* translate, bool isShadowStyle) {
     SkScalar zRatio = divide_and_pin(occluderZ, lightZ - occluderZ, 0.0f, 0.95f);
     *blurRadius = lightRadius*zRatio;
     *scale = 1.0;
     zRatio = 0.0f;
+
+    if (isShadowStyle) {
+        *scale = 1.0f;
+        zRatio = 0.0f;
+    }
+
     *translate = SkVector::Make(-zRatio * lightX, -zRatio * lightY);
+}
+
+inline void GetSpotParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY, SkScalar lightZ,
+                          SkScalar lightRadius,
+                          SkScalar* blurRadius, SkScalar* scale, SkVector* translate) {
+
+    GetSpotParams(occluderZ, lightX, lightY, lightZ, lightRadius, blurRadius, scale, translate, false);
 }
 
 inline void GetDirectionalParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY,
