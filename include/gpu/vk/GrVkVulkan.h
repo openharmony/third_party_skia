@@ -9,7 +9,6 @@
 #define GrVkVulkan_DEFINED
 
 #include "include/core/SkTypes.h"
-
 #include "third_party/vulkan-headers/include/vulkan/vulkan_core.h"
 
 #ifdef VK_USE_PLATFORM_OHOS
@@ -26,5 +25,7 @@
 #include <vulkan/vulkan_android.h>
 #endif
 #endif
+
+#include "src/gpu/vk/vulkan_header_ext_huawei.h"
 
 #endif

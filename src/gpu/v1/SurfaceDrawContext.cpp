@@ -53,6 +53,7 @@
 #include "src/gpu/geometry/GrQuad.h"
 #include "src/gpu/geometry/GrQuadUtils.h"
 #include "src/gpu/geometry/GrStyledShape.h"
+#include "src/gpu/ops/BlurOp.h"
 #include "src/gpu/ops/ClearOp.h"
 #include "src/gpu/ops/DrawAtlasOp.h"
 #include "src/gpu/ops/DrawVerticesOp.h"
@@ -2126,6 +2127,16 @@ OpsTask* SurfaceDrawContext::replaceOpsTaskIfModifiesColor() {
         this->replaceOpsTask();
     }
     return this->getOpsTask();
+}
+
+bool SurfaceDrawContext::drawBlurImage(GrSurfaceProxyView proxyView, const SkBlurArg& blurArg)
+{
+    if (!this->caps()->supportsHpsBlur(&proxyView)) {
+        SkDebugf("ERROR: check HpsBlur fail.\n");
+        return false;
+    }
+    this->addOp(GrOp::Make<BlurOp>(fContext, std::move(proxyView), blurArg));
+    return true;
 }
 
 } // namespace skgpu::v1

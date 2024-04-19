@@ -2776,4 +2776,9 @@ SkRasterHandleAllocator::MakeCanvas(std::unique_ptr<SkRasterHandleAllocator> all
     return hndl ? std::unique_ptr<SkCanvas>(new SkCanvas(bm, std::move(alloc), hndl)) : nullptr;
 }
 
+bool SkCanvas::onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg)
+{
+    return this->topDevice()->drawBlurImage(image, blurArg);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////

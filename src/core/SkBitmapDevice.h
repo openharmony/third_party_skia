@@ -9,6 +9,7 @@
 #define SkBitmapDevice_DEFINED
 
 #include "include/core/SkBitmap.h"
+#include "include/core/SkBlurTypes.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkImageInfo.h"
@@ -134,6 +135,8 @@ protected:
 
     void drawBitmap(const SkBitmap&, const SkMatrix&, const SkRect* dstOrNull,
                     const SkSamplingOptions&, const SkPaint&);
+
+    bool drawBlurImage(const SkImage* image, const SkBlurArg& blurArg) override { return false; }
 
 private:
     friend class SkCanvas;

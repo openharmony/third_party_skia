@@ -8,6 +8,7 @@
 #ifndef GrOpsRenderPass_DEFINED
 #define GrOpsRenderPass_DEFINED
 
+#include "include/core/SkBlurTypes.h"
 #include "include/core/SkDrawable.h"
 #include "src/gpu/GrDeferredUpload.h"
 #include "src/gpu/GrPipeline.h"
@@ -138,6 +139,8 @@ public:
      */
     void executeDrawable(std::unique_ptr<SkDrawable::GpuDrawHandler>);
 
+    void drawBlurImage(const GrSurfaceProxy* proxy, SkBlurArg& blurArg);
+
 protected:
     GrOpsRenderPass() : fOrigin(kTopLeft_GrSurfaceOrigin), fRenderTarget(nullptr) {}
 
@@ -199,6 +202,7 @@ private:
     virtual void onClear(const GrScissorState&, std::array<float, 4> color) = 0;
     virtual void onClearStencilClip(const GrScissorState&, bool insideStencilMask) = 0;
     virtual void onExecuteDrawable(std::unique_ptr<SkDrawable::GpuDrawHandler>) {}
+    virtual void onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlurArg& blurArg) {};
 
     enum class DrawPipelineStatus {
         kOk = 0,

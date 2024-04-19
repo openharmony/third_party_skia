@@ -930,6 +930,36 @@ void GrVkPrimaryCommandBuffer::onFreeGPUData(const GrVkGpu* gpu) const {
     SkASSERT(!fSecondaryCommandBuffers.count());
 }
 
+void GrVkPrimaryCommandBuffer::drawBlurImage(const GrVkGpu* gpu, const GrVkImage* image, const SkBlurArg& blurArg) {
+    if ((gpu == nullptr) || (image == nullptr)) {
+        return;
+    }
+    this->addingWork(gpu);
+
+    VkRect2D srcRegion;
+    srcRegion.offset = { blurArg.srcRect.fLeft , blurArg.srcRect.fTop };
+    srcRegion.extent = { (uint32_t)blurArg.srcRect.width(), (uint32_t)blurArg.srcRect.height() };
+
+    VkRect2D dstRegion;
+    dstRegion.offset = { blurArg.dstRect.fLeft , blurArg.dstRect.fTop };
+    dstRegion.extent = { (uint32_t)blurArg.dstRect.width(), (uint32_t)blurArg.dstRect.height() };
+
+    VkBlurColorFilterInfoHUAWEI colorFilterInfo {};
+    colorFilterInfo.sType = VkStructureTypeHUAWEI::VK_STRUCTURE_TYPE_BLUR_COLOR_FILTER_INFO_HUAWEI;
+    colorFilterInfo.pNext = nullptr;
+    colorFilterInfo.saturation = blurArg.saturation;
+    colorFilterInfo.brightness = blurArg.brightness;
+
+    VkDrawBlurImageInfoHUAWEI drawBlurImageInfo {};
+    drawBlurImageInfo.sType = VkStructureTypeHUAWEI::VK_STRUCTURE_TYPE_DRAW_BLUR_IMAGE_INFO_HUAWEI;
+    drawBlurImageInfo.pNext = &colorFilterInfo;
+    drawBlurImageInfo.sigma = blurArg.sigma;
+    drawBlurImageInfo.srcRegion = srcRegion;
+    drawBlurImageInfo.dstRegion = dstRegion;
+    drawBlurImageInfo.srcImageView = image->textureView()->imageView();
+    GR_VK_CALL(gpu->vkInterface(), CmdDrawBlurImageHUAWEI(fCmdBuffer, &drawBlurImageInfo));
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // SecondaryCommandBuffer
 ////////////////////////////////////////////////////////////////////////////////

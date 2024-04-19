@@ -11,6 +11,9 @@ extern "C" {
 #endif
 
 typedef enum VkStructureTypeHUAWEI {
+    VK_STRUCTURE_TYPE_BLUR_COLOR_FILTER_INFO_HUAWEI = VK_STRUCTURE_TYPE_MAX_ENUM - 15,
+    VK_STRUCTURE_TYPE_BLUR_NOISE_INFO_HUAWEI = VK_STRUCTURE_TYPE_MAX_ENUM - 14,
+    VK_STRUCTURE_TYPE_DRAW_BLUR_IMAGE_INFO_HUAWEI = VK_STRUCTURE_TYPE_MAX_ENUM - 13,
     VK_STRUCTURE_TYPE_RENDER_PASS_DAMAGE_REGION_BEGIN_INFO_TYPE = VK_STRUCTURE_TYPE_MAX_ENUM - 7
 } VkstructureTypeHUAWEI;
 
@@ -20,6 +23,40 @@ typedef struct VkRenderPassDamageRegionBeginInfo {
     uint32_t                    regionCount;
     const VkRect2D*             regions;
 } VkRenderPassDamageRegionBeginInfo;
+
+#define VK_HUAWEI_draw_blur_image 1
+#define VK_HUAWEI_DRAW_BLUR_IMAGE_SPEC_VERSION 10
+#define VK_HUAWEI_DRAW_BLUR_IMAGE_EXTENSION_NAME "VK_HUAWEI_draw_blur_image"
+
+typedef struct VkDrawBlurImageInfoHUAWEI {
+    VkStructureTypeHUAWEI             sType;
+    const void*                       pNext;
+    float                             sigma;
+    VkRect2D                          srcRegion;
+    VkRect2D                          dstRegion;
+    VkImageView                       srcImageView;
+} VkDrawBlurImageInfoHUAWEI;
+
+typedef struct VkBlurNoiseInfoHUAWEI {
+    VkStructureTypeHUAWEI             sType;
+    const void*                       pNext;
+    float                             noiseRatio;
+} VkBlurNoiseInfoHUAWEI;
+
+typedef struct VkBlurColorFilterInfoHUAWEI {
+    VkStructureTypeHUAWEI             sType;
+    const void*                       pNext;
+    float                             saturation;
+    float                             brightness;
+} VkBlurColorFilterInfoHUAWEI;
+
+typedef void (VKAPI_PTR *PFN_vkCmdDrawBlurImageHUAWEI)(VkCommandBuffer commandBuffer, const VkDrawBlurImageInfoHUAWEI *drawBlurImageInfo);
+
+#ifndef VK_NO_PROTOTYPES
+VKAPI_ATTR void VKAPI_CALL vkCmdDrawBlurImageHUAWEI(
+    VkCommandBuffer                   commandBuffer,
+    const VkDrawBlurImageInfoHUAWEI*  drawBlurImageInfo);
+#endif
 
 #ifdef __cplusplus
 }

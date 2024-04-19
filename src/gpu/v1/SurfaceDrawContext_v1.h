@@ -8,6 +8,7 @@
 #ifndef SurfaceDrawContext_v1_DEFINED
 #define SurfaceDrawContext_v1_DEFINED
 
+#include "include/core/SkBlurTypes.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkDrawable.h"
 #include "include/core/SkRefCnt.h"
@@ -624,6 +625,8 @@ public:
 #if GR_TEST_UTILS
     void testingOnly_SetPreserveOpsOnFullClear() { fPreserveOpsOnFullClear_TestingOnly = true; }
 #endif
+
+    bool drawBlurImage(GrSurfaceProxyView proxyView, const SkBlurArg& blurArg);
 
 private:
     enum class QuadOptimization;

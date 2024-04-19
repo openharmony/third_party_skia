@@ -695,6 +695,8 @@ void GrVkCaps::initGrCaps(const GrVkInterface* vkInterface,
     if (kQualcomm_VkVendor == properties.vendorID) {
         fPerformPartialClearsAsDraws = true;
     }
+
+    fSupportHpsBlur = (kHisi_VkVendor == properties.vendorID);
 }
 
 void GrVkCaps::initShaderCaps(const VkPhysicalDeviceProperties& properties,
@@ -1968,6 +1970,24 @@ GrInternalSurfaceFlags GrVkCaps::getExtraSurfaceFlagsForDeferredRT() const {
 VkShaderStageFlags GrVkCaps::getPushConstantStageFlags() const {
     VkShaderStageFlags stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     return stageFlags;
+}
+
+bool GrVkCaps::supportsHpsBlur(const GrSurfaceProxyView* proxyViewPtr) const {
+    if (proxyViewPtr == nullptr) {
+        return false;
+    }
+    if (proxyViewPtr->asTextureProxy() == nullptr) {
+        return false;
+    }
+    const GrBackendFormat& grBackendFormat = proxyViewPtr->asTextureProxy()->backendFormat();
+    VkFormat format;
+    if (!grBackendFormat.asVkFormat(&format)) {
+        return false;
+    }
+    if (((format == VkFormat::VK_FORMAT_R8G8B8A8_UNORM) || (format == VkFormat::VK_FORMAT_R8G8B8_UNORM)) && fSupportHpsBlur) {
+        return true;
+    }
+    return false;
 }
 
 #if GR_TEST_UTILS

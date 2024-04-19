@@ -228,6 +228,7 @@ public:
         VkPtr<PFN_vkGetMemoryAndroidHardwareBufferANDROID> fGetMemoryAndroidHardwareBuffer;
 #endif
 
+        VkPtr<PFN_vkCmdDrawBlurImageHUAWEI> fCmdDrawBlurImageHUAWEI;
 
     } fFunctions;
 };

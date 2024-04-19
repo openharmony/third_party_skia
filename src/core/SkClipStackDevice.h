@@ -8,6 +8,7 @@
 #ifndef SkClipStackDevice_DEFINED
 #define SkClipStackDevice_DEFINED
 
+#include "include/core/SkBlurTypes.h"
 #include "src/core/SkClipStack.h"
 #include "src/core/SkDevice.h"
 
@@ -35,6 +36,8 @@ protected:
     void onAsRgnClip(SkRegion*) const override;
     ClipType onGetClipType() const override;
     SkIRect onDevClipBounds() const override;
+
+    bool drawBlurImage(const SkImage* image, const SkBlurArg& blurArg) override { return false; }
 
 private:
     enum {

@@ -65,6 +65,11 @@ void SkPaintFilterCanvas::onDrawPoints(PointMode mode, size_t count, const SkPoi
     }
 }
 
+bool SkPaintFilterCanvas::onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg)
+{
+    return this->SkNWayCanvas::onDrawBlurImage(image, blurArg);
+}
+
 void SkPaintFilterCanvas::onDrawRect(const SkRect& rect, const SkPaint& paint) {
     AutoPaintFilter apf(this, paint);
     if (apf.shouldDraw()) {

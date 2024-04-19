@@ -272,6 +272,8 @@ public:
 
     bool supportsMemorylessAttachments() const { return fSupportsMemorylessAttachments; }
 
+    bool supportsHpsBlur(const GrSurfaceProxyView* proxyViewPtr) const override;
+
 #if GR_TEST_UTILS
     std::vector<TestFormatColorTypeCombination> getTestingCombinations() const override;
 #endif
@@ -424,6 +426,8 @@ private:
     bool fMustLoadFullImageWithDiscardableMSAA = false;
     bool fSupportsDiscardableMSAAForDMSAA = true;
     bool fSupportsMemorylessAttachments = false;
+
+    bool fSupportHpsBlur = false;
 
     uint32_t fMaxDrawIndirectDrawCount = 0;
 
