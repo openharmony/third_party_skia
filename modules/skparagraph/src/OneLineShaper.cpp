@@ -520,9 +520,7 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
 
                 if (typeface && textStyle.getFontArguments()) {
                     auto varTypeface = textStyle.getFontArguments()->CloneTypeface(typeface);
-                    if (varTypeface) {
-                        typeface = varTypeface;
-                    }
+                    typeface = varTypeface ? varTypeface : typeface;
                 }
 
                 auto resolvedBlocksBefore = fResolvedBlocks.size();

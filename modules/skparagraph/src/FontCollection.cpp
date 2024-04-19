@@ -204,7 +204,8 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
     for (const auto& familyName : familyNames) {
         std::shared_ptr<RSTypeface> match = matchTypeface(familyName, fontStyle);
         if (match && fontArgs) {
-            match = fontArgs->CloneTypeface(match);
+            auto varTypeface = fontArgs->CloneTypeface(match);
+            match = varTypeface ? varTypeface : match;
         }
         if (match) {
             typefaces.emplace_back(std::move(match));
@@ -216,7 +217,8 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
         for (const auto& familyName : fDefaultFamilyNames) {
             match = matchTypeface(familyName, fontStyle);
             if (fontArgs && match) {
-                match = fontArgs->CloneTypeface(match);
+                auto varTypeface = fontArgs->CloneTypeface(match);
+                match = varTypeface ? varTypeface : match;
             }
             if (match) {
                 break;
