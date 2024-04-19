@@ -301,37 +301,6 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
     endlineMetrics->add(this);
 }
 
-std::vector<uint16_t> Run::getGlyphs() const
-{
-    std::vector<uint16_t> glyphIDs;
-    for (auto& glyph : fGlyphs) {
-        glyphIDs.emplace_back(glyph);
-    }
-    return glyphIDs;
-}
-
-std::vector<RSPoint> Run::getPositions() const
-{
-    std::vector<RSPoint> positions;
-    for (auto& position : fPositions) {
-        RSPoint point(position.fX, position.fX);
-        positions.emplace_back(point);
-    }
-
-    return positions;
-}
-
-std::vector<RSPoint> Run::getOffsets() const
-{
-    std::vector<RSPoint> offsets;
-    for (auto& offset : fOffsets) {
-        RSPoint point(offset.fX, offset.fX);
-        offsets.emplace_back(point);
-    }
-
-    return offsets;
-}
-
 SkScalar Cluster::sizeToChar(TextIndex ch) const {
     if (ch < fTextRange.start || ch >= fTextRange.end) {
         return 0;

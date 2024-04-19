@@ -19,24 +19,24 @@ namespace skia {
 namespace textlayout {
 RunBaseImpl::RunBaseImpl(
 #ifndef USE_SKIA_TXT
-        sk_sp<SkTextBlob> blob,
+    sk_sp<SkTextBlob> blob,
 #else
-        std::shared_ptr<RSTextBlob> blob,
+    std::shared_ptr<RSTextBlob> blob,
 #endif
-        SkPoint offset,
-        ParagraphPainter::SkPaintOrID paint,
-        bool clippingNeeded,
-        SkRect clipRect,
-        const Run* visitorRun,
-        size_t visitorPos,
-        size_t visitorSize
-    ) : fBlob(blob),
-        fOffset(offset),
-        fClippingNeeded(clippingNeeded),
-        fClipRect(clipRect),
-        fVisitorRun(visitorRun),
-        fVisitorPos(visitorPos),
-        fVisitorSize(visitorSize)
+    SkPoint offset,
+    ParagraphPainter::SkPaintOrID paint,
+    bool clippingNeeded,
+    SkRect clipRect,
+    const Run* visitorRun,
+    size_t visitorPos,
+    size_t visitorSize)
+    : fBlob(blob),
+    fOffset(offset),
+    fClippingNeeded(clippingNeeded),
+    fClipRect(clipRect),
+    fVisitorRun(visitorRun),
+    fVisitorPos(visitorPos),
+    fVisitorSize(visitorSize)
 {
     if (std::holds_alternative<SkPaint>(paint)) {
         fPaint = std::get<SkPaint>(paint);
@@ -53,7 +53,7 @@ const RSFont& RunBaseImpl::font() const
 #endif
 {
     if (!fVisitorRun) {
-        return fFont;
+        return {};
     }
     return fVisitorRun->font();
 }
@@ -68,8 +68,9 @@ std::vector<uint16_t> RunBaseImpl::getGlyphs() const
     if (!fVisitorRun) {
         return {};
     }
-    std::vector<uint16_t> glyphIDs = fVisitorRun->getGlyphs();
-    return std::vector<uint16_t>(glyphIDs.begin() + fVisitorPos, glyphIDs.begin() + fVisitorPos + fVisitorSize);
+    SkSpan<const SkGlyphID> glyphIDSpan = fVisitorRun->glyphs();
+    SkSpan<const SkGlyphID> runGlyphIDSpan = glyphIDSpan.subspan(fVisitorPos, fVisitorSize);
+    return std::vector<uint16_t>(runGlyphIDSpan.begin(), runGlyphIDSpan.end());
 }
 
 std::vector<RSPoint> RunBaseImpl::getPositions() const
@@ -77,8 +78,16 @@ std::vector<RSPoint> RunBaseImpl::getPositions() const
     if (!fVisitorRun) {
         return {};
     }
-    std::vector<RSPoint> positions = fVisitorRun->getPositions();
-    return std::vector<RSPoint>(positions.begin() + fVisitorPos, positions.begin() + fVisitorPos + fVisitorSize);
+    SkSpan<const SkPoint> positionSpan = fVisitorRun->positions();
+    SkSpan<const SkPoint> runPositionSpan = positionSpan.subspan(fVisitorPos, fVisitorSize);
+    std::vector<RSPoint> positions;
+    for (size_t i = 0; i < runPositionSpan.size(); i++) {
+        RSPoint point(runPositionSpan[i].fX, runPositionSpan[i].fY);
+        positions.emplace_back(point);
+    }
+
+    return positions;
+
 }
 
 std::vector<RSPoint> RunBaseImpl::getOffsets() const
@@ -86,8 +95,16 @@ std::vector<RSPoint> RunBaseImpl::getOffsets() const
     if (!fVisitorRun) {
         return {};
     }
-    std::vector<RSPoint> offset = fVisitorRun->getOffsets();
-    return std::vector<RSPoint>(offset.begin() + fVisitorPos, offset.begin() + fVisitorPos + fVisitorSize);
+    SkSpan<const SkPoint> offsetSpan = fVisitorRun->offsets();
+    SkSpan<const SkPoint> runOffsetSpan = offsetSpan.subspan(fVisitorPos, fVisitorSize);
+    std::vector<RSPoint> offsets;
+    for (size_t i = 0; i < runOffsetSpan.size(); i++) {
+        RSPoint point(runOffsetSpan[i].fX, runOffsetSpan[i].fY);
+        offsets.emplace_back(point);
+    }
+
+    return offsets;
+
 }
 
 void RunBaseImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y)

@@ -69,11 +69,6 @@ private:
     const Run* fVisitorRun;
     size_t     fVisitorPos;
     size_t     fVisitorSize;
-#ifndef USE_SKIA_TXT
-    SkFont fFont;
-#else
-    RSFont fFont;
-#endif
 };
 }  // namespace textlayout
 }  // namespace skia
