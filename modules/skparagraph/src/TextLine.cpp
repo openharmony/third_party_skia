@@ -1131,7 +1131,7 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
             textRange, run, runOffset, textOffsetInRun, includeGhostSpaces, textAdjustment);
         if (styleType == StyleType::kDecorations) {
             // Decorations are drawn based on the real font metrics (regardless of styles and strut)
-            result.clip.fTop = this->sizes().runTop(run, LineMetricStyle::CSS);
+            result.clip.fTop = this->sizes().runTop(run, LineMetricStyle::CSS) - run->baselineShift();
             result.clip.fBottom = result.clip.fTop +
                                   run->calculateHeight(LineMetricStyle::CSS, LineMetricStyle::CSS);
         }

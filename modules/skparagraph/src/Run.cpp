@@ -47,6 +47,8 @@ Run::Run(ParagraphImpl* owner,
     fPositions.push_back_n(info.glyphCount + 1);
     fOffsets.push_back_n(info.glyphCount + 1);
     fClusterIndexes.push_back_n(info.glyphCount + 1);
+    fHalfLetterspacings.push_back_n(info.glyphCount + 1);
+    std::fill(fHalfLetterspacings.begin(), fHalfLetterspacings.end(), 0.0);
 #ifndef USE_SKIA_TXT
     info.fFont.getMetrics(&fFontMetrics);
 #else
@@ -198,14 +200,15 @@ void Run::addSpacesAtTheEnd(SkScalar space, Cluster* cluster) {
 SkScalar Run::addSpacesEvenly(SkScalar space) {
     SkScalar shift = 0;
     if (this->size()) {
-        shift += space / 2;
+        shift += space / PARAM_TWO;
     }
     for (size_t i = 0; i < this->size(); ++i) {
         fPositions[i].fX += shift;
+        fHalfLetterspacings[i] = space / PARAM_TWO;
         shift += space;
     }
     if (this->size()) {
-        shift -= space / 2;
+        shift -= space / PARAM_TWO;
     }
     fPositions[this->size()].fX += shift;
     fAdvance.fX += shift;
@@ -216,14 +219,15 @@ SkScalar Run::addSpacesEvenly(SkScalar space, Cluster* cluster) {
     // Offset all the glyphs in the cluster
     SkScalar shift = 0;
     if (cluster->startPos() < cluster->endPos()) {
-        shift += space / 2;
+        shift += space / PARAM_TWO;
     }
     for (size_t i = cluster->startPos(); i < cluster->endPos(); ++i) {
         fPositions[i].fX += shift;
+        fHalfLetterspacings[i] = space / PARAM_TWO;
         shift += space;
     }
     if (cluster->startPos() < cluster->endPos()) {
-        shift -= space / 2;
+        shift -= space / PARAM_TWO;
     }
     if (this->size() == cluster->endPos()) {
         // To make calculations easier
@@ -233,7 +237,7 @@ SkScalar Run::addSpacesEvenly(SkScalar space, Cluster* cluster) {
     fAdvance.fX += shift;
     // Increment the cluster width
     cluster->space(shift);
-    cluster->setHalfLetterSpacing(space / 2);
+    cluster->setHalfLetterSpacing(space / PARAM_TWO);
 
     return shift;
 }
@@ -339,7 +343,8 @@ SkScalar Cluster::trimmedWidth(size_t pos) const {
     // Find the width until the pos and return the min between trimmedWidth and the width(pos)
     // We don't have to take in account cluster shift since it's the same for 0 and for pos
     auto& run = fOwner->run(fRunIndex);
-    return std::min(run.positionX(pos) - run.positionX(fStart), fWidth);
+    SkScalar delta = getHalfLetterSpacing() - run.halfLetterspacing(pos);
+    return std::min(run.positionX(pos) - run.positionX(fStart) + delta, fWidth);
 }
 
 SkScalar Run::positionX(size_t pos) const {
