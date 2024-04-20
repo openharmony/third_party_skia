@@ -197,9 +197,15 @@ void Run::addSpacesAtTheEnd(SkScalar space, Cluster* cluster) {
 
 SkScalar Run::addSpacesEvenly(SkScalar space) {
     SkScalar shift = 0;
+    if (this->size()) {
+        shift += space / 2;
+    }
     for (size_t i = 0; i < this->size(); ++i) {
         fPositions[i].fX += shift;
         shift += space;
+    }
+    if (this->size()) {
+        shift -= space / 2;
     }
     fPositions[this->size()].fX += shift;
     fAdvance.fX += shift;
@@ -209,12 +215,15 @@ SkScalar Run::addSpacesEvenly(SkScalar space) {
 SkScalar Run::addSpacesEvenly(SkScalar space, Cluster* cluster) {
     // Offset all the glyphs in the cluster
     SkScalar shift = 0;
+    if (cluster->startPos() < cluster->endPos()) {
+        shift += space / 2;
+    }
     for (size_t i = cluster->startPos(); i < cluster->endPos(); ++i) {
         fPositions[i].fX += shift;
-        if (this->index() == 0) {
-            fPositions[i].fX += space / 2; // offset by space / 2
-        }
         shift += space;
+    }
+    if (cluster->startPos() < cluster->endPos()) {
+        shift -= space / 2;
     }
     if (this->size() == cluster->endPos()) {
         // To make calculations easier
