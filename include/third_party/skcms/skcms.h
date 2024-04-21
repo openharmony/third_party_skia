@@ -152,6 +152,13 @@ typedef struct skcms_B2A {
     skcms_Curve     output_curves[4];
 } skcms_B2A;
 
+typedef struct skcms_CICP
+{
+    uint16_t colour_primaries;
+    uint16_t transfer_characteristics;
+    uint16_t matrix_coefficients;
+    uint8_t full_range_flag;
+} skcms_CICP;
 
 typedef struct skcms_ICCProfile {
     const uint8_t* buffer;
@@ -185,6 +192,8 @@ typedef struct skcms_ICCProfile {
     bool                   has_B2A;
     skcms_B2A              B2A;
 
+    bool                   has_CICP;
+    skcms_CICP             cicp;
 } skcms_ICCProfile;
 
 // The sRGB color profile is so commonly used that we offer a canonical skcms_ICCProfile for it.
@@ -387,6 +396,11 @@ static inline void skcms_SetTransferFunction(skcms_ICCProfile* p,
 static inline void skcms_SetXYZD50(skcms_ICCProfile* p, const skcms_Matrix3x3* m) {
     p->has_toXYZD50 = true;
     p->toXYZD50 = *m;
+}
+
+static inline void skcms_SetCICPTag(skcms_ICCProfile* p, const skcms_CICP* cicp) {
+    p->has_CICP = true;
+    p->cicp = *cicp;
 }
 
 #ifdef __cplusplus

@@ -187,7 +187,12 @@ static inline sk_sp<SkData> icc_from_color_space(const SkImageInfo& info) {
 
     skcms_TransferFunction fn;
     skcms_Matrix3x3 toXYZD50;
-    if (cs->isNumericalTransferFn(&fn) && cs->toXYZD50(&toXYZD50)) {
+    cs->transferFn(&fn);
+    if (cs->toXYZD50(&toXYZD50)) {
+        skcms_CICP cicp{};
+        if (cs->GetIccCicp(&cicp)) {
+            return SkWriteICCProfileWithCicp(fn, toXYZD50, cicp);
+        }
         return SkWriteICCProfile(fn, toXYZD50);
     }
     return nullptr;
