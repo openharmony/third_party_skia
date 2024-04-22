@@ -53,8 +53,8 @@ enum CurveType {
 };
 
 enum CommonSubType {
-    UP = 0,
-    DOWN = 1,
+    DOWN = 0,
+    UP = 1,
 };
 
 using PiecewiseParameter = struct PiecewiseParameter {
@@ -67,7 +67,7 @@ using PiecewiseParameter = struct PiecewiseParameter {
 
 using AnimationPara = struct AnimationPara {
     uint16_t animationMode = 0; // 0 is default value, is byLayer effect
-    CommonSubType commonSubType = CommonSubType::UP;
+    CommonSubType commonSubType = CommonSubType::DOWN;
     std::vector<std::vector<PiecewiseParameter>> groupParameters;
 };
 

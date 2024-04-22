@@ -33,7 +33,7 @@ public:
     SymbolLayersGroups GetSymbolLayersGroups(uint32_t glyphId);
 
     std::vector<std::vector<PiecewiseParameter>> GetGroupParameters(AnimationType type, uint16_t groupSum,
-        uint16_t animationMode = 0, CommonSubType commonSubType = CommonSubType::UP);
+        uint16_t animationMode = 0, CommonSubType commonSubType = CommonSubType::DOWN);
 
     int ParseConfigOfHmSymbol(const char* fname, SkString fontDir);
 
