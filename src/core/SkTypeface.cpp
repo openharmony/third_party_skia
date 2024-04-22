@@ -16,11 +16,14 @@
 #include "src/core/SkEndian.h"
 #include "src/core/SkFontDescriptor.h"
 #include "src/core/SkFontPriv.h"
+#include "src/core/SkLRUCache.h"
 #include "src/core/SkScalerContext.h"
 #include "src/core/SkSurfacePriv.h"
 #include "src/core/SkTypefaceCache.h"
 #include "src/sfnt/SkOTTable_OS_2.h"
 #include "src/utils/SkUTF.h"
+
+#include <mutex>
 
 SkTypeface::SkTypeface(const SkFontStyle& style, bool isFixedPitch)
     : fUniqueID(SkTypefaceCache::NewFontID()), fStyle(style), fIsFixedPitch(isFixedPitch) { }
@@ -89,6 +92,55 @@ protected:
     size_t onGetTableData(SkFontTableTag, size_t, size_t, void*) const override {
         return 0;
     }
+};
+
+constexpr int MAX_VARFONT_CACHE_SIZE = 64;
+
+class SkVarFontCache {
+public:
+    SkVarFontCache() : fLRUCache(MAX_VARFONT_CACHE_SIZE) {}
+
+    static SkVarFontCache& Instance()
+    {
+        static SkVarFontCache cache;
+        return cache;
+    }
+
+    sk_sp<SkTypeface> GetVarFont(sk_sp<SkTypeface> typeface, const SkFontArguments& args)
+    {
+        if (!typeface) {
+            return nullptr;
+        }
+
+        size_t hash = 0;
+        hash ^= std::hash<uint32_t>()(typeface->uniqueID());
+        hash ^= std::hash<int>()(args.getCollectionIndex());
+        const auto& positions = args.getVariationDesignPosition();
+        for (int i = 0; i < positions.coordinateCount; i++) {
+            const auto& coord = positions.coordinates[i];
+            hash ^= std::hash<SkFourByteTag>()(coord.axis);
+            hash ^= std::hash<float>()(coord.value);
+        }
+
+        std::lock_guard<std::mutex> lock(fMutex);
+        auto cached = fLRUCache.find(hash);
+        if (!cached) {
+            int ttcIndex = args.getCollectionIndex();
+            auto varTypeface = SkFontMgr::RefDefault()->makeFromStream(typeface->openStream(&ttcIndex), args);
+            if (!varTypeface) {
+                return typeface;
+            } else {
+                fLRUCache.insert(hash, varTypeface);
+                return varTypeface;
+            }
+        }
+
+        return *cached;
+    }
+
+private:
+    SkLRUCache<uint32_t, sk_sp<SkTypeface>> fLRUCache;
+    std::mutex fMutex;
 };
 
 }  // namespace
@@ -229,18 +281,15 @@ sk_sp<SkTypeface> SkTypeface::MakeDeserialize(SkStream* stream) {
         }
     }
 
-    auto tp = SkTypeface::MakeFromName(desc.getFamilyName(), desc.getStyle());
-    if (desc.getVariationCoordinateCount() > 0 && tp) {
+    auto typeface = SkTypeface::MakeFromName(desc.getFamilyName(), desc.getStyle());
+    if (desc.getVariationCoordinateCount() > 0 && typeface) {
         SkFontArguments args;
         args.setCollectionIndex(desc.getCollectionIndex());
         args.setVariationDesignPosition({desc.getVariation(), desc.getVariationCoordinateCount()});
-        int ttcIndex = args.getCollectionIndex();
-        auto stream = tp->openStream(&ttcIndex);
-        sk_sp<SkFontMgr> defaultFm = SkFontMgr::RefDefault();
-        tp = defaultFm->makeFromStream(std::move(stream), args);
+        typeface = SkVarFontCache::Instance().GetVarFont(typeface, args);
     }
 
-    return tp;
+    return typeface;
 }
 
 std::unique_ptr<SkStreamAsset> SkTypeface::openExistingStream(int* ttcIndex) const {
