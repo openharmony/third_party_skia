@@ -81,6 +81,7 @@ public:
 
     SkScalar posX(size_t index) const { return fPositions[index].fX; }
     void addX(size_t index, SkScalar shift) { fPositions[index].fX += shift; }
+    SkScalar halfLetterspacing(size_t index) { return fHalfLetterspacings[index]; }
     SkScalar posY(size_t index) const { return fPositions[index].fY; }
     size_t size() const { return fGlyphs.size(); }
     void setWidth(SkScalar width) { fAdvance.fX = width; }
@@ -236,6 +237,7 @@ private:
 
     SkSTArray<64, SkPoint, true> fJustificationShifts; // For justification
                                                                    // (current and prev shifts)
+    SkSTArray<64, SkScalar, true> fHalfLetterspacings; // For letterspacing
 
 #ifndef USE_SKIA_TXT
     SkFontMetrics fFontMetrics;
