@@ -897,6 +897,7 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlu
     auto ownership = GrWrapOwnership::kBorrow_GrWrapOwnership;
     auto cacheable = GrWrapCacheable::kNo;
     auto blurImage = GrVkImage::MakeWrapped(fGpu, size, imageInfo, nullptr, usageFlag, ownership, cacheable, false);
-    fGpu->currentCommandBuffer()->drawBlurImage(fGpu, blurImage.get(), blurArg);
+    fGpu->currentCommandBuffer()->drawBlurImage(fGpu, blurImage.get(), fFramebuffer->colorAttachment()->dimensions(),
+                                                fOrigin, blurArg);
     return;
 }

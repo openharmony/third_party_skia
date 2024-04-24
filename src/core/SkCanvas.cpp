@@ -2778,6 +2778,11 @@ SkRasterHandleAllocator::MakeCanvas(std::unique_ptr<SkRasterHandleAllocator> all
 
 bool SkCanvas::onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg)
 {
+    if (blurArg.dstRect.with() < this->imageInfo().width() ||
+        blurArg.ditRect.height() < this->imageInfo().height()) {
+        SkDebugf("SkCanvas::onDrawBlurImage is not full screen");
+        return false;
+    }
     return this->topDevice()->drawBlurImage(image, blurArg);
 }
 
