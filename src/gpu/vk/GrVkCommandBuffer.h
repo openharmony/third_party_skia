@@ -321,7 +321,8 @@ public:
 
     void recycleSecondaryCommandBuffers(GrVkCommandPool* cmdPool);
 
-    void drawBlurImage(const GrVkGpu* gpu, const GrVkImage* image, const SkBlurArg& blurArg);
+    void drawBlurImage(const GrVkGpu* gpu, const GrVkImage* image, SkISize colorAttachmentDimensions,
+                        GrSurfaceOrigin rtOrigin, const SkBlurArg& blurArg);
 
 private:
     explicit GrVkPrimaryCommandBuffer(VkCommandBuffer cmdBuffer)
