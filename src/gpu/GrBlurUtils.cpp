@@ -342,10 +342,10 @@ static bool compute_key_and_clip_bounds(GrUniqueKey* maskKey,
         SkFixed fracX = SkScalarToFixed(SkScalarFraction(tx)) & 0x0000FF00;
         SkFixed fracY = SkScalarToFixed(SkScalarFraction(ty)) & 0x0000FF00;
 
-        builder[0] = SkFloat2Bits(sx);
-        builder[1] = SkFloat2Bits(sy);
-        builder[2] = SkFloat2Bits(kx);
-        builder[3] = SkFloat2Bits(ky);
+        builder[0] = SkFloat2Bits(roundf(sx * 100) / 100.f);
+        builder[1] = SkFloat2Bits(roundf(sy * 100) / 100.f);
+        builder[2] = SkFloat2Bits(roundf(kx * 100) / 100.f);
+        builder[3] = SkFloat2Bits(roundf(ky * 100) / 100.f);
         // Distinguish between hairline and filled paths. For hairlines, we also need to include
         // the cap. (SW grows hairlines by 0.5 pixel with round and square caps). Note that
         // stroke-and-fill of hairlines is turned into pure fill by SkStrokeRec, so this covers
@@ -359,7 +359,7 @@ static bool compute_key_and_clip_bounds(GrUniqueKey* maskKey,
         SkAssertResult(as_MFB(maskFilter)->asABlur(&rec));
 
         builder[5] = rec.fStyle;  // TODO: we could put this with the other style bits
-        builder[6] = SkFloat2Bits(rec.fSigma);
+        builder[6] = SkFloat2Bits(roundf(rec.fSigma * 100) / 100.f);
         shape.writeUnstyledKey(&builder[7]);
     }
 #endif
