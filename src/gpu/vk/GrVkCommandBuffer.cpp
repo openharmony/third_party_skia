@@ -951,7 +951,7 @@ void GrVkPrimaryCommandBuffer::drawBlurImage(const GrVkGpu* gpu, const GrVkImage
     colorFilterInfo.saturation = blurArg.saturation;
     colorFilterInfo.brightness = blurArg.brightness;
 
-    if (kBottomLeft_GrSurfaceOrigin == rtOrigin) {
+    if (rtOrigin == kBottomLeft_GrSurfaceOrigin) {
         dstRegion.offset.y = colorAttachmentDimensions.height() - blurArg.dstRect.fBottom;
     }
 
