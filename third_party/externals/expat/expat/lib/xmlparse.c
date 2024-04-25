@@ -3507,7 +3507,13 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
   if (nPrefixes) {
     int j; /* hash table index */
     unsigned long version = parser->m_nsAttsVersion;
-    int nsAttsSize = (int)1 << parser->m_nsAttsPower;
+
+    /* Detect and prevent invalid shift */
+    if (parser->m_nsAttsPower >= sizeof(unsigned int) * 8 /* bits per byte */) {
+      return XML_ERROR_NO_MEMORY;
+    }
+
+    unsigned int nsAttsSize = 1u << parser->m_nsAttsPower;
     unsigned char oldNsAttsPower = parser->m_nsAttsPower;
     /* size of hash table must be at least 2 * (# of prefixed attributes) */
     if ((nPrefixes << 1)
@@ -3518,7 +3524,28 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
         ;
       if (parser->m_nsAttsPower < 3)
         parser->m_nsAttsPower = 3;
-      nsAttsSize = (int)1 << parser->m_nsAttsPower;
+
+      /* Detect and prevent invalid shift */
+      if (parser->m_nsAttsPower >= sizeof(nsAttsSize) * 8 /* bits per byte */) {
+        /* Restore actual size of memory in m_nsAtts */
+        parser->m_nsAttsPower = oldNsAttsPower;
+        return XML_ERROR_NO_MEMORY;
+      }
+
+      nsAttsSize = 1u << parser->m_nsAttsPower;
+
+      /* Detect and prevent integer overflow.
+       * The preprocessor guard addresses the "always false" warning
+       * from -Wtype-limits on platforms where
+       * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
+#if UINT_MAX >= SIZE_MAX
+      if (nsAttsSize > (size_t)(-1) / sizeof(NS_ATT)) {
+        /* Restore actual size of memory in m_nsAtts */
+        parser->m_nsAttsPower = oldNsAttsPower;
+        return XML_ERROR_NO_MEMORY;
+      }
+#endif
+
       temp = (NS_ATT *)REALLOC(parser, parser->m_nsAtts,
                                nsAttsSize * sizeof(NS_ATT));
       if (! temp) {
@@ -5208,6 +5235,11 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
       if (parser->m_prologState.level >= parser->m_groupSize) {
         if (parser->m_groupSize) {
           {
+            /* Detect and prevent integer overflow */
+            if (parser->m_groupSize > (unsigned int)(-1) / 2u) {
+              return XML_ERROR_NO_MEMORY;
+            }
+
             char *const new_connector = (char *)REALLOC(
                 parser, parser->m_groupConnector, parser->m_groupSize *= 2);
             if (new_connector == NULL) {
@@ -5218,6 +5250,16 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
           }
 
           if (dtd->scaffIndex) {
+            /* Detect and prevent integer overflow.
+             * The preprocessor guard addresses the "always false" warning
+             * from -Wtype-limits on platforms where
+             * sizeof(unsigned int) < sizeof(size_t), e.g. on x86_64. */
+#if UINT_MAX >= SIZE_MAX
+            if (parser->m_groupSize > (size_t)(-1) / sizeof(int)) {
+              return XML_ERROR_NO_MEMORY;
+            }
+#endif
+
             int *const new_scaff_index = (int *)REALLOC(
                 parser, dtd->scaffIndex, parser->m_groupSize * sizeof(int));
             if (new_scaff_index == NULL)
@@ -7400,44 +7442,15 @@ nextScaffoldPart(XML_Parser parser) {
   return next;
 }
 
-static void
-build_node(XML_Parser parser, int src_node, XML_Content *dest,
-           XML_Content **contpos, XML_Char **strpos) {
-  DTD *const dtd = parser->m_dtd; /* save one level of indirection */
-  dest->type = dtd->scaffold[src_node].type;
-  dest->quant = dtd->scaffold[src_node].quant;
-  if (dest->type == XML_CTYPE_NAME) {
-    const XML_Char *src;
-    dest->name = *strpos;
-    src = dtd->scaffold[src_node].name;
-    for (;;) {
-      *(*strpos)++ = *src;
-      if (! *src)
-        break;
-      src++;
-    }
-    dest->numchildren = 0;
-    dest->children = NULL;
-  } else {
-    unsigned int i;
-    int cn;
-    dest->numchildren = dtd->scaffold[src_node].childcnt;
-    dest->children = *contpos;
-    *contpos += dest->numchildren;
-    for (i = 0, cn = dtd->scaffold[src_node].firstchild; i < dest->numchildren;
-         i++, cn = dtd->scaffold[cn].nextsib) {
-      build_node(parser, cn, &(dest->children[i]), contpos, strpos);
-    }
-    dest->name = NULL;
-  }
-}
-
 static XML_Content *
 build_model(XML_Parser parser) {
+  /* Function build_model transforms the existing parser->m_dtd->scaffold
+   * array of CONTENT_SCAFFOLD tree nodes into a new array of
+   * XML_Content tree nodes followed by a gapless list of zero-terminated
+   * strings. */
   DTD *const dtd = parser->m_dtd; /* save one level of indirection */
   XML_Content *ret;
-  XML_Content *cpos;
-  XML_Char *str;
+  XML_Char *str; /* the current string writing location */
   
   /* Detect and prevent integer overflow.
    * The preprocessor guard addresses the "always false" warning
@@ -7463,10 +7476,81 @@ build_model(XML_Parser parser) {
   if (! ret)
     return NULL;
 
-  str = (XML_Char *)(&ret[dtd->scaffCount]);
-  cpos = &ret[1];
+  /* What follows is an iterative implementation (of what was previously done
+   * recursively in a dedicated function called "build_node".  The old recursive
+   * build_node could be forced into stack exhaustion from input as small as a
+   * few megabyte, and so that was a security issue.  Hence, a function call
+   * stack is avoided now by resolving recursion.)
+   *
+   * The iterative approach works as follows:
+   *
+   * - We use space in the target array for building a temporary stack structure
+   *   while that space is still unused.
+   *   The stack grows from the array's end downwards and the "actual data"
+   *   grows from the start upwards, sequentially.
+   *   (Because stack grows downwards, pushing onto the stack is a decrement
+   *   while popping off the stack is an increment.)
+   *
+   * - A stack element appears as a regular XML_Content node on the outside,
+   *   but only uses a single field -- numchildren -- to store the source
+   *   tree node array index.  These are the breadcrumbs leading the way back
+   *   during pre-order (node first) depth-first traversal.
+   *
+   * - The reason we know the stack will never grow into (or overlap with)
+   *   the area with data of value at the start of the array is because
+   *   the overall number of elements to process matches the size of the array,
+   *   and the sum of fully processed nodes and yet-to-be processed nodes
+   *   on the stack, cannot be more than the total number of nodes.
+   *   It is possible for the top of the stack and the about-to-write node
+   *   to meet, but that is safe because we get the source index out
+   *   before doing any writes on that node.
+   */
+  XML_Content *dest = ret; /* tree node writing location, moves upwards */
+  XML_Content *const destLimit = &ret[dtd->scaffCount];
+  XML_Content *const stackBottom = &ret[dtd->scaffCount];
+  XML_Content *stackTop = stackBottom; /* i.e. stack is initially empty */
+  str = (XML_Char *)&ret[dtd->scaffCount];
 
-  build_node(parser, 0, ret, &cpos, &str);
+  /* Push source tree root node index onto the stack */
+  (--stackTop)->numchildren = 0;
+
+  for (; dest < destLimit; dest++) {
+    /* Pop source tree node index off the stack */
+    const int src_node = (int)(stackTop++)->numchildren;
+
+    /* Convert item */
+    dest->type = dtd->scaffold[src_node].type;
+    dest->quant = dtd->scaffold[src_node].quant;
+    if (dest->type == XML_CTYPE_NAME) {
+      const XML_Char *src;
+      dest->name = str;
+      src = dtd->scaffold[src_node].name;
+      for (;;) {
+        *str++ = *src;
+        if (! *src)
+          break;
+        src++;
+      }
+      dest->numchildren = 0;
+      dest->children = NULL;
+    } else {
+      unsigned int i;
+      int cn;
+      dest->name = NULL;
+      dest->numchildren = dtd->scaffold[src_node].childcnt;
+      dest->children = &dest[1];
+
+      /* Push children to the stack
+       * in a way where the first child ends up at the top of the
+       * (downwards growing) stack, in order to be processed first. */
+      stackTop -= dest->numchildren;
+      for (i = 0, cn = dtd->scaffold[src_node].firstchild;
+           i < dest->numchildren; i++, cn = dtd->scaffold[cn].nextsib) {
+        (stackTop + i)->numchildren = (unsigned int)cn;
+      }
+    }
+  }
+
   return ret;
 }
 
@@ -7495,7 +7579,7 @@ getElementType(XML_Parser parser, const ENCODING *enc, const char *ptr,
 
 static XML_Char *
 copyString(const XML_Char *s, const XML_Memory_Handling_Suite *memsuite) {
-  int charsRequired = 0;
+  size_t charsRequired = 0;
   XML_Char *result;
 
   /* First determine how long the string is */
