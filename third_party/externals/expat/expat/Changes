@@ -28,6 +28,11 @@ Release 2.4.1 Sun May 23 2021
 
 Release 2.4.0 Sun May 23 2021
         Security fixes:
+            #551  CVE-2022-23990 -- Fix unsigned integer overflow in function
+                    doProlog triggered by large content in element type
+                    declarations when there is an element declaration handler
+                    present (from a prior call to XML_SetElementDeclHandler).
+                    Impact is denial of service or more.
    #34 #466 #484  CVE-2013-0340/CWE-776 -- Protect against billion laughs attacks
                     (denial-of-service; flavors targeting CPU time or RAM or both,
                     leveraging general entities or parameter entities or both)
@@ -59,6 +64,7 @@ Release 2.4.0 Sun May 23 2021
                       parameters when desired.
                       If you ever need to increase the defaults for non-attack XML
                       payload, please file a bug report with libexpat.
+
 
         Bug fixes:
        #332 #470  For (non-default) compilation with -DEXPAT_MIN_SIZE=ON (CMake)
@@ -94,6 +100,7 @@ Release 2.4.0 Sun May 23 2021
                     of doc/reference.html and doc/xmlwf.xml
 
         Special thanks to:
+            Roland Illig
             Dimitry Andric
             Felix Wilhelm
             Eero Helenius
