@@ -31,7 +31,17 @@
             "sub_component": [
                 "//third_party/skia:skia_canvaskit(//build/toolchain/ohos:ohos_clang_arm)"
             ],
-            "inner_kits": [],
+            "inner_kits": [
+                {
+                    "name": "//third_party/skia/third_party/libjpeg-turbo:libjpeg"
+                },
+                {
+                    "name": "//third_party/skia/third_party/piex:piex"
+                },
+                {
+                    "name": "//third_party/skia/third_party/libwebp:libwebp"
+                }
+            ],
             "test": []
         }
     }
