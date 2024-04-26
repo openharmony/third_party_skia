@@ -304,6 +304,7 @@ enum {
     // XYZ is also a PCS signature, so it's defined in skcms.h
     // skcms_Signature_XYZ = 0x58595A20,
 
+    // cicp type signatures. Reference: ICC Chapter 9.2.17
     skcms_Signature_cicp = 0x63696370,
 };
 
@@ -1184,7 +1185,7 @@ static bool read_tag_cicp(const skcms_ICCTag* tag, skcms_CICP* cicp) {
     if (tag->type != skcms_Signature_cicp || tag->size < 12) {
         return false;
     }
-    const cicp_Layout* cicpTag = (const cicp_Layout*)tag->buf;
+    cicp_Layout* cicpTag = (cicp_Layout*)tag->buf;
     cicp->colour_primaries = cicpTag->colour_primaries[0];
     cicp->transfer_characteristics = cicpTag->transfer_characteristics[0];
     cicp->matrix_coefficients = cicpTag->matrix_coefficients[0];
