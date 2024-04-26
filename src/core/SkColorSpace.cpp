@@ -22,6 +22,7 @@ SkColorSpace::SkColorSpace(const skcms_TransferFunction& transferFn,
         , fToXYZD50(toXYZD50) {
     fTransferFnHash = SkOpts::hash_fn(&fTransferFn, 7*sizeof(float), 0);
     fToXYZD50Hash = SkOpts::hash_fn(&fToXYZD50, 9*sizeof(float), 0);
+    hasCicp = false;
 }
 
 static bool xyz_almost_equal(const skcms_Matrix3x3& mA, const skcms_Matrix3x3& mB) {
@@ -179,6 +180,19 @@ sk_sp<SkColorSpace> SkColorSpace::makeColorSpin() const {
     skcms_Matrix3x3 spun = skcms_Matrix3x3_concat(&fToXYZD50, &spin);
 
     return sk_sp<SkColorSpace>(new SkColorSpace(fTransferFn, spun));
+}
+
+void SkColorSpace::SetIccCicp(const skcms_CICP cicp) {
+    fcicp = cicp;
+    hasCicp = true;
+}
+
+bool SkColorSpace::GetIccCicp(skcms_CICP* cicp) const {
+    if (hasCicp) {
+        *cicp = fcicp;
+        return true;
+    }
+    return false;
 }
 
 void SkColorSpace::toProfile(skcms_ICCProfile* profile) const {

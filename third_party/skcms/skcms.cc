@@ -303,6 +303,9 @@ enum {
     skcms_Signature_sf32 = 0x73663332,
     // XYZ is also a PCS signature, so it's defined in skcms.h
     // skcms_Signature_XYZ = 0x58595A20,
+
+    // cicp type signatures. Reference: ICC Chapter 9.2.17
+    skcms_Signature_cicp = 0x63696370,
 };
 
 static uint16_t read_big_u16(const uint8_t* ptr) {
@@ -1169,6 +1172,27 @@ static bool read_b2a(const skcms_ICCTag* tag, skcms_B2A* b2a, bool pcs_is_xyz) {
     return true;
 }
 
+typedef struct {
+    uint8_t type                       [ 4];
+    uint8_t reserved                   [ 4];
+    uint8_t colour_primaries           [ 1];
+    uint8_t transfer_characteristics   [ 1];
+    uint8_t matrix_coefficients        [ 1];
+    uint8_t full_range_flag            [ 1];
+} cicp_Layout;
+
+static bool read_tag_cicp(const skcms_ICCTag* tag, skcms_CICP* cicp) {
+    if (tag->type != skcms_Signature_cicp || tag->size < 12) {
+        return false;
+    }
+    cicp_Layout* cicpTag = (cicp_Layout*)tag->buf;
+    cicp->colour_primaries = cicpTag->colour_primaries[0];
+    cicp->transfer_characteristics = cicpTag->transfer_characteristics[0];
+    cicp->matrix_coefficients = cicpTag->matrix_coefficients[0];
+    cicp->full_range_flag = cicpTag->full_range_flag[0];
+    return true;
+}
+
 void skcms_GetTagByIndex(const skcms_ICCProfile* profile, uint32_t idx, skcms_ICCTag* tag) {
     if (!profile || !profile->buffer || !tag) { return; }
     if (idx > profile->tag_count) { return; }
@@ -1338,6 +1362,12 @@ bool skcms_ParseWithA2BPriority(const void* buf, size_t len,
         }
     }
 
+    skcms_ICCTag cicpTag;
+    if (skcms_GetTagBySignature(profile, skcms_Signature_cicp, &cicpTag)) {
+        if (read_tag_cicp(&cicpTag, &profile->cicp)) {
+            profile->has_CICP = true;
+        }
+    }
     return usable_as_src(profile);
 }
 
