@@ -150,6 +150,7 @@ public:
     size_t getGlyphCount() const;
     std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const;
     TextLine CloneSelf();
+    TextRange getTextRangeReplacedByEllipsis() const { return fTextRangeReplacedByEllipsis; }
 private:
     struct RoundRectAttr {
         int styleId;
@@ -199,6 +200,7 @@ private:
     SkScalar fShift;                    // Let right
     SkScalar fWidthWithSpaces;
     std::unique_ptr<Run> fEllipsis;     // In case the line ends with the ellipsis
+    TextRange fTextRangeReplacedByEllipsis;     // text range replaced by ellipsis
     InternalLineMetrics fSizes;                 // Line metrics as a max of all run metrics and struts
     InternalLineMetrics fMaxRunMetrics;         // No struts - need it for GetRectForRange(max height)
     bool fHasBackground;
