@@ -192,6 +192,7 @@ TextLine::TextLine(ParagraphImpl* owner,
             break;
         }
     }
+    fTextRangeReplacedByEllipsis = EMPTY_RANGE;
 }
 
 void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
@@ -709,7 +710,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             // We may need to continue
             lastRun = cluster.runIndex();
         }
-        
+
         if (!cluster.isWordBreak()) {
             inWord = true;
         } else if (inWord) {
@@ -737,6 +738,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         fAdvance.fX = width;
         fEllipsis = std::move(ellipsisRun);
         fEllipsis->setOwner(fOwner);
+        fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
 
         // Let's update the line
         fClusterRange.end = clusterIndex;
@@ -786,13 +788,10 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         fAdvance.fX = width + ellipsisRun->advance().fX;
         fEllipsis = std::move(ellipsisRun);
         fEllipsis->setOwner(fOwner);
+        fTextRangeReplacedByEllipsis = TextRange(0, cluster.textRange().start);
         fClusterRange.start = clusterIndex;
         fGhostClusterRange.start = fClusterRange.start;
-        if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
-            fEllipsis->fClusterStart = fText.start;
-        } else {
-            fEllipsis->fClusterStart = 0;
-        }
+        fEllipsis->fClusterStart = cluster.textRange().start;
         fText.start = cluster.textRange().start;
         fTextIncludingNewlines.start = cluster.textRange().start;
         fTextExcludingSpaces.start = cluster.textRange().start;
@@ -1141,12 +1140,10 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
     if (run->fEllipsis) {
         // Extra efforts to get the ellipsis text style
         ClipContext clipContext = correctContext(run->textRange(), 0.0f);
-        TextRange testRange(run->fClusterStart, run->fClusterStart + run->textRange().width());
         for (BlockIndex index = fBlockRange.start; index < fBlockRange.end; ++index) {
            auto block = fOwner->styles().begin() + index;
-           auto intersect = intersected(block->fRange, testRange);
-           if (intersect.width() > 0) {
-               visitor(testRange, block->fStyle, clipContext);
+           if (block->fRange.start >= run->fClusterStart && block->fRange.end < run->fClusterStart) {
+               visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
                return run->advance().fX;
            }
         }
@@ -1251,14 +1248,14 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
         this->ellipsis() != nullptr && !ellipsisModeIsHead) {
         isAlreadyUseEllipsis = true;
         runOffset = this->ellipsis()->offset().fX;
-        if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
+        if (visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &width)) {
         }
     } else if (ellipsisModeIsHead && this->ellipsis() != nullptr &&
-                fOwner->paragraphStyle().getTextDirection() == TextDirection::kLtr) {
+        fOwner->paragraphStyle().getTextDirection() == TextDirection::kLtr) {
         isAlreadyUseEllipsis = true;
         runOffset = this->ellipsis()->offset().fX;
-        if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
-        }        
+        if (visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &width)) {
+        }
     }
 
     for (auto& runIndex : fRunsInVisualOrder) {
@@ -1291,7 +1288,7 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
     totalWidth += width;
 
     if (this->ellipsis() != nullptr && !isAlreadyUseEllipsis) {
-        if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
+        if (visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &width)) {
             totalWidth += width;
         }
     }
