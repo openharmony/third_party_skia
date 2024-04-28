@@ -923,8 +923,7 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
             unicode, textStyle.getFontStyle(), textStyle.getLocale());
         if (typeface) {
             if (textStyle.getFontArguments()) {
-                auto varTypeface = textStyle.getFontArguments()->CloneTypeface(typeface);
-                typeface = varTypeface ? varTypeface : typeface;
+                typeface = fOwner->fontCollection()->CloneTypeface(typeface, textStyle.getFontArguments());
             }
             auto ellipsisRun = shaped(typeface, true);
             if (ellipsisRun->isResolved()) {
