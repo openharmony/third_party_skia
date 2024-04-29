@@ -1666,6 +1666,10 @@ SkRect SkCanvas::getLocalClipBounds() const {
     return bounds;
 }
 
+SkIRect SkCanvas::getRoundInDeviceClipBounds() const {
+    return this->computeDeviceClipBounds(/*outsetForAA=*/false).roundIn();
+}
+
 SkIRect SkCanvas::getDeviceClipBounds() const {
     return this->computeDeviceClipBounds(/*outsetForAA=*/false).roundOut();
 }
