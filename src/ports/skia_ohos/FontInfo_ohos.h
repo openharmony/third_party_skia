@@ -129,6 +129,23 @@ public:
         }
     }
 
+    SkFontStyle computeFontStyle()
+    {
+        int weight = style.weight();
+        int width = style.width();
+        auto slant = style.slant();
+        for (size_t i = 0; i < axisSet.axis.size(); i++) {
+            auto value = SkFixedToScalar(axisSet.axis[i]);
+            auto tag = axisSet.range[i].fTag;
+            if (tag == SkSetFourByteTag('w', 'g', 'h', 't')) {
+                weight = SkScalarFloorToInt(value);
+            } else if (tag == SkSetFourByteTag('w', 'd', 't', 'h')) {
+                width = SkScalarFloorToInt(value);
+            }
+        }
+        return SkFontStyle(weight, width, slant);
+    }
+
     SkString familyName;  // the real family name of the font
     SkString fname; // the full name of font file
     int index; // the index of the font in a ttc font
