@@ -3,6 +3,7 @@
 #define FontCollection_DEFINED
 
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <set>
 #include <unordered_map>
@@ -59,6 +60,14 @@ public:
     std::shared_ptr<RSTypeface> defaultFallback();
 #endif
 
+#ifndef USE_SKIA_TXT
+    sk_sp<SkTypeface> CloneTypeface(sk_sp<SkTypeface> typeface,
+        const std::optional<FontArguments>& fontArgs);
+#else
+    std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface,
+        const std::optional<FontArguments>& fontArgs);
+#endif
+
     void disableFontFallback();
     void enableFontFallback();
     bool fontFallbackEnabled() { return fEnableFontFallback; }
@@ -108,17 +117,20 @@ private:
     bool fEnableFontFallback;
 #ifndef USE_SKIA_TXT
     SkTHashMap<FamilyKey, std::vector<sk_sp<SkTypeface>>, FamilyKey::Hasher> fTypefaces;
+    SkLRUCache<uint32_t, sk_sp<SkTypeface>> fVarTypefaces;
     sk_sp<SkFontMgr> fDefaultFontManager;
     sk_sp<SkFontMgr> fAssetFontManager;
     sk_sp<SkFontMgr> fDynamicFontManager;
     sk_sp<SkFontMgr> fTestFontManager;
 #else
     std::unordered_map<FamilyKey, std::vector<std::shared_ptr<RSTypeface>>, FamilyKey::Hasher> fTypefaces;
+    SkLRUCache<uint32_t, std::shared_ptr<RSTypeface>> fVarTypefaces;
     std::shared_ptr<RSFontMgr> fDefaultFontManager;
     std::shared_ptr<RSFontMgr> fAssetFontManager;
     std::shared_ptr<RSFontMgr> fDynamicFontManager;
     std::shared_ptr<RSFontMgr> fTestFontManager;
 #endif
+    std::mutex fMutex;
     std::vector<SkString> fDefaultFamilyNames;
     ParagraphCache fParagraphCache;
 };
