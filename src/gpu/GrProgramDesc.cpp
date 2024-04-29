@@ -160,6 +160,7 @@ static void gen_key(GrProcessorKeyBuilder* b,
     // The base descriptor only stores whether or not the primitiveType is kPoints. Backend-
     // specific versions (e.g., Vulkan) require more detail
     b->addBool((programInfo.primitiveType() == GrPrimitiveType::kPoints), "isPoints");
+    b->addBool(SkToBool(programInfo.renderPassBarriers() & GrXferBarrierFlags::kTexture), "useInput");
 
     // Put a clean break between the "common" data written by this function, and any backend data
     // appended later. The initial key length will just be this portion (rounded to 4 bytes).
