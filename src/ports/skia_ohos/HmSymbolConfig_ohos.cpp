@@ -838,12 +838,13 @@ void HmSymbolConfig_OHOS::ParseDefaultColor(const char* defaultColorStr, RenderG
         for (unsigned int i = 1; i < defaultColorStrLen; i++) {
             defaultColorHex[i + 1] = defaultColorStr[i];
         }
+        defaultColorHex[defaultColorHexLen - 1] = '\0';
     } else {
         SkDebugf("%{public}s is invalid value!", defaultColorStr);
         return;
     }
 
-    char* endPtr;
+    char* endPtr = nullptr;
     int defaultColorInt = strtol(defaultColorHex, &endPtr, hexFlag);
     renderGroup.color.r = (defaultColorInt >> twoBytesBitsLen) & 0xFF;
     renderGroup.color.g = (defaultColorInt >> oneByteBitsLen) & 0xFF;
