@@ -1093,6 +1093,15 @@ public:
     /** Returns SkIRect bounds of clip, unaffected by SkMatrix. If clip is empty,
         return SkRect::MakeEmpty, where all SkRect sides equal zero.
 
+        Unlike getDeviceClipBounds(), returned SkIRect is roundIn.
+
+        @return  bounds of clip in SkBaseDevice coordinates
+    */
+    SkIRect getRoundInDeviceClipBounds() const;
+
+    /** Returns SkIRect bounds of clip, unaffected by SkMatrix. If clip is empty,
+        return SkRect::MakeEmpty, where all SkRect sides equal zero.
+
         Unlike getLocalClipBounds(), returned SkIRect is not outset.
 
         @return  bounds of clip in SkBaseDevice coordinates
