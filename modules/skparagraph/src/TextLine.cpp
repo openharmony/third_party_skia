@@ -307,7 +307,7 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
 
 void TextLine::prepareRoundRect() {
     roundRectAttrs.clear();
-    this->iterateThroughVisualRuns(false,
+    this->iterateThroughVisualRuns(fOwner->paragraphStyle().getTextAlign() == TextAlign::kEnd,
         [this](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
             TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
@@ -546,7 +546,8 @@ void TextLine::paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y,
         run->getBottomInGroup()));
     SkRRect skRRect;
     skRRect.setRectRadii(skRect, radii);
-    skRRect.offset(x + fOffset.x(), y + fOffset.y());
+    skRRect.offset(x + (fOwner->paragraphStyle().getTextAlign() == TextAlign::kEnd ?
+        fShift : fOffset.x()), y + fOffset.y());
     painter->drawRRect(skRRect, attr.roundRectStyle.color);
 }
 
@@ -1072,7 +1073,8 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
             // We only use this member for LTR
             result.fExcludedTrailingSpaces = std::max(result.clip.fRight - fAdvance.fX, 0.0f);
             result.clippingNeeded = true;
-            result.clip.fRight = fAdvance.fX;
+            result.clip.fRight = fOwner->paragraphStyle().getTextAlign() == TextAlign::kEnd ?
+                fWidthWithSpaces : fAdvance.fX;
         }
     }
 
