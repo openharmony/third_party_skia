@@ -168,9 +168,9 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
     }
     SkASSERT(!resource->cacheAccess().isUsableAsScratch());
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    if(fBudgetedBytes >= fMaxBytes) {
+    if (fBudgetedBytes >= fMaxBytes) {
         HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over fBudgetedBytes:(%u),fMaxBytes:(%u)",
-        fBudgetedBytes, fMaxBytes);
+            fBudgetedBytes, fMaxBytes);
     }
 #endif
     this->purgeAsNeeded();
