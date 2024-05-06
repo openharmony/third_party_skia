@@ -127,6 +127,38 @@ void Run::copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const {
         points[i] = point;
     }
 }
+
+void Run::copyTo(RSTextBlobBuilder& builder,
+                 const RSPath* path,
+                 float hOffset,
+                 float vOffset,
+                 float fTextShift,
+                 size_t pos,
+                 size_t size) const {
+    SkASSERT(pos + size <= this->size());
+    auto& blobBuffer = builder.AllocRunRSXform(fFont, SkToInt(size));
+    sk_careful_memcpy(blobBuffer.glyphs, fGlyphs.data() + pos, size * sizeof(SkGlyphID));
+    std::vector<float> widths(size);
+    fFont.GetWidths(blobBuffer.glyphs, size, widths.data());
+    RSXform* xform = reinterpret_cast<RSXform*>(blobBuffer.pos);
+    for (size_t i = 0; i < size; ++i) {
+        float halfWidth = widths[i + pos] * 0.5f;
+        float x = hOffset + posX(i + pos) + halfWidth + fOffsets[i + pos].x() + fTextShift;
+        if (!fJustificationShifts.empty()) {
+            x += fJustificationShifts[i + pos].fX;
+        }
+        RSPoint rsPos;
+        RSPoint rsTan;
+        if (!path->GetPositionAndTangent(x, rsPos, rsTan, false)) {
+            rsPos.Set(x, vOffset);
+            rsTan.Set(1, 0);
+        }
+        xform[i].cos_ = rsTan.GetX();
+        xform[i].sin_ = rsTan.GetY();
+        xform[i].tx_ = rsPos.GetX() - rsTan.GetY() * vOffset - halfWidth * rsTan.GetX();
+        xform[i].ty_ = rsPos.GetY() + rsTan.GetX() * vOffset - halfWidth * rsTan.GetY();
+    }
+}
 #endif
 
 // Find a cluster range from text range (within one run)

@@ -128,6 +128,8 @@ TextLine::TextLine(ParagraphImpl* owner,
         , fHasBackground(false)
         , fHasShadows(false)
         , fHasDecorations(false)
+        , fIsArcText(false)
+        , fArcTextState(false)
         , fAscentStyle(LineMetricStyle::CSS)
         , fDescentStyle(LineMetricStyle::CSS)
         , fTextBlobCachePopulated(false) {
@@ -195,9 +197,24 @@ TextLine::TextLine(ParagraphImpl* owner,
     fTextRangeReplacedByEllipsis = EMPTY_RANGE;
 }
 
+void TextLine::paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset) {
+    prepareRoundRect();
+    fIsArcText = true;
+    if (pathParameters.hOffset != hOffset || pathParameters.vOffset != vOffset) {
+        fTextBlobCachePopulated = false;
+    }
+    pathParameters.recordPath = path;
+    pathParameters.hOffset = hOffset;
+    pathParameters.vOffset = vOffset;
+    this->ensureTextBlobCachePopulated();
+    for (auto& record : fTextBlobCache) {
+        record.paint(painter);
+    }
+}
+
 void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     prepareRoundRect();
-
+    fIsArcText = false;
     this->iterateThroughVisualRuns(false,
         [painter, x, y, this]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
@@ -328,9 +345,10 @@ void TextLine::prepareRoundRect() {
 }
 
 void TextLine::ensureTextBlobCachePopulated() {
-    if (fTextBlobCachePopulated) {
+    if (fTextBlobCachePopulated && fArcTextState == fIsArcText) {
         return;
     }
+	fTextBlobCache.clear();
     if (fBlockRange.width() == 1 &&
         fRunsInVisualOrder.size() == 1 &&
         fEllipsis == nullptr &&
@@ -387,6 +405,8 @@ void TextLine::ensureTextBlobCachePopulated() {
            });
     }
     fTextBlobCachePopulated = true;
+    fArcTextState = fIsArcText;
+    pathParameters.recordPath = nullptr;
 }
 
 void TextLine::format(TextAlign align, SkScalar maxWidth) {
@@ -463,7 +483,17 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
 #else
     RSTextBlobBuilder builder;
 #endif
-    context.run->copyTo(builder, SkToU32(context.pos), context.size);
+    if (pathParameters.recordPath) {
+        context.run->copyTo(builder,
+                            pathParameters.recordPath,
+                            pathParameters.hOffset,
+                            pathParameters.vOffset,
+                            context.fTextShift,
+                            SkToU32(context.pos),
+                            context.size);
+    } else {
+        context.run->copyTo(builder, SkToU32(context.pos), context.size);
+    }
     record.fClippingNeeded = context.clippingNeeded;
     if (context.clippingNeeded) {
         record.fClipRect = extendHeight(context).makeOffset(this->offset());
@@ -500,6 +530,16 @@ void TextLine::TextBlobRecord::paint(ParagraphPainter* painter, SkScalar x, SkSc
         painter->clipRect(fClipRect.makeOffset(x, y));
     }
     painter->drawTextBlob(fBlob, x + fOffset.x(), y + fOffset.y(), fPaint);
+    if (fClippingNeeded) {
+        painter->restore();
+    }
+}
+
+void TextLine::TextBlobRecord::paint(ParagraphPainter* painter) {
+    if (fClippingNeeded) {
+        painter->save();
+    }
+    painter->drawTextBlob(fBlob, 0, 0, fPaint);
     if (fClippingNeeded) {
         painter->restore();
     }
