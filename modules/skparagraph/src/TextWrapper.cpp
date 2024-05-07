@@ -1,5 +1,4 @@
 // Copyright 2019 Google LLC.
-#include "commonlibrary/utils_lite/include/ohos_types.h"
 #include "include/ParagraphStyle.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextWrapper.h"
@@ -311,8 +310,8 @@ constexpr int64_t UNDERFLOW_SCORE = 100;
 constexpr float BALANCED_LAST_LINE_MULTIPLIER = 1.4f;
 constexpr int64_t BEST_LOCAL_SCORE = -1000000;
 constexpr float  WIDTH_TOLERANCE = 5.f;
-constexpr int64 PARAM_2 = 2;
-constexpr int64 PARAM_10000 = 10000;
+constexpr int64_t PARAM_2 = 2;
+constexpr int64_t PARAM_10000 = 10000;
 
 // mkay, this makes an assumption that we do the scoring runs in a single thread and holds the variables during
 // recursion
