@@ -344,7 +344,11 @@ sk_sp<SkTypeface> FontCollection::CloneTypeface(sk_sp<SkTypeface> typeface,
 std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSTypeface> typeface,
     const std::optional<FontArguments>& fontArgs)
 {
-    if (!typeface || !fontArgs) {
+#ifndef USE_SKIA_TXT
+    if (!typeface || !fontArgs || typeface->isCustomTypeface()) {
+#else
+    if (!typeface || !fontArgs || typeface->IsCustomTypeface()) {
+#endif
         return typeface;
     }
 
@@ -376,6 +380,8 @@ void FontCollection::disableFontFallback() { fEnableFontFallback = false; }
 void FontCollection::enableFontFallback() { fEnableFontFallback = true; }
 
 void FontCollection::clearCaches() {
+    std::unique_lock<std::mutex> lock(fMutex);
+    fVarTypefaces.reset();
     fParagraphCache.reset();
 #ifndef USE_SKIA_TXT
     fTypefaces.reset();
