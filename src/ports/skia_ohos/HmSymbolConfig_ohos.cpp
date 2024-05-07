@@ -497,20 +497,20 @@ static void PiecewiseParaCurveCase(const char* key, const Json::Value& root, Pie
 static void PiecewiseParaDurationCase(const char* key, const Json::Value& root,
     PiecewiseParameter& piecewiseParameter)
 {
-    if (!root[key].isInt()) {
-        SkDebugf("duration is not int!");
+    if (!root[key].isNumeric()) {
+        SkDebugf("duration is not numeric!");
         return;
     }
-    piecewiseParameter.duration = root[key].asInt();
+    piecewiseParameter.duration = static_cast<uint32_t>(root[key].asDouble());
 }
 
 static void PiecewiseParaDelayCase(const char* key, const Json::Value& root, PiecewiseParameter& piecewiseParameter)
 {
-    if (!root[key].isInt()) {
-        SkDebugf("delay is not int!");
+    if (!root[key].isNumeric()) {
+        SkDebugf("delay is not numeric!");
         return;
     }
-    piecewiseParameter.delay = root[key].asInt();
+    piecewiseParameter.delay = static_cast<int>(root[key].asDouble());
 }
 
 void HmSymbolConfig_OHOS::ParseSymbolPiecewisePara(const Json::Value& root, PiecewiseParameter& piecewiseParameter)
