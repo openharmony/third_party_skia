@@ -91,6 +91,7 @@ struct HeifDecoder {
     virtual void getVividMetadata(std::vector<uint8_t>& uwaInfo, std::vector<uint8_t>& displayInfo,
         std::vector<uint8_t>& lightInfo) = 0;
     virtual void getISOMetadata(std::vector<uint8_t>& isoMetadata) = 0;
+    virtual void getErrMsg(std::string& errMsg) = 0;
 };
 
 struct StubHeifDecoder : HeifDecoder {
@@ -157,6 +158,10 @@ struct StubHeifDecoder : HeifDecoder {
     }
 
     void getISOMetadata(std::vector<uint8_t>& isoMetadata) override {
+        return;
+    }
+
+    void getErrMsg(std::string& errMsg) override {
         return;
     }
 };
