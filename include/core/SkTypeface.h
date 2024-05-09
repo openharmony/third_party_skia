@@ -342,6 +342,9 @@ public:
      */
     SkRect getBounds() const;
 
+    bool isCustomTypeface() const;
+    void setIsCustomTypeface(bool isCustom);
+
     // PRIVATE / EXPERIMENTAL -- do not call
     void filterRec(SkScalerContextRec* rec) const {
         this->onFilterRec(rec);
@@ -459,6 +462,7 @@ private:
     mutable SkRect      fBounds;
     mutable SkOnce      fBoundsOnce;
     bool                fIsFixedPitch;
+    bool                fIsCustom = false;
 
     using INHERITED = SkWeakRefCnt;
 };

@@ -136,9 +136,11 @@ sk_sp<SkTypeface> SkTypeface_OHOS::onMakeClone(const SkFontArguments& args) cons
                 axis, info.familyName);
             info.setAxisSet(axisCount, axis, axisDefs.data());
             info.style = info.computeFontStyle();
+            return sk_make_sp<SkTypeface_OHOS>(specifiedName, info);
         }
     }
-    return sk_make_sp<SkTypeface_OHOS>(specifiedName, info);
+
+    return sk_ref_sp(this);
 }
 
 /*! To get the font information of the typeface
