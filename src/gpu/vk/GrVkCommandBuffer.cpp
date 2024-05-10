@@ -553,6 +553,16 @@ void GrVkPrimaryCommandBuffer::executeCommands(const GrVkGpu* gpu,
     this->invalidateState();
 }
 
+#ifdef SKIA_USE_XEG
+static std::atomic<uint64_t> g_totalFrameLoad(0);
+
+extern "C" __attribute__((visibility("default"))) void get_frame_load(uint64_t* frame_load)
+{
+    *frame_load = g_totalFrameLoad;
+    g_totalFrameLoad.store(0);
+}
+#endif
+
 static bool submit_to_queue(GrVkGpu* gpu,
                             VkQueue queue,
                             VkFence fence,
@@ -585,6 +595,14 @@ static bool submit_to_queue(GrVkGpu* gpu,
     submitInfo.pSignalSemaphores = signalSemaphores;
     VkResult result;
     GR_VK_CALL_RESULT(gpu, result, QueueSubmit(queue, 1, &submitInfo, fence));
+    
+#ifdef SKIA_USE_XEG
+    uint64_t frameLoad = 0;
+    GR_VK_CALL(gpu->vkInterface(), HMS_XEG_GetPerFrameLoad(commandBufferCount, commandBuffers, &frameLoad));
+    SkDebugf("frameLoad %{public}u\n", frameLoad);
+    g_totalFrameLoad += frameLoad;
+#endif
+    
     return result == VK_SUCCESS;
 }
 
