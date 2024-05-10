@@ -60,8 +60,8 @@ enum CommonSubType {
 using PiecewiseParameter = struct PiecewiseParameter {
     CurveType curveType;
     std::map<std::string, double_t> curveArgs;
-    uint32_t duration;
-    int delay;
+    uint32_t duration = 0;
+    int delay = 0;
     std::map<std::string, std::vector<double_t>> properties;
 };
 
