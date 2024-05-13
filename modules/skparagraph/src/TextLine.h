@@ -132,7 +132,8 @@ public:
                                         SkScalar runOffsetInLine,
                                         SkScalar textOffsetInRunInLine,
                                         bool includeGhostSpaces,
-                                        TextAdjustment textAdjustment) const;
+                                        TextAdjustment textAdjustment,
+                                        StyleType styleType = StyleType::kNone) const;
 
     LineMetrics getMetrics() const;
 
