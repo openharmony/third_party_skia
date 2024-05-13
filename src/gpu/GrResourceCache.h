@@ -192,6 +192,8 @@ public:
 
     void purgeUnlockedResourcesByTag(bool scratchResourceOnly, const GrGpuResourceTag& tag);
     void purgeUnlockedResourcesByPid(bool scratchResourceOnly, const std::set<int>& exitedPidSet);
+    void purgeResourcesEveryFrame(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+        const std::set<int>& protectedPidSet);
     void purgeUnlockAndSafeCacheGpuResources();
 
     // Purge unlocked resources not used since the passed point in time. If 'scratchResourcesOnly'
@@ -396,6 +398,7 @@ private:
     // our budget, used in purgeAsNeeded()
     size_t                              fMaxBytes = kDefaultMaxSize;
 
+    size_t                              fMaxBytesSoftLimit = 450000000;
 #if GR_CACHE_STATS
     int                                 fHighWaterCount = 0;
     size_t                              fHighWaterBytes = 0;

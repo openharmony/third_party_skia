@@ -30,6 +30,11 @@
 #include "src/gpu/text/GrAtlasManager.h"
 #include "src/gpu/text/GrStrikeCache.h"
 #include "src/image/SkImage_GpuBase.h"
+
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#include "hitrace_meter.h"
+#endif
+
 #if SK_GPU_V1
 #include "src/gpu/ops/SmallPathAtlasMgr.h"
 #else
@@ -366,6 +371,17 @@ void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, con
     this->getTextBlobCache()->purgeStaleBlobs();
 }
 
+void GrDirectContext::purgeResourcesEveryFrame(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+        const std::set<int>& protectedPidSet)
+{
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned()) {
+        return;
+    }
+
+    fResourceCache->purgeResourcesEveryFrame(scratchResourcesOnly, exitedPidSet, protectedPidSet);
+}
 void GrDirectContext::performDeferredCleanup(std::chrono::milliseconds msNotUsed,
                                              bool scratchResourcesOnly) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);

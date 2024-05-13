@@ -614,6 +614,10 @@ void GrResourceCache::didChangeBudgetStatus(GrGpuResource* resource) {
 }
 
 void GrResourceCache::purgeAsNeeded() {
+    #ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "purgeAsNeeded now=%d, limit=%d, purge=%d, all=%d",
+        fBudgetedBytes, fMaxBytes, fPurgeableBytes, fBytes);
+    #endif
     SkTArray<GrUniqueKeyInvalidatedMessage> invalidKeyMsgs;
     fInvalidUniqueKeyInbox.poll(&invalidKeyMsgs);
     if (invalidKeyMsgs.count()) {
@@ -759,6 +763,39 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
     this->validate();
 }
 
+void GrResourceCache::purgeResourcesEveryFrame(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+        const std::set<int>& protectedPidSet) {
+    #ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "purgeAsNeeded now=%d, limit=%d, purge=%d, all=%d",
+        fBudgetedBytes, fMaxBytes, fPurgeableBytes, fBytes);
+    #endif
+    fThreadSafeCache->dropUniqueRefs(nullptr);
+    if (exitedPidSet.size() > 1) {
+        for (int i = 1; i < fPurgeableQueue.count(); i++) {
+            GrGpuResource* resource = fPurgeableQueue.at(i);
+            SkASSERT(resource->resourcePriv().isPurgeable());
+            if (exitedPidSet.find(resource->getResourceTag().fPid) != exitedPidSet.end()) {
+                resource->cacheAccess().release();
+                this->validate();
+                return;
+            }
+        }
+    }
+    fPurgeableQueue.sort();
+    if (fBudgetedBytes >= fMaxBytesSoftLimit) {
+        for (int i=0; i < fPurgeableQueue.count(); i++) {
+            GrGpuResource* resource = fPurgeableQueue.at(i);
+            SkASSERT(resource->resourcePriv().isPurgeable());
+            if (protectedPidSet.find(resource->getResourceTag().fPid) == protectedPidSet.end()
+                && (!scratchResourcesOnly || !resource->getUniqueKey().isValid())) {
+                resource->cacheAccess().release();
+                this->validate();
+                return;
+            }
+        }
+    }
+}
+
 void GrResourceCache::purgeUnlockedResourcesByPid(bool scratchResourceOnly, const std::set<int>& exitedPidSet) {
     // Sort the queue
     fPurgeableQueue.sort();
@@ -813,6 +850,10 @@ void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, con
 }
 
 bool GrResourceCache::purgeToMakeHeadroom(size_t desiredHeadroomBytes) {
+    #ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "purgeAsNeeded now=%d, limit=%d, purge=%d, all=%d",
+        fBudgetedBytes, fMaxBytes, fPurgeableBytes, fBytes);
+    #endif
     AutoValidate av(this);
     if (desiredHeadroomBytes > fMaxBytes) {
         return false;
