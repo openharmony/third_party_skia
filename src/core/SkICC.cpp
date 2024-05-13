@@ -96,6 +96,9 @@ static constexpr uint32_t kTAG_cicp_bytes = 12;
 
 static constexpr uint32_t kICCProfileSize = kTAG_cprt_Offset + kTAG_cprt_Bytes;
 static constexpr uint32_t kICCProfileSizeWithCicp = kICCProfileSize + kTAG_cicp_bytes;
+static constexpr int TOXYZ_MATRIX_COL_ZERO = 0;
+static constexpr int TOXYZ_MATRIX_COL_ONE = 1;
+static constexpr int TOXYZ_MATRIX_COL_TWO = 2;
 
 static constexpr uint32_t kICCHeader[kICCHeaderSize / 4] {
     SkEndian_SwapBE32(kICCProfileSize),  // Size of the profile
@@ -371,68 +374,64 @@ sk_sp<SkData> SkWriteICCProfileWithCicp(const skcms_TransferFunction& fn,
                                         const skcms_Matrix3x3& toXYZD50,
                                         const skcms_CICP& cicp) {
     SkAutoMalloc profile(kICCProfileSizeWithCicp);
-    uint8_t* ptr = (uint8_t*) profile.get();
+    uint8_t* pProfile = (uint8_t*) profile.get();
 
-    // Write profile header
-    if (memcpy_s(ptr, sizeof(kICCHeader), kICCHeader, sizeof(kICCHeader)) != EOK) {
+    // Write icc profile header
+    if (memcpy_s(pProfile, sizeof(kICCHeader), kICCHeader, sizeof(kICCHeader)) != EOK) {
         return nullptr;
     }
-    ptr += sizeof(kICCHeader);
+    pProfile += sizeof(kICCHeader);
 
     // Write tag table
-    if (memcpy_s(ptr, sizeof(kICCTagTable), kICCTagTable, sizeof(kICCTagTable)) != EOK) {
+    if (memcpy_s(pProfile, sizeof(kICCTagTable), kICCTagTable, sizeof(kICCTagTable)) != EOK) {
         return nullptr;
     }
-    ptr += sizeof(kICCTagTable);
+    pProfile += sizeof(kICCTagTable);
 
     // Write profile description tag
-    if (memcpy_s(ptr, sizeof(kDescriptionTagHeader), kDescriptionTagHeader, sizeof(kDescriptionTagHeader)) != EOK) {
+    if (memcpy_s(pProfile, sizeof(kDescriptionTagHeader), kDescriptionTagHeader, sizeof(kDescriptionTagHeader)) != EOK) {
         return nullptr;
     }
-    ptr += sizeof(kDescriptionTagHeader);
-    {
-        char colorProfileTag[kICCDescriptionTagSize];
-        get_color_profile_tag(colorProfileTag, fn, toXYZD50);
-
-        // ASCII --> big-endian UTF-16.
-        for (size_t i = 0; i < kICCDescriptionTagSize; i++) {
-            *ptr++ = 0;
-            *ptr++ = colorProfileTag[i];
-        }
+    pProfile += sizeof(kDescriptionTagHeader);
+    char colorProfileTag[kICCDescriptionTagSize];
+    get_color_profile_tag(colorProfileTag, fn, toXYZD50);
+    for (size_t i = 0; i < kICCDescriptionTagSize; i++) {
+        *pProfile++ = 0;
+        *pProfile++ = colorProfileTag[i];
     }
 
     // Write XYZ tags
-    write_xyz_tag((uint32_t*) ptr, toXYZD50, 0);
-    ptr += kTAG_XYZ_Bytes;
-    write_xyz_tag((uint32_t*) ptr, toXYZD50, 1);
-    ptr += kTAG_XYZ_Bytes;
-    write_xyz_tag((uint32_t*) ptr, toXYZD50, 2);
-    ptr += kTAG_XYZ_Bytes;
+    write_xyz_tag((uint32_t*) pProfile, toXYZD50, TOXYZ_MATRIX_COL_ZERO);
+    pProfile += kTAG_XYZ_Bytes;
+    write_xyz_tag((uint32_t*) pProfile, toXYZD50, TOXYZ_MATRIX_COL_ONE);
+    pProfile += kTAG_XYZ_Bytes;
+    write_xyz_tag((uint32_t*) pProfile, toXYZD50, TOXYZ_MATRIX_COL_TWO);
+    pProfile += kTAG_XYZ_Bytes;
 
     // Write TRC tag
-    write_trc_tag((uint32_t*) ptr, fn);
-    ptr += kTAG_TRC_Bytes;
+    write_trc_tag((uint32_t*) pProfile, fn);
+    pProfile += kTAG_TRC_Bytes;
 
     // Write white point tag (must be D50)
-    if (memcpy_s(ptr, sizeof(kWhitePointTag), kWhitePointTag, sizeof(kWhitePointTag)) != EOK) {
+    if (memcpy_s(pProfile, sizeof(kWhitePointTag), kWhitePointTag, sizeof(kWhitePointTag)) != EOK) {
         return nullptr;
     }
-    ptr += sizeof(kWhitePointTag);
+    pProfile += sizeof(kWhitePointTag);
 
     // Write copyright tag
-    if (memcpy_s(ptr, sizeof(kCopyrightTagHeader), kCopyrightTagHeader, sizeof(kCopyrightTagHeader)) != EOK) {
+    if (memcpy_s(pProfile, sizeof(kCopyrightTagHeader), kCopyrightTagHeader, sizeof(kCopyrightTagHeader)) != EOK) {
         return nullptr;
     }
-    ptr += sizeof(kCopyrightTagHeader);
-    if (memcpy_s(ptr, sizeof(kCopyrightTagBody), kCopyrightTagBody, sizeof(kCopyrightTagBody) != EOK)) {
+    pProfile += sizeof(kCopyrightTagHeader);
+    if (memcpy_s(pProfile, sizeof(kCopyrightTagBody), kCopyrightTagBody, sizeof(kCopyrightTagBody) != EOK)) {
         return nullptr;
     }
-    ptr += sizeof(kCopyrightTagBody);
+    pProfile += sizeof(kCopyrightTagBody);
     
-    // write cicp tag
-    write_cicp_tag((uint32_t*) ptr, cicp);
-    ptr += kTAG_cicp_bytes;
+    // Write cicp tag
+    write_cicp_tag((uint32_t*) pProfile, cicp);
+    pProfile += kTAG_cicp_bytes;
 
-    SkASSERT(kICCProfileSizeWithCicp == ptr - (uint8_t*) profile.get());
+    SkASSERT(kICCProfileSizeWithCicp == pProfile - (uint8_t*) profile.get());
     return SkData::MakeFromMalloc(profile.release(), kICCProfileSizeWithCicp);
 }
