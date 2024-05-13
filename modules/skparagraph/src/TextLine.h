@@ -40,6 +40,12 @@ public:
       bool clippingNeeded;
     };
 
+    struct PathParameters {
+        const RSPath* recordPath = nullptr;
+        SkScalar hOffset = 0;
+        SkScalar vOffset = 0;
+    } pathParameters;
+
     enum TextAdjustment {
         GlyphCluster = 0x01,    // All text producing glyphs pointing to the same ClusterIndex
         GlyphemeCluster = 0x02, // base glyph + all attached diacritics
@@ -106,6 +112,7 @@ public:
 
     void format(TextAlign align, SkScalar maxWidth);
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
+    void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
     void visit(SkScalar x, SkScalar y);
     void ensureTextBlobCachePopulated();
     void setParagraphImpl(ParagraphImpl* newpara) { fOwner = newpara; }
@@ -207,12 +214,15 @@ private:
     bool fHasBackground;
     bool fHasShadows;
     bool fHasDecorations;
+    bool fIsArcText;
+    bool fArcTextState;
 
     LineMetricStyle fAscentStyle;
     LineMetricStyle fDescentStyle;
 
     struct TextBlobRecord {
         void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
+        void paint(ParagraphPainter* painter);
 
 #ifndef USE_SKIA_TXT
         sk_sp<SkTextBlob> fBlob;

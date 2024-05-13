@@ -55,7 +55,9 @@ public:
     virtual void paint(SkCanvas* canvas, SkScalar x, SkScalar y) = 0;
 
     virtual void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) = 0;
-
+#ifdef USE_SKIA_TXT
+    virtual void paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) = 0;
+#endif
     // Returns a vector of bounding boxes that enclose all text between
     // start and end glyph indexes, including start and excluding end
     virtual std::vector<TextBox> getRectsForRange(unsigned start,

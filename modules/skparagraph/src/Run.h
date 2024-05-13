@@ -151,6 +151,13 @@ public:
     void copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const;
 #else
     void copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const;
+    void copyTo(RSTextBlobBuilder& builder,
+                const RSPath* path,
+                float hOffset,
+                float vOffset,
+                float fTextShift,
+                size_t pos,
+                size_t size) const;
 #endif
 
     template<typename Visitor>

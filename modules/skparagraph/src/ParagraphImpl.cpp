@@ -571,6 +571,25 @@ void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 }
 
+void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) {
+    float align = 0.0f;
+    switch (paragraphStyle().getTextAlign()) {
+        case TextAlign::kCenter:
+            align = -0.5f;
+            break;
+        case TextAlign::kRight:
+            align = -1.0f;
+            break;
+        default:
+            break;
+    }
+    hOffset += align * (fMaxIntrinsicWidth - path->GetLength(false));
+
+    for (auto& line : fLines) {
+        line.paint(painter, path, hOffset, vOffset);
+    }
+}
+
 void ParagraphImpl::resetContext() {
     fAlphabeticBaseline = 0;
     fHeight = 0;
