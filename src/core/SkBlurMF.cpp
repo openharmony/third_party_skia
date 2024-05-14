@@ -19,6 +19,7 @@
 #include "src/core/SkRRectPriv.h"
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkStringUtils.h"
+#include "src/core/SkSDFFilter.h"
 #include "src/core/SkWriteBuffer.h"
 
 #if SK_SUPPORT_GPU
@@ -71,6 +72,12 @@ public:
                                      SkAlphaType srcAlphaType,
                                      const SkMatrix& ctm,
                                      const SkIRect& maskRect) const override;
+
+    float getNoxFormedSigma3() const override;
+
+    GrSurfaceProxyView filterMaskGPUNoxFormed(GrRecordingContext*, GrSurfaceProxyView srcView,
+        GrColorType srcColorType, SkAlphaType srcAlphaType, const SkIRect& maskRect,
+        const SkRRect& srcRRect) const override;
 #endif
 
     void computeFastBounds(const SkRect&, SkRect*) const override;
@@ -1582,7 +1589,7 @@ bool SkBlurMaskFilterImpl::canFilterMaskGPU(const GrStyledShape& shape,
         SkIRect clipRect = clipBounds.makeOutset(sigma3, sigma3);
         SkIRect srcRect = devSpaceShapeBounds.makeOutset(sigma3, sigma3);
 
-        if (!srcRect.intersect(clipRect)) {
+        if (!SDFBlur::isSDFBlur(shape) && !srcRect.intersect(clipRect)) {
             srcRect.setEmpty();
         }
         *maskRect = srcRect;
@@ -1651,6 +1658,34 @@ GrSurfaceProxyView SkBlurMaskFilterImpl::filterMaskGPU(GrRecordingContext* conte
 
         surfaceDrawContext->fillPixelsWithLocalMatrix(nullptr, std::move(paint), clipRect,
                                                       SkMatrix::I());
+    }
+
+    return surfaceDrawContext->readSurfaceView();
+}
+
+float SkBlurMaskFilterImpl::getNoxFormedSigma3() const
+{
+    constexpr float kSigma_Factor = 3.f;
+    return kSigma_Factor * fSigma;
+}
+
+GrSurfaceProxyView SkBlurMaskFilterImpl::filterMaskGPUNoxFormed(GrRecordingContext* context,
+    GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType,
+    const SkIRect& maskRect, const SkRRect& srcRRect) const
+{
+    const SkIRect clipRect = SkIRect::MakeWH(maskRect.width(), maskRect.height());
+
+    float noxFormedSigma = this->getNoxFormedSigma3();
+
+    bool isNormalBlur = (kNormal_SkBlurStyle == fBlurStyle);
+    if (!isNormalBlur) {
+        return {};
+    }
+    auto srcBounds = SkIRect::MakeSize(srcView.proxy()->dimensions());
+    auto surfaceDrawContext = SDFBlur::SDFBlur(context, srcView, srcColorType, srcAlphaType, nullptr,
+        clipRect, srcBounds, noxFormedSigma, SkTileMode::kClamp, srcRRect);
+    if (!surfaceDrawContext || !surfaceDrawContext->asTextureProxy()) {
+        return {};
     }
 
     return surfaceDrawContext->readSurfaceView();
