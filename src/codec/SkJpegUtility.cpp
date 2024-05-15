@@ -20,7 +20,11 @@ void skjpeg_err_exit(j_common_ptr dinfo) {
     if (error->fJmpBufStack.empty()) {
         SK_ABORT("JPEG error with no jmp_buf set.");
     }
+#ifdef _JBLEN
+    longjmp((_JBTYPE*)*error->fJmpBufStack.back(), 1);
+#else
     longjmp(*error->fJmpBufStack.back(), 1);
+#endif
 }
 
 // Functions for buffered sources //
