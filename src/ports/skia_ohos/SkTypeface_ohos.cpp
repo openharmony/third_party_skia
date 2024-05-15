@@ -131,7 +131,7 @@ sk_sp<SkTypeface> SkTypeface_OHOS::onMakeClone(const SkFontArguments& args) cons
             return nullptr;
         }
         if (axisDefs.count() > 0) {
-            SkFixed axis[axisCount];
+            SkFixed axis[axisDefs.count()];
             fontScanner.computeAxisValues(axisDefs, args.getVariationDesignPosition(),
                 axis, info.familyName);
             info.setAxisSet(axisCount, axis, axisDefs.data());
