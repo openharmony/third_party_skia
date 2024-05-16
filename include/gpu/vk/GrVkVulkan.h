@@ -15,6 +15,10 @@
 #include <vulkan/vulkan_ohos.h>
 #endif
 
+#ifdef SKIA_USE_XEG
+#include "third_party/vulkan-headers/include/vulkan/vulkan_xeg.h"
+#endif
+
 #ifdef SK_BUILD_FOR_ANDROID
 // This is needed to get android extensions for external memory
 #if SKIA_IMPLEMENTATION || !defined(SK_VULKAN)

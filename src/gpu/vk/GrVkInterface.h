@@ -222,6 +222,10 @@ public:
         VkPtr<PFN_vkCreateSamplerYcbcrConversion> fCreateSamplerYcbcrConversion;
         VkPtr<PFN_vkDestroySamplerYcbcrConversion> fDestroySamplerYcbcrConversion;
 
+#ifdef SKIA_USE_XEG
+        VkPtr<PFN_HMS_XEG_GetPerFrameLoad> fHMS_XEG_GetPerFrameLoad;
+#endif
+
 #ifdef SK_BUILD_FOR_ANDROID
         // Functions for VK_ANDROID_external_memory_android_hardware_buffer
         VkPtr<PFN_vkGetAndroidHardwareBufferPropertiesANDROID> fGetAndroidHardwareBufferProperties;
