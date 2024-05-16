@@ -559,7 +559,7 @@ bool SkScalerContext_DW::isPngGlyph(const SkGlyph& glyph) {
 
     DWRITE_GLYPH_IMAGE_FORMATS f;
     IDWriteFontFace4* fontFace4 = this->getDWriteTypeface()->fDWriteFontFace4.get();
-    HRBM(fontFace4->GetGlyphImageFormats_(glyph.getGlyphID(), 0, UINT32_MAX, &f),
+    HRBM(fontFace4->GetGlyphImageFormats(glyph.getGlyphID(), 0, UINT32_MAX, &f),
          "Cannot get glyph image formats.");
     return f & DWRITE_GLYPH_IMAGE_FORMATS_PNG;
 }
