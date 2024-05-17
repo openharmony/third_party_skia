@@ -110,7 +110,7 @@ public:
                                              bool includeGhosts,
                                              const ClustersVisitor& visitor) const;
 
-    void format(TextAlign align, SkScalar maxWidth);
+    void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
     void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
     void visit(SkScalar x, SkScalar y);
