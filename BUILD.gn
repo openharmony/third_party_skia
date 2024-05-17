@@ -1631,6 +1631,10 @@ if (use_oh_skia) {
       "modules/svg",
     ]
 
+    if (is_arkui_x) {
+      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+    }
+
     public = skia_core_public
     public += skia_utils_public
     public += skia_effects_public
