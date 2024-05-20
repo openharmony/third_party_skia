@@ -309,8 +309,8 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
     fFontMetrics.fLeading = 0;
     switch (placeholderStyle->fAlignment) {
         case PlaceholderAlignment::kBaseline:
-            fFontMetrics.fAscent = baselineAdjustment - offset;
-            fFontMetrics.fDescent = baselineAdjustment + height - offset;
+            fFontMetrics.fAscent = baselineAdjustment - height - offset;
+            fFontMetrics.fDescent = baselineAdjustment - offset;
             break;
 
         case PlaceholderAlignment::kAboveBaseline:
