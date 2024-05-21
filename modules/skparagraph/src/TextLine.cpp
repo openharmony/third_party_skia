@@ -990,6 +990,10 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
                                                         bool includeGhostSpaces,
                                                         TextAdjustment textAdjustment,
                                                         StyleType styleType) const {
+    if (run == nullptr) {
+        ClipContext result;
+        return result
+    }
     ClipContext result = { run, 0, run->size(), 0, SkRect::MakeEmpty(), 0, false };
 
     if (run->fEllipsis) {
