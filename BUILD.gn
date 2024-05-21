@@ -1163,7 +1163,6 @@ optional("gpu") {
     }
     sources += skia_gl_gpu_sources
   }
-  
   if (skia_use_vulkan) {
     public_defines += [ "SK_VULKAN" ]
     if (skia_use_vma) {
