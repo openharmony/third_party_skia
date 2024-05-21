@@ -782,7 +782,8 @@ void GrResourceCache::purgeResourcesEveryFrame(bool scratchResourcesOnly, const 
         }
     }
     fPurgeableQueue.sort();
-    if (fBudgetedBytes >= fMaxBytesSoftLimit) {
+    static int softLimit = std::atoi(OHOS::system::GetParameter("persist.sys.graphic.fMaxBytesSoftLimit","280000000").c_str());
+    if (fBudgetedBytes >= softLimit) {
         for (int i=0; i < fPurgeableQueue.count(); i++) {
             GrGpuResource* resource = fPurgeableQueue.at(i);
             SkASSERT(resource->resourcePriv().isPurgeable());
