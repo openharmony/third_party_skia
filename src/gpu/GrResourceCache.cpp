@@ -7,6 +7,7 @@
 
 #include "src/gpu/GrResourceCache.h"
 #include <atomic>
+#include <parameters.h>
 #include <vector>
 #include "include/gpu/GrDirectContext.h"
 #include "include/private/GrSingleOwner.h"
