@@ -1169,6 +1169,7 @@ optional("gpu") {
     if (skia_use_vma) {
       deps += [ "third_party/vulkanmemoryallocator" ]
     }
+    deps += [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
     public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     sources += skia_vk_sources
     if (skia_enable_vulkan_debug_layers) {

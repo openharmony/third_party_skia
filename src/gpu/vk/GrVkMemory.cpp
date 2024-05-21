@@ -4,7 +4,8 @@
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
 */
-
+#include <parameters.h>
+#include "include/core/SkExecutor.h"
 #include "src/gpu/vk/GrVkMemory.h"
 
 #include "src/gpu/vk/GrVkGpu.h"
@@ -63,6 +64,9 @@ void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
         executor->add([allocator = gpu->memoryAllocator(), backedMem = alloc.fBackendMemory] {
             allocator->freeMemory(backedMem);
         });
+    } else {
+        GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
+        allocator->freeMemory(alloc.fBackendMemory);
     }
 }
 
@@ -125,6 +129,9 @@ void GrVkMemory::FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
         executor->add([allocator = gpu->memoryAllocator(), backedMem = alloc.fBackendMemory] {
             allocator->freeMemory(backedMem);
         });
+    } else {
+        GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
+        allocator->freeMemory(alloc.fBackendMemory);
     }
 }
 
