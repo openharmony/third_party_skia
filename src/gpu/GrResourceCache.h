@@ -398,7 +398,6 @@ private:
     // our budget, used in purgeAsNeeded()
     size_t                              fMaxBytes = kDefaultMaxSize;
 
-    size_t                              fMaxBytesSoftLimit = 450000000;
 #if GR_CACHE_STATS
     int                                 fHighWaterCount = 0;
     size_t                              fHighWaterBytes = 0;

@@ -58,7 +58,7 @@ bool GrVkMemory::AllocAndBindBufferMemory(GrVkGpu* gpu,
 void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
     SkASSERT(alloc.fBackendMemory);
     bool asyncFreeVkMemoryEnabled = 
-        (std::atoi(system::GetParameter("persist.sys.graphic.AsyncFreeVkMemoryEnabled", "0").c_str()) != 0);
+        (std::atoi(system::GetParameter("persist.sys.graphic.mem.async_free_enabled", "0").c_str()) != 0);
     if (asyncFreeVkMemoryEnabled) {
         executor->add([allocator = gpu->memoryAllocator(), backedMem = alloc.fBackendMemory] {
             allocator->freeMemory(backedMem);
@@ -120,7 +120,7 @@ bool GrVkMemory::AllocAndBindImageMemory(GrVkGpu* gpu,
 void GrVkMemory::FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
     SkASSERT(alloc.fBackendMemory);
     bool asyncFreeVkMemoryEnabled = 
-        (std::atoi(system::GetParameter("persist.sys.graphic.AsyncFreeVkMemoryEnabled", "0").c_str()) != 0);
+        (std::atoi(system::GetParameter("persist.sys.graphic.mem.async_free_enabled", "0").c_str()) != 0);
     if (asyncFreeVkMemoryEnabled) {
         executor->add([allocator = gpu->memoryAllocator(), backedMem = alloc.fBackendMemory] {
             allocator->freeMemory(backedMem);

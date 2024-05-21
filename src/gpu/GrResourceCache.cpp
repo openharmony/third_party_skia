@@ -615,8 +615,8 @@ void GrResourceCache::didChangeBudgetStatus(GrGpuResource* resource) {
 
 void GrResourceCache::purgeAsNeeded() {
     #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "purgeAsNeeded now=%d, limit=%d, purge=%d, all=%d",
-        fBudgetedBytes, fMaxBytes, fPurgeableBytes, fBytes);
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PurgeGrResourceCache cur=%d, limit=%d",
+        fBudgetedBytes, fMaxBytes);
     #endif
     SkTArray<GrUniqueKeyInvalidatedMessage> invalidKeyMsgs;
     fInvalidUniqueKeyInbox.poll(&invalidKeyMsgs);
@@ -766,8 +766,8 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
 void GrResourceCache::purgeResourcesEveryFrame(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
         const std::set<int>& protectedPidSet) {
     #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "purgeAsNeeded now=%d, limit=%d, purge=%d, all=%d",
-        fBudgetedBytes, fMaxBytes, fPurgeableBytes, fBytes);
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PurgeGrResourceCache cur=%d, limit=%d",
+        fBudgetedBytes, fMaxBytes);
     #endif
     fThreadSafeCache->dropUniqueRefs(nullptr);
     if (exitedPidSet.size() > 1) {
@@ -852,8 +852,8 @@ void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, con
 
 bool GrResourceCache::purgeToMakeHeadroom(size_t desiredHeadroomBytes) {
     #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "purgeAsNeeded now=%d, limit=%d, purge=%d, all=%d",
-        fBudgetedBytes, fMaxBytes, fPurgeableBytes, fBytes);
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PurgeGrResourceCache cur=%d, limit=%d",
+        fBudgetedBytes, fMaxBytes);
     #endif
     AutoValidate av(this);
     if (desiredHeadroomBytes > fMaxBytes) {
