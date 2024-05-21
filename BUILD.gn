@@ -1118,7 +1118,7 @@ optional("gpu") {
 
   libs = []
   frameworks = []
-
+  deps += [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
   if (skia_use_gl) {
     public_defines += [ "SK_GL" ]
     if (is_android) {
@@ -1163,13 +1163,12 @@ optional("gpu") {
     }
     sources += skia_gl_gpu_sources
   }
-
+  
   if (skia_use_vulkan) {
     public_defines += [ "SK_VULKAN" ]
     if (skia_use_vma) {
       deps += [ "third_party/vulkanmemoryallocator" ]
     }
-    deps += [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
     public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     sources += skia_vk_sources
     if (skia_enable_vulkan_debug_layers) {
