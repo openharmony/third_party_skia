@@ -763,7 +763,7 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
     this->validate();
 }
 
-void GrResourceCache::purgeResourcesEveryFrame(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
         const std::set<int>& protectedPidSet) {
     #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PurgeGrResourceCache cur=%d, limit=%d",
@@ -782,7 +782,10 @@ void GrResourceCache::purgeResourcesEveryFrame(bool scratchResourcesOnly, const 
         }
     }
     fPurgeableQueue.sort();
-    static int softLimit = std::atoi(OHOS::system::GetParameter("persist.sys.graphic.fMaxBytesSoftLimit","280000000").c_str());
+    const char* softLimitPercentage = "0.9";
+    static int softLimit = 
+        std::atof(OHOS::system::GetParameter("persist.sys.graphic.mem.soft_limit", 
+        softLimitPercentage).c_str()) * fMaxBytes;
     if (fBudgetedBytes >= softLimit) {
         for (int i=0; i < fPurgeableQueue.count(); i++) {
             GrGpuResource* resource = fPurgeableQueue.at(i);

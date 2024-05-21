@@ -288,7 +288,7 @@ public:
     void purgeUnlockedResources(size_t bytesToPurge, bool preferScratchResources);
     void purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag& tag);
     void purgeUnlockedResourcesByPid(bool scratchResourcesOnly, const std::set<int>& exitedPidSet);
-    void purgeResourcesEveryFrame(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+    void purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
         const std::set<int>& protectedPidSet);
     void purgeUnlockAndSafeCacheGpuResources();
 

@@ -371,7 +371,7 @@ void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, con
     this->getTextBlobCache()->purgeStaleBlobs();
 }
 
-void GrDirectContext::purgeResourcesEveryFrame(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
         const std::set<int>& protectedPidSet)
 {
     ASSERT_SINGLE_OWNER
@@ -380,7 +380,7 @@ void GrDirectContext::purgeResourcesEveryFrame(bool scratchResourcesOnly, const 
         return;
     }
 
-    fResourceCache->purgeResourcesEveryFrame(scratchResourcesOnly, exitedPidSet, protectedPidSet);
+    fResourceCache->purgeCacheBetweenFrames(scratchResourcesOnly, exitedPidSet, protectedPidSet);
 }
 void GrDirectContext::performDeferredCleanup(std::chrono::milliseconds msNotUsed,
                                              bool scratchResourcesOnly) {
