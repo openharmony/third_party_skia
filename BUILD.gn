@@ -81,6 +81,9 @@ config("skia_public") {
   if (defined(skia_ohos_debug) && skia_ohos_debug) {
     defines += [ "SKIA_OHOS_DEBUG" ]
   }
+  if (defined(skia_use_xeg) && skia_use_xeg) {
+    defines += [ "SKIA_USE_XEG" ]
+  }
   if (is_ohos && (target_cpu == "arm" || target_cpu == "arm64")) {
     defines += [ "SKIA_OHOS_FOR_OHOS_TRACE" ]
   }
@@ -1138,8 +1141,11 @@ optional("gpu") {
           "//third_party/EGL/api",
           "//third_party/openGLES/api",
         ]
-        deps += [ "//foundation/graphic/graphic_2d:libgl" ]
-        deps += [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
+        external_deps = [
+          "graphic_2d:EGL",
+          "graphic_2d:GLESv3",
+          "init:libbegetutil",
+        ]
       } else {
         libs += [ "EGL" ]
       }
@@ -1627,6 +1633,10 @@ if (use_oh_skia) {
       "modules/skunicode",
       "modules/svg",
     ]
+
+    if (is_arkui_x) {
+      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+    }
 
     public = skia_core_public
     public += skia_utils_public
@@ -2374,7 +2384,10 @@ if (skia_enable_tools) {
 
         if (is_ohos) {
           include_dirs = [ "//third_party/EGL/api" ]
-          deps += [ "//foundation/graphic/graphic_2d:libgl" ]
+          external_deps = [
+            "graphic_2d:EGL",
+            "graphic_2d:GLESv3",
+          ]
         } else {
           libs += [ "EGL" ]
         }

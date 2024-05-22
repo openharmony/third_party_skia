@@ -409,8 +409,11 @@ void TextLine::ensureTextBlobCachePopulated() {
     pathParameters.recordPath = nullptr;
 }
 
-void TextLine::format(TextAlign align, SkScalar maxWidth) {
+void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal) {
     SkScalar delta = maxWidth - this->width();
+    if (ellipsisModal == EllipsisModal::HEAD && fEllipsis) {
+        delta += fEllipsis->advance().fX;
+    }
     if (delta <= 0) {
         return;
     }
@@ -494,7 +497,7 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
     } else {
         context.run->copyTo(builder, SkToU32(context.pos), context.size);
     }
-    record.fClippingNeeded = context.clippingNeeded;
+    // when letterspacing < 0, it causes the font is cliped. so the record fClippingNeeded is set false
     if (context.clippingNeeded) {
         record.fClipRect = extendHeight(context).makeOffset(this->offset());
     } else {

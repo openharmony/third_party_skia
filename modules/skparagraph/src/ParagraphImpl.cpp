@@ -1049,7 +1049,7 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
     }
 
     for (auto& line : fLines) {
-        line.format(effectiveAlign, maxWidth);
+        line.format(effectiveAlign, maxWidth, this->paragraphStyle().getEllipsisMod());
     }
 }
 

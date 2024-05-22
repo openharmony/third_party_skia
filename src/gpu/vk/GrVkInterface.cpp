@@ -17,6 +17,11 @@
     fFunctions.f##name =                                    \
             reinterpret_cast<PFN_vk##name##suffix>(getProc("vk" #name #suffix, instance, device))
 
+#ifdef SKIA_USE_XEG
+#define ACQUIRE_PROC_XEG(name, instance, device) \
+    fFunctions.f##name =  reinterpret_cast<PFN_##name>(getProc("" #name, instance, device))
+#endif
+
 GrVkInterface::GrVkInterface(GrVkGetProc getProc,
                              VkInstance instance,
                              VkDevice device,
@@ -240,6 +245,10 @@ GrVkInterface::GrVkInterface(GrVkGetProc getProc,
         ACQUIRE_PROC_SUFFIX(DestroySamplerYcbcrConversion, KHR, VK_NULL_HANDLE, device);
     }
 
+#ifdef SKIA_USE_XEG
+    ACQUIRE_PROC_XEG(HMS_XEG_GetPerFrameLoad, VK_NULL_HANDLE, device);
+#endif
+
 #ifdef SK_BUILD_FOR_ANDROID
     // Functions for VK_ANDROID_external_memory_android_hardware_buffer
     if (extensions->hasExtension(
@@ -401,6 +410,12 @@ bool GrVkInterface::validate(uint32_t instanceVersion, uint32_t physicalDeviceVe
         nullptr == fFunctions.fCmdExecuteCommands) {
         RETURN_FALSE_INTERFACE
     }
+
+#ifdef SKIA_USE_XEG
+    if (nullptr == fFunctions.fHMS_XEG_GetPerFrameLoad) {
+        RETURN_FALSE_INTERFACE
+    }
+#endif
 
     // Functions for VK_KHR_get_physical_device_properties2 or vulkan 1.1
     if (physicalDeviceVersion >= VK_MAKE_VERSION(1, 1, 0) ||
