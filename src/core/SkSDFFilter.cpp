@@ -33,6 +33,7 @@ bool draw_mask_SDFBlur(skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, c
     const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter)
 {
     float noxFormedSigma3 = maskFilter->getNoxFormedSigma3();
+    mask.concatSwizzle(GrSwizzle("aaaa"));
 
     SkMatrix matrixTrans =
             SkMatrix::Translate(-SkIntToScalar(noxFormedSigma3), -SkIntToScalar(noxFormedSigma3));
