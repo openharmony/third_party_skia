@@ -209,7 +209,7 @@ private:
 
     int parseConfig(const char* fname);
     int checkConfigFile(const char* fname, Json::Value& root);
-    int parseFontDir(const Json::Value& root);
+    int parseFontDir(const char* fname, const Json::Value& root);
     int parseGeneric(const Json::Value& root);
     int parseFallback(const Json::Value& root);
     int parseFallbackItem(const Json::Value& root);

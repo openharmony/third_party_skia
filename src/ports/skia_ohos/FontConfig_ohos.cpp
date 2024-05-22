@@ -375,7 +375,7 @@ int FontConfig_OHOS::parseConfig(const char* fname)
     const char* key = "fontdir";
     if (root.isMember(key)) {
         if (root[key].isArray()) {
-            parseFontDir(root[key]);
+            parseFontDir(temp.c_str(), root[key]);
         } else {
             return logErrInfo(ERROR_CONFIG_INVALID_VALUE_TYPE, key);
         }
@@ -514,15 +514,20 @@ void FontConfig_OHOS::dumpFallback() const
  * \return NO_ERROR successful
  * \return ERROR_CONFIG_INVALID_VALUE_TYPE invalid value type
  */
-int FontConfig_OHOS::parseFontDir(const Json::Value& root)
+int FontConfig_OHOS::parseFontDir(const char* fname, const Json::Value& root)
 {
     for (unsigned int i = 0; i < root.size(); i++) {
         if (root[i].isString()) {
+            const char* dir;
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
     defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
-            const char* dir = strcmp(root[i].asCString(), "/system/fonts/") ? root[i].asCString() : "fonts";
+            if (strcmp(fname, OHOS_DEFAULT_CONFIG) == 0) {
+                dir = strcmp(root[i].asCString(), "/system/fonts/") ? root[i].asCString() : "fonts";
+            } else {
+                dir = strcmp(root[i].asCString(), "/system/fonts/") ? root[i].asCString() : "../../../../hms/previewer/resources/fonts";
+            }
 #else
-            const char* dir = root[i].asCString();
+            dir = root[i].asCString();
 #endif
             fontDirSet.emplace_back(SkString(dir));
         } else {
