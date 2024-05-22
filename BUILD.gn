@@ -1118,7 +1118,9 @@ optional("gpu") {
 
   libs = []
   frameworks = []
-  deps += [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
+  external_deps = [
+    "init:libbegetutil",
+  ]
   if (skia_use_gl) {
     public_defines += [ "SK_GL" ]
     if (is_android) {
