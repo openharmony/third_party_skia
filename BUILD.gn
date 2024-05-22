@@ -1118,9 +1118,7 @@ optional("gpu") {
 
   libs = []
   frameworks = []
-  external_deps = [
-    "init:libbegetutil",
-  ]
+  external_deps += [ "init:libbegetutil" ]
   if (skia_use_gl) {
     public_defines += [ "SK_GL" ]
     if (is_android) {
