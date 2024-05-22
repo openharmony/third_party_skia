@@ -1123,6 +1123,7 @@ optional("gpu") {
   frameworks = []
   if (skia_use_gl) {
     public_defines += [ "SK_GL" ]
+    external_deps = [ "init:libbegetutil" ]
     if (is_android) {
       sources += [
         "src/gpu/gl/egl/GrGLMakeEGLInterface.cpp",
@@ -1141,10 +1142,9 @@ optional("gpu") {
           "//third_party/EGL/api",
           "//third_party/openGLES/api",
         ]
-        external_deps = [
+        external_deps += [
           "graphic_2d:EGL",
           "graphic_2d:GLESv3",
-          "init:libbegetutil",
         ]
       } else {
         libs += [ "EGL" ]
@@ -1174,7 +1174,7 @@ optional("gpu") {
     if (skia_use_vma) {
       deps += [ "third_party/vulkanmemoryallocator" ]
     }
-    deps += [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
+    external_deps = [ "init:libbegetutil" ]
     public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     sources += skia_vk_sources
     if (skia_enable_vulkan_debug_layers) {
