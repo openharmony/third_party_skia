@@ -1144,8 +1144,8 @@ optional("gpu") {
         external_deps = [
           "graphic_2d:EGL",
           "graphic_2d:GLESv3",
-          "init:libbegetutil",
         ]
+        deps += [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
       } else {
         libs += [ "EGL" ]
       }
