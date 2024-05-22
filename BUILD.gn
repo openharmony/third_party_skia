@@ -1144,8 +1144,8 @@ optional("gpu") {
         external_deps = [
           "graphic_2d:EGL",
           "graphic_2d:GLESv3",
+          "init:libbegetutil",
         ]
-        deps += [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
       } else {
         libs += [ "EGL" ]
       }
@@ -1931,6 +1931,7 @@ if (use_oh_skia) {
       external_deps = [
         "hilog:libhilog",
         "hitrace:hitrace_meter",
+        "init:libbegetutil",
       ]
     }
 
@@ -2387,6 +2388,7 @@ if (skia_enable_tools) {
           external_deps = [
             "graphic_2d:EGL",
             "graphic_2d:GLESv3",
+            "init:libbegetutil",
           ]
         } else {
           libs += [ "EGL" ]
