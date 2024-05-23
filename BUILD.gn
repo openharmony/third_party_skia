@@ -1929,6 +1929,7 @@ if (use_oh_skia) {
     if (is_ohos) {
       sources += [ "//third_party/skia/src/ports/SkDebug_ohos.cpp" ]
       external_deps = [
+        "bounds_checking_function:libsec_shared",
         "hilog:libhilog",
         "hitrace:hitrace_meter",
       ]
