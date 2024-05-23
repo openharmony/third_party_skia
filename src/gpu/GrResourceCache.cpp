@@ -7,7 +7,6 @@
 
 #include "src/gpu/GrResourceCache.h"
 #include <atomic>
-#include <parameters.h>
 #include <vector>
 #include "include/gpu/GrDirectContext.h"
 #include "include/private/GrSingleOwner.h"
@@ -28,6 +27,10 @@
 #include "src/gpu/SkGr.h"
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
 #include "hitrace_meter.h"
+#endif
+
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+#include <parameters.h>
 #endif
 
 DECLARE_SKMESSAGEBUS_MESSAGE(GrUniqueKeyInvalidatedMessage, uint32_t, true);
@@ -784,9 +787,13 @@ void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly, const s
     }
     fPurgeableQueue.sort();
     const char* softLimitPercentage = "0.9";
+    #ifdef NOT_BUILD_FOR_OHOS_SDK
     static int softLimit = 
         std::atof(OHOS::system::GetParameter("persist.sys.graphic.mem.soft_limit", 
         softLimitPercentage).c_str()) * fMaxBytes;
+    #else
+    static int softLimit = 0.9 * fMaxBytes;
+    #endif
     if (fBudgetedBytes >= softLimit) {
         for (int i=0; i < fPurgeableQueue.count(); i++) {
             GrGpuResource* resource = fPurgeableQueue.at(i);
