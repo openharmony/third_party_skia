@@ -1167,6 +1167,14 @@ optional("gpu") {
     } else {
       sources += [ "src/gpu/gl/GrGLMakeNativeInterface_none.cpp" ]
     }
+    if (!build_ohos_sdk) {
+      if (defined(external_deps)) {
+        external_deps += [ "init:libbegetutil" ]
+      } else {
+        external_deps = [ "init:libbegetutil" ]
+      }
+      defines = [ "NOT_BUILD_FOR_OHOS_SDK" ]
+    }
     sources += skia_gl_gpu_sources
   }
 
@@ -1174,6 +1182,10 @@ optional("gpu") {
     public_defines += [ "SK_VULKAN" ]
     if (skia_use_vma) {
       deps += [ "third_party/vulkanmemoryallocator" ]
+    }
+    if (!build_ohos_sdk) {
+      external_deps = [ "init:libbegetutil" ]
+      defines = [ "NOT_BUILD_FOR_OHOS_SDK" ]
     }
     public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     sources += skia_vk_sources
@@ -1932,6 +1944,7 @@ if (use_oh_skia) {
         "bounds_checking_function:libsec_shared",
         "hilog:libhilog",
         "hitrace:hitrace_meter",
+        "init:libbegetutil",
       ]
     }
 
@@ -2388,6 +2401,7 @@ if (skia_enable_tools) {
           external_deps = [
             "graphic_2d:EGL",
             "graphic_2d:GLESv3",
+            "init:libbegetutil",
           ]
         } else {
           libs += [ "EGL" ]
