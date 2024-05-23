@@ -1168,7 +1168,7 @@ optional("gpu") {
       sources += [ "src/gpu/gl/GrGLMakeNativeInterface_none.cpp" ]
     }
     if (!build_ohos_sdk) {
-      if (defind(external_deps)) {
+      if (defined(external_deps)) {
         external_deps += [ "init:libbegetutil" ]
       } else {
         external_deps = [ "init:libbegetutil" ]
