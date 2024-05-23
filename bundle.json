@@ -21,7 +21,8 @@
         "deps": {
             "components": [
                 "hilog",
-                "hitrace"
+                "hitrace",
+                "init"
             ],
             "third_party": [
                 "vulkan-headers"

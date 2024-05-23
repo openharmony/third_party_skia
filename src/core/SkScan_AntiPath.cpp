@@ -14,6 +14,7 @@
 #include "src/core/SkAntiRun.h"
 #include "src/core/SkBlitter.h"
 #include "src/core/SkPathPriv.h"
+#include "src/core/SkPathComplexityDfx.h"
 
 #define SHIFT   SK_SUPERSAMPLE_SHIFT
 #define SCALE   (1 << SHIFT)
@@ -599,10 +600,14 @@ static SkIRect safeRoundOut(const SkRect& src) {
 
 constexpr int kSampleSize = 8;
 #if !defined(SK_DISABLE_AAA)
+#ifdef SK_BUILD_FOR_OHOS
+    constexpr SkScalar kComplexityThreshold = 8.0;
+#else
     constexpr SkScalar kComplexityThreshold = 0.25;
 #endif
+#endif
 
-static void compute_complexity(const SkPath& path, SkScalar& avgLength, SkScalar& complexity) {
+void compute_complexity(const SkPath& path, SkScalar& avgLength, SkScalar& complexity) {
     int n = path.countPoints();
     if (n < kSampleSize || path.getBounds().isEmpty()) {
         // set to invalid value to indicate that we failed to compute
@@ -659,12 +664,15 @@ static bool ShouldUseAAA(const SkPath& path, SkScalar avgLength, SkScalar comple
         // and Analytic AA might be slower than supersampling.
         return path.countPoints() < std::max(bounds.width(), bounds.height()) / 2 - 10;
     #else
+#ifndef SK_BUILD_FOR_OHOS
         if (path.countPoints() >= path.getBounds().height()) {
             // SAA is faster than AAA in this case even if there are no
             // intersections because AAA will have too many scan lines. See
             // skbug.com/8272
             return false;
         }
+#endif
+        SkPathComplexityDfx::AddPathComplexityTrace(complexity);
         // We will use AAA if the number of verbs < kSampleSize and therefore complexity < 0
         return complexity < kComplexityThreshold;
     #endif

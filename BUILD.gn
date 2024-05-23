@@ -1921,7 +1921,9 @@ if (use_oh_skia) {
       external_deps = [
         "hilog:libhilog",
         "hitrace:hitrace_meter",
+        "init:libbegetutil",
       ]
+      defines += [ "SK_ENABLE_PATH_COMPLEXITY_DFX" ]
     }
 
     if (is_android) {
