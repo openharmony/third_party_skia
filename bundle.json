@@ -22,7 +22,8 @@
             "components": [
                 "hilog",
                 "hitrace",
-                "init"
+                "init",
+                "bounds_checking_function"
             ],
             "third_party": [
                 "vulkan-headers"

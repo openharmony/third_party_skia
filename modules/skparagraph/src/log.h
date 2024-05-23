@@ -25,13 +25,13 @@
 #undef LOG_TAG
 #define LOG_TAG "2DGraphics"
 
-#define LOGD(fmt, ...)               \
+#define LOGD(fmt, ...)              \
     HILOG_DEBUG(LOG_CORE, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
 #define LOGI(fmt, ...)              \
     HILOG_INFO(LOG_CORE, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
 #define LOGW(fmt, ...)              \
     HILOG_WARN(LOG_CORE, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
-#define LOGE(fmt, ...)               \
+#define LOGE(fmt, ...)              \
     HILOG_ERROR(LOG_CORE, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
 #endif
 
