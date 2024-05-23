@@ -14,8 +14,30 @@
 #include "hitrace_meter.h"
 #endif
 
+#define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
+
 using AllocationPropertyFlags = GrVkMemoryAllocator::AllocationPropertyFlags;
 using BufferUsage = GrVkMemoryAllocator::BufferUsage;
+
+static bool FindMemoryType(GrVkGpu *gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t &typeIndex)
+{
+    VkPhysicalDevice physicalDevice = gpu->physicalDevice();
+    VkPhysicalDeviceMemoryProperties memProperties{};
+    VK_CALL(gpu, GetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties));
+
+    bool hasFound = false;
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount && !hasFound; ++i) {
+        if (typeFilter & (1 << i)) {
+            uint32_t supportedFlags = memProperties.memoryTypes[i].propertyFlags & properties;
+            if (supportedFlags == properties) {
+                typeIndex = i;
+                hasFound = true;
+            }
+        }
+    }
+
+    return hasFound;
+}
 
 bool GrVkMemory::AllocAndBindBufferMemory(GrVkGpu* gpu,
                                           VkBuffer buffer,
@@ -53,10 +75,72 @@ bool GrVkMemory::AllocAndBindBufferMemory(GrVkGpu* gpu,
     return true;
 }
 
+bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
+                                           OH_NativeBuffer *nativeBuffer,
+                                           VkBuffer buffer,
+                                           GrVkAlloc* alloc) {
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "ImportAndBindBufferMemory");
+#endif
+    VkDevice device = gpu->device();
+    VkMemoryRequirements memReqs{};
+    VK_CALL(gpu, GetBufferMemoryRequirements(device, buffer, &memReqs));
+
+    uint32_t typeIndex = 0;
+    bool hasFound = FindMemoryType(gpu, memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, typeIndex);
+    if (!hasFound) {
+        return false;
+    }
+
+    // Import external memory
+    VkImportNativeBufferInfoOHOS importInfo{};
+    importInfo.sType = VK_STRUCTURE_TYPE_IMPORT_NATIVE_BUFFER_INFO_OHOS;
+    importInfo.pNext = nullptr;
+    importInfo.buffer = nativeBuffer;
+
+    VkMemoryDedicatedAllocateInfo dedicatedAllocInfo{};
+    dedicatedAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+    dedicatedAllocInfo.pNext = &importInfo;
+    dedicatedAllocInfo.image = VK_NULL_HANDLE;
+    dedicatedAllocInfo.buffer = buffer;
+
+    VkMemoryAllocateInfo allocateInfo{};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocateInfo.pNext = &dedicatedAllocInfo;
+    allocateInfo.allocationSize = memReqs.size;
+    allocateInfo.memoryTypeIndex = typeIndex;
+
+    VkResult err;
+    VkDeviceMemory memory;
+    GR_VK_CALL_RESULT(gpu, err, AllocateMemory(device, &allocateInfo, nullptr, &memory));
+    if (err) {
+        return false;
+    }
+
+    // Bind buffer
+    GR_VK_CALL_RESULT(gpu, err, BindBufferMemory(device, buffer, memory, 0));
+    if (err) {
+        VK_CALL(gpu, FreeMemory(device, memory, nullptr));
+        return false;
+    }
+
+    alloc->fMemory = memory;
+    alloc->fOffset = 0;
+    alloc->fSize = memReqs.size;
+    alloc->fFlags = 0;
+    alloc->fIsExternalMemory = true;
+
+    return true;
+}
+
 void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
-    SkASSERT(alloc.fBackendMemory);
-    GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
-    allocator->freeMemory(alloc.fBackendMemory);
+    if (alloc.fIsExternalMemory) {
+        VK_CALL(gpu, FreeMemory(gpu->device(), alloc.fMemory, nullptr));
+    } else {
+        SkASSERT(alloc.fBackendMemory);
+        GrVkMemoryAllocator *allocator = gpu->memoryAllocator();
+        allocator->freeMemory(alloc.fBackendMemory);
+    }
 }
 
 bool GrVkMemory::AllocAndBindImageMemory(GrVkGpu* gpu,

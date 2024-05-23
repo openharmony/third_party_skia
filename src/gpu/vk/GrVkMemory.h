@@ -24,6 +24,12 @@ namespace GrVkMemory {
                                   VkBuffer buffer,
                                   GrVkMemoryAllocator::BufferUsage,
                                   GrVkAlloc* alloc);
+
+    bool ImportAndBindBufferMemory(GrVkGpu* gpu,
+                                   OH_NativeBuffer *nativeBuffer,
+                                   VkBuffer buffer,
+                                   GrVkAlloc* alloc);
+
     void FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc);
 
     bool AllocAndBindImageMemory(GrVkGpu* gpu,

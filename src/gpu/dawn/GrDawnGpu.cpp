@@ -249,6 +249,14 @@ sk_sp<GrTexture> GrDawnGpu::onCreateCompressedTexture(SkISize dimensions, const 
     return nullptr;
 }
 
+sk_sp<GrTexture> GrDawnGpu::onCreateCompressedTexture(SkISize dimensions, const GrBackendFormat&,
+                                                      SkBudgeted, GrMipmapped, GrProtected,
+                                                      OH_NativeBuffer* nativeBuffer,
+                                                      size_t bufferSize) {
+    SkASSERT(!"unimplemented");
+    return nullptr;                                                    
+}
+
 sk_sp<GrTexture> GrDawnGpu::onWrapBackendTexture(const GrBackendTexture& backendTex,
                                                  GrWrapOwnership ownership,
                                                  GrWrapCacheable cacheable,
