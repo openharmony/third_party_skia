@@ -4,7 +4,7 @@
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
 */
-
+#include "include/core/SkExecutor.h"
 #include "src/gpu/vk/GrVkMemory.h"
 
 #include "src/gpu/vk/GrVkGpu.h"
@@ -14,10 +14,16 @@
 #include "hitrace_meter.h"
 #endif
 
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+#include <parameters.h>
+#endif
+
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
 
 using AllocationPropertyFlags = GrVkMemoryAllocator::AllocationPropertyFlags;
 using BufferUsage = GrVkMemoryAllocator::BufferUsage;
+
+static std::unique_ptr<SkExecutor> executor = SkExecutor::MakeFIFOThreadPool(1, false);
 
 static bool FindMemoryType(GrVkGpu *gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t &typeIndex)
 {
@@ -134,12 +140,25 @@ bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
 }
 
 void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
-    if (alloc.fIsExternalMemory) {
-        VK_CALL(gpu, FreeMemory(gpu->device(), alloc.fMemory, nullptr));
-    } else {
+    #ifdef NOT_BUILD_FOR_OHOS_SDK
+    static bool asyncFreeVkMemoryEnabled = 
+        (std::atoi(system::GetParameter("persist.sys.graphic.mem.async_free_enabled", "0").c_str()) != 0);
+    #else
+    static bool asyncFreeVkMemoryEnabled = false;
+    #endif
+    if (asyncFreeVkMemoryEnabled) {
         SkASSERT(alloc.fBackendMemory);
-        GrVkMemoryAllocator *allocator = gpu->memoryAllocator();
-        allocator->freeMemory(alloc.fBackendMemory);
+        executor->add([allocator = gpu->memoryAllocator(), backedMem = alloc.fBackendMemory] {
+            allocator->freeMemory(backedMem);
+        });
+    } else {
+        if (alloc.fIsExternalMemory) {
+            VK_CALL(gpu, FreeMemory(gpu->device(), alloc.fMemory, nullptr));
+        } else {
+            SkASSERT(alloc.fBackendMemory);
+            GrVkMemoryAllocator *allocator = gpu->memoryAllocator();
+            allocator->freeMemory(alloc.fBackendMemory);
+        }
     }
 }
 
@@ -196,8 +215,20 @@ bool GrVkMemory::AllocAndBindImageMemory(GrVkGpu* gpu,
 
 void GrVkMemory::FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
     SkASSERT(alloc.fBackendMemory);
-    GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
-    allocator->freeMemory(alloc.fBackendMemory);
+    #ifdef NOT_BUILD_FOR_OHOS_SDK
+    static bool asyncFreeVkMemoryEnabled = 
+        (std::atoi(system::GetParameter("persist.sys.graphic.mem.async_free_enabled", "0").c_str()) != 0);
+    #else
+    static bool asyncFreeVkMemoryEnabled = false;
+    #endif
+    if (asyncFreeVkMemoryEnabled) {
+        executor->add([allocator = gpu->memoryAllocator(), backedMem = alloc.fBackendMemory] {
+            allocator->freeMemory(backedMem);
+        });
+    } else {
+        GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
+        allocator->freeMemory(alloc.fBackendMemory);
+    }
 }
 
 void* GrVkMemory::MapAlloc(GrVkGpu* gpu, const GrVkAlloc& alloc) {

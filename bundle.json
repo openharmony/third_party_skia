@@ -21,7 +21,9 @@
         "deps": {
             "components": [
                 "hilog",
-                "hitrace"
+                "hitrace",
+                "init",
+                "bounds_checking_function"
             ],
             "third_party": [
                 "vulkan-headers"
