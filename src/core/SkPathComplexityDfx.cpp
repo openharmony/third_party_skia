@@ -31,15 +31,13 @@ bool IsShowPathComplexityEnabled()
         std::atoi((OHOS::system::GetParameter("persist.sys.graphic.showPathComplexity", "0")).c_str()) != 0;
     return enabled;
 }
-#endif
+
 
 void SkPathComplexityDfx::AddPathComplexityTrace(SkScalar complexity)
 {
-#ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
     if (GetDebugTraceLevel() >= PATH_TRACE_LEVEL) {
         HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Path Complexity Debug: %f", complexity);
     }
-#endif
 }
 void SkPathComplexityDfx::ShowPathComplexityDfx(SkCanvas* canvas, const SkPath& path)
 {
@@ -47,7 +45,6 @@ void SkPathComplexityDfx::ShowPathComplexityDfx(SkCanvas* canvas, const SkPath& 
         return;
     }
 
-#ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
     if (IsShowPathComplexityEnabled()) {
         constexpr size_t MESSAGE_SIZE = 4;
         constexpr SkScalar MESSAGE_FONT_SIZE = 30.0f;
@@ -65,5 +62,5 @@ void SkPathComplexityDfx::ShowPathComplexityDfx(SkCanvas* canvas, const SkPath& 
         canvas->drawSimpleText(message.c_str(), MESSAGE_SIZE, SkTextEncoding::kUTF8,
             0, MARGIN_LENGTH, tempFont, tempPaint);
     }
-#endif
 }
+#endif
