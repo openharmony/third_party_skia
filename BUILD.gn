@@ -1946,6 +1946,7 @@ if (use_oh_skia) {
         "hitrace:hitrace_meter",
         "init:libbegetutil",
       ]
+      defines += [ "SK_ENABLE_PATH_COMPLEXITY_DFX" ]
     }
 
     if (is_android) {
