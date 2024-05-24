@@ -519,8 +519,7 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                 }
 
                 if (typeface && textStyle.getFontArguments()) {
-                    auto varTypeface = textStyle.getFontArguments()->CloneTypeface(typeface);
-                    typeface = varTypeface ? varTypeface : typeface;
+                    typeface = fParagraph->fFontCollection->CloneTypeface(typeface, textStyle.getFontArguments());
                 }
 
                 auto resolvedBlocksBefore = fResolvedBlocks.size();
@@ -676,12 +675,12 @@ bool OneLineShaper::shape() {
 #ifndef USE_SKIA_TXT
                 SkFont font(std::move(typeface), block.fStyle.getFontSize());
                 font.setEdging(SkFont::Edging::kAntiAlias);
-                font.setHinting(SkFontHinting::kSlight);
+                font.setHinting(SkFontHinting::kNone);
                 font.setSubpixel(true);
 #else
                 RSFont font(std::move(typeface), block.fStyle.getFontSize(), 1, 0);
                 font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
-                font.SetHinting(RSDrawing::FontHinting::SLIGHT);
+                font.SetHinting(RSDrawing::FontHinting::NONE);
                 font.SetSubpixel(true);
 #endif
 

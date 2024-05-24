@@ -352,6 +352,18 @@ GrSurfaceProxyView SkMaskFilterBase::filterMaskGPU(GrRecordingContext*,
                                                    const SkIRect& maskRect) const {
     return {};
 }
+
+float SkMaskFilterBase::getNoxFormedSigma3() const
+{
+    return 0.f;
+}
+
+GrSurfaceProxyView SkMaskFilterBase::filterMaskGPUNoxFormed(GrRecordingContext*, GrSurfaceProxyView view,
+    GrColorType srcColorType, SkAlphaType srcAlphaType, const SkIRect& maskRect,
+    const SkRRect& srcRRect) const
+{
+    return {};
+}
 #endif
 
 void SkMaskFilterBase::computeFastBounds(const SkRect& src, SkRect* dst) const {

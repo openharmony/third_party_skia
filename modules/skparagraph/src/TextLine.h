@@ -40,6 +40,12 @@ public:
       bool clippingNeeded;
     };
 
+    struct PathParameters {
+        const RSPath* recordPath = nullptr;
+        SkScalar hOffset = 0;
+        SkScalar vOffset = 0;
+    } pathParameters;
+
     enum TextAdjustment {
         GlyphCluster = 0x01,    // All text producing glyphs pointing to the same ClusterIndex
         GlyphemeCluster = 0x02, // base glyph + all attached diacritics
@@ -104,8 +110,9 @@ public:
                                              bool includeGhosts,
                                              const ClustersVisitor& visitor) const;
 
-    void format(TextAlign align, SkScalar maxWidth);
+    void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
+    void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
     void visit(SkScalar x, SkScalar y);
     void ensureTextBlobCachePopulated();
     void setParagraphImpl(ParagraphImpl* newpara) { fOwner = newpara; }
@@ -132,7 +139,8 @@ public:
                                         SkScalar runOffsetInLine,
                                         SkScalar textOffsetInRunInLine,
                                         bool includeGhostSpaces,
-                                        TextAdjustment textAdjustment) const;
+                                        TextAdjustment textAdjustment,
+                                        StyleType styleType = StyleType::kNone) const;
 
     LineMetrics getMetrics() const;
 
@@ -150,6 +158,7 @@ public:
     size_t getGlyphCount() const;
     std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const;
     TextLine CloneSelf();
+    TextRange getTextRangeReplacedByEllipsis() const { return fTextRangeReplacedByEllipsis; }
 private:
     struct RoundRectAttr {
         int styleId;
@@ -199,17 +208,21 @@ private:
     SkScalar fShift;                    // Let right
     SkScalar fWidthWithSpaces;
     std::unique_ptr<Run> fEllipsis;     // In case the line ends with the ellipsis
+    TextRange fTextRangeReplacedByEllipsis;     // text range replaced by ellipsis
     InternalLineMetrics fSizes;                 // Line metrics as a max of all run metrics and struts
     InternalLineMetrics fMaxRunMetrics;         // No struts - need it for GetRectForRange(max height)
     bool fHasBackground;
     bool fHasShadows;
     bool fHasDecorations;
+    bool fIsArcText;
+    bool fArcTextState;
 
     LineMetricStyle fAscentStyle;
     LineMetricStyle fDescentStyle;
 
     struct TextBlobRecord {
         void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
+        void paint(ParagraphPainter* painter);
 
 #ifndef USE_SKIA_TXT
         sk_sp<SkTextBlob> fBlob;

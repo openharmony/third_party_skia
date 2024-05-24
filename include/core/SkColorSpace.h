@@ -224,6 +224,9 @@ public:
     uint32_t transferFnHash() const { return fTransferFnHash; }
     uint64_t           hash() const { return (uint64_t)fTransferFnHash << 32 | fToXYZD50Hash; }
 
+    void SetIccCicp(skcms_CICP cicp);
+    bool GetIccCicp(skcms_CICP* cicp) const;
+
 private:
     friend class SkColorSpaceSingletonFactory;
 
@@ -236,6 +239,9 @@ private:
 
     skcms_TransferFunction              fTransferFn;
     skcms_Matrix3x3                     fToXYZD50;
+
+    skcms_CICP                          fcicp;
+    bool                                hasCicp = false;
 
     mutable skcms_TransferFunction      fInvTransferFn;
     mutable skcms_Matrix3x3             fFromXYZD50;

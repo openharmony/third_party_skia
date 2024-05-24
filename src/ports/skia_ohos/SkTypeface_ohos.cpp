@@ -118,24 +118,29 @@ void SkTypeface_OHOS::onGetFamilyName(SkString* familyName) const
  */
 sk_sp<SkTypeface> SkTypeface_OHOS::onMakeClone(const SkFontArguments& args) const
 {
+    int ttcIndex = args.getCollectionIndex();
+    auto stream = openStream(&ttcIndex);
+
     FontInfo info(*(fontInfo.get()));
     unsigned int axisCount = args.getVariationDesignPosition().coordinateCount;
     if (axisCount > 0) {
-        int ttcIndex = args.getCollectionIndex();
         SkTypeface_FreeType::Scanner fontScanner;
         SkTypeface_FreeType::Scanner::AxisDefinitions axisDefs;
-        if (!fontScanner.scanFont(info.stream.get(), ttcIndex, &info.familyName, &info.style,
+        if (!fontScanner.scanFont(stream.get(), ttcIndex, &info.familyName, &info.style,
             &info.isFixedWidth, &axisDefs)) {
             return nullptr;
         }
         if (axisDefs.count() > 0) {
-            SkFixed axis[axisCount];
+            SkFixed axis[axisDefs.count()];
             fontScanner.computeAxisValues(axisDefs, args.getVariationDesignPosition(),
                 axis, info.familyName);
             info.setAxisSet(axisCount, axis, axisDefs.data());
+            info.style = info.computeFontStyle();
+            return sk_make_sp<SkTypeface_OHOS>(specifiedName, info);
         }
     }
-    return sk_make_sp<SkTypeface_OHOS>(specifiedName, info);
+
+    return sk_ref_sp(this);
 }
 
 /*! To get the font information of the typeface

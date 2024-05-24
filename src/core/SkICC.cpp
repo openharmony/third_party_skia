@@ -13,6 +13,7 @@
 #include "src/core/SkICCPriv.h"
 #include "src/core/SkMD5.h"
 #include "src/core/SkUtils.h"
+#include <securec.h>
 
 static constexpr char kDescriptionTagBodyPrefix[12] =
         { 'G', 'o', 'o', 'g', 'l', 'e', '/', 'S', 'k', 'i', 'a' , '/'};
@@ -90,8 +91,14 @@ static constexpr uint32_t kTAG_cprt = SkSetFourByteTag('c', 'p', 'r', 't');
 static constexpr uint32_t kTAG_cprt_Bytes = sizeof(kCopyrightTagHeader) +
                                             sizeof(kCopyrightTagBody);
 static constexpr uint32_t kTAG_cprt_Offset = kTAG_wtpt_Offset + kTAG_XYZ_Bytes;
+// icc profile cicp tag size, reference ICC Chapter 10.3
+static constexpr uint32_t kTAG_cicp_bytes = 12;
 
 static constexpr uint32_t kICCProfileSize = kTAG_cprt_Offset + kTAG_cprt_Bytes;
+static constexpr uint32_t kICCProfileSizeWithCicp = kICCProfileSize + kTAG_cicp_bytes;
+static constexpr int TOXYZ_MATRIX_COL_ZERO = 0;
+static constexpr int TOXYZ_MATRIX_COL_ONE = 1;
+static constexpr int TOXYZ_MATRIX_COL_TWO = 2;
 
 static constexpr uint32_t kICCHeader[kICCHeaderSize / 4] {
     SkEndian_SwapBE32(kICCProfileSize),  // Size of the profile
@@ -191,6 +198,15 @@ static void write_trc_tag(uint32_t* ptr, const skcms_TransferFunction& fn) {
     ptr[7] = SkEndian_SwapBE32(float_round_to_fixed(fn.d));
     ptr[8] = SkEndian_SwapBE32(float_round_to_fixed(fn.e));
     ptr[9] = SkEndian_SwapBE32(float_round_to_fixed(fn.f));
+}
+
+static void write_cicp_tag(uint32_t* ptr, const skcms_CICP& cicp) {
+    ptr[0] = SkEndian_SwapBE32(kTAG_CICP);
+    ptr[1] = 0;
+    ptr[2] =  SkEndian_SwapBE32((((uint32_t)cicp.colour_primaries & 0xFF) << 24) |
+             (((uint32_t)cicp.transfer_characteristics & 0xFF) << 16) |
+             (((uint32_t)cicp.matrix_coefficients & 0xFF) << 8) |
+             (uint32_t)cicp.full_range_flag);
 }
 
 static bool nearly_equal(float x, float y) {
@@ -352,4 +368,70 @@ sk_sp<SkData> SkWriteICCProfile(const skcms_TransferFunction& fn,
 
     SkASSERT(kICCProfileSize == ptr - (uint8_t*) profile.get());
     return SkData::MakeFromMalloc(profile.release(), kICCProfileSize);
+}
+
+sk_sp<SkData> SkWriteICCProfileWithCicp(const skcms_TransferFunction& fn,
+                                        const skcms_Matrix3x3& toXYZD50,
+                                        const skcms_CICP& cicp) {
+    SkAutoMalloc profile(kICCProfileSizeWithCicp);
+    uint8_t* pProfile = (uint8_t*) profile.get();
+
+    // Write icc profile header
+    if (memcpy_s(pProfile, sizeof(kICCHeader), kICCHeader, sizeof(kICCHeader)) != EOK) {
+        return nullptr;
+    }
+    pProfile += sizeof(kICCHeader);
+
+    // Write tag table
+    if (memcpy_s(pProfile, sizeof(kICCTagTable), kICCTagTable, sizeof(kICCTagTable)) != EOK) {
+        return nullptr;
+    }
+    pProfile += sizeof(kICCTagTable);
+
+    // Write profile description tag
+    if (memcpy_s(pProfile, sizeof(kDescriptionTagHeader), kDescriptionTagHeader, sizeof(kDescriptionTagHeader)) != EOK) {
+        return nullptr;
+    }
+    pProfile += sizeof(kDescriptionTagHeader);
+    char colorProfileTag[kICCDescriptionTagSize];
+    get_color_profile_tag(colorProfileTag, fn, toXYZD50);
+    for (size_t i = 0; i < kICCDescriptionTagSize; i++) {
+        *pProfile++ = 0;
+        *pProfile++ = colorProfileTag[i];
+    }
+
+    // Write XYZ tags
+    write_xyz_tag((uint32_t*) pProfile, toXYZD50, TOXYZ_MATRIX_COL_ZERO);
+    pProfile += kTAG_XYZ_Bytes;
+    write_xyz_tag((uint32_t*) pProfile, toXYZD50, TOXYZ_MATRIX_COL_ONE);
+    pProfile += kTAG_XYZ_Bytes;
+    write_xyz_tag((uint32_t*) pProfile, toXYZD50, TOXYZ_MATRIX_COL_TWO);
+    pProfile += kTAG_XYZ_Bytes;
+
+    // Write TRC tag
+    write_trc_tag((uint32_t*) pProfile, fn);
+    pProfile += kTAG_TRC_Bytes;
+
+    // Write white point tag (must be D50)
+    if (memcpy_s(pProfile, sizeof(kWhitePointTag), kWhitePointTag, sizeof(kWhitePointTag)) != EOK) {
+        return nullptr;
+    }
+    pProfile += sizeof(kWhitePointTag);
+
+    // Write copyright tag
+    if (memcpy_s(pProfile, sizeof(kCopyrightTagHeader), kCopyrightTagHeader, sizeof(kCopyrightTagHeader)) != EOK) {
+        return nullptr;
+    }
+    pProfile += sizeof(kCopyrightTagHeader);
+    if (memcpy_s(pProfile, sizeof(kCopyrightTagBody), kCopyrightTagBody, sizeof(kCopyrightTagBody) != EOK)) {
+        return nullptr;
+    }
+    pProfile += sizeof(kCopyrightTagBody);
+    
+    // Write cicp tag
+    write_cicp_tag((uint32_t*) pProfile, cicp);
+    pProfile += kTAG_cicp_bytes;
+
+    SkASSERT(kICCProfileSizeWithCicp == pProfile - (uint8_t*) profile.get());
+    return SkData::MakeFromMalloc(profile.release(), kICCProfileSizeWithCicp);
 }

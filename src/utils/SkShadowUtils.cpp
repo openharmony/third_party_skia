@@ -609,9 +609,9 @@ void SkShadowUtils::DrawShadow(SkCanvas* canvas, const SkPath& path, const SkPoi
 void SkShadowUtils::DrawShadowStyle(SkCanvas* canvas, const SkPath& path, const SkPoint3& zPlaneParams,
                                     const SkPoint3& lightPos, SkScalar lightRadius,
                                     SkColor ambientColor, SkColor spotColor,
-                                    uint32_t flags, bool isShadowStyle) {
+                                    uint32_t flags, bool isLimitElevation) {
     SkDrawShadowRec rec;
-    rec.isShadowStyle = isShadowStyle;
+    rec.isLimitElevation = isLimitElevation;
     if (!fill_shadow_rec(path, zPlaneParams, lightPos, lightRadius, ambientColor, spotColor,
                          flags, canvas->getTotalMatrix(), &rec)) {
         return;
@@ -795,8 +795,8 @@ void SkBaseDevice::drawShadow(const SkPath& path, const SkDrawShadowRec& rec) {
                                                           &factory.fOffset);
             } else {
                 SkDrawShadowMetrics::GetSpotParams(zPlaneParams.fZ, devLightPos.fX - center.fX,
-                                                   devLightPos.fY - center.fY, devLightPos.fZ,
-                                                   lightRadius, &radius, &scale, &factory.fOffset, rec.isShadowStyle);
+                                                   devLightPos.fY - center.fY, devLightPos.fZ, lightRadius,
+                                                   &radius, &scale, &factory.fOffset, rec.isLimitElevation);
             }
 
             SkRect devBounds;

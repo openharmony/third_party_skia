@@ -38,6 +38,7 @@ static constexpr uint32_t kTAG_gTRC = SkSetFourByteTag('g', 'T', 'R', 'C');
 static constexpr uint32_t kTAG_bTRC = SkSetFourByteTag('b', 'T', 'R', 'C');
 static constexpr uint32_t kTAG_kTRC = SkSetFourByteTag('k', 'T', 'R', 'C');
 static constexpr uint32_t kTAG_A2B0 = SkSetFourByteTag('A', '2', 'B', '0');
+static constexpr uint32_t kTAG_CICP = SkSetFourByteTag('c', 'i', 'c', 'p');
 
 static constexpr uint32_t kTAG_CurveType     = SkSetFourByteTag('c', 'u', 'r', 'v');
 static constexpr uint32_t kTAG_ParaCurveType = SkSetFourByteTag('p', 'a', 'r', 'a');

@@ -55,6 +55,14 @@ TextRange operator*(const TextRange& a, const TextRange& b) {
     return end > begin ? TextRange(begin, end) : EMPTY_TEXT;
 }
 
+TextRange textRangeMergeBtoA(const TextRange& a, const TextRange& b) {
+    if (a.width() <= 0 || b.width() <= 0 || a.end < b.start || a.start > b.end) {
+        return a;
+    }
+
+    return TextRange(std::min(a.start, b.start), std::max(a.end, b.end));
+}
+
 Paragraph::Paragraph()
 { }
 
@@ -398,6 +406,7 @@ bool ParagraphImpl::shapeForMiddleEllipsis(SkScalar rawWidth)
     }
     fOldMaxWidth = rawWidth;
     isMiddleEllipsis = true;
+    allTextWidth = 0;
     this->computeCodeUnitProperties();
     this->fRuns.reset();
     this->fClusters.reset();
@@ -559,6 +568,25 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     for (auto& line : fLines) {
         line.paint(painter, x, y);
+    }
+}
+
+void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) {
+    float align = 0.0f;
+    switch (paragraphStyle().getTextAlign()) {
+        case TextAlign::kCenter:
+            align = -0.5f;
+            break;
+        case TextAlign::kRight:
+            align = -1.0f;
+            break;
+        default:
+            break;
+    }
+    hOffset += align * (fMaxIntrinsicWidth - path->GetLength(false));
+
+    for (auto& line : fLines) {
+        line.paint(painter, path, hOffset, vOffset);
     }
 }
 
@@ -1021,7 +1049,7 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
     }
 
     for (auto& line : fLines) {
-        line.format(effectiveAlign, maxWidth);
+        line.format(effectiveAlign, maxWidth, this->paragraphStyle().getEllipsisMod());
     }
 }
 
@@ -1155,6 +1183,7 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
     //SkDebugf("getRectsForRange(%d,%d) -> (%d:%d)\n", start, end, text.start, text.end);
     for (auto& line : fLines) {
         auto lineText = line.textWithNewlines();
+        lineText = textRangeMergeBtoA(lineText, line.getTextRangeReplacedByEllipsis());
         auto intersect = lineText * text;
         if (intersect.empty() && lineText.start != text.start) {
             continue;

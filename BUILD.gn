@@ -81,6 +81,9 @@ config("skia_public") {
   if (defined(skia_ohos_debug) && skia_ohos_debug) {
     defines += [ "SKIA_OHOS_DEBUG" ]
   }
+  if (defined(skia_use_xeg) && skia_use_xeg) {
+    defines += [ "SKIA_USE_XEG" ]
+  }
   if (is_ohos && (target_cpu == "arm" || target_cpu == "arm64")) {
     defines += [ "SKIA_OHOS_FOR_OHOS_TRACE" ]
   }
@@ -1139,7 +1142,10 @@ optional("gpu") {
           "//third_party/EGL/api",
           "//third_party/openGLES/api",
         ]
-        deps += [ "//foundation/graphic/graphic_2d:libgl" ]
+        external_deps = [
+          "graphic_2d:EGL",
+          "graphic_2d:GLESv3",
+        ]
       } else {
         libs += [ "EGL" ]
       }
@@ -1161,6 +1167,14 @@ optional("gpu") {
     } else {
       sources += [ "src/gpu/gl/GrGLMakeNativeInterface_none.cpp" ]
     }
+    if (!build_ohos_sdk) {
+      if (defined(external_deps)) {
+        external_deps += [ "init:libbegetutil" ]
+      } else {
+        external_deps = [ "init:libbegetutil" ]
+      }
+      defines = [ "NOT_BUILD_FOR_OHOS_SDK" ]
+    }
     sources += skia_gl_gpu_sources
   }
 
@@ -1168,6 +1182,10 @@ optional("gpu") {
     public_defines += [ "SK_VULKAN" ]
     if (skia_use_vma) {
       deps += [ "third_party/vulkanmemoryallocator" ]
+    }
+    if (!build_ohos_sdk) {
+      external_deps = [ "init:libbegetutil" ]
+      defines = [ "NOT_BUILD_FOR_OHOS_SDK" ]
     }
     public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     sources += skia_vk_sources
@@ -1628,6 +1646,10 @@ if (use_oh_skia) {
       "modules/svg",
     ]
 
+    if (is_arkui_x) {
+      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+    }
+
     public = skia_core_public
     public += skia_utils_public
     public += skia_effects_public
@@ -1919,6 +1941,7 @@ if (use_oh_skia) {
     if (is_ohos) {
       sources += [ "//third_party/skia/src/ports/SkDebug_ohos.cpp" ]
       external_deps = [
+        "bounds_checking_function:libsec_shared",
         "hilog:libhilog",
         "hitrace:hitrace_meter",
         "init:libbegetutil",
@@ -2376,7 +2399,11 @@ if (skia_enable_tools) {
 
         if (is_ohos) {
           include_dirs = [ "//third_party/EGL/api" ]
-          deps += [ "//foundation/graphic/graphic_2d:libgl" ]
+          external_deps = [
+            "graphic_2d:EGL",
+            "graphic_2d:GLESv3",
+            "init:libbegetutil",
+          ]
         } else {
           libs += [ "EGL" ]
         }

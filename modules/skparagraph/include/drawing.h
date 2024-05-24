@@ -54,6 +54,7 @@ using RSRect = RSDrawing::Rect;
 using RSRoundRect = RSDrawing::RoundRect;
 using RSScalar = RSDrawing::scalar;
 using RSTextBlob = RSDrawing::TextBlob;
+using RSXform = RSDrawing::RSXform;
 using RSTextBlobBuilder = RSDrawing::TextBlobBuilder;
 using RSTypeface = RSDrawing::Typeface;
 using RSFontArguments = RSDrawing::FontArguments;

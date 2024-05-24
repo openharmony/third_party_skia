@@ -13,7 +13,23 @@ Release 2.4.9 Wed Sep 14 2022
        #629 #640  CVE-2022-40674 -- Heap use-after-free vulnerability in
                     function doContent. Expected impact is denial of service
                     or potentially arbitrary code execution.
-
+        Security fixes:
+       #531 #534  CVE-2021-45960 -- Fix issues with left shifts by >=29 places
+                    resulting in
+                      a) realloc acting as free
+                      b) realloc allocating too few bytes
+                      c) undefined behavior
+                    depending on architecture and precise value
+                    for XML documents with >=2^27+1 prefixed attributes
+                    on a single XML tag a la
+                    "<r xmlns:a='[..]' a:a123='[..]' [..] />"
+                    where XML_ParserCreateNS is used to create the parser
+                    (which needs argument "-n" when running xmlwf).
+                    Impact is denial of service, or more.
+        Special thanks to:
+            Tyson Smith
+                 and
+            GCC Farm Project
 Release 2.4.1 Sun May 23 2021
         Bug fixes:
        #488 #490  Autotools: Fix installed header expat_config.h for multilib
@@ -28,6 +44,11 @@ Release 2.4.1 Sun May 23 2021
 
 Release 2.4.0 Sun May 23 2021
         Security fixes:
+            #551  CVE-2022-23990 -- Fix unsigned integer overflow in function
+                    doProlog triggered by large content in element type
+                    declarations when there is an element declaration handler
+                    present (from a prior call to XML_SetElementDeclHandler).
+                    Impact is denial of service or more.
    #34 #466 #484  CVE-2013-0340/CWE-776 -- Protect against billion laughs attacks
                     (denial-of-service; flavors targeting CPU time or RAM or both,
                     leveraging general entities or parameter entities or both)
@@ -59,6 +80,7 @@ Release 2.4.0 Sun May 23 2021
                       parameters when desired.
                       If you ever need to increase the defaults for non-attack XML
                       payload, please file a bug report with libexpat.
+
 
         Bug fixes:
        #332 #470  For (non-default) compilation with -DEXPAT_MIN_SIZE=ON (CMake)
@@ -94,6 +116,7 @@ Release 2.4.0 Sun May 23 2021
                     of doc/reference.html and doc/xmlwf.xml
 
         Special thanks to:
+            Roland Illig
             Dimitry Andric
             Felix Wilhelm
             Eero Helenius

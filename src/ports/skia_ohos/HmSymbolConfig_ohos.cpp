@@ -497,20 +497,20 @@ static void PiecewiseParaCurveCase(const char* key, const Json::Value& root, Pie
 static void PiecewiseParaDurationCase(const char* key, const Json::Value& root,
     PiecewiseParameter& piecewiseParameter)
 {
-    if (!root[key].isInt()) {
-        SkDebugf("duration is not int!");
+    if (!root[key].isNumeric()) {
+        SkDebugf("duration is not numeric!");
         return;
     }
-    piecewiseParameter.duration = root[key].asInt();
+    piecewiseParameter.duration = static_cast<uint32_t>(root[key].asDouble());
 }
 
 static void PiecewiseParaDelayCase(const char* key, const Json::Value& root, PiecewiseParameter& piecewiseParameter)
 {
-    if (!root[key].isInt()) {
-        SkDebugf("delay is not int!");
+    if (!root[key].isNumeric()) {
+        SkDebugf("delay is not numeric!");
         return;
     }
-    piecewiseParameter.delay = root[key].asInt();
+    piecewiseParameter.delay = static_cast<int>(root[key].asDouble());
 }
 
 void HmSymbolConfig_OHOS::ParseSymbolPiecewisePara(const Json::Value& root, PiecewiseParameter& piecewiseParameter)
@@ -838,12 +838,13 @@ void HmSymbolConfig_OHOS::ParseDefaultColor(const char* defaultColorStr, RenderG
         for (unsigned int i = 1; i < defaultColorStrLen; i++) {
             defaultColorHex[i + 1] = defaultColorStr[i];
         }
+        defaultColorHex[defaultColorHexLen - 1] = '\0';
     } else {
         SkDebugf("%{public}s is invalid value!", defaultColorStr);
         return;
     }
 
-    char* endPtr;
+    char* endPtr = nullptr;
     int defaultColorInt = strtol(defaultColorHex, &endPtr, hexFlag);
     renderGroup.color.r = (defaultColorInt >> twoBytesBitsLen) & 0xFF;
     renderGroup.color.g = (defaultColorInt >> oneByteBitsLen) & 0xFF;

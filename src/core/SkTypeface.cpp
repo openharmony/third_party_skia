@@ -292,6 +292,14 @@ sk_sp<SkTypeface> SkTypeface::MakeDeserialize(SkStream* stream) {
     return typeface;
 }
 
+bool SkTypeface::isCustomTypeface() const {
+    return fIsCustom;
+}
+
+void SkTypeface::setIsCustomTypeface(bool isCustom) {
+    fIsCustom = isCustom;
+}
+
 std::unique_ptr<SkStreamAsset> SkTypeface::openExistingStream(int* ttcIndex) const {
     int ttcIndexStorage;
     if (nullptr == ttcIndex) {

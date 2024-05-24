@@ -24,7 +24,7 @@ struct SK_API SkDrawShadowRec {
     SkColor     fAmbientColor;
     SkColor     fSpotColor;
     uint32_t    fFlags;
-    bool        isShadowStyle = false;
+    bool        isLimitElevation = false;
 
     /** Writes text representation of SkDrawShadowRec to string.
 
@@ -64,13 +64,12 @@ inline SkScalar SpotBlurRadius(SkScalar occluderZ, SkScalar lightZ, SkScalar lig
 
 inline void GetSpotParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY, SkScalar lightZ,
                           SkScalar lightRadius,
-                          SkScalar* blurRadius, SkScalar* scale, SkVector* translate, bool isShadowStyle) {
+                          SkScalar* blurRadius, SkScalar* scale, SkVector* translate, bool isLimitElevation) {
     SkScalar zRatio = divide_and_pin(occluderZ, lightZ - occluderZ, 0.0f, 0.95f);
     *blurRadius = lightRadius*zRatio;
-    *scale = 1.0;
-    zRatio = 0.0f;
+    *scale = divide_and_pin(lightZ, lightZ - occluderZ, 1.0f, 1.95f);
 
-    if (isShadowStyle) {
+    if (isLimitElevation) {
         *scale = 1.0f;
         zRatio = 0.0f;
     }

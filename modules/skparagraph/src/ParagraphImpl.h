@@ -118,6 +118,7 @@ public:
     void layout(SkScalar width) override;
     void paint(SkCanvas* canvas, SkScalar x, SkScalar y) override;
     void paint(ParagraphPainter* canvas, SkScalar x, SkScalar y) override;
+    void paint(ParagraphPainter* canvas, RSPath* path, SkScalar hOffset, SkScalar vOffset) override;
     std::vector<TextBox> getRectsForRange(unsigned start,
                                           unsigned end,
                                           RectHeightStyle rectHeightStyle,

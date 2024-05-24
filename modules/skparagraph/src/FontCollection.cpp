@@ -24,6 +24,8 @@ std::shared_ptr<RSTypeface> RSLegacyMakeTypeface(
     return nullptr;
 }
 #endif
+
+constexpr int MAX_VARTYPEFACE_SIZE = 32;
 }
 
 bool FontCollection::FamilyKey::operator==(const FontCollection::FamilyKey& other) const {
@@ -51,8 +53,9 @@ size_t FontCollection::FamilyKey::Hasher::operator()(const FontCollection::Famil
 }
 
 FontCollection::FontCollection()
-        : fEnableFontFallback(true)
-        , fDefaultFamilyNames({SkString(DEFAULT_FONT_FAMILY)}) { }
+    : fEnableFontFallback(true),
+    fVarTypefaces(MAX_VARTYPEFACE_SIZE),
+    fDefaultFamilyNames({SkString(DEFAULT_FONT_FAMILY)}) {}
 
 size_t FontCollection::getFontManagersCount() const { return this->getFontManagerOrder().size(); }
 
@@ -158,7 +161,7 @@ std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<S
     for (const SkString& familyName : familyNames) {
         sk_sp<SkTypeface> match = matchTypeface(familyName, fontStyle);
         if (match && fontArgs) {
-            match = fontArgs->CloneTypeface(match);
+            match = CloneTypeface(match, fontArgs);
         }
         if (match) {
             typefaces.emplace_back(std::move(match));
@@ -170,6 +173,7 @@ std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<S
         for (const SkString& familyName : fDefaultFamilyNames) {
             match = matchTypeface(familyName, fontStyle);
             if (match) {
+                match = CloneTypeface(match, fontArgs);
                 break;
             }
         }
@@ -204,8 +208,7 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
     for (const auto& familyName : familyNames) {
         std::shared_ptr<RSTypeface> match = matchTypeface(familyName, fontStyle);
         if (match && fontArgs) {
-            auto varTypeface = fontArgs->CloneTypeface(match);
-            match = varTypeface ? varTypeface : match;
+            match = CloneTypeface(match, fontArgs);
         }
         if (match) {
             typefaces.emplace_back(std::move(match));
@@ -216,11 +219,8 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
         std::shared_ptr<RSTypeface> match;
         for (const auto& familyName : fDefaultFamilyNames) {
             match = matchTypeface(familyName, fontStyle);
-            if (fontArgs && match) {
-                auto varTypeface = fontArgs->CloneTypeface(match);
-                match = varTypeface ? varTypeface : match;
-            }
             if (match) {
+                match = CloneTypeface(match, fontArgs);
                 break;
             }
         }
@@ -336,10 +336,52 @@ std::shared_ptr<RSTypeface> FontCollection::defaultFallback() {
 }
 #endif
 
+#ifndef USE_SKIA_TXT
+sk_sp<SkTypeface> FontCollection::CloneTypeface(sk_sp<SkTypeface> typeface,
+    const std::optional<FontArguments>& fontArgs)
+{
+#else
+std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSTypeface> typeface,
+    const std::optional<FontArguments>& fontArgs)
+{
+#ifndef USE_SKIA_TXT
+    if (!typeface || !fontArgs || typeface->isCustomTypeface()) {
+#else
+    if (!typeface || !fontArgs || typeface->IsCustomTypeface()) {
+#endif
+        return typeface;
+    }
+
+    size_t hash = 0;
+    hash ^= std::hash<FontArguments>()(fontArgs.value());
+#ifndef USE_SKIA_TXT
+    hash ^= std::hash<uint32_t>()(typeface->uniqueID());
+#else
+    hash ^= std::hash<uint32_t>()(typeface->GetUniqueID());
+#endif
+
+    std::unique_lock<std::mutex> lock(fMutex);
+    const auto& cached = fVarTypefaces.find(hash);
+    if (cached) {
+        return *cached;
+    } else {
+        auto varTypeface = fontArgs->CloneTypeface(typeface);
+        if (!varTypeface) {
+            return typeface;
+        }
+
+        fVarTypefaces.insert(hash, varTypeface);
+        return varTypeface;
+    }
+}
+#endif
+
 void FontCollection::disableFontFallback() { fEnableFontFallback = false; }
 void FontCollection::enableFontFallback() { fEnableFontFallback = true; }
 
 void FontCollection::clearCaches() {
+    std::unique_lock<std::mutex> lock(fMutex);
+    fVarTypefaces.reset();
     fParagraphCache.reset();
 #ifndef USE_SKIA_TXT
     fTypefaces.reset();

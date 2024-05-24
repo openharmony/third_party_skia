@@ -30,6 +30,12 @@ static inline bool nearlyZero(SkScalar x, SkScalar tolerance = SK_ScalarNearlyZe
 }
 
 static inline bool nearlyEqual(SkScalar x, SkScalar y, SkScalar tolerance = SK_ScalarNearlyZero) {
+    if (SkScalarIsNaN(x) && SkScalarIsNaN(y)) {
+        // Generally NaN has no equality, but it will break the invariant of the hashtable
+        // in ParagraphCache, resulting in errors. This fix is only a backstop for
+        // this condition, other functions may still be unreliable in the presence of NaN.
+        return true;
+    }
     if (SkScalarIsFinite(x) && SkScalarIsFinite(x)) {
         return SkScalarNearlyEqual(x, y, tolerance);
     }
