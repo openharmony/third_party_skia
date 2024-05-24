@@ -792,14 +792,13 @@ void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly,
 
 #ifdef NOT_BUILD_FOR_OHOS_SDK
     const char* softLimitPercentage = "0.9";
+    const char* softLimitProperty = "persist.sys.graphic.mem.soft_limit";
     static int softLimit =
-            std::atof(OHOS::system::GetParameter("persist.sys.graphic.mem.soft_limit",
-                                                 softLimitPercentage)
-                              .c_str()) *
+            std::atof(OHOS::system::GetParameter(softLimitProperty, softLimitPercentage).c_str()) *
             fMaxBytes;
 #else
     const float softLimitPercentage = 0.9;
-    static int softLimit = 0.9 * fMaxBytes;
+    static int softLimit = softLimitPercentage * fMaxBytes;
 #endif
     if (fBudgetedBytes >= softLimit) {
         for (int i = 0; i < fPurgeableQueue.count(); i++) {
