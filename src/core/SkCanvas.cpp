@@ -37,7 +37,6 @@
 #include "src/core/SkMatrixPriv.h"
 #include "src/core/SkMatrixUtils.h"
 #include "src/core/SkPaintPriv.h"
-#include "src/core/SkPathComplexityDfx.h"
 #include "src/core/SkRasterClip.h"
 #include "src/core/SkSpecialImage.h"
 #include "src/core/SkStrikeCache.h"
@@ -51,6 +50,10 @@
 
 #include <memory>
 #include <new>
+
+#ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
+#include "src/core/SkPathComplexityDfx.h"
+#endif
 
 #if SK_SUPPORT_GPU
 #include "include/gpu/GrDirectContext.h"
@@ -1825,7 +1828,9 @@ void SkCanvas::drawVertices(const SkVertices* vertices, SkBlendMode mode, const 
 void SkCanvas::drawPath(const SkPath& path, const SkPaint& paint) {
     TRACE_EVENT0("skia", TRACE_FUNC);
     this->onDrawPath(path, paint);
+#ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
     SkPathComplexityDfx::ShowPathComplexityDfx(this, path);
+#endif
 }
 
 // Returns true if the rect can be "filled" : non-empty and finite
