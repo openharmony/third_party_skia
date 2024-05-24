@@ -25,14 +25,14 @@
 #ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
 #include "hitrace_meter.h"
 #include <parameters.h>
-#endif
-
-void compute_complexity(const SkPath& path, SkScalar& avgLength, SkScalar& complexity);
 
 class SkPathComplexityDfx {
 public:
     static void AddPathComplexityTrace(SkScalar complexity);
     static void ShowPathComplexityDfx(SkCanvas* canvas, const SkPath& path);
 };
+#endif
+
+void compute_complexity(const SkPath& path, SkScalar& avgLength, SkScalar& complexity);
 
 #endif
