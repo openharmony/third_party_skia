@@ -14,7 +14,10 @@
 #include "src/core/SkAntiRun.h"
 #include "src/core/SkBlitter.h"
 #include "src/core/SkPathPriv.h"
+
+#ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
 #include "src/core/SkPathComplexityDfx.h"
+#endif
 
 #define SHIFT   SK_SUPERSAMPLE_SHIFT
 #define SCALE   (1 << SHIFT)
@@ -672,7 +675,9 @@ static bool ShouldUseAAA(const SkPath& path, SkScalar avgLength, SkScalar comple
             return false;
         }
 #endif
+#ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
         SkPathComplexityDfx::AddPathComplexityTrace(complexity);
+#endif
         // We will use AAA if the number of verbs < kSampleSize and therefore complexity < 0
         return complexity < kComplexityThreshold;
     #endif
