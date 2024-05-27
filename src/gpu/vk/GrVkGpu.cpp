@@ -59,7 +59,7 @@
 #define VK_CALL(X) GR_VK_CALL(this->vkInterface(), X)
 #define VK_CALL_RET(RET, X) GR_VK_CALL_RESULT(this, RET, X)
 
-constexpr uint8_t ASTC_HEAD_SIZE = 16;
+constexpr uint8_t ASTC_HEADER_SIZE = 16;
 
 sk_sp<GrGpu> GrVkGpu::Make(const GrVkBackendContext& backendContext,
                            const GrContextOptions& options, GrDirectContext* direct) {
