@@ -613,14 +613,17 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     auto start = span.begin();
     InternalLineMetrics maxRunMetrics;
     bool needEllipsis = false;
-    SkScalar newWidth = 0.0;
+    SkScalar newWidth = maxWidth;
+    SkScalar noIndentWidth = maxWidth;
     while (fEndLine.endCluster() != end) {
         if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
             newWidth = FLT_MAX;
+            noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
             newWidth = balancedWidths[fLineNumber - 1];
         } else {
             newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
+            noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         }
         this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType());
 
@@ -728,7 +731,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 SkVector::Make(offsetX, fHeight),
                 SkVector::Make(fEndLine.width(), lineHeight),
                 fEndLine.metrics(),
-                needEllipsis);
+                needEllipsis,
+                noIndentWidth);
 
         softLineMaxIntrinsicWidth += widthWithSpaces;
 
@@ -829,7 +833,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 SkVector::Make(0, fHeight),
                 SkVector::Make(0, fEndLine.metrics().height()),
                 fEndLine.metrics(),
-                needEllipsis);
+                needEllipsis,
+                noIndentWidth);
         fHeight += fEndLine.metrics().height();
         parent->lines().back().setMaxRunMetrics(maxRunMetrics);
     }

@@ -1016,13 +1016,14 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 SkVector offset,
                 SkVector advance,
                 InternalLineMetrics metrics,
-                bool addEllipsis) {
+                bool addEllipsis,
+                SkScalar noIndentWidth) {
                 // TODO: Take in account clipped edges
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
                 if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
-                    line.createTailEllipsis(maxWidth, this->getEllipsis(), true, this->getWordBreakType());
+                    line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
                 } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
-                    line.createHeadEllipsis(maxWidth, this->getEllipsis(), true);
+                    line.createHeadEllipsis(maxWidth, this->getEllipsis(), true, noIndentWidth);
                 }
                 fLongestLine = std::max(fLongestLine, std::max(advance.fX, widthWithSpaces));
             });
