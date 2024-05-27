@@ -410,7 +410,7 @@ void TextLine::ensureTextBlobCachePopulated() {
 }
 
 void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal) {
-    SkScalar delta = maxWidth - this->width();
+    SkScalar delta = maxWidth - this->fWidthWithSpaces;
     if (ellipsisModal == EllipsisModal::HEAD && fEllipsis) {
         delta += fEllipsis->advance().fX;
     }
