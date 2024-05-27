@@ -186,8 +186,14 @@ sk_sp<GrTexture> GrResourceProvider::createCompressedTexture(SkISize dimensions,
     if (this->isAbandoned()) {
         return nullptr;
     }
-    return fGpu->createCompressedTexture(dimensions, format, budgeted, mipmapped,
-                                         isProtected, data->data(), data->size());
+    
+    if (data->getNativeBuffer() != nullptr) {
+        return fGpu->createCompressedTexture(dimensions, format, budgeted, mipmapped,
+                                             isProtected, data->getNativeBuffer(), data->size());
+    } else {
+        return fGpu->createCompressedTexture(dimensions, format, budgeted, mipmapped,
+                                             isProtected, data->data(), data->size());
+    }
 }
 
 sk_sp<GrTexture> GrResourceProvider::createTexture(SkISize dimensions,
