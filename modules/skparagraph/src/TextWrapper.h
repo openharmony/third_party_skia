@@ -179,7 +179,8 @@ public:
                                                   SkVector offset,
                                                   SkVector advance,
                                                   InternalLineMetrics metrics,
-                                                  bool addEllipsis)>;
+                                                  bool addEllipsis,
+                                                  SkScalar noIndentWidth)>;
     void breakTextIntoLines(ParagraphImpl* parent,
                             SkScalar maxWidth,
                             const AddLineToParagraph& addLine);
