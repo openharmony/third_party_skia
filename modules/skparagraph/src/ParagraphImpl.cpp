@@ -689,7 +689,8 @@ Cluster::Cluster(ParagraphImpl* owner,
         , fEnd(end)
         , fWidth(width)
         , fHeight(height)
-        , fHalfLetterSpacing(0.0) {
+        , fHalfLetterSpacing(0.0)
+        , fIsIdeographic(false) {
     size_t whiteSpacesBreakLen = 0;
     size_t intraWordBreakLen = 0;
 
@@ -706,6 +707,9 @@ Cluster::Cluster(ParagraphImpl* owner,
             }
             if (fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kPartOfIntraWordBreak)) {
                 ++intraWordBreakLen;
+            }
+            if (fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kIdeographic)) {
+                fIsIdeographic = true;
             }
         }
     }

@@ -205,6 +205,25 @@ public:
         return utf8 == '\n';
     }
 
+    static bool isIdeographic(SkUnichar unichar) {
+        static constexpr std::array<std::pair<SkUnichar, SkUnichar>, 8> ranges {{
+            {4352,   4607}, // Hangul Jamo
+            {11904, 42191}, // CJK_Radicals
+            {43072, 43135}, // Phags_Pa
+            {44032, 55215}, // Hangul_Syllables
+            {63744, 64255}, // CJK_Compatibility_Ideographs
+            {65072, 65103}, // CJK_Compatibility_Forms
+            {65381, 65500}, // Katakana_Hangul_Halfwidth
+            {131072, 196607} // Supplementary_Ideographic_Plane
+        }};
+        for (auto range : ranges) {
+            if (range.first <= unichar && range.second > unichar) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool computeCodeUnitFlags(char utf8[],
                               int utf8Units,
                               bool replaceTabs,
@@ -243,6 +262,9 @@ public:
                 }
                 if (SkUnicode_client::isControl(unichar)) {
                     results->at(i) |= SkUnicode::kControl;
+                }
+                if (SkUnicode_client::isIdeographic(unichar)) {
+                    results->at(i) |= SkUnicode::kIdeographic;
                 }
             }
         }
