@@ -804,7 +804,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     }
 }
 
-void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool, SkScalar noIndentWidth) {
+void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool) {
     if (fAdvance.fX <= maxWidth) {
         return;
     }
@@ -820,7 +820,7 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             lastRun = cluster.runIndex();
         }
         // See if it fits
-        if (width + ellipsisRun->advance().fX > noIndentWidth) {
+        if (width + ellipsisRun->advance().fX > maxWidth) {
             width -= cluster.width();
             // Continue if the ellipsis does not fit
             if (std::floor(width) > 0) {

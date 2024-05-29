@@ -1023,7 +1023,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
                     line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
                 } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
-                    line.createHeadEllipsis(maxWidth, this->getEllipsis(), true, noIndentWidth);
+                    line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
                 fLongestLine = std::max(fLongestLine, std::max(advance.fX, widthWithSpaces));
             });
