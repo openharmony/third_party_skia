@@ -314,9 +314,9 @@ void ParagraphCache::reset() {
     fLastCachedValue = nullptr;
 }
 
-bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value) {
+bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value, SkScalar breakWidth) {
     if (value) {
-        if (value->indents == paragraph.fIndents && 
+        if (value->indents == paragraph.fIndents && breakWidth != value->breakWidth &&
             paragraph.getLineBreakStrategy() == value->linebreakStrategy &&
             paragraph.getWordBreakType() == value->wordBreakType) {
             return true;
@@ -330,7 +330,7 @@ ParagraphCacheValue* ParagraphCache::resolveValue(ParagraphImpl& paragraph) {
     if (fCacheIsOn && paragraph.hash() != 0) {
         // short path
         if (!fLastCachedValue || fLastCachedValue->fKey.hash() != paragraph.hash()) {
-            auto key = ParagraphCacheKey(&paragraph/*.hash()*/);
+            auto key = ParagraphCacheKey(paragraph.hash());
             std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
 
             if (entry && *entry) {
@@ -343,7 +343,7 @@ ParagraphCacheValue* ParagraphCache::resolveValue(ParagraphImpl& paragraph) {
     return value;
 }
 
-void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
+void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph, SkScalar breakWidth) {
     if (auto value = resolveValue(paragraph)) {
         value->fLines.reset();
         value->indents.clear();
@@ -358,16 +358,17 @@ void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
         for (auto& indent : paragraph.fIndents) {
             value->indents.push_back(indent);
         }
-        value->linebreakStrategy = paragraph.getLinebreakStrategy();
+        value->linebreakStrategy = paragraph.getLineBreakStrategy();
         value->wordBreakType = paragraph.getWordBreakType();
+        value->breakWidth = breakWidth;
     }
 }
 
-bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
+bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph, SkScalar breakWidth) {
     auto value = resolveValue(paragraph);
     // check if we have a match, that should be pretty much only lenght and wrapping modes
     // if the paragraph and text style match otherwise
-    if (useCachedLayout(paragraph, value)) {
+    if (useCachedLayout(paragraph, value, breakWidth)) {
         // need to ensure we have sufficient info for restoring
         // need some additional metrics
         if (value->fLines.empty()) {

@@ -24,8 +24,8 @@ public:
     void reset();
     bool updateParagraph(ParagraphImpl* paragraph);
     bool findParagraph(ParagraphImpl* paragraph);
-    void SetStoredLayout(ParagraphImpl& paragraph);
-    bool GetStoredLayout(ParagraphImpl& paragraph);
+    void SetStoredLayout(ParagraphImpl& paragraph, SkScalar breakWidth);
+    bool GetStoredLayout(ParagraphImpl& paragraph, SkScalar breakWidth);
 
     // For testing
     void setChecker(std::function<void(ParagraphImpl* impl, const char*, bool)> checker) {
@@ -42,9 +42,10 @@ public:
     struct Entry;
     void updateFrom(const ParagraphImpl* paragraph, Entry* entry);
     void updateTo(ParagraphImpl* paragraph, const Entry* entry);
-
-     mutable SkMutex fParagraphMutex;
-     std::function<void(ParagraphImpl* impl, const char*, bool)> fChecker;
+    bool useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value, SkScalar breakWidth);
+    ParagraphCacheValue* resolveValue(ParagraphImpl& paragraph);
+    mutable SkMutex fParagraphMutex;
+    std::function<void(ParagraphImpl* impl, const char*, bool)> fChecker;
 
     static const int kMaxEntries = 128;
 

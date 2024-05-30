@@ -545,9 +545,9 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->computeEmptyMetrics();
         this->fLines.reset();
         auto paragrapCache = fFontCollection->getParagraphCache();
-        if (!paragrapCache->GetStoredLayout(*this) && !this->breakShapedTextIntoLines(floorWidth)) {
+        if (!paragrapCache->GetStoredLayout(*this, floorWidth) && !this->breakShapedTextIntoLines(floorWidth)) {
             // text breaking did not go to fast path and we did not have cached layout
-            paragrapCache->SetStoredLayout(*this);
+            paragrapCache->SetStoredLayout(*this, floorWidth);
         }
         fState = kLineBroken;
     }
