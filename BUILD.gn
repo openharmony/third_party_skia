@@ -2006,6 +2006,19 @@ if (use_oh_skia) {
         "ApplicationServices.framework",
         "OpenGL.framework",
       ]
+      if (is_component_build) {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_shared" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_shared" ]
+        }
+      } else {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_static" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_static" ]
+        }
+      }
     }
 
     if (is_ios) {
