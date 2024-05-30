@@ -1035,7 +1035,7 @@ SkScalar ParagraphImpl::detectIndents(size_t index)
     return indent;
 }
 
-void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
+bool ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     resetAutoSpacing();
     // fast path
     if (!fHasLineBreaks &&
