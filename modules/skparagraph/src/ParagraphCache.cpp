@@ -417,6 +417,8 @@ bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
     LOGD("ParagraphCache: cache hit, hash-%{public}d", key.hash());
 #endif
     updateTo(paragraph, entry->get());
+    fLastCachedValue = entry->get()->fValue.get();
+
     fChecker(paragraph, "foundParagraph", true);
     return true;
 }
