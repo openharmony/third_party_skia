@@ -106,9 +106,10 @@ public:
     bool fExceededMaxLines;
     // criteria to apply the layout cache, should presumably hash it, same
     // hash could be used to check if the entry has cached layout available
-    LineBreakStrategy linebreakStrategy;    // strutStyle.getLineBreakStrategy();
-    WordBreakType wordBreakType;    // strutStyle.getWordBreakType();
-    // Add also Indents here
+    LineBreakStrategy linebreakStrategy;
+    WordBreakType wordBreakType;
+    std::vector<SkScalar> indents;
+    SkScalar breakWidth;
 };
 
 uint32_t ParagraphCacheKey::mix(uint32_t hash, uint32_t data) {
@@ -313,80 +314,75 @@ void ParagraphCache::reset() {
     fLastCachedValue = nullptr;
 }
 
-void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
+bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value) {
+    if (value) {
+        if (value->indents == paragraph.fIndents && 
+            paragraph.getLineBreakStrategy() == value->linebreakStrategy &&
+            paragraph.getWordBreakType() == value->wordBreakType) {
+            return true;
+        }
+    }
+    return false;
+}
+
+ParagraphCacheValue* ParagraphCache::resolveValue(ParagraphImpl& paragraph) {
+    auto value = fLastCachedValue;
     if (fCacheIsOn && paragraph.hash() != 0) {
         // short path
-        if (fLastCachedValue && fLastCachedValue->fKey.hash() == paragraph.hash()) {
-            fLastCachedValue->fLines.reset();
-            for( auto& line : paragraph.fLines) {
-                fLastCachedValue->fLines.emplace_back(line.CloneSelf());
-            }
-            paragraph.getSize(fLastCachedValue->fHeight, fLastCachedValue->fWidth, fLastCachedValue->fLongestLine);
-            paragraph.getIntrinsicSize(fLastCachedValue->fMaxIntrinsicWidth, fLastCachedValue->fMinIntrinsicWidth, 
-                fLastCachedValue->fAlphabeticBaseline, fLastCachedValue->fIdeographicBaseline,
-                fLastCachedValue->fExceededMaxLines );
-            return;
-        }
+        if (!fLastCachedValue || fLastCachedValue->fKey.hash() != paragraph.hash()) {
+            auto key = ParagraphCacheKey(&paragraph/*.hash()*/);
+            std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
 
-        auto key = ParagraphCacheKey(&paragraph/*.hash()*/);
-        std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
-
-        if (entry && *entry) {
-            // check if we have a match, that should be pretty much only lenght and wrapping modes
-            // if the paragraph and text style match otherwise
-            (*entry)->fValue->fLines.reset();
-            for( auto& line : paragraph.fLines) {
-                (*entry)->fValue->fLines.emplace_back(line.CloneSelf());
+            if (entry && *entry) {
+                value = (*entry)->fValue.get();
+            } else {
+                value = nullptr;
             }
-            paragraph.getSize((*entry)->fValue->fHeight, (*entry)->fValue->fWidth, (*entry)->fValue->fLongestLine);
-            paragraph.getIntrinsicSize((*entry)->fValue->fMaxIntrinsicWidth, (*entry)->fValue->fMinIntrinsicWidth,
-                (*entry)->fValue->fAlphabeticBaseline, (*entry)->fValue->fIdeographicBaseline,
-                (*entry)->fValue->fExceededMaxLines );
         }
+    }
+    return value;
+}
+
+void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
+    if (auto value = resolveValue(paragraph)) {
+        value->fLines.reset();
+        value->indents.clear();
+
+        for( auto& line : paragraph.fLines) {
+            value->fLines.emplace_back(line.CloneSelf());
+        }
+        paragraph.getSize(value->fHeight, value->fWidth, value->fLongestLine);
+        paragraph.getIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
+            value->fAlphabeticBaseline, value->fIdeographicBaseline,
+            value->fExceededMaxLines );
+        for (auto& indent : paragraph.fIndents) {
+            value->indents.push_back(indent);
+        }
+        value->linebreakStrategy = paragraph.getLinebreakStrategy();
+        value->wordBreakType = paragraph.getWordBreakType();
     }
 }
 
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
-    if (fCacheIsOn && paragraph.hash() != 0) {
-        // short path
-        if (fLastCachedValue && fLastCachedValue->fKey.hash() == paragraph.hash()) {
-            if (fLastCachedValue->fLines.empty()) {
-                return false;
-            }
-            // LOGD("FAST");
-            paragraph.fLines.reset();
-            for( auto& line : fLastCachedValue->fLines) {
-                paragraph.fLines.emplace_back(line.CloneSelf());
-                paragraph.fLines.back().setParagraphImpl(&paragraph);
-            }
-            paragraph.setSize(fLastCachedValue->fHeight, fLastCachedValue->fWidth, fLastCachedValue->fLongestLine);
-            paragraph.setIntrinsicSize(fLastCachedValue->fMaxIntrinsicWidth, fLastCachedValue->fMinIntrinsicWidth,
-                fLastCachedValue->fAlphabeticBaseline, fLastCachedValue->fIdeographicBaseline,
-                fLastCachedValue->fExceededMaxLines );
-            return true;
+    auto value = resolveValue(paragraph);
+    // check if we have a match, that should be pretty much only lenght and wrapping modes
+    // if the paragraph and text style match otherwise
+    if (useCachedLayout(paragraph, value)) {
+        // need to ensure we have sufficient info for restoring
+        // need some additional metrics
+        if (value->fLines.empty()) {
+            return false;
         }
-
-        auto key = ParagraphCacheKey(paragraph.hash());
-        std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
-
-        if (entry && *entry) {
-            // need to ensure we have sufficient info for restoring
-            // need some additional metrics
-            if (fLastCachedValue->fLines.empty()) {
-                return false;
-            }
-            // LOGD("SLOW");
-            paragraph.fLines.reset();
-            for( auto& line : (*entry)->fValue->fLines) {
-                paragraph.fLines.emplace_back(line.CloneSelf());
-                paragraph.fLines.back().setParagraphImpl(&paragraph);
-            }
-            paragraph.setSize((*entry)->fValue->fHeight, (*entry)->fValue->fWidth, (*entry)->fValue->fLongestLine);
-            paragraph.setIntrinsicSize((*entry)->fValue->fMaxIntrinsicWidth, (*entry)->fValue->fMinIntrinsicWidth,
-                (*entry)->fValue->fAlphabeticBaseline, (*entry)->fValue->fIdeographicBaseline,
-                (*entry)->fValue->fExceededMaxLines );
-            return true;
+        paragraph.fLines.reset();
+        for( auto& line : value->fLines) {
+            paragraph.fLines.emplace_back(line.CloneSelf());
+            paragraph.fLines.back().setParagraphImpl(&paragraph);
         }
+        paragraph.setSize(value->fHeight, value->fWidth, value->fLongestLine);
+        paragraph.setIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
+            value->fAlphabeticBaseline, value->fIdeographicBaseline,
+            value->fExceededMaxLines );
+        return true;
     }
     return false;
 }
