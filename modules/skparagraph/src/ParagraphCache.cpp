@@ -47,6 +47,9 @@ public:
         other.fHash = 0;
     }
 
+    // thin constructor suitable only for searching
+    ParagraphCacheKey(uint32_t hash) : fHash(hash){}
+
     bool operator==(const ParagraphCacheKey& other) const;
 
     uint32_t hash() const { return fHash; }
@@ -92,6 +95,20 @@ public:
     bool fHasLineBreaks;
     bool fHasWhitespacesInside;
     TextIndex fTrailingSpaces;
+    SkTArray<TextLine, false> fLines;
+    SkScalar fHeight;
+    SkScalar fWidth;
+    SkScalar fMaxIntrinsicWidth;
+    SkScalar fMinIntrinsicWidth;
+    SkScalar fAlphabeticBaseline;
+    SkScalar fIdeographicBaseline;
+    SkScalar fLongestLine;
+    bool fExceededMaxLines;
+    // criteria to apply the layout cache, should presumably hash it, same
+    // hash could be used to check if the entry has cached layout available
+    LineBreakStrategy linebreakStrategy;    // strutStyle.getLineBreakStrategy();
+    WordBreakType wordBreakType;    // strutStyle.getWordBreakType();
+    // Add also Indents here
 };
 
 uint32_t ParagraphCacheKey::mix(uint32_t hash, uint32_t data) {
@@ -268,6 +285,7 @@ void ParagraphCache::updateTo(ParagraphImpl* paragraph, const Entry* entry) {
     for (auto& cluster : paragraph->fClusters) {
         cluster.setOwner(paragraph);
     }
+    paragraph->hash() = entry->fValue->fKey.hash();
 }
 
 void ParagraphCache::printStatistics() {
@@ -293,6 +311,84 @@ void ParagraphCache::reset() {
 #endif
     fLRUCacheMap.reset();
     fLastCachedValue = nullptr;
+}
+
+void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
+    if (fCacheIsOn && paragraph.hash() != 0) {
+        // short path
+        if (fLastCachedValue && fLastCachedValue->fKey.hash() == paragraph.hash()) {
+            fLastCachedValue->fLines.reset();
+            for( auto& line : paragraph.fLines) {
+                fLastCachedValue->fLines.emplace_back(line.CloneSelf());
+            }
+            paragraph.getSize(fLastCachedValue->fHeight, fLastCachedValue->fWidth, fLastCachedValue->fLongestLine);
+            paragraph.getIntrinsicSize(fLastCachedValue->fMaxIntrinsicWidth, fLastCachedValue->fMinIntrinsicWidth, 
+                fLastCachedValue->fAlphabeticBaseline, fLastCachedValue->fIdeographicBaseline,
+                fLastCachedValue->fExceededMaxLines );
+            return;
+        }
+
+        auto key = ParagraphCacheKey(&paragraph/*.hash()*/);
+        std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
+
+        if (entry && *entry) {
+            // check if we have a match, that should be pretty much only lenght and wrapping modes
+            // if the paragraph and text style match otherwise
+            (*entry)->fValue->fLines.reset();
+            for( auto& line : paragraph.fLines) {
+                (*entry)->fValue->fLines.emplace_back(line.CloneSelf());
+            }
+            paragraph.getSize((*entry)->fValue->fHeight, (*entry)->fValue->fWidth, (*entry)->fValue->fLongestLine);
+            paragraph.getIntrinsicSize((*entry)->fValue->fMaxIntrinsicWidth, (*entry)->fValue->fMinIntrinsicWidth,
+                (*entry)->fValue->fAlphabeticBaseline, (*entry)->fValue->fIdeographicBaseline,
+                (*entry)->fValue->fExceededMaxLines );
+        }
+    }
+}
+
+bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
+    if (fCacheIsOn && paragraph.hash() != 0) {
+        // short path
+        if (fLastCachedValue && fLastCachedValue->fKey.hash() == paragraph.hash()) {
+            if (fLastCachedValue->fLines.empty()) {
+                return false;
+            }
+            // LOGD("FAST");
+            paragraph.fLines.reset();
+            for( auto& line : fLastCachedValue->fLines) {
+                paragraph.fLines.emplace_back(line.CloneSelf());
+                paragraph.fLines.back().setParagraphImpl(&paragraph);
+            }
+            paragraph.setSize(fLastCachedValue->fHeight, fLastCachedValue->fWidth, fLastCachedValue->fLongestLine);
+            paragraph.setIntrinsicSize(fLastCachedValue->fMaxIntrinsicWidth, fLastCachedValue->fMinIntrinsicWidth,
+                fLastCachedValue->fAlphabeticBaseline, fLastCachedValue->fIdeographicBaseline,
+                fLastCachedValue->fExceededMaxLines );
+            return true;
+        }
+
+        auto key = ParagraphCacheKey(paragraph.hash());
+        std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
+
+        if (entry && *entry) {
+            // need to ensure we have sufficient info for restoring
+            // need some additional metrics
+            if (fLastCachedValue->fLines.empty()) {
+                return false;
+            }
+            // LOGD("SLOW");
+            paragraph.fLines.reset();
+            for( auto& line : (*entry)->fValue->fLines) {
+                paragraph.fLines.emplace_back(line.CloneSelf());
+                paragraph.fLines.back().setParagraphImpl(&paragraph);
+            }
+            paragraph.setSize((*entry)->fValue->fHeight, (*entry)->fValue->fWidth, (*entry)->fValue->fLongestLine);
+            paragraph.setIntrinsicSize((*entry)->fValue->fMaxIntrinsicWidth, (*entry)->fValue->fMinIntrinsicWidth,
+                (*entry)->fValue->fAlphabeticBaseline, (*entry)->fValue->fIdeographicBaseline,
+                (*entry)->fValue->fExceededMaxLines );
+            return true;
+        }
+    }
+    return false;
 }
 
 bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
@@ -346,6 +442,8 @@ bool ParagraphCache::updateParagraph(ParagraphImpl* paragraph) {
         fLRUCacheMap.insert(value->fKey, std::make_unique<Entry>(value));
         fChecker(paragraph, "addedParagraph", true);
         fLastCachedValue = value;
+
+        paragraph->hash() = key.hash();
         return true;
     } else {
         // We do not have to update the paragraph

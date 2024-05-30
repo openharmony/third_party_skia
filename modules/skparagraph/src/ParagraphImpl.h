@@ -223,7 +223,8 @@ public:
     void applySpacingAndBuildClusterTable();
     void buildClusterTable();
     bool shapeTextIntoEndlessLine();
-    void breakShapedTextIntoLines(SkScalar maxWidth);
+    // return true if fast path is used
+    bool breakShapedTextIntoLines(SkScalar maxWidth);
 
     void updateTextAlign(TextAlign textAlign) override;
     void updateFontSize(size_t from, size_t to, SkScalar fontSize) override;
@@ -295,6 +296,10 @@ public:
     std::vector<std::unique_ptr<TextLineBase>> GetTextLines() override;
     std::unique_ptr<Paragraph> CloneSelf() override;
 
+    uint32_t& hash() {
+        return hash_;
+    }
+
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
@@ -319,6 +324,32 @@ private:
         const TextRange& deletedRange, const size_t& ellSize);
     void resetTextStyleRange(const TextRange& deletedRange);
     void resetPlaceholderRange(const TextRange& deletedRange);
+    void setSize(SkScalar height, SkScalar width, SkScalar longestLine) {
+        fHeight = height;
+        fWidth = width;
+        fLongestLine = longestLine;
+    }
+    void getSize(SkScalar& height, SkScalar& width, SkScalar& longestLine) {
+        height = fHeight;
+        width = fWidth;
+        longestLine = fLongestLine;
+    }
+    void setIntrinsicSize(SkScalar maxIntrinsicWidth, SkScalar minIntrinsicWidth, SkScalar alphabeticBaseline,
+                          SkScalar ideographicBaseline, bool exceededMaxLines) {
+        fMaxIntrinsicWidth = maxIntrinsicWidth;
+        fMinIntrinsicWidth = minIntrinsicWidth;
+        fAlphabeticBaseline = alphabeticBaseline;
+        fIdeographicBaseline = ideographicBaseline;
+        fExceededMaxLines = exceededMaxLines;
+    }
+    void getIntrinsicSize(SkScalar& maxIntrinsicWidth, SkScalar& minIntrinsicWidth, SkScalar& alphabeticBaseline,
+                          SkScalar& ideographicBaseline, bool& exceededMaxLines) {
+        maxIntrinsicWidth = fMaxIntrinsicWidth;
+        minIntrinsicWidth = fMinIntrinsicWidth;
+        alphabeticBaseline = fAlphabeticBaseline ;
+        ideographicBaseline = fIdeographicBaseline;
+        exceededMaxLines = fExceededMaxLines;
+    }
 
     // Input
     SkTArray<StyleBlock<SkScalar>> fLetterSpaceStyles;
@@ -372,6 +403,7 @@ private:
     TextIndex fTrailingSpaces;
 
     size_t fLineNumber;
+    uint32_t hash_{0u};
 };
 }  // namespace textlayout
 }  // namespace skia

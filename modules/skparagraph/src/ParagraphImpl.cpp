@@ -544,7 +544,11 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->resolveStrut();
         this->computeEmptyMetrics();
         this->fLines.reset();
-        this->breakShapedTextIntoLines(floorWidth);
+        auto paragrapCache = fFontCollection->getParagraphCache();
+        if (!paragrapCache->GetStoredLayout(*this) && !this->breakShapedTextIntoLines(floorWidth)) {
+            // text breaking did not go to fast path and we did not have cached layout
+            paragrapCache->SetStoredLayout(*this);
+        }
         fState = kLineBroken;
     }
 
@@ -1033,10 +1037,11 @@ SkScalar ParagraphImpl::detectIndents(size_t index)
 
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     resetAutoSpacing();
+    // fast path
     if (!fHasLineBreaks &&
         !fHasWhitespacesInside &&
-        fPlaceholders.size() == 1 &&
-        fRuns.size() == 1 && fRuns[0].fAdvance.fX <= maxWidth - (this->detectIndents(0))) {
+        fPlaceholders.size() == 1 && ( !SkScalarIsFinite(maxWidth) ||
+        (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= maxWidth - this->detectIndents(0)))) {
         // This is a short version of a line breaking when we know that:
         // 1. We have only one line of text
         // 2. It's shaped into a single run
@@ -1087,18 +1092,15 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                       textExcludingSpaces, textRange, textRange,
                       clusterRange, clusterRangeWithGhosts, run.advance().x(),
                       metrics);
-        auto spacing = line.autoSpacing();
-        fLongestLine = std::max(run.advance().fX, advance.fX) + spacing;
-        fHeight = advance.fY;
-        fWidth = maxWidth;
-        fMaxIntrinsicWidth = run.advance().fX;
-        fMinIntrinsicWidth = advance.fX;
-        fAlphabeticBaseline = fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline();
-        fIdeographicBaseline = fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline();
-        fExceededMaxLines = false;
-        return;
-    }
+        setSize(advance.fY, maxWidth, std::max(run.advance().fX, advance.fX));
+        setIntrinsicSize(run.advance().fX, advance.fX,
+            fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
+            fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
+            false);
+        return true;
+   }
 
+    //slow path
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
             this,
@@ -1126,14 +1128,12 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 auto spacing = line.autoSpacing();
                 fLongestLine = std::max(fLongestLine, std::max(advance.fX, widthWithSpaces) + spacing);
             });
-
-    fHeight = textWrapper.height();
-    fWidth = maxWidth;
-    fMaxIntrinsicWidth = textWrapper.maxIntrinsicWidth();
-    fMinIntrinsicWidth = textWrapper.minIntrinsicWidth();
-    fAlphabeticBaseline = fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline();
-    fIdeographicBaseline = fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline();
-    fExceededMaxLines = textWrapper.exceededMaxLines();
+    setSize(textWrapper.height(), maxWidth, textWrapper.maxIntrinsicWidth());
+    setIntrinsicSize(textWrapper.maxIntrinsicWidth(), textWrapper.minIntrinsicWidth(), 
+        fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
+        fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
+        textWrapper.exceededMaxLines());
+    return false;
 }
 
 void ParagraphImpl::formatLines(SkScalar maxWidth) {

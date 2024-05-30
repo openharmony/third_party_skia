@@ -24,6 +24,8 @@ public:
     void reset();
     bool updateParagraph(ParagraphImpl* paragraph);
     bool findParagraph(ParagraphImpl* paragraph);
+    void SetStoredLayout(ParagraphImpl& paragraph);
+    bool GetStoredLayout(ParagraphImpl& paragraph);
 
     // For testing
     void setChecker(std::function<void(ParagraphImpl* impl, const char*, bool)> checker) {
