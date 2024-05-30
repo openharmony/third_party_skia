@@ -1931,19 +1931,6 @@ if (use_oh_skia) {
         "uuid",
         "windowscodecs",
       ]
-      if (is_component_build) {
-        if (defined(external_deps)) {
-          external_deps += [ "bounds_checking_function:libsec_shared" ]
-        } else {
-          external_deps = [ "bounds_checking_function:libsec_shared" ]
-        }
-      } else {
-        if (defined(external_deps)) {
-          external_deps += [ "bounds_checking_function:libsec_static" ]
-        } else {
-          external_deps = [ "bounds_checking_function:libsec_static" ]
-        }
-      }
     } else {
       sources += [
         "src/ports/SkOSFile_posix.cpp",
@@ -1979,19 +1966,6 @@ if (use_oh_skia) {
       sources += [ "src/ports/SkDebug_stdio.cpp" ]
       if (skia_use_egl) {
         libs += [ "GLESv2" ]
-      }
-      if (is_component_build) {
-        if (defined(external_deps)) {
-          external_deps += [ "bounds_checking_function:libsec_shared" ]
-        } else {
-          external_deps = [ "bounds_checking_function:libsec_shared" ]
-        }
-      } else {
-        if (defined(external_deps)) {
-          external_deps += [ "bounds_checking_function:libsec_static" ]
-        } else {
-          external_deps = [ "bounds_checking_function:libsec_static" ]
-        }
       }
     }
 
