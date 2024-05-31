@@ -223,8 +223,8 @@ public:
     void applySpacingAndBuildClusterTable();
     void buildClusterTable();
     bool shapeTextIntoEndlessLine();
-    // return true if fast path is used
-    bool breakShapedTextIntoLines(SkScalar maxWidth);
+    void positionShapedTextIntoLine(SkScalar maxWidth);
+    void breakShapedTextIntoLines(SkScalar maxWidth);
 
     void updateTextAlign(TextAlign textAlign) override;
     void updateFontSize(size_t from, size_t to, SkScalar fontSize) override;
