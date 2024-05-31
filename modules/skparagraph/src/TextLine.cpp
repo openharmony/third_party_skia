@@ -23,6 +23,9 @@
 #include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skshaper/include/SkShaper.h"
+#ifdef TXT_AUTO_SPACING
+#include "parameter.h"
+#endif
 
 #include <algorithm>
 #include <iterator>
@@ -433,6 +436,48 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
     }
 }
 
+SkScalar TextLine::calculateSpacing(const Cluster prevCluster, const Cluster curCluster)
+{
+    if (prevCluster.isWhitespaceBreak() || curCluster.isWhitespaceBreak()) {
+        return 0;
+    }
+    if (prevCluster.isHardBreak() || curCluster.isHardBreak()) {
+        return 0;
+    }
+    if (prevCluster.isCopyright() || curCluster.isCopyright()) {
+        return prevCluster.getFontSize() / autoSpacingWidthRatio;
+    }
+    if ((curCluster.isCJK() && prevCluster.isWestern()) || (curCluster.isWestern() && prevCluster.isCJK())) {
+        return prevCluster.getFontSize() / autoSpacingWidthRatio;
+    }
+    return 0;
+}
+
+SkScalar TextLine::autoSpacing() {
+#ifdef TXT_AUTO_SPACING
+    static constexpr int autoSpacingEnableLength = 10;
+    char autoSpacingEnable[autoSpacingEnableLength] = {0};
+    GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, autoSpacingEnableLength);
+    if (!std::strcmp(autoSpacingEnable, "0")) {
+        return 0;
+    }
+#else
+    return 0;
+#endif
+    SkScalar spacing = 0.0;
+    auto prevCluster = fOwner->cluster(fClusterRange.start);
+    for (auto clusterIndex = fClusterRange.start + 1; clusterIndex < fClusterRange.end; ++clusterIndex) {
+        auto prevSpacing = spacing;
+        auto& cluster = fOwner->cluster(clusterIndex);
+        spacing += calculateSpacing(prevCluster, cluster);
+        spacingCluster(&cluster, spacing, prevSpacing);
+        prevCluster = cluster;
+    }
+    this->fWidthWithSpaces += spacing;
+    this->fAdvance.fX += spacing;
+    return spacing;
+}
+
 void TextLine::scanStyles(StyleType styleType, const RunStyleVisitor& visitor) {
     if (this->empty()) {
         return;
@@ -769,6 +814,25 @@ void TextLine::shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar pre
 
     for (size_t pos = start; pos < end; ++pos) {
         run.fJustificationShifts[pos] = { shift, prevShift };
+    }
+}
+
+void TextLine::spacingCluster(const Cluster* cluster, SkScalar spacing, SkScalar prevSpacing) {
+    auto& run = cluster->run();
+    auto start = cluster->startPos();
+    auto end = cluster->endPos();
+    if (end == run.size()) {
+        // Set the same shift for the fake last glyph (to avoid all extra checks)
+        ++end;
+    }
+
+    if (run.fAutoSpacings.empty()) {
+        // Do not fill this array until needed
+        run.fAutoSpacings.push_back_n(run.size() + 1, { 0, 0 });
+    }
+
+    for (size_t pos = start; pos < end; ++pos) {
+        run.fAutoSpacings[pos] = { spacing, prevSpacing};
     }
 }
 
