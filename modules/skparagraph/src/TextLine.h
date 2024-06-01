@@ -111,6 +111,8 @@ public:
                                              const ClustersVisitor& visitor) const;
 
     void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
+    SkScalar calculateSpacing(const Cluster prevCluster, const Cluster curCluster);
+    SkScalar autoSpacing();
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
     void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
     void visit(SkScalar x, SkScalar y);
@@ -190,6 +192,7 @@ private:
                           const ClipContext& context) const;
 
     void shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
+    void spacingCluster(const Cluster* cluster, SkScalar spacing, SkScalar prevSpacing);
     bool hasBackgroundRect(const RoundRectAttr& attr);
     void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
     void prepareRoundRect();

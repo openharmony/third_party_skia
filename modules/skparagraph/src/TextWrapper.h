@@ -215,6 +215,7 @@ private:
         fHardLineBreak = false;
     }
 
+    SkScalar calculateFakeSpacing(Cluster* cluster);
     void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType);
     void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
     void trimEndSpaces(TextAlign align);
