@@ -23,7 +23,11 @@
                 "hilog",
                 "hitrace",
                 "init",
-                "bounds_checking_function"
+                "bounds_checking_function",
+                "zlib",
+                "jsoncpp",
+                "egl",
+                "opengles"
             ],
             "third_party": [
                 "vulkan-headers"
@@ -42,7 +46,14 @@
                 },
                 {
                     "name": "//third_party/skia/third_party/libwebp:libwebp"
+                },
+                {
+                    "name": "//third_party/skia:skia_canvaskit"
+                },
+                {
+                    "name": "//third_party/skia:skia_canvaskit_static"
                 }
+
             ],
             "test": []
         }
