@@ -18,7 +18,6 @@
 #include "hitrace_meter.h"
 #endif
 
-
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
 
 using AllocationPropertyFlags = GrVkMemoryAllocator::AllocationPropertyFlags;
