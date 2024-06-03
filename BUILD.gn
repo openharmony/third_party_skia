@@ -1996,6 +1996,7 @@ if (use_oh_skia) {
         "bounds_checking_function:libsec_shared",
         "hilog:libhilog",
         "hitrace:hitrace_meter",
+        "init:libbegetutil",
       ]
       defines += [ "SK_ENABLE_PATH_COMPLEXITY_DFX" ]
     }
