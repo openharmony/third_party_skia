@@ -362,12 +362,11 @@ char* FontConfig_OHOS::getFileData(const char* fname, int& size)
  */
 int FontConfig_OHOS::parseConfig(const char* fname)
 {
-    std::string temp = OHOS_DEFAULT_CONFIG;
-    if (fname != nullptr) {
-        temp = std::string(fname) + temp;
+    if (fname == nullptr) {
+        fname = OHOS_DEFAULT_CONFIG;
     }
     Json::Value root;
-    int err = checkConfigFile(temp.c_str(), root);
+    int err = checkConfigFile(fname, root);
     if (err != NO_ERROR) {
         return err;
     }
@@ -375,7 +374,7 @@ int FontConfig_OHOS::parseConfig(const char* fname)
     const char* key = "fontdir";
     if (root.isMember(key)) {
         if (root[key].isArray()) {
-            parseFontDir(temp.c_str(), root[key]);
+            parseFontDir(fname, root[key]);
         } else {
             return logErrInfo(ERROR_CONFIG_INVALID_VALUE_TYPE, key);
         }
