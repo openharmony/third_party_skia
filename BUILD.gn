@@ -84,7 +84,10 @@ config("skia_public") {
     defines += [ "SKIA_USE_XEG" ]
   }
   if (is_ohos && (target_cpu == "arm" || target_cpu == "arm64")) {
-    defines += [ "SKIA_OHOS_FOR_OHOS_TRACE" ]
+    defines += [
+      "SKIA_OHOS_FOR_OHOS_TRACE",
+      "SKIA_OHOS_FOR_OHOS_LOG",
+    ]
   }
   cflags_objcc = []
   if (is_skia_dev_build) {
@@ -1289,6 +1292,10 @@ optional("gpu") {
 
   if (is_debug) {
     public_defines += [ "SK_ENABLE_DUMP_GPU" ]
+  }
+
+  if (is_ohos) {
+    external_deps += [ "hilog:libhilog" ]
   }
 }
 

@@ -8,6 +8,7 @@
 #include "src/gpu/v1/SurfaceDrawContext_v1.h"
 
 #include "include/core/SkDrawable.h"
+#include "include/core/SkLog.h"
 #include "include/core/SkVertices.h"
 #include "include/gpu/GrBackendSemaphore.h"
 #include "include/gpu/GrDirectContext.h"
@@ -2132,7 +2133,7 @@ OpsTask* SurfaceDrawContext::replaceOpsTaskIfModifiesColor() {
 bool SurfaceDrawContext::drawBlurImage(GrSurfaceProxyView proxyView, const SkBlurArg& blurArg)
 {
     if (!this->caps()->supportsHpsBlur(&proxyView)) {
-        SkDebugf("ERROR: check HpsBlur fail.\n");
+        SK_LOGD("ERROR: check HpsBlur fail.\n");
         return false;
     }
     this->addOp(GrOp::Make<BlurOp>(fContext, std::move(proxyView), blurArg));
