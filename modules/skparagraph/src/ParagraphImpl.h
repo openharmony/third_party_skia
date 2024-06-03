@@ -142,7 +142,7 @@ public:
     const std::vector<SkUnichar>& unicodeText() const { return fUnicodeText; }
     size_t getUnicodeIndex(TextIndex index) const {
         if (index >= fUnicodeIndexForUTF8Index.size()) {
-            return fUnicodeIndexForUTF8Index.back() + 1;
+            return fUnicodeIndexForUTF8Index.empty() ? 0 : fUnicodeIndexForUTF8Index.back() + 1;
         }
         return fUnicodeIndexForUTF8Index[index];
     }
