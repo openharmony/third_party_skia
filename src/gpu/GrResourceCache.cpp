@@ -8,6 +8,9 @@
 #include "src/gpu/GrResourceCache.h"
 #include <atomic>
 #include <vector>
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#include "hitrace_meter.h"
+#endif
 #include "include/gpu/GrDirectContext.h"
 #include "include/private/GrSingleOwner.h"
 #include "include/private/SkTo.h"
@@ -25,9 +28,6 @@
 #include "src/gpu/GrThreadSafeCache.h"
 #include "src/gpu/GrTracing.h"
 #include "src/gpu/SkGr.h"
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
 
 #ifdef NOT_BUILD_FOR_OHOS_SDK
 #include <parameters.h>
@@ -618,10 +618,6 @@ void GrResourceCache::didChangeBudgetStatus(GrGpuResource* resource) {
 }
 
 void GrResourceCache::purgeAsNeeded() {
-    #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PurgeGrResourceCache cur=%d, limit=%d",
-        fBudgetedBytes, fMaxBytes);
-    #endif
     SkTArray<GrUniqueKeyInvalidatedMessage> invalidKeyMsgs;
     fInvalidUniqueKeyInbox.poll(&invalidKeyMsgs);
     if (invalidKeyMsgs.count()) {
@@ -868,10 +864,6 @@ void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, con
 }
 
 bool GrResourceCache::purgeToMakeHeadroom(size_t desiredHeadroomBytes) {
-    #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PurgeGrResourceCache cur=%d, limit=%d",
-        fBudgetedBytes, fMaxBytes);
-    #endif
     AutoValidate av(this);
     if (desiredHeadroomBytes > fMaxBytes) {
         return false;

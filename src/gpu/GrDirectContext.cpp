@@ -30,11 +30,6 @@
 #include "src/gpu/text/GrAtlasManager.h"
 #include "src/gpu/text/GrStrikeCache.h"
 #include "src/image/SkImage_GpuBase.h"
-
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
-
 #if SK_GPU_V1
 #include "src/gpu/ops/SmallPathAtlasMgr.h"
 #else
