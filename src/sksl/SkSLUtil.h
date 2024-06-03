@@ -289,7 +289,7 @@ using ShaderCapsPointer = std::unique_ptr<GrShaderCaps>;
 #endif  // defined(SKSL_STANDALONE) || !SK_SUPPORT_GPU
 
 // Various sets of caps for use in tests
-class ShaderCapsFactory {
+class SK_API ShaderCapsFactory {
 public:
     static ShaderCapsPointer Default() {
         ShaderCapsPointer result = MakeShaderCaps();

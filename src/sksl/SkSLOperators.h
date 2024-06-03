@@ -16,7 +16,7 @@ namespace SkSL {
 class Context;
 class Type;
 
-class Operator {
+class SK_API Operator {
 public:
     using Kind = Token::Kind;
 

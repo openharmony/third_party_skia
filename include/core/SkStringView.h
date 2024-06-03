@@ -8,6 +8,8 @@
 #ifndef SkStringView_DEFINED
 #define SkStringView_DEFINED
 
+#include "include/core/SkTypes.h"
+
 #include <algorithm>
 #include <cstring>
 #include <string>
@@ -156,17 +158,17 @@ private:
     size_type fLength;
 };
 
-bool operator==(string_view left, string_view right);
+SK_API bool operator==(string_view left, string_view right);
 
-bool operator!=(string_view left, string_view right);
+SK_API bool operator!=(string_view left, string_view right);
 
-bool operator<(string_view left, string_view right);
+SK_API bool operator<(string_view left, string_view right);
 
-bool operator<=(string_view left, string_view right);
+SK_API bool operator<=(string_view left, string_view right);
 
-bool operator>(string_view left, string_view right);
+SK_API bool operator>(string_view left, string_view right);
 
-bool operator>=(string_view left, string_view right);
+SK_API bool operator>=(string_view left, string_view right);
 
 } // namespace skstd
 
