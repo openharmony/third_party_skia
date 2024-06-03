@@ -138,6 +138,14 @@ public:
                       InternalLineMetrics sizes);
 
     SkSpan<const char> text() const { return SkSpan<const char>(fText.c_str(), fText.size()); }
+    std::vector<SkUnichar> convertUtf8ToUnicode(const SkString& utf8);
+    const std::vector<SkUnichar>& unicodeText() const { return fUnicodeText; }
+    size_t getUnicodeIndex(TextIndex index) const {
+        if (index >= fUnicodeIndexForUTF8Index.size()) {
+            return fUnicodeIndexForUTF8Index.back() + 1;
+        }
+        return fUnicodeIndexForUTF8Index[index];
+    }
     InternalState state() const { return fState; }
     SkSpan<Run> runs() { return SkSpan<Run>(fRuns.data(), fRuns.size()); }
     SkSpan<Block> styles() {
@@ -316,6 +324,7 @@ private:
     SkTArray<Block, true> fTextStyles; // TODO: take out only the font stuff
     SkTArray<Placeholder, true> fPlaceholders;
     SkString fText;
+    std::vector<SkUnichar> fUnicodeText;
 
     // Internal structures
     InternalState fState;
@@ -332,6 +341,7 @@ private:
     // They are filled lazily whenever they need and cached
     SkTArray<TextIndex, true> fUTF8IndexForUTF16Index;
     SkTArray<size_t, true> fUTF16IndexForUTF8Index;
+    SkTArray<size_t, true> fUnicodeIndexForUTF8Index;
     SkOnce fillUTF16MappingOnce;
     size_t fUnresolvedGlyphs;
     bool isMiddleEllipsis;

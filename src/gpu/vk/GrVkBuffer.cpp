@@ -152,6 +152,73 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
                                               uniformDescSet));
 }
 
+sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
+                                                     OH_NativeBuffer *nativeBuffer,
+                                                     size_t bufferSize,
+                                                     GrGpuBufferType bufferType,
+                                                     GrAccessPattern accessPattern) {
+    SkASSERT(gpu);
+    SkASSERT(nativeBuffer);
+ 
+    VkBuffer buffer;
+    GrVkAlloc alloc;
+ 
+    // The only time we don't require mappable buffers is when we have a static access pattern and
+    // we're on a device where gpu only memory has faster reads on the gpu than memory that is also
+    // mappable on the cpu. Protected memory always uses mappable buffers.
+    bool requiresMappable = gpu->protectedContext() ||
+                            accessPattern == kDynamic_GrAccessPattern ||
+                            accessPattern == kStream_GrAccessPattern ||
+                            !gpu->vkCaps().gpuOnlyBuffersMorePerformant();
+ 
+    // create the buffer object
+    VkBufferCreateInfo bufInfo{};
+    bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufInfo.flags = 0;
+    bufInfo.size = bufferSize;
+    switch (bufferType) {
+        case GrGpuBufferType::kVertex:
+            bufInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            break;
+        case GrGpuBufferType::kIndex:
+            bufInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            break;
+        case GrGpuBufferType::kDrawIndirect:
+            bufInfo.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+            break;
+        case GrGpuBufferType::kUniform:
+            bufInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            break;
+        case GrGpuBufferType::kXferCpuToGpu:
+            bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            break;
+        case GrGpuBufferType::kXferGpuToCpu:
+            bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            break;
+    }
+    // We may not always get a mappable buffer for non dynamic access buffers. Thus we set the
+    // transfer dst usage bit in case we need to do a copy to write data.
+    if (!requiresMappable) {
+        bufInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
+ 
+    bufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufInfo.queueFamilyIndexCount = 0;
+    bufInfo.pQueueFamilyIndices = nullptr;
+ 
+    VkResult err = VK_CALL(gpu, CreateBuffer(gpu->device(), &bufInfo, nullptr, &buffer));
+    if (err) {
+        return nullptr;
+    }
+ 
+    if (!GrVkMemory::ImportAndBindBufferMemory(gpu, nativeBuffer, buffer, &alloc)) {
+        VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
+        return nullptr;
+    }
+ 
+    return sk_sp<GrVkBuffer>(new GrVkBuffer(gpu, bufferSize, bufferType, accessPattern, buffer, alloc, nullptr));
+}
+
 void GrVkBuffer::vkMap(size_t size) {
     SkASSERT(!fMapPtr);
     if (this->isVkMappable()) {

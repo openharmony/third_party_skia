@@ -179,7 +179,8 @@ public:
                                                   SkVector offset,
                                                   SkVector advance,
                                                   InternalLineMetrics metrics,
-                                                  bool addEllipsis)>;
+                                                  bool addEllipsis,
+                                                  SkScalar noIndentWidth)>;
     void breakTextIntoLines(ParagraphImpl* parent,
                             SkScalar maxWidth,
                             const AddLineToParagraph& addLine);
@@ -214,6 +215,7 @@ private:
         fHardLineBreak = false;
     }
 
+    SkScalar calculateFakeSpacing(Cluster* cluster);
     void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType);
     void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
     void trimEndSpaces(TextAlign align);

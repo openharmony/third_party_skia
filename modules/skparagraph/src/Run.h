@@ -24,6 +24,7 @@ class SkTextBlobBuilder;
 
 namespace skia {
 namespace textlayout {
+constexpr int PARAM_64 = 64;
 
 class Cluster;
 class InternalLineMetrics;
@@ -58,6 +59,9 @@ enum class RoundRectType {
     RIGHT_ONLY,
     ALL,
 };
+
+// first: words length, second: spacing width ratio
+constexpr SkScalar autoSpacingWidthRatio = 8;
 
 class Run {
 public:
@@ -188,6 +192,10 @@ public:
         fJustificationShifts.reset();
     }
 
+    void resetAutoSpacing() {
+        fAutoSpacings.reset();
+    }
+
     bool isResolved() const;
 
     RoundRectType getRoundRectType() const { return fRoundRectType; }
@@ -244,7 +252,9 @@ private:
 
     SkSTArray<64, SkPoint, true> fJustificationShifts; // For justification
                                                                    // (current and prev shifts)
-    SkSTArray<64, SkScalar, true> fHalfLetterspacings; // For letterspacing
+    SkSTArray<PARAM_64, SkPoint, true> fAutoSpacings; // For auto spacing
+                                                                   // (current and prev spacings)
+    SkSTArray<PARAM_64, SkScalar, true> fHalfLetterspacings; // For letterspacing
 
 #ifndef USE_SKIA_TXT
     SkFontMetrics fFontMetrics;
@@ -362,7 +372,11 @@ public:
     bool isWhitespaceBreak() const { return fIsWhiteSpaceBreak; }
     bool isIntraWordBreak() const { return fIsIntraWordBreak; }
     bool isHardBreak() const { return fIsHardBreak; }
+    bool isIdeographic() const { return fIsIdeographic; }
     bool isWordBreak() const { return isWhitespaceBreak() || isHardBreak() || isSoftBreak() || run().isPlaceholder(); }
+    bool isCJK() const { return fIsCJK; }
+    bool isCopyright() const { return fIsCopyright; }
+    bool isWestern() const { return fIsWestern; }
 
     bool isSoftBreak() const;
     bool isGraphemeBreak() const;
@@ -401,6 +415,10 @@ public:
         return fTextRange.start >= text.start && fTextRange.start < text.end;
     }
 
+    SkScalar getFontSize() const {
+        return font().GetSize();
+    }
+
 private:
 
     friend ParagraphImpl;
@@ -419,6 +437,10 @@ private:
     bool fIsWhiteSpaceBreak;
     bool fIsIntraWordBreak;
     bool fIsHardBreak;
+    bool fIsIdeographic;
+    bool fIsCJK;
+    bool fIsCopyright;
+    bool fIsWestern;
 };
 
 class InternalLineMetrics {

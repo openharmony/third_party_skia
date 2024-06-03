@@ -75,7 +75,6 @@ config("skia_wno") {
 # Skia public API, generally provided by :skia.
 config("skia_public") {
   include_dirs = [ "." ]
-
   defines = [ "NEW_SKIA" ]
   include_dirs += [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
   if (defined(skia_ohos_debug) && skia_ohos_debug) {
@@ -355,6 +354,12 @@ template("optional") {
       check_includes = false
       configs = skia_library_configs
       configs += [ ":skia_wno" ]
+      if (defined(invoker.external_deps)) {
+        if (!defined(external_deps)) {
+          external_deps = []
+        }
+        external_deps += invoker.external_deps
+      }
 
       # "*" clobbers the current scope; append to existing configs
       forward_variables_from(invoker,
@@ -391,6 +396,12 @@ template("optional") {
         }
         testonly = true
         sources = invoker.sources_for_tests
+        if (defined(invoker.external_deps)) {
+          if (!defined(external_deps)) {
+            external_deps = []
+          }
+          external_deps += invoker.external_deps
+        }
         if (!defined(deps)) {
           deps = []
         }
@@ -412,6 +423,7 @@ template("optional") {
                                "public_defines",
                                "public_deps",
                                "deps",
+                               "external_deps",
                                "libs",
                                "frameworks",
                                "sources",
@@ -424,6 +436,12 @@ template("optional") {
       if (defined(invoker.sources_when_disabled)) {
         sources = invoker.sources_when_disabled
       }
+      if (defined(invoker.external_deps)) {
+        if (!defined(external_deps)) {
+          external_deps = []
+        }
+        external_deps += invoker.external_deps
+      }
     }
     if (defined(invoker.sources_for_tests)) {
       skia_source_set(target_name + "_tests") {
@@ -432,7 +450,6 @@ template("optional") {
     }
   }
 }
-
 optional("android_utils") {
   enabled = skia_enable_android_utils
 
@@ -505,12 +522,12 @@ optional("fontmgr_symbol_load") {
   deps = [
     ":typeface_freetype",
     "${skia_third_party_dir}/expat",
-    "//third_party/jsoncpp:jsoncpp_static",
   ]
+  external_deps = [ "jsoncpp:jsoncpp_static" ]
   if (is_component_build) {
-    deps += [ "//third_party/bounds_checking_function:libsec_shared" ]
+    external_deps += [ "bounds_checking_function:libsec_shared" ]
   } else {
-    deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+    external_deps += [ "bounds_checking_function:libsec_static" ]
   }
 
   deps += [ ":ohos_fontconfig.json" ]
@@ -669,10 +686,10 @@ optional("fontmgr_mac_ct") {
       "//third_party/skia/src/ports/skia_ohos",
     ]
     defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+    external_deps = [ "jsoncpp:jsoncpp_static" ]
     deps = [
       ":fontmgr_symbol_load",
       "${skia_third_party_dir}/expat",
-      "//third_party/jsoncpp:jsoncpp_static",
     ]
   }
   sources_for_tests = [ "tests/TypefaceMacTest.cpp" ]
@@ -738,8 +755,8 @@ optional("fontmgr_win") {
     deps = [
       ":fontmgr_symbol_load",
       "${skia_third_party_dir}/expat",
-      "//third_party/jsoncpp:jsoncpp_static",
     ]
+    external_deps = [ "jsoncpp:jsoncpp_static" ]
   }
 }
 
@@ -780,12 +797,12 @@ if (use_oh_skia && !is_arkui_x) {
       ":fontmgr_symbol_load",
       ":typeface_freetype",
       "${skia_third_party_dir}/expat",
-      "//third_party/jsoncpp:jsoncpp_static",
     ]
+    external_deps = [ "jsoncpp:jsoncpp_static" ]
     if (is_component_build) {
-      deps += [ "//third_party/bounds_checking_function:libsec_shared" ]
+      external_deps += [ "bounds_checking_function:libsec_shared" ]
     } else {
-      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+      external_deps += [ "bounds_checking_function:libsec_static" ]
     }
 
     deps += [ ":ohos_fontconfig.json" ]
@@ -807,7 +824,7 @@ if (use_oh_skia && !is_arkui_x) {
     } else if (use_linux) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
     } else if (is_ohos) {
-      deps += [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
+      external_deps += [ "init:libbegetutil" ]
       defines = [ "SK_BUILD_FONT_MGR_FOR_OHOS" ]
     }
   }
@@ -1138,11 +1155,11 @@ optional("gpu") {
         "src/gpu/gl/egl/GrGLMakeNativeInterface_egl.cpp",
       ]
       if (use_oh_skia) {
-        include_dirs = [
-          "//third_party/EGL/api",
-          "//third_party/openGLES/api",
-        ]
         external_deps = [
+          "egl:libEGL",
+          "opengles:libGLES",
+        ]
+        external_deps += [
           "graphic_2d:EGL",
           "graphic_2d:GLESv3",
         ]
@@ -1380,11 +1397,11 @@ optional("graphite") {
 optional("pdf") {
   enabled = skia_use_zlib && skia_enable_pdf
   public_defines = [ "SK_SUPPORT_PDF" ]
-
+  deps = []
   if (use_oh_skia) {
-    deps = [ "//third_party/zlib:libz" ]
+    external_deps = [ "zlib:libz" ]
   } else {
-    deps = [ "${skia_third_party_dir}/zlib" ]
+    deps += [ "${skia_third_party_dir}/zlib" ]
   }
   if (skia_use_libjpeg_turbo_decode) {
     deps += [ ":jpeg_decode" ]
@@ -1602,14 +1619,19 @@ if (use_oh_skia) {
     }
   }
 
-  ohos_source_set("skia_canvaskit_static") {
+  ohos_static_library("skia_canvaskit_static") {
     part_name = "skia"
     subsystem_name = "thirdparty"
 
     include_dirs = [ "${skia_third_party_dir}/externals/libgifcodec" ]
-    public_configs = [ ":skia_public" ]
+    public_configs = [
+      ":skia_public",
+      ":skia_config",
+      ":harfbuzz_config",
+      ":icu_config",
+    ]
     configs = skia_library_configs
-    public_deps = [
+    deps = [
       ":fontmgr_FontConfigInterface",
       ":fontmgr_android",
       ":fontmgr_custom_directory",
@@ -1624,10 +1646,10 @@ if (use_oh_skia) {
       public_deps += [ ":gpu" ]
     } else {
       if (defined(ace_enable_gpu) && ace_enable_gpu) {
-        public_deps += [ ":gpu" ]
+        deps += [ ":gpu" ]
       }
     }
-    deps = [
+    deps += [
       ":android_utils",
       ":arm64",
       ":armv7",
@@ -1659,7 +1681,7 @@ if (use_oh_skia) {
     ]
 
     if (is_arkui_x) {
-      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+      external_deps += [ "bounds_checking_function:libsec_static" ]
     }
 
     public = skia_core_public
@@ -1789,12 +1811,17 @@ if (use_oh_skia) {
     subsystem_name = "thirdparty"
 
     include_dirs = [ "${skia_third_party_dir}/externals/libgifcodec" ]
-    public_configs = [ ":skia_public" ]
+    public_configs = [
+      ":skia_public",
+      ":skia_config",
+      ":harfbuzz_config",
+      ":icu_config",
+    ]
     configs = skia_library_configs
     if (enhanced_opt) {
       configs += [ ":skia_canvaskit_link_config" ]
     }
-    public_deps = [
+    deps = [
       ":fontmgr_FontConfigInterface",
       ":fontmgr_android",
       ":fontmgr_custom_directory",
@@ -1811,17 +1838,17 @@ if (use_oh_skia) {
     ]
 
     if (is_arkui_x) {
-      public_deps -= [ ":fontmgr_ohos" ]
+      deps -= [ ":fontmgr_ohos" ]
     }
 
     if (is_ios) {
-      public_deps += [ ":gpu" ]
+      deps += [ ":gpu" ]
     } else {
       if (defined(ace_enable_gpu) && ace_enable_gpu) {
-        public_deps += [ ":gpu" ]
+        deps += [ ":gpu" ]
       }
     }
-    deps = [
+    deps += [
       ":android_utils",
       ":arm64",
       ":armv7",
@@ -1943,6 +1970,19 @@ if (use_oh_skia) {
         "uuid",
         "windowscodecs",
       ]
+      if (is_component_build) {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_shared" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_shared" ]
+        }
+      } else {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_static" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_static" ]
+        }
+      }
     } else {
       sources += [
         "src/ports/SkOSFile_posix.cpp",
@@ -1957,6 +1997,7 @@ if (use_oh_skia) {
         "hilog:libhilog",
         "hitrace:hitrace_meter",
       ]
+      defines += [ "SK_ENABLE_PATH_COMPLEXITY_DFX" ]
     }
 
     if (is_android) {
@@ -1977,6 +2018,19 @@ if (use_oh_skia) {
       if (skia_use_egl) {
         libs += [ "GLESv2" ]
       }
+      if (is_component_build) {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_shared" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_shared" ]
+        }
+      } else {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_static" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_static" ]
+        }
+      }
     }
 
     if (is_mac) {
@@ -1990,6 +2044,19 @@ if (use_oh_skia) {
         "ApplicationServices.framework",
         "OpenGL.framework",
       ]
+      if (is_component_build) {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_shared" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_shared" ]
+        }
+      } else {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_static" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_static" ]
+        }
+      }
     }
 
     if (is_ios) {
@@ -2637,9 +2704,7 @@ if (skia_enable_tools) {
       "modules/skshaper",
     ]
     if (is_ohos) {
-      deps += [
-        "//base/hiviewdfx/hitrace/interfaces/native/innerkits:hitrace_meter",
-      ]
+      external_deps = [ "hitrace:hitrace_meter" ]
     }
     if (use_oh_skia) {
       deps -= [

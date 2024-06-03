@@ -33,6 +33,7 @@ struct GrVkAlloc {
     uint32_t          fFlags = 0;
     GrVkBackendMemory fBackendMemory = 0; // handle to memory allocated via GrVkMemoryAllocator.
 
+    bool              fIsExternalMemory = false; // whether imported from external memory.
     enum Flag {
         kNoncoherent_Flag     = 0x1,   // memory must be flushed to device after mapping
         kMappable_Flag        = 0x2,   // memory is able to be mapped.

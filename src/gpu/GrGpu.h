@@ -174,6 +174,14 @@ void popGrResourceTag()
                                              GrProtected isProtected,
                                              const void* data, size_t dataSize);
 
+    sk_sp<GrTexture> createCompressedTexture(SkISize dimensions,
+                                             const GrBackendFormat& format,
+                                             SkBudgeted budgeted,
+                                             GrMipmapped mipMapped,
+                                             GrProtected isProtected,
+                                             OH_NativeBuffer* nativeBuffer,
+                                             size_t bufferSize);
+
     /**
      * Implements GrResourceProvider::wrapBackendTexture
      */
@@ -725,6 +733,13 @@ private:
                                                        GrMipmapped,
                                                        GrProtected,
                                                        const void* data, size_t dataSize) = 0;
+    virtual sk_sp<GrTexture> onCreateCompressedTexture(SkISize dimensions,
+                                                       const GrBackendFormat&,
+                                                       SkBudgeted,
+                                                       GrMipmapped,
+                                                       GrProtected,
+                                                       OH_NativeBuffer* nativeBuffer,
+                                                       size_t bufferSize) = 0;
     virtual sk_sp<GrTexture> onWrapBackendTexture(const GrBackendTexture&,
                                                   GrWrapOwnership,
                                                   GrWrapCacheable,

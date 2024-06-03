@@ -411,12 +411,6 @@ bool GrVkInterface::validate(uint32_t instanceVersion, uint32_t physicalDeviceVe
         RETURN_FALSE_INTERFACE
     }
 
-#ifdef SKIA_USE_XEG
-    if (nullptr == fFunctions.fHMS_XEG_GetPerFrameLoad) {
-        RETURN_FALSE_INTERFACE
-    }
-#endif
-
     // Functions for VK_KHR_get_physical_device_properties2 or vulkan 1.1
     if (physicalDeviceVersion >= VK_MAKE_VERSION(1, 1, 0) ||
         extensions->hasExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1)) {

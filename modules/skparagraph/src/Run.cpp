@@ -107,6 +107,9 @@ void Run::copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const {
         if (!fJustificationShifts.empty()) {
             point.fX += fJustificationShifts[i + pos].fX;
         }
+        if (!fAutoSpacings.empty()) {
+            point.fX += fAutoSpacings[i + pos].fX;
+        }
         point += fOffsets[i + pos];
         blobBuffer.points()[i] = point;
     }
@@ -122,6 +125,9 @@ void Run::copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const {
         auto point = fPositions[i + pos];
         if (!fJustificationShifts.empty()) {
             point.fX += fJustificationShifts[i + pos].fX;
+        }
+        if (!fAutoSpacings.empty()) {
+            point.fX += fAutoSpacings[i + pos].fX;
         }
         point += fOffsets[i + pos];
         points[i] = point;
@@ -380,7 +386,8 @@ SkScalar Cluster::trimmedWidth(size_t pos) const {
 }
 
 SkScalar Run::positionX(size_t pos) const {
-    return posX(pos) + (fJustificationShifts.empty() ? 0 : fJustificationShifts[pos].fY);
+    return posX(pos) + (fJustificationShifts.empty() ? 0 : fJustificationShifts[pos].fY) +
+        (fAutoSpacings.empty() ? 0 : fAutoSpacings[pos].fY);
 }
 
 PlaceholderStyle* Run::placeholderStyle() const {

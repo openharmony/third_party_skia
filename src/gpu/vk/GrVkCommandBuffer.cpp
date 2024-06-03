@@ -595,14 +595,16 @@ static bool submit_to_queue(GrVkGpu* gpu,
     submitInfo.pSignalSemaphores = signalSemaphores;
     VkResult result;
     GR_VK_CALL_RESULT(gpu, result, QueueSubmit(queue, 1, &submitInfo, fence));
-    
+
 #ifdef SKIA_USE_XEG
-    uint64_t frameLoad = 0;
-    GR_VK_CALL(gpu->vkInterface(), HMS_XEG_GetPerFrameLoad(commandBufferCount, commandBuffers, &frameLoad));
-    SkDebugf("frameLoad %{public}u\n", frameLoad);
-    g_totalFrameLoad += frameLoad;
+    if (nullptr != gpu->vkInterface()->fFunctions.fHMS_XEG_GetPerFrameLoad) {
+        uint64_t frameLoad = 0;
+        GR_VK_CALL(gpu->vkInterface(), HMS_XEG_GetPerFrameLoad(commandBufferCount, commandBuffers, &frameLoad));
+        SkDebugf("frameLoad %{public}u\n", frameLoad);
+        g_totalFrameLoad += frameLoad;
+    }
 #endif
-    
+
     return result == VK_SUCCESS;
 }
 

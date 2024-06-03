@@ -3,8 +3,12 @@
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextWrapper.h"
 #include <cfloat>
+#include <cstring>
 #include "Run.h"
 #include "log.h"
+#ifdef TXT_AUTO_SPACING
+#include "parameter.h"
+#endif
 
 namespace skia {
 namespace textlayout {
@@ -51,9 +55,40 @@ struct LineBreakerWithLittleRounding {
 };
 }  // namespace
 
+SkScalar TextWrapper::calculateFakeSpacing(Cluster* cluster)
+{
+#ifdef TXT_AUTO_SPACING
+    static constexpr int autoSpacingEnableLength = 10;
+    char autoSpacingEnable[autoSpacingEnableLength] = {0};
+    GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, autoSpacingEnableLength);
+    if (!std::strcmp(autoSpacingEnable, "0")) {
+        return 0;
+    }
+#else
+    return 0;
+#endif
+    if (cluster == fEndLine.endCluster()) {
+        return 0;
+    }
+    if ((cluster - 1)->isWhitespaceBreak() || cluster->isWhitespaceBreak()) {
+        return 0;
+    }
+    if ((cluster - 1)->isHardBreak() || cluster->isHardBreak()) {
+        return 0;
+    }
+    if ((cluster - 1)->isCopyright() || cluster->isCopyright()) {
+        return (cluster - 1)->getFontSize() / autoSpacingWidthRatio;
+    }
+    if ((cluster->isCJK() && (cluster - 1)->isWestern()) || (cluster->isWestern() && (cluster - 1)->isCJK())) {
+        return (cluster - 1)->getFontSize() / autoSpacingWidthRatio;
+    }
+    return 0;
+}
+
 // Since we allow cluster clipping when they don't fit
 // we have to work with stretches - parts of clusters
-void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType) {
+void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack,
+    WordBreakType wordBreakType) {
 
     reset();
     fEndLine.metrics().clean();
@@ -65,14 +100,17 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
 
     LineBreakerWithLittleRounding breaker(maxWidth, applyRoundingHack);
     Cluster* nextNonBreakingSpace = nullptr;
+    SkScalar totalFakeSpacing = 0.0;
     for (auto cluster = fEndLine.endCluster(); cluster < endOfClusters; ++cluster) {
+        auto fakeSpacing = calculateFakeSpacing(cluster);
+        totalFakeSpacing += fakeSpacing;
         if (cluster->isHardBreak()) {
             if (cluster != fEndLine.endCluster()) {
                 isFirstWord = false;
             }
         } else if (
                 // TODO: Trying to deal with flutter rounding problem. Must be removed...
-                SkScalar width = fWords.width() + fClusters.width() + cluster->width();
+                SkScalar width = fWords.width() + fClusters.width() + cluster->width() + totalFakeSpacing;
                 (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
                 breaker.breakLine(width)) {
             if (cluster->isWhitespaceBreak()) {
@@ -613,14 +651,17 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     auto start = span.begin();
     InternalLineMetrics maxRunMetrics;
     bool needEllipsis = false;
-    SkScalar newWidth = 0.0;
+    SkScalar newWidth = maxWidth;
+    SkScalar noIndentWidth = maxWidth;
     while (fEndLine.endCluster() != end) {
         if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
             newWidth = FLT_MAX;
+            noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
             newWidth = balancedWidths[fLineNumber - 1];
         } else {
             newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
+            noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         }
         this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType());
 
@@ -728,7 +769,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 SkVector::Make(offsetX, fHeight),
                 SkVector::Make(fEndLine.width(), lineHeight),
                 fEndLine.metrics(),
-                needEllipsis);
+                needEllipsis,
+                noIndentWidth);
 
         softLineMaxIntrinsicWidth += widthWithSpaces;
 
@@ -829,7 +871,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 SkVector::Make(0, fHeight),
                 SkVector::Make(0, fEndLine.metrics().height()),
                 fEndLine.metrics(),
-                needEllipsis);
+                needEllipsis,
+                noIndentWidth);
         fHeight += fEndLine.metrics().height();
         parent->lines().back().setMaxRunMetrics(maxRunMetrics);
     }
