@@ -11,6 +11,7 @@
 #include "include/core/SkColorFilter.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkImageFilter.h"
+#include "include/core/SkLog.h"
 #include "include/core/SkPathEffect.h"
 #include "include/core/SkPicture.h"
 #include "include/core/SkRRect.h"
@@ -2791,7 +2792,7 @@ bool SkCanvas::onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg)
 {
     if (blurArg.dstRect.width() < this->imageInfo().width() ||
         blurArg.dstRect.height() < this->imageInfo().height()) {
-        SkDebugf("SkCanvas::onDrawBlurImage is not full screen");
+        SK_LOGD("SkCanvas::onDrawBlurImage is not full screen");
         return false;
     }
     return this->topDevice()->drawBlurImage(image, blurArg);
