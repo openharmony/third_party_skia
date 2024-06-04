@@ -175,9 +175,13 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
     if (fBudgetedBytes >= fMaxBytes) {
         HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over fBudgetedBytes:(%u),fMaxBytes:(%u)",
             fBudgetedBytes, fMaxBytes);
+        this->purgeAsNeeded();
+    } else {
+        this->purgeAsNeeded();
     }
-#endif
+#else
     this->purgeAsNeeded();
+#endif
 }
 
 void GrResourceCache::removeResource(GrGpuResource* resource) {
