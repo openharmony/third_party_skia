@@ -500,7 +500,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
         shape = tmpShape.get();
     }
 
-    if (maskFilter->directFilterMaskGPU(rContext, sdc, std::move(paint), clip,
+    if (!SDFBlur::isSDFBlur(*shape) && maskFilter->directFilterMaskGPU(rContext, sdc, std::move(paint), clip,
                                         viewMatrix, *shape)) {
         // the mask filter was able to draw itself directly, so there's nothing
         // left to do.
@@ -549,7 +549,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
                 return;
             }
             if (SDFBlur::isSDFBlur(*shape) &&
-                SDFBlur::draw_mask_SDFBlur(sdc, clip, viewMatrix, maskRect, std::move(paint),
+                SDFBlur::draw_mask_SDFBlur(rContext, sdc, clip, viewMatrix, maskRect, std::move(paint),
                                            std::move(filteredMaskView), maskFilter)) {
                 return;
             }
@@ -558,18 +558,19 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     }
 
     // Either HW mask rendering failed or we're in a DDL recording thread
+    if (SDFBlur::isSDFBlur(*shape)) {
+        // Update Key With ViewMatrix
+        if (!compute_key_and_clip_bounds(&maskKey, &boundsForClip, sdc->caps(), viewMatrix, inverseFilled, maskFilter,
+            *shape, unclippedDevShapeBounds, devClipBounds)) {
+                return;
+        }
+    }
     filteredMaskView = sw_create_filtered_mask(rContext,
                                                viewMatrix, *shape, maskFilter,
                                                unclippedDevShapeBounds, boundsForClip,
                                                &maskRect, &maskKey);
     if (filteredMaskView) {
-        if (!SDFBlur::isSDFBlur(*shape) &&
-            draw_mask(sdc, clip, viewMatrix, maskRect, std::move(paint), std::move(filteredMaskView))) {
-            return;
-        }
-        if (SDFBlur::isSDFBlur(*shape) &&
-            SDFBlur::draw_mask_SDFBlur(sdc, clip, viewMatrix, maskRect, std::move(paint),
-                                       std::move(filteredMaskView), maskFilter)) {
+        if (draw_mask(sdc, clip, viewMatrix, maskRect, std::move(paint), std::move(filteredMaskView))) {
             return;
         }
         assert_alive(paint);

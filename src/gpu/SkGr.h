@@ -213,4 +213,9 @@ static inline bool GrValidCubicResampler(SkCubicResampler cubic) {
     return cubic.B >= 0 && cubic.C >= 0;
 }
 
+#ifndef SK_IGNORE_GPU_DITHER
+std::unique_ptr<GrFragmentProcessor> make_dither_effect(GrRecordingContext* rContext,
+    std::unique_ptr<GrFragmentProcessor> inputFP, float range, const GrCaps* caps);
+#endif
+
 #endif
