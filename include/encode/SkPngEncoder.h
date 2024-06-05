@@ -51,7 +51,7 @@ public:
          *
          *  Our default value matches libpng's default.
          */
-        int fZLibLevel = 6;
+        int fZLibLevel = 2;
 
         /**
          *  Represents comments in the tEXt ancillary chunk of the png.
