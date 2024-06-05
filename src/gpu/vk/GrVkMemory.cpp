@@ -4,9 +4,13 @@
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
 */
-#include "include/core/SkExecutor.h"
 #include "src/gpu/vk/GrVkMemory.h"
 
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+#include <parameters.h>
+#endif
+
+#include "include/core/SkExecutor.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkUtil.h"
 
@@ -14,16 +18,15 @@
 #include "hitrace_meter.h"
 #endif
 
-#ifdef NOT_BUILD_FOR_OHOS_SDK
-#include <parameters.h>
-#endif
-
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
 
 using AllocationPropertyFlags = GrVkMemoryAllocator::AllocationPropertyFlags;
 using BufferUsage = GrVkMemoryAllocator::BufferUsage;
 
-static std::unique_ptr<SkExecutor> executor = SkExecutor::MakeFIFOThreadPool(1, false);
+static SkExecutor& GetThreadPool() {
+    static std::unique_ptr<SkExecutor> executor = SkExecutor::MakeFIFOThreadPool(1, false);
+    return *executor;
+}
 
 static bool FindMemoryType(GrVkGpu *gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t &typeIndex)
 {
@@ -149,7 +152,7 @@ void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
 #endif
     if (asyncFreeVkMemoryEnabled) {
         SkASSERT(alloc.fBackendMemory);
-        executor->add([allocator = gpu->memoryAllocator(), backedMem = alloc.fBackendMemory] {
+        GetThreadPool().add([allocator = gpu->memoryAllocator(), backedMem = alloc.fBackendMemory] {
             allocator->freeMemory(backedMem);
         });
     } else {
@@ -224,7 +227,7 @@ void GrVkMemory::FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
     static bool asyncFreeVkMemoryEnabled = false;
 #endif
     if (asyncFreeVkMemoryEnabled) {
-        executor->add([allocator = gpu->memoryAllocator(), backedMem = alloc.fBackendMemory] {
+        GetThreadPool().add([allocator = gpu->memoryAllocator(), backedMem = alloc.fBackendMemory] {
             allocator->freeMemory(backedMem);
         });
     } else {
