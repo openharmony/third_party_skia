@@ -218,7 +218,7 @@ void TextLine::paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOf
 void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     prepareRoundRect();
     fIsArcText = false;
-    this->iterateThroughVisualRuns(false,
+    this->iterateThroughVisualRuns(true,
         [painter, x, y, this]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -634,7 +634,7 @@ void TextLine::paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y,
         run->getBottomInGroup()));
     SkRRect skRRect;
     skRRect.setRectRadii(skRect, radii);
-    skRRect.offset(x + fShift, y + fOffset.y());
+    skRRect.offset(x + this->offset().x(), y + this->offset().y());
     painter->drawRRect(skRRect, attr.roundRectStyle.color);
 }
 
@@ -1103,8 +1103,7 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
                                                         SkScalar runOffsetInLine,
                                                         SkScalar textOffsetInRunInLine,
                                                         bool includeGhostSpaces,
-                                                        TextAdjustment textAdjustment,
-                                                        StyleType styleType) const {
+                                                        TextAdjustment textAdjustment) const {
     ClipContext result = { run, 0, run->size(), 0, SkRect::MakeEmpty(), 0, false };
 
     if (run->fEllipsis) {
@@ -1228,7 +1227,7 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
             // We only use this member for LTR
             result.fExcludedTrailingSpaces = std::max(result.clip.fRight - fAdvance.fX, 0.0f);
             result.clippingNeeded = true;
-            result.clip.fRight = styleType == StyleType::kBackground ? fWidthWithSpaces : fAdvance.fX;
+            result.clip.fRight = fAdvance.fX;
         }
     }
 
@@ -1281,10 +1280,11 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
                                                    TextRange textRange,
                                                    StyleType styleType,
                                                    const RunStyleVisitor& visitor) const {
-    auto includeGhostSpaces = (styleType == StyleType::kDecorations || styleType == StyleType::kNone);
+    auto includeGhostSpaces = (styleType == StyleType::kDecorations || styleType == StyleType::kBackground ||
+        styleType == StyleType::kNone);
     auto correctContext = [&](TextRange textRange, SkScalar textOffsetInRun) -> ClipContext {
         auto result = this->measureTextInsideOneRun(
-            textRange, run, runOffset, textOffsetInRun, includeGhostSpaces, textAdjustment, styleType);
+            textRange, run, runOffset, textOffsetInRun, includeGhostSpaces, textAdjustment);
         if (styleType == StyleType::kDecorations) {
             // Decorations are drawn based on the real font metrics (regardless of styles and strut)
             result.clip.fTop = this->sizes().runTop(run, LineMetricStyle::CSS) - run->baselineShift();
