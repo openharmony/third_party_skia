@@ -184,6 +184,7 @@ public:
     void breakTextIntoLines(ParagraphImpl* parent,
                             SkScalar maxWidth,
                             const AddLineToParagraph& addLine);
+    void updateMetricsWithPlaceholder(std::vector<Run*>& runs, bool iterateByCluster);
 
     SkScalar height() const { return fHeight; }
     SkScalar minIntrinsicWidth() const { return fMinIntrinsicWidth; }
