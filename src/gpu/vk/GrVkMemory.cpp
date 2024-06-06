@@ -145,7 +145,7 @@ bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
 void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
 #ifdef NOT_BUILD_FOR_OHOS_SDK
     static bool asyncFreeVkMemoryEnabled =
-            (std::atoi(OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_enabled", "0")
+            (std::atoi(OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_enabled", "1")
                                .c_str()) != 0);
 #else
     static bool asyncFreeVkMemoryEnabled = false;
@@ -221,7 +221,7 @@ void GrVkMemory::FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
     SkASSERT(alloc.fBackendMemory);
 #ifdef NOT_BUILD_FOR_OHOS_SDK
     static bool asyncFreeVkMemoryEnabled =
-            (std::atoi(system::GetParameter("persist.sys.graphic.mem.async_free_enabled", "0")
+            (std::atoi(system::GetParameter("persist.sys.graphic.mem.async_free_enabled", "1")
                                .c_str()) != 0);
 #else
     static bool asyncFreeVkMemoryEnabled = false;
