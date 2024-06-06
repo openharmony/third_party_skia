@@ -104,7 +104,7 @@ GrTextureProxy::~GrTextureProxy() {
                 invalidGpuResource = resourceProvider->findByUniqueKey<GrGpuResource>(fUniqueKey);
             }
         }
-        // less than 512 Bytes resources will be delated
+        // less than 1024 Bytes resources will be delated
         if (invalidGpuResource && invalidGpuResource->gpuMemorySize() < 1024) {
             fProxyProvider->processInvalidUniqueKey(
                 fUniqueKey, this, GrProxyProvider::InvalidateGPUResource::kYes);
