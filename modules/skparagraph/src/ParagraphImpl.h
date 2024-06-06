@@ -401,6 +401,7 @@ private:
     bool fHasLineBreaks;
     bool fHasWhitespacesInside;
     TextIndex fTrailingSpaces;
+    SkScalar fLayoutRawWidth {0};
 
     size_t fLineNumber;
     uint32_t hash_{0u};
