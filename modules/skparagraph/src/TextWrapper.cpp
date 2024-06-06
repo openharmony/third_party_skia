@@ -610,6 +610,42 @@ uint64_t TextWrapper::CalculateBestScore(std::vector<SkScalar>& widthOut, SkScal
     return 0;
 }
 
+void TextWrapper::updateMetricsWithPlaceholder(std::vector<Run*>& runs, bool iterateByCluster) {
+    if (!iterateByCluster) {
+        Run* lastRun = nullptr;
+        for (auto& run : runs) {
+            if (run == lastRun) {
+                continue;
+            }
+            lastRun = run;
+            if (lastRun != nullptr && lastRun->placeholderStyle() != nullptr) {
+                SkASSERT(lastRun->size() == 1);
+                // Update the placeholder metrics so we can get the placeholder positions later
+                // and the line metrics (to make sure the placeholder fits)
+                lastRun->updateMetrics(&fEndLine.metrics());
+            }
+        }
+        return;
+    }
+    runs.clear();
+    // Deal with placeholder clusters == runs[@size==1]
+    Run* lastRun = nullptr;
+    for (auto cluster = fEndLine.startCluster(); cluster <= fEndLine.endCluster(); ++cluster) {
+        auto r = cluster->runOrNull();
+        if (r == lastRun) {
+            continue;
+        }
+        lastRun = r;
+        if (lastRun != nullptr && lastRun->placeholderStyle() != nullptr) {
+            SkASSERT(lastRun->size() == 1);
+            // Update the placeholder metrics so we can get the placeholder positions later
+            // and the line metrics (to make sure the placeholder fits)
+            lastRun->updateMetrics(&fEndLine.metrics());
+            runs.emplace_back(lastRun);
+        }
+    }
+}
+
 // TODO: refactor the code for line ending (with/without ellipsis)
 void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                                      SkScalar maxWidth,
@@ -693,22 +729,14 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
             fEndLine.setMetrics(parent->getEmptyMetrics());
         }
 
-        // Deal with placeholder clusters == runs[@size==1]
-        Run* lastRun = nullptr;
-        for (auto cluster = fEndLine.startCluster(); cluster <= fEndLine.endCluster(); ++cluster) {
-            auto r = cluster->runOrNull();
-            if (r == lastRun) {
-                continue;
-            }
-            lastRun = r;
-            if (lastRun != nullptr && lastRun->placeholderStyle() != nullptr) {
-                SkASSERT(lastRun->size() == 1);
-                // Update the placeholder metrics so we can get the placeholder positions later
-                // and the line metrics (to make sure the placeholder fits)
-                lastRun->updateMetrics(&fEndLine.metrics());
-            }
-        }
-
+        std::vector<Run*> runs;
+        updateMetricsWithPlaceholder(runs, true);
+        // update again for some case
+        // such as :
+        //      placeholderA(width: 100, height: 100, align: bottom) placeholderB(width: 200, height: 200, align: top)
+        // without second update: the placeholderA bottom will be set 0, and placeholderB bottom will be set 100
+        // so the fEndline bottom will be set 100, is not equal placeholderA bottom
+        updateMetricsWithPlaceholder(runs, false);
         // Before we update the line metrics with struts,
         // let's save it for GetRectsForRange(RectHeightStyle::kMax)
         maxRunMetrics = fEndLine.metrics();
