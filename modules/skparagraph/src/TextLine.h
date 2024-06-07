@@ -104,7 +104,7 @@ public:
                                              bool includeGhosts,
                                              const ClustersVisitor& visitor) const;
 
-    void format(TextAlign align, SkScalar maxWidth);
+    void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
     void visit(SkScalar x, SkScalar y);
     void ensureTextBlobCachePopulated();
