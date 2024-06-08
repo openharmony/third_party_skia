@@ -730,7 +730,17 @@ constexpr SkUnichar copyrightUnicode = 0x00A9;
 
 struct UnicodeSet {
     std::unordered_set<SkUnichar> set_;
-    UnicodeSet(const std::vector<SkRange<SkUnichar>>& unicodeSet) {
+    explicit UnicodeSet(const std::vector<SkRange<SkUnichar>>& unicodeSet) {
+#ifdef TXT_AUTO_SPACING
+        static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
+        char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
+        GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
+        if (!std::strcmp(autoSpacingEnable, "0")) {
+            return;
+        }
+#else
+        return;
+#endif
         for (auto unicodeSetRange : unicodeSet) {
             for (auto i = unicodeSetRange.start; i <= unicodeSetRange.end; ++i) {
                 set_.insert(i);
