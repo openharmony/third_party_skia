@@ -195,6 +195,7 @@ private:
     bool hasBackgroundRect(const RoundRectAttr& attr);
     void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
     void prepareRoundRect();
+    SkScalar calculateThickness(const TextStyle& style, const ClipContext& context);
 
     ParagraphImpl* fOwner;
     BlockRange fBlockRange;
@@ -243,7 +244,8 @@ private:
         size_t     fVisitor_Size;
     };
     bool fTextBlobCachePopulated;
-
+    SkScalar maxThickness = 0.0f;
+    SkScalar underlinePosition = 0.0f;
     std::vector<RoundRectAttr> roundRectAttrs = {};
 public:
     std::vector<TextBlobRecord> fTextBlobCache;
