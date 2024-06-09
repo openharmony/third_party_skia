@@ -260,6 +260,19 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
                 TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kDecorations,
                 [painter, x, y, this]
                 (TextRange textRange, const TextStyle& style, const ClipContext& context) {
+                    SkScalar tmpThick = this->calculateThickness(style, context);
+                    maxThickness = maxThickness > tmpThick ? maxThickness : tmpThick;
+                });
+                return true;
+        });
+        this->iterateThroughVisualRuns(true,
+            [painter, x, y, this]
+            (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
+                *runWidthInLine = this->iterateThroughSingleRunByStyles(
+                TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kDecorations,
+                [painter, x, y, this]
+                (TextRange textRange, const TextStyle& style, const ClipContext& context) {
+                    underlinePosition = (fSizes.height() * 0.12 + this->baseline());
                     this->paintDecorations(painter, x, y, textRange, style, context);
                 });
                 return true;
@@ -679,10 +692,18 @@ void TextLine::paintShadow(ParagraphPainter* painter,
     }
 }
 
+SkScalar TextLine::calculateThickness(const TextStyle& style, const ClipContext& content)
+{
+    Decorations decoration;
+    return decoration.calculateThickness(style, content);
+}
+
 void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar y, TextRange textRange, const TextStyle& style, const ClipContext& context) const {
     ParagraphPainterAutoRestore ppar(painter);
     painter->translate(x + this->offset().fX, y + this->offset().fY + style.getBaselineShift());
     Decorations decorations;
+    decorations.setThickness(maxThickness);
+    decorations.setUnderlinePosition(underlinePosition);
     SkScalar correctedBaseline = SkScalarFloorToScalar(-this->sizes().rawAscent() + style.getBaselineShift() + 0.5);
     decorations.paint(painter, style, context, correctedBaseline);
 }
