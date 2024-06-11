@@ -1642,7 +1642,7 @@ if (use_oh_skia) {
     ]
 
     if (is_ios) {
-      public_deps += [ ":gpu" ]
+      public_deps = [ ":gpu" ]
     } else {
       if (defined(ace_enable_gpu) && ace_enable_gpu) {
         deps += [ ":gpu" ]
