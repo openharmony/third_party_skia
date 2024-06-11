@@ -14,10 +14,10 @@
 
 import("../../scripts/dawn_overrides_with_defaults.gni")
 
-import("${skia_root_dir}/build_overrides/build.gni")
 import("${dawn_root}/generator/dawn_generator.gni")
 import("${dawn_root}/scripts/dawn_component.gni")
 import("${dawn_root}/scripts/dawn_features.gni")
+import("${skia_root_dir}/build_overrides/build.gni")
 
 # Import mac_deployment_target
 if (is_mac) {
@@ -139,6 +139,7 @@ if (dawn_enable_opengl) {
 source_set("dawn_native_headers") {
   public_deps = [ "${dawn_root}/src/dawn:dawncpp_headers" ]
   all_dependent_configs = [ "${dawn_root}/src/common:dawn_public_include_dirs" ]
+  public_configs = [ "${dawn_root}/src/common:dawn_public_include_dirs" ]
   sources = [
     "${dawn_root}/src/include/dawn_native/DawnNative.h",
     "${dawn_root}/src/include/dawn_native/dawn_native_export.h",
