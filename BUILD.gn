@@ -523,11 +523,18 @@ optional("fontmgr_symbol_load") {
     ":typeface_freetype",
     "${skia_third_party_dir}/expat",
   ]
-  external_deps = [ "jsoncpp:jsoncpp_static" ]
-  if (is_component_build) {
-    external_deps += [ "bounds_checking_function:libsec_shared" ]
+  if (is_arkui_x) {
+    deps += [
+      "//third_party/bounds_checking_function:libsec_static",
+      "//third_party/jsoncpp:jsoncpp_static",
+    ]
   } else {
-    external_deps += [ "bounds_checking_function:libsec_static" ]
+    external_deps = [ "jsoncpp:jsoncpp_static" ]
+    if (is_component_build) {
+      external_deps += [ "bounds_checking_function:libsec_shared" ]
+    } else {
+      external_deps += [ "bounds_checking_function:libsec_static" ]
+    }
   }
 
   deps += [ ":ohos_fontconfig.json" ]
@@ -756,7 +763,11 @@ optional("fontmgr_win") {
       ":fontmgr_symbol_load",
       "${skia_third_party_dir}/expat",
     ]
-    external_deps = [ "jsoncpp:jsoncpp_static" ]
+    if (is_arkui_x) {
+      deps += [ "//third_party/jsoncpp:jsoncpp_static" ]
+    } else {
+      external_deps = [ "jsoncpp:jsoncpp_static" ]
+    }
   }
 }
 
@@ -1184,7 +1195,7 @@ optional("gpu") {
     } else {
       sources += [ "src/gpu/gl/GrGLMakeNativeInterface_none.cpp" ]
     }
-    if (!build_ohos_sdk) {
+    if (!build_ohos_sdk && !is_arkui_x) {
       if (defined(external_deps)) {
         external_deps += [ "init:libbegetutil" ]
       } else {
@@ -1200,7 +1211,7 @@ optional("gpu") {
     if (skia_use_vma) {
       deps += [ "third_party/vulkanmemoryallocator" ]
     }
-    if (!build_ohos_sdk) {
+    if (!build_ohos_sdk && !is_arkui_x) {
       external_deps = [ "init:libbegetutil" ]
       defines = [ "NOT_BUILD_FOR_OHOS_SDK" ]
     }
@@ -1669,7 +1680,7 @@ if (use_oh_skia) {
     ]
 
     if (is_arkui_x) {
-      external_deps += [ "bounds_checking_function:libsec_static" ]
+      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
     }
 
     public = skia_core_public
@@ -1866,6 +1877,9 @@ if (use_oh_skia) {
       "modules/skunicode",
       "modules/svg",
     ]
+    if (is_arkui_x) {
+      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+    }
 
     public = skia_core_public
     public += skia_utils_public
