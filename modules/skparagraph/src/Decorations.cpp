@@ -55,7 +55,8 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
 
         auto width = context.clip.width();
         SkScalar x = context.clip.left();
-        SkScalar y = fPosition;
+        SkScalar y = (TextDecoration::kUnderline == decoration) ?
+            fPosition : (context.clip.top() + fPosition);
 
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
                         textStyle.getDecorationType() == TextDecoration::kUnderline;
@@ -197,28 +198,30 @@ void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRe
 void Decorations::calculateAvoidanceWaves(const TextStyle& textStyle, SkRect clip) {
     fPath.Reset();
     int wave_count = 0;
+    const int step = 2;
+    const float zer = 0.01;
     SkScalar x_start = 0;
     SkScalar quarterWave = fThickness;
-    if (quarterWave <= 0.01) {
+    if (quarterWave <= zer) {
         return;
     }
     fPath.MoveTo(0, 0);
-    while (x_start + quarterWave * 2 < clip.width()) {
+    while (x_start + quarterWave * step < clip.width()) {
         fPath.RQuadTo(quarterWave,
-            wave_count % 2 != 0 ? quarterWave : -quarterWave,
-            quarterWave * 2, 0);
-        x_start += quarterWave * 2;
+            wave_count % step != 0 ? quarterWave : -quarterWave,
+            quarterWave * step, 0);
+        x_start += quarterWave * step;
         ++wave_count;
     }
 
     // The rest of the wave
     auto remaining = clip.width() - x_start;
     if (remaining > 0) {
-        double x1 = remaining / 2;
-        double y1 = remaining / 2 * (wave_count % 2 == 0 ? -1 : 1);
+        double x1 = remaining / step;
+        double y1 = remaining / step * (wave_count % step == 0 ? -1 : 1);
         double x2 = remaining;
-        double y2 = (remaining - remaining * remaining / (quarterWave * 2)) *
-                    (wave_count % 2 == 0 ? -1 : 1);
+        double y2 = (remaining - remaining * remaining / (quarterWave * step)) *
+                    (wave_count % step == 0 ? -1 : 1);
         fPath.RQuadTo(x1, y1, x2, y2);
     }
 }
