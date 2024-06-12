@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("../../swiftshader.gni")
 import("${skia_root_dir}/testing/libfuzzer/fuzzer_test.gni")
+import("../../swiftshader.gni")
 
 # Need a separate config to ensure the warnings are added to the end.
 config("swiftshader_opengl_compiler_private_config") {
@@ -27,25 +27,26 @@ config("swiftshader_opengl_compiler_private_config") {
     ]
 
     if (!is_debug) {
-      cflags += [ "/wd4189" ]  # local variable is initialized but not referenced (variables only used in ASSERTS)
+      cflags += [ "/wd4189" ]  # local variable is initialized but not
+                               # referenced (variables only used in ASSERTS)
     }
   } else {
     cflags = [ "-Wno-sign-compare" ]
 
     if (!is_debug) {
-      cflags += [ "-Wno-unused-variable" ]  # local variable is initialized but not referenced (variables only used in ASSERTS)
+      cflags += [ "-Wno-unused-variable" ]  # local variable is initialized but
+                                            # not referenced (variables only
+                                            # used in ASSERTS)
     }
   }
 }
 
 config("swiftshader_translator_disable_pool_alloc") {
-    defines = [ "SWIFTSHADER_TRANSLATOR_DISABLE_POOL_ALLOC" ]
+  defines = [ "SWIFTSHADER_TRANSLATOR_DISABLE_POOL_ALLOC" ]
 }
 
 swiftshader_source_set("swiftshader_opengl_compiler") {
-  deps = [
-    "preprocessor:swiftshader_opengl_preprocessor",
-  ]
+  deps = [ "preprocessor:swiftshader_opengl_preprocessor" ]
 
   sources = [
     "AnalyzeCallDepth.cpp",
@@ -74,6 +75,7 @@ swiftshader_source_set("swiftshader_opengl_compiler") {
 
   if (use_fuzzing_engine) {
     all_dependent_configs = [ ":swiftshader_translator_disable_pool_alloc" ]
+    public_configs = [ ":swiftshader_translator_disable_pool_alloc" ]
   }
 
   if (is_linux || is_chromeos || is_mac || is_fuchsia) {

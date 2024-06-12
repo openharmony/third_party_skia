@@ -382,6 +382,7 @@ angle_static_library("angle_common") {
   public_configs += [ ":angle_common_config" ]
   if (angle_has_build && use_fuzzing_engine) {
     all_dependent_configs = [ ":angle_disable_pool_alloc" ]
+    public_configs = [ ":angle_disable_pool_alloc" ]
   }
 
   if (is_linux || is_chromeos) {
@@ -936,7 +937,8 @@ angle_source_set("libANGLE_base") {
 
   # Enable extra Chromium style warnings for libANGLE.
   if (is_clang && angle_has_build) {
-    suppressed_configs -= [ "${skia_root_dir}/build/config/clang:find_bad_constructs" ]
+    suppressed_configs -=
+        [ "${skia_root_dir}/build/config/clang:find_bad_constructs" ]
   }
 
   if (is_apple) {
