@@ -59,7 +59,8 @@ public:
                           const SkIRect& devSpaceShapeBounds,
                           const SkIRect& clipBounds,
                           const SkMatrix& ctm,
-                          SkIRect* maskRect) const override;
+                          SkIRect* maskRect,
+                          const bool canUseSDFBlur = false) const override;
     bool directFilterMaskGPU(GrRecordingContext*,
                              skgpu::v1::SurfaceDrawContext*,
                              GrPaint&&,
@@ -1575,7 +1576,8 @@ bool SkBlurMaskFilterImpl::canFilterMaskGPU(const GrStyledShape& shape,
                                             const SkIRect& devSpaceShapeBounds,
                                             const SkIRect& clipBounds,
                                             const SkMatrix& ctm,
-                                            SkIRect* maskRect) const {
+                                            SkIRect* maskRect,
+                                            const bool canUseSDFBlur) const {
     SkScalar xformedSigma = this->computeXformedSigma(ctm);
     if (SkGpuBlurUtils::IsEffectivelyZeroSigma(xformedSigma)) {
         *maskRect = devSpaceShapeBounds;
@@ -1589,7 +1591,7 @@ bool SkBlurMaskFilterImpl::canFilterMaskGPU(const GrStyledShape& shape,
         SkIRect clipRect = clipBounds.makeOutset(sigma3, sigma3);
         SkIRect srcRect = devSpaceShapeBounds.makeOutset(sigma3, sigma3);
 
-        if (!SDFBlur::isSDFBlur(shape) && !srcRect.intersect(clipRect)) {
+        if (!canUseSDFBlur && !srcRect.intersect(clipRect)) {
             srcRect.setEmpty();
         }
         *maskRect = srcRect;
