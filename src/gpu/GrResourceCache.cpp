@@ -824,6 +824,9 @@ void GrResourceCache::purgeUnlockedResourcesByPid(bool scratchResourceOnly, cons
     SkTDArray<GrGpuResource*> scratchResources;
     for (int i = 0; i < fPurgeableQueue.count(); i++) {
         GrGpuResource* resource = fPurgeableQueue.at(i);
+        if (!resource) {
+            continue;
+        }
         SkASSERT(resource->resourcePriv().isPurgeable());
         if (exitedPidSet.count(resource->getResourceTag().fPid)) {
             *exitPidResources.append() = resource;
