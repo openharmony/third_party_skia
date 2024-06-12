@@ -14,10 +14,12 @@ class Decorations {
     public:
     void paint(ParagraphPainter* painter, const TextStyle& textStyle, const TextLine::ClipContext& context, SkScalar baseline);
     SkScalar calculateThickness(const TextStyle& textStyle, const TextLine::ClipContext& context);
-    void setThickness(SkScalar thickness) {
+    void setThickness(SkScalar thickness)
+    {
         fThickness = thickness;
     }
-    void setUnderlinePosition(SkScalar thickness) {
+    void setUnderlinePosition(SkScalar thickness)
+    {
         underlinePosition = thickness;
     }
 
