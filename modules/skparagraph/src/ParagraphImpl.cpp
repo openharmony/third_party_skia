@@ -790,54 +790,76 @@ static bool is_ascii_7bit_space(int c) {
 }
 
 #ifdef OHOS_SUPPORT
-static std::vector<SkRange<SkUnichar>> CJK_UNICODE_SET = {
-    SkRange<SkUnichar>(0x4E00, 0x9FFF),
-    SkRange<SkUnichar>(0x3400, 0x4DBF),
-    SkRange<SkUnichar>(0x20000, 0x2A6DF),
-    SkRange<SkUnichar>(0x2A700, 0x2B73F),
-    SkRange<SkUnichar>(0x2B740, 0x2B81F),
-    SkRange<SkUnichar>(0x2B820, 0x2CEAF),
-    SkRange<SkUnichar>(0x2CEB0, 0x2EBEF),
-    SkRange<SkUnichar>(0x30000, 0x3134F),
-    SkRange<SkUnichar>(0xF900, 0xFAFF),
-    SkRange<SkUnichar>(0x3040, 0x309F),
-    SkRange<SkUnichar>(0x30A0, 0x30FF),
-    SkRange<SkUnichar>(0x31F0, 0x31FF),
+static const std::vector<SkRange<SkUnichar>> CJK_UNICODE_SET = {
     SkRange<SkUnichar>(0x1100, 0x11FF),
-    SkRange<SkUnichar>(0x3130, 0x318F),
-    SkRange<SkUnichar>(0xAC00, 0xD7AF),
-    SkRange<SkUnichar>(0x31C0, 0x31EF),
     SkRange<SkUnichar>(0x2E80, 0x2EFF),
+    // [0x3040, 0x309F](Hiragana) + [0x30A0, 0x30FF](Katakana)
+    SkRange<SkUnichar>(0x3040, 0x30FF),
+    SkRange<SkUnichar>(0x3130, 0x318F),
+    // [0x31C0, 0x31EF](CJK Strokes) + [0x31F0, 0x31FF](Katakana Phonetic Extensions)
+    SkRange<SkUnichar>(0x31C0, 0x31FF),
+    SkRange<SkUnichar>(0x3400, 0x4DBF),
+    SkRange<SkUnichar>(0x4E00, 0x9FFF),
+    SkRange<SkUnichar>(0xAC00, 0xD7AF),
+    SkRange<SkUnichar>(0xF900, 0xFAFF),
+    SkRange<SkUnichar>(0x20000, 0x2A6DF),
+/*
+    [0x2A700, 0x2B73F](CJK Unified Ideographs Extension C) +
+    [0x2B740, 0x2B81F](CJK Unified Ideographs Extension D) +
+    [0x2B820, 0x2CEAF](CJK Unified Ideographs Extension E) +
+    [0x2CEB0, 0x2EBEF](CJK Unified Ideographs Extension F)
+*/
+    SkRange<SkUnichar>(0x2A700, 0x2EBEF),
     SkRange<SkUnichar>(0x2F800, 0x2FA1F),
+    SkRange<SkUnichar>(0x30000, 0x3134F),
 };
 
-static std::vector<SkRange<SkUnichar>> WESTERN_UNICODE_SET = {
+static const std::vector<SkRange<SkUnichar>> WESTERN_UNICODE_SET = {
+    SkRange<SkUnichar>(0x0030, 0x0039),
     SkRange<SkUnichar>(0x0041, 0x005A),
     SkRange<SkUnichar>(0x0061, 0x007A),
-    SkRange<SkUnichar>(0x0030, 0x0039),
 };
 
 constexpr SkUnichar COPYRIGHT_UNICODE = 0x00A9;
 
-struct UnicodeSet {
-    std::unordered_set<SkUnichar> set_;
-    explicit UnicodeSet(const std::vector<SkRange<SkUnichar>>& unicodeSet) {
-        if (!TextParameter::GetAutoSpacingEnable()) {
-            return;
-        }
-        for (auto unicodeSetRange : unicodeSet) {
-            for (auto i = unicodeSetRange.start; i <= unicodeSetRange.end; ++i) {
-                set_.insert(i);
-            }
-        }
+struct UnicodeIdentifier {
+    static bool cmp(SkRange<SkUnichar> a, SkRange<SkUnichar> b) {
+        return a.start < b.start;
     }
+    const std::vector<SkRange<SkUnichar>>& fUnicodeSet;
+    explicit UnicodeIdentifier(const std::vector<SkRange<SkUnichar>>& unicodeSet) : fUnicodeSet(unicodeSet) {}
     bool exist(SkUnichar c) const {
-        return set_.find(c) != set_.end();
+        if (!TextParameter::GetAutoSpacingEnable()) {
+            return false;
+        }
+        auto pos = std::upper_bound(fUnicodeSet.begin(), fUnicodeSet.end(), SkRange<SkUnichar>(c, c), cmp);
+        if (pos == fUnicodeSet.begin()) {
+            return false;
+        }
+        --pos;
+        return pos->end >= c;
     }
 };
 
-static const UnicodeSet CJK_SET(CJK_UNICODE_SET);
-static const UnicodeSet WESTERN_SET(WESTERN_UNICODE_SET);
+static const UnicodeIdentifier CJK_IDENTIFIER(CJK_UNICODE_SET);
+static const UnicodeIdentifier WESTERN_IDENTIFIER(WESTERN_UNICODE_SET);
+
+static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(SkUnichar unicode)
+{
+    if (WESTERN_IDENTIFIER.exist(unicode)) {
+        return Cluster::AutoSpacingFlag::Western;
+    }
+
+    if (CJK_IDENTIFIER.exist(unicode)) {
+        return Cluster::AutoSpacingFlag::CJK;
+    }
+
+    if (unicode == COPYRIGHT_UNICODE) {
+        return Cluster::AutoSpacingFlag::Copyright;
+    }
+
+    return Cluster::AutoSpacingFlag::NoFlag;
+}
 #endif
 
 Cluster::Cluster(ParagraphImpl* owner,
@@ -887,16 +909,19 @@ Cluster::Cluster(ParagraphImpl* owner,
 #ifdef OHOS_SUPPORT
     fIsTabulation = fOwner->codeUnitHasProperty(fTextRange.start,
                                                 SkUnicode::CodeUnitFlags::kTabulation);
-#endif
     auto unicodeStart = fOwner->getUnicodeIndex(fTextRange.start);
     auto unicodeEnd = fOwner->getUnicodeIndex(fTextRange.end);
     SkUnichar unicode = 0;
     if (unicodeEnd - unicodeStart == 1 && unicodeStart < fOwner->unicodeText().size()) {
         unicode = fOwner->unicodeText()[unicodeStart];
     }
-    fIsCopyright = unicode == COPYRIGHT_UNICODE;
-    fIsCJK = CJK_SET.exist(unicode);
-    fIsWestern = WESTERN_SET.exist(unicode);
+
+    auto curAutoSpacingFlag = recognizeUnicodeAutoSpacingFlag(unicode);
+    auto lastAutoSpacingFlag = fOwner->getLastAutoSpacingFlag();
+    fNeedAutoSpacing = curAutoSpacingFlag != Cluster::AutoSpacingFlag::NoFlag &&
+        curAutoSpacingFlag != lastAutoSpacingFlag && lastAutoSpacingFlag != Cluster::AutoSpacingFlag::NoFlag;
+    fOwner->setLastAutoSpacingFlag(curAutoSpacingFlag);
+#endif
 }
 
 SkScalar Run::calculateWidth(size_t start, size_t end, bool clip) const {

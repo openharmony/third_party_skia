@@ -526,23 +526,6 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
     }
 }
 
-SkScalar TextLine::calculateSpacing(const Cluster prevCluster, const Cluster curCluster)
-{
-    if (prevCluster.isWhitespaceBreak() || curCluster.isWhitespaceBreak()) {
-        return 0;
-    }
-    if (prevCluster.isHardBreak() || curCluster.isHardBreak()) {
-        return 0;
-    }
-    if (prevCluster.isCopyright() || curCluster.isCopyright()) {
-        return prevCluster.getFontSize() / AUTO_SPACING_WIDTH_RATIO;
-    }
-    if ((curCluster.isCJK() && prevCluster.isWestern()) || (curCluster.isWestern() && prevCluster.isCJK())) {
-        return prevCluster.getFontSize() / AUTO_SPACING_WIDTH_RATIO;
-    }
-    return 0;
-}
-
 #ifdef OHOS_SUPPORT
 SkScalar TextLine::autoSpacing() {
     if (!TextParameter::GetAutoSpacingEnable()) {
@@ -553,7 +536,7 @@ SkScalar TextLine::autoSpacing() {
     for (auto clusterIndex = fClusterRange.start + 1; clusterIndex < fClusterRange.end; ++clusterIndex) {
         auto prevSpacing = spacing;
         auto& cluster = fOwner->cluster(clusterIndex);
-        spacing += calculateSpacing(prevCluster, cluster);
+        spacing += cluster.needAutoSpacing() ? prevCluster.getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
         spacingCluster(&cluster, spacing, prevSpacing);
         prevCluster = cluster;
     }

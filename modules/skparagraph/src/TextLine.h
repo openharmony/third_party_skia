@@ -150,7 +150,6 @@ public:
                                              const ClustersVisitor& visitor) const;
 
     void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
-    SkScalar calculateSpacing(const Cluster prevCluster, const Cluster curCluster);
     SkScalar autoSpacing();
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
     void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);

@@ -228,15 +228,18 @@ private:
         fHardLineBreak = false;
     }
 
-    SkScalar calculateFakeSpacing(Cluster* cluster, bool autoSpacingEnable);
-    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType,
-        bool autoSpacingEnable);
+#ifdef OHOS_SUPPORT
+    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType);
     void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
+    uint64_t CalculateBestScore(std::vector<SkScalar>& widthOut,
+        SkScalar maxWidth, ParagraphImpl* parent, size_t maxLines);
+#else
+    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack);
+    void moveForward(bool hasEllipsis);
+#endif
     void trimEndSpaces(TextAlign align);
     std::tuple<Cluster*, size_t, SkScalar> trimStartSpaces(Cluster* endOfClusters);
     SkScalar getClustersTrimmedWidth();
-    uint64_t CalculateBestScore(std::vector<SkScalar>& widthOut,
-        SkScalar maxWidth, ParagraphImpl* parent, size_t maxLines);
 };
 }  // namespace textlayout
 }  // namespace skia
