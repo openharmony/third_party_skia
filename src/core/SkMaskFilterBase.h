@@ -107,7 +107,8 @@ public:
                                   const SkIRect& devSpaceShapeBounds,
                                   const SkIRect& clipBounds,
                                   const SkMatrix& ctm,
-                                  SkIRect* maskRect) const;
+                                  SkIRect* maskRect,
+                                  const bool canUseSDFBlur = false) const;
 
     /**
      *  Try to directly render the mask filter into the target. Returns true if drawing was

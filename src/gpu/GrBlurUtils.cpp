@@ -191,7 +191,8 @@ static std::unique_ptr<skgpu::v1::SurfaceDrawContext> create_mask_GPU(
         const SkIRect& maskRect,
         const SkMatrix& origViewMatrix,
         const GrStyledShape& shape,
-        int sampleCnt) {
+        int sampleCnt,
+        const bool canUseSDFBlur = false) {
     // We cache blur masks. Use default surface props here so we can use the same cached mask
     // regardless of the final dst surface.
     SkSurfaceProps defaultSurfaceProps;
@@ -222,7 +223,7 @@ static std::unique_ptr<skgpu::v1::SurfaceDrawContext> create_mask_GPU(
 
     sdc->clear(SK_PMColor4fTRANSPARENT);
 
-    if (SDFBlur::isSDFBlur(shape)) {
+    if (canUseSDFBlur) {
         return sdc;
     }
 
@@ -296,7 +297,8 @@ static bool compute_key_and_clip_bounds(GrUniqueKey* maskKey,
                                         const SkMaskFilterBase* maskFilter,
                                         const GrStyledShape& shape,
                                         const SkIRect& unclippedDevShapeBounds,
-                                        const SkIRect& devClipBounds) {
+                                        const SkIRect& devClipBounds,
+                                        const bool canUseSDFBlur = false) {
     *boundsForClip = devClipBounds;
 
 #ifndef SK_DISABLE_MASKFILTERED_MASK_CACHING
@@ -308,9 +310,9 @@ static bool compute_key_and_clip_bounds(GrUniqueKey* maskKey,
     if (useCache) {
         SkIRect clippedMaskRect, unClippedMaskRect;
         maskFilter->canFilterMaskGPU(shape, unclippedDevShapeBounds, devClipBounds,
-                                     viewMatrix, &clippedMaskRect);
+                                     viewMatrix, &clippedMaskRect, canUseSDFBlur);
         maskFilter->canFilterMaskGPU(shape, unclippedDevShapeBounds, unclippedDevShapeBounds,
-                                     viewMatrix, &unClippedMaskRect);
+                                     viewMatrix, &unClippedMaskRect, canUseSDFBlur);
         if (clippedMaskRect.isEmpty()) {
             return false;
         }
@@ -380,12 +382,14 @@ static GrSurfaceProxyView hw_create_filtered_mask(GrDirectContext* dContext,
                                                   const SkIRect& unclippedDevShapeBounds,
                                                   const SkIRect& clipBounds,
                                                   SkIRect* maskRect,
-                                                  GrUniqueKey* key) {
+                                                  GrUniqueKey* key,
+                                                  const bool canUseSDFBlur = false) {
     if (!filter->canFilterMaskGPU(shape,
                                   unclippedDevShapeBounds,
                                   clipBounds,
                                   viewMatrix,
-                                  maskRect)) {
+                                  maskRect,
+                                  canUseSDFBlur)) {
         return {};
     }
 
@@ -426,7 +430,8 @@ static GrSurfaceProxyView hw_create_filtered_mask(GrDirectContext* dContext,
                                                                            *maskRect,
                                                                            viewMatrix,
                                                                            shape,
-                                                                           sdc->numSamples()));
+                                                                           sdc->numSamples(),
+                                                                           canUseSDFBlur));
     if (!maskSDC) {
         if (key->isValid()) {
             // It is very unlikely that 'create_mask_GPU' will fail after 'CreateLazyView'
@@ -441,7 +446,7 @@ static GrSurfaceProxyView hw_create_filtered_mask(GrDirectContext* dContext,
     GrSurfaceProxyView filteredMaskView;
     SkRRect srcRRect;
     bool inverted;
-    if (SDFBlur::isSDFBlur(shape) && shape.asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
+    if (canUseSDFBlur && shape.asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
         filteredMaskView = filter->filterMaskGPUNoxFormed(dContext, maskSDC->readSurfaceView(),
                                                           maskSDC->colorInfo().colorType(),
                                                           maskSDC->colorInfo().alphaType(),
@@ -500,7 +505,9 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
         shape = tmpShape.get();
     }
 
-    if (!SDFBlur::isSDFBlur(*shape) && maskFilter->directFilterMaskGPU(rContext, sdc, std::move(paint), clip,
+    bool canUseSDFBlur = SDFBlur::isSDFBlur(*shape) && (paint.numTotalFragmentProcessors() == 0);
+
+    if (!canUseSDFBlur && maskFilter->directFilterMaskGPU(rContext, sdc, std::move(paint), clip,
                                         viewMatrix, *shape)) {
         // the mask filter was able to draw itself directly, so there's nothing
         // left to do.
@@ -514,7 +521,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
 
     SkMatrix matrixTrans = SkMatrix::I().Translate(viewMatrix.getTranslateX(), viewMatrix.getTranslateY());
     SkIRect unclippedDevShapeBounds, devClipBounds;
-    if (!get_shape_and_clip_bounds(sdc, clip, *shape, SDFBlur::isSDFBlur(*shape) ? matrixTrans : viewMatrix,
+    if (!get_shape_and_clip_bounds(sdc, clip, *shape, canUseSDFBlur ? matrixTrans : viewMatrix,
                                    &unclippedDevShapeBounds, &devClipBounds)) {
         // TODO: just cons up an opaque mask here
         if (!inverseFilled) {
@@ -526,10 +533,11 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     SkIRect boundsForClip;
     if (!compute_key_and_clip_bounds(&maskKey, &boundsForClip,
                                      sdc->caps(),
-                                     SDFBlur::isSDFBlur(*shape) ? matrixTrans : viewMatrix, inverseFilled,
+                                     canUseSDFBlur ? SkMatrix::I() : viewMatrix, inverseFilled,
                                      maskFilter, *shape,
                                      unclippedDevShapeBounds,
-                                     devClipBounds)) {
+                                     devClipBounds,
+                                     canUseSDFBlur)) {
         return; // 'shape' was entirely clipped out
     }
 
@@ -538,19 +546,19 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
 
     if (auto dContext = rContext->asDirectContext()) {
         filteredMaskView = hw_create_filtered_mask(dContext, sdc,
-                                                   SDFBlur::isSDFBlur(*shape) ? matrixTrans : viewMatrix,
+                                                   canUseSDFBlur ? matrixTrans : viewMatrix,
                                                    *shape, maskFilter,
                                                    unclippedDevShapeBounds, boundsForClip,
                                                    &maskRect, &maskKey);
         if (filteredMaskView) {
-            if (!SDFBlur::isSDFBlur(*shape) &&
+            if (!canUseSDFBlur &&
                 draw_mask(sdc, clip, viewMatrix, maskRect, std::move(paint), std::move(filteredMaskView))) {
                 // This path is completely drawn
                 return;
             }
-            if (SDFBlur::isSDFBlur(*shape) &&
-                SDFBlur::draw_mask_SDFBlur(rContext, sdc, clip, viewMatrix, maskRect, std::move(paint),
-                                           std::move(filteredMaskView), maskFilter)) {
+            if (canUseSDFBlur &&
+                SDFBlur::drawMaskSDFBlur(rContext, sdc, clip, viewMatrix, maskRect, std::move(paint),
+                                         std::move(filteredMaskView), maskFilter)) {
                 return;
             }
             assert_alive(paint);
@@ -558,7 +566,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     }
 
     // Either HW mask rendering failed or we're in a DDL recording thread
-    if (SDFBlur::isSDFBlur(*shape)) {
+    if (canUseSDFBlur) {
         // Update Key With ViewMatrix
         if (!compute_key_and_clip_bounds(&maskKey, &boundsForClip, sdc->caps(), viewMatrix, inverseFilled, maskFilter,
             *shape, unclippedDevShapeBounds, devClipBounds)) {

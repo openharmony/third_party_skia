@@ -31,7 +31,7 @@ bool isSDFBlur(const GrStyledShape& shape)
     return true;
 }
 
-bool draw_mask_SDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
+bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
     const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter)
 {
     float noxFormedSigma3 = maskFilter->getNoxFormedSigma3();
@@ -64,9 +64,9 @@ bool draw_mask_SDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawConte
     auto paintFP = GrBlendFragmentProcessor::Make(std::move(inputFP),
                                                 /*dst=*/nullptr,
                                                 SkBlendMode::kSrc);
-    #ifndef SK_IGNORE_GPU_DITHER
+#ifndef SK_IGNORE_GPU_DITHER
     paintFP = make_dither_effect(rContext, std::move(paintFP), ditherRange, rContext->priv().caps());
-    #endif
+#endif
     paint.setColorFragmentProcessor(std::move(paintFP));
     sdc->drawRect(clip, std::move(paint), GrAA::kYes, matrix,
                   SkRect::MakeXYWH(0, 0, maskBounds.width(), maskBounds.height()));
