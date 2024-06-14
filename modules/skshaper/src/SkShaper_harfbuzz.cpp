@@ -1665,6 +1665,9 @@ ShapedRun ShaperHarfBuzz::shape(char const * const utf8,
 
 }  // namespace
 
+#ifdef USE_SKIA_TXT
+namespace skia_text {
+#endif
 std::unique_ptr<SkShaper::BiDiRunIterator>
 SkShaper::MakeIcuBiDiRunIterator(const char* utf8, size_t utf8Bytes, uint8_t bidiLevel) {
     auto unicode = SkUnicode::Make();
@@ -1761,3 +1764,7 @@ void SkShaper::PurgeHarfBuzzCache() {
     HBLockedFaceCache cache = get_hbFace_cache();
     cache.reset();
 }
+
+#ifdef USE_SKIA_TXT
+}
+#endif

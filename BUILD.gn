@@ -526,11 +526,18 @@ optional("fontmgr_symbol_load") {
     ":typeface_freetype",
     "${skia_third_party_dir}/expat",
   ]
-  external_deps = [ "jsoncpp:jsoncpp_static" ]
-  if (is_component_build) {
-    external_deps += [ "bounds_checking_function:libsec_shared" ]
+  if (is_arkui_x) {
+    deps += [
+      "//third_party/bounds_checking_function:libsec_static",
+      "//third_party/jsoncpp:jsoncpp_static",
+    ]
   } else {
-    external_deps += [ "bounds_checking_function:libsec_static" ]
+    external_deps = [ "jsoncpp:jsoncpp_static" ]
+    if (is_component_build) {
+      external_deps += [ "bounds_checking_function:libsec_shared" ]
+    } else {
+      external_deps += [ "bounds_checking_function:libsec_static" ]
+    }
   }
 
   deps += [ ":ohos_fontconfig.json" ]
@@ -759,7 +766,11 @@ optional("fontmgr_win") {
       ":fontmgr_symbol_load",
       "${skia_third_party_dir}/expat",
     ]
-    external_deps = [ "jsoncpp:jsoncpp_static" ]
+    if (is_arkui_x) {
+      deps += [ "//third_party/jsoncpp:jsoncpp_static" ]
+    } else {
+      external_deps = [ "jsoncpp:jsoncpp_static" ]
+    }
   }
 }
 
@@ -1650,7 +1661,7 @@ if (use_oh_skia) {
     ]
 
     if (is_ios) {
-      public_deps += [ ":gpu" ]
+      public_deps = [ ":gpu" ]
     } else {
       if (defined(ace_enable_gpu) && ace_enable_gpu) {
         deps += [ ":gpu" ]
@@ -1688,7 +1699,7 @@ if (use_oh_skia) {
     ]
 
     if (is_arkui_x) {
-      external_deps += [ "bounds_checking_function:libsec_static" ]
+      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
     }
 
     public = skia_core_public
@@ -1885,6 +1896,9 @@ if (use_oh_skia) {
       "modules/skunicode",
       "modules/svg",
     ]
+    if (is_arkui_x) {
+      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+    }
 
     public = skia_core_public
     public += skia_utils_public
