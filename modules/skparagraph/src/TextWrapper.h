@@ -216,8 +216,9 @@ private:
         fHardLineBreak = false;
     }
 
-    SkScalar calculateFakeSpacing(Cluster* cluster);
-    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType);
+    SkScalar calculateFakeSpacing(Cluster* cluster, bool autoSpacingEnable);
+    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType,
+        bool autoSpacingEnable);
     void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
     void trimEndSpaces(TextAlign align);
     std::tuple<Cluster*, size_t, SkScalar> trimStartSpaces(Cluster* endOfClusters);

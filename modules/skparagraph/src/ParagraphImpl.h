@@ -258,6 +258,12 @@ public:
         }
     }
 
+    void resetAutoSpacing() {
+        for (auto& run : fRuns) {
+            run.resetAutoSpacing();
+        }
+    }
+
     void scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
     bool middleEllipsisDeal();
     bool codeUnitHasProperty(size_t index, SkUnicode::CodeUnitFlags property) const {

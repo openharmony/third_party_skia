@@ -61,7 +61,7 @@ enum class RoundRectType {
 };
 
 // first: words length, second: spacing width ratio
-constexpr SkScalar autoSpacingWidthRatio = 8;
+constexpr SkScalar AUTO_SPACING_WIDTH_RATIO = 8;
 
 class Run {
 public:
