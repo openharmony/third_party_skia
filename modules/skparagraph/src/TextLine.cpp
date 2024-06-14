@@ -872,6 +872,7 @@ void TextLine::ellipsisNotFitProcess(EllipsisModal ellipsisModal) {
             fTextIncludingNewlines.end = fTextIncludingNewlines.start;
             fTextExcludingSpaces.end = fTextExcludingSpaces.start;
             fAdvance.fX = 0;
+            break;
         case EllipsisModal::HEAD:
             fClusterRange.start = fClusterRange.end;
             fGhostClusterRange.start = fClusterRange.end;
@@ -879,6 +880,7 @@ void TextLine::ellipsisNotFitProcess(EllipsisModal ellipsisModal) {
             fTextIncludingNewlines.start = fTextIncludingNewlines.end;
             fTextExcludingSpaces.start = fTextExcludingSpaces.end;
             fAdvance.fX = 0;
+            break;
         default:
             return;
     }
