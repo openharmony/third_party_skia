@@ -49,7 +49,8 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
-                          : context.run->correctAscent(), textStyle.getDecorationStyle());
+                          : context.run->correctAscent(), textStyle.getDecorationStyle(),
+                          textStyle.getBaselineShift());
 
         calculatePaint(textStyle);
 
@@ -265,7 +266,7 @@ void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSType
 
 // This is how flutter calculates the positioning
 void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
-    const TextDecorationStyle textDecorationStyle) {
+    const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift) {
     switch (decoration) {
       case TextDecoration::kUnderline:
           fPosition = underlinePosition;
@@ -282,6 +283,7 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
                      ? fFontMetrics.fStrikeoutPosition
                      : fFontMetrics.fXHeight / -2;
           fPosition -= ascent;
+          fPosition += textBaselineShift;
           break;
       }
       default:SkASSERT(false);
