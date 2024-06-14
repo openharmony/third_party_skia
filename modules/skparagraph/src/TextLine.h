@@ -119,6 +119,7 @@ public:
     void ensureTextBlobCachePopulated();
     void setParagraphImpl(ParagraphImpl* newpara) { fOwner = newpara; }
     void setBlockRange(const BlockRange& blockRange) { fBlockRange = blockRange; }
+    void ellipsisNotFitProcess(EllipsisModal ellipsisModal);
     void createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
     // For testing internal structures
