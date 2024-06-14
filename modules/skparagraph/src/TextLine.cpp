@@ -858,6 +858,32 @@ void TextLine::spacingCluster(const Cluster* cluster, SkScalar spacing, SkScalar
     }
 }
 
+void TextLine::ellipsisNotFitProcess(EllipsisModal ellipsisModal) {
+    if (fEllipsis) {
+        return;
+    }
+
+    // Weird situation: ellipsis does not fit; no ellipsis then
+    switch (ellipsisModal) {
+        case EllipsisModal::TAIL:
+            fClusterRange.end = fClusterRange.start;
+            fGhostClusterRange.end = fClusterRange.start;
+            fText.end = fText.start;
+            fTextIncludingNewlines.end = fTextIncludingNewlines.start;
+            fTextExcludingSpaces.end = fTextExcludingSpaces.start;
+            fAdvance.fX = 0;
+        case EllipsisModal::HEAD:
+            fClusterRange.start = fClusterRange.end;
+            fGhostClusterRange.start = fClusterRange.end;
+            fText.start = fText.end;
+            fTextIncludingNewlines.start = fTextIncludingNewlines.end;
+            fTextExcludingSpaces.start = fTextExcludingSpaces.end;
+            fAdvance.fX = 0;
+        default:
+            return;
+    }
+}
+
 void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType) {
     // Replace some clusters with the ellipsis
     // Go through the clusters in the reverse logical order
@@ -924,18 +950,15 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         fText.end = cluster.textRange().end;
         fTextIncludingNewlines.end = cluster.textRange().end;
         fTextExcludingSpaces.end = cluster.textRange().end;
+
+        if (SkScalarNearlyZero(width)) {
+            fRunsInVisualOrder.reset();
+        }
+
         break;
     }
 
-    if (!fEllipsis) {
-        // Weird situation: ellipsis does not fit; no ellipsis then
-        fClusterRange.end = fClusterRange.start;
-        fGhostClusterRange.end = fClusterRange.start;
-        fText.end = fText.start;
-        fTextIncludingNewlines.end = fTextIncludingNewlines.start;
-        fTextExcludingSpaces.end = fTextExcludingSpaces.start;
-        fAdvance.fX = 0;
-    }
+    ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
 
 void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool) {
@@ -975,15 +998,7 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         break;
     }
 
-    if (!fEllipsis) {
-        // Weird situation: ellipsis does not fit; no ellipsis then
-        fClusterRange.start = fClusterRange.end;
-        fGhostClusterRange.start = fClusterRange.end;
-        fText.start = fText.end;
-        fTextIncludingNewlines.start = fTextIncludingNewlines.end;
-        fTextExcludingSpaces.start = fTextExcludingSpaces.end;
-        fAdvance.fX = 0;
-    }
+    ellipsisNotFitProcess(EllipsisModal::HEAD);
 }
 
 static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
