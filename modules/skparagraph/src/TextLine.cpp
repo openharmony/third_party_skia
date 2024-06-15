@@ -459,19 +459,19 @@ SkScalar TextLine::calculateSpacing(const Cluster prevCluster, const Cluster cur
         return 0;
     }
     if (prevCluster.isCopyright() || curCluster.isCopyright()) {
-        return prevCluster.getFontSize() / autoSpacingWidthRatio;
+        return prevCluster.getFontSize() / AUTO_SPACING_WIDTH_RATIO;
     }
     if ((curCluster.isCJK() && prevCluster.isWestern()) || (curCluster.isWestern() && prevCluster.isCJK())) {
-        return prevCluster.getFontSize() / autoSpacingWidthRatio;
+        return prevCluster.getFontSize() / AUTO_SPACING_WIDTH_RATIO;
     }
     return 0;
 }
 
 SkScalar TextLine::autoSpacing() {
 #ifdef TXT_AUTO_SPACING
-    static constexpr int autoSpacingEnableLength = 10;
-    char autoSpacingEnable[autoSpacingEnableLength] = {0};
-    GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, autoSpacingEnableLength);
+    static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
+    char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
+    GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
     if (!std::strcmp(autoSpacingEnable, "0")) {
         return 0;
     }

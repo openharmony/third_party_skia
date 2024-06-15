@@ -55,19 +55,9 @@ struct LineBreakerWithLittleRounding {
 };
 }  // namespace
 
-SkScalar TextWrapper::calculateFakeSpacing(Cluster* cluster)
+SkScalar TextWrapper::calculateFakeSpacing(Cluster* cluster, bool autoSpacingEnable)
 {
-#ifdef TXT_AUTO_SPACING
-    static constexpr int autoSpacingEnableLength = 10;
-    char autoSpacingEnable[autoSpacingEnableLength] = {0};
-    GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, autoSpacingEnableLength);
-    if (!std::strcmp(autoSpacingEnable, "0")) {
-        return 0;
-    }
-#else
-    return 0;
-#endif
-    if (cluster == fEndLine.endCluster()) {
+    if (!autoSpacingEnable || cluster == fEndLine.endCluster()) {
         return 0;
     }
     if ((cluster - 1)->isWhitespaceBreak() || cluster->isWhitespaceBreak()) {
@@ -77,10 +67,10 @@ SkScalar TextWrapper::calculateFakeSpacing(Cluster* cluster)
         return 0;
     }
     if ((cluster - 1)->isCopyright() || cluster->isCopyright()) {
-        return (cluster - 1)->getFontSize() / autoSpacingWidthRatio;
+        return (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO;
     }
     if ((cluster->isCJK() && (cluster - 1)->isWestern()) || (cluster->isWestern() && (cluster - 1)->isCJK())) {
-        return (cluster - 1)->getFontSize() / autoSpacingWidthRatio;
+        return (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO;
     }
     return 0;
 }
@@ -88,7 +78,7 @@ SkScalar TextWrapper::calculateFakeSpacing(Cluster* cluster)
 // Since we allow cluster clipping when they don't fit
 // we have to work with stretches - parts of clusters
 void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack,
-    WordBreakType wordBreakType) {
+    WordBreakType wordBreakType, bool autoSpacingEnable) {
 
     reset();
     fEndLine.metrics().clean();
@@ -102,7 +92,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     Cluster* nextNonBreakingSpace = nullptr;
     SkScalar totalFakeSpacing = 0.0;
     for (auto cluster = fEndLine.endCluster(); cluster < endOfClusters; ++cluster) {
-        auto fakeSpacing = calculateFakeSpacing(cluster);
+        auto fakeSpacing = calculateFakeSpacing(cluster, autoSpacingEnable);
         totalFakeSpacing += fakeSpacing;
         if (cluster->isHardBreak()) {
             if (cluster != fEndLine.endCluster()) {
@@ -668,6 +658,13 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     auto disableLastDescent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
     bool firstLine = true; // We only interested in fist line if we have to disable the first ascent
 
+    bool autoSpacingEnableFlag = false;
+#ifdef TXT_AUTO_SPACING
+    static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
+    char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
+    GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
+    autoSpacingEnableFlag = std::strcmp(autoSpacingEnable, "0") != 0;
+#endif
     // Resolve balanced line widths
     std::vector<SkScalar> balancedWidths;
 
@@ -699,7 +696,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
             newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
             noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         }
-        this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType());
+        this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType(),
+            autoSpacingEnableFlag);
 
         auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
         needEllipsis = hasEllipsis && !endlessLine && lastLine;

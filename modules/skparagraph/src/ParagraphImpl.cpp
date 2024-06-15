@@ -28,7 +28,6 @@
 #include <math.h>
 #include <algorithm>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include "log.h"
 #ifdef TXT_AUTO_SPACING
@@ -78,7 +77,7 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
     while (p < end) {
         auto tmp = p;
         auto unichar = SkUTF::NextUTF8(&p, end);
-        for(auto i = 0; i < p - tmp; ++i){
+        for(auto i = 0; i < p - tmp; ++i) {
             fUnicodeIndexForUTF8Index.emplace_back(result.size());
         }
         result.emplace_back(unichar);
@@ -726,7 +725,7 @@ static std::vector<SkRange<SkUnichar>> WESTERN_UNICODE_SET = {
     SkRange<SkUnichar>(0x0030, 0x0039),
 };
 
-constexpr SkUnichar copyrightUnicode = 0x00A9;
+constexpr SkUnichar COPYRIGHT_UNICODE = 0x00A9;
 
 struct UnicodeSet {
     std::unordered_set<SkUnichar> set_;
@@ -752,8 +751,8 @@ struct UnicodeSet {
     }
 };
 
-static const UnicodeSet cjkUnicodeSet(CJK_UNICODE_SET);
-static const UnicodeSet westernUnicodeSet(WESTERN_UNICODE_SET);
+static const UnicodeSet CJK_SET(CJK_UNICODE_SET);
+static const UnicodeSet WESTERN_SET(WESTERN_UNICODE_SET);
 
 Cluster::Cluster(ParagraphImpl* owner,
                  RunIndex runIndex,
@@ -805,9 +804,9 @@ Cluster::Cluster(ParagraphImpl* owner,
     if (unicodeEnd - unicodeStart == 1 && unicodeStart < fOwner->unicodeText().size()) {
         unicode = fOwner->unicodeText()[unicodeStart];
     }
-    fIsCopyright = unicode == copyrightUnicode;
-    fIsCJK = cjkUnicodeSet.exist(unicode);
-    fIsWestern = westernUnicodeSet.exist(unicode);
+    fIsCopyright = unicode == COPYRIGHT_UNICODE;
+    fIsCJK = CJK_SET.exist(unicode);
+    fIsWestern = WESTERN_SET.exist(unicode);
 }
 
 SkScalar Run::calculateWidth(size_t start, size_t end, bool clip) const {
@@ -1033,9 +1032,7 @@ SkScalar ParagraphImpl::detectIndents(size_t index)
 }
 
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
-    for (auto& run : fRuns) {
-        run.resetAutoSpacing();
-    }
+    resetAutoSpacing();
     if (!fHasLineBreaks &&
         !fHasWhitespacesInside &&
         fPlaceholders.size() == 1 &&
