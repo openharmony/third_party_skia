@@ -1594,6 +1594,12 @@ bool SkBlurMaskFilterImpl::canFilterMaskGPU(const GrStyledShape& shape,
         if (!canUseSDFBlur && !srcRect.intersect(clipRect)) {
             srcRect.setEmpty();
         }
+        SkRRect srcRRect;
+        bool inverted;
+        if (canUseSDFBlur && shape.asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
+            srcRect = SkIRect::MakeXYWH(srcRect.fLeft, srcRect.fTop,
+                srcRect.width() + srcRRect.rect().fLeft, srcRect.height() + srcRRect.rect().fTop);
+        }
         *maskRect = srcRect;
     }
 

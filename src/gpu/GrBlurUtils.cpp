@@ -549,7 +549,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
                                                    canUseSDFBlur ? matrixTrans : viewMatrix,
                                                    *shape, maskFilter,
                                                    unclippedDevShapeBounds, boundsForClip,
-                                                   &maskRect, &maskKey);
+                                                   &maskRect, &maskKey, canUseSDFBlur);
         if (filteredMaskView) {
             if (!canUseSDFBlur &&
                 draw_mask(sdc, clip, viewMatrix, maskRect, std::move(paint), std::move(filteredMaskView))) {
