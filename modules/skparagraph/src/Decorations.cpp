@@ -236,7 +236,8 @@ void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSType
 
     textStyle.setTypeface(typeface);
     textStyle.getFontMetrics(&fFontMetrics);
-    if (fThickness > 0.01) {
+    if (textStyle.getDecoration().fType == TextDecoration::kUnderline &&
+        !SkScalarNearlyZero(fThickness)) {
         return;
     }
 

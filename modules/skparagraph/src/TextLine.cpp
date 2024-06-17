@@ -253,6 +253,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 
     if (fHasDecorations) {
+        maxThickness = 0.0f;
         this->iterateThroughVisualRuns(true,
             [painter, x, y, this]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
@@ -260,8 +261,10 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
                     TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kDecorations,
                     [painter, x, y, this]
                     (TextRange textRange, const TextStyle& style, const ClipContext& context) {
-                    SkScalar tmpThick = this->calculateThickness(style, context);
-                    maxThickness = maxThickness > tmpThick ? maxThickness : tmpThick;
+                    if (style.getDecoration().fType == TextDecoration::kUnderline) {
+                        SkScalar tmpThick = this->calculateThickness(style, context);
+                        maxThickness = maxThickness > tmpThick ? maxThickness : tmpThick;
+                    }
                 });
                 return true;
         });
