@@ -320,7 +320,7 @@ bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const Parag
         if (value->indents == paragraph.fIndents &&
             paragraph.getLineBreakStrategy() == value->linebreakStrategy &&
             paragraph.getWordBreakType() == value->wordBreakType &&
-            abs(paragraph.fLayoutRawWidth)-abs(value->fLayoutRawWidth) < 1.f ) {
+            abs(paragraph.fLayoutRawWidth - value->fLayoutRawWidth) < 1.f ) {
             return true;
         }
     }
