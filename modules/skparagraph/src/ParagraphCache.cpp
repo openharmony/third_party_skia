@@ -319,8 +319,8 @@ bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const Parag
     if (value) {
         if (value->indents == paragraph.fIndents &&
             paragraph.getLineBreakStrategy() == value->linebreakStrategy &&
-            paragraph.getWordBreakType() == value->wordBreakType) {
-
+            paragraph.getWordBreakType() == value->wordBreakType &&
+            paragraph.fLayoutRawWidth == value->fLayoutRawWidth ) {
             return true;
         }
     }
