@@ -421,8 +421,6 @@ public:
 
     void storeVkPipelineCacheData();
 
-    static void setIsInAnimation(bool isInAnimation);
-
     static void texturePreAllocationBetweenFrame();
     /**
      * Retrieve the default GrBackendFormat for a given SkColorType and renderability.

@@ -94,8 +94,6 @@ public:
 
     bool compile(const GrProgramDesc&, const GrProgramInfo&) override;
 
-    static void setIsInAnimation(bool isInAnimation);
-
     static void texturePreAllocationBetweenFrame();
 
 #if GR_TEST_UTILS

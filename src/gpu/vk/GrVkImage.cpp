@@ -510,11 +510,7 @@ void GrVkImage::ImagePool::forEachImageQueue(std::function<void(DescSpecificQueu
     }
 }
 
-void GrVkImage::setIsInAnimation(bool isInAnimation) {
-    IS_IN_ANIMATION = isInAnimation;
-}
-
-void GrVkImage::texturePreAllocationBetweenFrame() {
+void GrVkImage::TexturePreAllocationBetweenFrame() {
     GrVkGpu* gpu = ImagePool::GetInstance().getGpu();
     if (gpu) {
         ImageDesc imageDesc = {VK_IMAGE_TYPE_2D,
