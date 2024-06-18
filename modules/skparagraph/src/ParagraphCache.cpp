@@ -348,27 +348,6 @@ ParagraphCacheValue* ParagraphCache::resolveValue(ParagraphImpl& paragraph) {
     return value;
 }
 
-void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph, SkScalar breakWidth) {
-    if (auto value = resolveValue(paragraph)) {
-        value->fLines.reset();
-        value->indents.clear();
-
-        for( auto& line : paragraph.fLines) {
-            value->fLines.emplace_back(line.CloneSelf());
-        }
-        paragraph.getSize(value->fHeight, value->fWidth, value->fLongestLine);
-        paragraph.getIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
-            value->fAlphabeticBaseline, value->fIdeographicBaseline,
-            value->fExceededMaxLines );
-        for (auto& indent : paragraph.fIndents) {
-            value->indents.push_back(indent);
-        }
-        value->linebreakStrategy = paragraph.getLineBreakStrategy();
-        value->wordBreakType = paragraph.getWordBreakType();
-        value->breakWidth = breakWidth;
-    }
-}
-
 void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
     if (auto value = resolveValue(paragraph)) {
         SetStoredLayoutImpl(paragraph, value);

@@ -554,10 +554,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
             fPlaceholders.size() == 1 && ( !SkScalarIsFinite(floorWidth) ||
             (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= floorWidth - this->detectIndents(0)))) {
             positionShapedTextIntoLine(floorWidth);
-        } else if (!paragraphCache->GetStoredLayout(*this, floorWidth)) {
+        } else if (!paragraphCache->GetStoredLayout(*this) {
             breakShapedTextIntoLines(floorWidth);
             // text breaking did not go to fast path and we did not have cached layout
-            paragraphCache->SetStoredLayout(*this, floorWidth);
+            paragraphCache->SetStoredLayout(*this);
         }
         fState = kLineBroken;
     }
@@ -1110,71 +1110,6 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     for (auto& run : fRuns) {
         run.resetAutoSpacing();
     }
-    if (!fHasLineBreaks &&
-        !fHasWhitespacesInside &&
-        fPlaceholders.size() == 1 && ( !SkScalarIsFinite(maxWidth) ||
-        (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= maxWidth - this->detectIndents(0)))) {
-        // This is a short version of a line breaking when we know that:
-        // 1. We have only one line of text
-        // 2. It's shaped into a single run
-        // 3. There are no placeholders
-        // 4. There are no linebreaks (which will format text into multiple lines)
-        // 5. There are no whitespaces so the minIntrinsicWidth=maxIntrinsicWidth
-        // (To think about that, the last condition is not quite right;
-        // we should calculate minIntrinsicWidth by soft line breaks.
-        // However, it's how it's done in Flutter now)
-        auto& run = this->fRuns[0];
-        auto advance = run.advance();
-        auto textRange = TextRange(0, this->text().size());
-        auto textExcludingSpaces = TextRange(0, fTrailingSpaces);
-        InternalLineMetrics metrics(this->strutForceHeight());
-        metrics.add(&run);
-        auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() &
-                                  TextHeightBehavior::kDisableFirstAscent;
-        auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() &
-                                  TextHeightBehavior::kDisableLastDescent;
-        if (disableFirstAscent) {
-            metrics.fAscent = metrics.fRawAscent;
-        }
-        if (disableLastDescent) {
-            metrics.fDescent = metrics.fRawDescent;
-        }
-        if (this->strutEnabled()) {
-            this->strutMetrics().updateLineMetrics(metrics);
-        }
-        ClusterIndex trailingSpaces = fClusters.size();
-        do {
-            --trailingSpaces;
-            auto& cluster = fClusters[trailingSpaces];
-            if (!cluster.isWhitespaceBreak()) {
-                ++trailingSpaces;
-                break;
-            }
-            advance.fX -= cluster.width();
-        } while (trailingSpaces != 0);
-
-        advance.fY = metrics.height();
-        auto clusterRange = ClusterRange(0, trailingSpaces);
-        auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
-
-        TextAlign align = fParagraphStyle.effective_align();
-        SkScalar offsetX = (align == TextAlign::kLeft || align == TextAlign::kJustify) ?
-            this->detectIndents(0) : 0.0f;
-        auto& line = this->addLine(SkPoint::Make(offsetX, 0), advance,
-                      textExcludingSpaces, textRange, textRange,
-                      clusterRange, clusterRangeWithGhosts, run.advance().x(),
-                      metrics);
-        auto spacing = line.autoSpacing();
-        setSize(advance.fY, maxWidth, std::max(run.advance().fX, advance.fX) + spacing);
-        setIntrinsicSize(run.advance().fX, advance.fX,
-            fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
-            fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
-            false);
-        return true;
-   }
-
->>>>>>> af14e8dbde (skparagraph add layout caching)
-    //slow path
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
             this,
