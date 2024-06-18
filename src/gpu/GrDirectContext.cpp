@@ -30,6 +30,7 @@
 #include "src/gpu/text/GrAtlasManager.h"
 #include "src/gpu/text/GrStrikeCache.h"
 #include "src/image/SkImage_GpuBase.h"
+#include "vk/GrVkImage.h"
 #if SK_GPU_V1
 #include "src/gpu/ops/SmallPathAtlasMgr.h"
 #else
@@ -164,6 +165,14 @@ bool GrDirectContext::abandoned() {
 }
 
 bool GrDirectContext::oomed() { return fGpu ? fGpu->checkAndResetOOMed() : false; }
+
+void GrDirectContext::setIsInAnimation(bool isInAnimation) {
+    GrVkGpu::setIsInAnimation(bool isInAnimation);
+}
+
+void GrDirectContext::texturePreAllocationBetweenFrame() {
+    GrVkGpu::texturePreAllocationBetweenFrame();
+}
 
 void GrDirectContext::releaseResourcesAndAbandonContext() {
     if (INHERITED::abandoned()) {

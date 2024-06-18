@@ -7,13 +7,35 @@
 
 #include "src/gpu/vk/GrVkImage.h"
 
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <string>
+
+#include "GrVkCommandBuffer.h"
+#include "GrVkGpu.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkImageView.h"
 #include "src/gpu/vk/GrVkMemory.h"
 #include "src/gpu/vk/GrVkTexture.h"
 #include "src/gpu/vk/GrVkUtil.h"
 
+#include "include/core/SkExecutor.h"
+
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#include "hitrace_meter.h"
+#include <parameter.h>
+#include <parameters.h>
+#include "param/sys_param.h"
+#endif
+
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
+
+namespace {
+    std::atomic<bool> IS_IN_ANIMATION(false);
+}
 
 sk_sp<GrVkImage> GrVkImage::MakeStencil(GrVkGpu* gpu,
                                         SkISize dimensions,
@@ -457,7 +479,116 @@ void GrVkImage::setImageLayoutAndQueueIndex(const GrVkGpu* gpu,
     this->setQueueFamilyIndex(newQueueFamilyIndex);
 }
 
+GrVkImage::ImagePool::GetInstance() {
+    static GrVkImage::ImagePool imagePool;
+    return imagePool;
+}
+
+void GrVkImage::ImagePool::forSpecificImageQueue(const imageDesc& desc,
+                                                 std::function<void(DescSpecificQueue&)> action) {
+    std::lock_guard<std::mutex> guard(fQueuesLock);
+    for (auto& q : fQueues) {
+        if (q.fDesc == desc) {
+            action(q);
+            return;
+        }
+    }
+    fQueues.push_back({desc, 0, {}});
+    DescSpecificQueue& back = fQueues.back();
+    action(back);
+}
+
+void GrVkImage::ImagePool::forEachImageQueue(std::function<void(DescSpecificQueue&)> action) {
+    std::lock_guard<std::mutex> guard(fQueuesLock);
+    auto copy = fQueues;
+    std::sort(copy.begin(),
+              copy.end(),
+              [](const DescSpecificQueue& lop, const DescSpecificQueue& rop) {
+                  return lop.fReqTimes > rop.fReqTimes;
+              }) for (auto& q : copy) {
+        action(q)
+    }
+}
+
+void GrVkImage::setIsInAnimation(bool isInAnimation) {
+    IS_IN_ANIMATION = isInAnimation;
+}
+
+void GrVkImage::texturePreAllocationBetweenFrame() {
+    GrVkGpu* gpu = ImagePool::GetInstance().getGpu();
+    if (gpu) {
+        ImageDesc imageDesc = {VK_IMAGE_TYPE_2D,
+                               VK_FORMAT_R8_UNORM,
+                               66,
+                               67,
+                               1,
+                               1,
+                               VK_IMAGE_TILING_LINEAR,
+                               7,
+                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                               GrProtected::kNo};
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Recruit Mem for BufQ");
+#endif
+        ImagePool::GetInstance().forSpecificImageQueue(
+                imagePool, [gpu, imagePool](ImagePool::DescSpecificQueue& q) {
+                    if (q.fQueue.size() > 3) {
+                        return;
+                    }
+                    if (GrVkImageInfo info; InitImageInfoInner(gpu, imageDesc, &info)) {
+                        q.fQueue.push_back({true, info});
+                    }
+                });
+        imageDesc = {VK_IMAGE_TYPE_2D,
+                     VK_FORMAT_R8G8B8A8_UNORM,
+                     1260,
+                     2720,
+                     1,
+                     1,
+                     VK_IMAGE_TILING_LINEAR,
+                     151,
+                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                     GrProtected::kNo};
+        ImagePool::GetInstance().forSpecificImageQueue(
+                imagePool, [gpu, imagePool](ImagePool::DescSpecificQueue& q) {
+                    if (q.fQueue.size() > 3) {
+                        return;
+                    }
+                    if (GrVkImageInfo info; InitImageInfoInner(gpu, imageDesc, &info)) {
+                        q.fQueue.push_back({true, info});
+                    }
+                });
+    }
+}
+
 bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "InitImageInfo");
+#endif
+    ImagePool& imagePool = ImagePool.GetInstance();
+    bool cacheHit = false;
+    imagePool.forSpecificImageQueue(imageDesc, [info, &cacheHit](ImagePool::DescSpecificQueue& q) {
+        for (auto& [available, cachedInfo] : q.fQueue) {
+            if (!available) {
+                continue;
+            }
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Cache Hit");
+#endif
+            available = false;
+            *info = cachedInfo;
+            cacheHit = true;
+            break;
+        }
+    });
+    if (imagePool.getGpu() == nullptr) {
+        imagePool.setGpu(gpu);
+    }
+    bool isInitSucc = InitImageInfoInner(gpu, imageDesc, info);
+    return isInitSucc;
+}
+
+bool GrVkImage::InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
     if (0 == imageDesc.fWidth || 0 == imageDesc.fHeight) {
         return false;
     }
@@ -534,6 +665,29 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
 }
 
 void GrVkImage::DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo* info) {
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "on Destroy info");
+#endif
+    bool cached = false;
+    ImagePool.GetInstance().forEachImageQueue([info, &cached](ImagePool::DescSpecificQueue& q) {
+        for (auto& [available, cachedInfo] : q.fQueue) {
+            if (cachedInfo == *info) {
+                available = true;
+                cached = true;
+                return;
+            }
+        }
+    });
+    if (cached) {
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "is cache Mem, cancel destory");
+#endif
+        return;
+    }
+    return DestroyImageInfoInner(gpu, info);
+}
+
+void GrVkImage::DestroyImageInfoInner(const GrVkGpu* gpu, GrVkImageInfo* info) {
     VK_CALL(gpu, DestroyImage(gpu->device(), info->fImage, nullptr));
     GrVkMemory::FreeImageMemory(gpu, info->fAlloc);
 }

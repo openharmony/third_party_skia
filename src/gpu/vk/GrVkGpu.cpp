@@ -546,6 +546,14 @@ bool GrVkGpu::onWritePixels(GrSurface* surface,
     return success;
 }
 
+void GrVkGpu::setIsInAnimation(bool isInAnimation) {
+    GrVkImage::setIsInAnimation(bool isInAnimation);
+}
+
+void GrVkGpu::texturePreAllocationBetweenFrame() {
+    GrVkImage::texturePreAllocationBetweenFrame();
+}
+
 bool GrVkGpu::onTransferPixelsTo(GrTexture* texture,
                                  SkIRect rect,
                                  GrColorType surfaceColorType,
