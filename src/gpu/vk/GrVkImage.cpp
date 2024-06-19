@@ -485,7 +485,8 @@ GrVkImage::ImagePool::GetInstance() {
 }
 
 void GrVkImage::ImagePool::forSpecificImageQueue(const imageDesc& desc,
-                                                 std::function<void(DescSpecificQueue&)> action) {
+                                                 std::function<void(DescSpecificQueue&)> action,
+                                                 bool createQueueWhenNotExist = false) {
     std::lock_guard<std::mutex> guard(fQueuesLock);
     for (auto& q : fQueues) {
         if (q.fDesc == desc) {
@@ -493,9 +494,11 @@ void GrVkImage::ImagePool::forSpecificImageQueue(const imageDesc& desc,
             return;
         }
     }
-    fQueues.push_back({desc, 0, {}});
-    DescSpecificQueue& back = fQueues.back();
-    action(back);
+    if (createQueueWhenNotExist) {
+        fQueues.push_back({desc, 0, {}});
+        DescSpecificQueue& back = fQueues.back();
+        action(back);
+    }
 }
 
 void GrVkImage::ImagePool::forEachImageQueue(std::function<void(DescSpecificQueue&)> action) {
@@ -527,14 +530,16 @@ void GrVkImage::TexturePreAllocationBetweenFrame() {
         HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Recruit Mem for BufQ");
 #endif
         ImagePool::GetInstance().forSpecificImageQueue(
-                imagePool, [gpu, imagePool](ImagePool::DescSpecificQueue& q) {
+                imagePool,
+                [gpu, imagePool](ImagePool::DescSpecificQueue& q) {
                     if (q.fQueue.size() > 3) {
                         return;
                     }
                     if (GrVkImageInfo info; InitImageInfoInner(gpu, imageDesc, &info)) {
                         q.fQueue.push_back({true, info});
                     }
-                });
+                },
+                true);
         imageDesc = {VK_IMAGE_TYPE_2D,
                      VK_FORMAT_R8G8B8A8_UNORM,
                      1260,
@@ -546,14 +551,16 @@ void GrVkImage::TexturePreAllocationBetweenFrame() {
                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                      GrProtected::kNo};
         ImagePool::GetInstance().forSpecificImageQueue(
-                imagePool, [gpu, imagePool](ImagePool::DescSpecificQueue& q) {
+                imagePool,
+                [gpu, imagePool](ImagePool::DescSpecificQueue& q) {
                     if (q.fQueue.size() > 3) {
                         return;
                     }
                     if (GrVkImageInfo info; InitImageInfoInner(gpu, imageDesc, &info)) {
                         q.fQueue.push_back({true, info});
                     }
-                });
+                },
+                true);
     }
 }
 

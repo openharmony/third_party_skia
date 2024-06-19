@@ -228,7 +228,8 @@ public:
             SkTArray<std::pair<bool, GrVkImageInfo>> fQueue;
         };
         void forSpecificImageQueue(const imageDesc& desc,
-                                   std::function<void(DescSpecificQueue&)> action);
+                                   std::function<void(DescSpecificQueue&)> action,
+                                   bool createQueueWhenNotExist = false);
         void forEachImageQueue(std::function<void(DescSpecificQueue&)> action);
         static ImagePool& GetInstance();
         ImagePool(const ImagePool&) = delete;
