@@ -79,7 +79,8 @@ public:
         , fBidiRegions(paragraph->fBidiRegions)
         , fHasLineBreaks(paragraph->fHasLineBreaks)
         , fHasWhitespacesInside(paragraph->fHasWhitespacesInside)
-        , fTrailingSpaces(paragraph->fTrailingSpaces) { }
+        , fTrailingSpaces(paragraph->fTrailingSpaces)
+        , fLayoutRawWidth(paragraph->fLayoutRawWidth) { }
 
     // Input == key
     ParagraphCacheKey fKey;
