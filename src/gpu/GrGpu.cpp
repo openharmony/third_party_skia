@@ -8,6 +8,7 @@
 
 #include "src/gpu/GrGpu.h"
 
+#include "hitrace_meter.h"
 #include "include/gpu/GrBackendSemaphore.h"
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/GrDirectContext.h"
@@ -481,6 +482,9 @@ bool GrGpu::writePixels(GrSurface* surface,
                         const GrMipLevel texels[],
                         int mipLevelCount,
                         bool prepForTexSampling) {
+    float startTimestamp = static_cast<float>(
+            std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count());
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
     ATRACE_ANDROID_FRAMEWORK_ALWAYS("Texture upload(%u) %ix%i",
                                     surface->uniqueID().asUInt(), rect.width(), rect.height());
@@ -517,6 +521,15 @@ bool GrGpu::writePixels(GrSurface* surface,
                             prepForTexSampling)) {
         this->didWriteToSurface(surface, kTopLeft_GrSurfaceOrigin, &rect, mipLevelCount);
         fStats.incTextureUploads();
+        if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
+        float endTimestamp = static_cast<float>(
+                    std::chrono::duration_cast<std::chrono::microseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count());
+        float duration = (endTimestamp - startTimestamp) / 1000;
+        if (duration > TEXT_UPLOAD_TIME) {
+            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "TEXT_UPLOAD_TIME = %d", duration);
+        }
+    } 
         return true;
     }
     return false;

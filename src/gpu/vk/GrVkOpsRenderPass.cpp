@@ -7,6 +7,7 @@
 
 #include "src/gpu/vk/GrVkOpsRenderPass.h"
 
+#include "hitrace_meter.h"
 #include "include/core/SkDrawable.h"
 #include "include/core/SkRect.h"
 #include "include/gpu/GrBackendDrawableInfo.h"
@@ -881,6 +882,9 @@ void GrVkOpsRenderPass::onExecuteDrawable(std::unique_ptr<SkDrawable::GpuDrawHan
 
 void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlurArg& blurArg)
 {
+    float startTimestamp = static_cast<float>(
+                std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count());
     if (!proxy) {
         return;
     }
@@ -899,5 +903,14 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlu
     auto blurImage = GrVkImage::MakeWrapped(fGpu, size, imageInfo, nullptr, usageFlag, ownership, cacheable, false);
     fGpu->currentCommandBuffer()->drawBlurImage(fGpu, blurImage.get(), fFramebuffer->colorAttachment()->dimensions(),
                                                 fOrigin, blurArg);
+    if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
+        float endTimestamp = static_cast<float>(
+                    std::chrono::duration_cast<std::chrono::microseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count());
+        float duration = (endTimestamp - startTimestamp) / 1000;
+        if (duration > DRAW_BLUR_IMAGE_TIME) {
+            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "DRAW_BLUR_IMAGE_TIME = %d", duration);
+        }
+    }  
     return;
 }

@@ -441,6 +441,8 @@ void popGrResourceTag()
      */
     virtual void releaseUnlockedBackendObjects() {}
 
+    const float TEXT_UPLOAD_TIME = 1.0;
+
     ///////////////////////////////////////////////////////////////////////////
     // Debugging and Stats
 
