@@ -59,10 +59,10 @@ enum CommonSubType {
 
 using PiecewiseParameter = struct PiecewiseParameter {
     CurveType curveType;
-    std::map<std::string, double_t> curveArgs;
+    std::map<std::string, float> curveArgs;
     uint32_t duration = 0;
     int delay = 0;
-    std::map<std::string, std::vector<double_t>> properties;
+    std::map<std::string, std::vector<float>> properties;
 };
 
 using AnimationPara = struct AnimationPara {
@@ -73,7 +73,7 @@ using AnimationPara = struct AnimationPara {
 
 using AnimationInfo = struct AnimationInfo {
     AnimationType animationType;
-    std::vector<AnimationPara> animationParas;
+    std::map<uint32_t, AnimationPara> animationParas;
 };
 
 using SColor = struct SColor {
@@ -116,7 +116,7 @@ enum EffectStrategy {
 };
 
 using SymbolLayers = struct SymbolLayers {
-    uint32_t symbolGlyphId;
+    uint16_t symbolGlyphId;
     std::vector<std::vector<size_t>> layers;
     std::vector<RenderGroup> renderGroups;
 };
@@ -129,7 +129,7 @@ enum SymbolRenderingStrategy {
 
 
 using SymbolLayersGroups = struct SymbolLayersGroups {
-    uint32_t symbolGlyphId = 0;
+    uint16_t symbolGlyphId = 0;
     std::vector<std::vector<size_t>> layers;
     std::map<SymbolRenderingStrategy, std::vector<RenderGroup>> renderModeGroups;
     std::vector<AnimationSetting> animationSettings;
