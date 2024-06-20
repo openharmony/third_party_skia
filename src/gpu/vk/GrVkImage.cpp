@@ -33,10 +33,6 @@
 
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
 
-namespace {
-    std::atomic<bool> IS_IN_ANIMATION(false);
-}
-
 sk_sp<GrVkImage> GrVkImage::MakeStencil(GrVkGpu* gpu,
                                         SkISize dimensions,
                                         int sampleCnt,
