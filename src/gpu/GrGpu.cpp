@@ -522,13 +522,13 @@ bool GrGpu::writePixels(GrSurface* surface,
         this->didWriteToSurface(surface, kTopLeft_GrSurfaceOrigin, &rect, mipLevelCount);
         fStats.incTextureUploads();
         if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
-        float endTimestamp = static_cast<float>(
-                    std::chrono::duration_cast<std::chrono::microseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()).count());
-        float duration = (endTimestamp - startTimestamp) / 1000;
-        if (duration > TEXT_UPLOAD_TIME) {
-            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "TEXT_UPLOAD_TIME = %d", duration);
-        }
+            float endTimestamp = static_cast<float>(
+                        std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::steady_clock::now().time_since_epoch()).count());
+            float duration = (endTimestamp - startTimestamp) / 1000;
+            if (duration > TEXT_UPLOAD_TIME) {
+                HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "TEXT_UPLOAD_TIME = %d", duration);
+            }
     } 
         return true;
     }
