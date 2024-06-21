@@ -776,6 +776,7 @@ void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly,
                       fBudgetedBytes,
                       fMaxBytes);
 #endif
+    fThreadSafeCache->dropUniqueRefs(nullptr);
     if (exitedPidSet.size() > 1) {
         for (int i = 1; i < fPurgeableQueue.count(); i++) {
             GrGpuResource* resource = fPurgeableQueue.at(i);

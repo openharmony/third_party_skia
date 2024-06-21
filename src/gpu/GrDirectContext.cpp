@@ -30,7 +30,6 @@
 #include "src/gpu/text/GrAtlasManager.h"
 #include "src/gpu/text/GrStrikeCache.h"
 #include "src/image/SkImage_GpuBase.h"
-#include "vk/GrVkGpu.h"
 #if SK_GPU_V1
 #include "src/gpu/ops/SmallPathAtlasMgr.h"
 #else
@@ -166,8 +165,10 @@ bool GrDirectContext::abandoned() {
 
 bool GrDirectContext::oomed() { return fGpu ? fGpu->checkAndResetOOMed() : false; }
 
-void GrDirectContext::texturePreAllocationBetweenFrame() {
-    GrVkGpu::texturePreAllocationBetweenFrame();
+void GrDirectContext::preAllocateTextureBetweenFrames() {
+#ifdef SK_VULKAN
+    GrVkGpu::preAllocateTextureBetweenFrames();
+#endif
 }
 
 void GrDirectContext::releaseResourcesAndAbandonContext() {

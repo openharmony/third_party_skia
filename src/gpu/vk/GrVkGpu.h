@@ -94,7 +94,7 @@ public:
 
     bool compile(const GrProgramDesc&, const GrProgramInfo&) override;
 
-    static void texturePreAllocationBetweenFrame();
+    static void preAllocateTextureBetweenFrames();
 
 #if GR_TEST_UTILS
     bool isTestingOnlyBackendTexture(const GrBackendTexture&) const override;

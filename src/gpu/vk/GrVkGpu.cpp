@@ -546,8 +546,8 @@ bool GrVkGpu::onWritePixels(GrSurface* surface,
     return success;
 }
 
-void GrVkGpu::texturePreAllocationBetweenFrame() {
-    GrVkImage::TexturePreAllocationBetweenFrame();
+void GrVkGpu::preAllocateTextureBetweenFrames() {
+    GrVkImage::PreAllocateTextureBetweenFrames();
 }
 
 bool GrVkGpu::onTransferPixelsTo(GrTexture* texture,

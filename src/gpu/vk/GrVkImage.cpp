@@ -16,16 +16,15 @@
 
 #include "GrVkCommandBuffer.h"
 #include "GrVkGpu.h"
+#include "include/core/SkExecutor.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkImageView.h"
 #include "src/gpu/vk/GrVkMemory.h"
 #include "src/gpu/vk/GrVkTexture.h"
 #include "src/gpu/vk/GrVkUtil.h"
 
-#include "include/core/SkExecutor.h"
 
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
 #include <parameter.h>
 #include <parameters.h>
 #include "param/sys_param.h"
@@ -500,56 +499,41 @@ void GrVkImage::ImagePool::forSpecificImageQueue(const imageDesc& desc,
 void GrVkImage::ImagePool::forEachImageQueue(std::function<void(DescSpecificQueue&)> action) {
     std::lock_guard<std::mutex> guard(fQueuesLock);
     auto copy = fQueues;
-    std::sort(copy.begin(),
-              copy.end(),
-              [](const DescSpecificQueue& lop, const DescSpecificQueue& rop) {
-                  return lop.fReqTimes > rop.fReqTimes;
-              }) for (auto& q : copy) {
+    for (auto& q : copy) {
         action(q)
     }
 }
 
-void GrVkImage::TexturePreAllocationBetweenFrame() {
+void GrVkImage::PreAllocateTextureBetweenFrames() {
     GrVkGpu* gpu = ImagePool::GetInstance().getGpu();
-    if (gpu) {
-        ImageDesc imageDesc = {VK_IMAGE_TYPE_2D,
-                               VK_FORMAT_R8_UNORM,
-                               66,
-                               67,
-                               1,
-                               1,
-                               VK_IMAGE_TILING_LINEAR,
-                               7,
-                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                               GrProtected::kNo};
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Recruit Mem for BufQ");
-#endif
+    if (!gpu) {
+        return;
+    }
+    SkTArray<ImageDesc> imageDescArray = {{VK_IMAGE_TYPE_2D,
+                                           VK_FORMAT_R8_UNORM,
+                                           66,
+                                           67,
+                                           1,
+                                           1,
+                                           VK_IMAGE_TILING_LINEAR,
+                                           7,
+                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                           GrProtected::kNo},
+                                          {VK_IMAGE_TYPE_2D,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           1260,
+                                           2720,
+                                           1,
+                                           1,
+                                           VK_IMAGE_TILING_LINEAR,
+                                           151,
+                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                           GrProtected::kNo}};
+    for (auto& imageDesc : imageDescArray) {
         ImagePool::GetInstance().forSpecificImageQueue(
                 imagePool,
                 [gpu, imagePool](ImagePool::DescSpecificQueue& q) {
-                    if (q.fQueue.size() > 3) {
-                        return;
-                    }
-                    if (GrVkImageInfo info; InitImageInfoInner(gpu, imageDesc, &info)) {
-                        q.fQueue.push_back({true, info});
-                    }
-                },
-                true);
-        imageDesc = {VK_IMAGE_TYPE_2D,
-                     VK_FORMAT_R8G8B8A8_UNORM,
-                     1260,
-                     2720,
-                     1,
-                     1,
-                     VK_IMAGE_TILING_LINEAR,
-                     151,
-                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                     GrProtected::kNo};
-        ImagePool::GetInstance().forSpecificImageQueue(
-                imagePool,
-                [gpu, imagePool](ImagePool::DescSpecificQueue& q) {
-                    if (q.fQueue.size() > 3) {
+                    if (q.fQueue.size() >= 3) {
                         return;
                     }
                     if (GrVkImageInfo info; InitImageInfoInner(gpu, imageDesc, &info)) {
@@ -561,9 +545,6 @@ void GrVkImage::TexturePreAllocationBetweenFrame() {
 }
 
 bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "InitImageInfo");
-#endif
     ImagePool& imagePool = ImagePool.GetInstance();
     bool cacheHit = false;
     imagePool.forSpecificImageQueue(imageDesc, [info, &cacheHit](ImagePool::DescSpecificQueue& q) {
@@ -571,9 +552,6 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
             if (!available) {
                 continue;
             }
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Cache Hit");
-#endif
             available = false;
             *info = cachedInfo;
             cacheHit = true;
@@ -583,8 +561,7 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
     if (imagePool.getGpu() == nullptr) {
         imagePool.setGpu(gpu);
     }
-    bool isInitSucc = InitImageInfoInner(gpu, imageDesc, info);
-    return isInitSucc;
+    return InitImageInfoInner(gpu, imageDesc, info);
 }
 
 bool GrVkImage::InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
@@ -664,9 +641,6 @@ bool GrVkImage::InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrV
 }
 
 void GrVkImage::DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo* info) {
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "on Destroy info");
-#endif
     bool cached = false;
     ImagePool.GetInstance().forEachImageQueue([info, &cached](ImagePool::DescSpecificQueue& q) {
         for (auto& [available, cachedInfo] : q.fQueue) {
@@ -678,9 +652,6 @@ void GrVkImage::DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo* info) {
         }
     });
     if (cached) {
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "is cache Mem, cancel destory");
-#endif
         return;
     }
     return DestroyImageInfoInner(gpu, info);

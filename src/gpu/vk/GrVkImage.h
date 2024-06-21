@@ -244,7 +244,7 @@ public:
         SkTArray<DescSpecificQueue> fQueues;
         std::mutex fQueuesLock;
     };
-    static void TexturePreAllocationBetweenFrame();
+    static void PreAllocateTextureBetweenFrames();
     static bool InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo*);
     static bool InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo*);
     // Destroys the internal VkImage and VkDeviceMemory in the GrVkImageInfo
