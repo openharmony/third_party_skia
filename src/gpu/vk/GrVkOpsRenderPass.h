@@ -121,7 +121,7 @@ private:
 
     GrVkGpu*                                    fGpu;
 
-    const float DRAW_BLUR_IMAGE_TIME = 1;
+    const float DRAW_BLUR_IMAGE_TIME = 1.0;
 
 #ifdef SK_DEBUG
     // When we are actively recording into the GrVkOpsRenderPass we set this flag to true. This
