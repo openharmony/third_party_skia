@@ -51,6 +51,7 @@ public:
 #endif
 #ifdef SK_VULKAN
 #include "src/gpu/vk/GrVkGpu.h"
+#include "src/gpu/vk/GrVkImage.h"
 #endif
 #ifdef SK_DIRECT3D
 #include "src/gpu/d3d/GrD3DGpu.h"
