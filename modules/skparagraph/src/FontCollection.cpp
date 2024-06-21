@@ -368,7 +368,7 @@ public:
 private:
     SkLRUCache<uint32_t, std::shared_ptr<RSTypeface>>& fLRUCache;
     SkMutex& fMutex;
-}
+};
 
 static SkLRUCacheMgr GetLRUCacheInstance() {
     static SkMutex gFaceCacheMutex;
