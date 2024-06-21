@@ -14,6 +14,10 @@
 
 class SkStream;
 
+extern "C" {
+    typedef struct OH_NativeBuffer OH_NativeBuffer;
+}
+
 /**
  *  SkData holds an immutable data buffer. Not only is the data immutable,
  *  but the actual ptr that is returned (by data() or bytes()) is guaranteed
@@ -32,6 +36,11 @@ public:
      *  Returns the ptr to the data.
      */
     const void* data() const { return fPtr; }
+
+    /**
+     *  Returns the ptr to OH_NativeBuffer.
+     */
+    OH_NativeBuffer* getNativeBuffer() { return fNativeBuffer; }
 
     /**
      *  Like data(), returns a read-only ptr into the data, but in this case
@@ -139,6 +148,12 @@ public:
     static sk_sp<SkData> MakeFromFD(int fd);
 
     /**
+     *  Create a new dataref from an OH_NativeBuffer.
+     *  Returns NULL on failure.
+     */
+    static sk_sp<SkData> MakeFromOHNativeBuffer(OH_NativeBuffer* nativeBuffer, size_t size);
+
+    /**
      *  Attempt to read size bytes into a SkData. If the read succeeds, return the data,
      *  else return NULL. Either way the stream's cursor may have been changed as a result
      *  of calling read().
@@ -159,12 +174,14 @@ public:
 
 private:
     friend class SkNVRefCnt<SkData>;
-    ReleaseProc fReleaseProc;
-    void*       fReleaseProcContext;
-    const void* fPtr;
-    size_t      fSize;
+    ReleaseProc         fReleaseProc;
+    void*               fReleaseProcContext;
+    const void*         fPtr;
+    size_t              fSize;
+    OH_NativeBuffer*    fNativeBuffer;
 
     SkData(const void* ptr, size_t size, ReleaseProc, void* context);
+    SkData(const void* ptr, size_t size, OH_NativeBuffer* nativeBuffer, ReleaseProc, void* context);
     explicit SkData(size_t size);   // inplace new/delete
     ~SkData();
 

@@ -25,7 +25,7 @@ class Variable;
 /**
  * Abstract supertype of all expressions.
  */
-class Expression : public IRNode {
+class SK_API Expression : public IRNode {
 public:
     enum class Kind {
         kBinary = (int) Statement::Kind::kLast + 1,

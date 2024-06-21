@@ -331,7 +331,8 @@ bool SkMaskFilterBase::canFilterMaskGPU(const GrStyledShape& shape,
                                         const SkIRect& devSpaceShapeBounds,
                                         const SkIRect& clipBounds,
                                         const SkMatrix& ctm,
-                                        SkIRect* maskRect) const {
+                                        SkIRect* maskRect,
+                                        const bool canUseSDFBlur) const {
     return false;
 }
 

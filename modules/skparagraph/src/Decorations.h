@@ -13,6 +13,15 @@ namespace textlayout {
 class Decorations {
     public:
     void paint(ParagraphPainter* painter, const TextStyle& textStyle, const TextLine::ClipContext& context, SkScalar baseline);
+    SkScalar calculateThickness(const TextStyle& textStyle, const TextLine::ClipContext& context);
+    void setThickness(SkScalar thickness)
+    {
+        fThickness = thickness;
+    }
+    void setUnderlinePosition(SkScalar thickness)
+    {
+        underlinePosition = thickness;
+    }
 
     private:
 
@@ -21,13 +30,15 @@ class Decorations {
 #else
     void calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface);
 #endif
-    void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle);
+    void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift);
     void calculatePaint(const TextStyle& textStyle);
     void calculateWaves(const TextStyle& textStyle, SkRect clip);
+    void calculateAvoidanceWaves(const TextStyle& textStyle, SkRect clip);
     void calculateGaps(const TextLine::ClipContext& context, const SkRect& rect, SkScalar baseline, SkScalar halo);
 
     SkScalar fThickness;
     SkScalar fPosition;
+    SkScalar underlinePosition;
 
 #ifndef USE_SKIA_TXT
     SkFontMetrics fFontMetrics;

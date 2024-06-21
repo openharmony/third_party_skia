@@ -79,7 +79,7 @@ declare_args() {
   skia_enable_graphite = false
   skia_use_zlib = true
   skia_ohos_debug = false
-  skia_use_xeg = false
+  skia_use_xeg = true
   skia_vtune_path = ""
 
   if (is_ios) {

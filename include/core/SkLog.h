@@ -13,26 +13,27 @@
  * limitations under the License.
  */
 
-#ifndef LOG_DEFINED
-#define LOG_DEFINED
+#ifndef SKLOG_DEFINED
+#define SKLOG_DEFINED
 
-#ifdef USE_SKIA_TXT
+#ifdef SKIA_OHOS_FOR_OHOS_LOG
 #include <hilog/log.h>
 
 #undef LOG_DOMAIN
-#define LOG_DOMAIN 0xD001402
+#define LOG_DOMAIN 0xD001406
 
 #undef LOG_TAG
-#define LOG_TAG "2DGraphics"
+#define LOG_TAG "skia"
 
-#define LOGD(fmt, ...)              \
-    HILOG_DEBUG(LOG_CORE, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
-#define LOGI(fmt, ...)              \
-    HILOG_INFO(LOG_CORE, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
-#define LOGW(fmt, ...)              \
-    HILOG_WARN(LOG_CORE, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
-#define LOGE(fmt, ...)              \
-    HILOG_ERROR(LOG_CORE, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
+#define SK_LOGD(fmt, ...) HILOG_DEBUG(LOG_CORE, fmt, ##__VA_ARGS__)
+#define SK_LOGI(fmt, ...) HILOG_INFO(LOG_CORE, fmt, ##__VA_ARGS__)
+#define SK_LOGW(fmt, ...) HILOG_WARN(LOG_CORE, fmt, ##__VA_ARGS__)
+#define SK_LOGE(fmt, ...) HILOG_ERROR(LOG_CORE, fmt, ##__VA_ARGS__)
+#else
+#define SK_LOGD(fmt, ...)
+#define SK_LOGI(fmt, ...)
+#define SK_LOGW(fmt, ...)
+#define SK_LOGE(fmt, ...)
 #endif
 
-#endif  // LOG_DEFINED
+#endif  // SKLOG_DEFINED

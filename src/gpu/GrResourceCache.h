@@ -11,6 +11,7 @@
 #include <set>
 #include <stack>
 
+#include "include/core/SkLog.h"
 #include "include/core/SkRefCnt.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/private/GrResourceKey.h"
@@ -168,7 +169,7 @@ public:
             this->refAndMakeResourceMRU(resource);
             return resource;
         }
-        SkDebugf("OHOS resource is not in cache, return nullptr!");
+        SK_LOGD("OHOS resource is not in cache, return nullptr!");
         return nullptr;
     }
 
@@ -192,6 +193,8 @@ public:
 
     void purgeUnlockedResourcesByTag(bool scratchResourceOnly, const GrGpuResourceTag& tag);
     void purgeUnlockedResourcesByPid(bool scratchResourceOnly, const std::set<int>& exitedPidSet);
+    void purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+        const std::set<int>& protectedPidSet);
     void purgeUnlockAndSafeCacheGpuResources();
 
     // Purge unlocked resources not used since the passed point in time. If 'scratchResourcesOnly'

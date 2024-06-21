@@ -14,6 +14,8 @@
  */
 
 #include "src/core/SkSDFFilter.h"
+#include "src/gpu/SkGr.h"
+#include "src/gpu/effects/GrBlendFragmentProcessor.h"
 
 namespace SDFBlur {
 
@@ -29,17 +31,43 @@ bool isSDFBlur(const GrStyledShape& shape)
     return true;
 }
 
-bool draw_mask_SDFBlur(skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
+bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
     const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter)
 {
     float noxFormedSigma3 = maskFilter->getNoxFormedSigma3();
+    mask.concatSwizzle(GrSwizzle("aaaa"));
 
     SkMatrix matrixTrans =
             SkMatrix::Translate(-SkIntToScalar(noxFormedSigma3), -SkIntToScalar(noxFormedSigma3));
     SkMatrix matrix;
     matrix.preConcat(viewMatrix);
     matrix.preConcat(matrixTrans);
-    paint.setCoverageFragmentProcessor(GrTextureEffect::Make(std::move(mask), kUnknown_SkAlphaType));
+    // add dither effect to reduce color discontinuity
+    constexpr float ditherRange = 1.0 / 255.0;
+    auto inputFp = GrTextureEffect::Make(std::move(mask), kUnknown_SkAlphaType);
+    SkPMColor4f origColor = paint.getColor4f();
+
+    static auto effect = SkMakeRuntimeEffect(SkRuntimeEffect::MakeForShader, R"(
+        uniform shader fp;
+        uniform half4 colorPaint;
+        half4 main(float2 pos) {
+
+            half4 colorMask = fp.eval(pos);
+            return colorMask * colorPaint;
+        }
+    )");
+    SkASSERT(SkRuntimeEffectPriv::SupportsConstantOutputForConstantInput(effect));
+    auto inputFP = GrSkSLFP::Make(effect, "OverrideInput", nullptr, 
+        origColor.isOpaque() ? GrSkSLFP::OptFlags::kPreservesOpaqueInput : GrSkSLFP::OptFlags::kNone,
+        "fp", std::move(inputFp), "colorPaint", origColor);
+
+    auto paintFP = GrBlendFragmentProcessor::Make(std::move(inputFP),
+                                                /*dst=*/nullptr,
+                                                SkBlendMode::kSrc);
+#ifndef SK_IGNORE_GPU_DITHER
+    paintFP = make_dither_effect(rContext, std::move(paintFP), ditherRange, rContext->priv().caps());
+#endif
+    paint.setColorFragmentProcessor(std::move(paintFP));
     sdc->drawRect(clip, std::move(paint), GrAA::kYes, matrix,
                   SkRect::MakeXYWH(0, 0, maskBounds.width(), maskBounds.height()));
     return true;

@@ -11,6 +11,7 @@
 #include "include/core/SkColorFilter.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkImageFilter.h"
+#include "include/core/SkLog.h"
 #include "include/core/SkPathEffect.h"
 #include "include/core/SkPicture.h"
 #include "include/core/SkRRect.h"
@@ -50,6 +51,10 @@
 
 #include <memory>
 #include <new>
+
+#ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
+#include "src/core/SkPathComplexityDfx.h"
+#endif
 
 #if SK_SUPPORT_GPU
 #include "include/gpu/GrDirectContext.h"
@@ -1824,6 +1829,9 @@ void SkCanvas::drawVertices(const SkVertices* vertices, SkBlendMode mode, const 
 void SkCanvas::drawPath(const SkPath& path, const SkPaint& paint) {
     TRACE_EVENT0("skia", TRACE_FUNC);
     this->onDrawPath(path, paint);
+#ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
+    SkPathComplexityDfx::ShowPathComplexityDfx(this, path);
+#endif
 }
 
 // Returns true if the rect can be "filled" : non-empty and finite
@@ -2784,7 +2792,7 @@ bool SkCanvas::onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg)
 {
     if (blurArg.dstRect.width() < this->imageInfo().width() ||
         blurArg.dstRect.height() < this->imageInfo().height()) {
-        SkDebugf("SkCanvas::onDrawBlurImage is not full screen");
+        SK_LOGD("SkCanvas::onDrawBlurImage is not full screen");
         return false;
     }
     return this->topDevice()->drawBlurImage(image, blurArg);

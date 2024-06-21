@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "include/core/SkLog.h"
 #include "include/private/SkTPin.h"
 #include "src/core/SkOpts.h"
 #include "src/gpu/GrBackendUtils.h"
@@ -243,7 +244,7 @@ GrDrawOpAtlas::GrDrawOpAtlas(GrProxyProvider* proxyProvider, const GrBackendForm
     fNumPlots = numPlotsX * numPlotsY;
 
     this->createPages(proxyProvider, generationCounter);
-    SkDebugf("Texture[Width:%{public}d, Height:%{public}d, MaxPage:%{public}d], Plot[Width:%{public}d, Height:%{public}d].", \
+    SK_LOGD("Texture[Width:%{public}d, Height:%{public}d, MaxPage:%{public}d], Plot[Width:%{public}d, Height:%{public}d].", \
         fTextureWidth, fTextureHeight, fMaxPages, fPlotWidth, fPlotHeight);
 }
 

@@ -202,7 +202,9 @@ void GrDirectContext::freeGpuResources() {
         fSmallPathAtlasMgr->reset();
     }
     fAtlasManager->freeAll();
-
+    // The TextBlobCache doesn't actually hold any GPU resource but this is a convenient
+    // place to purge blobs.
+    this->getTextBlobCache()->freeAll();
     // TODO: the glyph cache doesn't hold any GpuResources so this call should not be needed here.
     // Some slack in the GrTextBlob's implementation requires it though. That could be fixed.
     fStrikeCache->freeAll();
@@ -361,11 +363,25 @@ void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, con
     fResourceCache->purgeUnlockedResourcesByPid(scratchResourcesOnly, exitedPidSet);
     fResourceCache->purgeAsNeeded();
 
-    // The textBlod Cache doesn't actually hold any GPU resource but this is a convenient
-    // place to purge stale blobs
-    this->getTextBlobCache()->purgeStaleBlobs();
+    // The TextBlobCache doesn't actually hold any GPU resource but this is a convenient
+    // place to purge blobs.
+    this->getTextBlobCache()->freeAll();
+    // The StrikeCache indirectly references typeface, and in order to dereference the typeface,
+    // it is necessary to clear the StrikeCache when the application exits.
+    fStrikeCache->freeAll();
 }
 
+void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly,
+                                              const std::set<int>& exitedPidSet,
+                                              const std::set<int>& protectedPidSet) {
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned()) {
+        return;
+    }
+
+    fResourceCache->purgeCacheBetweenFrames(scratchResourcesOnly, exitedPidSet, protectedPidSet);
+}
 void GrDirectContext::performDeferredCleanup(std::chrono::milliseconds msNotUsed,
                                              bool scratchResourcesOnly) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);

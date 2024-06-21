@@ -346,7 +346,7 @@ private:
     Decoration fDecoration = {
             TextDecoration::kNoDecoration,
             // TODO: switch back to kGaps when (if) switching flutter to skparagraph
-            TextDecorationMode::kThrough,
+            TextDecorationMode::kGaps,
             // It does not make sense to draw a transparent object, so we use this as a default
             // value to indicate no decoration color was set.
             SK_ColorTRANSPARENT, TextDecorationStyle::kSolid,

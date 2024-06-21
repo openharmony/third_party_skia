@@ -23,7 +23,7 @@ if (skia_use_system_libpng) {
 
     defines = [ "PNG_SET_OPTION_SUPPORTED" ]
     if (use_oh_skia) {
-      deps = [ "//third_party/zlib:libz" ]
+      external_deps = [ "zlib:libz" ]
     } else {
       deps = [ "${skia_third_party_dir}/zlib" ]
     }

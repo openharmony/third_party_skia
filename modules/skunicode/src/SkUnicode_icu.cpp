@@ -309,6 +309,10 @@ class SkUnicode_icu : public SkUnicode {
         return property == U_LB_LINE_FEED || property == U_LB_MANDATORY_BREAK;
     }
 
+    static bool isIdeographic(SkUnichar unichar) {
+        return sk_u_hasBinaryProperty(unichar, UCHAR_IDEOGRAPHIC);
+    }
+
 public:
     ~SkUnicode_icu() override { }
     std::unique_ptr<SkBidiIterator> makeBidiIterator(const uint16_t text[], int count,
@@ -416,6 +420,9 @@ public:
                 }
                 if (SkUnicode_icu::isControl(unichar)) {
                     results->at(i) |= SkUnicode::kControl;
+                }
+                if (SkUnicode_icu::isIdeographic(unichar)) {
+                    results->at(i) |= SkUnicode::kIdeographic;
                 }
             }
         }

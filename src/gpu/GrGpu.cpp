@@ -284,6 +284,39 @@ sk_sp<GrTexture> GrGpu::createCompressedTexture(SkISize dimensions,
                                            data, dataSize);
 }
 
+sk_sp<GrTexture> GrGpu::createCompressedTexture(SkISize dimensions,
+                                                const GrBackendFormat& format,
+                                                SkBudgeted budgeted,
+                                                GrMipmapped mipMapped,
+                                                GrProtected isProtected,
+                                                OH_NativeBuffer* nativeBuffer,
+                                                size_t bufferSize) {
+    this->handleDirtyContext();
+    if (dimensions.width()  < 1 || dimensions.width()  > this->caps()->maxTextureSize() ||
+        dimensions.height() < 1 || dimensions.height() > this->caps()->maxTextureSize()) {
+        return nullptr;
+    }
+    if (!nativeBuffer) {
+        return nullptr;
+    }
+ 
+    SkImage::CompressionType compressionType = GrBackendFormatToCompressionType(format);
+    if (compressionType == SkImage::CompressionType::kNone) {
+        return nullptr;
+    }
+ 
+    if (!this->caps()->isFormatTexturable(format, GrTextureType::k2D)) {
+        return nullptr;
+    }
+ 
+    if (bufferSize < SkCompressedDataSize(compressionType, dimensions, nullptr,
+                                          mipMapped == GrMipmapped::kYes)) {
+        return nullptr;
+    }
+    return this->onCreateCompressedTexture(dimensions, format, budgeted, mipMapped, isProtected,
+                                           nativeBuffer, bufferSize);
+}
+
 sk_sp<GrTexture> GrGpu::wrapBackendTexture(const GrBackendTexture& backendTex,
                                            GrWrapOwnership ownership,
                                            GrWrapCacheable cacheable,

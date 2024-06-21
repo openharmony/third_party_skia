@@ -50,19 +50,19 @@ public:
     String& operator+=(const char* s);
     String& operator+=(const String& s);
     String& operator+=(skstd::string_view s);
-    friend String operator+(const char* s1, const String& s2);
+    SK_API friend String operator+(const char* s1, const String& s2);
 
 private:
     using INHERITED = std::string;
 };
 
-String operator+(skstd::string_view left, skstd::string_view right);
+SK_API String operator+(skstd::string_view left, skstd::string_view right);
 
-String to_string(double value);
-String to_string(int32_t value);
-String to_string(uint32_t value);
-String to_string(int64_t value);
-String to_string(uint64_t value);
+SK_API String to_string(double value);
+SK_API String to_string(int32_t value);
+SK_API String to_string(uint32_t value);
+SK_API String to_string(int64_t value);
+SK_API String to_string(uint64_t value);
 
 bool stod(const skstd::string_view& s, SKSL_FLOAT* value);
 bool stoi(const skstd::string_view& s, SKSL_INT* value);

@@ -105,18 +105,21 @@ public:
                                              StyleType styleType,
                                              const RunStyleVisitor& visitor) const;
 
-    using ClustersVisitor = std::function<bool(const Cluster* cluster, bool ghost)>;
+    using ClustersVisitor = std::function<bool(const Cluster* cluster, ClusterIndex index, bool ghost)>;
     void iterateThroughClustersInGlyphsOrder(bool reverse,
                                              bool includeGhosts,
                                              const ClustersVisitor& visitor) const;
 
-    void format(TextAlign align, SkScalar maxWidth);
+    void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
+    SkScalar calculateSpacing(const Cluster prevCluster, const Cluster curCluster);
+    SkScalar autoSpacing();
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
     void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
     void visit(SkScalar x, SkScalar y);
     void ensureTextBlobCachePopulated();
     void setParagraphImpl(ParagraphImpl* newpara) { fOwner = newpara; }
     void setBlockRange(const BlockRange& blockRange) { fBlockRange = blockRange; }
+    void ellipsisNotFitProcess(EllipsisModal ellipsisModal);
     void createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
     // For testing internal structures
@@ -139,8 +142,7 @@ public:
                                         SkScalar runOffsetInLine,
                                         SkScalar textOffsetInRunInLine,
                                         bool includeGhostSpaces,
-                                        TextAdjustment textAdjustment,
-                                        StyleType styleType = StyleType::kNone) const;
+                                        TextAdjustment textAdjustment) const;
 
     LineMetrics getMetrics() const;
 
@@ -190,9 +192,11 @@ private:
                           const ClipContext& context) const;
 
     void shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
+    void spacingCluster(const Cluster* cluster, SkScalar spacing, SkScalar prevSpacing);
     bool hasBackgroundRect(const RoundRectAttr& attr);
     void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
     void prepareRoundRect();
+    SkScalar calculateThickness(const TextStyle& style, const ClipContext& context);
 
     ParagraphImpl* fOwner;
     BlockRange fBlockRange;
@@ -241,7 +245,8 @@ private:
         size_t     fVisitor_Size;
     };
     bool fTextBlobCachePopulated;
-
+    SkScalar maxThickness = 0.0f;
+    SkScalar underlinePosition = 0.0f;
     std::vector<RoundRectAttr> roundRectAttrs = {};
 public:
     std::vector<TextBlobRecord> fTextBlobCache;

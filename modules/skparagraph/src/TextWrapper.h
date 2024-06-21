@@ -179,10 +179,12 @@ public:
                                                   SkVector offset,
                                                   SkVector advance,
                                                   InternalLineMetrics metrics,
-                                                  bool addEllipsis)>;
+                                                  bool addEllipsis,
+                                                  SkScalar noIndentWidth)>;
     void breakTextIntoLines(ParagraphImpl* parent,
                             SkScalar maxWidth,
                             const AddLineToParagraph& addLine);
+    void updateMetricsWithPlaceholder(std::vector<Run*>& runs, bool iterateByCluster);
 
     SkScalar height() const { return fHeight; }
     SkScalar minIntrinsicWidth() const { return fMinIntrinsicWidth; }
@@ -214,7 +216,9 @@ private:
         fHardLineBreak = false;
     }
 
-    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType);
+    SkScalar calculateFakeSpacing(Cluster* cluster, bool autoSpacingEnable);
+    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType,
+        bool autoSpacingEnable);
     void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
     void trimEndSpaces(TextAlign align);
     std::tuple<Cluster*, size_t, SkScalar> trimStartSpaces(Cluster* endOfClusters);
