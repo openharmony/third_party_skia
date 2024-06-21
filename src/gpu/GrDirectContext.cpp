@@ -167,7 +167,7 @@ bool GrDirectContext::oomed() { return fGpu ? fGpu->checkAndResetOOMed() : false
 
 void GrDirectContext::preAllocateTextureBetweenFrames() {
 #ifdef SK_VULKAN
-    GrVkGpu::preAllocateTextureBetweenFrames();
+    GrVkImage::preAllocateTextureBetweenFrames();
 #endif
 }
 

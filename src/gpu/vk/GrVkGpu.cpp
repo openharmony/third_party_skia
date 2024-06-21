@@ -546,10 +546,6 @@ bool GrVkGpu::onWritePixels(GrSurface* surface,
     return success;
 }
 
-void GrVkGpu::preAllocateTextureBetweenFrames() {
-    GrVkImage::PreAllocateTextureBetweenFrames();
-}
-
 bool GrVkGpu::onTransferPixelsTo(GrTexture* texture,
                                  SkIRect rect,
                                  GrColorType surfaceColorType,
