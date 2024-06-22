@@ -1597,6 +1597,13 @@ bool SkBlurMaskFilterImpl::canFilterMaskGPU(const GrStyledShape& shape,
         SkRRect srcRRect;
         bool inverted;
         if (canUseSDFBlur && shape.asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
+            SkScalar sx = 1.0;
+            SkScalar sy = 1.0;
+            SDFBlur::GetSDFBlurScaleFactor(srcRRect, sx, sy);
+            float noxFormedSigma3 = this->getNoxFormedSigma3();
+            int sigmaX = noxFormedSigma3 * sx;
+            int sigmaY = noxFormedSigma3 * sy;
+            srcRect = devSpaceShapeBounds.makeOutset(sigmaX, sigmaY);
             srcRect = SkIRect::MakeXYWH(srcRect.fLeft, srcRect.fTop,
                 srcRect.width() + srcRRect.rect().fLeft, srcRect.height() + srcRRect.rect().fTop);
         }

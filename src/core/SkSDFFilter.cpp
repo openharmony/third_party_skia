@@ -31,17 +31,30 @@ bool isSDFBlur(const GrStyledShape& shape)
     return true;
 }
 
+void GetSDFBlurScaleFactor(const SkRRect srcRRect, SkScalar& sx, SkScalar& sy)
+{
+    int srcRRectW = srcRRect.rect().width();
+    int srcRRectH = srcRRect.rect().height();
+    int scaleX = std::max(1.0, std::min(std::ceil(srcRRectW / 500), 5.0));
+    int scaleY = std::max(1.0, std::min(std::ceil(srcRRectH / 500), 5.0));
+    sx = 1.0 / scaleX;
+    sy = 1.0 / scaleY;
+}
+
 bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
-    const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter)
+    const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter,
+    const SkScalar sx, const SkScalar sy)
 {
     float noxFormedSigma3 = maskFilter->getNoxFormedSigma3();
     mask.concatSwizzle(GrSwizzle("aaaa"));
 
     SkMatrix matrixTrans =
             SkMatrix::Translate(-SkIntToScalar(noxFormedSigma3), -SkIntToScalar(noxFormedSigma3));
+    SkMatrix matrixInverseScale =SkMatrix::Scale(1 / sx, 1 / sy);
     SkMatrix matrix;
     matrix.preConcat(viewMatrix);
     matrix.preConcat(matrixTrans);
+    matrix.preConcat(matrixInverseScale);
     // add dither effect to reduce color discontinuity
     constexpr float ditherRange = 1.0 / 255.0;
     auto inputFp = GrTextureEffect::Make(std::move(mask), kUnknown_SkAlphaType);
@@ -95,7 +108,10 @@ static std::unique_ptr<skgpu::v1::SurfaceDrawContext> sdf_2d(GrRecordingContext*
     paint.setColorFragmentProcessor(std::move(sdfFp));
     paint.setPorterDuffXPFactory(SkBlendMode::kSrc);
 
-    sdc->drawPaint(nullptr, std::move(paint), SkMatrix::I());
+    SkScalar sx = 1.0;
+    SkScalar sy = 1.0;
+    SDFBlur::GetSDFBlurScaleFactor(srcRRect, sx, sy);
+    sdc->drawPaint(nullptr, std::move(paint), SkMatrix::I().Scale(sx, sy));
 
     return sdc;
 }

@@ -519,9 +519,16 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     bool inverseFilled = shape->inverseFilled() &&
                          !GrIsStrokeHairlineOrEquivalent(shape->style(), viewMatrix, nullptr);
 
-    SkMatrix matrixTrans = SkMatrix::I().Translate(viewMatrix.getTranslateX(), viewMatrix.getTranslateY());
+    SkScalar sx = 1.0;
+    SkScalar sy = 1.0;
+    SkRRect srcRRect;
+    bool inverted;
+    if (canUseSDFBlur && shape->asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
+        SDFBlur::GetSDFBlurScaleFactor(srcRRect, sx, sy);
+    }
+    SkMatrix matrixScale = SkMatrix::I().Scale(sx, sy);
     SkIRect unclippedDevShapeBounds, devClipBounds;
-    if (!get_shape_and_clip_bounds(sdc, clip, *shape, canUseSDFBlur ? matrixTrans : viewMatrix,
+    if (!get_shape_and_clip_bounds(sdc, clip, *shape, canUseSDFBlur ? matrixScale : viewMatrix,
                                    &unclippedDevShapeBounds, &devClipBounds)) {
         // TODO: just cons up an opaque mask here
         if (!inverseFilled) {
@@ -533,7 +540,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     SkIRect boundsForClip;
     if (!compute_key_and_clip_bounds(&maskKey, &boundsForClip,
                                      sdc->caps(),
-                                     canUseSDFBlur ? SkMatrix::I() : viewMatrix, inverseFilled,
+                                     canUseSDFBlur ? matrixScale : viewMatrix, inverseFilled,
                                      maskFilter, *shape,
                                      unclippedDevShapeBounds,
                                      devClipBounds,
@@ -546,7 +553,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
 
     if (auto dContext = rContext->asDirectContext()) {
         filteredMaskView = hw_create_filtered_mask(dContext, sdc,
-                                                   canUseSDFBlur ? matrixTrans : viewMatrix,
+                                                   canUseSDFBlur ? matrixScale : viewMatrix,
                                                    *shape, maskFilter,
                                                    unclippedDevShapeBounds, boundsForClip,
                                                    &maskRect, &maskKey, canUseSDFBlur);
@@ -558,7 +565,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
             }
             if (canUseSDFBlur &&
                 SDFBlur::drawMaskSDFBlur(rContext, sdc, clip, viewMatrix, maskRect, std::move(paint),
-                                         std::move(filteredMaskView), maskFilter)) {
+                                         std::move(filteredMaskView), maskFilter, sx, sy)) {
                 return;
             }
             assert_alive(paint);
