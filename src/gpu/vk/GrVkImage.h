@@ -21,6 +21,9 @@
 #include "src/gpu/vk/GrVkDescriptorSet.h"
 
 #include <cinttypes>
+#include <cstdint>
+#include <mutex>
+#include <utility>
 
 class GrVkGpu;
 class GrVkImageView;
@@ -189,11 +192,64 @@ public:
                 , fUsageFlags(0)
                 , fMemProps(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
                 , fIsProtected(GrProtected::kNo) {}
+        ImageDesc(VkImageType fImageType,
+                  VkFormat fFormat,
+                  uint32_t fWidth,
+                  uint32_t fHeight,
+                  uint32_t fLevels,
+                  uint32_t fSamples,
+                  VkImageTiling fImageTiling,
+                  VkImageUsageFlags fUsageFlags,
+                  VkFlags fMemProps,
+                  GrProtected fIsProtected)
+                : fImageType(fImageType)
+                , fFormat(fFormat)
+                , fWidth(fWidth)
+                , fHeight(fHeight)
+                , fLevels(fLevels)
+                , fSamples(fSamples)
+                , fImageTiling(fImageTiling)
+                , fUsageFlags(fUsageFlags)
+                , fMemProps(fMemProps)
+                , fIsProtected(fIsProtected) {}
+        bool operator==(const imageDesc& rop) {
+            return fImageType == rop.fImageType && fFormat == rop.fFormat && fWidth == rop.fWidth &&
+                   fHeight == rop.fHeight && fLevels == rop.fLevels && fSamples == rop.fSamples &&
+                   fImageTilingrop.fImageTiling && fUsageFlags == rop.fUsageFlags &&
+                   fMemProps == rop.fMemProps && fIsProtected == rop.fIsProtected
+        }
     };
+    class ImagePool {
+    public:
+        struct DescSpecificQueue {
+            ImageDesc fDesc;
+            uint64_t fReqTimes;
+            uint64_t fDuration;
+            SkTArray<std::pair<bool, GrVkImageInfo>> fQueue;
+        };
+        void forSpecificImageQueue(const imageDesc& desc,
+                                   std::function<void(DescSpecificQueue&)> action,
+                                   bool createQueueWhenNotExist = false);
+        void forEachImageQueue(std::function<void(DescSpecificQueue&)> action);
+        static ImagePool& GetInstance();
+        ImagePool(const ImagePool&) = delete;
+        ImagePool& operator=(const ImagePool&) = delete;
+        void setGpu(GrVkGpu* newGpu) { fGpu = newGpu; }
+        GrVkGpu* getGpu() { return fGpu; }
 
+    private:
+        ImagePool() = default;
+        ~ImagePool() = default;
+        GrVkGpu* fGpu = nullptr;
+        SkTArray<DescSpecificQueue> fQueues;
+        std::mutex fQueuesLock;
+    };
+    static void PreAllocateTextureBetweenFrames();
     static bool InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo*);
+    static bool InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo*);
     // Destroys the internal VkImage and VkDeviceMemory in the GrVkImageInfo
     static void DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo*);
+    static void DestroyImageInfoInner(const GrVkGpu* gpu, GrVkImageInfo*);
 
     // These match the definitions in SkImage, for whence they came
     typedef void* ReleaseCtx;

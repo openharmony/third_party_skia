@@ -51,6 +51,7 @@ public:
 #endif
 #ifdef SK_VULKAN
 #include "src/gpu/vk/GrVkGpu.h"
+#include "src/gpu/vk/GrVkImage.h"
 #endif
 #ifdef SK_DIRECT3D
 #include "src/gpu/d3d/GrD3DGpu.h"
@@ -164,6 +165,12 @@ bool GrDirectContext::abandoned() {
 }
 
 bool GrDirectContext::oomed() { return fGpu ? fGpu->checkAndResetOOMed() : false; }
+
+void GrDirectContext::preAllocateTextureBetweenFrames() {
+#ifdef SK_VULKAN
+    GrVkImage::preAllocateTextureBetweenFrames();
+#endif
+}
 
 void GrDirectContext::releaseResourcesAndAbandonContext() {
     if (INHERITED::abandoned()) {
