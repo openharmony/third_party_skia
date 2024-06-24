@@ -35,8 +35,8 @@ void GetSDFBlurScaleFactor(const SkRRect srcRRect, SkScalar& sx, SkScalar& sy)
 {
     int srcRRectW = srcRRect.rect().width();
     int srcRRectH = srcRRect.rect().height();
-    int scaleX = std::max(1.0, std::min(std::ceil(srcRRectW / 500), 5.0));
-    int scaleY = std::max(1.0, std::min(std::ceil(srcRRectH / 500), 5.0));
+    int scaleX = std::max(1.0, std::min(std::ceil(srcRRectW / 500), 3.0));
+    int scaleY = std::max(1.0, std::min(std::ceil(srcRRectH / 500), 3.0));
     sx = 1.0 / scaleX;
     sy = 1.0 / scaleY;
 }
