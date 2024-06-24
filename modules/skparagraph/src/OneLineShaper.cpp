@@ -677,7 +677,7 @@ bool OneLineShaper::shape() {
                 font.setEdging(SkFont::Edging::kAntiAlias);
                 font.setHinting(SkFontHinting::kNone);
                 font.setSubpixel(true);
-                font.SetBaselineSnap(false);
+                font.setBaselineSnap(false);
 #else
                 RSFont font(std::move(typeface), block.fStyle.getFontSize(), 1, 0);
                 font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
