@@ -1605,7 +1605,8 @@ bool SkBlurMaskFilterImpl::canFilterMaskGPU(const GrStyledShape& shape,
             int sigmaY = noxFormedSigma3 * sy;
             srcRect = devSpaceShapeBounds.makeOutset(sigmaX, sigmaY);
             srcRect = SkIRect::MakeXYWH(srcRect.fLeft, srcRect.fTop,
-                srcRect.width() + srcRRect.rect().fLeft, srcRect.height() + srcRRect.rect().fTop);
+                srcRect.width() + srcRRect.rect().fLeft * sx,
+                srcRect.height() + srcRRect.rect().fTop * sy);
         }
         *maskRect = srcRect;
     }
