@@ -33,12 +33,16 @@ bool isSDFBlur(const GrStyledShape& shape)
 
 void GetSDFBlurScaleFactor(const SkRRect srcRRect, SkScalar& sx, SkScalar& sy)
 {
+    constexpr float minScaleFactor = 1.0;
+    constexpr float maxScaleFactor = 3.0;
+    constexpr float sizeThreshold = 500.0;
     int srcRRectW = srcRRect.rect().width();
     int srcRRectH = srcRRect.rect().height();
-    int scaleX = std::max(1.0, std::min(std::ceil(srcRRectW / 500), 3.0));
-    int scaleY = std::max(1.0, std::min(std::ceil(srcRRectH / 500), 3.0));
-    sx = 1.0 / scaleX;
-    sy = 1.0 / scaleY;
+    // When the input size is greater than the threshold, it needs to be scaled. scale factor will be clamped in [1.0, 3.0].
+    int scaleX = std::max(minScaleFactor, std::min(std::ceil(srcRRectW / sizeThreshold), maxScaleFactor));
+    int scaleY = std::max(minScaleFactor, std::min(std::ceil(srcRRectH / sizeThreshold), maxScaleFactor));
+    sx = SK_Scalar1 / scaleX;
+    sy = SK_Scalar1 / scaleY;
 }
 
 bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
