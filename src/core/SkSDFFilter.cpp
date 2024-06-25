@@ -60,7 +60,7 @@ bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext
     matrix.preConcat(matrixTrans);
     matrix.preConcat(matrixInverseScale);
     // add dither effect to reduce color discontinuity
-    constexpr float ditherRange = 1.0 / 255.0;
+    constexpr float ditherRange = 1.f / 255.f;
     auto inputFp = GrTextureEffect::Make(std::move(mask), kUnknown_SkAlphaType);
     SkPMColor4f origColor = paint.getColor4f();
 
@@ -112,8 +112,8 @@ static std::unique_ptr<skgpu::v1::SurfaceDrawContext> sdf_2d(GrRecordingContext*
     paint.setColorFragmentProcessor(std::move(sdfFp));
     paint.setPorterDuffXPFactory(SkBlendMode::kSrc);
 
-    SkScalar sx = 1.0;
-    SkScalar sy = 1.0;
+    SkScalar sx = 1.f;
+    SkScalar sy = 1.f;
     SDFBlur::GetSDFBlurScaleFactor(srcRRect, sx, sy);
     sdc->drawPaint(nullptr, std::move(paint), SkMatrix::I().Scale(sx, sy));
 
