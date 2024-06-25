@@ -551,8 +551,8 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         // fast path
         if (!fHasLineBreaks &&
             !fHasWhitespacesInside &&
-            fPlaceholders.size() == 1 && ( !SkScalarIsFinite(floorWidth) ||
-            (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= floorWidth - this->detectIndents(0)))) {
+            fPlaceholders.size() == 1 &&
+            (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= floorWidth - this->detectIndents(0))) {
             positionShapedTextIntoLine(floorWidth);
         } else if (!paragraphCache->GetStoredLayout(*this)) {
             breakShapedTextIntoLines(floorWidth);
