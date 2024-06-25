@@ -519,8 +519,8 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     bool inverseFilled = shape->inverseFilled() &&
                          !GrIsStrokeHairlineOrEquivalent(shape->style(), viewMatrix, nullptr);
 
-    SkScalar sx = 1.0;
-    SkScalar sy = 1.0;
+    SkScalar sx = 1.f;
+    SkScalar sy = 1.f;
     SkRRect srcRRect;
     bool inverted;
     if (canUseSDFBlur && shape->asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
