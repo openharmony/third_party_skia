@@ -715,7 +715,6 @@ void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar 
 void TextLine::justify(SkScalar maxWidth) {
     int whitespacePatches = 0;
     SkScalar textLen = 0;
-    SkScalar whitespaceLen = 0;
     bool whitespacePatch = false;
     // Take leading whitespaces width but do not increment a whitespace patch number
     bool leadingWhitespaces = false;
@@ -729,7 +728,6 @@ void TextLine::justify(SkScalar maxWidth) {
                     ++whitespacePatches;
                 }
                 whitespacePatch = !leadingWhitespaces;
-                whitespaceLen += cluster->width();
             } else if (cluster->isIdeographic()) {
                 // Whitespace break before and after
                 if (!whitespacePatch && index != 0) {
@@ -759,7 +757,7 @@ void TextLine::justify(SkScalar maxWidth) {
         return;
     }
 
-    SkScalar step = (maxWidth - textLen + whitespaceLen) / whitespacePatches;
+    SkScalar step = (maxWidth - textLen) / whitespacePatches;
     SkScalar shift = 0.0f;
     SkScalar prevShift = 0.0f;
 
@@ -786,7 +784,6 @@ void TextLine::justify(SkScalar maxWidth) {
                 whitespacePatch = true;
                 --whitespacePatches;
             }
-            shift -= cluster->width();
         } else if (cluster->isIdeographic()) {
             if (!whitespacePatch && index != 0) {
                 shift += step;
