@@ -597,9 +597,9 @@ static bool submit_to_queue(GrVkGpu* gpu,
     GR_VK_CALL_RESULT(gpu, result, QueueSubmit(queue, 1, &submitInfo, fence));
 
 #ifdef SKIA_USE_XEG
-    if (nullptr != gpu->vkInterface()->fFunctions.fHMS_XEG_GetPerFrameLoad) {
+    if (nullptr != gpu->vkInterface()->fFunctions.fGetPerFrameLoad) {
         uint64_t frameLoad = 0;
-        GR_VK_CALL(gpu->vkInterface(), HMS_XEG_GetPerFrameLoad(commandBufferCount, commandBuffers, &frameLoad));
+        GR_VK_CALL(gpu->vkInterface(), GetPerFrameLoad(commandBufferCount, commandBuffers, &frameLoad));
         SkDebugf("frameLoad %{public}u\n", frameLoad);
         g_totalFrameLoad += frameLoad;
     }
