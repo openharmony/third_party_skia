@@ -33,9 +33,9 @@ bool isSDFBlur(const GrStyledShape& shape)
 
 void GetSDFBlurScaleFactor(const SkRRect srcRRect, SkScalar& sx, SkScalar& sy)
 {
-    constexpr float minScaleFactor = 1.0;
-    constexpr float maxScaleFactor = 3.0;
-    constexpr float sizeThreshold = 500.0;
+    constexpr float minScaleFactor = 1.f;
+    constexpr float maxScaleFactor = 3.f;
+    constexpr float sizeThreshold = 500.f;
     int srcRRectW = srcRRect.rect().width();
     int srcRRectH = srcRRect.rect().height();
     // When the input size is greater than the threshold, it needs to be scaled. scale factor will be clamped in [1.0, 3.0].
