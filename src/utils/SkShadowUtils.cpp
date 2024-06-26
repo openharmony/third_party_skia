@@ -128,7 +128,7 @@ struct AmbientVerticesFactory {
     }
 
     sk_sp<SkVertices> makeVertices(const SkPath& path, const SkMatrix& ctm,
-                                   SkVector* translate) const {
+                                   SkVector* translate, bool isLimitElevation = false) const {
         SkPoint3 zParams = SkPoint3::Make(0, 0, fOccluderHeight);
         // pick a canonical place to generate shadow
         SkMatrix noTrans(ctm);
@@ -190,18 +190,18 @@ struct SpotVerticesFactory {
     }
 
     sk_sp<SkVertices> makeVertices(const SkPath& path, const SkMatrix& ctm,
-                                   SkVector* translate) const {
+                                   SkVector* translate, bool isLimitElevation = false) const {
         bool transparent = OccluderType::kTransparent == fOccluderType;
         bool directional = OccluderType::kDirectional == fOccluderType;
         SkPoint3 zParams = SkPoint3::Make(0, 0, fOccluderHeight);
         if (directional) {
             translate->set(0, 0);
             return SkShadowTessellator::MakeSpot(path, ctm, zParams, fDevLightPos, fLightRadius,
-                                                 transparent, true);
+                                                 transparent, true, isLimitElevation);
         } else if (ctm.hasPerspective() || OccluderType::kOpaquePartialUmbra == fOccluderType) {
             translate->set(0, 0);
             return SkShadowTessellator::MakeSpot(path, ctm, zParams, fDevLightPos, fLightRadius,
-                                                 transparent, false);
+                                                 transparent, false, isLimitElevation);
         } else {
             // pick a canonical place to generate shadow, with light centered over path
             SkMatrix noTrans(ctm);
@@ -212,7 +212,7 @@ struct SpotVerticesFactory {
             SkPoint3 centerLightPos = SkPoint3::Make(devCenter.fX, devCenter.fY, fDevLightPos.fZ);
             *translate = fOffset;
             return SkShadowTessellator::MakeSpot(path, noTrans, zParams,
-                                                 centerLightPos, fLightRadius, transparent, false);
+                                                 centerLightPos, fLightRadius, transparent, false, isLimitElevation);
         }
     }
 };
@@ -233,8 +233,9 @@ public:
     }
 
     sk_sp<SkVertices> add(const SkPath& devPath, const AmbientVerticesFactory& ambient,
-                          const SkMatrix& matrix, SkVector* translate) {
-        return fAmbientSet.add(devPath, ambient, matrix, translate);
+                          const SkMatrix& matrix, SkVector* translate,
+                          bool isLimitElevation = false) {
+        return fAmbientSet.add(devPath, ambient, matrix, translate, isLimitElevation);
     }
 
     sk_sp<SkVertices> find(const SpotVerticesFactory& spot, const SkMatrix& matrix,
@@ -243,8 +244,9 @@ public:
     }
 
     sk_sp<SkVertices> add(const SkPath& devPath, const SpotVerticesFactory& spot,
-                          const SkMatrix& matrix, SkVector* translate) {
-        return fSpotSet.add(devPath, spot, matrix, translate);
+                          const SkMatrix& matrix, SkVector* translate,
+                          bool isLimitElevation = false) {
+        return fSpotSet.add(devPath, spot, matrix, translate, isLimitElevation);
     }
 
 private:
@@ -275,8 +277,8 @@ private:
         }
 
         sk_sp<SkVertices> add(const SkPath& path, const FACTORY& factory, const SkMatrix& matrix,
-                              SkVector* translate) {
-            sk_sp<SkVertices> vertices = factory.makeVertices(path, matrix, translate);
+                              SkVector* translate, bool isLimitElevation = false) {
+            sk_sp<SkVertices> vertices = factory.makeVertices(path, matrix, translate, isLimitElevation);
             if (!vertices) {
                 return nullptr;
             }
@@ -455,7 +457,8 @@ private:
 template <typename FACTORY>
 bool draw_shadow(const FACTORY& factory,
                  std::function<void(const SkVertices*, SkBlendMode, const SkPaint&,
-                 SkScalar tx, SkScalar ty, bool)> drawProc, ShadowedPath& path, SkColor color) {
+                 SkScalar tx, SkScalar ty, bool)> drawProc, ShadowedPath& path,
+                 SkColor color, bool isLimitElevation = false) {
     FindContext<FACTORY> context(&path.viewMatrix(), &factory);
 
     SkResourceCache::Key* key = nullptr;
@@ -484,7 +487,7 @@ bool draw_shadow(const FACTORY& factory,
                 tessellations.reset(new CachedTessellations());
             }
             vertices = tessellations->add(path.path(), factory, path.viewMatrix(),
-                                          &context.fTranslate);
+                                          &context.fTranslate, isLimitElevation);
             if (!vertices) {
                 return false;
             }
@@ -764,7 +767,7 @@ void SkBaseDevice::drawShadow(const SkPath& path, const SkDrawShadowRec& rec) {
                                                                        zPlaneParams,
                                                                        devLightPos, lightRadius,
                                                                        transparent,
-                                                                       directional);
+                                                                       directional, rec.isLimitElevation);
             if (vertices) {
                 SkPaint paint;
                 // Run the vertex color through a GaussianColorFilter and then modulate the
@@ -838,13 +841,13 @@ void SkBaseDevice::drawShadow(const SkPath& path, const SkDrawShadowRec& rec) {
                     break;
             }
 #endif
-            if (!draw_shadow(factory, drawVertsProc, shadowedPath, color)) {
+            if (!draw_shadow(factory, drawVertsProc, shadowedPath, color, rec.isLimitElevation)) {
                 // draw with blur
                 SkMatrix shadowMatrix;
                 if (!SkDrawShadowMetrics::GetSpotShadowTransform(devLightPos, lightRadius,
                                                                  viewMatrix, zPlaneParams,
                                                                  path.getBounds(), directional,
-                                                                 &shadowMatrix, &radius)) {
+                                                                 &shadowMatrix, &radius, rec.isLimitElevation)) {
                     return;
                 }
                 SkAutoDeviceTransformRestore adr2(this, shadowMatrix);

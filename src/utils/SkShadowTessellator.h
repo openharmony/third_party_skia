@@ -37,7 +37,7 @@ SK_API sk_sp<SkVertices> MakeAmbient(const SkPath& path, const SkMatrix& ctm,
  */
 SK_API sk_sp<SkVertices> MakeSpot(const SkPath& path, const SkMatrix& ctm, const SkPoint3& zPlane,
                                   const SkPoint3& lightPos, SkScalar lightRadius, bool transparent,
-                                  bool directional);
+                                  bool directional, bool isLimitElevation = false);
 
 
 }  // namespace SkShadowTessellator
