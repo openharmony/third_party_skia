@@ -211,11 +211,16 @@ HmSymbolConfig_OHOS* HmSymbolConfig_OHOS::GetInstance()
 
 SymbolLayersGroups HmSymbolConfig_OHOS::GetSymbolLayersGroups(uint32_t glyphId)
 {
+    GetSymbolLayersGroups(static_cast<uint16_t>(glyphId));
+}
+
+SymbolLayersGroups HmSymbolConfig_OHOS::GetSymbolLayersGroups(uint16_t glyphId)
+{
     SymbolLayersGroups symbolLayersGroups;
     if (hmSymbolConfig_.size() == 0) {
         return symbolLayersGroups;
     }
-    std::unordered_map<uint32_t, SymbolLayersGroups>::iterator iter = hmSymbolConfig_.find(glyphId);
+    auto iter = hmSymbolConfig_.find(glyphId);
     if (iter != hmSymbolConfig_.end()) {
         symbolLayersGroups = iter->second;
     }
@@ -224,37 +229,21 @@ SymbolLayersGroups HmSymbolConfig_OHOS::GetSymbolLayersGroups(uint32_t glyphId)
 
 std::vector<std::vector<PiecewiseParameter>> HmSymbolConfig_OHOS::GetGroupParameters(AnimationType type,
     uint16_t groupSum, uint16_t animationMode, CommonSubType commonSubType)
-
 {
     std::vector<std::vector<PiecewiseParameter>> groupParametersOut;
-    auto info = GetAnimationInfo(type);
-    if (info == nullptr) {
+    if (animationInfos_.empty()) {
         return groupParametersOut;
     }
-    for (auto &para : info->animationParas) {
-        if (para.groupParameters.size() == groupSum &&
-            para.animationMode == animationMode &&
-            para.commonSubType == commonSubType) {
-            groupParametersOut = para.groupParameters;
-            break;
-        }
+    std::unordered_map<AnimationType, AnimationInfo>::iterator iter = animationInfos_.find(type);
+    if (iter == animationInfos_.end()) {
+        return groupParametersOut;
+    }
+    auto key = EncodeAnimationAttribute(groupSum, animationMode, commonSubType);
+    auto para = iter->second.animationParas.find(key);
+    if (para != iter->second.animationParas.end()) {
+        groupParametersOut = para->second.groupParameters;
     }
     return groupParametersOut;
-}
-
-AnimationInfo* HmSymbolConfig_OHOS::GetAnimationInfo(AnimationType type)
-{
-    for (auto &info : commonAnimationInfos_) {
-        if (info.animationType == type) {
-            return &info;
-        }
-    }
-    for (auto &info : specialAnimationInfos_) {
-        if (info.animationType == type) {
-            return &info;
-        }
-    }
-    return nullptr;
 }
 
 /* check the system font configuration document
@@ -323,7 +312,7 @@ int HmSymbolConfig_OHOS::ParseConfigOfHmSymbol(const char* fname, SkString fontD
             continue;
         }
         if (!strcmp(key, COMMON_ANIMATIONS) || !strcmp(key, SPECIAL_ANIMATIONS)) {
-            ParseSymbolAnimations(root[key], key);
+            ParseSymbolAnimations(root[key], &animationInfos_);
         } else {
             ParseSymbolLayersGrouping(root[key]);
         }
@@ -333,18 +322,8 @@ int HmSymbolConfig_OHOS::ParseConfigOfHmSymbol(const char* fname, SkString fontD
     return NO_ERROR;
 }
 
-void HmSymbolConfig_OHOS::ParseSymbolAnimations(const Json::Value& root, const char* key)
-{
-    if (!strcmp(key, COMMON_ANIMATIONS)) {
-        std::vector<AnimationInfo>* commonAnimationInfos = &commonAnimationInfos_;
-        ParseSymbolAnimations(root, commonAnimationInfos);
-    } else {
-        std::vector<AnimationInfo>* specialAnimationInfos = &specialAnimationInfos_;
-        ParseSymbolAnimations(root, specialAnimationInfos);
-    }
-}
-
-void HmSymbolConfig_OHOS::ParseSymbolAnimations(const Json::Value& root, std::vector<AnimationInfo>* animationInfos)
+void HmSymbolConfig_OHOS::ParseSymbolAnimations(const Json::Value& root,
+    std::unordered_map<AnimationType, AnimationInfo>* animationInfos)
 {
     for (unsigned int i = 0; i < root.size(); i++) {
         if (!root[i].isObject()) {
@@ -368,11 +347,21 @@ void HmSymbolConfig_OHOS::ParseSymbolAnimations(const Json::Value& root, std::ve
             continue;
         }
         ParseSymbolAnimationParas(root[i][ANIMATION_PARAMETERS], animationInfo.animationParas);
-        animationInfos->push_back(animationInfo);
+        animationInfos->insert({animationInfo.animationType, animationInfo});
     }
 }
 
-void HmSymbolConfig_OHOS::ParseSymbolAnimationParas(const Json::Value& root, std::vector<AnimationPara>& animationParas)
+uint32_t HmSymbolConfig_OHOS::EncodeAnimationAttribute(uint16_t groupSum, uint16_t animationMode,
+    CommonSubType commonSubType)
+{
+    uint32_t result = static_cast<uint32_t>(groupSum);
+    result = (result << oneByteBitsLen) + static_cast<uint32_t>(animationMode);
+    result = (result << oneByteBitsLen) + static_cast<uint32_t>(commonSubType);
+    return result;
+}
+
+void HmSymbolConfig_OHOS::ParseSymbolAnimationParas(const Json::Value& root,
+    std::map<uint32_t, AnimationPara>& animationParas)
 {
     for (unsigned int i = 0; i < root.size(); i++) {
         if (!root[i].isObject()) {
@@ -381,7 +370,9 @@ void HmSymbolConfig_OHOS::ParseSymbolAnimationParas(const Json::Value& root, std
         }
         AnimationPara animationPara;
         ParseSymbolAnimationPara(root[i], animationPara);
-        animationParas.push_back(animationPara);
+        uint32_t attributeKey = EncodeAnimationAttribute(animationPara.groupParameters.size(),
+            animationPara.animationMode, animationPara.commonSubType);
+        animationParas.insert({attributeKey, animationPara});
     }
 }
 
@@ -553,7 +544,7 @@ void HmSymbolConfig_OHOS::ParseSymbolPiecewisePara(const Json::Value& root, Piec
     }
 }
 
-void HmSymbolConfig_OHOS::ParseSymbolCurveArgs(const Json::Value& root, std::map<std::string, double_t>& curveArgs)
+void HmSymbolConfig_OHOS::ParseSymbolCurveArgs(const Json::Value& root, std::map<std::string, float>& curveArgs)
 {
     if (root.empty()) {
         return;
@@ -566,12 +557,12 @@ void HmSymbolConfig_OHOS::ParseSymbolCurveArgs(const Json::Value& root, std::map
             SkDebugf("%{public}s is not numeric!", memberName);
             continue;
         }
-        curveArgs.insert({std::string(memberName), root[memberName].asDouble()});
+        curveArgs.insert({std::string(memberName), root[memberName].asFloat()});
     }
 }
 
 void HmSymbolConfig_OHOS::ParseSymbolProperties(const Json::Value& root,
-    std::map<std::string, std::vector<double_t>>& properties)
+    std::map<std::string, std::vector<float>>& properties)
 {
     for (Json::Value::const_iterator iter = root.begin(); iter != root.end(); ++iter) {
         std::string name = iter.name();
@@ -581,13 +572,13 @@ void HmSymbolConfig_OHOS::ParseSymbolProperties(const Json::Value& root,
             continue;
         }
 
-        std::vector<double_t> propertyValues;
+        std::vector<float> propertyValues;
         for (unsigned int i = 0; i < root[memberName].size(); i++) {
             if (!root[memberName][i].isNumeric()) {
                 SkDebugf("property value is not numeric!");
                 continue;
             }
-            propertyValues.push_back(root[memberName][i].asDouble());
+            propertyValues.push_back(root[memberName][i].asFloat());
         }
 
         properties.insert({std::string(memberName), propertyValues});
@@ -596,7 +587,7 @@ void HmSymbolConfig_OHOS::ParseSymbolProperties(const Json::Value& root,
 
 void HmSymbolConfig_OHOS::ParseSymbolLayersGrouping(const Json::Value& root)
 {
-    std::unordered_map<uint32_t, SymbolLayersGroups>* hmSymbolConfig
+    std::unordered_map<uint16_t, SymbolLayersGroups>* hmSymbolConfig
         = &hmSymbolConfig_;
     for (unsigned int i = 0; i < root.size(); i++) {
         if (!root[i].isObject()) {
@@ -617,7 +608,7 @@ static void SymbolGlyphCase(const char* key, const Json::Value& root, SymbolLaye
 }
 
 void HmSymbolConfig_OHOS::ParseOneSymbolNativeCase(const char* key, const Json::Value& root,
-    SymbolLayersGroups& symbolLayersGroups, uint32_t& nativeGlyphId)
+    SymbolLayersGroups& symbolLayersGroups, uint16_t& nativeGlyphId)
 {
     if (!root[key].isInt()) {
         SkDebugf("native_glyph_id is not int!");
@@ -657,11 +648,11 @@ void HmSymbolConfig_OHOS::ParseOneSymbolAnimateCase(const char* key, const Json:
 }
 
 void HmSymbolConfig_OHOS::ParseOneSymbol(const Json::Value& root,
-    std::unordered_map<uint32_t, SymbolLayersGroups>* hmSymbolConfig)
+    std::unordered_map<uint16_t, SymbolLayersGroups>* hmSymbolConfig)
 {
     const char* key = nullptr;
     std::string tags[] = {NATIVE_GLYPH_ID, SYMBOL_GLYPH_ID, LAYERS, RENDER_MODES, "animation_settings"};
-    uint32_t nativeGlyphId;
+    uint16_t nativeGlyphId;
     SymbolLayersGroups symbolLayersGroups;
 
     SymbolKeyFuncMap funcMap = {
