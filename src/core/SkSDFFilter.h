@@ -38,10 +38,11 @@ struct DrawRectData {
 
 bool isSDFBlur(const GrStyledShape& shape);
 
-bool GetSDFBlurDebugTraceEnabled();
+void GetSDFBlurScaleFactor(const SkRRect srcRRect, SkScalar& sx, SkScalar& sy);
 
 bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
-    const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter);
+    const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter,
+    const SkScalar sx, const SkScalar sy);
 
 std::unique_ptr<skgpu::v1::SurfaceDrawContext> SDFBlur(GrRecordingContext* rContext,
     GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType,
