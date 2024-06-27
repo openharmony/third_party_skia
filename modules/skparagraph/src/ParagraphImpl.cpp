@@ -1124,7 +1124,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
                 auto spacing = line.autoSpacing();
-                fLongestLine = std::max(fLongestLine, std::max(advance.fX, widthWithSpaces) + spacing);
+                fLongestLine = std::max(fLongestLine, std::max(line.width(), widthWithSpaces) + spacing);
             });
 
     fHeight = textWrapper.height();
