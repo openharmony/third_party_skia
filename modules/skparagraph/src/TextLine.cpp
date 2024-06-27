@@ -430,10 +430,7 @@ void TextLine::ensureTextBlobCachePopulated() {
 }
 
 void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal) {
-    SkScalar delta = maxWidth - this->fWidthWithSpaces;
-    if (ellipsisModal == EllipsisModal::HEAD && fEllipsis) {
-        delta += fEllipsis->advance().fX;
-    }
+    SkScalar delta = maxWidth - this->widthWithEllipsisSpaces();
     if (delta <= 0) {
         return;
     }
@@ -960,6 +957,8 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         break;
     }
 
+    fWidthWithSpaces = width;
+
     ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
 
@@ -999,6 +998,8 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         fTextExcludingSpaces.start = cluster.textRange().start;
         break;
     }
+
+    fWidthWithSpaces = width;
 
     ellipsisNotFitProcess(EllipsisModal::HEAD);
 }
