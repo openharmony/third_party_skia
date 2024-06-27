@@ -166,12 +166,6 @@ bool GrDirectContext::abandoned() {
 
 bool GrDirectContext::oomed() { return fGpu ? fGpu->checkAndResetOOMed() : false; }
 
-void GrDirectContext::preAllocateTextureBetweenFrames() {
-#ifdef SK_VULKAN
-    GrVkImage::preAllocateTextureBetweenFrames();
-#endif
-}
-
 void GrDirectContext::releaseResourcesAndAbandonContext() {
     if (INHERITED::abandoned()) {
         return;

@@ -421,7 +421,6 @@ public:
 
     void storeVkPipelineCacheData();
 
-    static void preAllocateTextureBetweenFrames();
     /**
      * Retrieve the default GrBackendFormat for a given SkColorType and renderability.
      * It is guaranteed that this backend format will be the one used by the following
