@@ -7,28 +7,11 @@
 
 #include "src/gpu/vk/GrVkImage.h"
 
-#include <algorithm>
-#include <cstdint>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <string>
-
-#include "GrVkCommandBuffer.h"
-#include "GrVkGpu.h"
-#include "include/core/SkExecutor.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkImageView.h"
 #include "src/gpu/vk/GrVkMemory.h"
 #include "src/gpu/vk/GrVkTexture.h"
 #include "src/gpu/vk/GrVkUtil.h"
-
-
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include <parameter.h>
-#include <parameters.h>
-#include "param/sys_param.h"
-#endif
 
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
 
@@ -474,97 +457,7 @@ void GrVkImage::setImageLayoutAndQueueIndex(const GrVkGpu* gpu,
     this->setQueueFamilyIndex(newQueueFamilyIndex);
 }
 
-GrVkImage::ImagePool::GetInstance() {
-    static GrVkImage::ImagePool imagePool;
-    return imagePool;
-}
-
-void GrVkImage::ImagePool::forSpecificImageQueue(const imageDesc& desc,
-                                                 std::function<void(DescSpecificQueue&)> action,
-                                                 bool createQueueWhenNotExist = false) {
-    std::lock_guard<std::mutex> guard(fQueuesLock);
-    for (auto& q : fQueues) {
-        if (q.fDesc == desc) {
-            action(q);
-            return;
-        }
-    }
-    if (createQueueWhenNotExist) {
-        fQueues.push_back({desc, 0, {}});
-        DescSpecificQueue& back = fQueues.back();
-        action(back);
-    }
-}
-
-void GrVkImage::ImagePool::forEachImageQueue(std::function<void(DescSpecificQueue&)> action) {
-    std::lock_guard<std::mutex> guard(fQueuesLock);
-    auto copy = fQueues;
-    for (auto& q : copy) {
-        action(q)
-    }
-}
-
-void GrVkImage::PreAllocateTextureBetweenFrames() {
-    GrVkGpu* gpu = ImagePool::GetInstance().getGpu();
-    if (!gpu) {
-        return;
-    }
-    SkTArray<ImageDesc> imageDescArray = {{VK_IMAGE_TYPE_2D,
-                                           VK_FORMAT_R8_UNORM,
-                                           66,
-                                           67,
-                                           1,
-                                           1,
-                                           VK_IMAGE_TILING_LINEAR,
-                                           7,
-                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                           GrProtected::kNo},
-                                          {VK_IMAGE_TYPE_2D,
-                                           VK_FORMAT_R8G8B8A8_UNORM,
-                                           1260,
-                                           2720,
-                                           1,
-                                           1,
-                                           VK_IMAGE_TILING_LINEAR,
-                                           151,
-                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                           GrProtected::kNo}};
-    for (auto& imageDesc : imageDescArray) {
-        ImagePool::GetInstance().forSpecificImageQueue(
-                imagePool,
-                [gpu, imagePool](ImagePool::DescSpecificQueue& q) {
-                    if (q.fQueue.size() >= 3) {
-                        return;
-                    }
-                    if (GrVkImageInfo info; InitImageInfoInner(gpu, imageDesc, &info)) {
-                        q.fQueue.push_back({true, info});
-                    }
-                },
-                true);
-    }
-}
-
 bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
-    ImagePool& imagePool = ImagePool.GetInstance();
-    bool cacheHit = false;
-    imagePool.forSpecificImageQueue(imageDesc, [info, &cacheHit](ImagePool::DescSpecificQueue& q) {
-        for (auto& [available, cachedInfo] : q.fQueue) {
-            if (!available) {
-                continue;
-            }
-            available = false;
-            *info = cachedInfo;
-            cacheHit = true;
-            break;
-        }
-    });
-    if (imagePool.getGpu() == nullptr) {
-        imagePool.setGpu(gpu);
-    }
-    return InitImageInfoInner(gpu, imageDesc, info);
-}
-
-bool GrVkImage::InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
     if (0 == imageDesc.fWidth || 0 == imageDesc.fHeight) {
         return false;
     }
@@ -641,23 +534,6 @@ bool GrVkImage::InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrV
 }
 
 void GrVkImage::DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo* info) {
-    bool cached = false;
-    ImagePool.GetInstance().forEachImageQueue([info, &cached](ImagePool::DescSpecificQueue& q) {
-        for (auto& [available, cachedInfo] : q.fQueue) {
-            if (cachedInfo == *info) {
-                available = true;
-                cached = true;
-                return;
-            }
-        }
-    });
-    if (cached) {
-        return;
-    }
-    return DestroyImageInfoInner(gpu, info);
-}
-
-void GrVkImage::DestroyImageInfoInner(const GrVkGpu* gpu, GrVkImageInfo* info) {
     VK_CALL(gpu, DestroyImage(gpu->device(), info->fImage, nullptr));
     GrVkMemory::FreeImageMemory(gpu, info->fAlloc);
 }
