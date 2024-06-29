@@ -1068,11 +1068,19 @@ uint32_t GrResourceCache::getNextTimestamp() {
 }
 
 void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
+    SkTDArray<GrGpuResource*> resources;
     for (int i = 0; i < fNonpurgeableResources.count(); ++i) {
-        fNonpurgeableResources[i]->dumpMemoryStatistics(traceMemoryDump);
+        *resources.append() = fNonpurgeableResources[i];
     }
     for (int i = 0; i < fPurgeableQueue.count(); ++i) {
-        fPurgeableQueue.at(i)->dumpMemoryStatistics(traceMemoryDump);
+        *resources.append() = fPurgeableQueue.at(i);
+    }
+    for (int i = 0; i < resources.count(); i++) {
+        auto resource = resources.getAt(i);
+        if (!resource || resource->wasDestroyed()) {
+            continue;
+        }
+        resource->dumpMemoryStatistics(traceMemoryDump);
     }
 }
 
