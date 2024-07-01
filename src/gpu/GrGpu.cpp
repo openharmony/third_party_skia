@@ -8,7 +8,6 @@
 
 #include "src/gpu/GrGpu.h"
 
-#include "hitrace_meter.h"
 #include "include/gpu/GrBackendSemaphore.h"
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/GrDirectContext.h"
@@ -33,6 +32,9 @@
 #include "src/gpu/GrTextureProxyPriv.h"
 #include "src/gpu/GrTracing.h"
 #include "src/sksl/SkSLCompiler.h"
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#include "hitrace_meter.h"
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
