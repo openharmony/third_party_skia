@@ -7,6 +7,16 @@
 
 #include "src/gpu/vk/GrVkImage.h"
 
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <string>
+
+#include "GrVkCommandBuffer.h"
+#include "GrVkGpu.h"
+#include "include/core/SkExecutor.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkImageView.h"
 #include "src/gpu/vk/GrVkMemory.h"
