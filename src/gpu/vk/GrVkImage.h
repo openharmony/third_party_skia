@@ -215,8 +215,8 @@ public:
         bool operator==(const ImageDesc& rop) {
             return fImageType == rop.fImageType && fFormat == rop.fFormat && fWidth == rop.fWidth &&
                    fHeight == rop.fHeight && fLevels == rop.fLevels && fSamples == rop.fSamples &&
-                   fImageTiling==rop.fImageTiling && fUsageFlags == rop.fUsageFlags &&
-                   fMemProps == rop.fMemProps && fIsProtected == rop.fIsProtected
+                   fImageTiling == rop.fImageTiling && fUsageFlags == rop.fUsageFlags &&
+                   fMemProps == rop.fMemProps && fIsProtected == rop.fIsProtected;
         }
     };
     class ImagePool {

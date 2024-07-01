@@ -34,7 +34,7 @@
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
 
 namespace {
-    const SkTArray<std::pair<ImageDesc,int64_t>> BAR_IMAGEDESC = {{{VK_IMAGE_TYPE_2D,
+    const SkTArray<std::pair<GrVkImage::ImageDesc,int64_t>> BAR_IMAGEDESC = {{{VK_IMAGE_TYPE_2D,
                                            VK_FORMAT_R8_UNORM,
                                            66,
                                            67,
@@ -503,9 +503,9 @@ GrVkImage::ImagePool& GrVkImage::ImagePool::getInstance() {
     return imagePool;
 }
 
-void GrVkImage::ImagePool::forSpecificImageQueue(const imageDesc& desc,
+void GrVkImage::ImagePool::forSpecificImageQueue(const ImageDesc& desc,
                                                  std::function<void(DescSpecificQueue&)> action,
-                                                 bool createQueueWhenNotExist = false,
+                                                 bool createQueueWhenNotExist,
                                                  int64_t cachePoolSize) {
     std::lock_guard<std::mutex> guard(fQueuesLock);
     for (auto& q : fQueues) {
@@ -568,8 +568,8 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
             break;
         }
     });
-    if (imagePool::getGpu() == nullptr) {
-        imagePool::setGpu(gpu);
+    if (imagePool.getGpu() == nullptr) {
+        imagePool.setGpu(gpu);
     }
     if (cacheHit) {
         return true;
@@ -715,7 +715,7 @@ void GrVkImage::Resource::freeGPUData() const {
     ImagePool::getInstance().forEachImageQueue([this, &cached](ImagePool::DescSpecificQueue& q) {
         for (auto it = q.fQueue.begin(); it != q.fQueue.end(); it++) {
             auto& [available, cachedInfo] = *it;
-            if (!(cachedInfo.fImage == this.fImage && cachedInfo.fAlloc == this.fAlloc)) {
+            if (!(cachedInfo.fImage == this->fImage && cachedInfo.fAlloc == this->fAlloc)) {
                 continue;
             }
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
