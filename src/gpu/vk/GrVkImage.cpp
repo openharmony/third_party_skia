@@ -13,7 +13,38 @@
 #include "src/gpu/vk/GrVkTexture.h"
 #include "src/gpu/vk/GrVkUtil.h"
 
+
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#include <parameter.h>
+#include <parameters.h>
+#include "hitrace_meter.h"
+#include "param/sys_param.h"
+#endif
+
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
+
+namespace {
+    const SkTArray<std::pair<ImageDesc,int64_t>> BAR_IMAGEDESC = {{{VK_IMAGE_TYPE_2D,
+                                           VK_FORMAT_R8_UNORM,
+                                           66,
+                                           67,
+                                           1,
+                                           1,
+                                           VK_IMAGE_TILING_OPTIMAL,
+                                           7,
+                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                           GrProtected::kNo},3},
+                                          {{VK_IMAGE_TYPE_2D,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           1260,
+                                           2720,
+                                           1,
+                                           1,
+                                           VK_IMAGE_TILING_OPTIMAL,
+                                           151,
+                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                           GrProtected::kNo},3}};
+}
 
 sk_sp<GrVkImage> GrVkImage::MakeStencil(GrVkGpu* gpu,
                                         SkISize dimensions,
@@ -457,7 +488,86 @@ void GrVkImage::setImageLayoutAndQueueIndex(const GrVkGpu* gpu,
     this->setQueueFamilyIndex(newQueueFamilyIndex);
 }
 
+GrVkImage::ImagePool& GrVkImage::ImagePool::getInstance() {
+    static GrVkImage::ImagePool imagePool;
+    return imagePool;
+}
+
+void GrVkImage::ImagePool::forSpecificImageQueue(const imageDesc& desc,
+                                                 std::function<void(DescSpecificQueue&)> action,
+                                                 bool createQueueWhenNotExist = false,
+                                                 int64_t cachePoolSize) {
+    std::lock_guard<std::mutex> guard(fQueuesLock);
+    for (auto& q : fQueues) {
+        if (q.fDesc == desc) {
+            action(q);
+            return;
+        }
+    }
+    if (createQueueWhenNotExist) {
+        fQueues.push_back({desc, cachePoolSize, {}});
+        DescSpecificQueue& back = fQueues.back();
+        action(back);
+    }
+}
+
+void GrVkImage::ImagePool::forEachImageQueue(std::function<bool(DescSpecificQueue&)> action) {
+    std::lock_guard<std::mutex> guard(fQueuesLock);
+    for (auto& q : fQueues) {
+        if (action(q)) {
+            break;
+        }
+    }
+}
+
+void GrVkImage::PreAllocateTextureBetweenFrames() {
+
+    for (auto& [imageDesc,cachePoolSize] : BAR_IMAGEDESC) {
+        ImagePool::getInstance().forSpecificImageQueue(
+                imageDesc,
+                [](ImagePool::DescSpecificQueue& q) {
+                    GrVkGpu* gpu = ImagePool::getInstance().getGpu();
+                    if (!gpu || q.fQueue.size() >= q.cachePoolSize) {
+                        return;
+                    }
+                    if (GrVkImageInfo info; InitImageInfoInner(gpu, q.fDesc, &info)) {
+                        q.fQueue.push_back({true, info});
+                        q.availabledCacheCount++;
+                    }
+                },
+                true,
+                cachePoolSize);
+    }
+}
+
 bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
+    ImagePool& imagePool = ImagePool::getInstance();
+    bool cacheHit = false;
+    imagePool.forSpecificImageQueue(imageDesc, [info, &cacheHit](ImagePool::DescSpecificQueue& q) {
+        for (auto& [available, cachedInfo] : q.fQueue) {
+            if (!available) {
+                continue;
+            }
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Hit pre-allocated image cache");
+#endif
+            available = false;
+            q.availabledCacheCount--;
+            *info = cachedInfo;
+            cacheHit = true;
+            break;
+        }
+    });
+    if (imagePool::getGpu() == nullptr) {
+        imagePool::setGpu(gpu);
+    }
+    if (cacheHit) {
+        return true;
+    }
+    return InitImageInfoInner(gpu, imageDesc, info);
+}
+
+bool GrVkImage::InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
     if (0 == imageDesc.fWidth || 0 == imageDesc.fHeight) {
         return false;
     }
@@ -591,6 +701,33 @@ void GrVkImage::setResourceRelease(sk_sp<GrRefCntedCallback> releaseHelper) {
 }
 
 void GrVkImage::Resource::freeGPUData() const {
+    bool cached = false;
+    ImagePool::getInstance().forEachImageQueue([this, &cached](ImagePool::DescSpecificQueue& q) {
+        for (auto it = q.fQueue.begin(); it != q.fQueue.end(); it++) {
+            auto& [available, cachedInfo] = *it;
+            if (!(cachedInfo.fImage == this.fImage && cachedInfo.fAlloc == this.fAlloc)) {
+                continue;
+            }
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Back pre-allocated image cache");
+#endif
+            if (q.availabledCacheCount < q.cachePoolSize) {
+                available = true;
+                cached = true;
+                q.availabledCacheCount++;
+                return true;
+            }
+            q.fQueue.erase(it);
+            return true;
+        }
+        return false;
+    });
+    if (cached) {
+        return;
+    }
+    freeGPUDataInner();
+}
+void GrVkImage::Resource::freeGPUDataInner() const {
     this->invokeReleaseProc();
     VK_CALL(fGpu, DestroyImage(fGpu->device(), fImage, nullptr));
     GrVkMemory::FreeImageMemory(fGpu, fAlloc);
