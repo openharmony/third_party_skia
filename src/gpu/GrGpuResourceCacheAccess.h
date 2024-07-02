@@ -43,6 +43,7 @@ private:
         fResource->release();
         if (!fResource->hasRef() && fResource->hasNoCommandBufferUsages()) {
             delete fResource;
+            fResource = nullptr;
         }
     }
 
