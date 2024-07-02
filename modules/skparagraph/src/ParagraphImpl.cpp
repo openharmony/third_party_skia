@@ -1090,9 +1090,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto clusterRange = ClusterRange(0, trailingSpaces);
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
 
-    TextAlign align = fParagraphStyle.effective_align();
-    SkScalar offsetX = (align == TextAlign::kLeft || align == TextAlign::kJustify) ?
-                       this->detectIndents(0) : 0.0f;
+    SkScalar offsetX = this->detectIndents(0);
     this->addLine(SkPoint::Make(offsetX, 0), advance,
                   textExcludingSpaces, textRange, textRange,
                   clusterRange, clusterRangeWithGhosts, run.advance().x(),
@@ -1138,7 +1136,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 fLongestLine = std::max(fLongestLine, std::max(line.width(), widthWithSpaces) + spacing);
             });
     setSize(textWrapper.height(), maxWidth, textWrapper.maxIntrinsicWidth());
-    setIntrinsicSize(textWrapper.maxIntrinsicWidth(), textWrapper.minIntrinsicWidth(), 
+    setIntrinsicSize(textWrapper.maxIntrinsicWidth(), textWrapper.minIntrinsicWidth(),
         fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
         fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
         textWrapper.exceededMaxLines());
@@ -1156,8 +1154,13 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
         return;
     }
 
+    size_t iLineNumber = 0;
     for (auto& line : fLines) {
-        line.format(effectiveAlign, maxWidth, this->paragraphStyle().getEllipsisMod());
+        SkScalar noIndentWidth = maxWidth - detectIndents(iLineNumber++);
+        if (fParagraphStyle.getTextDirection() == TextDirection::kRtl) {
+            line.setLineOffsetX(0);
+        }
+        line.format(effectiveAlign, noIndentWidth, this->paragraphStyle().getEllipsisMod());
     }
 }
 
