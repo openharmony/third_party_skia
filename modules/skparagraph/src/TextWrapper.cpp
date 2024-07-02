@@ -782,11 +782,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
             }
         }
 
-        SkScalar offsetX = 0.0f;
-        TextAlign align = parent->paragraphStyle().effective_align();
-        if (align == TextAlign::kLeft || align == TextAlign::kJustify) {
-            offsetX = parent->detectIndents(fLineNumber - 1);
-        }
+        SkScalar offsetX = parent->detectIndents(fLineNumber - 1);
         addLine(textExcludingSpaces,
                 text,
                 textIncludingNewlines, clusters, clustersWithGhosts, widthWithSpaces,
