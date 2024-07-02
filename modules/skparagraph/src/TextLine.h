@@ -98,7 +98,7 @@ public:
 
     using RunVisitor = std::function<bool(
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;
-    void iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& runVisitor) const;
+    void iterateThroughVisualRuns(bool includingEllipsis, bool includingGhostSpaces, const RunVisitor& runVisitor) const;
     using RunStyleVisitor = std::function<void(
             TextRange textRange, const TextStyle& style, const ClipContext& context)>;
     SkScalar iterateThroughSingleRunByStyles(TextAdjustment textAdjustment,
