@@ -34,26 +34,29 @@
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
 
 namespace {
-    const SkTArray<std::pair<GrVkImage::ImageDesc,int64_t>> BAR_IMAGEDESC = {{{VK_IMAGE_TYPE_2D,
-                                           VK_FORMAT_R8_UNORM,
-                                           66,
-                                           67,
-                                           1,
-                                           1,
-                                           VK_IMAGE_TILING_OPTIMAL,
-                                           7,
-                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                           GrProtected::kNo},3},
-                                          {{VK_IMAGE_TYPE_2D,
-                                           VK_FORMAT_R8G8B8A8_UNORM,
-                                           1260,
-                                           2720,
-                                           1,
-                                           1,
-                                           VK_IMAGE_TILING_OPTIMAL,
-                                           151,
-                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                           GrProtected::kNo},3}};
+const SkTArray<std::pair<GrVkImage::ImageDesc, int64_t>> BAR_IMAGEDESC = {
+        {{VK_IMAGE_TYPE_2D,
+          VK_FORMAT_R8_UNORM,
+          66,
+          67,
+          1,
+          1,
+          VK_IMAGE_TILING_OPTIMAL,
+          7,
+          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+          GrProtected::kNo},
+         3},
+        {{VK_IMAGE_TYPE_2D,
+          VK_FORMAT_R8G8B8A8_UNORM,
+          1260,
+          2720,
+          1,
+          1,
+          VK_IMAGE_TILING_OPTIMAL,
+          151,
+          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+          GrProtected::kNo},
+         3}};
 }
 
 sk_sp<GrVkImage> GrVkImage::MakeStencil(GrVkGpu* gpu,
@@ -531,8 +534,7 @@ void GrVkImage::ImagePool::forEachImageQueue(std::function<bool(DescSpecificQueu
 }
 
 void GrVkImage::PreAllocateTextureBetweenFrames() {
-
-    for (auto& [imageDesc,cachePoolSize] : BAR_IMAGEDESC) {
+    for (auto& [imageDesc, cachePoolSize] : BAR_IMAGEDESC) {
         ImagePool::getInstance().forSpecificImageQueue(
                 imageDesc,
                 [](ImagePool::DescSpecificQueue& q) {
