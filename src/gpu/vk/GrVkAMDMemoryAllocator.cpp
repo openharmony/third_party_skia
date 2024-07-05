@@ -12,6 +12,11 @@
 #include "src/gpu/vk/GrVkInterface.h"
 #include "src/gpu/vk/GrVkMemory.h"
 #include "src/gpu/vk/GrVkUtil.h"
+#include "src/core/SkUtils.h"
+
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#include "hitrace_meter.h"
+#endif
 
 #ifndef SK_USE_VMA
 sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
@@ -20,7 +25,9 @@ sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
                                                         uint32_t physicalDeviceVersion,
                                                         const GrVkExtensions* extensions,
                                                         sk_sp<const GrVkInterface> interface,
-                                                        const GrVkCaps* caps) {
+                                                        const GrVkCaps* caps,
+                                                        bool cacheFlag,
+                                                        size_t maxBlockCount) {
     return nullptr;
 }
 #else
@@ -31,7 +38,9 @@ sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
                                                         uint32_t physicalDeviceVersion,
                                                         const GrVkExtensions* extensions,
                                                         sk_sp<const GrVkInterface> interface,
-                                                        const GrVkCaps* caps) {
+                                                        const GrVkCaps* caps,
+                                                        bool cacheFlag,
+                                                        size_t maxBlockCount) {
 #define GR_COPY_FUNCTION(NAME) functions.vk##NAME = interface->fFunctions.f##NAME
 #define GR_COPY_FUNCTION_KHR(NAME) functions.vk##NAME##KHR = interface->fFunctions.f##NAME
 
@@ -73,7 +82,12 @@ sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
     // It seems to be a good compromise of not wasting unused allocated space and not making too
     // many small allocations. The AMD allocator will start making blocks at 1/8 the max size and
     // builds up block size as needed before capping at the max set here.
-    info.preferredLargeHeapBlockSize = 4*1024*1024;
+    if (cacheFlag) {
+        info.preferredLargeHeapBlockSize = SkGetVmaBlockSizeMB() * 1024 * 1024;
+    } else {
+        info.preferredLargeHeapBlockSize = 4 * 1024 * 1024;
+    }
+    info.maxBlockCount = maxBlockCount;
     info.pAllocationCallbacks = nullptr;
     info.pDeviceMemoryCallbacks = nullptr;
     info.frameInUseCount = 0;
@@ -235,6 +249,7 @@ void GrVkAMDMemoryAllocator::getAllocInfo(const GrVkBackendMemory& memoryHandle,
     alloc->fSize          = vmaInfo.size;
     alloc->fFlags         = flags;
     alloc->fBackendMemory = memoryHandle;
+    alloc->fAllocator     = (GrVkMemoryAllocator *)this;
 }
 
 VkResult GrVkAMDMemoryAllocator::mapMemory(const GrVkBackendMemory& memoryHandle, void** data) {
@@ -273,6 +288,74 @@ uint64_t GrVkAMDMemoryAllocator::totalAllocatedMemory() const {
     VmaStats stats;
     vmaCalculateStats(fAllocator, &stats);
     return stats.total.usedBytes + stats.total.unusedBytes;
+}
+
+void GrVkAMDMemoryAllocator::dumpVmaStats(SkString *out, const char *sep) const
+{
+    constexpr int MB = 1024 * 1024;
+    if (out == nullptr || sep == nullptr) {
+        return;
+    }
+    bool flag = SkGetMemoryOptimizedFlag();
+    out->appendf("vma_flag: %d %s", flag, sep);
+    if (!flag) {
+        return;
+    }
+    VmaStats stats;
+    vmaCalculateStats(fAllocator, &stats);
+    uint64_t free = stats.total.unusedBytes;
+    uint64_t used = stats.total.usedBytes;
+    uint64_t total = free + used;
+    auto maxBlockCount = SkGetVmaBlockCountMax();
+    out->appendf("vma_free: %llu (%d MB)%s", free, free / MB, sep);
+    out->appendf("vma_used: %llu (%d MB)%s", used, used / MB, sep);
+    out->appendf("vma_total: %llu (%d MB)%s", total, total / MB, sep);
+    out->appendf("vma_cacheBlockSize: %d MB%s", SkGetVmaBlockSizeMB(), sep);
+    out->appendf("vma_cacheBlockCount: %llu / %llu%s",
+        stats.total.blockCount <= maxBlockCount ? stats.total.blockCount : maxBlockCount, maxBlockCount, sep);
+    out->appendf("vma_dedicatedBlockCount: %llu%s",
+        stats.total.blockCount <= maxBlockCount ? 0 : stats.total.blockCount - maxBlockCount, sep);
+    out->appendf("vma_allocationCount: %u%s", stats.total.allocationCount, sep);
+    out->appendf("vma_unusedRangeCount: %u%s", stats.total.unusedRangeCount, sep);
+    out->appendf("vma_allocationSize: %llu / %llu / %llu%s",
+        stats.total.allocationSizeMin, stats.total.allocationSizeAvg, stats.total.allocationSizeMax, sep);
+    out->appendf("vma_unusedRangeSize: %llu / %llu / %llu%s",
+        stats.total.unusedRangeSizeMin, stats.total.unusedRangeSizeAvg, stats.total.unusedRangeSizeMax, sep);
+}
+
+void GrVkAMDMemoryAllocator::vmaDefragment()
+{
+    bool flag = SkGetVmaDefragmentOn();
+    if (!flag) {
+        return;
+    }
+    bool debugFlag = SkGetVmaDebugFlag();
+    if (!debugFlag) {
+        vmaFreeEmptyBlock(fAllocator);
+        return;
+    }
+
+    // dfx
+    SkString debugInfo;
+    dumpVmaStats(&debugInfo);
+    SkDebugf("GrVkAMDMemoryAllocator::vmaDefragment() before: %s",
+        debugInfo.c_str());
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "GrVkAMDMemoryAllocator::vmaDefragment() before: %s",
+        debugInfo.c_str());
+#endif
+
+    vmaFreeEmptyBlock(fAllocator);
+
+    // dfx
+    debugInfo = "";
+    dumpVmaStats(&debugInfo);
+    SkDebugf("GrVkAMDMemoryAllocator::vmaDefragment() after: %s",
+        debugInfo.c_str());
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "GrVkAMDMemoryAllocator::vmaDefragment() after: %s",
+        debugInfo.c_str());
+#endif
 }
 
 #endif // SK_USE_VMA

@@ -69,7 +69,8 @@ namespace GrVkMemory {
     bool AllocAndBindImageMemory(GrVkGpu* gpu,
                                  VkImage image,
                                  GrMemoryless,
-                                 GrVkAlloc* alloc);
+                                 GrVkAlloc* alloc,
+                                 int memorySize);
     void FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc);
 
     // Maps the entire GrVkAlloc and returns a pointer to the start of the allocation. Underneath

@@ -2354,6 +2354,7 @@ typedef struct VmaAllocatorCreateInfo
     Leaving it initialized to zero is equivalent to `VK_API_VERSION_1_0`.
     */
     uint32_t vulkanApiVersion;
+    size_t maxBlockCount = SIZE_MAX;
 } VmaAllocatorCreateInfo;
 
 /// Creates Allocator object.
@@ -2470,6 +2471,11 @@ become outdated.
 VMA_CALL_PRE void VMA_CALL_POST vmaCalculateStats(
     VmaAllocator VMA_NOT_NULL allocator,
     VmaStats* VMA_NOT_NULL pStats);
+
+/** \brief Free empty block of the Allocator.
+*/
+VMA_CALL_PRE void VMA_CALL_POST vmaFreeEmptyBlock(
+    VmaAllocator VMA_NOT_NULL allocator);
 
 /** \brief Statistics of current memory usage and available budget, in bytes, for specific memory heap.
 */
@@ -6876,6 +6882,8 @@ public:
     // Adds statistics of this BlockVector to pStats.
     void AddStats(VmaStats* pStats);
 
+    void FreeEmptyBlock();
+
 #if VMA_STATS_STRING_ENABLED
     void PrintDetailedMap(class VmaJsonWriter& json);
 #endif
@@ -7781,6 +7789,8 @@ public:
         VkDeviceSize newSize);
 
     void CalculateStats(VmaStats* pStats);
+
+    void FreeEmptyBlock();
 
     void GetBudget(
         VmaBudget* outBudget, uint32_t firstHeap, uint32_t heapCount);
@@ -13743,6 +13753,12 @@ void VmaBlockVector::AddStats(VmaStats* pStats)
     }
 }
 
+void VmaBlockVector::FreeEmptyBlock()
+{
+    VmaMutexLockWrite lock(m_Mutex, m_hAllocator->m_UseMutex);
+    FreeEmptyBlocks(VMA_NULL);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // VmaDefragmentationAlgorithm_Generic members definition
 
@@ -15608,7 +15624,7 @@ VmaAllocator_T::VmaAllocator_T(const VmaAllocatorCreateInfo* pCreateInfo) :
             memTypeIndex,
             preferredBlockSize,
             0,
-            SIZE_MAX,
+            pCreateInfo->maxBlockCount,
             GetBufferImageGranularity(),
             pCreateInfo->frameInUseCount,
             false, // explicitBlockSize
@@ -16532,6 +16548,15 @@ void VmaAllocator_T::CalculateStats(VmaStats* pStats)
         VmaPostprocessCalcStatInfo(pStats->memoryType[i]);
     for(size_t i = 0; i < GetMemoryHeapCount(); ++i)
         VmaPostprocessCalcStatInfo(pStats->memoryHeap[i]);
+}
+
+void VmaAllocator_T::FreeEmptyBlock()
+{
+    for (uint32_t memTypeIndex = 0; memTypeIndex < GetMemoryTypeCount(); ++memTypeIndex) {
+        VmaBlockVector* const pBlockVector = m_pBlockVectors[memTypeIndex];
+        VMA_ASSERT(pBlockVector);
+        pBlockVector->FreeEmptyBlock();
+    }
 }
 
 void VmaAllocator_T::GetBudget(VmaBudget* outBudget, uint32_t firstHeap, uint32_t heapCount)
@@ -17579,6 +17604,14 @@ VMA_CALL_PRE void VMA_CALL_POST vmaCalculateStats(
     VMA_ASSERT(allocator && pStats);
     VMA_DEBUG_GLOBAL_MUTEX_LOCK
     allocator->CalculateStats(pStats);
+}
+
+VMA_CALL_PRE void VMA_CALL_POST vmaFreeEmptyBlock(
+    VmaAllocator allocator)
+{
+    VMA_ASSERT(allocator);
+    VMA_DEBUG_GLOBAL_MUTEX_LOCK
+    allocator->FreeEmptyBlock();
 }
 
 VMA_CALL_PRE void VMA_CALL_POST vmaGetBudget(
