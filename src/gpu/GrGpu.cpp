@@ -485,9 +485,11 @@ bool GrGpu::writePixels(GrSurface* surface,
                         int mipLevelCount,
                         bool prepForTexSampling) {
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    float startTimestamp = static_cast<float>(
-            std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::steady_clock::now().time_since_epoch()).count());
+    if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
+        float startTimestamp = static_cast<float>(
+                std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count());
+    }
 #endif
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
     ATRACE_ANDROID_FRAMEWORK_ALWAYS("Texture upload(%u) %ix%i",
@@ -534,8 +536,8 @@ bool GrGpu::writePixels(GrSurface* surface,
             if (duration > TEXT_UPLOAD_TIME) {
                 HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "TEXT_UPLOAD_TIME = %d µs", duration);
             }
+        }
 #endif
-    } 
         return true;
     }
     return false;
