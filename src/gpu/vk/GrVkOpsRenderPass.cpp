@@ -886,7 +886,7 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlu
 {
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "DRAW_BLUR_IMAGE_TIME = %d", duration);
+        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "GrVkOpsRenderPass::onDrawBlurImage");
     }
 #endif
     if (!proxy) {

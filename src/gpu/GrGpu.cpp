@@ -484,9 +484,11 @@ bool GrGpu::writePixels(GrSurface* surface,
                         const GrMipLevel texels[],
                         int mipLevelCount,
                         bool prepForTexSampling) {
+    int startTimestamp = 0;
+    int endTimestamp = 0;
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
-        float startTimestamp = static_cast<float>(
+        startTimestamp = static_cast<int>(
                 std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count());
     }
@@ -529,10 +531,10 @@ bool GrGpu::writePixels(GrSurface* surface,
         fStats.incTextureUploads();
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
         if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
-            float endTimestamp = static_cast<float>(
+            endTimestamp = static_cast<int>(
                         std::chrono::duration_cast<std::chrono::microseconds>(
                         std::chrono::steady_clock::now().time_since_epoch()).count());
-            float duration = endTimestamp - startTimestamp;
+            int duration = endTimestamp - startTimestamp;
             if (duration > TEXT_UPLOAD_TIME) {
                 HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "TEXT_UPLOAD_TIME = %d µs", duration);
             }

@@ -19,9 +19,6 @@
 #include "src/image/SkImage_Base.h"
 #include "src/shaders/SkBitmapProcShader.h"
 
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
 
 #if SK_SUPPORT_GPU
 #include "include/gpu/GrDirectContext.h"
@@ -440,9 +437,6 @@ std::tuple<GrSurfaceProxyView, GrColorType> SkImage_Raster::onAsView(
         GrRecordingContext* rContext,
         GrMipmapped mipmapped,
         GrImageTexGenPolicy policy) const {
-    #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "SkImage_Raster::onAsView");
-    #endif
     if (fPinnedView) {
         // We ignore the mipmap request here. If the pinned view isn't mipmapped then we will
         // fallback to bilinear. The pin API is used by Android Framework which does not expose
