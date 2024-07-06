@@ -54,7 +54,6 @@ size_t FontCollection::FamilyKey::Hasher::operator()(const FontCollection::Famil
 
 FontCollection::FontCollection()
     : fEnableFontFallback(true),
-    fVarTypefaces(MAX_VARTYPEFACE_SIZE),
     fDefaultFamilyNames({SkString(DEFAULT_FONT_FAMILY)}) {}
 
 size_t FontCollection::getFontManagersCount() const { return this->getFontManagerOrder().size(); }
@@ -336,6 +335,47 @@ std::shared_ptr<RSTypeface> FontCollection::defaultFallback() {
 }
 #endif
 
+class SkLRUCacheMgr {
+public:
+    SkLRUCacheMgr(SkLRUCache<uint32_t, std::shared_ptr<RSTypeface>>& lruCache, SkMutex& mutex)
+        :fLRUCache(lruCache), fMutex(mutex)
+    {
+        fMutex.acquire();
+    }
+    SkLRUCacheMgr(const SkLRUCacheMgr&) = delete;
+    SkLRUCacheMgr(SkLRUCacheMgr&&) = delete;
+    SkLRUCacheMgr& operator=(const SkLRUCacheMgr&) = delete;
+    SkLRUCacheMgr& operator=(SkLRUCacheMgr&&) = delete;
+
+    ~SkLRUCacheMgr() {
+        fMutex.release();
+    }
+
+    std::shared_ptr<RSTypeface> find(uint32_t fontId) {
+        auto face = fLRUCache.find(fontId);
+        return face == nullptr ? nullptr : *face;
+    }
+
+    std::shared_ptr<RSTypeface> insert(uint32_t fontId, std::shared_ptr<RSTypeface> hbFont) {
+        auto face = fLRUCache.insert(fontId, std::move(hbFont));
+        return face == nullptr ? nullptr : *face;
+    }
+
+    void reset() {
+        fLRUCache.reset();
+    }
+
+private:
+    SkLRUCache<uint32_t, std::shared_ptr<RSTypeface>>& fLRUCache;
+    SkMutex& fMutex;
+};
+
+static SkLRUCacheMgr GetLRUCacheInstance() {
+    static SkMutex gFaceCacheMutex;
+    static SkLRUCache<uint32_t, std::shared_ptr<RSTypeface>> gFaceCache(MAX_VARTYPEFACE_SIZE);
+    return SkLRUCacheMgr(gFaceCache, gFaceCacheMutex);
+}
+
 #ifndef USE_SKIA_TXT
 sk_sp<SkTypeface> FontCollection::CloneTypeface(sk_sp<SkTypeface> typeface,
     const std::optional<FontArguments>& fontArgs)
@@ -361,16 +401,15 @@ std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSType
 #endif
 
     std::unique_lock<std::mutex> lock(fMutex);
-    const auto& cached = fVarTypefaces.find(hash);
+    auto cached = GetLRUCacheInstance().find(hash);
     if (cached) {
-        return *cached;
+        return cached;
     } else {
         auto varTypeface = fontArgs->CloneTypeface(typeface);
         if (!varTypeface) {
             return typeface;
         }
-
-        fVarTypefaces.insert(hash, varTypeface);
+        GetLRUCacheInstance().insert(hash, varTypeface);
         return varTypeface;
     }
 }
@@ -381,7 +420,6 @@ void FontCollection::enableFontFallback() { fEnableFontFallback = true; }
 
 void FontCollection::clearCaches() {
     std::unique_lock<std::mutex> lock(fMutex);
-    fVarTypefaces.reset();
     fParagraphCache.reset();
 #ifndef USE_SKIA_TXT
     fTypefaces.reset();

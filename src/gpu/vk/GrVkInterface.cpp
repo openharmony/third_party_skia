@@ -17,11 +17,6 @@
     fFunctions.f##name =                                    \
             reinterpret_cast<PFN_vk##name##suffix>(getProc("vk" #name #suffix, instance, device))
 
-#ifdef SKIA_USE_XEG
-#define ACQUIRE_PROC_XEG(name, instance, device) \
-    fFunctions.f##name =  reinterpret_cast<PFN_##name>(getProc("" #name, instance, device))
-#endif
-
 GrVkInterface::GrVkInterface(GrVkGetProc getProc,
                              VkInstance instance,
                              VkDevice device,
@@ -246,7 +241,7 @@ GrVkInterface::GrVkInterface(GrVkGetProc getProc,
     }
 
 #ifdef SKIA_USE_XEG
-    ACQUIRE_PROC_XEG(HMS_XEG_GetPerFrameLoad, VK_NULL_HANDLE, device);
+    ACQUIRE_PROC(GetPerFrameLoad, VK_NULL_HANDLE, device);
 #endif
 
 #ifdef SK_BUILD_FOR_ANDROID

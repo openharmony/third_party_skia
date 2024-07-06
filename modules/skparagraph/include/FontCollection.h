@@ -117,14 +117,12 @@ private:
     bool fEnableFontFallback;
 #ifndef USE_SKIA_TXT
     SkTHashMap<FamilyKey, std::vector<sk_sp<SkTypeface>>, FamilyKey::Hasher> fTypefaces;
-    SkLRUCache<uint32_t, sk_sp<SkTypeface>> fVarTypefaces;
     sk_sp<SkFontMgr> fDefaultFontManager;
     sk_sp<SkFontMgr> fAssetFontManager;
     sk_sp<SkFontMgr> fDynamicFontManager;
     sk_sp<SkFontMgr> fTestFontManager;
 #else
     std::unordered_map<FamilyKey, std::vector<std::shared_ptr<RSTypeface>>, FamilyKey::Hasher> fTypefaces;
-    SkLRUCache<uint32_t, std::shared_ptr<RSTypeface>> fVarTypefaces;
     std::shared_ptr<RSFontMgr> fDefaultFontManager;
     std::shared_ptr<RSFontMgr> fAssetFontManager;
     std::shared_ptr<RSFontMgr> fDynamicFontManager;

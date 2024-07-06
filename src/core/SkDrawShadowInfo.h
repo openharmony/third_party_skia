@@ -101,7 +101,7 @@ inline void GetDirectionalParams(SkScalar occluderZ, SkScalar lightX, SkScalar l
 bool GetSpotShadowTransform(const SkPoint3& lightPos, SkScalar lightRadius,
                             const SkMatrix& ctm, const SkPoint3& zPlaneParams,
                             const SkRect& pathBounds, bool directional,
-                            SkMatrix* shadowTransform, SkScalar* radius);
+                            SkMatrix* shadowTransform, SkScalar* radius, bool isLimitElevation = false);
 
 // get bounds prior to the ctm being applied
 void GetLocalBounds(const SkPath&, const SkDrawShadowRec&, const SkMatrix& ctm, SkRect* bounds);

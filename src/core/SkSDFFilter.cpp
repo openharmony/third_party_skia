@@ -31,19 +31,36 @@ bool isSDFBlur(const GrStyledShape& shape)
     return true;
 }
 
+void GetSDFBlurScaleFactor(const SkRRect srcRRect, SkScalar& sx, SkScalar& sy)
+{
+    constexpr float minScaleFactor = 1.f;
+    constexpr float maxScaleFactor = 3.f;
+    constexpr float sizeThreshold = 500.f;
+    int srcRRectW = srcRRect.rect().width();
+    int srcRRectH = srcRRect.rect().height();
+    // When the input size is greater than the threshold, it needs to be scaled. scale factor will be clamped in [1.0, 3.0].
+    int scaleX = std::max(minScaleFactor, std::min(std::ceil(srcRRectW / sizeThreshold), maxScaleFactor));
+    int scaleY = std::max(minScaleFactor, std::min(std::ceil(srcRRectH / sizeThreshold), maxScaleFactor));
+    sx = SK_Scalar1 / scaleX;
+    sy = SK_Scalar1 / scaleY;
+}
+
 bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
-    const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter)
+    const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter,
+    const SkScalar sx, const SkScalar sy)
 {
     float noxFormedSigma3 = maskFilter->getNoxFormedSigma3();
     mask.concatSwizzle(GrSwizzle("aaaa"));
 
     SkMatrix matrixTrans =
             SkMatrix::Translate(-SkIntToScalar(noxFormedSigma3), -SkIntToScalar(noxFormedSigma3));
+    SkMatrix matrixInverseScale =SkMatrix::Scale(1 / sx, 1 / sy);
     SkMatrix matrix;
     matrix.preConcat(viewMatrix);
     matrix.preConcat(matrixTrans);
+    matrix.preConcat(matrixInverseScale);
     // add dither effect to reduce color discontinuity
-    constexpr float ditherRange = 1.0 / 255.0;
+    constexpr float ditherRange = 1.f / 255.f;
     auto inputFp = GrTextureEffect::Make(std::move(mask), kUnknown_SkAlphaType);
     SkPMColor4f origColor = paint.getColor4f();
 
@@ -95,7 +112,10 @@ static std::unique_ptr<skgpu::v1::SurfaceDrawContext> sdf_2d(GrRecordingContext*
     paint.setColorFragmentProcessor(std::move(sdfFp));
     paint.setPorterDuffXPFactory(SkBlendMode::kSrc);
 
-    sdc->drawPaint(nullptr, std::move(paint), SkMatrix::I());
+    SkScalar sx = 1.f;
+    SkScalar sy = 1.f;
+    SDFBlur::GetSDFBlurScaleFactor(srcRRect, sx, sy);
+    sdc->drawPaint(nullptr, std::move(paint), SkMatrix::I().Scale(sx, sy));
 
     return sdc;
 }

@@ -223,7 +223,7 @@ public:
         VkPtr<PFN_vkDestroySamplerYcbcrConversion> fDestroySamplerYcbcrConversion;
 
 #ifdef SKIA_USE_XEG
-        VkPtr<PFN_HMS_XEG_GetPerFrameLoad> fHMS_XEG_GetPerFrameLoad;
+        VkPtr<PFN_vkGetPerFrameLoad> fGetPerFrameLoad;
 #endif
 
 #ifdef SK_BUILD_FOR_ANDROID

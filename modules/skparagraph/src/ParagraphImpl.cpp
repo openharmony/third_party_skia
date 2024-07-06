@@ -459,6 +459,7 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 void ParagraphImpl::layout(SkScalar rawWidth) {
     fLineNumber = 1;
     allTextWidth = 0;
+    fLayoutRawWidth = rawWidth;
     // TODO: This rounding is done to match Flutter tests. Must be removed...
     auto floorWidth = rawWidth;
 
@@ -491,9 +492,11 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 
     this->prepareForMiddleEllipsis(rawWidth);
     this->fUnicodeText = convertUtf8ToUnicode(fText);
+    auto paragraphCache = fFontCollection->getParagraphCache();
+
     if (fState < kShaped) {
         // Check if we have the text in the cache and don't need to shape it again
-        if (!fFontCollection->getParagraphCache()->findParagraph(this)) {
+        if (!paragraphCache->findParagraph(this)) {
             if (fState < kIndexed) {
                 // This only happens once at the first layout; the text is immutable
                 // and there is no reason to repeat it
@@ -533,7 +536,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
                 return;
             } else {
                 // Add the paragraph to the cache
-                fFontCollection->getParagraphCache()->updateParagraph(this);
+                paragraphCache->updateParagraph(this);
             }
         }
         fState = kShaped;
@@ -544,7 +547,18 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->resolveStrut();
         this->computeEmptyMetrics();
         this->fLines.reset();
-        this->breakShapedTextIntoLines(floorWidth);
+
+        // fast path
+        if (!fHasLineBreaks &&
+            !fHasWhitespacesInside &&
+            fPlaceholders.size() == 1 &&
+            (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= floorWidth - this->detectIndents(0))) {
+            positionShapedTextIntoLine(floorWidth);
+        } else if (!paragraphCache->GetStoredLayout(*this)) {
+            breakShapedTextIntoLines(floorWidth);
+            // text breaking did not go to fast path and we did not have cached layout
+            paragraphCache->SetStoredLayout(*this);
+        }
         fState = kLineBroken;
     }
 
@@ -1031,74 +1045,69 @@ SkScalar ParagraphImpl::detectIndents(size_t index)
     return indent;
 }
 
+void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
+    resetAutoSpacing();
+    // This is a short version of a line breaking when we know that:
+    // 1. We have only one line of text
+    // 2. It's shaped into a single run
+    // 3. There are no placeholders
+    // 4. There are no linebreaks (which will format text into multiple lines)
+    // 5. There are no whitespaces so the minIntrinsicWidth=maxIntrinsicWidth
+    // (To think about that, the last condition is not quite right;
+    // we should calculate minIntrinsicWidth by soft line breaks.
+    // However, it's how it's done in Flutter now)
+    auto& run = this->fRuns[0];
+    auto advance = run.advance();
+    auto textRange = TextRange(0, this->text().size());
+    auto textExcludingSpaces = TextRange(0, fTrailingSpaces);
+    InternalLineMetrics metrics(this->strutForceHeight());
+    metrics.add(&run);
+    auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() &
+                              TextHeightBehavior::kDisableFirstAscent;
+    auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() &
+                              TextHeightBehavior::kDisableLastDescent;
+    if (disableFirstAscent) {
+        metrics.fAscent = metrics.fRawAscent;
+    }
+    if (disableLastDescent) {
+        metrics.fDescent = metrics.fRawDescent;
+    }
+    if (this->strutEnabled()) {
+        this->strutMetrics().updateLineMetrics(metrics);
+    }
+    ClusterIndex trailingSpaces = fClusters.size();
+    do {
+        --trailingSpaces;
+        auto& cluster = fClusters[trailingSpaces];
+        if (!cluster.isWhitespaceBreak()) {
+            ++trailingSpaces;
+            break;
+        }
+        advance.fX -= cluster.width();
+    } while (trailingSpaces != 0);
+
+    advance.fY = metrics.height();
+    auto clusterRange = ClusterRange(0, trailingSpaces);
+    auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
+
+    SkScalar offsetX = this->detectIndents(0);
+    this->addLine(SkPoint::Make(offsetX, 0), advance,
+                  textExcludingSpaces, textRange, textRange,
+                  clusterRange, clusterRangeWithGhosts, run.advance().x(),
+                  metrics);
+
+    setSize(advance.fY, maxWidth, std::max(run.advance().fX, advance.fX));
+            setIntrinsicSize(run.advance().fX, advance.fX,
+            fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
+            fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
+            false);
+}
+
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     resetAutoSpacing();
-    if (!fHasLineBreaks &&
-        !fHasWhitespacesInside &&
-        fPlaceholders.size() == 1 &&
-        fRuns.size() == 1 && fRuns[0].fAdvance.fX <= maxWidth - (this->detectIndents(0))) {
-        // This is a short version of a line breaking when we know that:
-        // 1. We have only one line of text
-        // 2. It's shaped into a single run
-        // 3. There are no placeholders
-        // 4. There are no linebreaks (which will format text into multiple lines)
-        // 5. There are no whitespaces so the minIntrinsicWidth=maxIntrinsicWidth
-        // (To think about that, the last condition is not quite right;
-        // we should calculate minIntrinsicWidth by soft line breaks.
-        // However, it's how it's done in Flutter now)
-        auto& run = this->fRuns[0];
-        auto advance = run.advance();
-        auto textRange = TextRange(0, this->text().size());
-        auto textExcludingSpaces = TextRange(0, fTrailingSpaces);
-        InternalLineMetrics metrics(this->strutForceHeight());
-        metrics.add(&run);
-        auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() &
-                                  TextHeightBehavior::kDisableFirstAscent;
-        auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() &
-                                  TextHeightBehavior::kDisableLastDescent;
-        if (disableFirstAscent) {
-            metrics.fAscent = metrics.fRawAscent;
-        }
-        if (disableLastDescent) {
-            metrics.fDescent = metrics.fRawDescent;
-        }
-        if (this->strutEnabled()) {
-            this->strutMetrics().updateLineMetrics(metrics);
-        }
-        ClusterIndex trailingSpaces = fClusters.size();
-        do {
-            --trailingSpaces;
-            auto& cluster = fClusters[trailingSpaces];
-            if (!cluster.isWhitespaceBreak()) {
-                ++trailingSpaces;
-                break;
-            }
-            advance.fX -= cluster.width();
-        } while (trailingSpaces != 0);
-
-        advance.fY = metrics.height();
-        auto clusterRange = ClusterRange(0, trailingSpaces);
-        auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
-
-        TextAlign align = fParagraphStyle.effective_align();
-        SkScalar offsetX = (align == TextAlign::kLeft || align == TextAlign::kJustify) ?
-            this->detectIndents(0) : 0.0f;
-        auto& line = this->addLine(SkPoint::Make(offsetX, 0), advance,
-                      textExcludingSpaces, textRange, textRange,
-                      clusterRange, clusterRangeWithGhosts, run.advance().x(),
-                      metrics);
-        auto spacing = line.autoSpacing();
-        fLongestLine = std::max(run.advance().fX, advance.fX) + spacing;
-        fHeight = advance.fY;
-        fWidth = maxWidth;
-        fMaxIntrinsicWidth = run.advance().fX;
-        fMinIntrinsicWidth = advance.fX;
-        fAlphabeticBaseline = fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline();
-        fIdeographicBaseline = fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline();
-        fExceededMaxLines = false;
-        return;
+    for (auto& run : fRuns) {
+        run.resetAutoSpacing();
     }
-
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
             this,
@@ -1124,16 +1133,13 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
                 auto spacing = line.autoSpacing();
-                fLongestLine = std::max(fLongestLine, std::max(advance.fX, widthWithSpaces) + spacing);
+                fLongestLine = std::max(fLongestLine, std::max(line.width(), widthWithSpaces) + spacing);
             });
-
-    fHeight = textWrapper.height();
-    fWidth = maxWidth;
-    fMaxIntrinsicWidth = textWrapper.maxIntrinsicWidth();
-    fMinIntrinsicWidth = textWrapper.minIntrinsicWidth();
-    fAlphabeticBaseline = fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline();
-    fIdeographicBaseline = fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline();
-    fExceededMaxLines = textWrapper.exceededMaxLines();
+    setSize(textWrapper.height(), maxWidth, textWrapper.maxIntrinsicWidth());
+    setIntrinsicSize(textWrapper.maxIntrinsicWidth(), textWrapper.minIntrinsicWidth(),
+        fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
+        fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
+        textWrapper.exceededMaxLines());
 }
 
 void ParagraphImpl::formatLines(SkScalar maxWidth) {
@@ -1148,8 +1154,13 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
         return;
     }
 
+    size_t iLineNumber = 0;
     for (auto& line : fLines) {
-        line.format(effectiveAlign, maxWidth, this->paragraphStyle().getEllipsisMod());
+        SkScalar noIndentWidth = maxWidth - detectIndents(iLineNumber++);
+        if (fParagraphStyle.getTextDirection() == TextDirection::kRtl) {
+            line.setLineOffsetX(0);
+        }
+        line.format(effectiveAlign, noIndentWidth, this->paragraphStyle().getEllipsisMod());
     }
 }
 

@@ -218,7 +218,7 @@ void TextLine::paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOf
 void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     prepareRoundRect();
     fIsArcText = false;
-    this->iterateThroughVisualRuns(true,
+    this->iterateThroughVisualRuns(true, true,
         [painter, x, y, this]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -233,7 +233,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
         });
 
     if (fHasShadows) {
-        this->iterateThroughVisualRuns(false,
+        this->iterateThroughVisualRuns(true, false,
             [painter, x, y, this]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -253,19 +253,22 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 
     if (fHasDecorations) {
-        this->iterateThroughVisualRuns(true,
+        maxThickness = 0.0f;
+        this->iterateThroughVisualRuns(false, true,
             [painter, x, y, this]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
                 *runWidthInLine = this->iterateThroughSingleRunByStyles(
                     TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kDecorations,
                     [painter, x, y, this]
                     (TextRange textRange, const TextStyle& style, const ClipContext& context) {
-                    SkScalar tmpThick = this->calculateThickness(style, context);
-                    maxThickness = maxThickness > tmpThick ? maxThickness : tmpThick;
+                    if (style.getDecoration().fType == TextDecoration::kUnderline) {
+                        SkScalar tmpThick = this->calculateThickness(style, context);
+                        maxThickness = maxThickness > tmpThick ? maxThickness : tmpThick;
+                    }
                 });
                 return true;
         });
-        this->iterateThroughVisualRuns(true,
+        this->iterateThroughVisualRuns(false, true,
             [painter, x, y, this]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
                 *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -341,7 +344,7 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
 
 void TextLine::prepareRoundRect() {
     roundRectAttrs.clear();
-    this->iterateThroughVisualRuns(true,
+    this->iterateThroughVisualRuns(true, true,
         [this](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
             TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
@@ -400,7 +403,7 @@ void TextLine::ensureTextBlobCachePopulated() {
                                /*clippingNeeded=*/false};                   // no need for that
         this->buildTextBlob(fTextExcludingSpaces, style, context);
     } else {
-        this->iterateThroughVisualRuns(false,
+        this->iterateThroughVisualRuns(true, false,
            [this](const Run* run,
                   SkScalar runOffsetInLine,
                   TextRange textRange,
@@ -427,10 +430,7 @@ void TextLine::ensureTextBlobCachePopulated() {
 }
 
 void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal) {
-    SkScalar delta = maxWidth - this->fWidthWithSpaces;
-    if (ellipsisModal == EllipsisModal::HEAD && fEllipsis) {
-        delta += fEllipsis->advance().fX;
-    }
+    SkScalar delta = maxWidth - this->widthWithEllipsisSpaces();
     if (delta <= 0) {
         return;
     }
@@ -497,8 +497,7 @@ void TextLine::scanStyles(StyleType styleType, const RunStyleVisitor& visitor) {
         return;
     }
 
-    this->iterateThroughVisualRuns(
-            false,
+    this->iterateThroughVisualRuns(true, false,
             [this, visitor, styleType](
                     const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width) {
                 *width = this->iterateThroughSingleRunByStyles(
@@ -957,6 +956,8 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         break;
     }
 
+    fWidthWithSpaces = width;
+
     ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
 
@@ -996,6 +997,8 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         fTextExcludingSpaces.start = cluster.textRange().start;
         break;
     }
+
+    fWidthWithSpaces = width;
 
     ellipsisNotFitProcess(EllipsisModal::HEAD);
 }
@@ -1427,7 +1430,7 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
     return textOffsetInRun;
 }
 
-void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& visitor) const {
+void TextLine::iterateThroughVisualRuns(bool includingEllipsis, bool includingGhostSpaces, const RunVisitor& visitor) const {
 
     // Walk through all the runs that intersect with the line in visual order
     SkScalar width = 0;
@@ -1441,13 +1444,19 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
         this->ellipsis() != nullptr && !ellipsisModeIsHead) {
         isAlreadyUseEllipsis = true;
         runOffset = this->ellipsis()->offset().fX;
-        if (visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &width)) {
+        if (includingEllipsis) {
+            visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &width);
+        }else {
+            width = this->ellipsis()->advance().fX;
         }
     } else if (ellipsisModeIsHead && this->ellipsis() != nullptr &&
         fOwner->paragraphStyle().getTextDirection() == TextDirection::kLtr) {
         isAlreadyUseEllipsis = true;
         runOffset = this->ellipsis()->offset().fX;
-        if (visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &width)) {
+        if (includingEllipsis) {
+            visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &width);
+        }else {
+            width = this->ellipsis()->advance().fX;
         }
     }
 
@@ -1481,9 +1490,12 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
     totalWidth += width;
 
     if (this->ellipsis() != nullptr && !isAlreadyUseEllipsis) {
-        if (visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &width)) {
-            totalWidth += width;
+        if (includingEllipsis) {
+            visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &width);
+        }else {
+            width = this->ellipsis()->advance().fX;
         }
+        totalWidth += width;
     }
 
     if (!includingGhostSpaces && compareRound(totalWidth, this->width(), fOwner->getApplyRoundingHack()) != 0) {
@@ -1525,7 +1537,7 @@ LineMetrics TextLine::getMetrics() const {
     result.fTopHeight = this->offset().fY;
 
     // Fill out the style parts
-    this->iterateThroughVisualRuns(false,
+    this->iterateThroughVisualRuns(true, false,
         [this, &result]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
         if (run->placeholderStyle() != nullptr) {
@@ -1574,7 +1586,7 @@ void TextLine::getRectsForRange(TextRange textRange0,
 {
     const Run* lastRun = nullptr;
     auto startBox = boxes.size();
-    this->iterateThroughVisualRuns(true,
+    this->iterateThroughVisualRuns(true, true,
         [textRange0, rectHeightStyle, rectWidthStyle, &boxes, &lastRun, startBox, this]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
         *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -1786,7 +1798,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
     }
 
     PositionWithAffinity result(0, Affinity::kDownstream);
-    this->iterateThroughVisualRuns(true,
+    this->iterateThroughVisualRuns(true, true,
         [this, dx, &result]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             bool keepLooking = true;
@@ -1906,8 +1918,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
 }
 
 void TextLine::getRectsForPlaceholders(std::vector<TextBox>& boxes) {
-    this->iterateThroughVisualRuns(
-        true,
+    this->iterateThroughVisualRuns(true, true,
         [&boxes, this](const Run* run, SkScalar runOffset, TextRange textRange,
                         SkScalar* width) {
                 auto context = this->measureTextInsideOneRun(

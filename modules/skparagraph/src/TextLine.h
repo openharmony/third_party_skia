@@ -87,7 +87,13 @@ public:
         return fAdvance.fX + (fEllipsis != nullptr ? fEllipsis->fAdvance.fX : 0);
     }
     SkScalar widthWithoutEllipsis() const { return fAdvance.fX; }
+    SkScalar widthWithEllipsisSpaces() const {
+        return fWidthWithSpaces + (fEllipsis != nullptr ? fEllipsis->fAdvance.fX : 0);
+    }
     SkVector offset() const;
+    void setLineOffsetX(SkScalar x) {
+        fOffset.set(x, fOffset.y());
+    }
 
     SkScalar alphabeticBaseline() const { return fSizes.alphabeticBaseline(); }
     SkScalar ideographicBaseline() const { return fSizes.ideographicBaseline(); }
@@ -95,7 +101,7 @@ public:
 
     using RunVisitor = std::function<bool(
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;
-    void iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& runVisitor) const;
+    void iterateThroughVisualRuns(bool includingEllipsis, bool includingGhostSpaces, const RunVisitor& runVisitor) const;
     using RunStyleVisitor = std::function<void(
             TextRange textRange, const TextStyle& style, const ClipContext& context)>;
     SkScalar iterateThroughSingleRunByStyles(TextAdjustment textAdjustment,

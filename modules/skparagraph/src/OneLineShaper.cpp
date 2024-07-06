@@ -677,11 +677,13 @@ bool OneLineShaper::shape() {
                 font.setEdging(SkFont::Edging::kAntiAlias);
                 font.setHinting(SkFontHinting::kNone);
                 font.setSubpixel(true);
+                font.setBaselineSnap(false);
 #else
                 RSFont font(std::move(typeface), block.fStyle.getFontSize(), 1, 0);
                 font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
                 font.SetHinting(RSDrawing::FontHinting::NONE);
                 font.SetSubpixel(true);
+                font.SetBaselineSnap(false);
 #endif
 
                 // Apply fake bold and/or italic settings to the font if the
