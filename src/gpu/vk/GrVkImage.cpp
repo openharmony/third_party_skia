@@ -539,7 +539,7 @@ void GrVkImage::PreAllocateTextureBetweenFrames() {
                 imageDesc,
                 [](ImagePool::DescSpecificQueue& q) {
                     GrVkGpu* gpu = ImagePool::getInstance().getGpu();
-                    if (!gpu || q.fQueue.size() >= q.cachePoolSize) {
+                    if (!gpu || q.availabledCacheCount() >= q.cachePoolSize) {
                         return;
                     }
                     if (GrVkImageInfo info; InitImageInfoInner(gpu, q.fDesc, &info)) {
