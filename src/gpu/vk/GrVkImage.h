@@ -227,8 +227,8 @@ public:
             std::vector<std::pair<bool, GrVkImageInfo>> fQueue;
             uint64_t availabledCacheCount = 0;
         };
-        void forSpecificImageQueue(const ImageDesc& desc,
-                                   std::function<void(DescSpecificQueue&)> action,
+        bool forSpecificImageQueue(const ImageDesc& desc,
+                                   std::function<bool(DescSpecificQueue&)> action,
                                    bool createQueueWhenNotExist = false,
                                    int64_t cachePoolSize = 3);
         void forEachImageQueue(std::function<bool(DescSpecificQueue&)> action);
