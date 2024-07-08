@@ -484,11 +484,10 @@ bool GrGpu::writePixels(GrSurface* surface,
                         const GrMipLevel texels[],
                         int mipLevelCount,
                         bool prepForTexSampling) {
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
     int startTimestamp = 0;
     int endTimestamp = 0;
-    bool isTagEnabled = false;
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    isTagEnabled = IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP);
+    bool isTagEnabled = IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP);
     if (isTagEnabled) {
         startTimestamp = static_cast<int>(
                 std::chrono::duration_cast<std::chrono::microseconds>(
