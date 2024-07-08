@@ -538,7 +538,7 @@ bool GrGpu::writePixels(GrSurface* surface,
             int duration = endTimestamp - startTimestamp;
             if (duration > TEXT_UPLOAD_TIME) {
                 HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "TEXT_UPLOAD_TIME = %d µs, Texture upload(%u) %ix%i",
-                        duration, surface->uniqueID().asUInt(), rect.width(). rect.height());
+                        duration, surface->uniqueID().asUInt(), rect.width(), rect.height());
             }
         }
 #endif
