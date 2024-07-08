@@ -29,6 +29,9 @@
 #include "src/gpu/vk/GrVkResourceProvider.h"
 #include "src/gpu/vk/GrVkSemaphore.h"
 #include "src/gpu/vk/GrVkTexture.h"
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#include "hitrace_meter.h"
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -897,6 +900,9 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlu
     auto ownership = GrWrapOwnership::kBorrow_GrWrapOwnership;
     auto cacheable = GrWrapCacheable::kNo;
     auto blurImage = GrVkImage::MakeWrapped(fGpu, size, imageInfo, nullptr, usageFlag, ownership, cacheable, false);
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, "DrawBlurImage");
+#endif
     fGpu->currentCommandBuffer()->drawBlurImage(fGpu, blurImage.get(), fFramebuffer->colorAttachment()->dimensions(),
                                                 fOrigin, blurArg);
     return;
