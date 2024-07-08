@@ -901,7 +901,7 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlu
     auto cacheable = GrWrapCacheable::kNo;
     auto blurImage = GrVkImage::MakeWrapped(fGpu, size, imageInfo, nullptr, usageFlag, ownership, cacheable, false);
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-        HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, "DrawBlurImage");
+    HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, "DrawBlurImage");
 #endif
     fGpu->currentCommandBuffer()->drawBlurImage(fGpu, blurImage.get(), fFramebuffer->colorAttachment()->dimensions(),
                                                 fOrigin, blurArg);
