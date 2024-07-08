@@ -45,7 +45,7 @@ const SkTArray<std::pair<GrVkImage::ImageDesc, int64_t>> BAR_IMAGEDESC = {
           7,
           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
           GrProtected::kNo},
-         3},
+         2},
         {{VK_IMAGE_TYPE_2D,
           VK_FORMAT_R8G8B8A8_UNORM,
           1260,
@@ -56,7 +56,7 @@ const SkTArray<std::pair<GrVkImage::ImageDesc, int64_t>> BAR_IMAGEDESC = {
           151,
           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
           GrProtected::kNo},
-         3}};
+         2}};
 }
 
 sk_sp<GrVkImage> GrVkImage::MakeStencil(GrVkGpu* gpu,
@@ -506,22 +506,22 @@ GrVkImage::ImagePool& GrVkImage::ImagePool::getInstance() {
     return imagePool;
 }
 
-void GrVkImage::ImagePool::forSpecificImageQueue(const ImageDesc& desc,
-                                                 std::function<void(DescSpecificQueue&)> action,
+bool GrVkImage::ImagePool::forSpecificImageQueue(const ImageDesc& desc,
+                                                 std::function<bool(DescSpecificQueue&)> action,
                                                  bool createQueueWhenNotExist,
                                                  int64_t cachePoolSize) {
     std::lock_guard<std::mutex> guard(fQueuesLock);
     for (auto& q : fQueues) {
         if (q.fDesc == desc) {
-            action(q);
-            return;
+            return action(q);
         }
     }
     if (createQueueWhenNotExist) {
         fQueues.push_back({desc, cachePoolSize, {}});
         DescSpecificQueue& back = fQueues.back();
-        action(back);
+        return action(back);
     }
+    return false;
 }
 
 void GrVkImage::ImagePool::forEachImageQueue(std::function<bool(DescSpecificQueue&)> action) {
@@ -535,20 +535,25 @@ void GrVkImage::ImagePool::forEachImageQueue(std::function<bool(DescSpecificQueu
 
 void GrVkImage::PreAllocateTextureBetweenFrames() {
     for (auto& [imageDesc, cachePoolSize] : BAR_IMAGEDESC) {
-        ImagePool::getInstance().forSpecificImageQueue(
+        isAllocated = ImagePool::getInstance().forSpecificImageQueue(
                 imageDesc,
                 [](ImagePool::DescSpecificQueue& q) {
                     GrVkGpu* gpu = ImagePool::getInstance().getGpu();
                     if (!gpu || q.availabledCacheCount() >= q.cachePoolSize) {
-                        return;
+                        return false;
                     }
                     if (GrVkImageInfo info; InitImageInfoInner(gpu, q.fDesc, &info)) {
                         q.fQueue.push_back({true, info});
                         q.availabledCacheCount++;
+                        return true;
                     }
+                    return false
                 },
                 true,
                 cachePoolSize);
+        if (isAllocated) {
+            return;
+        }
     }
 }
 
@@ -567,8 +572,9 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
             q.availabledCacheCount--;
             *info = cachedInfo;
             cacheHit = true;
-            break;
+            return true;
         }
+        return false
     });
     if (imagePool.getGpu() == nullptr) {
         imagePool.setGpu(gpu);
