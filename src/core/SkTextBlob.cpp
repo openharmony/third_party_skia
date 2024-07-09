@@ -1044,6 +1044,9 @@ bool SkTextBlob::Iter::experimentalNext(ExperimentalRun* rec) {
 
 void GetGlyphIDforTextBlob(const SkTextBlob* blob, std::vector<SkGlyphID>& glyphIds)
 {
+    if (blob == nullptr) {
+        return;
+    }
     SkTextBlobRunIterator it(blob);
     if (!it.done()) {
         size_t runSize = it.glyphCount();
@@ -1057,6 +1060,9 @@ void GetGlyphIDforTextBlob(const SkTextBlob* blob, std::vector<SkGlyphID>& glyph
 SkPath GetPathforTextBlob(const SkGlyphID& glyphId, const SkTextBlob* blob)
 {
     SkPath path;
+    if (blob == nullptr) {
+        return path;
+    }
     SkTextBlobRunIterator it(blob);
     if (!it.done()) {
         SkFont font = it.font();
