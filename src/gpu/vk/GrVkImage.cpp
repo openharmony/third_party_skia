@@ -534,6 +534,10 @@ void GrVkImage::ImagePool::forEachImageQueue(std::function<bool(DescSpecificQueu
 }
 
 void GrVkImage::PreAllocateTextureBetweenFrames() {
+    static bool isFoldScreenFlag = system::GetParameter("const.window.foldscreen.type", "") != "";
+    if (isFoldScreenFlag) {
+        return;
+    }
     for (auto& [imageDesc, cachePoolSize] : BAR_IMAGEDESC) {
         isAllocated = ImagePool::getInstance().forSpecificImageQueue(
                 imageDesc,
