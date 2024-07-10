@@ -91,6 +91,9 @@ public:
         return fWidthWithSpaces + (fEllipsis != nullptr ? fEllipsis->fAdvance.fX : 0);
     }
     SkVector offset() const;
+    void setLineOffsetX(SkScalar x) {
+        fOffset.set(x, fOffset.y());
+    }
 
     SkScalar alphabeticBaseline() const { return fSizes.alphabeticBaseline(); }
     SkScalar ideographicBaseline() const { return fSizes.ideographicBaseline(); }

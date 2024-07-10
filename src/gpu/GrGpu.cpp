@@ -32,6 +32,9 @@
 #include "src/gpu/GrTextureProxyPriv.h"
 #include "src/gpu/GrTracing.h"
 #include "src/sksl/SkSLCompiler.h"
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#include "hitrace_meter.h"
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -481,6 +484,16 @@ bool GrGpu::writePixels(GrSurface* surface,
                         const GrMipLevel texels[],
                         int mipLevelCount,
                         bool prepForTexSampling) {
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    int startTimestamp = 0;
+    int endTimestamp = 0;
+    bool isTagEnabled = IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP);
+    if (isTagEnabled) {
+        startTimestamp = static_cast<int>(
+                std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count());
+    }
+#endif
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
     ATRACE_ANDROID_FRAMEWORK_ALWAYS("Texture upload(%u) %ix%i",
                                     surface->uniqueID().asUInt(), rect.width(), rect.height());
@@ -517,6 +530,18 @@ bool GrGpu::writePixels(GrSurface* surface,
                             prepForTexSampling)) {
         this->didWriteToSurface(surface, kTopLeft_GrSurfaceOrigin, &rect, mipLevelCount);
         fStats.incTextureUploads();
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+        if (isTagEnabled) {
+            endTimestamp = static_cast<int>(
+                        std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::steady_clock::now().time_since_epoch()).count());
+            int duration = endTimestamp - startTimestamp;
+            if (duration > TEXT_UPLOAD_TIME) {
+                HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "TEXT_UPLOAD_TIME = %d µs, Texture upload(%u) %ix%i",
+                        duration, surface->uniqueID().asUInt(), rect.width(), rect.height());
+            }
+        }
+#endif
         return true;
     }
     return false;
