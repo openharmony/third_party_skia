@@ -554,10 +554,8 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
             fPlaceholders.size() == 1 &&
             (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= floorWidth - this->detectIndents(0))) {
             positionShapedTextIntoLine(floorWidth);
-        } else if (!paragraphCache->GetStoredLayout(*this)) {
+        } else {
             breakShapedTextIntoLines(floorWidth);
-            // text breaking did not go to fast path and we did not have cached layout
-            paragraphCache->SetStoredLayout(*this);
         }
         fState = kLineBroken;
     }
