@@ -534,7 +534,7 @@ void GrVkImage::ImagePool::forEachImageQueue(std::function<bool(DescSpecificQueu
 }
 
 void GrVkImage::PreAllocateTextureBetweenFrames() {
-    static bool isFoldScreenFlag = system::GetParameter("const.window.foldscreen.type", "") != "";
+    static bool isFoldScreenFlag = OHOS::system::GetParameter("const.window.foldscreen.type", "") != "";
     if (isFoldScreenFlag) {
         return;
     }
