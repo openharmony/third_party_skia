@@ -177,6 +177,13 @@ void GrBitmapTextGeoProc::addNewViews(const GrSurfaceProxyView* views,
     this->setTextureSamplerCnt(numActiveViews);
 }
 
+SkString GrBitmapTextGeoProc::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrBitmapTextGeoProc_%d_%d_%d_%d_%d_%d", fUsesW, fMaskFormat, numTextureSamplers(),
+        fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+    return format;
+}
+
 void GrBitmapTextGeoProc::addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     b->addBool(fUsesW, "usesW");
     static_assert(kLast_GrMaskFormat < (1u << 2));

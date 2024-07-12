@@ -618,6 +618,11 @@ public:
     SkScalar surfaceScale() const { return fSurfaceScale; }
     const SkMatrix& filterMatrix() const { return fFilterMatrix; }
     BoundaryMode boundaryMode() const { return fBoundaryMode; }
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_LightingEffect_%d_%d", fBoundaryMode, fLight ? fLight->type() : -1);
+        return format;
+    }
 
 protected:
     class ImplBase;

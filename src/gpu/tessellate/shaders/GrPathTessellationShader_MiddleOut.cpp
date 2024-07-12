@@ -70,6 +70,12 @@ public:
         return 1 << skgpu::PathTessellator::kMaxFixedResolveLevel;
     }
 
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_MiddleOutShader_%d", fAttribs);
+        return format;
+    }
+
 private:
     const char* name() const final { return "tessellate_MiddleOutShader"; }
     void addToKey(const GrShaderCaps&, GrProcessorKeyBuilder* b) const final {

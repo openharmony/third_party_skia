@@ -22,6 +22,8 @@ class DisableColorXP : public GrXferProcessor {
 public:
     DisableColorXP() : INHERITED(kDisableColorXP_ClassID) {}
 
+    SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_DisableColorXP"); }
+
 private:
     const char* name() const override { return "Disable Color"; }
     bool onIsEqual(const GrXferProcessor& xpBase) const override { return true; }

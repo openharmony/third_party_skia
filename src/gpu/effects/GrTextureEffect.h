@@ -97,6 +97,8 @@ public:
 
     const char* name() const override { return "TextureEffect"; }
 
+    SkString getShaderDfxInfo() const override;
+
     GrSamplerState samplerState() const { return fSamplerState; }
 
     GrTexture* texture() const { return fView.asTextureProxy()->peekTexture(); }

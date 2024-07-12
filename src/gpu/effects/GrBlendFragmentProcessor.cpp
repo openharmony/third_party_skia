@@ -35,6 +35,12 @@ public:
 
     const char* name() const override { return "Blend"; }
 
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_Blend_%d", fMode);
+        return format;
+    }
+
     std::unique_ptr<GrFragmentProcessor> clone() const override;
 
 private:

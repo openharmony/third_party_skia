@@ -43,6 +43,12 @@ public:
 
     const char* name() const override { return "LatticeGP"; }
 
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_LatticeGP_%d", GrColorSpaceXform::XformKey(fColorSpaceXform.get()));
+        return format;
+    }
+
     void addToKey(const GrShaderCaps&, GrProcessorKeyBuilder* b) const override {
         b->add32(GrColorSpaceXform::XformKey(fColorSpaceXform.get()));
     }

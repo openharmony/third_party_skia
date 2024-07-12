@@ -77,6 +77,14 @@ public:
 
     const char* name() const override { return "CircleGeometryProcessor"; }
 
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_CircleGeometry_%d_%d_%d_%d_%d_%d_%d_%d", fStroke, fInClipPlane.isInitialized(),
+            fInIsectPlane.isInitialized(), fInUnionPlane.isInitialized(), fInRoundCapCenters.isInitialized(),
+            fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+        return format;
+    }
+
     void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override {
         b->addBool(fStroke,                             "stroked"        );
         b->addBool(fInClipPlane.isInitialized(),        "clipPlane"      );
@@ -278,6 +286,13 @@ public:
     ~ButtCapDashedCircleGeometryProcessor() override {}
 
     const char* name() const override { return "ButtCapDashedCircleGeometryProcessor"; }
+
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_ButtCapDashedCircle_%d_%d_%d",
+            fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+        return format;
+    }
 
     void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override {
         b->addBits(ProgramImpl::kMatrixKeyBits,
@@ -535,6 +550,13 @@ public:
 
     const char* name() const override { return "EllipseGeometryProcessor"; }
 
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_EllipseGeometry_%d_%d_%d_%d", fStroke,
+            fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+        return format;
+    }
+
     void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override {
         b->addBool(fStroke, "stroked");
         b->addBits(ProgramImpl::kMatrixKeyBits,
@@ -731,6 +753,13 @@ public:
     ~DIEllipseGeometryProcessor() override {}
 
     const char* name() const override { return "DIEllipseGeometryProcessor"; }
+
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_DIEllipseGeometry_%d_%d_%d_%d", fStyle,
+            fViewMatrix.isIdentity(), fViewMatrix.isScaleTranslate(), fViewMatrix.hasPerspective());
+        return format;
+    }
 
     void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override {
         b->addBits(2, static_cast<uint32_t>(fStyle), "style");

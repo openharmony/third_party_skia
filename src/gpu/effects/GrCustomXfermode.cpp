@@ -84,6 +84,8 @@ public:
 
     const char* name() const override { return "Custom Xfermode"; }
 
+    SkString getShaderDfxInfo() const override;
+
     std::unique_ptr<ProgramImpl> makeProgramImpl() const override;
 
     GrXferBarrierType xferBarrierType(const GrCaps&) const override;
@@ -102,6 +104,12 @@ private:
 
     using INHERITED = GrXferProcessor;
 };
+
+SkString CustomXP::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_CustomXP_%d_%d", hasHWBlendEquation(), fMode);
+    return format;
+}
 
 void CustomXP::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     uint32_t key = 0;

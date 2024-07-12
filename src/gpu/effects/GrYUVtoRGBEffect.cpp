@@ -336,6 +336,16 @@ std::unique_ptr<GrFragmentProcessor::ProgramImpl> GrYUVtoRGBEffect::onMakeProgra
     return std::make_unique<Impl>();
 }
 
+SkString GrYUVtoRGBEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrYUVtoRGBEffect");
+    for (auto [plane, channel] : fLocations) {
+        format.appendf("_%d_%d", plane, channel);
+    }
+    format.appendf("_%d_%d_%d", fYUVColorSpace, fSnap[0], fSnap[1]);
+    return format;
+}
+
 void GrYUVtoRGBEffect::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     uint32_t packed = 0;
     int i = 0;

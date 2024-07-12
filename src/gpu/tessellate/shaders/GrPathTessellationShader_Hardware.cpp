@@ -48,6 +48,8 @@ public:
         return shaderCaps.maxTessellationSegments();
     }
 
+    SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_HardwareWedgeShader"); }
+
 private:
     const char* name() const final { return "tessellate_HardwareWedgeShader"; }
     void addToKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const final {}
@@ -191,6 +193,8 @@ public:
         // the range T=0..1.
         return shaderCaps.maxTessellationSegments() * 2;
     }
+
+    SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_HardwareCurveShader"); }
 
 private:
     const char* name() const final { return "tessellate_HardwareCurveShader"; }

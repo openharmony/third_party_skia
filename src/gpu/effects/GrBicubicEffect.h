@@ -33,6 +33,8 @@ public:
 
     const char* name() const override { return "Bicubic"; }
 
+    SkString getShaderDfxInfo() const override;
+
     std::unique_ptr<GrFragmentProcessor> clone() const override {
         return std::unique_ptr<GrFragmentProcessor>(new GrBicubicEffect(*this));
     }

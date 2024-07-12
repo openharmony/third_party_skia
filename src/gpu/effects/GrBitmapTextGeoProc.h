@@ -49,6 +49,8 @@ public:
 
     const char* name() const override { return "BitmapText"; }
 
+    SkString getShaderDfxInfo() const override;
+
     void addNewViews(const GrSurfaceProxyView*, int numActiveViews, GrSamplerState);
 
     void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override;

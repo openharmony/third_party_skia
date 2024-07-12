@@ -31,6 +31,12 @@ public:
         return "GrModulateAtlasCoverageFP";
     }
 
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_GrModulateAtlasCoverageEffect_%d", fFlags);
+        return format;
+    }
+
     std::unique_ptr<GrFragmentProcessor> clone() const override {
         return std::make_unique<GrModulateAtlasCoverageEffect>(*this);
     }

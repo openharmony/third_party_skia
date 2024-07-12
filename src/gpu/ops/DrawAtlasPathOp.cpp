@@ -53,6 +53,11 @@ private:
 
     int colorAttribIdx() const { return fUsesLocalCoords ? 3 : 1; }
     const char* name() const override { return "DrawAtlasPathShader"; }
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_DrawAtlasPathShader_%d", fUsesLocalCoords);
+        return format;
+    }
     void addToKey(const GrShaderCaps&, GrProcessorKeyBuilder* b) const override {
         b->addBits(1, fUsesLocalCoords, "localCoords");
         fAtlasHelper->getKeyBits(b);

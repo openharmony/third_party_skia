@@ -718,6 +718,8 @@ public:
 
     const char* name() const override { return "DashingCircleEffect"; }
 
+    SkString getShaderDfxInfo() const override;
+
     void addToKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const override;
 
     std::unique_ptr<ProgramImpl> makeProgramImpl(const GrShaderCaps&) const override;
@@ -842,6 +844,13 @@ GrGeometryProcessor* DashingCircleEffect::Make(SkArenaAlloc* arena,
     });
 }
 
+SkString DashingCircleEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_DashingCircleEffect_%d_%d_%d_%d_%d", fUsesLocalCoords, fAAMode,
+        fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+    return format;
+}
+
 void DashingCircleEffect::addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     uint32_t key = 0;
     key |= fUsesLocalCoords ? 0x1 : 0x0;
@@ -907,6 +916,8 @@ public:
                                      bool usesLocalCoords);
 
     const char* name() const override { return "DashingEffect"; }
+
+    SkString getShaderDfxInfo() const override;
 
     bool usesLocalCoords() const { return fUsesLocalCoords; }
 
@@ -1054,6 +1065,13 @@ GrGeometryProcessor* DashingLineEffect::Make(SkArenaAlloc* arena,
     return arena->make([&](void* ptr) {
         return new (ptr) DashingLineEffect(color, aaMode, localMatrix, usesLocalCoords);
     });
+}
+
+SkString DashingLineEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_DashingLineEffect_%d_%d_%d_%d_%d", fUsesLocalCoords, fAAMode,
+        fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+    return format;
 }
 
 void DashingLineEffect::addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {

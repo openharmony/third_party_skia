@@ -57,6 +57,7 @@ public:
     ~GrConvexPolyEffect() override;
 
     const char* name() const override { return "ConvexPoly"; }
+    SkString getShaderDfxInfo() const override;
     std::unique_ptr<GrFragmentProcessor> clone() const override;
 
 private:

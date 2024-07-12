@@ -29,6 +29,8 @@ public:
 
     const char* name() const override { return "RRectShadow"; }
 
+    SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_GrRRectShadowGeoProc"); }
+
     const Attribute& inPosition() const { return fInPosition; }
     const Attribute& inColor() const { return fInColor; }
     const Attribute& inShadowParams() const { return fInShadowParams; }

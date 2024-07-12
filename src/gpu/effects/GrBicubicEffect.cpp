@@ -213,6 +213,12 @@ GrBicubicEffect::GrBicubicEffect(const GrBicubicEffect& that)
         , fDirection(that.fDirection)
         , fClamp(that.fClamp) {}
 
+SkString GrBicubicEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrBicubicEffect_%d_%d", fDirection, fClamp);
+    return format;
+}
+
 void GrBicubicEffect::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     uint32_t key = (static_cast<uint32_t>(fDirection) << 0) | (static_cast<uint32_t>(fClamp) << 2);
     b->add32(key);

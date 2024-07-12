@@ -85,6 +85,12 @@ GrFPResult GrConvexPolyEffect::Make(std::unique_ptr<GrFragmentProcessor> inputFP
 
 GrConvexPolyEffect::~GrConvexPolyEffect() {}
 
+SkString GrConvexPolyEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrConvexPolyEffect_%d_%d", fEdgeCount, fEdgeType);
+    return format;
+}
+
 void GrConvexPolyEffect::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     static_assert(kGrClipEdgeTypeCnt <= 8);
     uint32_t key = (fEdgeCount << 3) | static_cast<int>(fEdgeType);
