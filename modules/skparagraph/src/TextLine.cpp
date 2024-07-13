@@ -39,6 +39,8 @@
 namespace skia {
 namespace textlayout {
 #define MAX_INT_VALUE 0x7FFFFFFF
+#define EMOJI_UNICODE_START 0x1F300
+#define EMOJI_UNICODE_END 0x1F9EF
 
 namespace {
 
@@ -576,6 +578,13 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
 
     record.fOffset = SkPoint::Make(this->offset().fX + context.fTextShift,
                                    this->offset().fY + correctedBaseline);
+    if (record.fBlob != nullptr) {
+        auto unicodeStart = fOwner->getUnicodeIndex(textRange.start);
+        SkUnichar unicode = fOwner->unicodeText()[unicodeStart];
+        if (unicode >= EMOJI_UNICODE_START && unicode <= EMOJI_UNICODE_END) {
+            record.fBlob->SetEmoji(true);
+        }
+    }
 }
 
 void TextLine::TextBlobRecord::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
