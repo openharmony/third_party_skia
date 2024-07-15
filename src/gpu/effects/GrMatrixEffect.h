@@ -20,6 +20,7 @@ public:
 
     std::unique_ptr<GrFragmentProcessor> clone() const override;
     const char* name() const override { return "MatrixEffect"; }
+    SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_GrMatrixEffect"); }
 
 private:
     GrMatrixEffect(const GrMatrixEffect& src);

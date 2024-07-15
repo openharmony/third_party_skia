@@ -398,6 +398,13 @@ void GrStrokeTessellationShader::Impl::setData(const GrGLSLProgramDataManager& p
     }
 }
 
+SkString GrStrokeTessellationShader::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrStrokeTessellationShader_%d_%d_%d_%d",
+        fPatchAttribs, fMode, fStroke.getJoin(), fStroke.isHairlineStyle());
+    return format;
+}
+
 void GrStrokeTessellationShader::addToKey(const GrShaderCaps&, GrProcessorKeyBuilder* b) const {
     bool keyNeedsJoin = (fMode != Mode::kHardwareTessellation) &&
                         !(fPatchAttribs & PatchAttribs::kStrokeParams);

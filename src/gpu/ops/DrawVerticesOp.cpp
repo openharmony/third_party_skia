@@ -55,6 +55,14 @@ public:
 
     const char* name() const override { return "VerticesGP"; }
 
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_VerticesGP_%d_%d_%d_%d_%d",
+            fColorArrayType, GrColorSpaceXform::XformKey(fColorSpaceXform.get()),
+            fViewMatrix.isIdentity(), fViewMatrix.isScaleTranslate(), fViewMatrix.hasPerspective());
+        return format;
+    }
+
     const Attribute& positionAttr() const { return fAttributes[kPositionIndex]; }
     const Attribute& colorAttr() const { return fAttributes[kColorIndex]; }
     const Attribute& localCoordsAttr() const { return fAttributes[kLocalCoordsIndex]; }

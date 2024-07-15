@@ -596,6 +596,8 @@ public:
 
     const char* name() const override { return "PerlinNoise"; }
 
+    SkString getShaderDfxInfo() const override;
+
     std::unique_ptr<GrFragmentProcessor> clone() const override {
         return std::unique_ptr<GrFragmentProcessor>(new GrPerlinNoise2Effect(*this));
     }
@@ -892,6 +894,12 @@ void GrPerlinNoise2Effect::Impl::onSetData(const GrGLSLProgramDataManager& pdman
                     SkIntToScalar(stitchData.fWidth),
                     SkIntToScalar(stitchData.fHeight));
     }
+}
+
+SkString GrPerlinNoise2Effect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrPerlinNoise2Effect_%d_%d_%d", fNumOctaves, fType, fStitchTiles);
+    return format;
 }
 
 void GrPerlinNoise2Effect::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {

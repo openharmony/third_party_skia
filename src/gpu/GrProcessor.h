@@ -144,6 +144,9 @@ public:
 
     ClassID classID() const { return fClassID; }
 
+    /** An encoded string to identify shader snippet */
+    virtual SkString getShaderDfxInfo() const = 0;
+
 protected:
     GrProcessor(ClassID classID) : fClassID(classID) {}
     GrProcessor(const GrProcessor&) = delete;

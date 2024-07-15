@@ -151,6 +151,14 @@ void GrConicEffect::Impl::onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) {
 
 GrConicEffect::~GrConicEffect() = default;
 
+SkString GrConicEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrConicEffect_%d_%d_%d_%d_%d_%d_%d_%d", fCoverageScale, fUsesLocalCoords,
+        fViewMatrix.isIdentity(), fViewMatrix.isScaleTranslate(), fViewMatrix.hasPerspective(),
+        fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+    return format;
+}
+
 void GrConicEffect::addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     uint32_t key = 0;
     key |= fCoverageScale == 0xff ? 0x8  : 0x0;
@@ -303,6 +311,14 @@ void GrQuadEffect::Impl::onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) {
 //////////////////////////////////////////////////////////////////////////////
 
 GrQuadEffect::~GrQuadEffect() = default;
+
+SkString GrQuadEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrQuadEffect_%d_%d_%d_%d_%d_%d_%d_%d", fCoverageScale, fUsesLocalCoords,
+        fViewMatrix.isIdentity(), fViewMatrix.isScaleTranslate(), fViewMatrix.hasPerspective(),
+        fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+    return format;
+}
 
 void GrQuadEffect::addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     uint32_t key = 0;

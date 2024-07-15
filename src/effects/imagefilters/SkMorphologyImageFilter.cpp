@@ -194,6 +194,8 @@ public:
 
     const char* name() const override { return "Morphology"; }
 
+    SkString getShaderDfxInfo() const override;
+
     std::unique_ptr<GrFragmentProcessor> clone() const override {
         return std::unique_ptr<GrFragmentProcessor>(new GrMorphologyEffect(*this));
     }
@@ -284,6 +286,12 @@ std::unique_ptr<GrFragmentProcessor::ProgramImpl> GrMorphologyEffect::onMakeProg
     };
 
     return std::make_unique<Impl>();
+}
+
+SkString GrMorphologyEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrMorphologyEffect_%d_%d_%d_%d", fRadius, fType, fDirection, fUseRange);
+    return format;
 }
 
 void GrMorphologyEffect::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {

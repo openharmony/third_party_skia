@@ -53,6 +53,8 @@ public:
         fFixedCountNumTotalEdges = value;
     }
 
+    SkString getShaderDfxInfo() const override;
+
 private:
     const char* name() const override {
         switch (fMode) {

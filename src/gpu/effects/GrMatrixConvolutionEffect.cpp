@@ -300,6 +300,13 @@ std::unique_ptr<GrFragmentProcessor> GrMatrixConvolutionEffect::clone() const {
     return std::unique_ptr<GrFragmentProcessor>(new GrMatrixConvolutionEffect(*this));
 }
 
+SkString GrMatrixConvolutionEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrMatrixConvolutionEffect_%d_%d_%d",
+        fKernel.size().width(), fKernel.size().height(), fConvolveAlpha);
+    return format;
+}
+
 void GrMatrixConvolutionEffect::onAddToKey(const GrShaderCaps& caps,
                                            GrProcessorKeyBuilder* b) const {
     SkASSERT(this->fKernel.size().width() <= 0x7FFF && this->fKernel.size().height() <= 0xFFFF);

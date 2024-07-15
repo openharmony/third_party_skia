@@ -94,6 +94,8 @@ public:
 
     const char* name() const override { return "DistanceFieldA8Text"; }
 
+    SkString getShaderDfxInfo() const override;
+
     void addNewViews(const GrSurfaceProxyView* views, int numViews, GrSamplerState);
 
     void addToKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const override;
@@ -159,6 +161,8 @@ public:
     ~GrDistanceFieldPathGeoProc() override {}
 
     const char* name() const override { return "DistanceFieldPath"; }
+
+    SkString getShaderDfxInfo() const override;
 
     void addNewViews(const GrSurfaceProxyView*, int numActiveViews, GrSamplerState);
 
@@ -239,6 +243,8 @@ public:
     ~GrDistanceFieldLCDTextGeoProc() override {}
 
     const char* name() const override { return "DistanceFieldLCDText"; }
+
+    SkString getShaderDfxInfo() const override;
 
     void addNewViews(const GrSurfaceProxyView*, int numActiveViews, GrSamplerState);
 

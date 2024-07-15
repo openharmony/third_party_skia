@@ -79,6 +79,8 @@ public:
 
     const char* name() const override { return "Conic"; }
 
+    SkString getShaderDfxInfo() const override;
+
     void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override;
 
     std::unique_ptr<ProgramImpl> makeProgramImpl(const GrShaderCaps&) const override;
@@ -140,6 +142,8 @@ public:
     ~GrQuadEffect() override;
 
     const char* name() const override { return "Quad"; }
+
+    SkString getShaderDfxInfo() const override;
 
     void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override;
 

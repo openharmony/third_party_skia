@@ -341,6 +341,12 @@ public:
 
     const char* name() const override { return "FillRRectOp::Processor"; }
 
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_FillRRectOp_%d", fFlags);
+        return format;
+    }
+
     void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override {
         b->addBits(kNumProcessorFlags, (uint32_t)fFlags,  "flags");
     }
