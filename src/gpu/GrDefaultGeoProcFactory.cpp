@@ -48,6 +48,15 @@ public:
 
     const char* name() const override { return "DefaultGeometryProcessor"; }
 
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_DefaultGeoProc_%d_%d_%d_%d_%d_%d_%d_%d_%d_%d",
+            fFlags, fCoverage, fLocalCoordsWillBeRead, fInLocalCoords.isInitialized(),
+            fViewMatrix.isIdentity(), fViewMatrix.isScaleTranslate(), fViewMatrix.hasPerspective(),
+            fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+        return format;
+    }
+
     void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override {
         uint32_t key = fFlags;
         key |= fCoverage == 0xff      ?  0x80 : 0;

@@ -33,6 +33,8 @@ public:
 
     const char* name() const override { return "MatrixConvolution"; }
 
+    SkString getShaderDfxInfo() const override;
+
     std::unique_ptr<GrFragmentProcessor> clone() const override;
 
 private:

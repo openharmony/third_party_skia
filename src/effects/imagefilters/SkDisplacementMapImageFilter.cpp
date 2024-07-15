@@ -166,6 +166,8 @@ public:
 
     const char* name() const override { return "DisplacementMap"; }
 
+    SkString getShaderDfxInfo() const override;
+
     std::unique_ptr<GrFragmentProcessor> clone() const override;
 
 private:
@@ -447,6 +449,12 @@ std::unique_ptr<GrFragmentProcessor> GrDisplacementMapEffect::Make(SkColorChanne
 std::unique_ptr<GrFragmentProcessor::ProgramImpl>
 GrDisplacementMapEffect::onMakeProgramImpl() const {
     return std::make_unique<Impl>();
+}
+
+SkString GrDisplacementMapEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrDisplacementMapEffect_%d_%d", fXChannelSelector, fYChannelSelector);
+    return format;
 }
 
 void GrDisplacementMapEffect::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {

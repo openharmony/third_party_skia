@@ -51,6 +51,8 @@ public:
 
     const char* name() const override { return "CircularRRect"; }
 
+    SkString getShaderDfxInfo() const override;
+
     std::unique_ptr<GrFragmentProcessor> clone() const override;
 
 private:
@@ -371,6 +373,12 @@ void CircularRRectEffect::Impl::onSetData(const GrGLSLProgramDataManager& pdman,
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+SkString CircularRRectEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_CircularRRectEffect_%d_%d", fCircularCornerFlags, fEdgeType);
+    return format;
+}
+
 void CircularRRectEffect::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     static_assert(kGrClipEdgeTypeCnt <= 8);
     b->add32((fCircularCornerFlags << 3) | static_cast<int>(fEdgeType));
@@ -390,6 +398,8 @@ public:
     ~EllipticalRRectEffect() override {}
 
     const char* name() const override { return "EllipticalRRect"; }
+
+    SkString getShaderDfxInfo() const override;
 
     std::unique_ptr<GrFragmentProcessor> clone() const override;
 
@@ -662,6 +672,12 @@ void EllipticalRRectEffect::Impl::onSetData(const GrGLSLProgramDataManager& pdma
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+SkString EllipticalRRectEffect::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_EllipticalRRectEffect_%d_%d", fRRect.getType(), fEdgeType);
+    return format;
+}
 
 void EllipticalRRectEffect::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     static_assert((int)GrClipEdgeType::kLast < (1 << 3));

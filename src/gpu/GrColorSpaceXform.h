@@ -82,6 +82,7 @@ public:
                                                      sk_sp<GrColorSpaceXform> colorXform);
 
     const char* name() const override { return "ColorSpaceXform"; }
+    SkString getShaderDfxInfo() const override;
     std::unique_ptr<GrFragmentProcessor> clone() const override;
 
     const GrColorSpaceXform* colorXform() const { return fColorXform.get(); }

@@ -26,6 +26,8 @@ public:
 
     const char* name() const override { return "YUVtoRGBEffect"; }
 
+    SkString getShaderDfxInfo() const override;
+
 private:
     GrYUVtoRGBEffect(std::unique_ptr<GrFragmentProcessor> planeFPs[4],
                      int numPlanes,

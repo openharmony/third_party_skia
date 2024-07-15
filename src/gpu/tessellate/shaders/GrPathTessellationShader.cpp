@@ -30,6 +30,8 @@ public:
 
     int maxTessellationSegments(const GrShaderCaps&) const override { SkUNREACHABLE; }
 
+    SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_SimpleTriangleShader"); }
+
 private:
     const char* name() const final { return "tessellate_SimpleTriangleShader"; }
     void addToKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const final {}

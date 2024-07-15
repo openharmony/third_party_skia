@@ -264,6 +264,13 @@ void GrDistanceFieldA8TextGeoProc::addNewViews(const GrSurfaceProxyView* views,
     this->setTextureSamplerCnt(numViews);
 }
 
+SkString GrDistanceFieldA8TextGeoProc::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrDistanceFieldA8TextGeoProc_%d_%d_%d_%d_%d", fFlags, numTextureSamplers(),
+        fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+    return format;
+}
+
 void GrDistanceFieldA8TextGeoProc::addToKey(const GrShaderCaps& caps,
                                             GrProcessorKeyBuilder* b) const {
     uint32_t key = 0;
@@ -529,6 +536,13 @@ void GrDistanceFieldPathGeoProc::addNewViews(const GrSurfaceProxyView* views,
         }
     }
     this->setTextureSamplerCnt(numViews);
+}
+
+SkString GrDistanceFieldPathGeoProc::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrDistanceFieldPathGeoProc_%d_%d_%d_%d_%d", fFlags, numTextureSamplers(),
+        fMatrix.isIdentity(), fMatrix.isScaleTranslate(), fMatrix.hasPerspective());
+    return format;
 }
 
 void GrDistanceFieldPathGeoProc::addToKey(const GrShaderCaps& caps,
@@ -842,6 +856,13 @@ void GrDistanceFieldLCDTextGeoProc::addNewViews(const GrSurfaceProxyView* views,
         }
     }
     this->setTextureSamplerCnt(numViews);
+}
+
+SkString GrDistanceFieldLCDTextGeoProc::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrDistanceFieldLCDTextGeoProc_%d_%d_%d_%d_%d", fFlags, numTextureSamplers(),
+        fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+    return format;
 }
 
 void GrDistanceFieldLCDTextGeoProc::addToKey(const GrShaderCaps& caps,

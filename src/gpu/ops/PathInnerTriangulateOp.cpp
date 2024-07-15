@@ -48,6 +48,7 @@ public:
 
 private:
     const char* name() const final { return "tessellate_HullShader"; }
+    SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_HullShader"); }
     void addToKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const final {}
     std::unique_ptr<ProgramImpl> makeProgramImpl(const GrShaderCaps&) const final;
 

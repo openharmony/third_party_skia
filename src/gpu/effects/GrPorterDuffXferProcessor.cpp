@@ -380,6 +380,8 @@ public:
 
     const char* name() const override { return "Porter Duff"; }
 
+    SkString getShaderDfxInfo() const override;
+
     std::unique_ptr<ProgramImpl> makeProgramImpl() const override;
 
     BlendFormula getBlendFormula() const { return fBlendFormula; }
@@ -439,6 +441,12 @@ static void append_color_output(const PorterDuffXferProcessor& xp,
     }
 }
 
+SkString PorterDuffXferProcessor::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_PorterDuffXfer_%d_%d", fBlendFormula.primaryOutput(), fBlendFormula.secondaryOutput());
+    return format;
+}
+
 void PorterDuffXferProcessor::onAddToKey(const GrShaderCaps&, GrProcessorKeyBuilder* b) const {
     b->add32(fBlendFormula.primaryOutput() | (fBlendFormula.secondaryOutput() << 3));
     static_assert(BlendFormula::kLast_OutputType < 8);
@@ -483,6 +491,8 @@ public:
 
     const char* name() const override { return "Porter Duff Shader"; }
 
+    SkString getShaderDfxInfo() const override;
+
     std::unique_ptr<ProgramImpl> makeProgramImpl() const override;
 
 private:
@@ -500,6 +510,11 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 
+SkString ShaderPDXferProcessor::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_ShaderPDXfer_%d", fXfermode);
+    return format;
+}
 
 void ShaderPDXferProcessor::onAddToKey(const GrShaderCaps&, GrProcessorKeyBuilder* b) const {
     b->add32(static_cast<int>(fXfermode));
@@ -541,6 +556,8 @@ public:
                                              const GrProcessorAnalysisColor& inputColor);
 
     const char* name() const override { return "Porter Duff LCD"; }
+
+    SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_PDLCDXfer"); }
 
     std::unique_ptr<ProgramImpl> makeProgramImpl() const override;
 

@@ -24,6 +24,8 @@ public:
 
     const char* name() const override { return "Coverage Set Op"; }
 
+    SkString getShaderDfxInfo() const override;
+
     std::unique_ptr<ProgramImpl> makeProgramImpl() const override;
 
 private:
@@ -42,6 +44,12 @@ private:
 
     using INHERITED = GrXferProcessor;
 };
+
+SkString CoverageSetOpXP::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_CoverageSetOpXP_%d", fInvertCoverage);
+    return format;
+}
 
 void CoverageSetOpXP::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     b->addBool(fInvertCoverage, "invert coverage");

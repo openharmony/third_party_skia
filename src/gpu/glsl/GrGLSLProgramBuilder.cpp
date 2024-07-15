@@ -22,6 +22,10 @@
 #include "src/sksl/SkSLCompiler.h"
 #include "src/sksl/dsl/priv/DSLFPs.h"
 
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#include "hitrace_meter.h"
+#endif
+
 const int GrGLSLProgramBuilder::kVarsPerBlock = 8;
 
 GrGLSLProgramBuilder::GrGLSLProgramBuilder(const GrProgramDesc& desc,
@@ -90,6 +94,9 @@ bool GrGLSLProgramBuilder::emitAndInstallPrimProc(SkString* outputColor, SkStrin
     fFS.codeAppendf("// Stage %d, %s\n", fStageIndex, geomProc.name());
     fVS.codeAppendf("// Primitive Processor %s\n", geomProc.name());
 
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, geomProc.getShaderDfxInfo().c_str());
+#endif
     SkASSERT(!fGPImpl);
     fGPImpl = geomProc.makeProgramImpl(*this->shaderCaps());
 
@@ -214,6 +221,9 @@ void GrGLSLProgramBuilder::writeFPFunction(const GrFragmentProcessor& fp,
     constexpr const char*       kDstColor    = "_dst";
               const char* const inputColor   = fp.isBlendFunction() ? "_src" : "_input";
               const char*       sampleCoords = "_coords";
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, fp.getShaderDfxInfo().c_str());
+#endif
     fFS.nextStage();
     // Conceptually, an FP is always sampled at a particular coordinate. However, if it is only
     // sampled by a chain of uniform matrix expressions (or legacy coord transforms), the value that
@@ -300,6 +310,9 @@ bool GrGLSLProgramBuilder::emitAndInstallDstTexture() {
         if (!fDstTextureSamplerHandle.isValid()) {
             return false;
         }
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+        HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, "ShaderDfx emitAndInstallDstTexture usesDstTexture");
+#endif
         fDstTextureOrigin = dstView.origin();
         SkASSERT(dstTextureProxy->textureType() != GrTextureType::kExternal);
 
@@ -331,6 +344,9 @@ bool GrGLSLProgramBuilder::emitAndInstallDstTexture() {
         if (!fDstTextureSamplerHandle.isValid()) {
             return false;
         }
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+        HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, "ShaderDfx emitAndInstallDstTexture usesDstInputAttachment");
+#endif
 
         // Populate the _dstColor variable by loading from the input attachment at the top of the
         // fragment shader.
@@ -354,6 +370,9 @@ bool GrGLSLProgramBuilder::emitAndInstallXferProc(const SkString& colorIn,
     SkASSERT(!fXPImpl);
     const GrXferProcessor& xp = this->pipeline().getXferProcessor();
     fXPImpl = xp.makeProgramImpl();
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, xp.getShaderDfxInfo().c_str());
+#endif
 
     // Enable dual source secondary output if we have one
     if (xp.hasSecondaryOutput()) {

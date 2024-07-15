@@ -120,6 +120,8 @@ public:
 
     const char* name() const override { return "ColorTableEffect"; }
 
+    SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_ColorTableEffect"); }
+
     std::unique_ptr<GrFragmentProcessor> clone() const override {
         return std::unique_ptr<GrFragmentProcessor>(new ColorTableEffect(*this));
     }

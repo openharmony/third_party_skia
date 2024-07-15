@@ -351,6 +351,12 @@ std::unique_ptr<GrFragmentProcessor::ProgramImpl> GrSkSLFP::onMakeProgramImpl() 
     return std::make_unique<Impl>();
 }
 
+SkString GrSkSLFP::getShaderDfxInfo() const {
+    SkString format;
+    format.printf("ShaderDfx_GrSkSLFP_%s", name());
+    return format;
+}
+
 void GrSkSLFP::onAddToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
     // In the unlikely event of a hash collision, we also include the uniform size in the key.
     // That ensures that we will (at worst) use the wrong program, but one that expects the same

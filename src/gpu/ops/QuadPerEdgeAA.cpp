@@ -625,6 +625,24 @@ public:
 
     const char* name() const override { return "QuadPerEdgeAAGeometryProcessor"; }
 
+    SkString getShaderDfxInfo() const override {
+        uint32_t coverageKey = 0;
+        if (fCoverageMode != CoverageMode::kNone) {
+            coverageKey = fGeomSubset.isInitialized()
+                                  ? 0x3
+                                  : (CoverageMode::kWithPosition == fCoverageMode ? 0x1 : 0x2);
+        }
+        SkString format;
+        format.printf("ShaderDfx_QuadPerEdgeAA_%d_%d_%d_%d_%d_%d_%d_%d_%d_%d",
+            fTexSubset.isInitialized(), fSampler.isInitialized(), fNeedsPerspective, fSaturate == Saturate::kYes,
+            fLocalCoord.isInitialized(),
+            fLocalCoord.isInitialized() ? kFloat3_GrVertexAttribType == fLocalCoord.cpuType() : 2,
+            fColor.isInitialized(),
+            fColor.isInitialized() ? kFloat4_GrVertexAttribType == fColor.cpuType() : 2,
+            coverageKey, GrColorSpaceXform::XformKey(fTextureColorSpaceXform.get()));
+        return format;
+    }
+
     void addToKey(const GrShaderCaps&, GrProcessorKeyBuilder* b) const override {
         // texturing, device-dimensions are single bit flags
         b->addBool(fTexSubset.isInitialized(),    "subset");

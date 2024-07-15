@@ -559,6 +559,13 @@ public:
 
     const char* name() const override { return "QuadEdge"; }
 
+    SkString getShaderDfxInfo() const override {
+        SkString format;
+        format.printf("ShaderDfx_QuadEdgeEffect_%d_%d_%d_%d", fUsesLocalCoords,
+            fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
+        return format;
+    }
+
     void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const override {
         b->addBool(fUsesLocalCoords, "usesLocalCoords");
         b->addBits(ProgramImpl::kMatrixKeyBits,

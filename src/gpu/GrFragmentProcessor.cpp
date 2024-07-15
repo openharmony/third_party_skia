@@ -272,6 +272,12 @@ std::unique_ptr<GrFragmentProcessor> GrFragmentProcessor::SwizzleOutput(
 
         const char* name() const override { return "Swizzle"; }
 
+        SkString getShaderDfxInfo() const override {
+            SkString format;
+            format.printf("ShaderDfx_SwizzleOutput_%d", fSwizzle.asKey());
+            return format;
+        }
+
         std::unique_ptr<GrFragmentProcessor> clone() const override {
             return Make(this->childProcessor(0)->clone(), fSwizzle);
         }
@@ -391,6 +397,8 @@ std::unique_ptr<GrFragmentProcessor> GrFragmentProcessor::Compose(
         }
 
         const char* name() const override { return "Compose"; }
+
+        SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_ComposeProcessor"); }
 
         std::unique_ptr<GrFragmentProcessor> clone() const override {
             return std::unique_ptr<GrFragmentProcessor>(new ComposeProcessor(*this));
@@ -526,6 +534,8 @@ std::unique_ptr<GrFragmentProcessor> GrFragmentProcessor::SurfaceColor() {
 
         const char* name() const override { return "SurfaceColor"; }
 
+        SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_SurfaceColorProcessor"); }
+
     private:
         std::unique_ptr<ProgramImpl> onMakeProgramImpl() const override {
             class Impl : public ProgramImpl {
@@ -566,6 +576,8 @@ std::unique_ptr<GrFragmentProcessor> GrFragmentProcessor::DeviceSpace(
         static std::unique_ptr<GrFragmentProcessor> Make(std::unique_ptr<GrFragmentProcessor> fp) {
             return std::unique_ptr<GrFragmentProcessor>(new DeviceSpace(std::move(fp)));
         }
+
+        SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_DeviceSpace"); }
 
     private:
         DeviceSpace(std::unique_ptr<GrFragmentProcessor> fp)
@@ -816,6 +828,8 @@ std::unique_ptr<GrFragmentProcessor> GrFragmentProcessor::HighPrecision(
         }
 
         const char* name() const override { return "HighPrecision"; }
+
+        SkString getShaderDfxInfo() const override { return SkString("ShaderDfx_HighPrecision"); }
 
         std::unique_ptr<GrFragmentProcessor> clone() const override {
             return Make(this->childProcessor(0)->clone());
