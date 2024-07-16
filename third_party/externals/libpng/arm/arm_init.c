@@ -115,13 +115,21 @@ png_init_filter_functions_neon(png_structp pp, unsigned int bpp)
     * initialization function.)
     */
    pp->read_filter[PNG_FILTER_VALUE_UP-1] = png_read_filter_row_up_neon;
-
+#ifdef PNG_MULTY_LINE_ENABLE
+   pp->read_filter[PNG_FILTER_VALUE_UP_X2-1] = png_read_filter_row_up_x2_neon;
+#endif
    if (bpp == 3)
    {
       pp->read_filter[PNG_FILTER_VALUE_SUB-1] = png_read_filter_row_sub3_neon;
       pp->read_filter[PNG_FILTER_VALUE_AVG-1] = png_read_filter_row_avg3_neon;
       pp->read_filter[PNG_FILTER_VALUE_PAETH-1] =
          png_read_filter_row_paeth3_neon;
+#ifdef PNG_MULTY_LINE_ENABLE
+      pp->read_filter[PNG_FILTER_VALUE_AVG_X2-1] =
+         png_read_filter_row_avg3_x2_neon;
+      pp->read_filter[PNG_FILTER_VALUE_PAETH_X2-1] =
+         png_read_filter_row_paeth3_x2_neon;
+#endif
    }
 
    else if (bpp == 4)
@@ -130,6 +138,12 @@ png_init_filter_functions_neon(png_structp pp, unsigned int bpp)
       pp->read_filter[PNG_FILTER_VALUE_AVG-1] = png_read_filter_row_avg4_neon;
       pp->read_filter[PNG_FILTER_VALUE_PAETH-1] =
           png_read_filter_row_paeth4_neon;
+#ifdef PNG_MULTY_LINE_ENABLE
+      pp->read_filter[PNG_FILTER_VALUE_AVG_X2-1] =
+         png_read_filter_row_avg4_x2_neon;
+      pp->read_filter[PNG_FILTER_VALUE_PAETH_X2-1] =
+         png_read_filter_row_paeth4_x2_neon;
+#endif
    }
 }
 #endif /* PNG_ARM_NEON_OPT > 0 */

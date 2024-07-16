@@ -187,6 +187,18 @@
 #  endif
 #endif /* PNG_ARM_NEON_OPT > 0 */
 
+#ifdef PNG_ARM_NEON_IMPLEMENTATION
+#  if PNG_ARM_NEON_IMPLEMENTATION == 1
+#    define PNG_MULTY_LINE_ENABLE
+#    define PNG_INFLATE_MAX_SIZE 65536
+#    define PNG_INFLATE_ROWS 50
+#    define PNG_CHECK (PNG_EXPAND | PNG_STRIP_ALPHA | PNG_RGB_TO_GRAY | PNG_ENCODE_ALPHA | \
+		PNG_PACKSWAP | PNG_GRAY_TO_RGB | PNG_COMPOSE | PNG_SCALE_16_TO_8 | PNG_16_TO_8 | \
+		PNG_BACKGROUND_EXPAND | PNG_EXPAND_16 | PNG_PACK | PNG_ADD_ALPHA | PNG_EXPAND_tRNS | \
+		PNG_RGB_TO_GRAY_ERR | PNG_RGB_TO_GRAY_WARN | PNG_FILLER | PNG_USER_TRANSFORM)
+#  endif
+#endif
+
 #ifndef PNG_MIPS_MSA_OPT
 #  if defined(__mips_msa) && (__mips_isa_rev >= 5) && defined(PNG_ALIGNED_MEMORY_SUPPORTED)
 #     define PNG_MIPS_MSA_OPT 2
@@ -1313,6 +1325,18 @@ PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_neon,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_neon,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+#ifdef PNG_MULTY_LINE_ENABLE
+PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_x2_neon,(png_row_infop
+    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_x2_neon,(png_row_infop
+    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_x2_neon,(png_row_infop
+    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_x2_neon,(png_row_infop
+    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_x2_neon,(png_row_infop
+    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+#endif
 #endif
 
 #if PNG_MIPS_MSA_OPT > 0

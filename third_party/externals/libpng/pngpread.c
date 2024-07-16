@@ -262,11 +262,35 @@ png_push_read_chunk(png_structrp png_ptr, png_inforp info_ptr)
    else if (chunk_name == png_IDAT)
    {
       png_ptr->idat_size = png_ptr->push_length;
+
+#ifdef PNG_MULTY_LINE_ENABLE
+      // init inflate_buff
+      if (png_ptr->inflate_buff_max_size < png_ptr->push_length)
+      {
+         png_free(png_ptr, png_ptr->inflate_buff);
+         png_ptr->inflate_buff = png_voidcast(png_bytep,
+            png_malloc(png_ptr, png_ptr->push_length));
+         png_ptr->inflate_buff_size = 0;
+      }
+      png_ptr->inflate_buff_max_size = png_ptr->push_length;
+#endif
+
       png_ptr->process_mode = PNG_READ_IDAT_MODE;
       png_push_have_info(png_ptr, info_ptr);
-      png_ptr->zstream.avail_out =
-          (uInt) PNG_ROWBYTES(png_ptr->pixel_depth,
-          png_ptr->iwidth) + 1;
+#ifdef PNG_MULTY_LINE_ENABLE
+      if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 &&
+         (png_ptr->transformations & PNG_CHECK) == 0) {
+         int rest = png_ptr->num_rows - png_ptr->row_number;
+         int row_num = rest < PNG_INFLATE_ROWS ? rest : PNG_INFLATE_ROWS;
+         png_ptr->zstream.avail_out = (uInt)(PNG_ROWBYTES(png_ptr->pixel_depth,
+             png_ptr->iwidth) + 1) * row_num;
+      }
+      else
+#endif
+      {
+         png_ptr->zstream.avail_out =
+            (uInt)(PNG_ROWBYTES(png_ptr->pixel_depth, png_ptr->iwidth) + 1);
+      }
       png_ptr->zstream.next_out = png_ptr->row_buf;
       return;
    }
@@ -558,8 +582,110 @@ png_push_read_IDAT(png_structrp png_ptr)
       }
 
       png_ptr->idat_size = png_ptr->push_length;
+#ifdef PNG_MULTY_LINE_ENABLE
+      // init inflate_buff
+      if (png_ptr->inflate_buff_max_size < png_ptr->push_length)
+      {
+         png_free(png_ptr, png_ptr->inflate_buff);
+         png_ptr->inflate_buff = png_voidcast(png_bytep,
+            png_malloc(png_ptr, png_ptr->push_length));
+         png_ptr->inflate_buff_size = 0;
+      }
+      png_ptr->inflate_buff_max_size = png_ptr->push_length;
+#endif
    }
 
+#ifdef PNG_MULTY_LINE_ENABLE
+   if (png_ptr->idat_size != 0 && png_ptr->save_buffer_size != 0)
+   {
+      if (png_ptr->idat_size <= png_ptr->save_buffer_size)
+      {
+         png_debug2(1, "png_IDAT1: idat_size=%d save_buffer_size=%ld",
+            png_ptr->idat_size, png_ptr->save_buffer_size);
+
+         size_t save_size = png_ptr->idat_size;
+
+         png_calculate_crc(png_ptr, png_ptr->save_buffer_ptr, save_size);
+         png_process_IDAT_data(png_ptr, png_ptr->save_buffer_ptr, save_size);
+
+         png_ptr->buffer_size -= save_size;
+         png_ptr->save_buffer_size -= save_size;
+         png_ptr->save_buffer_ptr += save_size;
+         png_ptr->idat_size = 0;
+      }
+
+      else
+      {
+         png_debug2(1, "png_IDAT2: idat_size=%d save_buffer_size=%ld",
+            png_ptr->idat_size, png_ptr->save_buffer_size);
+
+         size_t save_size = png_ptr->save_buffer_size;
+
+         memcpy(png_ptr->inflate_buff, png_ptr->save_buffer_ptr, save_size);
+
+         png_ptr->inflate_buff_size = save_size;
+         png_ptr->buffer_size -= save_size;
+         png_ptr->save_buffer_ptr += save_size;
+         png_ptr->save_buffer_size = 0;
+      }
+   }
+
+   if (png_ptr->idat_size != 0 && png_ptr->current_buffer_size != 0)
+   {
+      size_t save_size = png_ptr->current_buffer_size;
+      if (png_ptr->idat_size > png_ptr->inflate_buff_size + save_size)
+      {
+         png_debug2(1, "png_IDAT3: inflate_buff_size=%ld current_buffer_size=%ld",
+            png_ptr->inflate_buff_size, save_size);
+
+         memcpy(png_ptr->inflate_buff + png_ptr->inflate_buff_size,
+            png_ptr->current_buffer_ptr, save_size);
+
+         png_ptr->inflate_buff_size += save_size;
+         png_ptr->buffer_size -= save_size;
+         png_ptr->current_buffer_ptr += save_size;
+         png_ptr->current_buffer_size = 0;
+      }
+
+      else
+      {
+         if (png_ptr->inflate_buff_size == 0)
+         {
+            png_debug2(1, "png_IDAT4: inflate_buff_size=%ld current_buffer_size=%ld",
+               png_ptr->inflate_buff_size, save_size);
+
+            save_size = png_ptr->idat_size;
+
+            png_calculate_crc(png_ptr, png_ptr->current_buffer_ptr, save_size);
+            png_process_IDAT_data(png_ptr, png_ptr->current_buffer_ptr, save_size);
+
+            png_ptr->buffer_size -= save_size;
+            png_ptr->current_buffer_size -= save_size;
+            png_ptr->current_buffer_ptr += save_size;
+            png_ptr->idat_size = 0;
+         }
+
+         else
+         {
+            save_size = png_ptr->idat_size - png_ptr->inflate_buff_size;
+            png_debug2(1, "png_IDAT5: inflate_buff_size=%ld save_size=%ld",
+               png_ptr->inflate_buff_size, save_size);
+
+            memcpy(png_ptr->inflate_buff + png_ptr->inflate_buff_size,
+               png_ptr->current_buffer_ptr, save_size);
+
+            png_ptr->inflate_buff_size = 0;
+            png_calculate_crc(png_ptr, png_ptr->inflate_buff, png_ptr->idat_size);
+            png_process_IDAT_data(png_ptr, png_ptr->inflate_buff, png_ptr->idat_size);
+
+            png_ptr->buffer_size -= save_size;
+            png_ptr->current_buffer_size -= save_size;
+            png_ptr->current_buffer_ptr += save_size;
+            png_ptr->idat_size = 0;
+         }
+      }
+   }
+#else
    if (png_ptr->idat_size != 0 && png_ptr->save_buffer_size != 0)
    {
       size_t save_size = png_ptr->save_buffer_size;
@@ -612,6 +738,7 @@ png_push_read_IDAT(png_structrp png_ptr)
       png_ptr->current_buffer_size -= save_size;
       png_ptr->current_buffer_ptr += save_size;
    }
+#endif
 
    if (png_ptr->idat_size == 0)
    {
@@ -622,6 +749,98 @@ png_push_read_IDAT(png_structrp png_ptr)
       png_ptr->zowner = 0;
    }
 }
+
+#ifdef PNG_MULTY_LINE_ENABLE
+void /* PRIVATE */
+png_push_process_row_x2(png_structrp png_ptr, png_row_info row_info_origin)
+{
+   png_debug(1, "in png_push_process_row_x2");
+   /* 1.5.6: row_info moved out of png_struct to a local here. */
+   png_row_info row_info = row_info_origin;
+   png_read_filter_row(png_ptr, &row_info, png_ptr->row_buf + 1,
+      png_ptr->prev_row + 1, png_ptr->row_buf[0] + 4);
+
+   /* libpng 1.5.6: the following line was copying png_ptr->rowbytes before
+    * 1.5.6, while the buffer really is this big in current versions of libpng
+    * it may not be in the future, so this was changed just to copy the
+    * interlaced row count:
+    */
+#ifdef PNG_READ_TRANSFORMS_SUPPORTED
+   if (png_ptr->transformations != 0)
+      png_do_read_transformations(png_ptr, &row_info);
+#endif
+
+   /* The transformed pixel depth should match the depth now in row_info. */
+   if (png_ptr->transformed_pixel_depth == 0)
+   {
+      png_ptr->transformed_pixel_depth = row_info.pixel_depth;
+      if (row_info.pixel_depth > png_ptr->maximum_pixel_depth)
+         png_error(png_ptr, "progressive row overflow");
+   }
+
+   png_push_have_row(png_ptr, png_ptr->row_buf + 1);
+   png_read_push_finish_row(png_ptr);
+
+   png_ptr->row_buf = png_ptr->row_buf + png_ptr->rowbytes + 1;
+
+   // do it again
+   if (png_ptr->transformations != 0)
+   {
+      memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info.rowbytes + 1);
+   }
+   else
+   {
+      png_ptr->prev_row = png_ptr->row_buf;
+   }
+#ifdef PNG_READ_TRANSFORMS_SUPPORTED
+   if (png_ptr->transformations != 0)
+      png_do_read_transformations(png_ptr, &row_info);
+#endif
+
+   png_push_have_row(png_ptr, png_ptr->row_buf + 1);
+   png_read_push_finish_row(png_ptr);
+}
+
+void png_push_process_multi_rows(png_structrp png_ptr, int row_num)
+{
+   png_debug(1, "in png_push_process_multi_rows");
+   uInt row_bytes =  png_ptr->rowbytes + 1;
+
+   png_row_info row_info;
+   row_info.width = png_ptr->iwidth;
+   row_info.color_type = png_ptr->color_type;
+   row_info.bit_depth = png_ptr->bit_depth;
+   row_info.channels = png_ptr->channels;
+   row_info.pixel_depth = png_ptr->pixel_depth;
+   row_info.rowbytes = png_ptr->rowbytes;
+
+   png_bytep temp_row = png_ptr->row_buf;
+   png_bytep temp_prev_row = png_ptr->prev_row;
+
+   for (int i = 0; i < row_num; i++) {
+      if ((png_ptr->channels == 3 || png_ptr->channels == 4) &&
+          i < row_num -1 && png_ptr->row_buf[0] > PNG_FILTER_VALUE_SUB &&
+          png_ptr->row_buf[0] < PNG_FILTER_VALUE_LAST &&
+          png_ptr->row_buf[0] == png_ptr->row_buf[row_bytes]
+         )
+      {
+         png_push_process_row_x2(png_ptr, row_info);
+         png_ptr->row_buf = png_ptr->row_buf + row_bytes;
+         i++;
+         continue;
+      }
+      png_push_process_row(png_ptr);
+      png_ptr->row_buf = png_ptr->row_buf + row_bytes;
+   }
+
+   if (png_ptr->transformations == 0 && png_ptr->interlaced == 0)
+   {
+      png_ptr->prev_row = temp_prev_row;
+      memcpy(png_ptr->prev_row, png_ptr->row_buf - row_bytes, row_bytes);
+   }
+   png_ptr->row_buf = temp_row;
+}
+#endif
 
 void /* PRIVATE */
 png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
@@ -639,6 +858,16 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
    /* TODO: WARNING: TRUNCATION ERROR: DANGER WILL ROBINSON: */
    png_ptr->zstream.avail_in = (uInt)buffer_length;
 
+   int row_num = 1;
+#ifdef PNG_MULTY_LINE_ENABLE
+   if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 &&
+       (png_ptr->transformations & PNG_CHECK) == 0)
+   {
+      int rest = png_ptr->num_rows - png_ptr->row_number;
+      row_num = rest < PNG_INFLATE_ROWS ? rest : PNG_INFLATE_ROWS;
+   }
+#endif
+
    /* Keep going until the decompressed data is all processed
     * or the stream marked as finished.
     */
@@ -655,8 +884,16 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
       if (!(png_ptr->zstream.avail_out > 0))
       {
          /* TODO: WARNING: TRUNCATION ERROR: DANGER WILL ROBINSON: */
+#ifdef PNG_MULTY_LINE_ENABLE
+         if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 &&
+             (png_ptr->transformations & PNG_CHECK) == 0)
+         {
+            int rest = png_ptr->num_rows - png_ptr->row_number;
+            row_num = rest < PNG_INFLATE_ROWS ? rest : PNG_INFLATE_ROWS;
+         }
+#endif
          png_ptr->zstream.avail_out = (uInt)(PNG_ROWBYTES(png_ptr->pixel_depth,
-             png_ptr->iwidth) + 1);
+             png_ptr->iwidth) + 1) * row_num;
 
          png_ptr->zstream.next_out = png_ptr->row_buf;
       }
@@ -719,7 +956,11 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
 
          /* Do we have a complete row? */
          if (png_ptr->zstream.avail_out == 0)
+#ifdef PNG_MULTY_LINE_ENABLE
+            png_push_process_multi_rows(png_ptr, row_num);
+#else
             png_push_process_row(png_ptr);
+#endif
       }
 
       /* And check for the end of the stream. */
@@ -738,6 +979,7 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
 void /* PRIVATE */
 png_push_process_row(png_structrp png_ptr)
 {
+   png_debug(1, "in png_push_process_row");
    /* 1.5.6: row_info moved out of png_struct to a local here. */
    png_row_info row_info;
 
@@ -762,8 +1004,16 @@ png_push_process_row(png_structrp png_ptr)
     * it may not be in the future, so this was changed just to copy the
     * interlaced row count:
     */
-   memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info.rowbytes + 1);
-
+#ifdef PNG_MULTY_LINE_ENABLE
+   if (png_ptr->transformations == 0 && png_ptr->interlaced == 0)
+   {
+      png_ptr->prev_row = png_ptr->row_buf;
+   }
+   else
+#endif
+   {
+      memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info.rowbytes + 1);
+   }
 #ifdef PNG_READ_TRANSFORMS_SUPPORTED
    if (png_ptr->transformations != 0)
       png_do_read_transformations(png_ptr, &row_info);

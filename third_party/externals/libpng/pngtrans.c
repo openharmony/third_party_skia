@@ -13,6 +13,17 @@
 
 #include "pngpriv.h"
 
+#ifdef PNG_ARM_NEON_IMPLEMENTATION
+#  if PNG_ARM_NEON_IMPLEMENTATION == 1
+#    define PNG_ARM_NEON_INTRINSICS_AVAILABLE
+#    if defined(_MSC_VER) && !defined(__clang__) && defined(_M_ARM64)
+#      include <arm64_neon.h>
+#    else
+#      include <arm_neon.h>
+#    endif
+#  endif
+#endif
+
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
 
 #if defined(PNG_READ_BGR_SUPPORTED) || defined(PNG_WRITE_BGR_SUPPORTED)
@@ -269,13 +280,19 @@ png_do_invert(png_row_infop row_info, png_bytep row)
    if (row_info->color_type == PNG_COLOR_TYPE_GRAY)
    {
       png_bytep rp = row;
-      size_t i;
-      size_t istop = row_info->rowbytes;
-
-      for (i = 0; i < istop; i++)
+      png_bytep rp_stop = row + row_info->rowbytes;
+#ifdef PNG_ARM_NEON_INTRINSICS_AVAILABLE
+      png_bytep rp_stop_neon = row + row_info->rowbytes - 16;
+      for (; rp < rp_stop_neon; rp += 16)
+      {
+         uint8x16_t gray = vld1q_u8(rp);
+         gray = ~gray;
+         vst1q_u8(rp, gray);
+      }   
+#endif
+      for (; rp < rp_stop; rp++)
       {
          *rp = (png_byte)(~(*rp));
-         rp++;
       }
    }
 
@@ -283,10 +300,17 @@ png_do_invert(png_row_infop row_info, png_bytep row)
       row_info->bit_depth == 8)
    {
       png_bytep rp = row;
-      size_t i;
-      size_t istop = row_info->rowbytes;
-
-      for (i = 0; i < istop; i += 2)
+      png_bytep rp_stop = row + row_info->rowbytes;
+#ifdef PNG_ARM_NEON_INTRINSICS_AVAILABLE
+      png_bytep rp_stop_neon = row + row_info->rowbytes - 32;
+      for (; rp < rp_stop_neon; rp += 32)
+      {
+         uint8x16x2_t gray_alpha = vld2q_u8(rp);
+         gray_alpha.val[0] = ~gray_alpha.val[0];
+         vst2q_u8(rp, gray_alpha);
+      }
+#endif
+      for (; rp < rp_stop; rp += 2)
       {
          *rp = (png_byte)(~(*rp));
          rp += 2;
@@ -298,10 +322,18 @@ png_do_invert(png_row_infop row_info, png_bytep row)
       row_info->bit_depth == 16)
    {
       png_bytep rp = row;
-      size_t i;
-      size_t istop = row_info->rowbytes;
-
-      for (i = 0; i < istop; i += 4)
+      png_bytep rp_stop = row + row_info->rowbytes;
+#ifdef PNG_ARM_NEON_INTRINSICS_AVAILABLE
+      png_bytep rp_stop_neon = row + row_info->rowbytes - 64;
+      for (; rp < rp_stop_neon; rp += 64)
+      {
+         uint8x16x4_t gray_alpha = vld4q_u8(rp);
+         gray_alpha.val[0] = ~gray_alpha.val[0];
+         gray_alpha.val[1] = ~gray_alpha.val[1];
+         vst4q_u8(rp, gray_alpha);
+      }
+#endif
+      for (; rp < rp_stop; rp += 4)
       {
          *rp = (png_byte)(~(*rp));
          *(rp + 1) = (png_byte)(~(*(rp + 1)));
@@ -323,10 +355,20 @@ png_do_swap(png_row_infop row_info, png_bytep row)
    if (row_info->bit_depth == 16)
    {
       png_bytep rp = row;
-      png_uint_32 i;
-      png_uint_32 istop= row_info->width * row_info->channels;
+      png_bytep rp_stop = row + row_info->rowbytes;
+#ifdef PNG_ARM_NEON_INTRINSICS_AVAILABLE
+      png_bytep rp_stop_neon = row + row_info->rowbytes - 32;
+      for (; rp < rp_stop_neon; rp += 32)
+      {
+         uint8x16x2_t gray = vld2q_u8(rp);
+         uint8x16_t tmp = gray.val[0];
+         gray.val[0] = gray.val[1];
+         gray.val[1] = tmp;
+         vst2q_u8(rp, gray);
+      }
+#endif
 
-      for (i = 0; i < istop; i++, rp += 2)
+      for (; rp < rp_stop; rp += 2)
       {
 #ifdef PNG_BUILTIN_BSWAP16_SUPPORTED
          /* Feature added to libpng-1.6.11 for testing purposes, not
@@ -622,15 +664,25 @@ png_do_bgr(png_row_infop row_info, png_bytep row)
 
    if ((row_info->color_type & PNG_COLOR_MASK_COLOR) != 0)
    {
-      png_uint_32 row_width = row_info->width;
       if (row_info->bit_depth == 8)
       {
          if (row_info->color_type == PNG_COLOR_TYPE_RGB)
          {
-            png_bytep rp;
-            png_uint_32 i;
+            png_bytep rp = row;
+            png_bytep rp_stop = row + row_info->rowbytes;
 
-            for (i = 0, rp = row; i < row_width; i++, rp += 3)
+#ifdef PNG_ARM_NEON_INTRINSICS_AVAILABLE
+            png_bytep rp_stop_neon = row + row_info->rowbytes - 48;
+            for (; rp < rp_stop_neon; rp += 48)
+            {
+               uint8x16x3_t bgr = vld3q_u8(rp);
+               uint8x16_t tmp = bgr.val[2];
+               bgr.val[2] = bgr.val[0];
+               bgr.val[0] = tmp;
+               vst3q_u8(rp, bgr);
+            }
+#endif
+            for (; rp < rp_stop; rp += 3)
             {
                png_byte save = *rp;
                *rp = *(rp + 2);
@@ -640,10 +692,21 @@ png_do_bgr(png_row_infop row_info, png_bytep row)
 
          else if (row_info->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
          {
-            png_bytep rp;
-            png_uint_32 i;
+            png_bytep rp = row;
+            png_bytep rp_stop = row + row_info->rowbytes;
 
-            for (i = 0, rp = row; i < row_width; i++, rp += 4)
+#ifdef PNG_ARM_NEON_INTRINSICS_AVAILABLE
+            png_bytep rp_stop_neon = row + row_info->rowbytes - 64;
+            for (; rp < rp_stop_neon; rp += 64)
+            {
+               uint8x16x4_t bgra = vld4q_u8(rp);
+               uint8x16_t tmp = bgra.val[2];
+               bgra.val[2] = bgra.val[0];
+               bgra.val[0] = tmp;
+               vst4q_u8(rp, bgra);
+            }
+#endif
+            for (; rp < rp_stop; rp += 4)
             {
                png_byte save = *rp;
                *rp = *(rp + 2);
@@ -657,10 +720,21 @@ png_do_bgr(png_row_infop row_info, png_bytep row)
       {
          if (row_info->color_type == PNG_COLOR_TYPE_RGB)
          {
-            png_bytep rp;
-            png_uint_32 i;
+            png_bytep rp = row;
+            png_bytep rp_stop = row + row_info->rowbytes;
 
-            for (i = 0, rp = row; i < row_width; i++, rp += 6)
+#ifdef PNG_ARM_NEON_INTRINSICS_AVAILABLE
+            png_bytep rp_stop_neon = row + row_info->rowbytes - 48;
+            for (; rp < rp_stop_neon; rp += 48)
+            {
+               uint16x8x3_t bgr = vld3q_u16((unsigned short *)rp);
+               uint16x8_t tmp = bgr.val[2];
+               bgr.val[2] = bgr.val[0];
+               bgr.val[0] = tmp;
+               vst3q_u16((unsigned short *)rp, bgr);
+            }
+#endif
+            for (; rp < rp_stop; rp += 6)
             {
                png_byte save = *rp;
                *rp = *(rp + 4);
@@ -673,10 +747,21 @@ png_do_bgr(png_row_infop row_info, png_bytep row)
 
          else if (row_info->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
          {
-            png_bytep rp;
-            png_uint_32 i;
+            png_bytep rp = row;
+            png_bytep rp_stop = row + row_info->rowbytes;
 
-            for (i = 0, rp = row; i < row_width; i++, rp += 8)
+#ifdef PNG_ARM_NEON_INTRINSICS_AVAILABLE
+            png_bytep rp_stop_neon = row + row_info->rowbytes - 48;
+            for (; rp < rp_stop_neon; rp += 64)
+            {
+               uint16x8x4_t bgra = vld4q_u16((unsigned short *)rp);
+               uint16x8_t tmp = bgra.val[2];
+               bgra.val[2] = bgra.val[0];
+               bgra.val[0] = tmp;
+               vst4q_u16((unsigned short *)rp, bgra);
+            }
+#endif
+            for (; rp < rp_stop; rp += 8)
             {
                png_byte save = *rp;
                *rp = *(rp + 4);
