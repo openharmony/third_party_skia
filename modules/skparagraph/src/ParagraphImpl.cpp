@@ -591,8 +591,11 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     if (fMaxIntrinsicWidth < fMinIntrinsicWidth) {
         fMaxIntrinsicWidth = fMinIntrinsicWidth;
     }
-
-    fLineNumber = std::max(size_t(1), fLines.size());
+    if (fParagraphStyle.getMaxLines() == 0) {
+        fLineNumber = 0;
+    } else {
+        fLineNumber = std::max(size_t(1), fLines.size());
+    }
     //SkDebugf("layout('%s', %f): %f %f\n", fText.c_str(), rawWidth, fMinIntrinsicWidth, fMaxIntrinsicWidth);
 }
 
