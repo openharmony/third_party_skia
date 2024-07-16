@@ -561,6 +561,37 @@ void GrVkImage::PreAllocateTextureBetweenFrames() {
     }
 }
 
+void GrVkImage::PurgeAllocatedTextureBetweenFrames() {
+    static bool isFoldScreenFlag = OHOS::system::GetParameter("const.window.foldscreen.type", "") != "";
+    if (isFoldScreenFlag) {
+        return;
+    }
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PurgeAllocatedTextureBetweenFrames");
+#endif
+    ImagePool &imagePool = ImagePool::getInstance();
+    GrVkGpu *gpu = imagePool.getGpu();
+    if (!gpu) {
+        return;
+    }
+    imagePool.forEachImageQueue([gpu](ImagePool::DescSpecificQueue &q) {
+        auto it = q.fQueue.end();
+        while (it != q.fQueue.begin()) {
+            --it;
+            if (it->first) {
+                GrVkImage::DestroyImageInfo(gpu, &it->second);
+                it = q.fQueue.erase(it);
+            }
+        }
+        if (!q.fQueue.empty() && q.fQueue.front().first) {
+            GrVkImage::DestroyImageInfo(gpu, &q.fQueue.front().second);
+            q.fQueue.erase(q.fQueue.begin());
+        }
+        q.availabledCacheCount = 0;
+        return false;
+    });
+}
+
 bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
     ImagePool& imagePool = ImagePool::getInstance();
     bool cacheHit = false;
