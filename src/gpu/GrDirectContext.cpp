@@ -383,6 +383,13 @@ void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly,
 
     fResourceCache->purgeCacheBetweenFrames(scratchResourcesOnly, exitedPidSet, protectedPidSet);
 }
+
+void GrDirectContext::asyncFreeVMAMemoryBetweenFrames(bool all) {
+#ifdef SK_VULKAN
+    GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(all);
+#endif
+}
+
 void GrDirectContext::performDeferredCleanup(std::chrono::milliseconds msNotUsed,
                                              bool scratchResourcesOnly) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);

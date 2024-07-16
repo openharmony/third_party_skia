@@ -308,6 +308,8 @@ public:
      */
     void purgeUnlockedResources(bool scratchResourcesOnly);
 
+    static void asyncFreeVMAMemoryBetweenFrames(bool all);
+
     /**
      * Gets the maximum supported texture size.
      */
