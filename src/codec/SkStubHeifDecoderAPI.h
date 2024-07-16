@@ -22,6 +22,9 @@ enum SkHeifColorFormat {
     kHeifColorFormat_BGRA_8888,
     kHeifColorFormat_NV12,
     kHeifColorFormat_NV21,
+    kHeifColorFormat_RGBA_1010102,
+    kHeifColorFormat_P010_NV12,
+    kHeifColorFormat_P010_NV21,
 };
 
 struct HeifStream {
