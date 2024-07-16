@@ -376,6 +376,7 @@ void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, con
     // The StrikeCache indirectly references typeface, and in order to dereference the typeface,
     // it is necessary to clear the StrikeCache when the application exits.
     fStrikeCache->freeAll();
+    GrVkImage::PurgeAllocatedTextureBetweenFrames();
 }
 
 void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly,
