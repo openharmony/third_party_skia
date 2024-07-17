@@ -39,6 +39,7 @@ namespace textlayout {
 
 namespace {
 constexpr int PARAM_DOUBLE = 2;
+constexpr ParagraphPainter::PaintID INVALID_PAINT_ID = -1;
 
 SkScalar littleRound(SkScalar a) {
     // This rounding is done to match Flutter tests. Must be removed..
@@ -1598,6 +1599,61 @@ void ParagraphImpl::updateBackgroundPaint(size_t from, size_t to, SkPaint paint)
     for (auto& textStyle : fTextStyles) {
         textStyle.fStyle.setBackgroundColor(paint);
     }
+}
+
+ParagraphPainter::PaintID ParagraphImpl::updateTextStyleColorAndForeground(TextStyle& textStyle, SkColor color)
+{
+    textStyle.setColor(color);
+    if (textStyle.hasForeground()) {
+        auto paintOrID = textStyle.getForegroundPaintOrID();
+        SkPaint* paint = std::get_if<SkPaint>(&paintOrID);
+        if (paint) {
+            paint->setColor(color);
+            textStyle.setForegroundPaint(*paint);
+        } else {
+            auto paintID = std::get_if<ParagraphPainter::PaintID>(&paintOrID);
+            if (paintID) {
+                return *paintID;
+            }
+        }
+    }
+    return INVALID_PAINT_ID;
+}
+
+std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, size_t to, SkColor color) {
+    std::vector<ParagraphPainter::PaintID> unresolvedPaintID;
+    if (from >= to) {
+        return unresolvedPaintID;
+    }
+    this->ensureUTF16Mapping();
+    from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[from] : fText.size();
+    to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[to] : fText.size();
+    if (from == 0 && to == fText.size()) {
+        auto defaultStyle = fParagraphStyle.getTextStyle();
+        auto paintID = updateTextStyleColorAndForeground(defaultStyle, color);
+        if (paintID != INVALID_PAINT_ID) {
+            unresolvedPaintID.emplace_back(paintID);
+        }
+        fParagraphStyle.setTextStyle(defaultStyle);
+    }
+
+    for (auto& textStyle : fTextStyles) {
+        auto& fRange = textStyle.fRange;
+        if (to < fRange.end) {
+            break;
+        }
+        if (from > fRange.start) {
+            continue;
+        }
+        auto paintID = updateTextStyleColorAndForeground(textStyle.fStyle, color);
+        if (paintID != INVALID_PAINT_ID) {
+            unresolvedPaintID.emplace_back(paintID);
+        }
+    }
+    for (auto& line : fLines) {
+        line.setTextBlobCachePopulated(false);
+    }
+    return unresolvedPaintID;
 }
 
 SkTArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {

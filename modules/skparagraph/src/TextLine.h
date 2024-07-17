@@ -167,6 +167,9 @@ public:
     std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const;
     TextLine CloneSelf();
     TextRange getTextRangeReplacedByEllipsis() const { return fTextRangeReplacedByEllipsis; }
+    void setTextBlobCachePopulated(const bool textBlobCachePopulated) {
+        fTextBlobCachePopulated = textBlobCachePopulated;
+    }
 private:
     struct RoundRectAttr {
         int styleId;
