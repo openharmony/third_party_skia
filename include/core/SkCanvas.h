@@ -2208,7 +2208,15 @@ public:
 
     void private_draw_shadow_rec(const SkPath&, const SkDrawShadowRec&);
 
-    /** 
+    /**
+     *   Get the downSample Dimension when do drawBlurImage.
+     *
+     *   @param blurArg  parameter of blur.
+     *   @return {width, height}, if return {0, 0}, witch means something error.
+    */
+    std::array<int, 2> CalcHpsBluredImageDimension(const SkBlurArg& blurArg);
+
+    /**
      *   Draw SkImage image with Gaussian Blur algorithm by the separate X and Y sigma
      *   onto destination canvas.  The provided tile mode is used when blur kernel goes
      *   outside the input image, by default SkTileMode::kDecal is used.

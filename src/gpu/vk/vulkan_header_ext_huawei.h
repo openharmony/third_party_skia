@@ -52,10 +52,18 @@ typedef struct VkBlurColorFilterInfoHUAWEI {
 
 typedef void (VKAPI_PTR *PFN_vkCmdDrawBlurImageHUAWEI)(VkCommandBuffer commandBuffer, const VkDrawBlurImageInfoHUAWEI *drawBlurImageInfo);
 
+typedef VkResult (VKAPI_PTR *PFN_vkGetBlurImageSizeHUAWEI)(VkDevice device, \
+    const VkDrawBlurImageInfoHUAWEI *drawBlurImageInfo, VkRect2D *pSize);
+
 #ifndef VK_NO_PROTOTYPES
 VKAPI_ATTR void VKAPI_CALL vkCmdDrawBlurImageHUAWEI(
     VkCommandBuffer                   commandBuffer,
     const VkDrawBlurImageInfoHUAWEI*  drawBlurImageInfo);
+
+VKAPI_ATTR VkResult VKAPI_CALL vkGetBlurImageSizeHUAWEI(
+    VkDevice                          device,
+    const VkDrawBlurImageInfoHUAWEI*  drawBlurImageInfo,
+    VkRect2D*                         pSize);
 #endif
 
 #ifdef __cplusplus

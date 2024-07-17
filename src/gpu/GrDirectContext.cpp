@@ -349,6 +349,10 @@ void GrDirectContext::purgeUnlockAndSafeCacheGpuResources() {
     fGpu->releaseUnlockedBackendObjects();
 }
 
+std::array<int, 2> GrDirectContext::CalcHpsBluredImageDimension(const SkBlurArg& blurArg) {
+    return fGpu->GetHpsDimension(blurArg);
+}
+
 void GrDirectContext::purgeUnlockedResourcesByTag(bool scratchResourceseOnly, const GrGpuResourceTag& tag) {
     ASSERT_SINGLE_OWNER
     fResourceCache->purgeUnlockedResourcesByTag(scratchResourceseOnly, tag);
