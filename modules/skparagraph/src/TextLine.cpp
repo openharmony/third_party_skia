@@ -248,7 +248,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 
     if (fHasDecorations) {
-        maxThickness = 0.0f;
+        this->fDecorationContext = {0.0f, 0.0f, 0.0f};
         this->iterateThroughVisualRuns(false, true,
             [painter, x, y, this]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
@@ -258,7 +258,13 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
                     (TextRange textRange, const TextStyle& style, const ClipContext& context) {
                     if (style.getDecoration().fType == TextDecoration::kUnderline) {
                         SkScalar tmpThick = this->calculateThickness(style, context);
-                        maxThickness = maxThickness > tmpThick ? maxThickness : tmpThick;
+                        fDecorationContext.thickness = fDecorationContext.thickness > tmpThick ?
+                            fDecorationContext.thickness : tmpThick;
+                        // 12% of row height.
+                        SkScalar top = (context.run->correctDescent() - context.run->correctAscent() +
+                            context.run->correctLeading()) * 0.12 - context.run->ascent();
+                        fDecorationContext.textBlobTop = fDecorationContext.textBlobTop > top ?
+                            fDecorationContext.textBlobTop : top;
                     }
                 });
                 return true;
@@ -271,7 +277,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
                 [painter, x, y, this]
                 (TextRange textRange, const TextStyle& style, const ClipContext& context) {
                     // 12% of row height.
-                    underlinePosition = (fSizes.height() * 0.12 + this->baseline());
+                    fDecorationContext.underlinePosition = (fSizes.height() * 0.12 + this->baseline());
                     this->paintDecorations(painter, x, y, textRange, style, context);
                 });
                 return true;
@@ -704,8 +710,7 @@ void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar 
     ParagraphPainterAutoRestore ppar(painter);
     painter->translate(x + this->offset().fX, y + this->offset().fY + style.getBaselineShift());
     Decorations decorations;
-    decorations.setThickness(maxThickness);
-    decorations.setUnderlinePosition(underlinePosition);
+    decorations.setDecorationContext(fDecorationContext);
     SkScalar correctedBaseline = SkScalarFloorToScalar(-this->sizes().rawAscent() + style.getBaselineShift() + 0.5);
     decorations.paint(painter, style, context, correctedBaseline);
 }
