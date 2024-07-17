@@ -34,9 +34,7 @@ if (skia_enable_svg && skia_use_expat) {
         "../skshaper",
       ]
       if (is_ohos) {
-        deps += [
-          "//base/hiviewdfx/hitrace/interfaces/native/innerkits:hitrace_meter",
-        ]
+        external_deps = [ "hitrace:hitrace_meter" ]
       }
     } else {
       configs += [ "../../:skia_wno" ]

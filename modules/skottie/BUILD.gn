@@ -26,7 +26,7 @@ if (skia_enable_skottie) {
       "../skunicode",
     ]
     if (is_ohos) {
-      include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+      external_deps = [ "hitrace:hitrace_meter" ]
     }
     if (use_oh_skia) {
       deps -= [ "../..:skia" ]
@@ -72,7 +72,7 @@ if (skia_enable_skottie) {
         ]
 
         if (is_ohos) {
-          include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+          external_deps = [ "hitrace:hitrace_meter" ]
         }
         deps = [
           ":skottie",
