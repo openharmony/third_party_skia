@@ -2788,13 +2788,19 @@ SkRasterHandleAllocator::MakeCanvas(std::unique_ptr<SkRasterHandleAllocator> all
     return hndl ? std::unique_ptr<SkCanvas>(new SkCanvas(bm, std::move(alloc), hndl)) : nullptr;
 }
 
+std::array<int, 2> SkCanvas::CalcHpsBluredImageDimension(const SkBlurArg& blurArg)
+{
+#if SK_SUPPORT_GPU
+    auto dContext = GrAsDirectContext(this->recordingContext());
+    if (dContext) {
+        return dContext->CalcHpsBluredImageDimension(blurArg);
+    }
+#endif
+    return {0, 0};
+}
+
 bool SkCanvas::onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg)
 {
-    if (blurArg.dstRect.width() < this->imageInfo().width() ||
-        blurArg.dstRect.height() < this->imageInfo().height()) {
-        SK_LOGD("SkCanvas::onDrawBlurImage is not full screen");
-        return false;
-    }
     return this->topDevice()->drawBlurImage(image, blurArg);
 }
 

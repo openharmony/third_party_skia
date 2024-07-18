@@ -167,6 +167,7 @@ GrVkInterface::GrVkInterface(GrVkGetProc getProc,
     ACQUIRE_PROC(CmdEndRenderPass, VK_NULL_HANDLE, device);
     ACQUIRE_PROC(CmdExecuteCommands, VK_NULL_HANDLE, device);
     ACQUIRE_PROC(CmdDrawBlurImageHUAWEI, VK_NULL_HANDLE, device);
+    ACQUIRE_PROC(GetBlurImageSizeHUAWEI, VK_NULL_HANDLE, device);
 
     // Functions for VK_KHR_get_physical_device_properties2
     if (physicalDeviceVersion >= VK_MAKE_VERSION(1, 1, 0)) {

@@ -199,6 +199,8 @@ public:
     // GrVkGpu should be processed by this function so that we respond to OOMs and lost devices.
     bool checkVkResult(VkResult);
 
+    std::array<int, 2> GetHpsDimension(const SkBlurArg& blurArg) const override;
+
 private:
     enum SyncQueue {
         kForce_SyncQueue,
