@@ -161,8 +161,7 @@ void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRe
         // There is no text really
         return;
     }
-    SkScalar shift = context.run->baselineShift() != 0 ? context.run->baselineShift() + halo : 0;
-    SkScalar top = textStyle.getHeight() != 0 ? this->fDecorationContext.textBlobTop + shift : rect.fTop;
+    SkScalar top = textStyle.getHeight() != 0 ? this->fDecorationContext.textBlobTop + baseline : rect.fTop;
     // Since we do not shift down the text by {baseline}
     // (it now happens on drawTextBlob but we do not draw text here)
     // we have to shift up the bounds to compensate
