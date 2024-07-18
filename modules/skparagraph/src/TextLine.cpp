@@ -260,11 +260,6 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
                         SkScalar tmpThick = this->calculateThickness(style, context);
                         fDecorationContext.thickness = fDecorationContext.thickness > tmpThick ?
                             fDecorationContext.thickness : tmpThick;
-                        // 12% of row height.
-                        SkScalar top = (context.run->correctDescent() - context.run->correctAscent() +
-                            context.run->correctLeading()) * 0.12 - context.run->ascent();
-                        fDecorationContext.textBlobTop = fDecorationContext.textBlobTop > top ?
-                            fDecorationContext.textBlobTop : top;
                     }
                 });
                 return true;
@@ -278,6 +273,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
                 (TextRange textRange, const TextStyle& style, const ClipContext& context) {
                     // 12% of row height.
                     fDecorationContext.underlinePosition = (fSizes.height() * 0.12 + this->baseline());
+                    fDecorationContext.textBlobTop = fSizes.height() * 0.12;
                     this->paintDecorations(painter, x, y, textRange, style, context);
                 });
                 return true;
