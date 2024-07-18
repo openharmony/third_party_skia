@@ -32,6 +32,7 @@
 #endif
 
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
+constexpr uint32_t VKIMAGE_LIMIT_SIZE = 10000 * 10000; // Vk-Image Size need less than 10000*10000
 
 namespace {
 const SkTArray<std::pair<GrVkImage::ImageDesc, int64_t>> BAR_IMAGEDESC = {
@@ -665,6 +666,11 @@ bool GrVkImage::InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrV
 
     VkImage image = VK_NULL_HANDLE;
     VkResult result;
+    if (imageDesc.fWidth * imageDesc.fHeight > VKIMAGE_LIMIT_SIZE) {
+        SkDebugf("GrVkImage::InitImageInfoInner failed, image is too large, width:%u, height::%u",
+            imageDesc.fWidth, imageDesc.fHeight);
+        return false;
+    }
     GR_VK_CALL_RESULT(gpu, result, CreateImage(gpu->device(), &imageCreateInfo, nullptr, &image));
     if (result != VK_SUCCESS) {
         return false;
