@@ -84,9 +84,9 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
               if (drawGaps) {
                   SkScalar left = x - context.fTextShift;
                   painter->translate(context.fTextShift, 0);
-                  calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, fThickness);
+                  calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, fThickness, textStyle);
                   painter->drawPath(fPath, fDecorStyle);
-                  calculateGaps(context, SkRect::MakeXYWH(left, bottom, width, fThickness), baseline, fThickness);
+                  calculateGaps(context, SkRect::MakeXYWH(left, bottom, width, fThickness), baseline, fThickness, textStyle);
                   painter->drawPath(fPath, fDecorStyle);
               } else {
                   draw_line_as_rect(painter, x,      y, width, fDecorStyle);
@@ -99,7 +99,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
               if (drawGaps) {
                   SkScalar left = x - context.fTextShift;
                   painter->translate(context.fTextShift, 0);
-                  calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, 0);
+                  calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, fThickness, textStyle);
                   painter->drawPath(fPath, fDecorStyle);
               } else {
                   painter->drawLine(x, y, x + width, y, fDecorStyle);
@@ -110,7 +110,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
                   SkScalar left = x - context.fTextShift;
                   painter->translate(context.fTextShift, 0);
                   SkRect rect = SkRect::MakeXYWH(left, y, width, fThickness);
-                  calculateGaps(context, rect, baseline, fThickness);
+                  calculateGaps(context, rect, baseline, fThickness, textStyle);
                   painter->drawPath(fPath, fDecorStyle);
               } else {
                   draw_line_as_rect(painter, x, y, width, fDecorStyle);
@@ -152,7 +152,7 @@ static RSDrawing::Paint ConvertDecorStyle(const ParagraphPainter::DecorationStyl
 }
 
 void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRect& rect,
-                                SkScalar baseline, SkScalar halo) {
+    SkScalar baseline, SkScalar halo, const TextStyle& textStyle) {
     // Create a special text blob for decorations
     RSTextBlobBuilder builder;
     context.run->copyTo(builder, SkToU32(context.pos), context.size);
@@ -161,11 +161,12 @@ void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRe
         // There is no text really
         return;
     }
+    SkScalar top = textStyle.getHeight() != 0 ? this->fDecorationContext.textBlobTop + baseline : rect.fTop;
     // Since we do not shift down the text by {baseline}
     // (it now happens on drawTextBlob but we do not draw text here)
     // we have to shift up the bounds to compensate
     // This baseline thing ends with getIntercepts
-    const SkScalar bounds[2] = {rect.fTop - baseline, rect.fBottom - baseline};
+    const SkScalar bounds[2] = {top - baseline, top + halo - baseline};
     RSDrawing::Paint paint = ConvertDecorStyle(fDecorStyle);
     auto count = blob->GetIntercepts(bounds, nullptr, &paint);
     SkTArray<SkScalar> intersections(count);
@@ -270,7 +271,7 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
     const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift) {
     switch (decoration) {
       case TextDecoration::kUnderline:
-          fPosition = underlinePosition;
+          fPosition = fDecorationContext.underlinePosition;
           break;
       case TextDecoration::kOverline:
           fPosition = (textDecorationStyle == TextDecorationStyle::kWavy ? fThickness : fThickness / 2.0f) - ascent;

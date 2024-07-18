@@ -18,9 +18,10 @@ class Decorations {
     {
         fThickness = thickness;
     }
-    void setUnderlinePosition(SkScalar thickness)
+    void setDecorationContext(DecorationContext context)
     {
-        underlinePosition = thickness;
+        fDecorationContext = context;
+        setThickness(fDecorationContext.thickness);
     }
 
     private:
@@ -34,11 +35,12 @@ class Decorations {
     void calculatePaint(const TextStyle& textStyle);
     void calculateWaves(const TextStyle& textStyle, SkRect clip);
     void calculateAvoidanceWaves(const TextStyle& textStyle, SkRect clip);
-    void calculateGaps(const TextLine::ClipContext& context, const SkRect& rect, SkScalar baseline, SkScalar halo);
+    void calculateGaps(const TextLine::ClipContext& context, const SkRect& rect, SkScalar baseline,
+        SkScalar halo, const TextStyle& textStyle);
 
     SkScalar fThickness;
     SkScalar fPosition;
-    SkScalar underlinePosition;
+    DecorationContext fDecorationContext;
 
 #ifndef USE_SKIA_TXT
     SkFontMetrics fFontMetrics;
