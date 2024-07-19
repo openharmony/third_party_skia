@@ -1822,6 +1822,13 @@ if (use_oh_skia) {
         "-Wl,-wholeprogramdevirt-check=fallback",
         "-Wl,-Bsymbolic",
       ]
+
+      if (graphic_2d_feature_enable_pgo && enable_enhanced_opt) {
+        ldflags += [
+          "-Wl,-mllvm,-vectorization-bonus-factor=4",
+          "-Wl,-mllvm,-vectorizer-min-trip-count=4",
+        ]
+      }
     }
   }
 
