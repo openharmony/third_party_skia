@@ -25,6 +25,7 @@
 #include "modules/skshaper/include/SkShaper.h"
 #ifdef TXT_AUTO_SPACING
 #include "parameter.h"
+#include "log.h"
 #endif
 
 #include <algorithm>
@@ -1456,6 +1457,7 @@ bool TextLine::processEllipsisRun(bool& isAlreadyUseEllipsis,
     runOffset += this->ellipsis()->offset().fX;
     if (includingEllipsis) {
         if (!visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &runWidthInLine)) {
+            LOGE("Visitor process ellipsis error!");
             return false;
         }
     } else {
