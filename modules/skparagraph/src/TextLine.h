@@ -105,6 +105,13 @@ public:
 
     using RunVisitor = std::function<bool(
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;
+
+    void processEllipsisRun(bool& isAlreadyUseEllipsis,
+                            SkScalar& runOffset,
+                            bool includingEllipsis,
+                            const RunVisitor& visitor,
+                            SkScalar& runWidthInLine) const;
+
     void iterateThroughVisualRuns(bool includingEllipsis, bool includingGhostSpaces, const RunVisitor& runVisitor) const;
     using RunStyleVisitor = std::function<void(
             TextRange textRange, const TextStyle& style, const ClipContext& context)>;
@@ -129,6 +136,7 @@ public:
     void ensureTextBlobCachePopulated();
     void setParagraphImpl(ParagraphImpl* newpara) { fOwner = newpara; }
     void setBlockRange(const BlockRange& blockRange) { fBlockRange = blockRange; }
+    void countWord(int& wordCount, bool& inWord);
     void ellipsisNotFitProcess(EllipsisModal ellipsisModal);
     void createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
@@ -228,11 +236,14 @@ private:
     TextRange fTextRangeReplacedByEllipsis;     // text range replaced by ellipsis
     InternalLineMetrics fSizes;                 // Line metrics as a max of all run metrics and struts
     InternalLineMetrics fMaxRunMetrics;         // No struts - need it for GetRectForRange(max height)
+    size_t fEllipsisIndex = EMPTY_INDEX;
+
     bool fHasBackground;
     bool fHasShadows;
     bool fHasDecorations;
     bool fIsArcText;
     bool fArcTextState;
+    bool fLastClipRunLtr;
 
     LineMetricStyle fAscentStyle;
     LineMetricStyle fDescentStyle;
