@@ -230,6 +230,7 @@ public:
     void updateFontSize(size_t from, size_t to, SkScalar fontSize) override;
     void updateForegroundPaint(size_t from, size_t to, SkPaint paint) override;
     void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) override;
+    std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) override;
 
     void visit(const Visitor&) override;
 
@@ -350,6 +351,8 @@ private:
         ideographicBaseline = fIdeographicBaseline;
         exceededMaxLines = fExceededMaxLines;
     }
+
+    ParagraphPainter::PaintID updateTextStyleColorAndForeground(TextStyle& TextStyle, SkColor color);
 
     // Input
     SkTArray<StyleBlock<SkScalar>> fLetterSpaceStyles;
