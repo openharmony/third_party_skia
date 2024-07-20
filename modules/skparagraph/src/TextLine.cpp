@@ -11,6 +11,7 @@
 #include "include/core/SkTypes.h"
 #include "include/private/SkTemplates.h"
 #include "include/private/SkTo.h"
+#include "log.h"
 #include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
@@ -582,9 +583,13 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
                                    this->offset().fY + correctedBaseline);
     if (record.fBlob != nullptr) {
         auto unicodeStart = fOwner->getUnicodeIndex(textRange.start);
-        SkUnichar unicode = fOwner->unicodeText()[unicodeStart];
-        if (unicode >= EMOJI_UNICODE_START && unicode <= EMOJI_UNICODE_END) {
-            record.fBlob->SetEmoji(true);
+        if (unicodeStart < fOwner->unicodeText().size()) {
+            SkUnichar unicode = fOwner->unicodeText()[unicodeStart];
+            if (unicode >= EMOJI_UNICODE_START && unicode <= EMOJI_UNICODE_END) {
+                record.fBlob->SetEmoji(true);
+            }
+        } else {
+            LOGE("the blob getUnicodeIndex failed");
         }
     }
 }
