@@ -278,6 +278,7 @@ void GrVkMemory::FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
     if (AsyncFreeVMAMemoryManager::GetInstance().AddMemoryToWaitQueue(gpu, alloc, false)) {
         return;
     }
+    SkASSERT(alloc.fBackendMemory);
     GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
     allocator->freeMemory(alloc.fBackendMemory);
 }

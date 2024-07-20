@@ -25,8 +25,8 @@ namespace GrVkMemory {
             bool isBuffer = false;
             const GrVkGpu* fGpu;
             const GrVkAlloc fAlloc;
-            WaitQueueItem(bool buffer, const GrVkGpu* gpu, const GrVkAlloc& alloc)
-                    : isBuffer(buff), fGpu(gpu), fAlloc(alloc) {}
+            WaitQueueItem(bool isBuffer, const GrVkGpu* gpu, const GrVkAlloc& alloc)
+                    : isBuffer(isBuffer), fGpu(gpu), fAlloc(alloc) {}
         };
         struct FreeVMAMemoryWaitQueue {
             uint64_t fTotalFreedMemorySize = 0;
