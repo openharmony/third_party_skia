@@ -1447,7 +1447,7 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
     return textOffsetInRun;
 }
 
-void TextLine::processEllipsisRun(bool& isAlreadyUseEllipsis,
+bool TextLine::processEllipsisRun(bool& isAlreadyUseEllipsis,
                                   SkScalar& runOffset,
                                   bool includingEllipsis,
                                   const RunVisitor& visitor,
@@ -1456,11 +1456,12 @@ void TextLine::processEllipsisRun(bool& isAlreadyUseEllipsis,
     runOffset += this->ellipsis()->offset().fX;
     if (includingEllipsis) {
         if (!visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &runWidthInLine)) {
-            return;
+            return false;
         }
     } else {
         runWidthInLine = this->ellipsis()->advance().fX;
     }
+    return true;
 } 
 
 void TextLine::iterateThroughVisualRuns(bool includingEllipsis,
@@ -1480,8 +1481,10 @@ void TextLine::iterateThroughVisualRuns(bool includingEllipsis,
     for (auto& runIndex : fRunsInVisualOrder) {
         // add the lastClipRun's left ellipsis if necessary
         if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex &&
-            ((!fLastClipRunLtr && !ellipsisModelIsHead) || (ellipsisModelIsHead && fLastClipRunLtr))) {
-            processEllipsisRun(isAlreadyUseEllipsis, runOffset, includingEllipsis, visitor, width);
+            ((!fLastClipRunLtr && !ellipsisModeIsHead) || (ellipsisModeIsHead && fLastClipRunLtr))) {
+            if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, includingEllipsis, visitor, width)) {
+                return;
+            }
             runOffset += width;
             totalWidth += width;
         }
@@ -1513,7 +1516,9 @@ void TextLine::iterateThroughVisualRuns(bool includingEllipsis,
 
         // add the lastClipRun's right ellipsis if necessary
         if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex) {
-            processEllipsisRun(isAlreadyUseEllipsis, runOffset, includingEllipsis, visitor, width);
+            if(!processEllipsisRun(isAlreadyUseEllipsis, runOffset, includingEllipsis, visitor, width)) {
+                return;
+            }
             runOffset += width;
             totalWidth += width;
         }

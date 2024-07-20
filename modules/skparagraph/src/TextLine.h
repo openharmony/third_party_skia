@@ -106,7 +106,7 @@ public:
     using RunVisitor = std::function<bool(
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;
 
-    void processEllipsisRun(bool& isAlreadyUseEllipsis,
+    bool processEllipsisRun(bool& isAlreadyUseEllipsis,
                             SkScalar& runOffset,
                             bool includingEllipsis,
                             const RunVisitor& visitor,
