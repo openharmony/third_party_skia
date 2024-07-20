@@ -26,7 +26,11 @@ namespace skia {
 namespace textlayout {
 
 class ParagraphImpl;
-
+struct DecorationContext {
+    SkScalar thickness = 0.0f;
+    SkScalar underlinePosition = 0.0f;
+    SkScalar textBlobTop = 0.0f;
+};
 class TextLine {
 public:
 
@@ -167,6 +171,9 @@ public:
     std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const;
     TextLine CloneSelf();
     TextRange getTextRangeReplacedByEllipsis() const { return fTextRangeReplacedByEllipsis; }
+    void setTextBlobCachePopulated(const bool textBlobCachePopulated) {
+        fTextBlobCachePopulated = textBlobCachePopulated;
+    }
 private:
     struct RoundRectAttr {
         int styleId;
@@ -251,8 +258,7 @@ private:
         size_t     fVisitor_Size;
     };
     bool fTextBlobCachePopulated;
-    SkScalar maxThickness = 0.0f;
-    SkScalar underlinePosition = 0.0f;
+    DecorationContext fDecorationContext;
     std::vector<RoundRectAttr> roundRectAttrs = {};
 public:
     std::vector<TextBlobRecord> fTextBlobCache;

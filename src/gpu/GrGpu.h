@@ -441,6 +441,8 @@ void popGrResourceTag()
      */
     virtual void releaseUnlockedBackendObjects() {}
 
+    virtual std::array<int, 2> GetHpsDimension(const SkBlurArg& blurArg) const { return {0, 0}; }
+
     const int TEXT_UPLOAD_TIME = 500;
 
     ///////////////////////////////////////////////////////////////////////////

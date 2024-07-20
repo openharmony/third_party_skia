@@ -166,6 +166,12 @@ bool GrDirectContext::abandoned() {
 
 bool GrDirectContext::oomed() { return fGpu ? fGpu->checkAndResetOOMed() : false; }
 
+void GrDirectContext::preAllocateTextureBetweenFrames() {
+#ifdef SK_VULKAN
+    GrVkImage::PreAllocateTextureBetweenFrames();
+#endif
+}
+
 void GrDirectContext::releaseResourcesAndAbandonContext() {
     if (INHERITED::abandoned()) {
         return;
@@ -349,6 +355,10 @@ void GrDirectContext::purgeUnlockAndSafeCacheGpuResources() {
     fGpu->releaseUnlockedBackendObjects();
 }
 
+std::array<int, 2> GrDirectContext::CalcHpsBluredImageDimension(const SkBlurArg& blurArg) {
+    return fGpu->GetHpsDimension(blurArg);
+}
+
 void GrDirectContext::purgeUnlockedResourcesByTag(bool scratchResourceseOnly, const GrGpuResourceTag& tag) {
     ASSERT_SINGLE_OWNER
     fResourceCache->purgeUnlockedResourcesByTag(scratchResourceseOnly, tag);
@@ -370,6 +380,9 @@ void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, con
     // The StrikeCache indirectly references typeface, and in order to dereference the typeface,
     // it is necessary to clear the StrikeCache when the application exits.
     fStrikeCache->freeAll();
+#ifdef SK_VULKAN
+    GrVkImage::PurgeAllocatedTextureBetweenFrames();
+#endif
 }
 
 void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly,

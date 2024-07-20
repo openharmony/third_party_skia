@@ -2678,6 +2678,38 @@ bool GrVkGpu::checkVkResult(VkResult result) {
     }
 }
 
+std::array<int, 2> GrVkGpu::GetHpsDimension(const SkBlurArg& blurArg) const
+{
+    int width = 0;
+    int height = 0;
+    VkRect2D srcRegion;
+    srcRegion.offset = { blurArg.srcRect.fLeft, blurArg.srcRect.fTop };
+    srcRegion.extent = { (uint32_t)blurArg.srcRect.width(), (uint32_t)blurArg.srcRect.height() };
+
+    VkRect2D dstRegion;
+    dstRegion.offset = { blurArg.dstRect.fLeft, blurArg.dstRect.fTop };
+    dstRegion.extent = { (uint32_t)blurArg.dstRect.width(), (uint32_t)blurArg.dstRect.height() };
+
+    VkDrawBlurImageInfoHUAWEI drawBlurImageInfo {};
+    drawBlurImageInfo.sType = VkStructureTypeHUAWEI::VK_STRUCTURE_TYPE_DRAW_BLUR_IMAGE_INFO_HUAWEI;
+    drawBlurImageInfo.pNext = nullptr;
+    drawBlurImageInfo.sigma = blurArg.sigma;
+    drawBlurImageInfo.srcRegion = srcRegion;
+    drawBlurImageInfo.dstRegion = dstRegion;
+    drawBlurImageInfo.srcImageView = VK_NULL_HANDLE;
+
+    VkRect2D hpsDimension {};
+    auto grVkInterface = this->vkInterface();
+    if (grVkInterface != nullptr && grVkInterface->fFunctions.fGetBlurImageSizeHUAWEI != nullptr) {
+        VK_CALL(GetBlurImageSizeHUAWEI(this->device(), &drawBlurImageInfo, &hpsDimension));
+        width = static_cast<int>(hpsDimension.extent.width);
+        height = static_cast<int>(hpsDimension.extent.height);
+    }
+
+    std::array<int, 2> res = {width, height}; // There are 2 variables here.
+    return res;
+}
+
 void GrVkGpu::submitSecondaryCommandBuffer(std::unique_ptr<GrVkSecondaryCommandBuffer> buffer) {
     if (!this->currentCommandBuffer()) {
         return;

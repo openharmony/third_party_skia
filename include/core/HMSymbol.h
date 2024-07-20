@@ -19,18 +19,7 @@
 #include <string>
 #include <map>
 
-#include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/core/SkFont.h"
-#include "third_party/skia/include/core/SkFontMetrics.h"
-#include "third_party/skia/include/core/SkMaskFilter.h"
-#include "third_party/skia/include/core/SkPaint.h"
-#include "third_party/skia/include/core/SkTextBlob.h"
-#include "third_party/skia/include/core/SkTypeface.h"
-#include "third_party/skia/include/core/SkTypes.h"
-#include "third_party/skia/include/core/SkPaint.h"
-#include "third_party/skia/include/pathops/SkPathOps.h"
-#include "third_party/skia/include/effects/SkDashPathEffect.h"
-#include "third_party/skia/include/effects/SkDiscretePathEffect.h"
+#include "third_party/skia/include/core/SkPath.h"
 
 enum AnimationType {
     INVALID_ANIMATION_TYPE = 0,
@@ -41,7 +30,7 @@ enum AnimationType {
     BOUNCE_TYPE = 5,
     PULSE_TYPE = 6,
     REPLACE_APPEAR_TYPE = 7,
-    REPLACE_DISAPPEAR_TYPE
+    REPLACE_DISAPPEAR_TYPE = 8,
 };
 
 enum CurveType {
@@ -58,7 +47,7 @@ enum CommonSubType {
 };
 
 using PiecewiseParameter = struct PiecewiseParameter {
-    CurveType curveType;
+    CurveType curveType = CurveType::INVALID_CURVE_TYPE;
     std::map<std::string, float> curveArgs;
     uint32_t duration = 0;
     int delay = 0;
@@ -72,7 +61,7 @@ using AnimationPara = struct AnimationPara {
 };
 
 using AnimationInfo = struct AnimationInfo {
-    AnimationType animationType;
+    AnimationType animationType = AnimationType::INVALID_ANIMATION_TYPE;
     std::map<uint32_t, AnimationPara> animationParas;
 };
 
@@ -112,11 +101,11 @@ enum EffectStrategy {
     BOUNCE = 5,
     PULSE = 6,
     REPLACE_APPEAR = 7,
-    REPLACE_DISAPPEAR
+    REPLACE_DISAPPEAR = 8,
 };
 
 using SymbolLayers = struct SymbolLayers {
-    uint16_t symbolGlyphId;
+    uint16_t symbolGlyphId = 0;
     std::vector<std::vector<size_t>> layers;
     std::vector<RenderGroup> renderGroups;
 };

@@ -233,6 +233,7 @@ public:
 #endif
 
         VkPtr<PFN_vkCmdDrawBlurImageHUAWEI> fCmdDrawBlurImageHUAWEI;
+        VkPtr<PFN_vkGetBlurImageSizeHUAWEI> fGetBlurImageSizeHUAWEI;
 
     } fFunctions;
 };

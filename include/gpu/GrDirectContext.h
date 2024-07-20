@@ -10,6 +10,8 @@
 
 #include <set>
 
+#include <array>
+
 #include "include/gpu/GrRecordingContext.h"
 
 #include "include/gpu/GrBackendSurface.h"
@@ -18,6 +20,8 @@
 
 // We shouldn't need this but currently Android is relying on this being include transitively.
 #include "include/core/SkUnPreMultiply.h"
+
+#include "include/core/SkBlurTypes.h"
 
 class GrAtlasManager;
 class GrBackendSemaphore;
@@ -293,6 +297,7 @@ public:
                                  const std::set<int>& protectedPidSet);
     void purgeUnlockAndSafeCacheGpuResources();
 
+    std::array<int, 2> CalcHpsBluredImageDimension(const SkBlurArg& blurArg);
     /**
      * This entry point is intended for instances where an app has been backgrounded or
      * suspended.
@@ -421,6 +426,7 @@ public:
 
     void storeVkPipelineCacheData();
 
+    static void preAllocateTextureBetweenFrames();
     /**
      * Retrieve the default GrBackendFormat for a given SkColorType and renderability.
      * It is guaranteed that this backend format will be the one used by the following

@@ -86,7 +86,7 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_enable_skunicode &&
         testonly = true
         sources = skparagraph_tests
         if (is_ohos) {
-          include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+          external_deps = [ "hitrace:hitrace_meter" ]
         }
         if (use_oh_skia) {
           deps = [

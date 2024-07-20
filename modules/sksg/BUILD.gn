@@ -28,7 +28,7 @@ if (defined(is_skia_standalone) && skia_enable_tools) {
 
     configs = [ "../..:skia_private" ]
     if (is_ohos) {
-      include_dirs = [ "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter" ]
+      external_deps = [ "hitrace:hitrace_meter" ]
     }
     sources = [ "tests/SGTest.cpp" ]
     deps = [
