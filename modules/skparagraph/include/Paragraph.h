@@ -42,7 +42,7 @@ public:
 
     SkScalar getLongestLineWithIndent() { return fLongestLineWithIndent; }
 
-    SkScalar setLongestLineWithIndent(SkScalar longestLineWithIndent) {
+    void setLongestLineWithIndent(SkScalar longestLineWithIndent) {
         fLongestLineWithIndent = longestLineWithIndent;
     }
 
