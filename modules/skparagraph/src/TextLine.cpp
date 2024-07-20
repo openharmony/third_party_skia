@@ -1452,15 +1452,15 @@ void TextLine::processEllipsisRun(bool& isAlreadyUseEllipsis,
                                   bool includingEllipsis,
                                   const RunVisitor& visitor,
                                   SkScalar& runWidthInLine) const {
-        isAlreadyUseEllipsis = true;
-        runOffset += this->ellipsis()->offset().fX;
-        if (includingEllipsis) {
-            if (!visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &runWidthInLine)) {
-                return;
-            }
-        } else {
-            runWidthInLine = this->ellipsis()->advance().fX;
+    isAlreadyUseEllipsis = true;
+    runOffset += this->ellipsis()->offset().fX;
+    if (includingEllipsis) {
+        if (!visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &runWidthInLine)) {
+            return;
         }
+    } else {
+        runWidthInLine = this->ellipsis()->advance().fX;
+    }
 } 
 
 void TextLine::iterateThroughVisualRuns(bool includingEllipsis,
