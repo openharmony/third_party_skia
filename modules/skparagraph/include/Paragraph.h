@@ -40,6 +40,12 @@ public:
 
     SkScalar getLongestLine() { return fLongestLine; }
 
+    SkScalar getLongestLineWithIndent() { return fLongestLineWithIndent; }
+
+    SkScalar setLongestLineWithIndent(SkScalar longestLineWithIndent) {
+        fLongestLineWithIndent = longestLineWithIndent;
+    }
+
     SkScalar getGlyphsBoundsTop() { return fGlyphsBoundsTop; }
 
     SkScalar getGlyphsBoundsBottom() { return fGlyphsBoundsBottom; }
@@ -237,6 +243,7 @@ protected:
     SkScalar fMaxIntrinsicWidth;
     SkScalar fMinIntrinsicWidth;
     SkScalar fLongestLine;
+    SkScalar fLongestLineWithIndent;
     bool fExceededMaxLines;
 };
 }  // namespace textlayout

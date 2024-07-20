@@ -446,7 +446,7 @@ struct TextWrapScorer {
 
             if (!forceThrough) {
                 if (breakPos > 0 && begin < breaks_[breakPos - 1].width) {
-                    newWidth = breaks_[--breakPos].width - begin;
+                    newWidth = breaks_[--breakPos].width - begin - parent_.detectIndents(lineNumber);
                 }
 
                 if (looped && ((lastBreakPos_ == breakPos) || (newWidth/currentMax < MINIMUM_FILL_RATIO))) {
@@ -687,14 +687,13 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     SkScalar newWidth = maxWidth;
     SkScalar noIndentWidth = maxWidth;
     while (fEndLine.endCluster() != end) {
+        noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         if (maxLines == 1 && parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
             newWidth = FLT_MAX;
-            noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
             newWidth = balancedWidths[fLineNumber - 1];
         } else {
             newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
-            noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         }
         this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType(),
             autoSpacingEnableFlag);
@@ -792,6 +791,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 SkVector::Make(fEndLine.width(), lineHeight),
                 fEndLine.metrics(),
                 needEllipsis,
+                offsetX,
                 noIndentWidth);
 
         softLineMaxIntrinsicWidth += widthWithSpaces;
@@ -894,6 +894,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                 SkVector::Make(0, fEndLine.metrics().height()),
                 fEndLine.metrics(),
                 needEllipsis,
+                parent->detectIndents(fLineNumber - 1),
                 noIndentWidth);
         fHeight += fEndLine.metrics().height();
         parent->lines().back().setMaxRunMetrics(maxRunMetrics);

@@ -1093,13 +1093,15 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
 
     SkScalar offsetX = this->detectIndents(0);
-    this->addLine(SkPoint::Make(offsetX, 0), advance,
+    auto& line= this->addLine(SkPoint::Make(offsetX, 0), advance,
                   textExcludingSpaces, textRange, textRange,
                   clusterRange, clusterRangeWithGhosts, run.advance().x(),
                   metrics);
-
-    setSize(advance.fY, maxWidth, std::max(run.advance().fX, advance.fX));
-            setIntrinsicSize(run.advance().fX, advance.fX,
+    auto spacing = line.autoSpacing();
+    auto longestLine = std::max(run.advance().fX, advance.fX) + spacing;
+    setSize(advance.fY, maxWidth, longestLine);
+    setLongestLineWithIndent(std::min(longestLine + offsetX), maxWidth));
+    setIntrinsicSize(run.advance().fX, advance.fX,
             fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
             fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
             false);
@@ -1126,6 +1128,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 SkVector advance,
                 InternalLineMetrics metrics,
                 bool addEllipsis,
+                SkScalar indent,
                 SkScalar noIndentWidth) {
                 // TODO: Take in account clipped edges
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
@@ -1135,7 +1138,10 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
                 auto spacing = line.autoSpacing();
-                fLongestLine = std::max(fLongestLine, std::max(line.width(), widthWithSpaces) + spacing);
+                auto longestLine = std::max(line.width(), widthWithSpaces) + spacing;
+                fLongestLine = std::max(fLongestLine, longestLine);
+                fLongestLineWithIndent =
+                        std::min(std::max(fLongestLineWithIndent, longestLine + indent), maxWidth);
             });
     setSize(textWrapper.height(), maxWidth, textWrapper.maxIntrinsicWidth());
     setIntrinsicSize(textWrapper.maxIntrinsicWidth(), textWrapper.minIntrinsicWidth(),

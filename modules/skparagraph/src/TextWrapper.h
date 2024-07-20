@@ -180,6 +180,7 @@ public:
                                                   SkVector advance,
                                                   InternalLineMetrics metrics,
                                                   bool addEllipsis,
+                                                  SkScalar lineIndent,
                                                   SkScalar noIndentWidth)>;
     void breakTextIntoLines(ParagraphImpl* parent,
                             SkScalar maxWidth,
