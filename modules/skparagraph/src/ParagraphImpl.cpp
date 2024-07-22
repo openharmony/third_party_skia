@@ -1127,6 +1127,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 SkVector advance,
                 InternalLineMetrics metrics,
                 bool addEllipsis,
+                SkScalar indent,
                 SkScalar noIndentWidth) {
                 // TODO: Take in account clipped edges
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
