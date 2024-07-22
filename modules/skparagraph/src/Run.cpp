@@ -390,6 +390,17 @@ SkScalar Run::positionX(size_t pos) const {
         (fAutoSpacings.empty() ? 0 : fAutoSpacings[pos].fY);
 }
 
+SkScalar Run::posX(size_t index) const {
+    if (index < fPositions.size()) {
+        return fPositions[index].fX;
+    }
+    LOGE("index:%{public}lu,size:%{public}lu", index, fPositions.size());
+    if (fPositions.empty()) {
+        return 0.0f;
+    }
+    return fPositions[fPositions.size() - 1].fX;
+}
+
 PlaceholderStyle* Run::placeholderStyle() const {
     if (isPlaceholder()) {
         return &fOwner->placeholders()[fPlaceholderIndex].fStyle;
