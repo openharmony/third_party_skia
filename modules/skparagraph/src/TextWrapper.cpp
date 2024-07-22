@@ -446,7 +446,7 @@ struct TextWrapScorer {
 
             if (!forceThrough) {
                 if (breakPos > 0 && begin < breaks_[breakPos - 1].width) {
-                    newWidth = breaks_[--breakPos].width - begin - parent_.detectIndents(lineNumber);
+                    newWidth = std::min(breaks_[--breakPos].width - begin, currentMax);
                 }
 
                 if (looped && ((lastBreakPos_ == breakPos) || (newWidth/currentMax < MINIMUM_FILL_RATIO))) {
