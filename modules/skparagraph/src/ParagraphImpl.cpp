@@ -1093,12 +1093,11 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
 
     SkScalar offsetX = this->detectIndents(0);
-    auto& line= this->addLine(SkPoint::Make(offsetX, 0), advance,
+    this->addLine(SkPoint::Make(offsetX, 0), advance,
                   textExcludingSpaces, textRange, textRange,
                   clusterRange, clusterRangeWithGhosts, run.advance().x(),
                   metrics);
-    auto spacing = line.autoSpacing();
-    auto longestLine = std::max(run.advance().fX, advance.fX) + spacing;
+    auto longestLine = std::max(run.advance().fX, advance.fX);
     setSize(advance.fY, maxWidth, longestLine);
     setLongestLineWithIndent(std::min(longestLine + offsetX, maxWidth));
     setIntrinsicSize(run.advance().fX, advance.fX,
@@ -1128,7 +1127,6 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 SkVector advance,
                 InternalLineMetrics metrics,
                 bool addEllipsis,
-                SkScalar indent,
                 SkScalar noIndentWidth) {
                 // TODO: Take in account clipped edges
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
