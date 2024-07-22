@@ -10,6 +10,7 @@
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skshaper/include/SkShaper.h"
 #include "src/utils/SkUTF.h"
+#include "log.h"
 
 namespace skia {
 namespace textlayout {
@@ -388,6 +389,17 @@ SkScalar Cluster::trimmedWidth(size_t pos) const {
 SkScalar Run::positionX(size_t pos) const {
     return posX(pos) + (fJustificationShifts.empty() ? 0 : fJustificationShifts[pos].fY) +
         (fAutoSpacings.empty() ? 0 : fAutoSpacings[pos].fY);
+}
+
+SkScalar Run::posX(size_t index) const {
+    if (index < fPositions.size()) {
+        return fPositions[index].fX;
+    }
+    LOGE("index:%{public}zu,size:%{public}zu", index, fPositions.size());
+    if (fPositions.empty()) {
+        return 0.0f;
+    }
+    return fPositions[fPositions.size() - 1].fX;
 }
 
 PlaceholderStyle* Run::placeholderStyle() const {

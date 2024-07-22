@@ -934,7 +934,9 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         }
         // See if it fits
         if (width + ellipsisRun->advance().fX > maxWidth) {
-            width -= cluster.width();
+            if (!cluster.isHardBreak()) {
+                width -= cluster.width();
+            }
             // Continue if the ellipsis does not fit
             iterForWord = (wordCount != 1 && wordBreakType != WordBreakType::BREAK_ALL && !cluster.isWordBreak());
             if (std::floor(width) > 0) {
