@@ -2604,6 +2604,7 @@ storeRawNames(XML_Parser parser) {
   while (tag) {
     int bufSize;
     int nameLen = sizeof(XML_Char) * (tag->name.strLen + 1);
+    size_t rawNameLen;
     char *rawNameBuf = tag->buf + nameLen;
     /* Stop if already stored.  Since m_tagStack is a stack, we can stop
        at the first entry that has already been copied; everything
@@ -2615,7 +2616,11 @@ storeRawNames(XML_Parser parser) {
     /* For re-use purposes we need to ensure that the
        size of tag->buf is a multiple of sizeof(XML_Char).
     */
-    bufSize = nameLen + ROUND_UP(tag->rawNameLength, sizeof(XML_Char));
+    rawNameLen = ROUND_UP(tag->rawNameLength, sizeof(XML_Char));
+    /* Detect and prevent integer overflow. */
+    if (rawNameLen > (size_t)INT_MAX - nameLen)
+      return XML_FALSE;
+    bufSize = nameLen + (int)rawNameLen;
     if (bufSize > tag->bufEnd - tag->buf) {
       char *temp = (char *)REALLOC(parser, tag->buf, bufSize);
       if (temp == NULL)
@@ -3712,6 +3717,16 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
     if (! mustBeXML && isXMLNS
         && (len > xmlnsLen || uri[len] != xmlnsNamespace[len]))
       isXMLNS = XML_FALSE;
+    // NOTE: While Expat does not validate namespace URIs against RFC 3986,
+    //       we have to at least make sure that the XML processor on top of
+    //       Expat (that is splitting tag names by namespace separator into
+    //       2- or 3-tuples (uri-local or uri-local-prefix)) cannot be confused
+    //       by an attacker putting additional namespace separator characters
+    //       into namespace declarations.  That would be ambiguous and not to
+    //       be expected.
+    if (parser->m_ns && (uri[len] == parser->m_namespaceSeparator)) {
+      return XML_ERROR_SYNTAX;
+    }
   }
   isXML = isXML && len == xmlLen;
   isXMLNS = isXMLNS && len == xmlnsLen;
