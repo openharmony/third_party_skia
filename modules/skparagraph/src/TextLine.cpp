@@ -25,8 +25,8 @@
 #include "modules/skshaper/include/SkShaper.h"
 #ifdef TXT_AUTO_SPACING
 #include "parameter.h"
-#include "log.h"
 #endif
+#include "log.h"
 
 #include <algorithm>
 #include <iterator>
