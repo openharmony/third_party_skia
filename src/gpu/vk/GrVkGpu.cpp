@@ -546,6 +546,10 @@ bool GrVkGpu::onWritePixels(GrSurface* surface,
     return success;
 }
 
+void GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(bool all) {
+    GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(all);
+}
+
 bool GrVkGpu::onTransferPixelsTo(GrTexture* texture,
                                  SkIRect rect,
                                  GrColorType surfaceColorType,

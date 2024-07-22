@@ -8,6 +8,9 @@
 #ifndef GrVkMemory_DEFINED
 #define GrVkMemory_DEFINED
 
+#include <map>
+#include <mutex>
+
 #include "include/gpu/vk/GrVkMemoryAllocator.h"
 #include "include/gpu/vk/GrVkTypes.h"
 #include "include/private/GrTypesPriv.h"
@@ -16,6 +19,36 @@
 class GrVkGpu;
 
 namespace GrVkMemory {
+    class AsyncFreeVMAMemoryManager {
+    public:
+        struct WaitQueueItem {
+            bool isBuffer = false;
+            const GrVkGpu* fGpu;
+            const GrVkAlloc fAlloc;
+            WaitQueueItem(bool isBuffer, const GrVkGpu* gpu, const GrVkAlloc& alloc)
+                    : isBuffer(isBuffer), fGpu(gpu), fAlloc(alloc) {}
+        };
+        struct FreeVMAMemoryWaitQueue {
+            uint64_t fTotalFreedMemorySize = 0;
+            std::vector<WaitQueueItem> fQueue;
+        };
+
+        static AsyncFreeVMAMemoryManager& GetInstance();
+        AsyncFreeVMAMemoryManager(const AsyncFreeVMAMemoryManager&) = delete;
+        AsyncFreeVMAMemoryManager& operator=(const AsyncFreeVMAMemoryManager&) = delete;
+
+        void FreeMemoryInWaitQueue(bool all);
+        void AddMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, bool buffer);
+
+    private:
+        AsyncFreeVMAMemoryManager();
+        ~AsyncFreeVMAMemoryManager() = default;
+        bool fAsyncFreedMemoryEnabled = false;
+        const uint64_t fLimitFreedMemorySize = 15728640;
+        const uint64_t fThresholdFreedMemorySize = 65536;
+        std::vector<std::pair<pid_t, FreeVMAMemoryWaitQueue>> fWaitQueues;
+        std::mutex fWaitQueuesLock;
+    };
     /**
     * Allocates vulkan device memory and binds it to the gpu's device for the given object.
     * Returns true if allocation succeeded.
@@ -57,6 +90,8 @@ namespace GrVkMemory {
     // memory.
     void GetNonCoherentMappedMemoryRange(const GrVkAlloc&, VkDeviceSize offset, VkDeviceSize size,
                                          VkDeviceSize alignment, VkMappedMemoryRange*);
+
+    void AsyncFreeVMAMemoryBetweenFrames(bool all);
 }  // namespace GrVkMemory
 
 #endif
