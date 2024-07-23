@@ -45,7 +45,7 @@ private:
 
 class SkStrikeCommon {
 public:
-#if defined(SK_BUILD_FOR_OHOS)
+#if defined(SKIA_OHOS_FOR_OHOS_TRACE)
     // An atlas consists of plots, and plots hold glyphs. The minimum a plot can be is 512x512.
     // This means that the maximum size a glyph can be is 512x512.
     inline static constexpr uint16_t kSkSideTooBigForAtlas = 512;
