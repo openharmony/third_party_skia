@@ -257,6 +257,7 @@ public:
     static bool InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo*);
     // Destroys the internal VkImage and VkDeviceMemory in the GrVkImageInfo
     static void DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo*);
+    static void SetLastTouchDownTime();
 
     // These match the definitions in SkImage, for whence they came
     typedef void* ReleaseCtx;

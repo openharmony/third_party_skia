@@ -559,7 +559,7 @@ void GrVkImage::PreAllocateTextureBetweenFrames() {
     if (!gpu) {
         return;
     }
-    auto passedTime = std::chrono::duration_values<std::chrono::seconds>(
+    auto passedTime = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::system_clock::now() - imagePool.getLastTouchDownTime());
     if (passedTime.count() > PRE_ALLOCATE_DURATION) {
         return;
