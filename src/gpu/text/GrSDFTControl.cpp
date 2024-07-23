@@ -65,7 +65,7 @@ auto GrSDFTControl::drawingType(
 
     // Hinted text looks far better at small resolutions
     // Scaling up beyond 2x yields undesirable artifacts
-#ifdef SK_BUILD_FOR_OHOS
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
     if ((scaledTextSize < fMinDistanceFieldFontSize) ||
         (SkStrikeCommon::kSkSideTooBigForSDFT < scaledTextSize && scaledTextSize <= fMaxDistanceFieldFontSize)) {
 #else
