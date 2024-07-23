@@ -172,6 +172,12 @@ void GrDirectContext::preAllocateTextureBetweenFrames() {
 #endif
 }
 
+void GrDirectContext::setLastTouchDownTime() {
+#ifdef SK_VULKAN
+    GrVkImage::SetLastTouchDownTime();
+#endif
+}
+
 void GrDirectContext::releaseResourcesAndAbandonContext() {
     if (INHERITED::abandoned()) {
         return;

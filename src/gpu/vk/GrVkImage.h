@@ -8,6 +8,12 @@
 #ifndef GrVkImage_DEFINED
 #define GrVkImage_DEFINED
 
+#include <chrono>
+#include <cinttypes>
+#include <cstdint>
+#include <mutex>
+#include <utility>
+
 #include "include/core/SkTypes.h"
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/vk/GrVkTypes.h"
@@ -19,11 +25,6 @@
 #include "src/gpu/GrRefCnt.h"
 #include "src/gpu/GrTexture.h"
 #include "src/gpu/vk/GrVkDescriptorSet.h"
-
-#include <cinttypes>
-#include <cstdint>
-#include <mutex>
-#include <utility>
 
 class GrVkGpu;
 class GrVkImageView;
@@ -237,13 +238,18 @@ public:
         ImagePool& operator=(const ImagePool&) = delete;
         void setGpu(GrVkGpu* newGpu) { fGpu = newGpu; }
         GrVkGpu* getGpu() { return fGpu; }
+        void setLastTouchDownTime(std::chrono::system_clock::time_point lastTouchDownTime) {
+            fLastTouchDownTime = lastTouchDownTime;
+        }
+        std::chrono::system_clock::time_point getLastTouchDownTime() { return fLastTouchDownTime; }
 
     private:
-        ImagePool() = default;
+        ImagePool() { fLastTouchDownTime = std::chrono::system_clock::now(); }
         ~ImagePool() = default;
         GrVkGpu* fGpu = nullptr;
         SkTArray<DescSpecificQueue> fQueues;
         std::mutex fQueuesLock;
+        std::chrono::system_clock::time_point fLastTouchDownTime;
     };
     static void PreAllocateTextureBetweenFrames();
     static void PurgeAllocatedTextureBetweenFrames();
@@ -251,6 +257,7 @@ public:
     static bool InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo*);
     // Destroys the internal VkImage and VkDeviceMemory in the GrVkImageInfo
     static void DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo*);
+    static void SetLastTouchDownTime();
 
     // These match the definitions in SkImage, for whence they came
     typedef void* ReleaseCtx;

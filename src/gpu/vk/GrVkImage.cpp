@@ -8,6 +8,7 @@
 #include "src/gpu/vk/GrVkImage.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -35,29 +36,39 @@
 constexpr uint32_t VKIMAGE_LIMIT_SIZE = 10000 * 10000; // Vk-Image Size need less than 10000*10000
 
 namespace {
+constexpr int32_t PRE_ALLOCATE_DURATION = 10;
 const SkTArray<std::pair<GrVkImage::ImageDesc, int64_t>> BAR_IMAGEDESC = {
-        {{VK_IMAGE_TYPE_2D,
-          VK_FORMAT_R8_UNORM,
-          66,
-          67,
-          1,
-          1,
-          VK_IMAGE_TILING_OPTIMAL,
-          7,
-          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-          GrProtected::kNo},
-         2},
-        {{VK_IMAGE_TYPE_2D,
-          VK_FORMAT_R8G8B8A8_UNORM,
-          1260,
-          2720,
-          1,
-          1,
-          VK_IMAGE_TILING_OPTIMAL,
-          151,
-          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-          GrProtected::kNo},
-         2}};
+    {
+        {
+            VK_IMAGE_TYPE_2D,
+            VK_FORMAT_R8_UNORM,
+            66,
+            67,
+            1,
+            1,
+            VK_IMAGE_TILING_OPTIMAL,
+            7,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            GrProtected::kNo
+        },
+        2
+    },
+    {
+        {
+            VK_IMAGE_TYPE_2D,
+            VK_FORMAT_R8G8B8A8_UNORM,
+            1260,
+            2720,
+            1,
+            1,
+            VK_IMAGE_TILING_OPTIMAL,
+            151,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            GrProtected::kNo
+        },
+        2
+    }
+};
 }
 
 sk_sp<GrVkImage> GrVkImage::MakeStencil(GrVkGpu* gpu,
@@ -507,6 +518,10 @@ GrVkImage::ImagePool& GrVkImage::ImagePool::getInstance() {
     return imagePool;
 }
 
+void GrVkImage::SetLastTouchDownTime() {
+    ImagePool::getInstance().setLastTouchDownTime(std::chrono::system_clock::now());
+}
+
 bool GrVkImage::ImagePool::forSpecificImageQueue(const ImageDesc& desc,
                                                  std::function<bool(DescSpecificQueue&)> action,
                                                  bool createQueueWhenNotExist,
@@ -539,23 +554,32 @@ void GrVkImage::PreAllocateTextureBetweenFrames() {
     if (isFoldScreenFlag) {
         return;
     }
+    ImagePool &imagePool = ImagePool::getInstance();
+    GrVkGpu *gpu = imagePool.getGpu();
+    if (!gpu) {
+        return;
+    }
+    auto passedTime = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now() - imagePool.getLastTouchDownTime());
+    if (passedTime.count() > PRE_ALLOCATE_DURATION) {
+        return;
+    }
     for (auto& [imageDesc, cachePoolSize] : BAR_IMAGEDESC) {
-        isAllocated = ImagePool::getInstance().forSpecificImageQueue(
-                imageDesc,
-                [](ImagePool::DescSpecificQueue& q) {
-                    GrVkGpu* gpu = ImagePool::getInstance().getGpu();
-                    if (!gpu || q.availabledCacheCount() >= q.cachePoolSize) {
-                        return false;
-                    }
-                    if (GrVkImageInfo info; InitImageInfoInner(gpu, q.fDesc, &info)) {
-                        q.fQueue.push_back({true, info});
-                        q.availabledCacheCount++;
-                        return true;
-                    }
-                    return false
-                },
-                true,
-                cachePoolSize);
+        bool isAllocated = imagePool.forSpecificImageQueue(
+            imageDesc,
+            [gpu](ImagePool::DescSpecificQueue& q) {
+                if (q.availabledCacheCount >= q.cachePoolSize) {
+                    return false;
+                }
+                if (GrVkImageInfo info; InitImageInfoInner(gpu, q.fDesc, &info)) {
+                    q.fQueue.push_back({true, info});
+                    q.availabledCacheCount++;
+                    return true;
+                }
+                return false;
+            },
+            true,
+            cachePoolSize);
         if (isAllocated) {
             return;
         }
@@ -591,6 +615,8 @@ void GrVkImage::PurgeAllocatedTextureBetweenFrames() {
         q.availabledCacheCount = 0;
         return false;
     });
+    auto lastTouchDownTime = imagePool.getLastTouchDownTime();
+    imagePool.setLastTouchDownTime(lastTouchDownTime - std::chrono::seconds(PRE_ALLOCATE_DURATION));
 }
 
 bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
@@ -610,7 +636,7 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
             cacheHit = true;
             return true;
         }
-        return false
+        return false;
     });
     if (imagePool.getGpu() == nullptr) {
         imagePool.setGpu(gpu);
