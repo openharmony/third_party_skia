@@ -66,7 +66,7 @@ public:
 
     void onDrawGlyphRunList(const SkGlyphRunList& glyphRunList, const SkPaint& paint) override {
         SkASSERT(!glyphRunList.hasRSXForm());
-        fPainter.drawForBitmapDevice(glyphRunList, paint, fOverdrawCanvas->getTotalMatrix(), this);
+        fPainter.drawForBitmapDevice(glyphRunList, paint, SkMatrix(), this);
     }
 
 private:
