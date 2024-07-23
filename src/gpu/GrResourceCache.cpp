@@ -137,6 +137,52 @@ void GrResourceCache::setLimit(size_t bytes) {
     this->purgeAsNeeded();
 }
 
+void GrResourceCache::dumpPidResource() {
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    static time_t lastdumpTime = 0;
+    time_t now = time(nullptr);
+    if (now - lastdumpTime < 1) { // 打印间隔1s以上
+        return;
+    }
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "dumpPidResource");
+    lastdumpTime = now;
+    std::stringstream dumpMessage;
+    std::map<uint32_t, size_t> purgePidMaps, unPurgePidMaps;
+    uint32_t maxPid = 0;
+    for (size_t i = 0; i < fPurgeableQueue.count(); i++) {
+        GrGpuResource* resource = fPurgeableQueue.at(i);
+        if (!resource || GrBudgetedType::kBudgeted != resource->resourcePriv().budgetedType()) {
+            continue;
+        }
+        uint32_t pid = resource->getResourceTag().fPid;
+        size_t size = resource->gpuMemorySize();
+        purgePidMaps[pid] = (purgePidMaps.find(pid) != purgePidMaps.end()) ? purgePidMaps[pid] + size : size;
+        if (i == 0) {
+            maxPid = pid;
+        } else {
+            maxPid = (purgePidMaps[maxPid] > purgePidMaps[pid]) ? maxPid : pid;
+        }
+    }
+    dumpMessage << "purgeAble pid[" << maxPid << "][" << purgePidMaps[maxPid] << "] ";
+    for (size_t i = 0; i < fNonpurgeableResources.count(); i++) {
+        GrGpuResource* resource = fNonpurgeableResources[i];
+        if (!resource || GrBudgetedType::kBudgeted != resource->resourcePriv().budgetedType()) {
+            continue;
+        }
+        uint32_t pid = resource->getResourceTag().fPid;
+        size_t size = resource->gpuMemorySize();
+        unPurgePidMaps[pid] = (unPurgePidMaps.find(pid) != unPurgePidMaps.end()) ? unPurgePidMaps[pid] + size : size;
+        if (i == 0) {
+            maxPid = pid;
+        } else {
+            maxPid = (unPurgePidMaps[maxPid] > unPurgePidMaps[pid]) ? maxPid : pid;
+        }
+    }
+    dumpMessage << "unPurgeAble pid[" << maxPid << "][" << unPurgePidMaps[maxPid] << "]";
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over info %s", dumpMessage.str().c_str());
+#endif
+}
+
 void GrResourceCache::insertResource(GrGpuResource* resource) {
     ASSERT_SINGLE_OWNER
     SkASSERT(resource);
@@ -175,6 +221,7 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
     if (fBudgetedBytes >= fMaxBytes) {
         HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over fBudgetedBytes:(%u),fMaxBytes:(%u)",
             fBudgetedBytes, fMaxBytes);
+        this->dumpPidResource();
         this->purgeAsNeeded();
     } else {
         this->purgeAsNeeded();
