@@ -9,6 +9,7 @@
 #define GrResourceCache_DEFINED
 
 #include <set>
+#include <sstream>
 #include <stack>
 
 #include "include/core/SkLog.h"
@@ -325,6 +326,8 @@ private:
 #else
     void validate() const {}
 #endif
+
+    void dumpPidResource();
 
     class AutoValidate;
 
