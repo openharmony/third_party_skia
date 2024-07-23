@@ -183,7 +183,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 }
             }
 
-            if (breaker.breakLine(cluster->width())) {
+            if (fWords.empty() && breaker.breakLine(cluster->width())) {
                 fClusters.extend(cluster);
                 fTooLongCluster = true;
                 fTooLongWord = true;
