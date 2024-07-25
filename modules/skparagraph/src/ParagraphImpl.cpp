@@ -104,7 +104,9 @@ Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
 { }
 
 ParagraphImpl::ParagraphImpl()
-{ }
+{
+    threadId = pthread_self();
+}
 
 ParagraphImpl::ParagraphImpl(const SkString& text,
                              ParagraphStyle style,
@@ -127,6 +129,7 @@ ParagraphImpl::ParagraphImpl(const SkString& text,
         , fHasWhitespacesInside(false)
         , fTrailingSpaces(0)
 {
+    threadId = pthread_self();
     SkASSERT(fUnicode);
 }
 
@@ -143,6 +146,7 @@ ParagraphImpl::ParagraphImpl(const std::u16string& utf16text,
                         std::move(fonts),
                         std::move(unicode))
 {
+    threadId = pthread_self();
     SkASSERT(fUnicode);
     fText =  SkUnicode::convertUtf16ToUtf8(utf16text);
 }
@@ -458,6 +462,9 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 }
 
 void ParagraphImpl::layout(SkScalar rawWidth) {
+    if (threadId != pthread_self()) {
+        LOGE("Not run on the same thread, create thread %{public}lu, current thread %{public}", threadId, pthread_self());
+    }
     fLineNumber = 1;
     allTextWidth = 0;
     fLayoutRawWidth = rawWidth;
@@ -1258,8 +1265,12 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
                                                      unsigned end,
                                                      RectHeightStyle rectHeightStyle,
                                                      RectWidthStyle rectWidthStyle) {
+    if (threadId != pthread_self()) {
+        LOGE("Not run on the same thread, create thread %{public}lu, current thread %{public}", threadId, pthread_self());
+    }
     std::vector<TextBox> results;
-    if (fText.isEmpty()) {
+    // this method should not be called before kshaped
+    if (fText.isEmpty() || fState < kShaped) {
         if (start == 0 && end > 0) {
             // On account of implied "\n" that is always at the end of the text
             //SkDebugf("getRectsForRange(%d, %d): %f\n", start, end, fHeight);
@@ -1323,8 +1334,12 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
 }
 
 std::vector<TextBox> ParagraphImpl::getRectsForPlaceholders() {
+    if (threadId != pthread_self()) {
+        LOGE("Not run on the same thread, create thread %{public}lu, current thread %{public}", threadId, pthread_self());
+    }
   std::vector<TextBox> boxes;
-  if (fText.isEmpty()) {
+  // this method should not be called before kshaped
+  if (fText.isEmpty() || fState < kShaped) {
        return boxes;
   }
   if (fPlaceholders.size() == 1) {

@@ -408,6 +408,8 @@ private:
 
     size_t fLineNumber;
     uint32_t hash_{0u};
+
+    pthread_t threadId;
 };
 }  // namespace textlayout
 }  // namespace skia
