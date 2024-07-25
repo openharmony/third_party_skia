@@ -85,7 +85,7 @@ public:
 
     SkScalar posX(size_t index) const;
     void addX(size_t index, SkScalar shift) { fPositions[index].fX += shift; }
-    SkScalar halfLetterspacing(size_t index) { return fHalfLetterspacings[index]; }
+    SkScalar halfLetterspacing(size_t index) const { return fHalfLetterspacings[index]; }
     SkScalar posY(size_t index) const { return fPositions[index].fY; }
     size_t size() const { return fGlyphs.size(); }
     void setWidth(SkScalar width) { fAdvance.fX = width; }

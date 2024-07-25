@@ -554,7 +554,11 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
     } else {
         context.run->copyTo(builder, SkToU32(context.pos), context.size);
     }
+#ifdef OHOS_SUPPORT
     // when letterspacing < 0, it causes the font is cliped. so the record fClippingNeeded is set false
+#else
+    record.fClippingNeeded = context.clippingNeeded;
+#endif
     if (context.clippingNeeded) {
         record.fClipRect = extendHeight(context).makeOffset(this->offset());
     } else {
@@ -964,7 +968,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         // Let's update the line
         fClusterRange.end = clusterIndex;
         fGhostClusterRange.end = fClusterRange.end;
-        fEllipsis->fClusterStart = cluster.textRange().start;
+        fEllipsis->fClusterStart = cluster.textRange().end;
         fText.end = cluster.textRange().end;
         fTextIncludingNewlines.end = cluster.textRange().end;
         fTextExcludingSpaces.end = cluster.textRange().end;
@@ -1283,7 +1287,12 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
     result.clip.offset(textStartInLine, 0);
     //SkDebugf("@%f[%f:%f)\n", textStartInLine, result.clip.fLeft, result.clip.fRight);
 
+#ifdef OHOS_SUPPORT
+    if (compareRound(result.clip.fRight, fAdvance.fX, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces && 
+        fAdvance.fX > 0) {
+#else
     if (compareRound(result.clip.fRight, fAdvance.fX, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces) {
+#endif
         // There are few cases when we need it.
         // The most important one: we measure the text with spaces at the end (or at the beginning in RTL)
         // and we should ignore these spaces
@@ -1295,11 +1304,13 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
         }
     }
 
+#ifndef OHOS_SUPPORT
     if (result.clip.width() < 0) {
         // Weird situation when glyph offsets move the glyph to the left
         // (happens with zalgo texts, for instance)
         result.clip.fRight = result.clip.fLeft;
     }
+#endif
 
     // The text must be aligned with the lineOffset
     result.fTextShift = textStartInLine - textStartInRun;

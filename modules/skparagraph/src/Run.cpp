@@ -254,23 +254,19 @@ SkScalar Run::addSpacesEvenly(SkScalar space) {
     return shift;
 }
 
+#ifdef OHOS_SUPPORT
 SkScalar Run::addSpacesEvenly(SkScalar space, Cluster* cluster) {
     // Offset all the glyphs in the cluster
     SkScalar shift = 0;
-    if (cluster->startPos() < cluster->endPos()) {
-        shift += space / PARAM_TWO;
-    }
     for (size_t i = cluster->startPos(); i < cluster->endPos(); ++i) {
         fPositions[i].fX += shift;
         fHalfLetterspacings[i] = space / PARAM_TWO;
         shift += space;
     }
-    if (cluster->startPos() < cluster->endPos()) {
-        shift -= space / PARAM_TWO;
-    }
     if (this->size() == cluster->endPos()) {
         // To make calculations easier
         fPositions[cluster->endPos()].fX += shift;
+        fHalfLetterspacings[cluster->endPos()] = space / PARAM_TWO;
     }
     // Increment the run width
     fAdvance.fX += shift;
@@ -280,6 +276,27 @@ SkScalar Run::addSpacesEvenly(SkScalar space, Cluster* cluster) {
 
     return shift;
 }
+#else
+SkScalar Run::addSpacesEvenly(SkScalar space, Cluster* cluster) {
+    // Offset all the glyphs in the cluster
+    SkScalar shift = 0;
+    for (size_t i = cluster->startPos(); i < cluster->endPos(); ++i) {
+        fPositions[i].fX += shift;
+        shift += space;
+    }
+    if (this->size() == cluster->endPos()) {
+        // To make calculations easier
+        fPositions[cluster->endPos()].fX += shift;
+    }
+    // Increment the run width
+    fAdvance.fX += shift;
+    // Increment the cluster width
+    cluster->space(shift);
+    cluster->setHalfLetterSpacing(space / 2);
+
+    return shift;
+}
+#endif
 
 void Run::shift(const Cluster* cluster, SkScalar offset) {
     if (offset == 0) {
