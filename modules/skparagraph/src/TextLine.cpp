@@ -1485,7 +1485,12 @@ void TextLine::iterateThroughVisualRuns(bool includingEllipsis,
     bool isAlreadyUseEllipsis = false;
     auto textRange = includingGhostSpaces ? this->textWithNewlines() : this->trimmedText();
 
-
+    if (fRunsInVisualOrder.size() == 0 && fEllipsis != nullptr) {
+        if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, includingEllipsis, visitor, width)) {
+            return;
+        }
+        totalWidth += width;
+    }
 
     for (auto& runIndex : fRunsInVisualOrder) {
         // add the lastClipRun's left ellipsis if necessary
