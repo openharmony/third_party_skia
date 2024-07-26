@@ -1259,7 +1259,8 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
                                                      RectHeightStyle rectHeightStyle,
                                                      RectWidthStyle rectWidthStyle) {
     std::vector<TextBox> results;
-    if (fText.isEmpty()) {
+    // this method should not be called before kshaped
+    if (fText.isEmpty() || fState < kShaped) {
         if (start == 0 && end > 0) {
             // On account of implied "\n" that is always at the end of the text
             //SkDebugf("getRectsForRange(%d, %d): %f\n", start, end, fHeight);
@@ -1324,7 +1325,8 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
 
 std::vector<TextBox> ParagraphImpl::getRectsForPlaceholders() {
   std::vector<TextBox> boxes;
-  if (fText.isEmpty()) {
+  // this method should not be called before kshaped
+  if (fText.isEmpty() || fState < kShaped) {
        return boxes;
   }
   if (fPlaceholders.size() == 1) {
