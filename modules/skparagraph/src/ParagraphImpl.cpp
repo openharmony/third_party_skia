@@ -462,9 +462,6 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 }
 
 void ParagraphImpl::layout(SkScalar rawWidth) {
-    if (threadId != pthread_self()) {
-        LOGE("Not run on the same thread, create thread %{public}lu, current thread %{public}lu", threadId, pthread_self());
-    }
     fLineNumber = 1;
     allTextWidth = 0;
     fLayoutRawWidth = rawWidth;
@@ -1265,9 +1262,6 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
                                                      unsigned end,
                                                      RectHeightStyle rectHeightStyle,
                                                      RectWidthStyle rectWidthStyle) {
-    if (threadId != pthread_self()) {
-        LOGE("Not run on the same thread, create thread %{public}lu, current thread %{public}lu", threadId, pthread_self());
-    }
     std::vector<TextBox> results;
     // this method should not be called before kshaped
     if (fText.isEmpty() || fState < kShaped) {
@@ -1334,9 +1328,6 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
 }
 
 std::vector<TextBox> ParagraphImpl::getRectsForPlaceholders() {
-    if (threadId != pthread_self()) {
-        LOGE("Not run on the same thread, create thread %{public}lu, current thread %{public}lu", threadId, pthread_self());
-    }
   std::vector<TextBox> boxes;
   // this method should not be called before kshaped
   if (fText.isEmpty() || fState < kShaped) {
