@@ -30,7 +30,6 @@
 #include "include/private/SkTHash.h"
 
 #include <memory>
-#include <pthread.h>
 #include <string>
 #include <vector>
 

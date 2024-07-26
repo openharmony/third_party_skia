@@ -104,9 +104,7 @@ Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
 { }
 
 ParagraphImpl::ParagraphImpl()
-{
-    threadId = pthread_self();
-}
+{ }
 
 ParagraphImpl::ParagraphImpl(const SkString& text,
                              ParagraphStyle style,
@@ -129,7 +127,6 @@ ParagraphImpl::ParagraphImpl(const SkString& text,
         , fHasWhitespacesInside(false)
         , fTrailingSpaces(0)
 {
-    threadId = pthread_self();
     SkASSERT(fUnicode);
 }
 
@@ -146,7 +143,6 @@ ParagraphImpl::ParagraphImpl(const std::u16string& utf16text,
                         std::move(fonts),
                         std::move(unicode))
 {
-    threadId = pthread_self();
     SkASSERT(fUnicode);
     fText =  SkUnicode::convertUtf16ToUtf8(utf16text);
 }
