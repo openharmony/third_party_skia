@@ -20,8 +20,8 @@
 #include <mutex>
 #include <json/json.h>
 
-#include "SkStream.h"
-#include "SkString.h"
+#include "include/core/SkStream.h"
+#include "include/core/SkString.h"
 #include "include/core/SkTypes.h"
 #include "include/core/HMSymbol.h"
 
@@ -29,8 +29,8 @@ class SK_API HmSymbolConfig_OHOS
 {
 public:
     static HmSymbolConfig_OHOS* GetInstance();
+    ~HmSymbolConfig_OHOS();
 
-    SymbolLayersGroups GetSymbolLayersGroups(uint32_t glyphId);
     SymbolLayersGroups GetSymbolLayersGroups(uint16_t glyphId);
 
     std::vector<std::vector<PiecewiseParameter>> GetGroupParameters(AnimationType type, uint16_t groupSum,
@@ -68,6 +68,9 @@ public:
     }
 
 private:
+    static HmSymbolConfig_OHOS* symbolSingleton_;
+    HmSymbolConfig_OHOS() {}
+
     std::unordered_map<uint16_t, SymbolLayersGroups> hmSymbolConfig_;
     std::unordered_map<AnimationType, AnimationInfo> animationInfos_;
     std::mutex hmSymbolMut_;
