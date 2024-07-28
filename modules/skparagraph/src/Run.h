@@ -63,6 +63,14 @@ enum class RoundRectType {
 // first: words length, second: spacing width ratio
 constexpr SkScalar AUTO_SPACING_WIDTH_RATIO = 8;
 
+#ifdef OHOS_SUPPORT
+#ifdef USE_SKIA_TXT
+void metricsIncludeFontPadding(RSFontMetrics* metrics);
+#else
+void metricsIncludeFontPadding(SkFontMetrics* metrics);
+#endif
+#endif
+
 class Run {
 public:
     Run(ParagraphImpl* owner,
@@ -484,6 +492,9 @@ public:
     InternalLineMetrics(const RSFont& font, bool forceStrut) {
         RSFontMetrics metrics;
         font.GetMetrics(&metrics);
+#endif
+#ifdef OHOS_SUPPORT
+        metricsIncludeFontPadding(&metrics);
 #endif
         fAscent = metrics.fAscent;
         fDescent = metrics.fDescent;
