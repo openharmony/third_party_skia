@@ -215,7 +215,11 @@ void TextLine::paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOf
 void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     prepareRoundRect();
     fIsArcText = false;
-    this->iterateThroughVisualRuns(true, true,
+#ifdef OHOS_SUPPORT
+    this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, true,
+#else
+    this->iterateThroughVisualRuns(false,
+#endif
         [painter, x, y, this]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -230,7 +234,11 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
         });
 
     if (fHasShadows) {
-        this->iterateThroughVisualRuns(true, false,
+#ifdef OHOS_SUPPORT
+        this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, false,
+#else
+        this->iterateThroughVisualRuns(false,
+#endif
             [painter, x, y, this]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -251,7 +259,11 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 
     if (fHasDecorations) {
         this->fDecorationContext = {0.0f, 0.0f, 0.0f};
-        this->iterateThroughVisualRuns(false, true,
+#ifdef OHOS_SUPPORT
+        this->iterateThroughVisualRuns(EllipsisReadStrategy::DEFAULT, true,
+#else
+        this->iterateThroughVisualRuns(false,
+#endif
             [painter, x, y, this]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
                 *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -266,7 +278,11 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
                 });
                 return true;
         });
-        this->iterateThroughVisualRuns(false, true,
+#ifdef OHOS_SUPPORT
+        this->iterateThroughVisualRuns(EllipsisReadStrategy::DEFAULT, true,
+#else
+        this->iterateThroughVisualRuns(false,
+#endif
             [painter, x, y, this]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
                 *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -343,7 +359,11 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
 
 void TextLine::prepareRoundRect() {
     roundRectAttrs.clear();
-    this->iterateThroughVisualRuns(true, true,
+#ifdef OHOS_SUPPORT
+        this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, true,
+#else
+        this->iterateThroughVisualRuns(true,
+#endif
         [this](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
             TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
@@ -402,7 +422,11 @@ void TextLine::ensureTextBlobCachePopulated() {
                                /*clippingNeeded=*/false};                   // no need for that
         this->buildTextBlob(fTextExcludingSpaces, style, context);
     } else {
-        this->iterateThroughVisualRuns(true, false,
+#ifdef OHOS_SUPPORT
+        this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_ELLIPSIS_WORD, false,
+#else
+        this->iterateThroughVisualRuns(false,
+#endif
            [this](const Run* run,
                   SkScalar runOffsetInLine,
                   TextRange textRange,
@@ -496,7 +520,11 @@ void TextLine::scanStyles(StyleType styleType, const RunStyleVisitor& visitor) {
         return;
     }
 
-    this->iterateThroughVisualRuns(true, false,
+#ifdef OHOS_SUPPORT
+    this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, false,
+#else
+    this->iterateThroughVisualRuns(false,
+#endif
             [this, visitor, styleType](
                     const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width) {
                 *width = this->iterateThroughSingleRunByStyles(
@@ -969,6 +997,8 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         fClusterRange.end = clusterIndex;
         fGhostClusterRange.end = fClusterRange.end;
 #ifdef OHOS_SUPPORT
+        fEllipsis->fTextRange =
+                TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
         fEllipsis->fClusterStart = cluster.textRange().end;
 #else
         fEllipsis->fClusterStart = cluster.textRange().start;
@@ -1489,28 +1519,38 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
     return textOffsetInRun;
 }
 
+#ifdef OHOS_SUPPORT
 bool TextLine::processEllipsisRun(bool& isAlreadyUseEllipsis,
                                   SkScalar& runOffset,
-                                  bool includingEllipsis,
+                                  EllipsisReadStrategy ellipsisReadStrategy,
                                   const RunVisitor& visitor,
                                   SkScalar& runWidthInLine) const {
     isAlreadyUseEllipsis = true;
     runOffset += this->ellipsis()->offset().fX;
-    if (includingEllipsis) {
+    if (ellipsisReadStrategy == EllipsisReadStrategy::READ_REPLACED_WORD) {
         if (!visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &runWidthInLine)) {
-            LOGE("Visitor process ellipsis error!");
+            LOGE("Visitor process ellipsis replace word error!");
+            return false;
+        }
+    } else if (ellipsisReadStrategy == EllipsisReadStrategy::READ_ELLIPSIS_WORD) {
+        if (!visitor(ellipsis(), runOffset, ellipsis()->textRange(), &runWidthInLine)) {
+            LOGE("Visitor process ellipsis word error!");
             return false;
         }
     } else {
         runWidthInLine = this->ellipsis()->advance().fX;
     }
     return true;
-} 
+}
+#endif
 
-void TextLine::iterateThroughVisualRuns(bool includingEllipsis,
+#ifdef OHOS_SUPPORT
+void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
                                         bool includingGhostSpaces,
                                         const RunVisitor& visitor) const {
-
+#else
+void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& visitor) const {
+#endif
     // Walk through all the runs that intersect with the line in visual order
     SkScalar width = 0;
     SkScalar runOffset = 0;
@@ -1519,23 +1559,33 @@ void TextLine::iterateThroughVisualRuns(bool includingEllipsis,
     bool isAlreadyUseEllipsis = false;
     auto textRange = includingGhostSpaces ? this->textWithNewlines() : this->trimmedText();
 
+#ifdef OHOS_SUPPORT
     if (fRunsInVisualOrder.size() == 0 && fEllipsis != nullptr) {
-        if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, includingEllipsis, visitor, width)) {
+        if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
             return;
         }
         totalWidth += width;
     }
+#else
+    if (this->ellipsis() != nullptr && fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
+        runOffset = this->ellipsis()->offset().fX;
+        if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
+        }
+    }
+#endif
 
     for (auto& runIndex : fRunsInVisualOrder) {
+#ifdef OHOS_SUPPORT
         // add the lastClipRun's left ellipsis if necessary
         if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex &&
             ((!fLastClipRunLtr && !ellipsisModeIsHead) || (ellipsisModeIsHead && fLastClipRunLtr))) {
-            if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, includingEllipsis, visitor, width)) {
+            if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
                 return;
             }
             runOffset += width;
             totalWidth += width;
         }
+#endif
 
         const auto run = &this->fOwner->run(runIndex);
         auto lineIntersection = intersected(run->textRange(), textRange);
@@ -1564,9 +1614,11 @@ void TextLine::iterateThroughVisualRuns(bool includingEllipsis,
 
         // add the lastClipRun's right ellipsis if necessary
         if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex) {
-            if(!processEllipsisRun(isAlreadyUseEllipsis, runOffset, includingEllipsis, visitor, width)) {
+#ifdef OHOS_SUPPORT
+            if(!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
                 return;
             }
+#endif
             runOffset += width;
             totalWidth += width;
         }
@@ -1611,7 +1663,11 @@ LineMetrics TextLine::getMetrics() const {
     result.fTopHeight = this->offset().fY;
 
     // Fill out the style parts
-    this->iterateThroughVisualRuns(true, false,
+#ifdef OHOS_SUPPORT
+    this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, false,
+#else
+    this->iterateThroughVisualRuns(false,
+#endif
         [this, &result]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
         if (run->placeholderStyle() != nullptr) {
@@ -1663,7 +1719,11 @@ void TextLine::getRectsForRange(TextRange textRange0,
 {
     const Run* lastRun = nullptr;
     auto startBox = boxes.size();
-    this->iterateThroughVisualRuns(true, true,
+#ifdef OHOS_SUPPORT
+    this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, true,
+#else
+    this->iterateThroughVisualRuns(true,
+#endif
         [textRange0, rectHeightStyle, rectWidthStyle, &boxes, &lastRun, startBox, this]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
         *runWidthInLine = this->iterateThroughSingleRunByStyles(
@@ -1875,7 +1935,11 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
     }
 
     PositionWithAffinity result(0, Affinity::kDownstream);
-    this->iterateThroughVisualRuns(true, true,
+#ifdef OHOS_SUPPORT
+    this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, true,
+#else
+    this->iterateThroughVisualRuns(true,
+#endif
         [this, dx, &result]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             bool keepLooking = true;
@@ -1995,7 +2059,11 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
 }
 
 void TextLine::getRectsForPlaceholders(std::vector<TextBox>& boxes) {
-    this->iterateThroughVisualRuns(true, true,
+#ifdef OHOS_SUPPORT
+    this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, true,
+#else
+    this->iterateThroughVisualRuns( true,
+#endif
         [&boxes, this](const Run* run, SkScalar runOffset, TextRange textRange,
                         SkScalar* width) {
                 auto context = this->measureTextInsideOneRun(

@@ -57,6 +57,14 @@ public:
         GraphemeGluster = 0x05, // GlyphCluster & Grapheme
     };
 
+#ifdef OHOS_SUPPORT
+    enum EllipsisReadStrategy {
+        DEFAULT = 0,            // default
+        READ_REPLACED_WORD = 1,  // read replaced word
+        READ_ELLIPSIS_WORD = 2, // read ellipsis word
+    };
+#endif
+
     TextLine() = default;
     TextLine(const TextLine&) = delete;
     TextLine& operator=(const TextLine&) = delete;
@@ -106,13 +114,21 @@ public:
     using RunVisitor = std::function<bool(
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;
 
+#ifdef OHOS_SUPPORT
     bool processEllipsisRun(bool& isAlreadyUseEllipsis,
                             SkScalar& runOffset,
-                            bool includingEllipsis,
+                            EllipsisReadStrategy ellipsisReadStrategy,
                             const RunVisitor& visitor,
                             SkScalar& runWidthInLine) const;
+#endif
 
-    void iterateThroughVisualRuns(bool includingEllipsis, bool includingGhostSpaces, const RunVisitor& runVisitor) const;
+#ifdef OHOS_SUPPORT
+    void iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
+                                  bool includingGhostSpaces,
+                                  const RunVisitor& runVisitor) const;
+#else
+    void iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& runVisitor) const;
+#endif
     using RunStyleVisitor = std::function<void(
             TextRange textRange, const TextStyle& style, const ClipContext& context)>;
     SkScalar iterateThroughSingleRunByStyles(TextAdjustment textAdjustment,
