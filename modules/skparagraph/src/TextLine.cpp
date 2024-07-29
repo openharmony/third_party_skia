@@ -614,17 +614,21 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
 
     record.fOffset = SkPoint::Make(this->offset().fX + context.fTextShift,
                                    this->offset().fY + correctedBaseline);
-    if (record.fBlob != nullptr) {
-        auto unicodeStart = fOwner->getUnicodeIndex(textRange.start);
-        if (unicodeStart < fOwner->unicodeText().size()) {
-            SkUnichar unicode = fOwner->unicodeText()[unicodeStart];
-            if (unicode >= EMOJI_UNICODE_START && unicode <= EMOJI_UNICODE_END) {
+#ifdef OHOS_SUPPORT
+#ifndef USE_SKIA_TXT
+    SkFont font;
+#else
+    RSFont font;
+#endif
+    if (record.fBlob != nullptr && record.fVisitor_Run != nullptr) {
+        font = record.fVisitor_Run->font();
+        if (font.GetTypeface() != nullptr &&
+            (font.GetTypeface()->GetFamilyName().find("Emoji") != std::string::npos ||
+            font.GetTypeface()->GetFamilyName().find("emoji") != std::string::npos)) {
                 record.fBlob->SetEmoji(true);
-            }
-        } else {
-            LOGE("the blob getUnicodeIndex failed");
         }
     }
+#endif
 }
 
 void TextLine::TextBlobRecord::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
