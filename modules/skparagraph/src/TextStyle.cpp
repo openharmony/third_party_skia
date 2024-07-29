@@ -2,6 +2,7 @@
 #include "include/core/SkColor.h"
 #include "include/core/SkFontStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
+#include "modules/skparagraph/src/Run.h"
 
 namespace skia {
 namespace textlayout {
@@ -190,6 +191,9 @@ void TextStyle::getFontMetrics(RSFontMetrics* metrics) const {
     font.SetHinting(RSDrawing::FontHinting::SLIGHT);
     font.SetSubpixel(true);
     font.GetMetrics(metrics);
+#endif
+#ifdef OHOS_SUPPORT
+    metricsIncludeFontPadding(metrics);
 #endif
     if (fHeightOverride) {
         auto multiplier = fHeight * fFontSize;
