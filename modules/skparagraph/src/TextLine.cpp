@@ -999,8 +999,10 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 #ifdef OHOS_SUPPORT
         fEllipsis->fTextRange =
                 TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
-#endif
         fEllipsis->fClusterStart = cluster.textRange().end;
+#else
+        fEllipsis->fClusterStart = cluster.textRange().start;
+#endif
         fText.end = cluster.textRange().end;
         fTextIncludingNewlines.end = cluster.textRange().end;
         fTextExcludingSpaces.end = cluster.textRange().end;
@@ -1198,6 +1200,24 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
     return ellipsisRun;
 }
 
+#ifdef OHOS_SUPPORT
+void TextLine::measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const
+{
+    if (compareRound(context.clip.fRight, fAdvance.fX, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces &&
+        fAdvance.fX > 0) {
+        // There are few cases when we need it.
+        // The most important one: we measure the text with spaces at the end (or at the beginning in RTL)
+        // and we should ignore these spaces
+        if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kLtr) {
+            // We only use this member for LTR
+            context.fExcludedTrailingSpaces = std::max(context.clip.fRight - fAdvance.fX, 0.0f);
+            context.clippingNeeded = true;
+            context.clip.fRight = fAdvance.fX;
+        }
+    }
+}
+#endif
+
 TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
                                                         const Run* run,
                                                         SkScalar runOffsetInLine,
@@ -1320,11 +1340,9 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
     //SkDebugf("@%f[%f:%f)\n", textStartInLine, result.clip.fLeft, result.clip.fRight);
 
 #ifdef OHOS_SUPPORT
-    if (compareRound(result.clip.fRight, fAdvance.fX, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces && 
-        fAdvance.fX > 0) {
+    measureTextWithSpacesAtTheEnd(result, includeGhostSpaces);
 #else
     if (compareRound(result.clip.fRight, fAdvance.fX, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces) {
-#endif
         // There are few cases when we need it.
         // The most important one: we measure the text with spaces at the end (or at the beginning in RTL)
         // and we should ignore these spaces
@@ -1336,7 +1354,6 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
         }
     }
 
-#ifndef OHOS_SUPPORT
     if (result.clip.width() < 0) {
         // Weird situation when glyph offsets move the glyph to the left
         // (happens with zalgo texts, for instance)
@@ -1416,7 +1433,11 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
 
     if (styleType == StyleType::kNone) {
         ClipContext clipContext = correctContext(textRange, 0.0f);
+#ifdef OHOS_SUPPORT
+        if (clipContext.clip.height() > 0 || (run->isPlaceholder() && clipContext.clip.height() == 0)) {
+#else
         if (clipContext.clip.height() > 0) {
+#endif
             visitor(textRange, TextStyle(), clipContext);
             return clipContext.clip.width();
         } else {
@@ -1662,6 +1683,9 @@ LineMetrics TextLine::getMetrics() const {
 #else
             RSFontMetrics fontMetrics;
             run->fFont.GetMetrics(&fontMetrics);
+#endif
+#ifdef OHOS_SUPPORT
+            metricsIncludeFontPadding(&fontMetrics);
 #endif
             StyleMetrics styleMetrics(&style, fontMetrics);
             result.fLineMetrics.emplace(textRange.start, styleMetrics);

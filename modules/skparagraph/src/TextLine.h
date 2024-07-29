@@ -234,6 +234,9 @@ private:
     void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
     void prepareRoundRect();
     SkScalar calculateThickness(const TextStyle& style, const ClipContext& context);
+#ifdef OHOS_SUPPORT
+    void measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const;
+#endif
 
     ParagraphImpl* fOwner;
     BlockRange fBlockRange;
