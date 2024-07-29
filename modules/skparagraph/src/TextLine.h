@@ -114,24 +114,20 @@ public:
     using RunVisitor = std::function<bool(
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;
 
+#ifdef OHOS_SUPPORT
     bool processEllipsisRun(bool& isAlreadyUseEllipsis,
                             SkScalar& runOffset,
-#ifdef OHOS_SUPPORT
                             EllipsisReadStrategy ellipsisReadStrategy,
-#else
-                            bool includingEllipsis,
-#endif
                             const RunVisitor& visitor,
                             SkScalar& runWidthInLine) const;
+#endif
 
 #ifdef OHOS_SUPPORT
     void iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
                                   bool includingGhostSpaces,
                                   const RunVisitor& runVisitor) const;
 #else
-    void iterateThroughVisualRuns(bool includingEllipsis,
-                                  bool includingGhostSpaces,
-                                  const RunVisitor& runVisitor) const;
+    void iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& runVisitor) const;
 #endif
     using RunStyleVisitor = std::function<void(
             TextRange textRange, const TextStyle& style, const ClipContext& context)>;
