@@ -359,7 +359,11 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
 
 void TextLine::prepareRoundRect() {
     roundRectAttrs.clear();
-    this->iterateThroughVisualRuns(true, true,
+#ifdef OHOS_SUPPORT
+        this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, true,
+#else
+        this->iterateThroughVisualRuns(true,
+#endif
         [this](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
             TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
