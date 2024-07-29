@@ -313,7 +313,7 @@ public:
      */
     void purgeUnlockedResources(bool scratchResourcesOnly);
 
-    static void asyncFreeVMAMemoryBetweenFrames(bool all);
+    static void asyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived);
 
     /**
      * Gets the maximum supported texture size.

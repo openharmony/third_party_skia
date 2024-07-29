@@ -55,7 +55,7 @@ GrVkMemory::AsyncFreeVMAMemoryManager& GrVkMemory::AsyncFreeVMAMemoryManager::Ge
     return asyncFreeVMAMemoryManager;
 }
 
-void GrVkMemory::AsyncFreeVMAMemoryManager::FreeMemoryInWaitQueue(bool all) {
+void GrVkMemory::AsyncFreeVMAMemoryManager::FreeMemoryInWaitQueue(std::function<bool(void)> nextFrameHasArrived) {
     if (!fAsyncFreedMemoryEnabled) {
         return;
     }
@@ -67,7 +67,7 @@ void GrVkMemory::AsyncFreeVMAMemoryManager::FreeMemoryInWaitQueue(bool all) {
         }
         while (!pair.second.fQueue.empty()) {
             auto& free = pair.second.fQueue.back();
-            if (free.isBuffer && free.fAlloc.fIsExternalMemory) {
+            if (free.fIsBuffer && free.fAlloc.fIsExternalMemory) {
                 VK_CALL(free.fGpu, FreeMemory(free.fGpu->device(), free.fAlloc.fMemory, nullptr));
             } else {
                 GrVkMemoryAllocator* allocator = free.fGpu->memoryAllocator();
@@ -75,7 +75,7 @@ void GrVkMemory::AsyncFreeVMAMemoryManager::FreeMemoryInWaitQueue(bool all) {
             }
             pair.second.fTotalFreedMemorySize -= free.fAlloc.fSize;
             pair.second.fQueue.pop_back();
-            if (!all) {
+            if (nextFrameHasArrived()) {
                 return;
             }
         }
@@ -86,7 +86,7 @@ void GrVkMemory::AsyncFreeVMAMemoryManager::FreeMemoryInWaitQueue(bool all) {
 
 bool GrVkMemory::AsyncFreeVMAMemoryManager::AddMemoryToWaitQueue(const GrVkGpu* gpu,
                                                                  const GrVkAlloc& alloc,
-                                                                 bool buffer) {
+                                                                 bool isBuffer) {
     if (!fAsyncFreedMemoryEnabled) {
         return false;
     }
@@ -102,18 +102,18 @@ bool GrVkMemory::AsyncFreeVMAMemoryManager::AddMemoryToWaitQueue(const GrVkGpu* 
         if ((pair.second.fTotalFreedMemorySize + alloc.fSize) > fLimitFreedMemorySize) {
             return false;
         }
-        if (!buffer || !alloc.fIsExternalMemory) {
+        if (!isBuffer || !alloc.fIsExternalMemory) {
             SkASSERT(alloc.fBackendMemory);
         }
         pair.second.fTotalFreedMemorySize += alloc.fSize;
-        pair.second.fQueue.emplace_back(buffer, gpu, alloc);
+        pair.second.fQueue.emplace_back(gpu, alloc, isBuffer);
         return true;
     }
     return false;
 }
 
-void GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(bool all) {
-    AsyncFreeVMAMemoryManager::GetInstance().FreeMemoryInWaitQueue(all);
+void GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
+    AsyncFreeVMAMemoryManager::GetInstance().FreeMemoryInWaitQueue(nextFrameHasArrived);
 }
 
 bool GrVkMemory::AllocAndBindBufferMemory(GrVkGpu* gpu,
