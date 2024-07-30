@@ -475,6 +475,24 @@
   ],
   "font_file_map" : [
     {
+      "DejaVu Math TeX Gyre": "DejaVuMathTeXGyre.ttf"
+    },
+    {
+      "FTSymbol": "FTSymbol.ttf"
+    },
+    {
+      "FTToken": "FTToken.ttf"
+    },
+    {
+      "FTToken2": "FTToken2.ttf"
+    },
+    {
+      "FTToken3": "FTToken3.ttf"
+    },
+    {
+      "FTTokens": "FTTokens.ttf"
+    },
+    {
       "方正仿宋-简": "FZFangS-SC.ttf"
     },
     {
