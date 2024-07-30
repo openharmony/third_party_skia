@@ -22,11 +22,12 @@ namespace GrVkMemory {
     class AsyncFreeVMAMemoryManager {
     public:
         struct WaitQueueItem {
-            bool isBuffer = false;
+            WaitQueueItem(const GrVkGpu* gpu, const GrVkAlloc& alloc, bool isBuffer)
+                    : fGpu(gpu), fAlloc(alloc), fIsBuffer(isBuffer) {}
+
             const GrVkGpu* fGpu;
             const GrVkAlloc fAlloc;
-            WaitQueueItem(bool isBuffer, const GrVkGpu* gpu, const GrVkAlloc& alloc)
-                    : isBuffer(isBuffer), fGpu(gpu), fAlloc(alloc) {}
+            bool fIsBuffer = false;
         };
         struct FreeVMAMemoryWaitQueue {
             uint64_t fTotalFreedMemorySize = 0;
@@ -37,8 +38,8 @@ namespace GrVkMemory {
         AsyncFreeVMAMemoryManager(const AsyncFreeVMAMemoryManager&) = delete;
         AsyncFreeVMAMemoryManager& operator=(const AsyncFreeVMAMemoryManager&) = delete;
 
-        void FreeMemoryInWaitQueue(bool all);
-        void AddMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, bool buffer);
+        void FreeMemoryInWaitQueue(std::function<bool(void)> nextFrameHasArrived);
+        void AddMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, bool isBuffer);
 
     private:
         AsyncFreeVMAMemoryManager();
@@ -91,7 +92,7 @@ namespace GrVkMemory {
     void GetNonCoherentMappedMemoryRange(const GrVkAlloc&, VkDeviceSize offset, VkDeviceSize size,
                                          VkDeviceSize alignment, VkMappedMemoryRange*);
 
-    void AsyncFreeVMAMemoryBetweenFrames(bool all);
+    void AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived);
 }  // namespace GrVkMemory
 
 #endif

@@ -403,9 +403,9 @@ void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly,
     fResourceCache->purgeCacheBetweenFrames(scratchResourcesOnly, exitedPidSet, protectedPidSet);
 }
 
-void GrDirectContext::asyncFreeVMAMemoryBetweenFrames(bool all) {
+void GrDirectContext::asyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
 #ifdef SK_VULKAN
-    GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(all);
+    GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(nextFrameHasArrived);
 #endif
 }
 

@@ -546,8 +546,8 @@ bool GrVkGpu::onWritePixels(GrSurface* surface,
     return success;
 }
 
-void GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(bool all) {
-    GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(all);
+void GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
+    GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(nextFrameHasArrived);
 }
 
 bool GrVkGpu::onTransferPixelsTo(GrTexture* texture,
