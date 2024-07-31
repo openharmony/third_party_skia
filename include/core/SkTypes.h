@@ -502,6 +502,10 @@
     #define SkAssertResult(cond)         if (cond) {} do {} while(false)
 #endif
 
+#ifdef SKIA_OHOS_SHADER_REDUCE
+    extern SK_API bool SkShaderReduceProperty();
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /** Fast type for unsigned 8 bits. Use for parameter passing and local
