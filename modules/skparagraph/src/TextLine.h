@@ -12,6 +12,9 @@
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
 #include "modules/skparagraph/include/RunBase.h"
+#ifdef OHOS_SUPPORT
+#include "modules/skparagraph/include/TextLineBase.h"
+#endif
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/src/Run.h"
 
@@ -198,6 +201,19 @@ public:
     void setTextBlobCachePopulated(const bool textBlobCachePopulated) {
         fTextBlobCachePopulated = textBlobCachePopulated;
     }
+
+#ifdef OHOS_SUPPORT
+    std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
+        const std::string& ellipsisStr);
+    double getTypographicBounds(double* ascent, double* descent, double* leading) const;
+    RSRect getImageBounds() const;
+    double getTrailingSpaceWidth() const;
+    int32_t getStringIndexForPosition(SkPoint point) const;
+    double getOffsetForStringIndex(int32_t index) const;
+    std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const;
+    double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const;
+#endif
+
 private:
     struct RoundRectAttr {
         int styleId;
@@ -290,6 +306,9 @@ private:
     bool fTextBlobCachePopulated;
     DecorationContext fDecorationContext;
     std::vector<RoundRectAttr> roundRectAttrs = {};
+#ifdef OHOS_SUPPORT
+    bool fIsTextLineEllipsisHeadModal = false;
+#endif
 public:
     std::vector<TextBlobRecord> fTextBlobCache;
 };
