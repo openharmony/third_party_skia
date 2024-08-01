@@ -20,7 +20,13 @@
 using namespace ErrorCode;
 static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
 
-const bool G_IS_HMSYMBOL_ENABLE = HmSymbolConfig_OHOS::GetInstance()->GetHmSymbolEnable();
+#ifdef SK_BUILD_FONT_MGR_FOR_OHOS
+#include <parameters.h>
+    static const bool G_IS_HMSYMBOL_ENABLE =
+        (std::atoi(OHOS::system::GetParameter("persist.sys.graphic.hmsymbolcfg.enable", "1").c_str()) != 0);
+#else
+    static const bool G_IS_HMSYMBOL_ENABLE = true;
+#endif
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
 static const char* OHOS_DEFAULT_CONFIG = "fontconfig.json";
