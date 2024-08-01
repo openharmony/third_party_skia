@@ -1419,10 +1419,14 @@ optional("pdf") {
   enabled = skia_use_zlib && skia_enable_pdf
   public_defines = [ "SK_SUPPORT_PDF" ]
   deps = []
+  external_deps = []
   if (use_oh_skia) {
-    external_deps = [ "zlib:libz" ]
+    external_deps += [ "zlib:libz" ]
   } else {
     deps += [ "${skia_third_party_dir}/zlib" ]
+  }
+  if (is_ohos && !build_ohos_sdk) {
+    external_deps += [ "hitrace:hitrace_meter" ]
   }
   if (skia_use_libjpeg_turbo_decode) {
     deps += [ ":jpeg_decode" ]
