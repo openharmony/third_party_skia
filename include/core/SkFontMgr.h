@@ -17,6 +17,8 @@
 #include <string>
 #endif
 
+#include <vector>
+
 class SkData;
 class SkFontData;
 class SkStreamAsset;
@@ -129,6 +131,10 @@ public:
 
     sk_sp<SkTypeface> legacyMakeTypeface(const char familyName[], SkFontStyle style) const;
 
+#ifdef OHOS_SUPPORT
+    std::vector<sk_sp<SkTypeface>> getSystemFonts();
+#endif
+
     /** Return the default fontmgr. */
     static sk_sp<SkFontMgr> RefDefault();
 
@@ -173,6 +179,10 @@ protected:
                                          const SkFontStyle&) const {
         return nullptr;
     }
+
+#ifdef OHOS_SUPPORT
+    virtual std::vector<sk_sp<SkTypeface>> onGetSystemFonts() const;
+#endif
 
 private:
 

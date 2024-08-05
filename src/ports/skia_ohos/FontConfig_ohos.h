@@ -114,6 +114,7 @@ public:
     int getTypefaceCount(int styleIndex, bool isFallback = false) const;
     int getStyleIndex(const char* familyName, bool& isFallback) const;
 
+    sk_sp<SkTypeface_OHOS> getTypefaceSP(int styleIndex, int index, bool isFallback = false) const;
     SkTypeface_OHOS* getTypeface(int styleIndex, int index, bool isFallback = false) const;
     SkTypeface_OHOS* getTypeface(int styleIndex, const SkFontStyle& style,
         bool isFallback = false) const;

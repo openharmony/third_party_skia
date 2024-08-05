@@ -384,6 +384,36 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::onLegacyMakeTypeface(const char familyName[], 
     return nullptr;
 }
 
+#ifdef OHOS_SUPPORT
+std::vector<sk_sp<SkTypeface>> SkFontMgr_OHOS::onGetSystemFonts() const
+{
+    if (fontConfig == nullptr) {
+        return;
+    }
+    std::vector<sk_sp<SkTypeface>> skTypefaces;
+    int familyCount = fontConfig->getFamilyCount();
+    for (int i = 0; i < familyCount; ++i) {
+        int typefaceCount = fontConfig->getTypefaceCount(i);
+        for (int j = 0; j < typefaceCount; ++j) {
+            sk_sp<SkTypeface_OHOS> typeface = fontConfig->getTypefaceSP(i, j);
+            if (typeface == nullptr) {
+                continue;
+            }
+            skTypefaces.emplace_back(typeface);
+        }
+    }
+
+    for (auto& item : fontConfig->getFallbackSet()) {
+        if (item->typefaceSet != nullptr) {
+            for (auto& iter : *(item->typefaceSet)) {
+                skTypefaces.emplace_back(iter);
+            }
+        }
+    }
+    return std::move(skTypefaces);
+}
+#endif
+
 /*! To make a typeface from the specified stream and font arguments
  * \param stream the specified stream to be parsed to get font information
  * \param args the arguments of index or axis values

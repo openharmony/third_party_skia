@@ -48,6 +48,10 @@ protected:
 
     virtual sk_sp<SkTypeface> onLegacyMakeTypeface(const char familyName[], SkFontStyle style) const override;
 
+#ifdef OHOS_SUPPORT
+    std::vector<sk_sp<SkTypeface>> onGetSystemFonts() const override;
+#endif
+
 private:
     std::shared_ptr<FontConfig_OHOS> fontConfig = nullptr; // the pointer of FontConfig_OHOS
     SkTypeface_FreeType::Scanner fontScanner; // the scanner to parse a font file
