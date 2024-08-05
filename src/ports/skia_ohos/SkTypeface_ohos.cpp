@@ -111,6 +111,18 @@ void SkTypeface_OHOS::onGetFamilyName(SkString* familyName) const
     }
 }
 
+#ifdef OHOS_SUPPORT
+void SkTypeface_OHOS::onGetFontPath(SkString* path) const
+{
+    if (path == nullptr) {
+        return;
+    }
+    if (fontInfo != nullptr) {
+        *path = fontInfo->fname;
+    }
+}
+#endif
+
 /*! To clone a typeface from this typeface
  * \param args the specified font arguments from which the new typeface is created
  * \return The object of a new typeface
