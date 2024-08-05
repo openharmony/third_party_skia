@@ -35,6 +35,10 @@ public:
         SkRect clipRect,
         const Run* visitorRun,
         size_t visitorPos,
+#ifdef OHOS_SUPPORT
+        size_t visitorGlobalPos,
+        size_t trailSpaces,
+#endif
         size_t visitorSize
     );
 
@@ -49,6 +53,19 @@ public:
     std::vector<RSPoint> getPositions() const override;
     std::vector<RSPoint> getOffsets() const override;
 
+#ifdef OHOS_SUPPORT
+    std::vector<uint16_t> getGlyphs(int64_t start, int64_t length) const override;
+    void getStringRange(uint64_t* location, uint64_t* length) const override;
+    std::vector<uint64_t> getStringIndices(int64_t start, int64_t length) const override;
+    float getTypographicBounds(float* ascent, float* descent, float* leading) const override;
+#ifndef USE_SKIA_TXT
+    SkRect getImageBounds() const override;
+    std::vector<SkPoint> getPositions(int64_t start, int64_t length) const override;
+#else
+    RSRect getImageBounds() const override;
+    std::vector<RSPoint> getPositions(int64_t start, int64_t length) const override;
+#endif
+#endif
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) override;
 
     size_t getVisitorPos() const;
@@ -56,6 +73,12 @@ public:
 
 private:
 
+#ifdef OHOS_SUPPORT
+    float calculateTrailSpacesWidth() const;
+    uint64_t calculateActualLength(int64_t start, int64_t length) const;
+    SkRect getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan, size_t startNotWhiteSpaceIndex,
+        SkScalar startWhiteSpaceWidth, size_t endWhiteSpaceNum, SkScalar endAdvance) const;
+#endif
 #ifndef USE_SKIA_TXT
     sk_sp<SkTextBlob> fBlob;
 #else
@@ -68,6 +91,10 @@ private:
 
     const Run* fVisitorRun;
     size_t     fVisitorPos;
+#ifdef OHOS_SUPPORT
+    size_t     fVisitorGlobalPos = 0;
+    size_t     fTrailSpaces = 0;
+#endif
     size_t     fVisitorSize;
 };
 }  // namespace textlayout
