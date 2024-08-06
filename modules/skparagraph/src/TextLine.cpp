@@ -1426,11 +1426,20 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         // Extra efforts to get the ellipsis text style
         ClipContext clipContext = correctContext(run->textRange(), 0.0f);
         for (BlockIndex index = fBlockRange.start; index < fBlockRange.end; ++index) {
-           auto block = fOwner->styles().begin() + index;
+            auto block = fOwner->styles().begin() + index;
+#ifdef OHOS_SUPPORT
+            TextRange intersect = intersected(block->fRange,
+                TextRange(fEllipsis->textRange().start - 1, fEllipsis->textRange().end));
+            if (intersect.width() > 0) {
+                visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
+                return run->advance().fX;
+            }
+#else
            if (block->fRange.start >= run->fClusterStart && block->fRange.end < run->fClusterStart) {
                visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
                return run->advance().fX;
            }
+#endif
         }
         SkASSERT(false);
     }
@@ -2147,6 +2156,9 @@ TextLine TextLine::CloneSelf()
 
     textLine.roundRectAttrs = this->roundRectAttrs;
     textLine.fTextBlobCache = this->fTextBlobCache;
+    textLine.fTextRangeReplacedByEllipsis = this->fTextRangeReplacedByEllipsis;
+    textLine.fEllipsisIndex = this->fEllipsisIndex;
+    textLine.fLastClipRunLtr = this->fLastClipRunLtr;
     return textLine;
 }
 }  // namespace textlayout
