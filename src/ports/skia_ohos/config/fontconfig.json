@@ -475,6 +475,9 @@
   ],
   "font_file_map" : [
     {
+      "DejaVuMathTeXGyre-Regular": "DejaVuMathTeXGyre.ttf"
+    },
+    {
       "FTSymbol": "FTSymbol.ttf"
     },
     {
