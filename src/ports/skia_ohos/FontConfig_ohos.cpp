@@ -12,6 +12,10 @@
 #include <unistd.h>
 #include <cstring>
 
+#ifdef SK_BUILD_FONT_MGR_FOR_OHOS
+#include <parameters.h>
+#endif
+
 #include "securec.h"
 
 #include "SkFontStyle.h"
@@ -21,7 +25,6 @@ using namespace ErrorCode;
 static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
 
 #ifdef SK_BUILD_FONT_MGR_FOR_OHOS
-#include <parameters.h>
     static const bool G_IS_HMSYMBOL_ENABLE =
         (std::atoi(OHOS::system::GetParameter("persist.sys.graphic.hmsymbolcfg.enable", "1").c_str()) != 0);
 #else
