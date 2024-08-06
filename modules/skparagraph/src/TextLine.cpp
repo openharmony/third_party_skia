@@ -1426,6 +1426,7 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         // Extra efforts to get the ellipsis text style
         ClipContext clipContext = correctContext(run->textRange(), 0.0f);
         for (BlockIndex index = fBlockRange.start; index < fBlockRange.end; ++index) {
+#ifdef OHOS_SUPPORT
             auto block = fOwner->styles().begin() + index;
             TextRange intersect = intersected(block->fRange,
                 TextRange(fEllipsis->textRange().start, fEllipsis->textRange().end));
@@ -1433,6 +1434,13 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
                 visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
                 return run->advance().fX;
             }
+#else
+           auto block = fOwner->styles().begin() + index;
+           if (block->fRange.start >= run->fClusterStart && block->fRange.end < run->fClusterStart) {
+               visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
+               return run->advance().fX;
+           }
+#endif
         }
         SkASSERT(false);
     }
