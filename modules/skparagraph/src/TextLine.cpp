@@ -2149,6 +2149,9 @@ TextLine TextLine::CloneSelf()
 
     textLine.roundRectAttrs = this->roundRectAttrs;
     textLine.fTextBlobCache = this->fTextBlobCache;
+    textLine.fTextRangeReplacedByEllipsis = this->fTextRangeReplacedByEllipsis;
+    textLine.fEllipsisIndex = this->fEllipsisIndex;
+    textLine.fLastClipRunLtr = this->fLastClipRunLtr;
     return textLine;
 }
 }  // namespace textlayout
