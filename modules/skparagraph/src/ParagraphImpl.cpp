@@ -100,6 +100,9 @@ Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             , fMaxIntrinsicWidth(0)
             , fMinIntrinsicWidth(0)
             , fLongestLine(0)
+#ifdef OHOS_SUPPORT
+            , fLongestLineWithIndent(0)
+#endif
             , fExceededMaxLines(0)
 { }
 
@@ -642,6 +645,9 @@ void ParagraphImpl::resetContext() {
     fMaxIntrinsicWidth = 0;
     fMinIntrinsicWidth = 0;
     fLongestLine = 0;
+#ifdef OHOS_SUPPORT
+    fLongestLineWithIndent = 0;
+#endif
     fMaxWidthWithTrailingSpaces = 0;
     fExceededMaxLines = false;
 }
