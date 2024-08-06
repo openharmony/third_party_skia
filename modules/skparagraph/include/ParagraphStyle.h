@@ -19,6 +19,16 @@
 namespace skia {
 namespace textlayout {
 
+#ifdef OHOS_SUPPORT
+struct TextTabs {
+    TextAlign alignment;
+    SkScalar location;
+    bool operator==(const TextTabs& other) const {
+        return (alignment == other.alignment) && nearlyEqual(location, other.location);
+    }
+};
+#endif
+
 enum class WordBreakType {
     NORMAL,     // to be done.
     BREAK_ALL,  // break occur after any characters.
@@ -119,6 +129,9 @@ struct ParagraphStyle {
                this->fEllipsisModal == rhs.fEllipsisModal &&
                this->fTextOverflower == rhs.fTextOverflower &&
                this->fReplaceTabCharacters == rhs.fReplaceTabCharacters &&
+#ifdef OHOS_SUPPORT
+               this->fTextTab == rhs.fTextTab &&
+#endif
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
     }
 
@@ -166,6 +179,11 @@ struct ParagraphStyle {
 
     bool getTextOverflower() const { return fTextOverflower; }
     void setTextOverflower(bool textOverflowerFlag) { fTextOverflower = textOverflowerFlag; }
+
+#ifdef OHOS_SUPPORT
+    const TextTabs& getTextTab() const { return fTextTab; }
+    void setTextTab(const TextTabs& textTab) { fTextTab = textTab; }
+#endif
 private:
     StrutStyle fStrutStyle;
     TextStyle fDefaultTextStyle;
@@ -181,6 +199,9 @@ private:
     bool fTextOverflower;
     skia::textlayout::EllipsisModal fEllipsisModal;
     SkScalar fTextSplitRatio = 0.5f;
+#ifdef OHOS_SUPPORT
+    TextTabs fTextTab;
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia

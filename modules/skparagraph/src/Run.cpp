@@ -494,6 +494,15 @@ void Run::shift(const Cluster* cluster, SkScalar offset) {
     }
 }
 
+#ifdef OHOS_SUPPORT
+void Run::extendClusterWidth(Cluster* cluster, SkScalar space) {
+    addSpacesAtTheEnd(space, cluster);
+    for (size_t pos = cluster->endPos(); pos < fPositions.size(); pos++) {
+        fPositions[pos].fX += space;
+    }
+}
+#endif
+
 void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
 
     SkASSERT(isPlaceholder());
