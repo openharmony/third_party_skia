@@ -145,6 +145,7 @@ uint32_t hash = 0;
         hash = mix(hash, SkGoodHash()(ts.fStyle.getLocale()));
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getHeight())));
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getBaselineShift())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getHalfLeading())));
         for (auto& ff : ts.fStyle.getFontFamilies()) {
             hash = mix(hash, SkGoodHash()(ff));
         }
@@ -170,6 +171,7 @@ uint32_t hash = 0;
         hash = mix(hash, SkGoodHash()(strutStyle.getHeightOverride()));
         hash = mix(hash, SkGoodHash()(strutStyle.getFontStyle()));
         hash = mix(hash, SkGoodHash()(strutStyle.getForceStrutHeight()));
+        hash = mix(hash, SkGoodHash()(strutStyle.getHalfLeading()));
         for (auto& ff : strutStyle.getFontFamilies()) {
             hash = mix(hash, SkGoodHash()(ff));
         }
