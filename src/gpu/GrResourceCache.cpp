@@ -8,9 +8,12 @@
 #include "src/gpu/GrResourceCache.h"
 #include <atomic>
 #include <vector>
+#include <map>
+#include <sstream>
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
 #include "hitrace_meter.h"
 #endif
+#include "include/core/SkString.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/private/GrSingleOwner.h"
 #include "include/private/SkTo.h"
@@ -183,6 +186,289 @@ void GrResourceCache::dumpPidResource() {
 #endif
 }
 
+#ifdef SKIA_DFX_FOR_OHOS
+static constexpr int MB = 1024 * 1024;
+
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+bool GrResourceCache::purgeUnlocakedResTraceEnabled_ =
+    std::atoi((OHOS::system::GetParameter("sys.graphic.skia.cache.debug", "0").c_str())) == 1;
+#endif
+
+void GrResourceCache::dumpInfo(SkString* out) {
+    if (out == nullptr) {
+        SkDebugf("OHOS GrResourceCache::dumpInfo outPtr is nullptr!");
+        return;
+    }
+    auto info = cacheInfo();
+    constexpr uint8_t STEP_INDEX = 1;
+    SkTArray<SkString> lines;
+    SkStrSplit(info.substr(STEP_INDEX, info.length() - STEP_INDEX).c_str(), ";", &lines);
+    for (int i = 0; i < lines.size(); ++i) {
+        out->appendf("    %s\n", lines[i].c_str());
+    }
+}
+
+std::string GrResourceCache::cacheInfo() {
+    auto fPurgeableQueueInfoStr = cacheInfoPurgeableQueue();
+    auto fNonpurgeableResourcesInfoStr = cacheInfoNoPurgeableQueue();
+
+    std::ostringstream cacheInfoStream;
+    cacheInfoStream << "[fPurgeableQueueInfoStr.count : " << fPurgeableQueue.count()
+        << "; fNonpurgeableResources.count : " << fNonpurgeableResources.count()
+        << "; fBudgetedBytes : " << fBudgetedBytes
+        << "(" << static_cast<size_t>(fBudgetedBytes / MB)
+        << " MB) / " << fMaxBytes
+        << "(" << static_cast<size_t>(fMaxBytes / MB)
+        << " MB); fBudgetedCount : " << fBudgetedCount
+        << "; fBytes" << fBytes
+        << "(" << static_cast<size_t>(fBytes / MB)
+        << " MB); fPurgeableBytes : " << fPurgeableBytes
+        << "(" << static_cast<size_t>(fPurgeableBytes / MB)
+        << " MB); fTimestamp : " << fTimestamp
+        << fPurgeableQueueInfoStr << "; " << fNonpurgeableResourcesInfoStr;
+    return cacheInfoStream.str();
+}
+
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+void GrResourceCache::traceBeforePurgeUnlockRes(const std::string& method, SimpleCacheInfo& simpleCacheInfo) {
+    if (purgeUnlocakedResTraceEnabled_) {
+        StartTrace(HITRACE_TAG_GRAPHIC_AGP, method + " begin cacheInfo = " + cacheInfo());
+    } else {
+        simpleCacheInfo.fPurgeableQueueCount = fPurgeableQueue.count();
+        simpleCacheInfo.fNonpurgeableResourcesCount = fNonpurgeableResources.count();
+        simpleCacheInfo.fPurgeableBytes = fPurgeableBytes;
+        simpleCacheInfo.fBudgetedCount = fBudgetedCount;
+        simpleCacheInfo.fBudgetedBytes = fBudgetedBytes;
+    }
+}
+
+void GrResourceCache::traceAfterPurgeUnlockRes(const std::string& method, const SimpleCacheInfo& simpleCacheInfo) {
+    if (purgeUnlocakedResTraceEnabled_) {
+        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "%s end cacheInfo= %s", method.c_str(), cacheInfo().c_str());
+        FinishTrace(HITRACE_TAG_GRAPHIC_AGP);
+    } else {
+        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "%s end cacheInfo= %s",
+            method.c_str(), cacheInfoComparison(simpleCacheInfo).c_str());
+    }
+}
+
+std::string GrResourceCache::cacheInfoComparison(const SimpleCacheInfo& simpleCacheInfo) {
+    std::ostringstream cacheInfoComparison;
+    cacheInfoComparison << "PurgeableCount : " << simpleCacheInfo.fPurgeableQueueCount << " / " << fPurgeableQueue.count()
+        << "; NonpurgeableCount : " << simpleCacheInfo.fNonpurgeableResourcesCount << " / " << fNonpurgeableResources.count()
+        << "; PurgeableBytes : " << simpleCacheInfo.fPurgeableBytes << " / " << fPurgeableBytes
+        << "; BudgetedCount : " << simpleCacheInfo.fBudgetedCount << " / " << fBudgetedCount
+        << "; BudgetedBytes : " << simpleCacheInfo.fBudgetedBytes << " / " << fBudgetedBytes;
+    return cacheInfoComparison.str();
+}
+#endif // SKIA_OHOS_FOR_OHOS_TRACE
+
+std::string GrResourceCache::cacheInfoPurgeableQueue() {
+    std::map<uint32_t, int> purgSizeInfoWid;
+    std::map<uint32_t, int> purgCountInfoWid;
+    std::map<uint32_t, std::string> purgNameInfoWid;
+    std::map<uint32_t, int> purgPidInfoWid;
+
+    std::map<uint32_t, int> purgSizeInfoPid;
+    std::map<uint32_t, int> purgCountInfoPid;
+    std::map<uint32_t, std::string> purgNameInfoPid;
+
+    std::map<uint32_t, int> purgSizeInfoFid;
+    std::map<uint32_t, int> purgCountInfoFid;
+    std::map<uint32_t, std::string> purgNameInfoFid;
+
+    int purgCountUnknown = 0;
+    int purgSizeUnknown = 0;
+
+    for (int i = 0; i < fPurgeableQueue.count(); i++) {
+        auto resource = fPurgeableQueue.at(i);
+        auto resourceTag = resource->getResourceTag();
+        if (resourceTag.fWid != 0) {
+            updatePurgeableWidMap(resource, purgNameInfoWid, purgSizeInfoWid, purgPidInfoWid, purgCountInfoWid);
+        } else if (resourceTag.fPid != 0) {
+            updatePurgeablePidMap(resource, purgNameInfoPid, purgSizeInfoPid, purgCountInfoPid);
+        } else if (resourceTag.fFid != 0) {
+            updatePurgeableFidMap(resource, purgNameInfoFid, purgSizeInfoFid, purgCountInfoFid);
+        } else {
+            purgCountUnknown++;
+            purgSizeUnknown += resource->gpuMemorySize();
+        }
+    }
+
+    std::string infoStr;
+    if (purgSizeInfoWid.size() > 0) {
+        infoStr += ";PurgeableInfo_Node:[";
+        updatePurgeableWidInfo(infoStr, purgNameInfoWid, purgSizeInfoWid, purgPidInfoWid, purgCountInfoWid);
+    }
+    if (purgSizeInfoPid.size() > 0) {
+        infoStr += ";PurgeableInfo_Pid:[";
+        updatePurgeablePidInfo(infoStr, purgNameInfoWid, purgSizeInfoWid, purgCountInfoWid);
+    }
+    if (purgSizeInfoFid.size() > 0) {
+        infoStr += ";PurgeableInfo_Fid:[";
+        updatePurgeableFidInfo(infoStr, purgNameInfoFid, purgSizeInfoFid, purgCountInfoFid);
+    }
+    updatePurgeableUnknownInfo(infoStr, ";PurgeableInfo_Unknown:", purgCountUnknown, purgSizeUnknown);
+    return infoStr;
+}
+
+std::string GrResourceCache::cacheInfoNoPurgeableQueue() {
+    std::map<uint32_t, int> noPurgSizeInfoWid;
+    std::map<uint32_t, int> noPurgCountInfoWid;
+    std::map<uint32_t, std::string> noPurgNameInfoWid;
+    std::map<uint32_t, int> noPurgPidInfoWid;
+
+    std::map<uint32_t, int> noPurgSizeInfoPid;
+    std::map<uint32_t, int> noPurgCountInfoPid;
+    std::map<uint32_t, std::string> noPurgNameInfoPid;
+
+    std::map<uint32_t, int> noPurgSizeInfoFid;
+    std::map<uint32_t, int> noPurgCountInfoFid;
+    std::map<uint32_t, std::string> noPurgNameInfoFid;
+
+    int noPurgCountUnknown = 0;
+    int noPurgSizeUnknown = 0;
+
+    for (int i = 0; i < fNonpurgeableResources.count(); i++) {
+        auto resource = fNonpurgeableResources[i];
+        if (resource == nullptr) {
+            continue;
+        }
+        auto resourceTag = resource->getResourceTag();
+        if (resourceTag.fWid != 0) {
+            updatePurgeableWidMap(resource, noPurgNameInfoWid, noPurgSizeInfoWid, noPurgPidInfoWid, noPurgCountInfoWid);
+        } else if (resourceTag.fPid != 0){
+            updatePurgeablePidMap(resource, noPurgNameInfoPid, noPurgSizeInfoPid, noPurgCountInfoPid);
+        } else if (resourceTag.fFid != 0){
+            updatePurgeableFidMap(resource, noPurgNameInfoFid, noPurgSizeInfoFid, noPurgCountInfoFid);
+        } else {
+            noPurgCountUnknown++;
+            noPurgSizeUnknown += resource->gpuMemorySize();
+        }
+    }
+
+    std::string infoStr;
+    if (noPurgSizeInfoWid.size() > 0) {
+        infoStr += ";NonPurgeableInfo_Node:[";
+        updatePurgeableWidInfo(infoStr, noPurgNameInfoWid, noPurgSizeInfoWid, noPurgPidInfoWid, noPurgCountInfoWid);
+    }
+    if (noPurgSizeInfoPid.size() > 0) {
+        infoStr += ";NonPurgeableInfo_Pid:[";
+        updatePurgeablePidInfo(infoStr, noPurgNameInfoPid, noPurgSizeInfoPid, noPurgCountInfoPid);
+    }
+    if (noPurgSizeInfoFid.size() > 0) {
+        infoStr += ";NonPurgeableInfo_Fid:[";
+        updatePurgeableFidInfo(infoStr, noPurgNameInfoFid, noPurgSizeInfoFid, noPurgCountInfoFid);
+    }
+    updatePurgeableUnknownInfo(infoStr, ";NonPurgeableInfo_Unknown:", noPurgCountUnknown, noPurgSizeUnknown);
+    return infoStr;
+}
+
+inline void GrResourceCache::updatePurgeableWidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoWid,
+                     std::map<uint32_t, int>& sizeInfoWid,
+                     std::map<uint32_t, int>& pidInfoWid,
+                     std::map<uint32_t, int>& countInfoWid) {
+    auto resourceTag = resource->getResourceTag();
+    auto it = sizeInfoWid.find(resourceTag.fWid);
+    if (it != sizeInfoWid.end()) {
+        sizeInfoWid[resourceTag.fWid] = it->second + resource->gpuMemorySize();
+        countInfoWid[resourceTag.fWid]++;
+    } else {
+        sizeInfoWid[resourceTag.fWid] = resource->gpuMemorySize();
+        nameInfoWid[resourceTag.fWid] = resourceTag.fName;
+        pidInfoWid[resourceTag.fWid] = resourceTag.fPid;
+        countInfoWid[resourceTag.fWid] = 1;
+    }
+}
+
+inline void GrResourceCache::updatePurgeablePidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoPid,
+                     std::map<uint32_t, int>& sizeInfoPid,
+                     std::map<uint32_t, int>& countInfoPid) {
+    auto resourceTag = resource->getResourceTag();
+    auto it = sizeInfoPid.find(resourceTag.fPid);
+    if (it != sizeInfoPid.end()) {
+        sizeInfoPid[resourceTag.fPid] = it->second + resource->gpuMemorySize();
+        countInfoPid[resourceTag.fPid]++;
+    } else {
+        sizeInfoPid[resourceTag.fPid] = resource->gpuMemorySize();
+        nameInfoPid[resourceTag.fPid] = resourceTag.fName;
+        countInfoPid[resourceTag.fPid] = 1;
+    }
+}
+
+inline void GrResourceCache::updatePurgeableFidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoFid,
+                     std::map<uint32_t, int>& sizeInfoFid,
+                     std::map<uint32_t, int>& countInfoFid) {
+    auto resourceTag = resource->getResourceTag();
+    auto it = sizeInfoFid.find(resourceTag.fFid);
+    if (it != sizeInfoFid.end()) {
+        sizeInfoFid[resourceTag.fFid] = it->second + resource->gpuMemorySize();
+        countInfoFid[resourceTag.fFid]++;
+    } else {
+        sizeInfoFid[resourceTag.fFid] = resource->gpuMemorySize();
+        nameInfoFid[resourceTag.fFid] = resourceTag.fName;
+        countInfoFid[resourceTag.fFid] = 1;
+    }
+}
+
+void GrResourceCache::updatePurgeableWidInfo(std::string& infoStr,
+                                  std::map<uint32_t, std::string>& nameInfoWid,
+                                  std::map<uint32_t, int>& sizeInfoWid,
+                                  std::map<uint32_t, int>& pidInfoWid,
+                                  std::map<uint32_t, int>& countInfoWid) {
+    for (auto it = sizeInfoWid.begin(); it != sizeInfoWid.end(); it++) {
+        infoStr += "[" + nameInfoWid[it->first] +
+            ",pid=" + std::to_string(pidInfoWid[it->first]) +
+            ",NodeId=" + std::to_string(it->first & 0xFFFFFFFF) +
+            ",count=" + std::to_string(countInfoWid[it->first]) +
+            ",size=" + std::to_string(it->second) +
+            "(" + std::to_string(it->second / MB) + " MB)],";
+    }
+    infoStr += ']';
+}
+
+void GrResourceCache::updatePurgeablePidInfo(std::string& infoStr,
+                 std::map<uint32_t, std::string>& nameInfoPid,
+                 std::map<uint32_t, int>& sizeInfoPid,
+                 std::map<uint32_t, int>& countInfoPid) {
+    for (auto it = sizeInfoPid.begin(); it != sizeInfoPid.end(); it++) {
+        infoStr += "[" + nameInfoPid[it->first] +
+            ",pid=" + std::to_string(it->first) +
+            ",count=" + std::to_string(countInfoPid[it->first]) +
+            ",size=" + std::to_string(it->second) +
+            "(" + std::to_string(it->second / MB) + " MB)],";
+    }
+    infoStr += ']';
+}
+
+void GrResourceCache::updatePurgeableFidInfo(std::string& infoStr,
+                 std::map<uint32_t, std::string>& nameInfoFid,
+                 std::map<uint32_t, int>& sizeInfoFid,
+                 std::map<uint32_t, int>& countInfoFid) {
+    for (auto it = sizeInfoFid.begin(); it != sizeInfoFid.end(); it++) {
+        infoStr += "[" + nameInfoFid[it->first] +
+            ",typeid=" + std::to_string(it->first) +
+            ",count=" + std::to_string(countInfoFid[it->first]) +
+            ",size=" + std::to_string(it->second) +
+            "(" + std::to_string(it->second / MB) + " MB)],";
+    }
+    infoStr += ']';
+}
+
+inline void GrResourceCache::updatePurgeableUnknownInfo(std::string& infoStr, const std::string& unknownPrefix,
+        const int countUnknown, const int sizeUnknown) {
+    if (countUnknown > 0) {
+        infoStr += unknownPrefix +
+            "[count=" + std::to_string(countUnknown) +
+            ",size=" + std::to_string(sizeUnknown) +
+            "(" + std::to_string(sizeUnknown / MB) + "MB)]";
+    }
+}
+#endif
+
 void GrResourceCache::insertResource(GrGpuResource* resource) {
     ASSERT_SINGLE_OWNER
     SkASSERT(resource);
@@ -221,8 +507,15 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
     if (fBudgetedBytes >= fMaxBytes) {
         HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over fBudgetedBytes:(%u),fMaxBytes:(%u)",
             fBudgetedBytes, fMaxBytes);
+#ifdef SKIA_DFX_FOR_OHOS
+        SimpleCacheInfo simpleCacheInfo;
+        traceBeforePurgeUnlockRes("insertResource", simpleCacheInfo);
+#endif
         this->dumpPidResource();
         this->purgeAsNeeded();
+#ifdef SKIA_DFX_FOR_OHOS
+        traceAfterPurgeUnlockRes("insertResource", simpleCacheInfo);
+#endif
     } else {
         this->purgeAsNeeded();
     }
@@ -722,7 +1015,10 @@ void GrResourceCache::purgeAsNeeded() {
 
 void GrResourceCache::purgeUnlockedResources(const GrStdSteadyClock::time_point* purgeTime,
                                              bool scratchResourcesOnly) {
-
+#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+    SimpleCacheInfo simpleCacheInfo;
+    traceBeforePurgeUnlockRes("purgeUnlockedResources", simpleCacheInfo);
+#endif
     if (!scratchResourcesOnly) {
         if (purgeTime) {
             fThreadSafeCache->dropUniqueRefsOlderThan(*purgeTime);
@@ -754,6 +1050,9 @@ void GrResourceCache::purgeUnlockedResources(const GrStdSteadyClock::time_point*
         // nothing will be deleted.
         if (purgeTime && fPurgeableQueue.count() &&
             fPurgeableQueue.peek()->cacheAccess().timeWhenResourceBecamePurgeable() >= *purgeTime) {
+#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+            traceAfterPurgeUnlockRes("purgeUnlockedResources", simpleCacheInfo);
+#endif
             return;
         }
 
@@ -785,9 +1084,16 @@ void GrResourceCache::purgeUnlockedResources(const GrStdSteadyClock::time_point*
     }
 
     this->validate();
+#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+    traceAfterPurgeUnlockRes("purgeUnlockedResources", simpleCacheInfo);
+#endif
 }
 
 void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
+#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+    SimpleCacheInfo simpleCacheInfo;
+    traceBeforePurgeUnlockRes("purgeUnlockAndSafeCacheGpuResources", simpleCacheInfo);
+#endif
     fThreadSafeCache->dropUniqueRefs(nullptr);
     // Sort the queue
     fPurgeableQueue.sort();
@@ -812,6 +1118,9 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
     }
 
     this->validate();
+#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+    traceAfterPurgeUnlockRes("purgeUnlockAndSafeCacheGpuResources", simpleCacheInfo);
+#endif
 }
 
 void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly,
@@ -861,6 +1170,10 @@ void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly,
 }
 
 void GrResourceCache::purgeUnlockedResourcesByPid(bool scratchResourceOnly, const std::set<int>& exitedPidSet) {
+#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+    SimpleCacheInfo simpleCacheInfo;
+    traceBeforePurgeUnlockRes("purgeUnlockedResourcesByPid", simpleCacheInfo);
+#endif
     // Sort the queue
     fPurgeableQueue.sort();
 
@@ -891,6 +1204,9 @@ void GrResourceCache::purgeUnlockedResourcesByPid(bool scratchResourceOnly, cons
     }
 
     this->validate();
+#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+    traceAfterPurgeUnlockRes("purgeUnlockedResourcesByPid", simpleCacheInfo);
+#endif
 }
 
 void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag& tag) {

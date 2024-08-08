@@ -2688,6 +2688,19 @@ bool GrVkGpu::checkVkResult(VkResult result) {
         case VK_SUCCESS:
             return true;
         case VK_ERROR_DEVICE_LOST:
+#ifdef SKIA_DFX_FOR_OHOS
+            {
+                auto context = getContext();
+                if (context) {
+                    auto cache = context->priv().getResourceCache();
+                    if (cache) {
+                        auto cacheInfo = cache->cacheInfo();
+                        SK_LOGE("GrVkGpu::checkVkResult VK_ERROR_DEVICE_LOST, cacheInfo = %{public}s",
+                            cacheInfo.c_str());
+                    }
+                }
+            }
+#endif
             fDeviceIsLost = true;
             return false;
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:

@@ -111,8 +111,8 @@ struct GrGpuResourceTag {
         isGrGpuResourceTagValid = false;
     }
 
-    GrGpuResourceTag(uint32_t pid, uint32_t tid, uint32_t wid, uint32_t fid)
-        : fPid(pid), fTid(tid), fWid(wid), fFid(fid)
+    GrGpuResourceTag(uint32_t pid, uint32_t tid, uint32_t wid, uint32_t fid, const std::string& name)
+        : fPid(pid), fTid(tid), fWid(wid), fFid(fid), fName(name)
     {
         isGrGpuResourceTagValid = fPid || fTid || fWid || fFid;
     }
@@ -187,6 +187,7 @@ struct GrGpuResourceTag {
     uint32_t fTid;
     uint32_t fWid;
     uint32_t fFid;
+    std::string fName;
     bool isGrGpuResourceTagValid;
 };
 
