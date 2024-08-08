@@ -29,7 +29,6 @@ class SK_API HmSymbolConfig_OHOS
 {
 public:
     static HmSymbolConfig_OHOS* GetInstance();
-    ~HmSymbolConfig_OHOS();
 
     SymbolLayersGroups GetSymbolLayersGroups(uint16_t glyphId);
 
@@ -68,8 +67,11 @@ public:
     }
 
 private:
-    static HmSymbolConfig_OHOS* symbolSingleton_;
     HmSymbolConfig_OHOS() {}
+    HmSymbolConfig_OHOS(const HmSymbolConfig_OHOS& hsc) = delete;
+    HmSymbolConfig_OHOS& operator=(const HmSymbolConfig_OHOS& hsc) = delete;
+    HmSymbolConfig_OHOS(const HmSymbolConfig_OHOS&& hsc) = delete;
+    HmSymbolConfig_OHOS& operator=(const HmSymbolConfig_OHOS&& hsc) = delete;
 
     std::unordered_map<uint16_t, SymbolLayersGroups> hmSymbolConfig_;
     std::unordered_map<AnimationType, AnimationInfo> animationInfos_;
