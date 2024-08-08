@@ -20,12 +20,14 @@
 #include "include/gpu/GrTypes.h"
 
 typedef intptr_t GrVkBackendMemory;
+class GrVkMemoryAllocator;
 
 /**
  * Types for interacting with Vulkan resources created externally to Skia. GrBackendObjects for
  * Vulkan textures are really const GrVkImageInfo*
  */
 struct GrVkAlloc {
+    GrVkMemoryAllocator* fAllocator = nullptr;
     // can be VK_NULL_HANDLE iff is an RT and is borrowed
     VkDeviceMemory    fMemory = VK_NULL_HANDLE;
     VkDeviceSize      fOffset = 0;
@@ -42,6 +44,7 @@ struct GrVkAlloc {
 
     bool operator==(const GrVkAlloc& that) const {
         return fMemory == that.fMemory && fOffset == that.fOffset && fSize == that.fSize &&
+               fAllocator == that.fAllocator &&
                fFlags == that.fFlags && fUsesSystemHeap == that.fUsesSystemHeap;
     }
 

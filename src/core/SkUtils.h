@@ -50,4 +50,15 @@ static SK_ALWAYS_INLINE Dst sk_bit_cast(const Src& src) {
     return sk_unaligned_load<Dst>(&src);
 }
 
+// vma cache
+void SK_API SkSetVmaCacheFlag(bool flag);
+
+bool SkGetMemoryOptimizedFlag();
+bool SkGetVmaCacheFlag();
+int SkGetVmaBlockSizeMB();
+int SkGetNeedCachedMemroySize();
+bool SkGetVmaDefragmentOn();
+size_t SkGetVmaBlockCountMax();
+bool SkGetVmaDebugFlag();
+
 #endif

@@ -60,6 +60,7 @@ public:
     bool isDeviceLost() const override { return fDeviceIsLost; }
 
     GrVkMemoryAllocator* memoryAllocator() const { return fMemoryAllocator.get(); }
+    GrVkMemoryAllocator* memoryAllocatorCacheImage() const { return fMemoryAllocatorCacheImage.get(); }
 
     VkPhysicalDevice physicalDevice() const { return fPhysicalDevice; }
     VkDevice device() const { return fDevice; }
@@ -203,6 +204,9 @@ public:
 
     std::array<int, 2> GetHpsDimension(const SkBlurArg& blurArg) const override;
 
+    void vmaDefragment() override { fMemoryAllocatorCacheImage->vmaDefragment(); }
+    void dumpVmaStats(SkString *out) override;
+
 private:
     enum SyncQueue {
         kForce_SyncQueue,
@@ -211,7 +215,7 @@ private:
 
     GrVkGpu(GrDirectContext*, const GrVkBackendContext&, const sk_sp<GrVkCaps> caps,
             sk_sp<const GrVkInterface>, uint32_t instanceVersion, uint32_t physicalDeviceVersion,
-            sk_sp<GrVkMemoryAllocator>);
+            sk_sp<GrVkMemoryAllocator>, sk_sp<GrVkMemoryAllocator>);
 
     void destroyResources();
 
@@ -396,6 +400,7 @@ private:
 
     sk_sp<const GrVkInterface>                            fInterface;
     sk_sp<GrVkMemoryAllocator>                            fMemoryAllocator;
+    sk_sp<GrVkMemoryAllocator>                            fMemoryAllocatorCacheImage;
     sk_sp<GrVkCaps>                                       fVkCaps;
     bool                                                  fDeviceIsLost = false;
 
