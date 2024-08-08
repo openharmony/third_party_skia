@@ -195,6 +195,8 @@ TextLine::TextLine(ParagraphImpl* owner,
     }
 
     fTextRangeReplacedByEllipsis = EMPTY_RANGE;
+    fEllipsisIndex = EMPTY_INDEX;
+    fLastClipRunLtr = false;
 }
 
 void TextLine::paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset) {
