@@ -15,22 +15,64 @@
 namespace skia {
 namespace textlayout {
 constexpr SkScalar PARAM_TWO = 2.0;
-
 #ifdef OHOS_SUPPORT
+// 1px font size "HarmonyOS Sans" metrics
+constexpr SkScalar DEFAULT_TOP = -1.056;
+constexpr SkScalar DEFAULT_BOTTOM = 0.271;
+constexpr SkScalar DEFAULT_TOP_BOTTOM_HEIGHT = DEFAULT_BOTTOM - DEFAULT_TOP;
+// unordered_map<familyName, scale>: compress <familyName> font height.
+// target height = (DEFAULT_BOTTOM - DEFAULT_TOP) * font size * scale.
+const std::unordered_map<std::string, SkScalar> TARGET_COMPRESSION_FAMILY = {
+    {"Noto Serif Tibetan", 1.3},
+    {"Noto Sans CJK JP", 1.0},
+    {"Noto Sans Tibetan", 1.3},
+};
+
 #ifdef USE_SKIA_TXT
-void metricsIncludeFontPadding(RSFontMetrics* metrics)
-#else
-void metricsIncludeFontPadding(SkFontMetrics* metrics)
-#endif
+void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font)
 {
     if (metrics == nullptr) {
         return;
+    }
+    auto typeface = font.GetTypeface();
+    if (typeface) {
+        auto curFamilyName = typeface->GetFamilyName();
+        auto iter = TARGET_COMPRESSION_FAMILY.find(curFamilyName);
+        if (iter != TARGET_COMPRESSION_FAMILY.end()) {
+            auto scale = font.GetSize() * iter->second;
+            metrics->fTop = DEFAULT_TOP * font.GetSize();
+            metrics->fBottom = DEFAULT_TOP_BOTTOM_HEIGHT * scale + metrics->fTop;
+        }
     }
     // use top and bottom as ascent and descent.
     // calculate height with top and bottom.(includeFontPadding)
     metrics->fAscent = metrics->fTop;
     metrics->fDescent = metrics->fBottom;
 }
+#else
+void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
+{
+    if (metrics == nullptr) {
+        return;
+    }
+    auto typeface = font.refTypeface();
+    if (typeface) {
+        SkString familyName;
+        typeface->getFamilyName(&familyName);
+        std::string curFamilyName(familyName.c_str(), familyName.size());
+        auto iter = TARGET_COMPRESSION_FAMILY.find(curFamilyName);
+        if (iter != TARGET_COMPRESSION_FAMILY.end()) {
+            auto scale = font.getSize() * iter->second;
+            metrics->fTop = DEFAULT_TOP * font.getSize();
+            metrics->fBottom = DEFAULT_TOP_BOTTOM_HEIGHT * scale + metrics->fTop;
+        }
+    }
+    // use top and bottom as ascent and descent.
+    // calculate height with top and bottom.(includeFontPadding)
+    metrics->fAscent = metrics->fTop;
+    metrics->fDescent = metrics->fBottom;
+}
+#endif
 #endif
 
 Run::Run(ParagraphImpl* owner,
@@ -74,7 +116,7 @@ Run::Run(ParagraphImpl* owner,
 #endif
 
 #ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&fFontMetrics);
+    metricsIncludeFontPadding(&fFontMetrics, info.fFont);
 #endif
 
     this->calculateMetrics();
