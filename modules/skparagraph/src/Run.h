@@ -65,9 +65,9 @@ constexpr SkScalar AUTO_SPACING_WIDTH_RATIO = 8;
 
 #ifdef OHOS_SUPPORT
 #ifdef USE_SKIA_TXT
-void metricsIncludeFontPadding(RSFontMetrics* metrics);
+void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font);
 #else
-void metricsIncludeFontPadding(SkFontMetrics* metrics);
+void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font);
 #endif
 #endif
 
@@ -494,7 +494,7 @@ public:
         font.GetMetrics(&metrics);
 #endif
 #ifdef OHOS_SUPPORT
-        metricsIncludeFontPadding(&metrics);
+        metricsIncludeFontPadding(&metrics, font);
 #endif
         fAscent = metrics.fAscent;
         fDescent = metrics.fDescent;

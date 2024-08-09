@@ -190,7 +190,7 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
             targetRun.fFont.GetMetrics(&newFontMetrics);
 #endif
 #ifdef OHOS_SUPPORT
-            metricsIncludeFontPadding(&newFontMetrics);
+            metricsIncludeFontPadding(&newFontMetrics, targetRun.fFont);
 #endif
             fontMetrics.emplace_back(newFontMetrics);
         }
@@ -1292,7 +1292,7 @@ void ParagraphImpl::resolveStrut() {
     font.GetMetrics(&metrics);
 #endif
 #ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics);
+    metricsIncludeFontPadding(&metrics, font);
 #endif
 
     if (strutStyle.getHeightOverride()) {
@@ -1982,7 +1982,7 @@ SkFontMetrics ParagraphImpl::measureText() {
     auto firstStr = text(fRuns.front().textRange());
     firstFont.getMetrics(&metrics);
 #ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics);
+    metricsIncludeFontPadding(&metrics, firstFont);
 #endif
     firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
     fGlyphsBoundsTop = firstBounds.top();
@@ -2021,7 +2021,7 @@ RSFontMetrics ParagraphImpl::measureText()
     auto firstStr = text(fRuns.front().textRange());
     firstFont.GetMetrics(&metrics);
 #ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics);
+    metricsIncludeFontPadding(&metrics, firstFont);
 #endif
     firstFont.MeasureText(firstStr.data(), firstStr.size(), RSDrawing::TextEncoding::UTF8, &firstBounds);
     fGlyphsBoundsTop = firstBounds.GetTop();
