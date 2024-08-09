@@ -32,6 +32,9 @@ public:
 
     const char* name() const override { return "Blur"; }
 
+    void visitProxies(const GrVisitProxyFunc& func) const override {
+        func(fProxyView.proxy(), GrMipmapped(false));
+    }
 private:
     friend class GrOp; // for ctors
 
