@@ -193,7 +193,7 @@ void TextStyle::getFontMetrics(RSFontMetrics* metrics) const {
     font.GetMetrics(metrics);
 #endif
 #ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(metrics);
+    metricsIncludeFontPadding(metrics, font);
 #endif
     if (fHeightOverride) {
         auto multiplier = fHeight * fFontSize;

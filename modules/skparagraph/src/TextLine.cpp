@@ -1700,7 +1700,7 @@ LineMetrics TextLine::getMetrics() const {
             run->fFont.GetMetrics(&fontMetrics);
 #endif
 #ifdef OHOS_SUPPORT
-            metricsIncludeFontPadding(&fontMetrics);
+            metricsIncludeFontPadding(&fontMetrics, run->fFont);
 #endif
             StyleMetrics styleMetrics(&style, fontMetrics);
             result.fLineMetrics.emplace(textRange.start, styleMetrics);
