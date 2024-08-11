@@ -496,7 +496,13 @@
       "方正仿宋-简": "FZFangS-SC.ttf"
     },
     {
+      "FZFangS-SC": "FZFangS-SC.ttf"
+    },
+    {
       "方正仿宋-繁": "FZFangS-TC.ttf"
+    },
+    {
+      "FZFangS-TC": "FZFangS-TC.ttf"
     },
     {
       "FZHeiT-SC Bold": "FZHeiT-SC-Bold.ttf"
@@ -520,49 +526,97 @@
       "方正楷体-简": "FZKaiT-SC.ttf"
     },
     {
+      "FZKaiT-SC": "FZKaiT-SC.ttf"
+    },
+    {
       "方正楷體-繁": "FZKaiT-TC.ttf"
+    },
+    {
+      "FZKaiT-TC": "FZKaiT-TC.ttf"
     },
     {
       "方正隶体-简": "FZLiT-SC.ttf"
     },
     {
+      "FZLiT-SC": "FZLiT-SC.ttf"
+    },
+    {
       "方正隸變-繁": "FZLiB-TC.ttf"
+    },
+    {
+      "FZLiB-TC": "FZLiB-TC.ttf"
     },
     {
       "方正隶书-简": "FZLiS-SC.ttf"
     },
     {
+      "FZLiS-SC": "FZLiS-SC.ttf"
+    },
+    {
       "方正隸書-繁": "FZLiS-TC.ttf"
+    },
+    {
+      "FZLiS-TC": "FZLiS-TC.ttf"
     },
     {
       "方正喵呜-简": "FZMiaoW-SC.ttf"
     },
     {
+      "FZMiaoW-SC": "FZMiaoW-SC.ttf"
+    },
+    {
       "方正喵體-繁": "FZMiaoT-TC.ttf"
+    },
+    {
+      "FZMiaoT-TC": "FZMiaoT-TC.ttf"
     },
     {
       "方正手书-简": "FZShouS-SC.ttf"
     },
     {
+      "FZShouS-SC": "FZShouS-SC.ttf"
+    },
+    {
       "方正手書-繁": "FZShouS-TC.ttf"
+    },
+    {
+      "FZShouS-TC": "FZShouS-TC.ttf"
     },
     {
       "方正书宋-简": "FZShuS-SC.ttf"
     },
     {
+      "FZShus-SC": "FZShuS-SC.ttf"
+    },
+    {
       "方正書宋-繁": "FZShuS-TC.ttf"
+    },
+    {
+      "FZShus-TC": "FZShuS-TC.ttf"
     },
     {
       "方正小标宋-简": "FZXiaoBS-SC.ttf"
     },
     {
+      "FZXiaoBS-SC": "FZXiaoBS-SC.ttf"
+    },
+    {
       "方正小標宋-繁": "FZXiaoBS-TC.ttf"
+    },
+    {
+      "FZXiaoBS-TC": "FZXiaoBS-TC.ttf"
     },
     {
       "方正行楷-简": "FZXingK-SC.ttf"
     },
     {
+      "FZXingK-SC": "FZXingK-SC.ttf"
+    },
+    {
       "方正行楷-繁": "FZXingK-TC.ttf"
+    },
+    {
+      "FZXingK-TC": "FZXingK-TC.ttf"
     },
     {
       "FZYuanT-SC Bold": "FZYuanT-SC-Bold.ttf"
