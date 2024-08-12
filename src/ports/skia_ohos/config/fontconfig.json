@@ -469,6 +469,9 @@
         },
         {
           "und-Zsym": "HM Symbol"
+        },
+        {
+          "und-Math": "Noto Sans Math"
         }
       ]
     }
@@ -1217,6 +1220,9 @@
     },
     {
       "Noto Sans Regular": "Roboto-Regular.ttf"
+    },
+    {
+      "Noto Sans Math Regular": "NotoSansMath-Regular.ttf"
     }
   ]
 }
