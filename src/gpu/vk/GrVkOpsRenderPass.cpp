@@ -23,6 +23,7 @@
 #include "src/gpu/vk/GrVkFramebuffer.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkImage.h"
+#include "src/gpu/vk/GrVkImageView.h"
 #include "src/gpu/vk/GrVkPipeline.h"
 #include "src/gpu/vk/GrVkRenderPass.h"
 #include "src/gpu/vk/GrVkRenderTarget.h"
@@ -888,7 +889,11 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlu
         return;
     }
 
-    GrVkImage* image = static_cast<GrVkTexture*>(proxy->peekTexture())->textureImage();
+    GrVkTexture* texture = static_cast<GrVkTexture*>(proxy->peekTexture());
+    if (!texture) {
+        return;
+    }
+    GrVkImage* image = texture->textureImage();
     if (!image) {
         return;
     }
@@ -896,6 +901,10 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlu
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, "DrawBlurImage");
 #endif
+    
+    // reference textureop, resource's refcount should add.
+    fGpu->currentCommandBuffer()->addResource(image->textureView());
+    fGpu->currentCommandBuffer()->addResource(image->resource());
     fGpu->currentCommandBuffer()->drawBlurImage(fGpu, image, fFramebuffer->colorAttachment()->dimensions(),
                                                 fOrigin, blurArg);
     return;
