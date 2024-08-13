@@ -352,8 +352,26 @@ std::unique_ptr<GrFragmentProcessor::ProgramImpl> GrSkSLFP::onMakeProgramImpl() 
 }
 
 SkString GrSkSLFP::getShaderDfxInfo() const {
+    const UniformFlags* flags = this->uniformFlags();
+    const uint8_t* uniformData = this->uniformData();
+    size_t uniformCount = fEffect->uniforms().size();
+    auto iter = fEffect->uniforms().begin();
+    SkString specials;
+    for (size_t i = 0; i < uniformCount; ++i, ++iter) {
+        bool specialize = flags[i] & kSpecialize_Flag;
+        specials.appendf("_%d", specialize);
+        if (specialize) {
+            specials.appendf("(");
+            const uint8_t* bytes = reinterpret_cast<const uint8_t*>(uniformData + iter->offset);
+            uint32_t numBytes = iter->sizeInBytes();
+            for (; numBytes --> 0; bytes++) {
+                specials.appendf("%X_", *bytes);
+            }
+            specials.appendf("%s)", iter->name.c_str());
+        }
+    }
     SkString format;
-    format.printf("ShaderDfx_GrSkSLFP_%s", name());
+    format.printf("ShaderDfx_GrSkSLFP_%s_%X_%d_%s", name(), fEffect->hash(), fUniformSize, specials.c_str());
     return format;
 }
 
