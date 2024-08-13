@@ -52,6 +52,9 @@
                 },
                 {
                     "name": "//third_party/skia:skia_canvaskit_static"
+                },
+                {
+                    "name": "//third_party/skia/third_party/expat:expat"
                 }
 
             ],
