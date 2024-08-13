@@ -517,10 +517,19 @@
       "FZHeiT-TC Bold": "FZHeiT-TC-Bold.ttf"
     },
     {
+      "方正黑體-繁 Bold": "FZHeiT-TC-Bold.ttf"
+    },
+    {
       "FZHeiT-TC Light": "FZHeiT-TC-Light.ttf"
     },
     {
+      "方正黑體-繁 Light": "FZHeiT-TC-Light.ttf"
+    },
+    {
       "FZHeiT-TC": "FZHeiT-TC-Regular.ttf"
+    },
+    {
+      "方正黑體-繁": "FZHeiT-TC-Regular.ttf"
     },
     {
       "方正楷体-简": "FZKaiT-SC.ttf"
@@ -631,10 +640,19 @@
       "FZYuanT-TC Bold": "FZYuanT-TC-Bold.ttf"
     },
     {
+      "方正圓體-繁 Bold": "FZYuanT-TC-Bold.ttf"
+    },
+    {
       "FZYuanT-TC Light": "FZYuanT-TC-Light.ttf"
     },
     {
+      "方正圓體-繁 Light": "FZYuanT-TC-Light.ttf"
+    },
+    {
       "FZYuanT-TC": "FZYuanT-TC-Regular.ttf"
+    },
+    {
+      "方正圓體-繁": "FZYuanT-TC-Regular.ttf"
     },
     {
       "HMOS Color Emoji": "HMOSColorEmojiCompat.ttf"
