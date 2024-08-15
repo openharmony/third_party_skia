@@ -142,12 +142,10 @@ typedef const png_colorspace * PNG_RESTRICT png_const_colorspacerp;
 
 #ifdef PNG_MULTY_LINE_ENABLE
 /* General flags for the 2 line filter */
-#define PNG_FILTER_VALUE_UP_X2      6 // PNG_FILTER_VALUE_UP + 4
-#define PNG_FILTER_VALUE_AVG_X2     7 // PNG_FILTER_VALUE_AVG + 4
-#define PNG_FILTER_VALUE_PAETH_X2   8 // PNG_FILTER_VALUE_PAETH + 4
-#define PNG_FILTER_VALUE_LAST_X2    9 // PNG_FILTER_VALUE_LAST + 4
-#else
-#define PNG_FILTER_VALUE_LAST_X2    5 // PNG_FILTER_VALUE_LAST
+#define PNG_FILTER_VALUE_UP_X2      (6) // PNG_FILTER_VALUE_UP + 4
+#define PNG_FILTER_VALUE_AVG_X2     (7) // PNG_FILTER_VALUE_AVG + 4
+#define PNG_FILTER_VALUE_PAETH_X2   (8) // PNG_FILTER_VALUE_PAETH + 4
+#define PNG_FILTER_VALUE_LAST_X2    (9) // PNG_FILTER_VALUE_LAST + 4
 #endif
 
 struct png_struct_def
@@ -487,19 +485,18 @@ struct png_struct_def
    png_bytep big_prev_row;
 
 /* New member added in libpng-1.5.7 */
+#ifdef PNG_MULTY_LINE_ENABLE
    void (*read_filter[PNG_FILTER_VALUE_LAST_X2 - 1])(png_row_infop row_info,
       png_bytep row, png_const_bytep prev_row);
+#else
+   void (*read_filter[PNG_FILTER_VALUE_LAST-1])(png_row_infop row_info,
+      png_bytep row, png_const_bytep prev_row);
+#endif
 
 #ifdef PNG_READ_SUPPORTED
 #if defined(PNG_COLORSPACE_SUPPORTED) || defined(PNG_GAMMA_SUPPORTED)
    png_colorspace   colorspace;
 #endif
-#endif
-
-#ifdef PNG_MULTY_LINE_ENABLE
-   png_bytep inflate_buff;
-   png_uint_32 inflate_buff_max_size;
-   png_uint_32 inflate_buff_size;
 #endif
 };
 #endif /* PNGSTRUCT_H */

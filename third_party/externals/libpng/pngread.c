@@ -690,12 +690,12 @@ png_read_rows(png_structrp png_ptr, png_bytepp row,
 #ifdef PNG_SEQUENTIAL_READ_SUPPORTED
 
 #ifdef PNG_MULTY_LINE_ENABLE
-void png_read_two_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 i,
+static void png_read_two_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 i,
                          png_row_info row_info)
 {
    png_debug1(1, "in png_read_two_rows %d", png_ptr->row_buf[0]);
    png_read_filter_row(png_ptr, &row_info, png_ptr->row_buf + 1,
-      png_ptr->prev_row + 1, png_ptr->row_buf[0] + 4);
+      png_ptr->prev_row + 1, png_ptr->row_buf[0] + 4); // 4为2行filter_type增量
 
 #ifdef PNG_MNG_FEATURES_SUPPORTED
    if ((png_ptr->mng_features_permitted & PNG_FLAG_MNG_FILTER_64) != 0 &&
@@ -727,7 +727,7 @@ void png_read_two_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 i,
       png_error(png_ptr, "internal sequential row size calculation error");
 
    if (rows[i] != NULL)
-      png_combine_row(png_ptr, rows[i], -1/*ignored*/);
+      png_combine_row(png_ptr, rows[i], -1);
 
    png_read_finish_row(png_ptr);
 
@@ -769,7 +769,7 @@ void png_read_two_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 i,
       png_error(png_ptr, "internal sequential row size calculation error");
 
    if (rows[i+1] != NULL)
-      png_combine_row(png_ptr, rows[i+1], -1/*ignored*/);
+      png_combine_row(png_ptr, rows[i+1], -1);
 
    png_read_finish_row(png_ptr);
 
@@ -779,8 +779,8 @@ void png_read_two_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 i,
    png_ptr->row_buf = png_ptr->row_buf + row_info.rowbytes + 1;
 }
 
-void png_read_muilty_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 row_num,
-                         png_row_info row_info_origin)
+static void png_read_muilty_rows(png_structrp png_ptr, png_bytepp rows,
+   png_uint_32 row_num, png_row_info row_info_in)
 {
    if (png_ptr == NULL)
       return;
@@ -792,18 +792,19 @@ void png_read_muilty_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 row
          png_error(png_ptr, "Invalid attempt to read row data");
 
    /* Fill the row with IDAT data: */
-   uInt row_bytes =  row_info_origin.rowbytes;
-   png_ptr->row_buf[0]=255; /* to force error if no data was found */
+   uInt row_bytes =  row_info_in.rowbytes;
+   png_ptr->row_buf[0]=255; /* 255 to force error if no data was found */
    png_read_IDAT_data(png_ptr, png_ptr->row_buf, (row_bytes + 1) * row_num);
    png_bytep temp_row = png_ptr->row_buf;
 
    for (png_uint_32 i = 0; i < row_num; i++) {
-      png_row_info row_info = row_info_origin;
-      if ((row_info_origin.channels == 3 || row_info_origin.channels == 4) &&
+      png_row_info row_info = row_info_in;
+      // 此处判断两行filter是否生效：仅支持3，4通道，且需两行filter_type相同
+      if ((row_info_in.channels == 3 || row_info_in.channels == 4) &&
           i < row_num -1 && png_ptr->row_buf[0] > PNG_FILTER_VALUE_SUB &&
           png_ptr->row_buf[0] < PNG_FILTER_VALUE_LAST &&
-          png_ptr->row_buf[0] == png_ptr->row_buf[row_info_origin.rowbytes + 1]
-         ) {
+          png_ptr->row_buf[0] == png_ptr->row_buf[row_info_in.rowbytes + 1])
+      {
          png_read_two_rows(png_ptr, rows, i, row_info);
          i++;
          continue;
@@ -817,7 +818,7 @@ void png_read_muilty_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 row
             png_debug1(1, "bad adaptive filter value %d", png_ptr->row_buf[0]);
       }
 
-      memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info_origin.rowbytes + 1);
+      memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info_in.rowbytes + 1);
 
 #ifdef PNG_MNG_FEATURES_SUPPORTED
       if ((png_ptr->mng_features_permitted & PNG_FLAG_MNG_FILTER_64) != 0 &&
@@ -849,7 +850,7 @@ void png_read_muilty_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 row
          png_error(png_ptr, "internal sequential row size calculation error");
 
       if (rows[i] != NULL)
-         png_combine_row(png_ptr, rows[i], -1/*ignored*/);
+         png_combine_row(png_ptr, rows[i], -1);
 
       png_read_finish_row(png_ptr);
 
@@ -860,7 +861,49 @@ void png_read_muilty_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 row
    }
    png_ptr->row_buf = temp_row;
 }
+
+static void png_warn_check(png_structrp png_ptr)
+{
+#ifdef PNG_WARNINGS_SUPPORTED
+   /* Check for transforms that have been set but were defined out */
+#if defined(PNG_WRITE_INVERT_SUPPORTED) && !defined(PNG_READ_INVERT_SUPPORTED)
+   if ((png_ptr->transformations & PNG_INVERT_MONO) != 0)
+      png_warning(png_ptr, "PNG_READ_INVERT_SUPPORTED is not defined");
 #endif
+
+#if defined(PNG_WRITE_FILLER_SUPPORTED) && !defined(PNG_READ_FILLER_SUPPORTED)
+   if ((png_ptr->transformations & PNG_FILLER) != 0)
+      png_warning(png_ptr, "PNG_READ_FILLER_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_PACKSWAP_SUPPORTED) && \
+    !defined(PNG_READ_PACKSWAP_SUPPORTED)
+   if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
+      png_warning(png_ptr, "PNG_READ_PACKSWAP_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_PACK_SUPPORTED) && !defined(PNG_READ_PACK_SUPPORTED)
+   if ((png_ptr->transformations & PNG_PACK) != 0)
+      png_warning(png_ptr, "PNG_READ_PACK_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_SHIFT_SUPPORTED) && !defined(PNG_READ_SHIFT_SUPPORTED)
+   if ((png_ptr->transformations & PNG_SHIFT) != 0)
+      png_warning(png_ptr, "PNG_READ_SHIFT_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_BGR_SUPPORTED) && !defined(PNG_READ_BGR_SUPPORTED)
+   if ((png_ptr->transformations & PNG_BGR) != 0)
+      png_warning(png_ptr, "PNG_READ_BGR_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_SWAP_SUPPORTED) && !defined(PNG_READ_SWAP_SUPPORTED)
+   if ((png_ptr->transformations & PNG_SWAP_BYTES) != 0)
+      png_warning(png_ptr, "PNG_READ_SWAP_SUPPORTED is not defined");
+#endif
+#endif /* WARNINGS */
+}
+#endif // PNG_MULTY_LINE_ENABLE
 
 /* Read the entire image.  If the image has an alpha channel or a tRNS
  * chunk, and you have called png_handle_alpha()[*], you will need to
@@ -924,50 +967,12 @@ png_read_image(png_structrp png_ptr, png_bytepp image)
    image_height=png_ptr->height;
 
 #ifdef PNG_MULTY_LINE_ENABLE
-   if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 &&
+   if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8表示1个像素8位
        (png_ptr->transformations & PNG_CHECK) == 0) {
       if ((png_ptr->flags & PNG_FLAG_ROW_INIT) == 0)
          png_read_start_row(png_ptr);
 
-#ifdef PNG_WARNINGS_SUPPORTED
-      /* Check for transforms that have been set but were defined out */
-#if defined(PNG_WRITE_INVERT_SUPPORTED) && !defined(PNG_READ_INVERT_SUPPORTED)
-      if ((png_ptr->transformations & PNG_INVERT_MONO) != 0)
-         png_warning(png_ptr, "PNG_READ_INVERT_SUPPORTED is not defined");
-#endif
-
-#if defined(PNG_WRITE_FILLER_SUPPORTED) && !defined(PNG_READ_FILLER_SUPPORTED)
-      if ((png_ptr->transformations & PNG_FILLER) != 0)
-         png_warning(png_ptr, "PNG_READ_FILLER_SUPPORTED is not defined");
-#endif
-
-#if defined(PNG_WRITE_PACKSWAP_SUPPORTED) && \
-    !defined(PNG_READ_PACKSWAP_SUPPORTED)
-      if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
-         png_warning(png_ptr, "PNG_READ_PACKSWAP_SUPPORTED is not defined");
-#endif
-
-#if defined(PNG_WRITE_PACK_SUPPORTED) && !defined(PNG_READ_PACK_SUPPORTED)
-      if ((png_ptr->transformations & PNG_PACK) != 0)
-         png_warning(png_ptr, "PNG_READ_PACK_SUPPORTED is not defined");
-#endif
-
-#if defined(PNG_WRITE_SHIFT_SUPPORTED) && !defined(PNG_READ_SHIFT_SUPPORTED)
-      if ((png_ptr->transformations & PNG_SHIFT) != 0)
-         png_warning(png_ptr, "PNG_READ_SHIFT_SUPPORTED is not defined");
-#endif
-
-#if defined(PNG_WRITE_BGR_SUPPORTED) && !defined(PNG_READ_BGR_SUPPORTED)
-      if ((png_ptr->transformations & PNG_BGR) != 0)
-         png_warning(png_ptr, "PNG_READ_BGR_SUPPORTED is not defined");
-#endif
-
-#if defined(PNG_WRITE_SWAP_SUPPORTED) && !defined(PNG_READ_SWAP_SUPPORTED)
-      if ((png_ptr->transformations & PNG_SWAP_BYTES) != 0)
-         png_warning(png_ptr, "PNG_READ_SWAP_SUPPORTED is not defined");
-#endif
-#endif /* WARNINGS */
-
+      png_warn_check(png_ptr);
       png_row_info row_info;
       row_info.width = png_ptr->iwidth;
       row_info.color_type = png_ptr->color_type;
@@ -1247,10 +1252,6 @@ png_read_destroy(png_structrp png_ptr)
    png_ptr->riffled_palette = NULL;
 #endif
 
-#ifdef PNG_MULTY_LINE_ENABLE
-   png_free(png_ptr, png_ptr->inflate_buff);
-   png_ptr->inflate_buff = NULL;
-#endif
    /* NOTE: the 'setjmp' buffer may still be allocated and the memory and error
     * callbacks are still set at this point.  They are required to complete the
     * destruction of the png_struct itself.

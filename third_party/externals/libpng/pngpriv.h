@@ -189,13 +189,13 @@
 
 #if defined(PNG_ARM_NEON_IMPLEMENTATION) && defined(PNG_OPT_ENABLE)
 #  if PNG_ARM_NEON_IMPLEMENTATION == 1
-#    define PNG_MULTY_LINE_ENABLE
-#    define PNG_INFLATE_MAX_SIZE 65536
-#    define PNG_INFLATE_ROWS 50
+#    define PNG_MULTY_LINE_ENABLE // 优化生效
+#    define PNG_INFLATE_MAX_SIZE (65536) // 最大解压输入大小
+#    define PNG_INFLATE_ROWS (50) // 最大解压行数
 #    define PNG_CHECK (PNG_EXPAND | PNG_STRIP_ALPHA | PNG_RGB_TO_GRAY | PNG_ENCODE_ALPHA | \
-		PNG_PACKSWAP | PNG_GRAY_TO_RGB | PNG_COMPOSE | PNG_SCALE_16_TO_8 | PNG_16_TO_8 | \
-		PNG_BACKGROUND_EXPAND | PNG_EXPAND_16 | PNG_PACK | PNG_ADD_ALPHA | PNG_EXPAND_tRNS | \
-		PNG_RGB_TO_GRAY_ERR | PNG_RGB_TO_GRAY_WARN | PNG_FILLER | PNG_USER_TRANSFORM)
+       PNG_PACKSWAP | PNG_GRAY_TO_RGB | PNG_COMPOSE | PNG_SCALE_16_TO_8 | PNG_16_TO_8 | \
+       PNG_BACKGROUND_EXPAND | PNG_EXPAND_16 | PNG_PACK | PNG_ADD_ALPHA | PNG_EXPAND_tRNS | \
+       PNG_RGB_TO_GRAY_ERR | PNG_RGB_TO_GRAY_WARN | PNG_FILLER | PNG_USER_TRANSFORM)
 #  endif
 #endif
 
@@ -357,8 +357,13 @@
 #endif
 
 #ifndef PNG_INTERNAL_FUNCTION
+#  ifdef PNG_MULTY_LINE_ENABLE
+#    define PNG_HIDE __attribute__((visibility("hidden")))
+#  else
+#    define PNG_HIDE
+#  endif
 #  define PNG_INTERNAL_FUNCTION(type, name, args, attributes)\
-      PNG_LINKAGE_FUNCTION PNG_FUNCTION(type, name, args, PNG_EMPTY attributes)
+      PNG_LINKAGE_FUNCTION PNG_FUNCTION(type, name, args, PNG_HIDE attributes)
 #endif
 
 #ifndef PNG_INTERNAL_CALLBACK
@@ -1326,16 +1331,16 @@ PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_neon,(png_row_infop
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_neon,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 #ifdef PNG_MULTY_LINE_ENABLE
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_x2_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_x2_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_x2_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_x2_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_x2_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_up_x2_neon, (png_row_infop
+    row_info, png_bytep row, png_const_bytep prev_row), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg3_x2_neon, (png_row_infop
+    row_info, png_bytep row, png_const_bytep prev_row), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg4_x2_neon, (png_row_infop
+    row_info, png_bytep row, png_const_bytep prev_row), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth3_x2_neon, (png_row_infop
+    row_info, png_bytep row, png_const_bytep prev_row), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth4_x2_neon, (png_row_infop
+    row_info, png_bytep row, png_const_bytep prev_row), PNG_EMPTY);
 #endif
 #endif
 
