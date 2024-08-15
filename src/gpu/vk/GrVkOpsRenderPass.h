@@ -94,7 +94,7 @@ private:
 
     void onClearStencilClip(const GrScissorState& scissor, bool insideStencilMask) override;
 
-    void onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlurArg& blurArg) override;
+    void onDrawBlurImage(const GrSurfaceProxyView& proxyView, const SkBlurArg& blurArg) override;
 
     using LoadFromResolve = GrVkRenderPass::LoadFromResolve;
 

@@ -883,13 +883,13 @@ void GrVkOpsRenderPass::onExecuteDrawable(std::unique_ptr<SkDrawable::GpuDrawHan
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlurArg& blurArg)
+void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxyView& proxyView, const SkBlurArg& blurArg)
 {
-    if (!proxy) {
+    if (!proxyView.proxy()) {
         return;
     }
 
-    GrVkTexture* texture = static_cast<GrVkTexture*>(proxy->peekTexture());
+    GrVkTexture* texture = static_cast<GrVkTexture*>(proxyView.proxy()->peekTexture());
     if (!texture) {
         return;
     }
@@ -905,7 +905,10 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlu
     // reference textureop, resource's refcount should add.
     fGpu->currentCommandBuffer()->addResource(image->textureView());
     fGpu->currentCommandBuffer()->addResource(image->resource());
+    SkOriginInfo originInfo {};
+    originInfo.imageOrigin = proxyView.origin();
+    originInfo.rtOrigin = fOrigin;
     fGpu->currentCommandBuffer()->drawBlurImage(fGpu, image, fFramebuffer->colorAttachment()->dimensions(),
-                                                fOrigin, blurArg);
+                                                originInfo, blurArg);
     return;
 }

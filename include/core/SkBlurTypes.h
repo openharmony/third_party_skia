@@ -11,6 +11,7 @@
 #include "include/core/SkRect.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
+#include "include/gpu/GrTypes.h"
 
 enum SkBlurStyle : int {
     kNormal_SkBlurStyle,  //!< fuzzy inside and outside
@@ -21,6 +22,13 @@ enum SkBlurStyle : int {
     kLastEnum_SkBlurStyle = kInner_SkBlurStyle,
 };
 
+//for huawei hps blur
+typedef struct SkOriginInfo {
+    GrSurfaceOrigin imageOrigin;
+    GrSurfaceOrigin rtOrigin;
+} SkOriginInfo;
+
+//for huawei hps blur
 struct SkBlurArg {
     SkRect srcRect;
     SkRect dstRect;

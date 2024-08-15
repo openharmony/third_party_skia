@@ -32,7 +32,8 @@ public:
 
     const char* name() const override { return "Blur"; }
 
-    void visitProxies(const GrVisitProxyFunc& func) const override {
+    void visitProxies(const GrVisitProxyFunc& func) const override
+    {
         func(fProxyView.proxy(), GrMipmapped(false));
     }
 private:
