@@ -139,7 +139,7 @@ public:
      */
     void executeDrawable(std::unique_ptr<SkDrawable::GpuDrawHandler>);
 
-    void drawBlurImage(const GrSurfaceProxy* proxy, SkBlurArg& blurArg);
+    void drawBlurImage(const GrSurfaceProxyView& proxyView, SkBlurArg& blurArg);
 
 protected:
     GrOpsRenderPass() : fOrigin(kTopLeft_GrSurfaceOrigin), fRenderTarget(nullptr) {}
@@ -202,7 +202,7 @@ private:
     virtual void onClear(const GrScissorState&, std::array<float, 4> color) = 0;
     virtual void onClearStencilClip(const GrScissorState&, bool insideStencilMask) = 0;
     virtual void onExecuteDrawable(std::unique_ptr<SkDrawable::GpuDrawHandler>) {}
-    virtual void onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlurArg& blurArg) {};
+    virtual void onDrawBlurImage(const GrSurfaceProxyView& proxyView, const SkBlurArg& blurArg) {};
 
     enum class DrawPipelineStatus {
         kOk = 0,
