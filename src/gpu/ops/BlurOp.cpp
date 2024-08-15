@@ -33,7 +33,7 @@ GrOp::CombineResult BlurOp::onCombineIfPossible(GrOp* t, SkArenaAlloc*, const Gr
 
 void BlurOp::onExecute(GrOpFlushState* state, const SkRect& chainBounds) {
     SkASSERT(state->opsRenderPass());
-    state->opsRenderPass()->drawBlurImage(fProxyView.proxy(), skBlurArg);
+    state->opsRenderPass()->drawBlurImage(fProxyView, skBlurArg);
 }
 
 } // namespace skgpu::v1
