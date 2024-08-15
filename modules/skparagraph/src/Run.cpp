@@ -28,6 +28,35 @@ const std::unordered_map<std::string, SkScalar> TARGET_COMPRESSION_FAMILY = {
     {"Noto Sans Tibetan", 1.3},
 };
 
+// the font padding does not take effect for these font families.
+const std::unordered_set<std::string> FONT_PADDING_NOT_EFFECT_FAMILY = {
+    "Harmony Clock_01",
+    "Harmony Clock_02",
+    "Harmony Clock_03",
+    "Harmony Clock_04",
+    "Harmony Clock_05",
+    "Harmony Clock_06",
+    "Harmony Clock_07",
+    "Harmony Clock_08",
+};
+
+#ifdef USE_SKIA_TXT
+std::string getFamilyNameFromTypeface(std::shared_ptr<RSTypeface> typeface)
+{
+    return typeface == nullptr ? "" : typeface->GetFamilyName();
+}
+#else
+std::string getFamilyNameFromTypeface(sk_sp<SkTypeface> typeface)
+{
+    if (typeface == nullptr) {
+        return "";
+    }
+    SkString familyName;
+    typeface->getFamilyName(&familyName);
+    return std::string(familyName.c_str(), familyName.size());
+}
+#endif
+
 #ifdef USE_SKIA_TXT
 void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font)
 {
@@ -35,19 +64,25 @@ void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font)
         return;
     }
     auto typeface = font.GetTypeface();
-    if (typeface) {
-        auto curFamilyName = typeface->GetFamilyName();
-        auto iter = TARGET_COMPRESSION_FAMILY.find(curFamilyName);
-        if (iter != TARGET_COMPRESSION_FAMILY.end()) {
-            auto scale = font.GetSize() * iter->second;
-            metrics->fTop = DEFAULT_TOP * font.GetSize();
-            metrics->fBottom = DEFAULT_TOP_BOTTOM_HEIGHT * scale + metrics->fTop;
-        }
+    if (typeface == nullptr) {
+        return;
     }
-    // use top and bottom as ascent and descent.
-    // calculate height with top and bottom.(includeFontPadding)
-    metrics->fAscent = metrics->fTop;
-    metrics->fDescent = metrics->fBottom;
+
+    std::string curFamilyName = getFamilyNameFromTypeface(typeface);
+    auto iter = TARGET_COMPRESSION_FAMILY.find(curFamilyName);
+    if (iter != TARGET_COMPRESSION_FAMILY.end()) {
+        auto scale = font.GetSize() * iter->second;
+        metrics->fTop = DEFAULT_TOP * font.GetSize();
+        metrics->fBottom = DEFAULT_TOP_BOTTOM_HEIGHT * scale + metrics->fTop;
+    }
+
+    auto setIter = FONT_PADDING_NOT_EFFECT_FAMILY.find(curFamilyName);
+    if (setIter == FONT_PADDING_NOT_EFFECT_FAMILY.end()) {
+        // use top and bottom as ascent and descent.
+        // calculate height with top and bottom.(includeFontPadding)
+        metrics->fAscent = metrics->fTop;
+        metrics->fDescent = metrics->fBottom;
+    }
 }
 #else
 void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
@@ -56,21 +91,25 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
         return;
     }
     auto typeface = font.refTypeface();
-    if (typeface) {
-        SkString familyName;
-        typeface->getFamilyName(&familyName);
-        std::string curFamilyName(familyName.c_str(), familyName.size());
-        auto iter = TARGET_COMPRESSION_FAMILY.find(curFamilyName);
-        if (iter != TARGET_COMPRESSION_FAMILY.end()) {
-            auto scale = font.getSize() * iter->second;
-            metrics->fTop = DEFAULT_TOP * font.getSize();
-            metrics->fBottom = DEFAULT_TOP_BOTTOM_HEIGHT * scale + metrics->fTop;
-        }
+    if (typeface == nullptr) {
+        return;
     }
-    // use top and bottom as ascent and descent.
-    // calculate height with top and bottom.(includeFontPadding)
-    metrics->fAscent = metrics->fTop;
-    metrics->fDescent = metrics->fBottom;
+
+    std::string curFamilyName = getFamilyNameFromTypeface(typeface);
+    auto iter = TARGET_COMPRESSION_FAMILY.find(curFamilyName);
+    if (iter != TARGET_COMPRESSION_FAMILY.end()) {
+        auto scale = font.getSize() * iter->second;
+        metrics->fTop = DEFAULT_TOP * font.getSize();
+        metrics->fBottom = DEFAULT_TOP_BOTTOM_HEIGHT * scale + metrics->fTop;
+    }
+
+    auto setIter = FONT_PADDING_NOT_EFFECT_FAMILY.find(curFamilyName);
+    if (setIter == FONT_PADDING_NOT_EFFECT_FAMILY.end()) {
+        // use top and bottom as ascent and descent.
+        // calculate height with top and bottom.(includeFontPadding)
+        metrics->fAscent = metrics->fTop;
+        metrics->fDescent = metrics->fBottom;
+    }
 }
 #endif
 #endif
