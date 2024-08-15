@@ -51,6 +51,9 @@ if (skia_use_system_libpng) {
         "../externals/libpng/arm/filter_neon_intrinsics.c",
         "../externals/libpng/arm/palette_neon_intrinsics.c",
       ]
+      if (target_plateform == "pc") {
+          defines += [ "PNG_OPT_ENABLE" ]
+      }
     }
 
     if (current_cpu == "x86" || current_cpu == "x64") {
