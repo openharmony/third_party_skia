@@ -14,7 +14,11 @@
         "name": "skia",
         "subsystem": "thirdparty",
         "syscap": [],
-        "features": [],
+        "features": [
+            "skia_feature_product",
+            "skia_feature_enable_pgo",
+            "skia_feature_pgo_path"
+        ],
         "adapted_system_type": [ "standard" ],
         "rom": "",
         "ram": "",

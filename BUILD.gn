@@ -47,18 +47,17 @@ config("skia_wno") {
     cflags += [ "-flto=thin" ]
     if (enhanced_opt) {
       cflags += [ "-fwhole-program-vtables" ]
-      if (graphic_2d_feature_enable_pgo &&
-          graphic_2d_feature_product != "default") {
+      if (skia_feature_enable_pgo && skia_feature_product != "default") {
         cflags += [
-          "-fprofile-use=" + rebase_path(
-                  "${graphic_2d_feature_pgo_path}/libskia_canvaskit.profdata",
-                  root_build_dir),
+          "-fprofile-use=" +
+              rebase_path("${skia_feature_pgo_path}/libskia_canvaskit.profdata",
+                          root_build_dir),
           "-Wno-error=backend-plugin",
           "-Wno-profile-instr-out-of-date",
           "-Wno-profile-instr-unprofiled",
         ]
       }
-      if (graphic_2d_feature_product == "pc" && target_cpu == "arm64" &&
+      if (skia_feature_product == "pc" && target_cpu == "arm64" &&
           current_cpu == "arm64") {
         cflags += [ "-moutline-atomics" ]
       }
@@ -1828,7 +1827,7 @@ if (use_oh_skia) {
         "-Wl,-Bsymbolic",
       ]
 
-      if (graphic_2d_feature_enable_pgo && enable_enhanced_opt) {
+      if (skia_feature_enable_pgo && enable_enhanced_opt) {
         ldflags += [
           "-Wl,-mllvm,-vectorization-bonus-factor=4",
           "-Wl,-mllvm,-vectorizer-min-trip-count=4",
