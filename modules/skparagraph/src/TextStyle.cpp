@@ -184,16 +184,27 @@ void TextStyle::getFontMetrics(RSFontMetrics* metrics) const {
     font.setEdging(SkFont::Edging::kAntiAlias);
     font.setSubpixel(true);
     font.setHinting(SkFontHinting::kSlight);
+#ifdef OHOS_SUPPORT
+    auto compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.getMetrics(metrics);
+    metricsIncludeFontPadding(metrics, font);
+#else
     font.getMetrics(metrics);
+#endif
 #else
     RSFont font(fTypeface, fFontSize, 1, 0);
     font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
     font.SetHinting(RSDrawing::FontHinting::SLIGHT);
     font.SetSubpixel(true);
+#ifdef OHOS_SUPPORT
+    auto compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.GetMetrics(metrics);
+    metricsIncludeFontPadding(metrics, font);
+#else
     font.GetMetrics(metrics);
 #endif
-#ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(metrics, font);
 #endif
     if (fHeightOverride) {
         auto multiplier = fHeight * fFontSize;

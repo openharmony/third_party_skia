@@ -24,6 +24,7 @@
 #include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skshaper/include/SkShaper.h"
+#include "src/Run.h"
 #ifdef TXT_AUTO_SPACING
 #include "parameter.h"
 #endif
@@ -615,7 +616,11 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
 #endif
 
     record.fOffset = SkPoint::Make(this->offset().fX + context.fTextShift,
+#ifdef OHOS_SUPPORT
+        this->offset().fY + correctedBaseline - (context.run ? context.run->fCompressionBaselineShift : 0));
+#else
                                    this->offset().fY + correctedBaseline);
+#endif
 #ifdef OHOS_SUPPORT
 #ifndef USE_SKIA_TXT
     SkFont font;
@@ -1731,7 +1736,9 @@ LineMetrics TextLine::getMetrics() const {
             run->fFont.GetMetrics(&fontMetrics);
 #endif
 #ifdef OHOS_SUPPORT
-            metricsIncludeFontPadding(&fontMetrics, run->fFont);
+            auto decompressFont = run->fFont;
+            scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+            metricsIncludeFontPadding(&fontMetrics, decompressFont);
 #endif
             StyleMetrics styleMetrics(&style, fontMetrics);
             result.fLineMetrics.emplace(textRange.start, styleMetrics);
