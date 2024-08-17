@@ -2,6 +2,7 @@
 
 #include "modules/skparagraph/src/Iterators.h"
 #include "modules/skparagraph/src/OneLineShaper.h"
+#include "src/Run.h"
 #include "src/utils/SkUTF.h"
 
 #include <algorithm>
@@ -686,6 +687,9 @@ bool OneLineShaper::shape() {
                 font.SetBaselineSnap(false);
 #endif
 
+#ifdef OHOS_SUPPORT
+                scaleFontWithCompressionConfig(font, ScaleOP::COMPRESS);
+#endif
                 // Apply fake bold and/or italic settings to the font if the
                 // typeface's attributes do not match the intended font style.
 #ifndef USE_SKIA_TXT
