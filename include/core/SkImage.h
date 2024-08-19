@@ -275,7 +275,8 @@ public:
                                                     int width, int height,
                                                     CompressionType type,
                                                     GrMipmapped mipMapped = GrMipmapped::kNo,
-                                                    GrProtected isProtected = GrProtected::kNo);
+                                                    GrProtected isProtected = GrProtected::kNo,
+                                                    sk_sp<SkColorSpace> colorSpace = nullptr);
 
     /** User function called when supplied texture may be deleted.
     */
