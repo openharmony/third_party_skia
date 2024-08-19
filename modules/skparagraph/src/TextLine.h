@@ -236,6 +236,7 @@ private:
     SkScalar calculateThickness(const TextStyle& style, const ClipContext& context);
 #ifdef OHOS_SUPPORT
     void measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const;
+    void computeNextPaintGlyphRange(ClipContext& context, const TextRange& lastGlyphRange, StyleType styleType) const;
 #endif
 
     ParagraphImpl* fOwner;

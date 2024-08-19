@@ -1404,6 +1404,29 @@ void TextLine::iterateThroughClustersInGlyphsOrder(bool reversed,
     });
 }
 
+#ifdef OHOS_SUPPORT
+void TextLine::computeNextPaintGlyphRange(ClipContext& context,
+    const TextRange& lastGlyphRange, StyleType styleType) const
+{
+    if (styleType != StyleType::kForeground) {
+        return;
+    }
+    TextRange curGlyphRange = TextRange(context.pos, context.pos + context.size);
+    auto intersect = intersected(lastGlyphRange, curGlyphRange);
+    if (intersect == EMPTY_TEXT || (intersect.start != curGlyphRange.start && intersect.end != curGlyphRange.end)) {
+        return;
+    }
+    if (intersect.start == curGlyphRange.start) {
+        curGlyphRange = TextRange(intersect.end, curGlyphRange.end);
+    } else if (intersect.end == curGlyphRange.end) {
+        curGlyphRange = TextRange(curGlyphRange.start, intersect.start);
+    }
+
+    context.pos = curGlyphRange.start;
+    context.size = curGlyphRange.width();
+}
+#endif
+
 SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment,
                                                    const Run* run,
                                                    SkScalar runOffset,
@@ -1464,7 +1487,9 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
     size_t size = 0;
     const TextStyle* prevStyle = nullptr;
     SkScalar textOffsetInRun = 0;
-
+#ifdef OHOS_SUPPORT
+    TextRange lastGlyphRange = EMPTY_TEXT;
+#endif
     const BlockIndex blockRangeSize = fBlockRange.end - fBlockRange.start;
     for (BlockIndex index = 0; index <= blockRangeSize; ++index) {
 
@@ -1524,6 +1549,12 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
                 clipContext.clip.fBottom = clipContext.clip.fTop + run->fFontMetrics.fDescent -
                     run->fFontMetrics.fAscent;
         }
+#ifdef OHOS_SUPPORT
+        computeNextPaintGlyphRange(clipContext, lastGlyphRange, styleType);
+        if (clipContext.size != 0) {
+            lastGlyphRange = TextRange(clipContext.pos, clipContext.pos + clipContext.size);
+        }
+#endif
         visitor(runStyleTextRange, *prevStyle, clipContext);
 
         // Start all over again
