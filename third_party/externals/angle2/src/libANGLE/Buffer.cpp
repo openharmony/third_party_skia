@@ -390,7 +390,7 @@ angle::Result Buffer::getSubData(const gl::Context *context,
 }
 
 void Buffer::onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMessage message)
-{
+{   //cve-2022-0297 angle
     if (message == angle::SubjectMessage::BufferVkStorageChanged)
     {
         return;

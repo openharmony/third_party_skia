@@ -4086,7 +4086,8 @@ const char *ValidateDrawStates(const Context *context)
                     return kTessellationShaderRequiresBothControlAndEvaluation;
                 }
             }
-
+            
+            //angle CVE-2022-0975
             if (state.isTransformFeedbackActiveUnpaused())
             {
                 if (!ValidateProgramExecutableXFBBuffersPresent(context, executable))
@@ -8304,6 +8305,7 @@ bool ValidateInvalidateTextureANGLE(const Context *context,
     return true;
 }
 
+//angle CVE-2022-0975
 bool ValidateProgramExecutableXFBBuffersPresent(const Context *context,
                                                 const ProgramExecutable *programExecutable)
 {
