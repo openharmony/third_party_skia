@@ -4086,6 +4086,15 @@ const char *ValidateDrawStates(const Context *context)
                     return kTessellationShaderRequiresBothControlAndEvaluation;
                 }
             }
+            
+            //angle CVE-2022-0975
+            if (state.isTransformFeedbackActiveUnpaused())
+            {
+                if (!ValidateProgramExecutableXFBBuffersPresent(context, executable))
+                {
+                    return kTransformFeedbackBufferMissing;
+                }
+            }
         }
 
         if (programIsYUVOutput != framebufferIsYUV)
@@ -8296,4 +8305,22 @@ bool ValidateInvalidateTextureANGLE(const Context *context,
     return true;
 }
 
+//angle CVE-2022-0975
+bool ValidateProgramExecutableXFBBuffersPresent(const Context *context,
+                                                const ProgramExecutable *programExecutable)
+{
+    size_t programXfbCount = programExecutable->getTransformFeedbackBufferCount();
+    const TransformFeedback *transformFeedback = context->getState().getCurrentTransformFeedback();
+    for (size_t programXfbIndex = 0; programXfbIndex < programXfbCount; ++programXfbIndex)
+    {
+        const OffsetBindingPointer<Buffer> &buffer =
+            transformFeedback->getIndexedBuffer(programXfbIndex);
+        if (!buffer.get())
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 }  // namespace gl

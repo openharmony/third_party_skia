@@ -2974,17 +2974,11 @@ bool ValidateBeginTransformFeedback(const Context *context,
         return false;
     }
 
-    size_t programXfbCount = programExecutable->getTransformFeedbackBufferCount();
-    for (size_t programXfbIndex = 0; programXfbIndex < programXfbCount; ++programXfbIndex)
+    //angle CVE-2022-0975
+    if (!ValidateProgramExecutableXFBBuffersPresent(context, programExecutable))
     {
-        const OffsetBindingPointer<Buffer> &buffer =
-            transformFeedback->getIndexedBuffer(programXfbIndex);
-        if (!buffer.get())
-        {
-            context->validationError(entryPoint, GL_INVALID_OPERATION,
-                                     kTransformFeedbackBufferMissing);
-            return false;
-        }
+        context->validationError(entryPoint, GL_INVALID_OPERATION, kTransformFeedbackBufferMissing);
+        return false;
     }
 
     return true;
@@ -4291,6 +4285,14 @@ bool ValidateResumeTransformFeedback(const Context *context, angle::EntryPoint e
     if (!transformFeedback->isPaused())
     {
         context->validationError(entryPoint, GL_INVALID_OPERATION, kTransformFeedbackNotPaused);
+        return false;
+    }
+    
+    //angle CVE-2022-1477
+    if (!ValidateProgramExecutableXFBBuffersPresent(context,
+                                                    context->getState().getProgramExecutable()))
+    {
+        context->validationError(entryPoint, GL_INVALID_OPERATION, kTransformFeedbackBufferMissing);
         return false;
     }
 
