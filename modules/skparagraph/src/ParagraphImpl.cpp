@@ -193,7 +193,9 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
             targetRun.fFont.GetMetrics(&newFontMetrics);
 #endif
 #ifdef OHOS_SUPPORT
-            metricsIncludeFontPadding(&newFontMetrics, targetRun.fFont);
+            auto decompressFont = targetRun.fFont;
+            scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+            metricsIncludeFontPadding(&newFontMetrics, decompressFont);
 #endif
             fontMetrics.emplace_back(newFontMetrics);
         }
@@ -1291,14 +1293,25 @@ void ParagraphImpl::resolveStrut() {
 #ifndef USE_SKIA_TXT
     SkFont font(typefaces.front(), strutStyle.getFontSize());
     SkFontMetrics metrics;
+#ifdef OHOS_SUPPORT
+    SkFont compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.getMetrics(&metrics);
+    metricsIncludeFontPadding(&metrics, font);
+#else
     font.getMetrics(&metrics);
+#endif
 #else
     RSFont font(typefaces.front(), strutStyle.getFontSize(), 1, 0);
     RSFontMetrics metrics;
+#ifdef OHOS_SUPPORT
+    RSFont compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.GetMetrics(&metrics);
+    metricsIncludeFontPadding(&metrics, font);
+#else
     font.GetMetrics(&metrics);
 #endif
-#ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics, font);
 #endif
 
     if (strutStyle.getHeightOverride()) {
@@ -1988,7 +2001,9 @@ SkFontMetrics ParagraphImpl::measureText() {
     auto firstStr = text(fRuns.front().textRange());
     firstFont.getMetrics(&metrics);
 #ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics, firstFont);
+    auto decompressFont = firstFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    metricsIncludeFontPadding(&metrics, decompressFont);
 #endif
     firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
     fGlyphsBoundsTop = firstBounds.top();
@@ -2027,7 +2042,9 @@ RSFontMetrics ParagraphImpl::measureText()
     auto firstStr = text(fRuns.front().textRange());
     firstFont.GetMetrics(&metrics);
 #ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics, firstFont);
+    auto decompressFont = firstFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    metricsIncludeFontPadding(&metrics, decompressFont);
 #endif
     firstFont.MeasureText(firstStr.data(), firstStr.size(), RSDrawing::TextEncoding::UTF8, &firstBounds);
     fGlyphsBoundsTop = firstBounds.GetTop();
