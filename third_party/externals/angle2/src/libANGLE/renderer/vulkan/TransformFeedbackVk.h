@@ -27,6 +27,7 @@ namespace vk
 class DescriptorSetLayoutDesc;
 }
 
+//cve-2022-0297 angle
 class TransformFeedbackVk : public TransformFeedbackImpl, public angle::ObserverInterface
 {
   public:
@@ -98,7 +99,8 @@ class TransformFeedbackVk : public TransformFeedbackImpl, public angle::Observer
     }
 
     vk::UniformsAndXfbDescriptorDesc &getTransformFeedbackDesc() { return mXFBBuffersDesc; }
-
+    
+    //cve-2022-0297 angle
     void onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMessage message) override;
 
   private:
@@ -132,7 +134,8 @@ class TransformFeedbackVk : public TransformFeedbackImpl, public angle::Observer
 
     // Keys to look up in the descriptor set cache
     vk::UniformsAndXfbDescriptorDesc mXFBBuffersDesc;
-
+    
+    //cve-2022-0297 angle
     // Buffer binding points
     std::vector<angle::ObserverBinding> mBufferObserverBindings;
 };

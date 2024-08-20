@@ -2974,6 +2974,7 @@ bool ValidateBeginTransformFeedback(const Context *context,
         return false;
     }
 
+    //angle CVE-2022-0975
     if (!ValidateProgramExecutableXFBBuffersPresent(context, programExecutable))
     {
         context->validationError(entryPoint, GL_INVALID_OPERATION, kTransformFeedbackBufferMissing);
@@ -4286,7 +4287,8 @@ bool ValidateResumeTransformFeedback(const Context *context, angle::EntryPoint e
         context->validationError(entryPoint, GL_INVALID_OPERATION, kTransformFeedbackNotPaused);
         return false;
     }
-
+    
+    //angle CVE-2022-1477
     if (!ValidateProgramExecutableXFBBuffersPresent(context,
                                                     context->getState().getProgramExecutable()))
     {
