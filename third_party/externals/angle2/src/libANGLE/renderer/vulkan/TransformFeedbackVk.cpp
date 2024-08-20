@@ -31,7 +31,7 @@ TransformFeedbackVk::TransformFeedbackVk(const gl::TransformFeedbackState &state
       mBufferSizes{},
       mAlignedBufferOffsets{},
       mCounterBufferHandles{}
-{
+{   //cve-2022-0297 angle
     for (angle::SubjectIndex bufferIndex = 0;
          bufferIndex < gl::IMPLEMENTATION_MAX_TRANSFORM_FEEDBACK_BUFFERS; ++bufferIndex)
     {
@@ -42,7 +42,8 @@ TransformFeedbackVk::TransformFeedbackVk(const gl::TransformFeedbackState &state
 TransformFeedbackVk::~TransformFeedbackVk() {}
 
 void TransformFeedbackVk::onDestroy(const gl::Context *context)
-{
+{   
+    //cve-2022-0297 angle
     ContextVk *contextVk   = vk::GetImpl(context);
     RendererVk *rendererVk = contextVk->getRenderer();
 
@@ -77,6 +78,7 @@ void TransformFeedbackVk::initializeXFBBuffersDesc(ContextVk *contextVk, size_t 
             mBufferHelpers[bufferIndex] = &bufferVk->getBufferAndOffset(&bufferOffset);
             mBufferOffsets[bufferIndex] = binding.getOffset() + bufferOffset;
             mBufferSizes[bufferIndex]   = gl::GetBoundBufferAvailableSize(binding);
+            //cve-2022-0297 angle
             mBufferObserverBindings[bufferIndex].bind(bufferVk);
         }
         else
@@ -86,6 +88,7 @@ void TransformFeedbackVk::initializeXFBBuffersDesc(ContextVk *contextVk, size_t 
             mBufferHelpers[bufferIndex]  = &nullBuffer;
             mBufferOffsets[bufferIndex]  = 0;
             mBufferSizes[bufferIndex]    = nullBuffer.getSize();
+            //cve-2022-0297 angle
             mBufferObserverBindings[bufferIndex].reset();
         }
 
@@ -167,6 +170,7 @@ angle::Result TransformFeedbackVk::end(const gl::Context *context)
         vk::GetImpl(transformFeedbackQuery)->onTransformFeedbackEnd(mState.getPrimitivesDrawn());
     }
 
+    //cve-2022-0297 angle
     for (angle::ObserverBinding &bufferBinding : mBufferObserverBindings)
     {
         bufferBinding.reset();
@@ -353,6 +357,7 @@ void TransformFeedbackVk::getBufferOffsets(ContextVk *contextVk,
     }
 }
 
+//cve-2022-0297 angle
 void TransformFeedbackVk::onSubjectStateChange(angle::SubjectIndex index,
                                                angle::SubjectMessage message)
 {

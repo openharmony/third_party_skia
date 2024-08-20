@@ -2174,6 +2174,7 @@ angle::Result State::detachBuffer(Context *context, const Buffer *buffer)
     if (curTransformFeedback)
     {
         ANGLE_TRY(curTransformFeedback->detachBuffer(context, bufferID));
+        //angle CVE-2022-0975
         if (isTransformFeedbackActiveUnpaused())
         {
             context->getStateCache().onActiveTransformFeedbackChange(context);

@@ -1203,6 +1203,7 @@ angle::Result BufferVk::acquireBufferHelper(ContextVk *contextVk,
         // to use the new buffer.
         onStateChange(angle::SubjectMessage::InternalMemoryAllocationChanged);
     }
+    //cve-2022-0297 angle
     else if (updateType == BufferUpdateType::StorageRedefined)
     {
         // Tell the observers (front end) that a buffer's storage has changed.

@@ -227,6 +227,8 @@ namespace dawn_native { namespace d3d12 {
             }
         }
         mAllocationsToDelete.ClearUpTo(completedSerial);
+        
+        //dawn cve2022-2399
         mHeapsToDelete.ClearUpTo(completedSerial);
     }
 
@@ -243,6 +245,7 @@ namespace dawn_native { namespace d3d12 {
         // to delete. It cannot be deleted immediately because it may be in use by in-flight or
         // pending commands.
         if (allocation.GetInfo().mMethod == AllocationMethod::kDirect) {
+            //dawn cve2022-2399
             mHeapsToDelete.Enqueue(std::unique_ptr<ResourceHeapBase>(allocation.GetResourceHeap()),
                                    mDevice->GetPendingCommandSerial());
         }

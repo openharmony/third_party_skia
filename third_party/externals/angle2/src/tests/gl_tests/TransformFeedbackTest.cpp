@@ -3902,6 +3902,7 @@ void main()
     EXPECT_GL_NO_ERROR();
 }
 
+//angle CVE-2022-0975
 // Tests that we don't produce undefined behaviour when deleting a current XFB buffer.
 TEST_P(TransformFeedbackTest, DeleteTransformFeedbackBuffer)
 {
@@ -3921,6 +3922,7 @@ TEST_P(TransformFeedbackTest, DeleteTransformFeedbackBuffer)
     glDrawArrays(GL_POINTS, 0, 1);
 }
 
+//angle CVE-2022-1477
 // Tests that deleting a buffer then resuming transform feedback produces an error.
 TEST_P(TransformFeedbackTest, ResumingTransformFeedbackAfterDeletebuffer)
 {

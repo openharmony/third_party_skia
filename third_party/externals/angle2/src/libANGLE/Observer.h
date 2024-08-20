@@ -55,6 +55,7 @@ enum class SubjectMessage
     // pending commands and waiting for the GPU to become idle.
     InternalMemoryAllocationChanged,
 
+    //cve-2022-0297 angle
     // Indicates that a buffer's storage has changed. Used to prevent use-after-free error. (Vulkan)
     BufferVkStorageChanged,
 

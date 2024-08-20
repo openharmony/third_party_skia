@@ -897,6 +897,7 @@ bool ValidateSampleMaskiBase(const Context *context,
                              GLuint maskNumber,
                              GLbitfield mask);
 
+//angle CVE-2022-0975
 bool ValidateProgramExecutableXFBBuffersPresent(const Context *context,
                                                 const ProgramExecutable *programExecutable);
 
