@@ -70,7 +70,6 @@ if (skia_use_system_libjpeg_turbo) {
       "../externals/libjpeg-turbo/jdcoefct.c",
       "../externals/libjpeg-turbo/jdcolor.c",
       "../externals/libjpeg-turbo/jddctmgr.c",
-      "../externals/libjpeg-turbo/jdhuff.c",
       "../externals/libjpeg-turbo/jdinput.c",
       "../externals/libjpeg-turbo/jdmainct.c",
       "../externals/libjpeg-turbo/jdmarker.c",
@@ -94,6 +93,13 @@ if (skia_use_system_libjpeg_turbo) {
       "../externals/libjpeg-turbo/jquant2.c",
       "../externals/libjpeg-turbo/jutils.c",
     ]
+    # OH ISSUE: jpeg optimize
+    if (target_platform == "pc") {
+      defines += [ "HUFF_DECODE_OPT" ]
+      sources += [ "../externals/libjpeg-turbo/jdhuff_opt.c" ]
+    } else {
+      sources += [ "../externals/libjpeg-turbo/jdhuff.c" ]
+    }
 
     if (!is_win && (current_cpu == "arm" || current_cpu == "arm64")) {
       defines += [ "NEON_INTRINSICS" ]

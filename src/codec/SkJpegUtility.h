@@ -36,7 +36,12 @@ struct skjpeg_source_mgr : jpeg_source_mgr {
     enum {
         // TODO (msarett): Experiment with different buffer sizes.
         // This size was chosen because it matches SkImageDecoder.
+#ifdef TURBO_JPEG_HUFF_DECODE_OPT
+        // OH ISSUE: jpeg optimize
+        kBufferSize = 40960
+#else
         kBufferSize = 1024
+#endif
     };
     uint8_t fBuffer[kBufferSize];
 };
