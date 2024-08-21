@@ -982,7 +982,9 @@ void GrVkPrimaryCommandBuffer::drawBlurImage(const GrVkGpu* gpu,
     drawBlurImageInfo.sType = VkStructureTypeHUAWEI::VK_STRUCTURE_TYPE_DRAW_BLUR_IMAGE_INFO_HUAWEI;
     drawBlurImageInfo.pNext = &colorFilterInfo;
     drawBlurImageInfo.sigma = blurArg.sigma;
-    drawBlurImageInfo.origin = (VkBlurOriginTypeHUAWEI)(originInfo.rtOrigin != originInfo.imageOrigin);
+    drawBlurImageInfo.origin = (originInfo.rtOrigin != originInfo.imageOrigin)
+                                       ? BLUR_ORIGIN_Y_AXIS_FLIP_HUAWEI
+                                       : BLUR_ORIGIN_NONE_FLIP_HUAWEI;
     drawBlurImageInfo.srcRegion = srcRegion;
     drawBlurImageInfo.dstRegion = dstRegion;
     drawBlurImageInfo.srcImageView = image->textureView()->imageView();
