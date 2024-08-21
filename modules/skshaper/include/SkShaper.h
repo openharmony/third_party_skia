@@ -45,6 +45,10 @@ class SkFont;
 class SkFontMgr;
 class SkUnicode;
 
+#ifdef USE_SKIA_TXT
+namespace SkiaRsText {
+#endif
+
 class SKSHAPER_API SkShaper {
 public:
     static std::unique_ptr<SkShaper> MakePrimitive();
@@ -334,4 +338,8 @@ private:
 };
 #endif
 
+#ifdef USE_SKIA_TXT
+}
+using SkShaper = SkiaRsText::SkShaper;
+#endif
 #endif  // SkShaper_DEFINED
