@@ -42,7 +42,7 @@ TransformFeedbackVk::TransformFeedbackVk(const gl::TransformFeedbackState &state
 TransformFeedbackVk::~TransformFeedbackVk() {}
 
 void TransformFeedbackVk::onDestroy(const gl::Context *context)
-{   
+{
     //cve-2022-0297 angle
     ContextVk *contextVk   = vk::GetImpl(context);
     RendererVk *rendererVk = contextVk->getRenderer();
