@@ -188,6 +188,7 @@
 #endif /* PNG_ARM_NEON_OPT > 0 */
 
 #if defined(PNG_ARM_NEON_IMPLEMENTATION) && defined(PNG_OPT_ENABLE)
+// OH ISSUE: png optimize
 #  if PNG_ARM_NEON_IMPLEMENTATION == 1
 #    define PNG_MULTY_LINE_ENABLE // 优化生效
 #    define PNG_INFLATE_MAX_SIZE (65536) // 最大解压输入大小
@@ -357,6 +358,7 @@
 #endif
 
 #ifndef PNG_INTERNAL_FUNCTION
+// OH ISSUE: png optimize
 #  ifdef PNG_MULTY_LINE_ENABLE
 #    define PNG_HIDE __attribute__((visibility("hidden")))
 #  else
@@ -1331,6 +1333,7 @@ PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_neon,(png_row_infop
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_neon,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 #ifdef PNG_MULTY_LINE_ENABLE
+// OH ISSUE: png optimize
 PNG_INTERNAL_FUNCTION(void, png_read_filter_row_up_x2_neon, (png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row), PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg3_x2_neon, (png_row_infop

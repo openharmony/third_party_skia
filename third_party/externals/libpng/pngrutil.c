@@ -4135,6 +4135,7 @@ png_read_filter_row(png_structrp pp, png_row_infop row_info, png_bytep row,
     * implementations.  See png_init_filter_functions above.
     */
 #ifdef PNG_MULTY_LINE_ENABLE
+   // OH ISSUE: png optimize
    if (filter > PNG_FILTER_VALUE_NONE && filter < PNG_FILTER_VALUE_LAST_X2)
 #else
    if (filter > PNG_FILTER_VALUE_NONE && filter < PNG_FILTER_VALUE_LAST)
@@ -4612,6 +4613,7 @@ defined(PNG_USER_TRANSFORM_PTR_SUPPORTED)
       else
       {
 #ifdef PNG_MULTY_LINE_ENABLE
+         // OH ISSUE: png optimize
          png_uint_32 row_num = 1;
          if (png_ptr->bit_depth == 8 && // 8表示1个像素8位
              (png_ptr->transformations & PNG_CHECK) == 0)

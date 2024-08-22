@@ -141,7 +141,7 @@ typedef const png_colorspace * PNG_RESTRICT png_const_colorspacerp;
 #endif /* COLORSPACE || GAMMA */
 
 #ifdef PNG_MULTY_LINE_ENABLE
-/* General flags for the 2 line filter */
+// OH ISSUE: png optimize
 #define PNG_FILTER_VALUE_UP_X2      (6) // PNG_FILTER_VALUE_UP + 4
 #define PNG_FILTER_VALUE_AVG_X2     (7) // PNG_FILTER_VALUE_AVG + 4
 #define PNG_FILTER_VALUE_PAETH_X2   (8) // PNG_FILTER_VALUE_PAETH + 4
@@ -486,6 +486,7 @@ struct png_struct_def
 
 /* New member added in libpng-1.5.7 */
 #ifdef PNG_MULTY_LINE_ENABLE
+   // OH ISSUE: png optimize
    void (*read_filter[PNG_FILTER_VALUE_LAST_X2 - 1])(png_row_infop row_info,
       png_bytep row, png_const_bytep prev_row);
 #else

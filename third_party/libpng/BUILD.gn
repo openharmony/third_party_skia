@@ -52,6 +52,7 @@ if (skia_use_system_libpng) {
         "../externals/libpng/arm/palette_neon_intrinsics.c",
       ]
       if (target_platform == "pc") {
+        // OH ISSUE: png optimize
         defines += [ "PNG_OPT_ENABLE" ]
       }
     }

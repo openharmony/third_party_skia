@@ -398,6 +398,7 @@ png_read_filter_row_paeth4_neon(png_row_infop row_info, png_bytep row,
    }
 }
 #else
+// OH ISSUE: png optimize
 // 根据rowbytes定义，row_info->rowbytes = row_width * row_info->channels
 // 输入filter的rowbytes一定是channels(3或4)的倍数，因此针对向量化运算:
 // RGB一次处理12个字节，尾部字节数只能是3，6，9
@@ -1741,6 +1742,6 @@ void png_read_filter_row_paeth4_x2_neon(png_row_infop row_info, png_bytep row,
    vst1_lane_u32(png_ptr(uint32_t, np), vdest_val2, 0);
 }
 #endif /* PNG_MULTY_LINE_ENABLE */
-#endif
+#endif /* PNG_ARM_NEON_OPT > 0 */
 #endif /* PNG_ARM_NEON_IMPLEMENTATION == 1 (intrinsics) */
 #endif /* READ */

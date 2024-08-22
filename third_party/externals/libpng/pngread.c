@@ -55,6 +55,7 @@ png_create_read_struct_2,(png_const_charp user_png_ver, png_voidp error_ptr,
        */
 #     ifdef PNG_SEQUENTIAL_READ_SUPPORTED
 #ifdef PNG_MULTY_LINE_ENABLE
+         // OH ISSUE: png optimize
          png_ptr->IDAT_read_size = PNG_INFLATE_MAX_SIZE;
 #else
          png_ptr->IDAT_read_size = PNG_IDAT_READ_SIZE;
@@ -690,6 +691,7 @@ png_read_rows(png_structrp png_ptr, png_bytepp row,
 #ifdef PNG_SEQUENTIAL_READ_SUPPORTED
 
 #ifdef PNG_MULTY_LINE_ENABLE
+// OH ISSUE: png optimize
 static void png_read_two_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 i,
                          png_row_info row_info)
 {
@@ -967,6 +969,7 @@ png_read_image(png_structrp png_ptr, png_bytepp image)
    image_height=png_ptr->height;
 
 #ifdef PNG_MULTY_LINE_ENABLE
+   // OH ISSUE: png optimize
    if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8表示1个像素8位
        (png_ptr->transformations & PNG_CHECK) == 0) {
       if ((png_ptr->flags & PNG_FLAG_ROW_INIT) == 0)

@@ -116,6 +116,7 @@ png_init_filter_functions_neon(png_structp pp, unsigned int bpp)
     */
    pp->read_filter[PNG_FILTER_VALUE_UP-1] = png_read_filter_row_up_neon;
 #ifdef PNG_MULTY_LINE_ENABLE
+   // OH ISSUE: png optimize
    pp->read_filter[PNG_FILTER_VALUE_UP_X2-1] = png_read_filter_row_up_x2_neon;
 #endif
    if (bpp == 3)
@@ -125,6 +126,7 @@ png_init_filter_functions_neon(png_structp pp, unsigned int bpp)
       pp->read_filter[PNG_FILTER_VALUE_PAETH-1] =
          png_read_filter_row_paeth3_neon;
 #ifdef PNG_MULTY_LINE_ENABLE
+      // OH ISSUE: png optimize
       pp->read_filter[PNG_FILTER_VALUE_AVG_X2-1] =
          png_read_filter_row_avg3_x2_neon;
       pp->read_filter[PNG_FILTER_VALUE_PAETH_X2-1] =
@@ -139,6 +141,7 @@ png_init_filter_functions_neon(png_structp pp, unsigned int bpp)
       pp->read_filter[PNG_FILTER_VALUE_PAETH-1] =
           png_read_filter_row_paeth4_neon;
 #ifdef PNG_MULTY_LINE_ENABLE
+      // OH ISSUE: png optimize
       pp->read_filter[PNG_FILTER_VALUE_AVG_X2-1] =
          png_read_filter_row_avg4_x2_neon;
       pp->read_filter[PNG_FILTER_VALUE_PAETH_X2-1] =

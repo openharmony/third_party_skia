@@ -265,6 +265,7 @@ png_push_read_chunk(png_structrp png_ptr, png_inforp info_ptr)
       png_ptr->process_mode = PNG_READ_IDAT_MODE;
       png_push_have_info(png_ptr, info_ptr);
 #ifdef PNG_MULTY_LINE_ENABLE
+      // OH ISSUE: png optimize
       if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8表示1个像素8位
          (png_ptr->transformations & PNG_CHECK) == 0) {
          int rest = png_ptr->num_rows - png_ptr->row_number;
@@ -636,6 +637,7 @@ png_push_read_IDAT(png_structrp png_ptr)
 }
 
 #ifdef PNG_MULTY_LINE_ENABLE
+// OH ISSUE: png optimize
 static void png_push_process_row_x2(png_structrp png_ptr,
    png_row_info row_info_in)
 {
@@ -737,6 +739,7 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
    png_ptr->zstream.avail_in = (uInt)buffer_length;
 
 #ifdef PNG_MULTY_LINE_ENABLE
+   // OH ISSUE: png optimize
    int row_num = 1;
    if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8表示1个像素8位
        (png_ptr->transformations & PNG_CHECK) == 0)
@@ -763,6 +766,7 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
       {
          /* TODO: WARNING: TRUNCATION ERROR: DANGER WILL ROBINSON: */
 #ifdef PNG_MULTY_LINE_ENABLE
+         // OH ISSUE: png optimize
          if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8表示1个像素8位
              (png_ptr->transformations & PNG_CHECK) == 0)
          {
@@ -837,6 +841,7 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
          /* Do we have a complete row? */
          if (png_ptr->zstream.avail_out == 0)
 #ifdef PNG_MULTY_LINE_ENABLE
+            // OH ISSUE: png optimize
             png_push_process_multi_rows(png_ptr, row_num);
 #else
             png_push_process_row(png_ptr);
@@ -885,6 +890,7 @@ png_push_process_row(png_structrp png_ptr)
     * interlaced row count:
     */
 #ifdef PNG_MULTY_LINE_ENABLE
+   // OH ISSUE: png optimize
    if (png_ptr->transformations == 0 && png_ptr->interlaced == 0)
    {
       png_ptr->prev_row = png_ptr->row_buf;
