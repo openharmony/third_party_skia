@@ -897,6 +897,10 @@ bool ValidateSampleMaskiBase(const Context *context,
                              GLuint maskNumber,
                              GLbitfield mask);
 
+//angle CVE-2022-0975
+bool ValidateProgramExecutableXFBBuffersPresent(const Context *context,
+                                                const ProgramExecutable *programExecutable);
+
 // We should check with Khronos if returning INVALID_FRAMEBUFFER_OPERATION is OK when querying
 // implementation format info for incomplete framebuffers. It seems like these queries are
 // incongruent with the other errors.
