@@ -1598,7 +1598,11 @@ skia_component("skia") {
 
 if (use_oh_skia) {
   config("skia_config") {
-    include_dirs = [ "//third_party/skia" ]
+    include_dirs = [
+      "//third_party/skia",
+      "//third_party/skia/include/core",
+      "//third_party/skia/src/core",
+    ]
 
     defines = skia_common_defines
   }
@@ -1842,7 +1846,11 @@ if (use_oh_skia) {
     innerapi_tags = [ "platformsdk" ]
     subsystem_name = "thirdparty"
 
-    include_dirs = [ "${skia_third_party_dir}/externals/libgifcodec" ]
+    include_dirs = [
+      "${skia_third_party_dir}/externals/libgifcodec",
+      "${skia_third_party_dir}/include/core",
+      "${skia_third_party_dir}/src/core",
+    ]
     public_configs = [
       ":skia_public",
       ":skia_config",
