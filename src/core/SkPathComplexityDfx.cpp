@@ -14,6 +14,7 @@
  */
 
 #include "src/core/SkPathComplexityDfx.h"
+#include "src/core/SkTraceEvent.h"
 
 #ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
 constexpr int PATH_TRACE_LEVEL = 1;
@@ -36,7 +37,7 @@ bool IsShowPathComplexityEnabled()
 void SkPathComplexityDfx::AddPathComplexityTrace(SkScalar complexity)
 {
     if (GetDebugTraceLevel() >= PATH_TRACE_LEVEL) {
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Path Complexity Debug: %f", complexity);
+        HITRACE_OHOS_NAME_FMT_ALWAYS("Path Complexity Debug: %f", complexity);
     }
 }
 void SkPathComplexityDfx::ShowPathComplexityDfx(SkCanvas* canvas, const SkPath& path)

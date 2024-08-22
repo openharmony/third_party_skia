@@ -10,9 +10,6 @@
 #include <vector>
 #include <map>
 #include <sstream>
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
 #include "include/core/SkString.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/private/GrSingleOwner.h"
@@ -147,7 +144,7 @@ void GrResourceCache::dumpPidResource() {
     if (now - lastdumpTime < 1) { // 打印间隔1s以上
         return;
     }
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "dumpPidResource");
+    HITRACE_OHOS_NAME_ALWAYS("dumpPidResource");
     lastdumpTime = now;
     std::stringstream dumpMessage;
     std::map<uint32_t, size_t> purgePidMaps, unPurgePidMaps;
@@ -182,7 +179,7 @@ void GrResourceCache::dumpPidResource() {
         }
     }
     dumpMessage << "unPurgeAble pid[" << maxPid << "][" << unPurgePidMaps[maxPid] << "]";
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over info %s", dumpMessage.str().c_str());
+    HITRACE_OHOS_NAME_FMT_ALWAYS("cache over info %s", dumpMessage.str().c_str());
 #endif
 }
 
@@ -244,10 +241,10 @@ void GrResourceCache::traceBeforePurgeUnlockRes(const std::string& method, Simpl
 
 void GrResourceCache::traceAfterPurgeUnlockRes(const std::string& method, const SimpleCacheInfo& simpleCacheInfo) {
     if (purgeUnlocakedResTraceEnabled_) {
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "%s end cacheInfo= %s", method.c_str(), cacheInfo().c_str());
+        HITRACE_OHOS_NAME_FMT_ALWAYS("%s end cacheInfo= %s", method.c_str(), cacheInfo().c_str());
         FinishTrace(HITRACE_TAG_GRAPHIC_AGP);
     } else {
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "%s end cacheInfo= %s",
+        HITRACE_OHOS_NAME_FMT_ALWAYS("%s end cacheInfo= %s",
             method.c_str(), cacheInfoComparison(simpleCacheInfo).c_str());
     }
 }
@@ -505,8 +502,7 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
     SkASSERT(!resource->cacheAccess().isUsableAsScratch());
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     if (fBudgetedBytes >= fMaxBytes) {
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over fBudgetedBytes:(%u),fMaxBytes:(%u)",
-            fBudgetedBytes, fMaxBytes);
+        HITRACE_OHOS_NAME_FMT_ALWAYS("cache over fBudgetedBytes:(%u), fMaxBytes:(%u)", fBudgetedBytes, fMaxBytes);
 #ifdef SKIA_DFX_FOR_OHOS
         SimpleCacheInfo simpleCacheInfo;
         traceBeforePurgeUnlockRes("insertResource", simpleCacheInfo);
@@ -1126,12 +1122,7 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
 void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly,
                                               const std::set<int>& exitedPidSet,
                                               const std::set<int>& protectedPidSet) {
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP,
-                      "PurgeGrResourceCache cur=%d, limit=%d",
-                      fBudgetedBytes,
-                      fMaxBytes);
-#endif
+    HITRACE_OHOS_NAME_FMT_ALWAYS("PurgeGrResourceCache cur=%d, limit=%d", fBudgetedBytes, fMaxBytes);
     if (exitedPidSet.size() > 1) {
         for (int i = 1; i < fPurgeableQueue.count(); i++) {
             GrGpuResource* resource = fPurgeableQueue.at(i);

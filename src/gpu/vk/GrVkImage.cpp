@@ -18,6 +18,7 @@
 #include "GrVkCommandBuffer.h"
 #include "GrVkGpu.h"
 #include "include/core/SkExecutor.h"
+#include "src/core/SkTraceEvent.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkImageView.h"
 #include "src/gpu/vk/GrVkMemory.h"
@@ -28,7 +29,6 @@
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
 #include <parameter.h>
 #include <parameters.h>
-#include "hitrace_meter.h"
 #include "param/sys_param.h"
 #endif
 
@@ -591,9 +591,7 @@ void GrVkImage::PurgeAllocatedTextureBetweenFrames() {
     if (isFoldScreenFlag) {
         return;
     }
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PurgeAllocatedTextureBetweenFrames");
-#endif
+    HITRACE_OHOS_NAME_ALWAYS("PurgeAllocatedTextureBetweenFrames");
     ImagePool &imagePool = ImagePool::getInstance();
     GrVkGpu *gpu = imagePool.getGpu();
     if (!gpu) {
@@ -627,9 +625,7 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
             if (!available) {
                 continue;
             }
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Hit pre-allocated image cache");
-#endif
+            HITRACE_OHOS_NAME_ALWAYS("Hit pre-allocated image cache");
             available = false;
             q.availabledCacheCount--;
             *info = cachedInfo;
@@ -794,9 +790,7 @@ void GrVkImage::Resource::freeGPUData() const {
             if (!(cachedInfo.fImage == this->fImage && cachedInfo.fAlloc == this->fAlloc)) {
                 continue;
             }
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Back pre-allocated image cache");
-#endif
+            HITRACE_OHOS_NAME_ALWAYS("Back pre-allocated image cache");
             if (q.availabledCacheCount < q.cachePoolSize) {
                 available = true;
                 cached = true;

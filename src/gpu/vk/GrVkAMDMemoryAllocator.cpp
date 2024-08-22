@@ -14,10 +14,6 @@
 #include "src/gpu/vk/GrVkUtil.h"
 #include "src/core/SkUtils.h"
 
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
-
 #ifndef SK_USE_VMA
 sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
                                                         VkPhysicalDevice physicalDevice,
@@ -340,10 +336,7 @@ void GrVkAMDMemoryAllocator::vmaDefragment()
     dumpVmaStats(&debugInfo);
     SkDebugf("GrVkAMDMemoryAllocator::vmaDefragment() before: %s",
         debugInfo.c_str());
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "GrVkAMDMemoryAllocator::vmaDefragment() before: %s",
-        debugInfo.c_str());
-#endif
+    HITRACE_OHOS_NAME_FMT_ALWAYS("GrVkAMDMemoryAllocator::vmaDefragment() before: %s", debugInfo.c_str());
 
     vmaFreeEmptyBlock(fAllocator);
 
@@ -352,10 +345,7 @@ void GrVkAMDMemoryAllocator::vmaDefragment()
     dumpVmaStats(&debugInfo);
     SkDebugf("GrVkAMDMemoryAllocator::vmaDefragment() after: %s",
         debugInfo.c_str());
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "GrVkAMDMemoryAllocator::vmaDefragment() after: %s",
-        debugInfo.c_str());
-#endif
+    HITRACE_OHOS_NAME_FMT_ALWAYS("GrVkAMDMemoryAllocator::vmaDefragment() after: %s", debugInfo.c_str());
 }
 
 #endif // SK_USE_VMA

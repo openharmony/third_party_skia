@@ -11,6 +11,7 @@
 #include "include/core/SkRect.h"
 #include "include/gpu/GrBackendDrawableInfo.h"
 #include "include/gpu/GrDirectContext.h"
+#include "src/core/SkTraceEvent.h"
 #include "src/gpu/GrBackendUtils.h"
 #include "src/gpu/GrDirectContextPriv.h"
 #include "src/gpu/GrOpFlushState.h"
@@ -30,9 +31,6 @@
 #include "src/gpu/vk/GrVkResourceProvider.h"
 #include "src/gpu/vk/GrVkSemaphore.h"
 #include "src/gpu/vk/GrVkTexture.h"
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -898,10 +896,7 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxyView& proxyView, con
         return;
     }
 
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, "DrawBlurImage");
-#endif
-    
+    HITRACE_OHOS_NAME_ALWAYS("DrawBlurImage");
     // reference textureop, resource's refcount should add.
     fGpu->currentCommandBuffer()->addResource(image->textureView());
     fGpu->currentCommandBuffer()->addResource(image->resource());
