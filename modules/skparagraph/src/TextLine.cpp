@@ -151,7 +151,8 @@ TextLine::TextLine(ParagraphImpl* owner,
         if (b->fStyle.hasBackground()) {
             fHasBackground = true;
         }
-        if (b->fStyle.getDecorationType() != TextDecoration::kNoDecoration) {
+        if (b->fStyle.getDecorationType() != TextDecoration::kNoDecoration &&
+            b->fStyle.getDecorationThicknessMultiplier() > 0) {
             fHasDecorations = true;
         }
         if (b->fStyle.getShadowNumber() > 0) {
