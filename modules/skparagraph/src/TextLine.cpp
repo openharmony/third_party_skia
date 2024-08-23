@@ -151,8 +151,13 @@ TextLine::TextLine(ParagraphImpl* owner,
         if (b->fStyle.hasBackground()) {
             fHasBackground = true;
         }
+
+#ifdef OHOS_SUPPORT
         if (b->fStyle.getDecorationType() != TextDecoration::kNoDecoration &&
             b->fStyle.getDecorationThicknessMultiplier() > 0) {
+#else
+        if (b->fStyle.getDecorationType() != TextDecoration::kNoDecoration) {
+#endif
             fHasDecorations = true;
         }
         if (b->fStyle.getShadowNumber() > 0) {
