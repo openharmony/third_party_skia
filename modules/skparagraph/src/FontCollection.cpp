@@ -403,7 +403,7 @@ sk_sp<SkTypeface> FontCollection::CloneTypeface(sk_sp<SkTypeface> typeface,
 std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSTypeface> typeface,
     const std::optional<FontArguments>& fontArgs)
 {
-    std::shared_lock<std::shared_mutex> readLock(mutex_);
+
 #ifndef USE_SKIA_TXT
     if (!typeface || !fontArgs || typeface->isCustomTypeface()) {
 #else
@@ -420,7 +420,7 @@ std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSType
     hash ^= std::hash<uint32_t>()(typeface->GetUniqueID());
 #endif
 
-//    std::unique_lock<std::mutex> lock(fMutex);
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     auto cached = GetLRUCacheInstance().find(hash);
     if (cached) {
         return cached;
