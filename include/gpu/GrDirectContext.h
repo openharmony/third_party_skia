@@ -52,6 +52,10 @@ class SkTraceMemoryDump;
 
 namespace skgpu { namespace v1 { class SmallPathAtlasMgr; }}
 
+// OH ISSUE: add callback for memory count
+using MemoryOverCheckCallback = void(*)(const int32_t, const size_t, bool);
+using RemoveMemoryFromSnapshotInfoCallback = std::function<void(const int32_t, const size_t)>;
+
 class SK_API GrDirectContext : public GrRecordingContext {
 public:
 #ifdef SK_GL
@@ -893,6 +897,10 @@ public:
 
     void vmaDefragment();
     void dumpVmaStats(SkString *out);
+
+    // OH ISSUE: set callback for memory count
+    void setMemoryOverCheck(MemoryOverCheckCallback callback);
+    void setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback);
 
 protected:
     GrDirectContext(GrBackendApi backend, const GrContextOptions& options);
