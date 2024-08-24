@@ -25,7 +25,7 @@
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skshaper/include/SkShaper.h"
 #include "src/Run.h"
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
 #include "parameter.h"
 #endif
 #include "log.h"
@@ -499,8 +499,9 @@ SkScalar TextLine::calculateSpacing(const Cluster prevCluster, const Cluster cur
     return 0;
 }
 
+#ifdef OHOS_SUPPORT
 SkScalar TextLine::autoSpacing() {
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
     static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
     char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
     GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
@@ -523,6 +524,7 @@ SkScalar TextLine::autoSpacing() {
     this->fAdvance.fX += spacing;
     return spacing;
 }
+#endif
 
 void TextLine::scanStyles(StyleType styleType, const RunStyleVisitor& visitor) {
     if (this->empty()) {
