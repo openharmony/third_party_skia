@@ -30,7 +30,7 @@
 #include <string>
 #include <utility>
 #include "log.h"
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
 #include "parameter.h"
 #endif
 
@@ -719,6 +719,7 @@ static bool is_ascii_7bit_space(int c) {
 #undef M
 }
 
+#ifdef OHOS_SUPPORT
 static std::vector<SkRange<SkUnichar>> CJK_UNICODE_SET = {
     SkRange<SkUnichar>(0x4E00, 0x9FFF),
     SkRange<SkUnichar>(0x3400, 0x4DBF),
@@ -751,7 +752,7 @@ constexpr SkUnichar COPYRIGHT_UNICODE = 0x00A9;
 struct UnicodeSet {
     std::unordered_set<SkUnichar> set_;
     explicit UnicodeSet(const std::vector<SkRange<SkUnichar>>& unicodeSet) {
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
         static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
         char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
         GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
@@ -774,6 +775,7 @@ struct UnicodeSet {
 
 static const UnicodeSet CJK_SET(CJK_UNICODE_SET);
 static const UnicodeSet WESTERN_SET(WESTERN_UNICODE_SET);
+#endif
 
 Cluster::Cluster(ParagraphImpl* owner,
                  RunIndex runIndex,
