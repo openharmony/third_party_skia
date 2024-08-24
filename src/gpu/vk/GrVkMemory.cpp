@@ -11,13 +11,10 @@
 #endif
 
 #include "include/core/SkExecutor.h"
+#include "src/core/SkTraceEvent.h"
 #include "src/core/SkUtils.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkUtil.h"
-
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
 
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
 
@@ -160,9 +157,7 @@ bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
                                            OH_NativeBuffer *nativeBuffer,
                                            VkBuffer buffer,
                                            GrVkAlloc* alloc) {
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "ImportAndBindBufferMemory");
-#endif
+    HITRACE_OHOS_NAME_ALWAYS("ImportAndBindBufferMemory");
     VkDevice device = gpu->device();
     VkMemoryRequirements memReqs{};
     VK_CALL(gpu, GetBufferMemoryRequirements(device, buffer, &memReqs));
@@ -245,9 +240,7 @@ bool GrVkMemory::AllocAndBindImageMemory(GrVkGpu* gpu,
     }
 
     VkMemoryRequirements memReqs;
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "AllocAndBindImageMemory");
-#endif
+    HITRACE_OHOS_NAME_ALWAYS("AllocAndBindImageMemory");
     GR_VK_CALL(gpu->vkInterface(), GetImageMemoryRequirements(gpu->device(), image, &memReqs));
 
     AllocationPropertyFlags propFlags;

@@ -53,10 +53,6 @@
 
 #include <utility>
 
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
-
 #define VK_CALL(X) GR_VK_CALL(this->vkInterface(), X)
 #define VK_CALL_RET(RET, X) GR_VK_CALL_RESULT(this, RET, X)
 
@@ -1172,10 +1168,8 @@ sk_sp<GrTexture> GrVkGpu::onCreateTexture(SkISize dimensions,
     SkASSERT(!GrVkFormatIsCompressed(pixelFormat));
     SkASSERT(mipLevelCount > 0);
 
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "GrVkGpu::onCreateTexture width = %d, height = %d",
+    HITRACE_OHOS_NAME_FMT_ALWAYS("GrVkGpu::onCreateTexture width = %d, height = %d",
         dimensions.width(), dimensions.height());
-#endif
     GrMipmapStatus mipmapStatus =
             mipLevelCount > 1 ? GrMipmapStatus::kDirty : GrMipmapStatus::kNotAllocated;
 

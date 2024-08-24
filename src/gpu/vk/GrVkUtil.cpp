@@ -13,7 +13,6 @@
 #include "src/gpu/GrDirectContextPriv.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/sksl/SkSLCompiler.h"
-#include "hitrace_meter.h"
 
 bool GrVkFormatIsSupported(VkFormat format) {
     switch (format) {
