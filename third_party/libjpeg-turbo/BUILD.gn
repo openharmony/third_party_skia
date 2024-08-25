@@ -93,6 +93,7 @@ if (skia_use_system_libjpeg_turbo) {
       "../externals/libjpeg-turbo/jquant2.c",
       "../externals/libjpeg-turbo/jutils.c",
     ]
+
     # OH ISSUE: jpeg optimize
     if (target_platform == "pc") {
       defines += [ "HUFF_DECODE_OPT" ]
