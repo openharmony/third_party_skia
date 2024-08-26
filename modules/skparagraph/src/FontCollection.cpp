@@ -56,13 +56,17 @@ FontCollection::FontCollection()
     : fEnableFontFallback(true),
     fDefaultFamilyNames({SkString(DEFAULT_FONT_FAMILY)}) {}
 
-size_t FontCollection::getFontManagersCount() const { return this->getFontManagerOrder().size(); }
+size_t FontCollection::getFontManagersCount() const {
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    return this->getFontManagerOrder().size();
+}
 
 #ifndef USE_SKIA_TXT
 void FontCollection::setAssetFontManager(sk_sp<SkFontMgr> font_manager) {
 #else
 void FontCollection::setAssetFontManager(std::shared_ptr<RSFontMgr> font_manager) {
 #endif
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fAssetFontManager = font_manager;
 }
 
@@ -71,6 +75,7 @@ void FontCollection::setDynamicFontManager(sk_sp<SkFontMgr> font_manager) {
 #else
 void FontCollection::setDynamicFontManager(std::shared_ptr<RSFontMgr> font_manager) {
 #endif
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fDynamicFontManager = font_manager;
 }
 
@@ -80,6 +85,7 @@ void FontCollection::setTestFontManager(sk_sp<SkFontMgr> font_manager) {
 void FontCollection::setTestFontManager(std::shared_ptr<RSFontMgr> font_manager)
 {
 #endif
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fTestFontManager = font_manager;
 }
 
@@ -90,6 +96,7 @@ void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager,
 void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager,
                                            const char defaultFamilyName[]) {
 #endif
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fDefaultFontManager = std::move(fontManager);
     fDefaultFamilyNames.emplace_back(defaultFamilyName);
 }
@@ -101,6 +108,7 @@ void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager,
 void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager,
                                            const std::vector<SkString>& defaultFamilyNames) {
 #endif
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fDefaultFontManager = std::move(fontManager);
     fDefaultFamilyNames = defaultFamilyNames;
 }
@@ -110,6 +118,7 @@ void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager) {
 #else
 void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager) {
 #endif
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fDefaultFontManager = fontManager;
 }
 
@@ -151,9 +160,12 @@ std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<S
     SkFontStyle fontStyle, const std::optional<FontArguments>& fontArgs) {
     // Look inside the font collections cache first
     FamilyKey familyKey(familyNames, fontStyle, fontArgs);
-    auto found = fTypefaces.find(familyKey);
-    if (found) {
-        return *found;
+    {
+        std::shared_lock<std::shared_mutex> readLock(mutex_);
+        auto found = fTypefaces.find(familyKey);
+        if (found) {
+            return *found;
+        }
     }
 
     std::vector<sk_sp<SkTypeface>> typefaces;
@@ -189,6 +201,7 @@ std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<S
         }
     }
 
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fTypefaces.set(familyKey, typefaces);
     return typefaces;
 }
@@ -198,9 +211,12 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
 {
     // Look inside the font collections cache first
     FamilyKey familyKey(familyNames, fontStyle, fontArgs);
-    auto found = fTypefaces.find(familyKey);
-    if (found != fTypefaces.end()) {
-        return found->second;
+    {
+        std::shared_lock<std::shared_mutex> readLock(mutex_);
+        auto found = fTypefaces.find(familyKey);
+        if (found != fTypefaces.end()) {
+            return found->second;
+        }
     }
 
     std::vector<std::shared_ptr<RSTypeface>> typefaces;
@@ -237,6 +253,7 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
         }
     }
 
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fTypefaces.emplace(familyKey, typefaces);
     return typefaces;
 }
@@ -285,7 +302,7 @@ std::shared_ptr<RSTypeface> FontCollection::defaultFallback(
     SkUnichar unicode, RSFontStyle fontStyle, const SkString& locale)
 {
 #endif
-
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
     for (const auto& manager : this->getFontManagerOrder()) {
         std::vector<const char*> bcp47;
         if (!locale.isEmpty()) {
@@ -307,6 +324,7 @@ std::shared_ptr<RSTypeface> FontCollection::defaultFallback(
 
 #ifndef USE_SKIA_TXT
 sk_sp<SkTypeface> FontCollection::defaultFallback() {
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
     if (fDefaultFontManager == nullptr) {
         return nullptr;
     }
@@ -321,6 +339,7 @@ sk_sp<SkTypeface> FontCollection::defaultFallback() {
 }
 #else
 std::shared_ptr<RSTypeface> FontCollection::defaultFallback() {
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
     if (fDefaultFontManager == nullptr) {
         return nullptr;
     }
@@ -384,6 +403,7 @@ sk_sp<SkTypeface> FontCollection::CloneTypeface(sk_sp<SkTypeface> typeface,
 std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSTypeface> typeface,
     const std::optional<FontArguments>& fontArgs)
 {
+
 #ifndef USE_SKIA_TXT
     if (!typeface || !fontArgs || typeface->isCustomTypeface()) {
 #else
@@ -400,7 +420,7 @@ std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSType
     hash ^= std::hash<uint32_t>()(typeface->GetUniqueID());
 #endif
 
-    std::unique_lock<std::mutex> lock(fMutex);
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     auto cached = GetLRUCacheInstance().find(hash);
     if (cached) {
         return cached;
@@ -415,11 +435,17 @@ std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSType
 }
 #endif
 
-void FontCollection::disableFontFallback() { fEnableFontFallback = false; }
-void FontCollection::enableFontFallback() { fEnableFontFallback = true; }
+void FontCollection::disableFontFallback() {
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    fEnableFontFallback = false;
+}
+void FontCollection::enableFontFallback() {
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    fEnableFontFallback = true;
+}
 
 void FontCollection::clearCaches() {
-    std::unique_lock<std::mutex> lock(fMutex);
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fParagraphCache.reset();
 #ifndef USE_SKIA_TXT
     fTypefaces.reset();
