@@ -148,6 +148,12 @@ config("skia_public") {
   if (is_win) {
     defines += [ "SK_BUILD_FOR_WIN" ]
   }
+
+  # OH ISSUE: jpeg optimize
+  if (target_platform == "pc") {
+    defines += [ "TURBO_JPEG_HUFF_DECODE_OPT" ]
+    defines += [ "TURBO_PNG_MULTY_LINE_OPT" ]
+  }
 }
 
 # Skia internal APIs, used by Skia itself and a few test tools.
