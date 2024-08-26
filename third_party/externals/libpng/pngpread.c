@@ -266,12 +266,12 @@ png_push_read_chunk(png_structrp png_ptr, png_inforp info_ptr)
       png_push_have_info(png_ptr, info_ptr);
 #ifdef PNG_MULTY_LINE_ENABLE
       // OH ISSUE: png optimize
-      if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8表示1个像素8位
+      if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8 represents 1 pixel
          (png_ptr->transformations & PNG_CHECK) == 0) {
          int rest = png_ptr->num_rows - png_ptr->row_number;
          int row_num = rest < PNG_INFLATE_ROWS ? rest : PNG_INFLATE_ROWS;
          png_ptr->zstream.avail_out = (uInt)(PNG_ROWBYTES(png_ptr->pixel_depth,
-             png_ptr->iwidth) + 1) * row_num; // 一次解压多行
+             png_ptr->iwidth) + 1) * row_num;
       }
       else
 #endif
@@ -644,7 +644,7 @@ static void png_push_process_row_x2(png_structrp png_ptr,
    png_debug(1, "in png_push_process_row_x2");
    png_row_info row_info = row_info_in;
    png_read_filter_row(png_ptr, &row_info, png_ptr->row_buf + 1,
-      png_ptr->prev_row + 1, png_ptr->row_buf[0] + 4); // 4为2行filter_type的增量
+      png_ptr->prev_row + 1, png_ptr->row_buf[0] + 4); // 4 is the increment of x2_filter
 
 #ifdef PNG_READ_TRANSFORMS_SUPPORTED
    if (png_ptr->transformations != 0)
@@ -698,7 +698,7 @@ static void png_push_process_multi_rows(png_structrp png_ptr, int row_num)
    png_bytep temp_prev_row = png_ptr->prev_row;
 
    for (int i = 0; i < row_num; i++) {
-      // 此处判断两行filter优化是否生效：仅支持3，4通道，且需两行filter_type相同
+      // check if the x2_filter is effective: only supports channels 3 or 4
       if ((png_ptr->channels == 3 || png_ptr->channels == 4) &&
           i < row_num -1 && png_ptr->row_buf[0] > PNG_FILTER_VALUE_SUB &&
           png_ptr->row_buf[0] < PNG_FILTER_VALUE_LAST &&
@@ -741,7 +741,7 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
 #ifdef PNG_MULTY_LINE_ENABLE
    // OH ISSUE: png optimize
    int row_num = 1;
-   if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8表示1个像素8位
+   if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8 is 1 pixel and 8 bytes
        (png_ptr->transformations & PNG_CHECK) == 0)
    {
       int rest = png_ptr->num_rows - png_ptr->row_number;
@@ -767,7 +767,7 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
          /* TODO: WARNING: TRUNCATION ERROR: DANGER WILL ROBINSON: */
 #ifdef PNG_MULTY_LINE_ENABLE
          // OH ISSUE: png optimize
-         if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8表示1个像素8位
+         if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8 is 1 pixel and 8 bytes
              (png_ptr->transformations & PNG_CHECK) == 0)
          {
             int rest = png_ptr->num_rows - png_ptr->row_number;

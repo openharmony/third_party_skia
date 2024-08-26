@@ -4615,14 +4615,14 @@ defined(PNG_USER_TRANSFORM_PTR_SUPPORTED)
 #ifdef PNG_MULTY_LINE_ENABLE
          // OH ISSUE: png optimize
          png_uint_32 row_num = 1;
-         if (png_ptr->bit_depth == 8 && // 8表示1个像素8位
+         if (png_ptr->bit_depth == 8 && //  8 is 1 pixel 8 bytes
              (png_ptr->transformations & PNG_CHECK) == 0)
          {
             row_num = png_ptr->height < PNG_INFLATE_ROWS ?
                png_ptr->height : PNG_INFLATE_ROWS;
          }
          png_ptr->big_row_buf = (png_bytep)png_malloc(
-            png_ptr, row_bytes * row_num + 48); // 48是字节对齐，边界保护
+            png_ptr, row_bytes * row_num + 48); // 48 is boundary protection
          if (png_ptr->big_row_buf == NULL)
             png_error(png_ptr, "png_malloc failed");
 #else

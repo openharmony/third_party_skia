@@ -190,9 +190,9 @@
 #if defined(PNG_ARM_NEON_IMPLEMENTATION) && defined(PNG_OPT_ENABLE)
 // OH ISSUE: png optimize
 #  if PNG_ARM_NEON_IMPLEMENTATION == 1
-#    define PNG_MULTY_LINE_ENABLE // 优化生效
-#    define PNG_INFLATE_MAX_SIZE (65536) // 最大解压输入大小
-#    define PNG_INFLATE_ROWS (50) // 最大解压行数
+#    define PNG_MULTY_LINE_ENABLE // optmizeation takes effect
+#    define PNG_INFLATE_MAX_SIZE (65536) // max inflate size
+#    define PNG_INFLATE_ROWS (50) // max inflate rows number
 #    define PNG_CHECK (PNG_EXPAND | PNG_STRIP_ALPHA | PNG_RGB_TO_GRAY | PNG_ENCODE_ALPHA | \
        PNG_PACKSWAP | PNG_GRAY_TO_RGB | PNG_COMPOSE | PNG_SCALE_16_TO_8 | PNG_16_TO_8 | \
        PNG_BACKGROUND_EXPAND | PNG_EXPAND_16 | PNG_PACK | PNG_ADD_ALPHA | PNG_EXPAND_tRNS | \

@@ -399,22 +399,22 @@ png_read_filter_row_paeth4_neon(png_row_infop row_info, png_bytep row,
 }
 #else
 // OH ISSUE: png optimize
-// 根据rowbytes定义，row_info->rowbytes = row_width * row_info->channels
-// 输入filter的rowbytes一定是channels(3或4)的倍数，因此针对向量化运算:
-// RGB一次处理12个字节，尾部字节数只能是3，6，9
-// RGBA一次处理16或8个字节，尾部字节数只能是4
-// filter算子都是内部函数，row_info，row等指针，外部已判断非空，此处不需要判断
-#define STEP_RGB (12) // 3通道RGB图像，迭代步长12个字节
-#define TAIL_RGB3 (9) // 尾部3个像素9个字节
-#define TAIL_RGB2 (6) // 尾部2个像素6个字节
-#define TAIL_RGB1 (3) // 尾部1个像素3个字节
-#define STEP_RGBA (16) // 4通道RGBA图像，迭代步长16个字节
-#define STEP_RGBA_HALF (8) // 4通道RGBA图像，迭代步长8个字节
-#define TAIL_RGBA (4) // 尾部1个像素4个字节
-#define IND3 (3) // 下标3
-#define IND2 (2) // 下标2
-#define OFFSET3 (3) // RGB图像偏移3个字节
-#define OFFSET6 (6) // RGB图像偏移6个字节
+// according to definition: row_info->rowbytes = row_width * row_info->channels,
+// the input rowbytes must be 3 or 4 times the channel size, so:
+// for RGB neon process 12 bytes at once,the tail must be 3,6,9;
+// for RGBA neon process 16 or 8 bytes at once,the tail must be 4;
+// filter operators are internal function, row_info and row ensure non empty outside.
+#define STEP_RGB (12) // 3 channel RGB process 12 bytes at once
+#define TAIL_RGB3 (9) // tail 3 pixels have 9 bytes
+#define TAIL_RGB2 (6) // tail 2 pixels have 6 bytes
+#define TAIL_RGB1 (3) // tail 1 pixel have 3 bytes
+#define STEP_RGBA (16) // GBA neon process 16 bytes at once
+#define STEP_RGBA_HALF (8) // GBA neon process 8 bytes at once
+#define TAIL_RGBA (4) // tail 1 pixel have 4 bytes
+#define IND3 (3) // index 3
+#define IND2 (2) // index 2
+#define OFFSET3 (3) // RGB offset 3 bytes
+#define OFFSET6 (6) // RGB offset 6 bytes
 void png_read_filter_row_up_neon(png_row_infop row_info, png_bytep row,
    png_const_bytep prev_row)
 {

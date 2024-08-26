@@ -697,7 +697,7 @@ static void png_read_two_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32
 {
    png_debug1(1, "in png_read_two_rows %d", png_ptr->row_buf[0]);
    png_read_filter_row(png_ptr, &row_info, png_ptr->row_buf + 1,
-      png_ptr->prev_row + 1, png_ptr->row_buf[0] + 4); // 4为2行filter_type增量
+      png_ptr->prev_row + 1, png_ptr->row_buf[0] + 4); // 4 is the increment of x2_filter
 
 #ifdef PNG_MNG_FEATURES_SUPPORTED
    if ((png_ptr->mng_features_permitted & PNG_FLAG_MNG_FILTER_64) != 0 &&
@@ -801,7 +801,7 @@ static void png_read_muilty_rows(png_structrp png_ptr, png_bytepp rows,
 
    for (png_uint_32 i = 0; i < row_num; i++) {
       png_row_info row_info = row_info_in;
-      // 此处判断两行filter是否生效：仅支持3，4通道，且需两行filter_type相同
+      // check if the x2_filter is effective: only supports channels 3 or 4
       if ((row_info_in.channels == 3 || row_info_in.channels == 4) &&
           i < row_num -1 && png_ptr->row_buf[0] > PNG_FILTER_VALUE_SUB &&
           png_ptr->row_buf[0] < PNG_FILTER_VALUE_LAST &&
@@ -970,7 +970,7 @@ png_read_image(png_structrp png_ptr, png_bytepp image)
 
 #ifdef PNG_MULTY_LINE_ENABLE
    // OH ISSUE: png optimize
-   if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8表示1个像素8位
+   if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8 is 1 pixel 8 bytes
        (png_ptr->transformations & PNG_CHECK) == 0) {
       if ((png_ptr->flags & PNG_FLAG_ROW_INIT) == 0)
          png_read_start_row(png_ptr);
