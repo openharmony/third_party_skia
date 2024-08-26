@@ -11,11 +11,24 @@
 #include "modules/skshaper/include/SkShaper.h"
 #include "src/utils/SkUTF.h"
 #include "log.h"
+#ifdef TXT_USE_PARAMETER
+#include "parameters.h"
+#endif
 
 namespace skia {
 namespace textlayout {
 constexpr SkScalar PARAM_TWO = 2.0;
 #ifdef OHOS_SUPPORT
+static bool calcHeightWithTopAndBottom()
+{
+#ifdef TXT_USE_PARAMETER
+    static bool topAndBootomEnabled =
+        std::atoi((OHOS::system::GetParameter("persist.sys.text.top_and_bottom.enable", "0")).c_str()) != 0;
+    return topAndBootomEnabled;
+#else
+    return false;
+#endif
+}
 // 1px font size "HarmonyOS Sans" metrics
 constexpr SkScalar DEFAULT_TOP = -1.056;
 constexpr SkScalar DEFAULT_BOTTOM = 0.271;
@@ -89,40 +102,6 @@ std::string getFamilyNameFromFont(const SkFont& font)
 #endif
 
 #ifdef USE_SKIA_TXT
-void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font)
-#else
-void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
-#endif
-{
-    if (metrics == nullptr) {
-        return;
-    }
-    auto fontCompressionStatus = getFontCompressionStatus(font);
-    if (fontCompressionStatus == FontCompressionStatus::UNDEFINED) {
-        return;
-    }
-
-    if (fontCompressionStatus == FontCompressionStatus::SYSTEM) {
-#ifdef USE_SKIA_TXT
-        SkScalar fontSize = font.GetSize();
-#else
-        SkScalar fontSize = font.getSize();
-#endif
-        metrics->fTop = DEFAULT_TOP * fontSize;
-        metrics->fBottom = DEFAULT_BOTTOM * fontSize;
-    }
-
-    std::string curFamilyName = getFamilyNameFromFont(font);
-    auto setIter = FONT_PADDING_NOT_EFFECT_FAMILY.find(curFamilyName);
-    if (setIter == FONT_PADDING_NOT_EFFECT_FAMILY.end()) {
-        // use top and bottom as ascent and descent.
-        // calculate height with top and bottom.(includeFontPadding)
-        metrics->fAscent = metrics->fTop;
-        metrics->fDescent = metrics->fBottom;
-    }
-}
-
-#ifdef USE_SKIA_TXT
 const ScaleParam& findCompressionConfigWithFont(const RSFont& font)
 #else
 const ScaleParam& findCompressionConfigWithFont(const SkFont& font)
@@ -139,6 +118,47 @@ const ScaleParam& findCompressionConfigWithFont(const SkFont& font)
         return DEFAULT_SCALE_PARAM;
     }
     return iter->second;
+}
+
+#ifdef USE_SKIA_TXT
+void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font)
+#else
+void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
+#endif
+{
+    if (metrics == nullptr) {
+        return;
+    }
+    auto fontCompressionStatus = getFontCompressionStatus(font);
+    if (fontCompressionStatus == FontCompressionStatus::UNDEFINED) {
+        return;
+    }
+#ifdef USE_SKIA_TXT
+    SkScalar fontSize = font.GetSize();
+#else
+    SkScalar fontSize = font.getSize();
+#endif
+    if (!calcHeightWithTopAndBottom()) {
+        if (fontCompressionStatus == FontCompressionStatus::SYSTEM &&
+            !SkScalarNearlyZero(findCompressionConfigWithFont(font).fontScale)) {
+            metrics->fAscent = DEFAULT_TOP * fontSize;
+            metrics->fDescent = DEFAULT_BOTTOM * fontSize;
+        }
+        return;
+    }
+    if (fontCompressionStatus == FontCompressionStatus::SYSTEM) {
+        metrics->fTop = DEFAULT_TOP * fontSize;
+        metrics->fBottom = DEFAULT_BOTTOM * fontSize;
+    }
+
+    std::string curFamilyName = getFamilyNameFromFont(font);
+    auto setIter = FONT_PADDING_NOT_EFFECT_FAMILY.find(curFamilyName);
+    if (setIter == FONT_PADDING_NOT_EFFECT_FAMILY.end()) {
+        // use top and bottom as ascent and descent.
+        // calculate height with top and bottom.(includeFontPadding)
+        metrics->fAscent = metrics->fTop;
+        metrics->fDescent = metrics->fBottom;
+    }
 }
 
 #ifdef USE_SKIA_TXT
