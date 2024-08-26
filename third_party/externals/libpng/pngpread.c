@@ -896,10 +896,13 @@ png_push_process_row(png_structrp png_ptr)
       png_ptr->prev_row = png_ptr->row_buf;
    }
    else
-#endif
    {
       memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info.rowbytes + 1);
    }
+#else
+   memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info.rowbytes + 1);
+#endif
+
 #ifdef PNG_READ_TRANSFORMS_SUPPORTED
    if (png_ptr->transformations != 0)
       png_do_read_transformations(png_ptr, &row_info);
