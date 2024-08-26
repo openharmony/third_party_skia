@@ -318,6 +318,7 @@ void ParagraphCache::reset() {
     fLastCachedValue = nullptr;
 }
 
+#ifdef OHOS_SUPPORT
 bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value) {
     if (value) {
         if (value->indents == paragraph.fIndents &&
@@ -352,6 +353,7 @@ ParagraphCacheValue* ParagraphCache::resolveValue(ParagraphImpl& paragraph) {
 }
 
 void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
+    SkAutoMutexExclusive lock(fParagraphMutex);
     if (auto value = resolveValue(paragraph)) {
         SetStoredLayoutImpl(paragraph, value);
     } else {
@@ -381,6 +383,7 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
 }
 
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
+    SkAutoMutexExclusive lock(fParagraphMutex);
     auto value = resolveValue(paragraph);
     // Check if we have a match, that should be pretty much only lentgh and wrapping modes
     // if the paragraph and text style match otherwise
@@ -403,6 +406,7 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
     }
     return false;
 }
+#endif
 
 bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
     if (!fCacheIsOn) {
@@ -454,12 +458,14 @@ bool ParagraphCache::updateParagraph(ParagraphImpl* paragraph) {
             // Skip this paragraph
             return false;
         }
+#ifdef OHOS_SUPPORT
+        paragraph->hash() = key.hash();
+#endif
         ParagraphCacheValue* value = new ParagraphCacheValue(std::move(key), paragraph);
         fLRUCacheMap.insert(value->fKey, std::make_unique<Entry>(value));
         fChecker(paragraph, "addedParagraph", true);
         fLastCachedValue = value;
 
-        paragraph->hash() = key.hash();
         return true;
     } else {
         // We do not have to update the paragraph
@@ -467,6 +473,8 @@ bool ParagraphCache::updateParagraph(ParagraphImpl* paragraph) {
     }
 }
 
+#ifdef OHOS_SUPPORT
+// caller needs to hold fParagraphMutex
 ParagraphCacheValue* ParagraphCache::cacheLayout(ParagraphImpl* paragraph) {
     if (!fCacheIsOn) {
         return nullptr;
@@ -474,7 +482,6 @@ ParagraphCacheValue* ParagraphCache::cacheLayout(ParagraphImpl* paragraph) {
 #ifdef PARAGRAPH_CACHE_STATS
     ++fTotalRequests;
 #endif
-    SkAutoMutexExclusive lock(fParagraphMutex);
 
     ParagraphCacheKey key(paragraph);
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
@@ -484,18 +491,19 @@ ParagraphCacheValue* ParagraphCache::cacheLayout(ParagraphImpl* paragraph) {
             // Skip this paragraph
             return nullptr;
         }
+        paragraph->hash() = key.hash();
         ParagraphCacheValue* value = new ParagraphCacheValue(std::move(key), paragraph);
         fLRUCacheMap.insert(value->fKey, std::make_unique<Entry>(value));
         fChecker(paragraph, "addedParagraph", true);
         fLastCachedValue = value;
 
-        paragraph->hash() = key.hash();
         return value;
     } else {
         // Paragraph&layout already cached
         return nullptr;
     }
 }
+#endif
 
 // Special situation: (very) long paragraph that is close to the last formatted paragraph
 #define NOCACHE_PREFIX_LENGTH 40
