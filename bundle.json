@@ -39,7 +39,9 @@
             ]
         },
         "build": {
-            "sub_component": [],
+            "sub_component": [
+                "//third_party/skia:skia_canvaskit"
+            ],
             "inner_kits": [
                 {
                     "name": "//third_party/skia/third_party/libjpeg-turbo:libjpeg"
