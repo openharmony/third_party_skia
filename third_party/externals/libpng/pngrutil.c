@@ -4649,6 +4649,7 @@ defined(PNG_USER_TRANSFORM_PTR_SUPPORTED)
          extra = (int)((temp - (png_bytep)0) & 0x0f);
          png_ptr->prev_row = temp - extra - 1/*filter byte*/;
       }
+
 #else
       /* Use 31 bytes of padding before and 17 bytes after row_buf. */
       png_ptr->row_buf = png_ptr->big_row_buf + 31;
