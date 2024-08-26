@@ -408,8 +408,8 @@ png_read_filter_row_paeth4_neon(png_row_infop row_info, png_bytep row,
 #define TAIL_RGB3 (9) // tail 3 pixels have 9 bytes
 #define TAIL_RGB2 (6) // tail 2 pixels have 6 bytes
 #define TAIL_RGB1 (3) // tail 1 pixel have 3 bytes
-#define STEP_RGBA (16) // GBA neon process 16 bytes at once
-#define STEP_RGBA_HALF (8) // GBA neon process 8 bytes at once
+#define STEP_RGBA (16) // RGBA neon process 16 bytes at once
+#define STEP_RGBA_HALF (8) // RGBA neon process 8 bytes at once
 #define TAIL_RGBA (4) // tail 1 pixel have 4 bytes
 #define IND3 (3) // index 3
 #define IND2 (2) // index 2
