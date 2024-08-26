@@ -189,9 +189,6 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
             RSFontMetrics newFontMetrics;
             targetRun.fFont.GetMetrics(&newFontMetrics);
 #endif
-#ifdef OHOS_SUPPORT
-            metricsIncludeFontPadding(&newFontMetrics);
-#endif
             fontMetrics.emplace_back(newFontMetrics);
         }
     }
@@ -1291,9 +1288,6 @@ void ParagraphImpl::resolveStrut() {
     RSFontMetrics metrics;
     font.GetMetrics(&metrics);
 #endif
-#ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics);
-#endif
 
     if (strutStyle.getHeightOverride()) {
         auto strutHeight = metrics.fDescent - metrics.fAscent;
@@ -1615,11 +1609,7 @@ void ParagraphImpl::computeEmptyMetrics() {
 
     if (!paragraphStyle().getStrutStyle().getForceStrutHeight() &&
         textStyle.getHeightOverride()) {
-#ifdef OHOS_SUPPORT
-        const auto intrinsicHeight = fEmptyMetrics.fDescent - fEmptyMetrics.fAscent + fEmptyMetrics.fLeading;
-#else
         const auto intrinsicHeight = fEmptyMetrics.height();
-#endif
         const auto strutHeight = textStyle.getHeight() * textStyle.getFontSize();
         if (paragraphStyle().getStrutStyle().getHalfLeading()) {
             fEmptyMetrics.update(
@@ -1981,9 +1971,6 @@ SkFontMetrics ParagraphImpl::measureText() {
     SkRect firstBounds;
     auto firstStr = text(fRuns.front().textRange());
     firstFont.getMetrics(&metrics);
-#ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics);
-#endif
     firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
     fGlyphsBoundsTop = firstBounds.top();
     fGlyphsBoundsBottom = firstBounds.bottom();
@@ -2020,9 +2007,6 @@ RSFontMetrics ParagraphImpl::measureText()
     RSRect firstBounds;
     auto firstStr = text(fRuns.front().textRange());
     firstFont.GetMetrics(&metrics);
-#ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics);
-#endif
     firstFont.MeasureText(firstStr.data(), firstStr.size(), RSDrawing::TextEncoding::UTF8, &firstBounds);
     fGlyphsBoundsTop = firstBounds.GetTop();
     fGlyphsBoundsBottom = firstBounds.GetBottom();

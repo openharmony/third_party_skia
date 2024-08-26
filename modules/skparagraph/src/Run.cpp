@@ -16,23 +16,6 @@ namespace skia {
 namespace textlayout {
 constexpr SkScalar PARAM_TWO = 2.0;
 
-#ifdef OHOS_SUPPORT
-#ifdef USE_SKIA_TXT
-void metricsIncludeFontPadding(RSFontMetrics* metrics)
-#else
-void metricsIncludeFontPadding(SkFontMetrics* metrics)
-#endif
-{
-    if (metrics == nullptr) {
-        return;
-    }
-    // use top and bottom as ascent and descent.
-    // calculate height with top and bottom.(includeFontPadding)
-    metrics->fAscent = metrics->fTop;
-    metrics->fDescent = metrics->fBottom;
-}
-#endif
-
 Run::Run(ParagraphImpl* owner,
          const SkShaper::RunHandler::RunInfo& info,
          size_t firstChar,
@@ -71,10 +54,6 @@ Run::Run(ParagraphImpl* owner,
     info.fFont.getMetrics(&fFontMetrics);
 #else
     info.fFont.GetMetrics(&fFontMetrics);
-#endif
-
-#ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&fFontMetrics);
 #endif
 
     this->calculateMetrics();
