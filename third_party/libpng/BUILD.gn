@@ -5,6 +5,7 @@
 
 declare_args() {
   skia_use_system_libpng = is_official_build
+  skia_feature_zlib = ""
 }
 
 import("../../gn/oh_skia.gni")
@@ -25,7 +26,11 @@ if (skia_use_system_libpng) {
     if (use_oh_skia) {
       external_deps = [ "zlib:libz" ]
     } else {
-      deps = [ "${skia_third_party_dir}/zlib" ]
+      if (skia_feature_zlib != "") {
+        external_deps = [ skia_feature_zlib ]
+      } else {
+        deps = [ "${skia_third_party_dir}/zlib" ]
+      }
     }
     sources = [
       "../externals/libpng/png.c",
