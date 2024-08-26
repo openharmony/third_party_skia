@@ -850,7 +850,7 @@ decode_mcu_fast(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
     if (entropy->ac_needed[blkn] && block) {
       for (k = 1; k < DCTSIZE2; k++) {
         FILL_BIT_BUFFER_FAST;
-        r = PEEK_BITS(HUFF_LOOKAHEAD);    // 先读取look_ahead位
+        r = PEEK_BITS(HUFF_LOOKAHEAD);
         r = actbl->lookup[r];
         l = GET_NB(r);
         unsigned int zero_num;
@@ -871,11 +871,11 @@ decode_mcu_fast(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
             (*block)[jpeg_natural_order[k]] = (JCOEF)s;
           }
         } else {
-          unsigned int base = GET_BASE(r);  // 高16位为base
-          unsigned int offset_bits = GET_EXTRA_BITS(r);  // 低8位为offset_bits, l = nb 为二级表的最大码长
-          r = PEEK_BITS(l); // 前HUFF_LOOKAHEAD位已使用，只使用低nb - HUFF_LOOKAHEAD位, 取低offset_bits作为二级表索引
+          unsigned int base = GET_BASE(r);  // base, higher 16 bits
+          unsigned int offset_bits = GET_EXTRA_BITS(r);  // l = nb, the max code length in 2nd table
+          r = PEEK_BITS(l); // offset_bits as the index of 2nd table
           s = actbl->lookup[base + (r & ((1 << offset_bits) - 1))];
-          l = GET_NB(s); // 实际码长
+          l = GET_NB(s); // actual huff code length
           coef_bits = GET_COEF_BITS(s);
           zero_num = GET_ZERO_NUM1(s);
           DROP_BITS(l);
@@ -897,7 +897,7 @@ decode_mcu_fast(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
     } else {
       for (k = 1; k < DCTSIZE2; k++) {
         FILL_BIT_BUFFER_FAST;
-        r = PEEK_BITS(HUFF_LOOKAHEAD);    // 先读取look_ahead位
+        r = PEEK_BITS(HUFF_LOOKAHEAD);
         r = actbl->lookup[r];
         l = GET_NB(r);
         unsigned int zero_num;
@@ -915,11 +915,11 @@ decode_mcu_fast(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
             k += zero_num;
           }
         } else {
-          unsigned int base = GET_BASE(r);  // 高16位为base
-          unsigned int offset_bits = GET_EXTRA_BITS(r);  // 低8位为offset_bits, l = nb 为二级表的最大码长
-          r = PEEK_BITS(l); // 前HUFF_LOOKAHEAD位已使用，只使用低nb - HUFF_LOOKAHEAD位, 取低offset_bits作为二级表索引
+          unsigned int base = GET_BASE(r);  // base, higher 16 bits
+          unsigned int offset_bits = GET_EXTRA_BITS(r);  // l = nb, the max code length in 2nd table
+          r = PEEK_BITS(l); // offset_bits as the index of 2nd table
           s = actbl->lookup[base + (r & ((1 << offset_bits) - 1))];
-          l = GET_NB(s); // 实际码长
+          l = GET_NB(s); // actual huff code length
           coef_bits = GET_COEF_BITS(s);
           zero_num = GET_ZERO_NUM1(s);
           DROP_BITS(l);
