@@ -20,7 +20,7 @@
 
 #include "SkFontStyle.h"
 #include "SkString.h"
-#include "utils/text_log.h"
+
 using namespace ErrorCode;
 static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
 
@@ -899,7 +899,7 @@ void FontConfig_OHOS::getAxisValues(const AxisDefinitions& axisDefs,
     position.coordinates = variation.axis.data();
 
     int count = axisDefs.count();
-    if (count < 0) {
+    if (count <= 0) {
         TEXT_LOGE("Invalid axis count:%{public}d", count);
         return;
     }
