@@ -20,7 +20,7 @@
 
 #include "SkFontStyle.h"
 #include "SkString.h"
-
+#include "utils/text_log.h"
 using namespace ErrorCode;
 static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
 
@@ -307,7 +307,7 @@ uint32_t FontConfig_OHOS::getFontStyleDifference(const SkFontStyle& dstStyle,
         {2, 1, 0}
     };
     if (dstStyle.slant() < 0 || dstStyle.slant() >= 3 || srcStyle.slant() < 0 || srcStyle.slant() >= 3) {
-        LOGE("Slant value out of range: dst slant=%d, src slant=%d", dstStyle.slant(), srcStyle.slant());
+        TEXT_LOGE("Slant out of range, dst:%{public}d, src:%{public}d", dstStyle.slant(), srcStyle.slant());
         return 0;
     }
     uint32_t slantDiff = diffSlantValue[dstStyle.slant()][srcStyle.slant()];
@@ -900,7 +900,7 @@ void FontConfig_OHOS::getAxisValues(const AxisDefinitions& axisDefs,
 
     int count = axisDefs.count();
     if (count < 0) {
-        LOGE("Invalid axis count: %d", count);
+        TEXT_LOGE("Invalid axis count:%{public}d", count);
         return;
     }
     SkFixed axisValues[count];
