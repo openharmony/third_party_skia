@@ -307,7 +307,7 @@ uint32_t FontConfig_OHOS::getFontStyleDifference(const SkFontStyle& dstStyle,
         {2, 1, 0}
     };
     if (dstStyle.slant() < 0 || dstStyle.slant() >= 3 || srcStyle.slant() < 0 || srcStyle.slant() >= 3) {
-        LOGE("Slant value out of range: dst slant=%d, src slant=%d", dstSlant, srcSlant);
+        LOGE("Slant value out of range: dst slant=%d, src slant=%d", dstStyle.slant(), srcStyle.slant());
         return 0;
     }
     uint32_t slantDiff = diffSlantValue[dstStyle.slant()][srcStyle.slant()];
