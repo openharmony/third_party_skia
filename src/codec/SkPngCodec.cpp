@@ -210,7 +210,12 @@ bool SkPngCodec::processData() {
     }
 
     // Arbitrary buffer size
+#ifdef TURBO_PNG_MULTY_LINE_OPT
+    // OH ISSUE: png optimize
+    constexpr size_t kBufferSize = 65536; // 65536, expand buffer to improve performance
+#else
     constexpr size_t kBufferSize = 4096;
+#endif
     char buffer[kBufferSize];
 
     bool iend = false;
