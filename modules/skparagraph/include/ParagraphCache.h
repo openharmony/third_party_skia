@@ -46,7 +46,6 @@ public:
     void updateTo(ParagraphImpl* paragraph, const Entry* entry);
 
 #ifdef OHOS_SUPPORT
-    ParagraphCacheValue* resolveValue(ParagraphImpl& paragraph);
     bool useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value);
     void SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value);
     ParagraphCacheValue* cacheLayout(ParagraphImpl* paragraph);
