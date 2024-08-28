@@ -1558,7 +1558,11 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         if (styleType == StyleType::kBackground &&
             prevStyle->getBackgroundRect() != temp &&
             prevStyle->getHeight() != 0) {
+#ifdef OHOS_SUPPORT
+                clipContext.clip.fTop = run->fFontMetrics.fAscent + this->baseline();
+#else
                 clipContext.clip.fTop = run->fFontMetrics.fAscent - run->fCorrectAscent;
+#endif
                 clipContext.clip.fBottom = clipContext.clip.fTop + run->fFontMetrics.fDescent -
                     run->fFontMetrics.fAscent;
         }
