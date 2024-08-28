@@ -23,10 +23,11 @@ public:
     void abandon();
     void reset();
     bool updateParagraph(ParagraphImpl* paragraph);
-    ParagraphCacheValue* cacheLayout(ParagraphImpl* paragraph);
     bool findParagraph(ParagraphImpl* paragraph);
+#ifdef OHOS_SUPPORT
     void SetStoredLayout(ParagraphImpl& paragraph);
     bool GetStoredLayout(ParagraphImpl& paragraph);
+#endif
 
     // For testing
     void setChecker(std::function<void(ParagraphImpl* impl, const char*, bool)> checker) {
@@ -44,9 +45,12 @@ public:
     void updateFrom(const ParagraphImpl* paragraph, Entry* entry);
     void updateTo(ParagraphImpl* paragraph, const Entry* entry);
 
+#ifdef OHOS_SUPPORT
     ParagraphCacheValue* resolveValue(ParagraphImpl& paragraph);
     bool useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value);
     void SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value);
+    ParagraphCacheValue* cacheLayout(ParagraphImpl* paragraph);
+#endif
 
     mutable SkMutex fParagraphMutex;
     std::function<void(ParagraphImpl* impl, const char*, bool)> fChecker;
