@@ -281,6 +281,9 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
         , fMutableState(std::move(mutableState))
         , fFramebufferView(std::move(framebufferView))
         , fTextureView(std::move(textureView))
+#ifdef SKIA_OHOS
+        , fBudgeted(budgeted)
+#endif
         , fIsBorrowed(false) {
     this->init(gpu, false);
     this->registerWithCache(budgeted);

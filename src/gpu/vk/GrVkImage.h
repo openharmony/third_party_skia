@@ -274,6 +274,10 @@ public:
     void setCurrentQueueFamilyToGraphicsQueue(GrVkGpu* gpu);
 #endif
 
+#ifdef SKIA_OHOS
+    SkBudgeted GetBudgeted() const { return fBudgeted; }
+#endif
+
 private:
     static sk_sp<GrVkImage> Make(GrVkGpu* gpu,
                                  SkISize dimensions,
@@ -323,6 +327,9 @@ private:
     sk_sp<const GrVkImageView>              fFramebufferView;
     sk_sp<const GrVkImageView>              fTextureView;
 
+#ifdef SKIA_OHOS
+    SkBudgeted fBudgeted = SkBudgeted::kNo;
+#endif
     bool fIsBorrowed;
 
     // Descriptor set used when this is used as an input attachment for reading the dst in blending.
