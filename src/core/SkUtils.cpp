@@ -42,13 +42,32 @@ void SkSetVmaCacheFlag(bool flag)
     g_vmaCacheFlag = flag;
 }
 
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+int GetIntParamWithDefault(int paramValue, int maxValue, int defaultValue)
+{
+    if (paramValue <= 0 || paramValue > maxValue) {
+        paramValue = defaultValue; // default value
+    }
+    return paramValue;
+}
+
+bool GetBoolParamWithFlag(bool paramValue)
+{
+    if (!SkGetMemoryOptimizedFlag()) {
+        return false;
+    }
+    return paramValue;
+}
+#endif
+
 int SkGetVmaBlockSizeMB()
 {
 #ifdef NOT_BUILD_FOR_OHOS_SDK
-    static int g_vmaBlockSize = std::atoi(OHOS::system::GetParameter("sys.graphic.vma.blockSize", "64").c_str());
-    if (g_vmaBlockSize <= 0 || g_vmaBlockSize > 256) {
-        g_vmaBlockSize = 64; // default value
-    }
+    constexpr int MAX_VMA_BLOCK_SIZE = 256;
+    constexpr int DEFAULT_VMA_BLOCK_SIZE = 64;
+    static int g_vmaBlockSize = GetIntParamWithDefault(
+        std::atoi(OHOS::system::GetParameter("sys.graphic.vma.blockSize", "64").c_str()),
+        MAX_VMA_BLOCK_SIZE, DEFAULT_VMA_BLOCK_SIZE);
 #else
     static int g_vmaBlockSize = 4; // default value
 #endif
@@ -58,8 +77,11 @@ int SkGetVmaBlockSizeMB()
 int SkGetNeedCachedMemroySize()
 {
 #ifdef NOT_BUILD_FOR_OHOS_SDK
-    static int g_vmaCacheMemorySize =
-        std::atoi(OHOS::system::GetParameter("sys.graphic.vma.minCachedSize", "9000000").c_str()); // 1500 * 1500
+    constexpr int MAX_VMA_CACHE_MEMORY_SIZE = 512 * 1024 * 1024;
+    constexpr int DEFAULT_VMA_CACHE_MEMORY_SIZE = 9000000;
+    static int g_vmaCacheMemorySize = GetIntParamWithDefault(
+        std::atoi(OHOS::system::GetParameter("sys.graphic.vma.minCachedSize", "9000000").c_str()),
+        MAX_VMA_CACHE_MEMORY_SIZE, DEFAULT_VMA_CACHE_MEMORY_SIZE);
 #else
     static int g_vmaCacheMemorySize = 0; // default value
 #endif
@@ -69,10 +91,8 @@ int SkGetNeedCachedMemroySize()
 bool SkGetVmaDefragmentOn()
 {
 #ifdef NOT_BUILD_FOR_OHOS_SDK
-    static bool g_vmaDefragmentFlag = OHOS::system::GetBoolParameter("sys.graphic.vma.defragment", true);
-    if (!SkGetMemoryOptimizedFlag()) {
-        return false;
-    }
+    static bool g_vmaDefragmentFlag =
+        GetBoolParamWithFlag(OHOS::system::GetBoolParameter("sys.graphic.vma.defragment", true));
     return g_vmaDefragmentFlag;
 #else
     return false;
@@ -82,8 +102,11 @@ bool SkGetVmaDefragmentOn()
 size_t SkGetVmaBlockCountMax()
 {
 #ifdef NOT_BUILD_FOR_OHOS_SDK
-    static size_t g_vmaBlockCountMax =
-        std::atoi(OHOS::system::GetParameter("sys.graphic.vma.maxBlockCount", "10").c_str());
+    constexpr int MAX_VMA_BLOCK_COUNT_MAX = 4096;
+    constexpr int DEFAULT_VMA_BLOCK_COUNT_MAX = 10;
+    static int g_vmaBlockCountMax = GetIntParamWithDefault(
+        std::atoi(OHOS::system::GetParameter("sys.graphic.vma.maxBlockCount", "10").c_str()),
+        MAX_VMA_BLOCK_COUNT_MAX, DEFAULT_VMA_BLOCK_COUNT_MAX);
     return g_vmaBlockCountMax;
 #else
     return SIZE_MAX; // default value
@@ -94,10 +117,7 @@ bool SkGetVmaDebugFlag()
 {
 #ifdef NOT_BUILD_FOR_OHOS_SDK
     static bool g_vmaDebugFlag =
-        (std::atoi(OHOS::system::GetParameter("sys.graphic.vma.debug", "0").c_str()) != 0);
-    if (!SkGetMemoryOptimizedFlag()) {
-        return false;
-    }
+        GetBoolParamWithFlag(std::atoi(OHOS::system::GetParameter("sys.graphic.vma.debug", "0").c_str()) != 0);
     return g_vmaDebugFlag;
 #else
     return false;
