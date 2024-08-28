@@ -40,8 +40,8 @@ struct ScaleParam {
 // target height = (DEFAULT_BOTTOM - DEFAULT_TOP) * font size * ScaleParam.scale.
 // target baseline = -(DEFAULT_BOTTOM - DEFAULT_TOP) * font size * ScaleParam.baselineShiftScale.
 const std::unordered_map<std::string, ScaleParam> FONT_FAMILY_COMPRESSION_CONFIG = {
-    {"Noto Serif Tibetan", ScaleParam{ .fontScale = 0.85, .baselineShiftScale = 0.11 }},
-    {"Noto Sans Tibetan", ScaleParam{ .fontScale = 0.85, .baselineShiftScale = 0.11 }},
+    {"Noto Serif Tibetan", ScaleParam{ .fontScale = 0.79, .baselineShiftScale = 0.1 }},
+    {"Noto Sans Tibetan", ScaleParam{ .fontScale = 0.79, .baselineShiftScale = 0.1 }},
 };
 const ScaleParam DEFAULT_SCALE_PARAM = ScaleParam{ .fontScale = 0, .baselineShiftScale = 0 };
 enum FontCompressionStatus {
