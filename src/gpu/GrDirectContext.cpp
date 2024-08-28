@@ -601,6 +601,22 @@ void GrDirectContext::dumpVmaStats(SkString *out)
     }
 }
 
+// OH ISSUE: set callback for memory check
+void GrDirectContext::setMemoryOverCheck(MemoryOverCheckCallback callback)
+{
+    if (fResourceCache) {
+        fResourceCache->setMemoryOverCheck(callback);
+    }
+}
+
+// OH ISSUE: set callback for memory count
+void GrDirectContext::setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback)
+{
+    if (fResourceCache) {
+        fResourceCache->setRemoveMemoryFromSnapshotInfo(callback);
+    }
+}
+
 GrBackendTexture GrDirectContext::createBackendTexture(int width, int height,
                                                        const GrBackendFormat& backendFormat,
                                                        GrMipmapped mipMapped,

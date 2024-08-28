@@ -309,6 +309,10 @@ public:
 #endif
 #endif
 
+    // OH ISSUE: set callback for memory count
+    void setMemoryOverCheck(MemoryOverCheckCallback callback);
+    void setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback);
+
 private:
     ///////////////////////////////////////////////////////////////////////////
     /// @name Methods accessible via ResourceAccess
@@ -487,6 +491,10 @@ private:
 
     //Indicates the cached resource tags.
     std::stack<GrGpuResourceTag> grResourceTagCacheStack;
+
+    // OH ISSUE: callback for memory count
+    MemoryOverCheckCallback fMemoryOverCheck = nullptr;
+    RemoveMemoryFromSnapshotInfoCallback fRemoveMemoryFromSnapshotInfo = nullptr;
 };
 
 class GrResourceCache::ResourceAccess {
