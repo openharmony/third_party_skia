@@ -556,16 +556,21 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->resolveStrut();
         this->computeEmptyMetrics();
         this->fLines.reset();
-
+#ifdef OHOS_SUPPORT
         // fast path
         if (!fHasLineBreaks &&
             !fHasWhitespacesInside &&
             fPlaceholders.size() == 1 &&
             (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= floorWidth - this->detectIndents(0))) {
             positionShapedTextIntoLine(floorWidth);
-        } else {
+        } else if (!paragraphCache->GetStoredLayout(*this)) {
             breakShapedTextIntoLines(floorWidth);
+            // text breaking did not go to fast path and we did not have cached layout
+            paragraphCache->SetStoredLayout(*this);
         }
+#else
+        this->breakShapedTextIntoLines(floorWidth);
+#endif
         fState = kLineBroken;
     }
 
