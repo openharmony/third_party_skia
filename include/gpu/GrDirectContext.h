@@ -56,6 +56,26 @@ namespace skgpu { namespace v1 { class SmallPathAtlasMgr; }}
 using MemoryOverCheckCallback = void(*)(const int32_t, const size_t, bool);
 using RemoveMemoryFromSnapshotInfoCallback = std::function<void(const int32_t, const size_t)>;
 
+// OH ISSUE: this class is used to count the memory in rs
+class MemoryCheckManager {
+public:
+    static MemoryCheckManager& getInstance();
+    void setMemoryOverCheck(MemoryOverCheckCallback callback);
+    void setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback);
+    void memoryOverCheck(const int32_t pid, const size_t size);
+    void removeMemoryFromSnapshotInfo(const int32_t pid, const size_t size);
+private:
+    MemoryCheckManager() = default;
+    ~MemoryCheckManager() = default;
+    MemoryCheckManager(const MemoryCheckManager&) = delete;
+    MemoryCheckManager(const MemoryCheckManager&&) = delete;
+    MemoryCheckManager& operator=(const MemoryCheckManager&) = delete;
+    MemoryCheckManager& operator=(const MemoryCheckManager&&) = delete;
+
+    MemoryOverCheckCallback fMemoryOverCheck = nullptr;
+    RemoveMemoryFromSnapshotInfoCallback fRemoveMemoryFromSnapshotInfo = nullptr;
+};
+
 class SK_API GrDirectContext : public GrRecordingContext {
 public:
 #ifdef SK_GL
