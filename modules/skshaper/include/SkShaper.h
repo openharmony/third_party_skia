@@ -46,7 +46,7 @@ class SkFontMgr;
 class SkUnicode;
 
 #ifdef USE_SKIA_TXT
-namespace SkiaRsText {
+namespace skia_text {
 #endif
 
 class SKSHAPER_API SkShaper {
@@ -340,6 +340,6 @@ private:
 
 #ifdef USE_SKIA_TXT
 }
-using SkShaper = SkiaRsText::SkShaper;
+using SkShaper = skia_text::SkShaper;
 #endif
 #endif  // SkShaper_DEFINED
