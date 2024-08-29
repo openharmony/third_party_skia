@@ -166,6 +166,11 @@ public:
                              SkPoint center,
                              float radius);
 
+#ifdef SKIA_OHOS
+    static GrFPResult CircleSDF(std::unique_ptr<GrFragmentProcessor>,
+        GrClipEdgeType, SkPoint center, float radius);
+#endif
+
     static GrFPResult Ellipse(std::unique_ptr<GrFragmentProcessor>,
                               GrClipEdgeType,
                               SkPoint center,
