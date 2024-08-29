@@ -74,6 +74,8 @@ const char MASK_INDEXES[] = "mask_indexes";
 const char GROUP_SETTINGS[] = "group_settings";
 const char ANIMATION_INDEX[] = "animation_index";
 const char COMMON_SUB_TYPE[] = "common_sub_type";
+const char ANIMATION_SETTINGS[] = "animation_settings";
+const char PROPERTIES[] = "properties";
 
 const int NO_ERROR = 0; // no error
 const int ERROR_CONFIG_NOT_FOUND = 1; // the configuration document is not found
@@ -174,7 +176,7 @@ std::unique_ptr<char[]> GetDataFromFile(const char* fname, int& size)
     }
 
     file->seekg(0, std::ios::end);
-    size = file->tellg(); // get the length of file
+    size = static_cast<int>(file->tellg()); // get the length of file
     if (size <= 0) {
         size = 0;
         return nullptr;
@@ -269,34 +271,25 @@ int HmSymbolConfig_OHOS::ParseConfigOfHmSymbol(const char* fname, SkString fontD
         return NO_ERROR;
     }
     Clear();
-    const int fontEndSize = 2;
-    int len = strlen(fname) + (fontDir.size() + fontEndSize);
-    char fullname[len];
-    if (memset_s(fullname, len, 0, len) != 0 ||
-        strcpy_s(fullname, len, fontDir.c_str()) != 0) {
-        return ERROR_CONFIG_NOT_FOUND;
-    }
+    std::string fullname(fontDir.c_str(), fontDir.size());
+    char separator = '/';
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN)
-    if (fontDir[fontDir.size() - 1] != '\\') {
-        strcat_s(fullname, len, "\\");
-    }
-#else
-    if (fontDir[fontDir.size() - 1] != '/') {
-        strcat_s(fullname, len, "/");
-    }
+    separator = '\\';
 #endif
-    if (strcat_s(fullname, len, fname) != 0) {
-        return ERROR_CONFIG_NOT_FOUND;
+    if (fontDir.size() > 0 && fontDir[fontDir.size() - 1] != separator) {
+        fullname += separator;
     }
+    std::string fnameStr(fname, strlen(fname));
+    fullname += fnameStr;
     Json::Value root;
-    int err = CheckConfigFile(fullname, root);
+    int err = CheckConfigFile(fullname.c_str(), root);
     if (err != NO_ERROR) {
         return err;
     }
 
     const char* key = nullptr;
-    std::string tags[] = {COMMON_ANIMATIONS, SPECIAL_ANIMATIONS, SYMBOL_LAYERS_GROUPING};
-    for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
+    std::vector<std::string> tags = {COMMON_ANIMATIONS, SPECIAL_ANIMATIONS, SYMBOL_LAYERS_GROUPING};
+    for (unsigned int i = 0; i < tags.size(); i++) {
         key = tags[i].c_str();
         if (!root.isMember(key) || !root[key].isArray()) {
             continue;
@@ -369,7 +362,7 @@ void HmSymbolConfig_OHOS::ParseSymbolAnimationParas(const Json::Value& root,
 void HmSymbolConfig_OHOS::ParseSymbolAnimationPara(const Json::Value& root, AnimationPara& animationPara)
 {
     const char* key = nullptr;
-    std::string tags[] = {ANIMATION_MODE, COMMON_SUB_TYPE, GROUP_PARAMETERS};
+    std::vector<std::string> tags = {ANIMATION_MODE, COMMON_SUB_TYPE, GROUP_PARAMETERS};
     using SymnolAniFuncMap = std::unordered_map<std::string, SymnolAniFunc>;
     SymnolAniFuncMap funcMap = {
         {ANIMATION_MODE, [](const char* key, const Json::Value& root, AnimationPara& animationPara)
@@ -401,7 +394,7 @@ void HmSymbolConfig_OHOS::ParseSymbolAnimationPara(const Json::Value& root, Anim
             }
         }
     };
-    for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
+    for (unsigned int i = 0; i < tags.size(); i++) {
         key = tags[i].c_str();
         if (!root.isMember(key)) {
             continue;
@@ -497,7 +490,7 @@ static void PiecewiseParaDelayCase(const char* key, const Json::Value& root, Pie
 void HmSymbolConfig_OHOS::ParseSymbolPiecewisePara(const Json::Value& root, PiecewiseParameter& piecewiseParameter)
 {
     const char* key = nullptr;
-    std::string tags[] = {CURVE, CURVE_ARGS, DURATION, DELAY, "properties"};
+    std::vector<std::string> tags = {CURVE, CURVE_ARGS, DURATION, DELAY, PROPERTIES};
     using PiecewiseFuncMap = std::unordered_map<std::string, PiecewiseParaKeyFunc>;
     PiecewiseFuncMap funcMap = {
         {CURVE, PiecewiseParaCurveCase},
@@ -512,7 +505,7 @@ void HmSymbolConfig_OHOS::ParseSymbolPiecewisePara(const Json::Value& root, Piec
         },
         {DURATION, PiecewiseParaDurationCase},
         {DELAY, PiecewiseParaDelayCase},
-        {"properties", [this](const char* key, const Json::Value& root, PiecewiseParameter& piecewiseParameter)
+        {PROPERTIES, [this](const char* key, const Json::Value& root, PiecewiseParameter& piecewiseParameter)
             {
                 if (!root[key].isObject()) {
                     SkDebugf("properties is not object!");
@@ -523,7 +516,7 @@ void HmSymbolConfig_OHOS::ParseSymbolPiecewisePara(const Json::Value& root, Piec
         }
     };
 
-    for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
+    for (unsigned int i = 0; i < tags.size(); i++) {
         key = tags[i].c_str();
         if (!root.isMember(key)) {
             continue;
@@ -641,7 +634,7 @@ void HmSymbolConfig_OHOS::ParseOneSymbol(const Json::Value& root,
     std::unordered_map<uint16_t, SymbolLayersGroups>* hmSymbolConfig)
 {
     const char* key = nullptr;
-    std::string tags[] = {NATIVE_GLYPH_ID, SYMBOL_GLYPH_ID, LAYERS, RENDER_MODES, "animation_settings"};
+    std::vector<std::string> tags = {NATIVE_GLYPH_ID, SYMBOL_GLYPH_ID, LAYERS, RENDER_MODES, ANIMATION_SETTINGS};
     uint16_t nativeGlyphId;
     SymbolLayersGroups symbolLayersGroups;
 
@@ -663,14 +656,14 @@ void HmSymbolConfig_OHOS::ParseOneSymbol(const Json::Value& root,
                 ParseOneSymbolRenderCase(key, root, symbolLayersGroups);
             }
         },
-        {"animation_settings", [this](const char* key, const Json::Value& root,
+        {ANIMATION_SETTINGS, [this](const char* key, const Json::Value& root,
             SymbolLayersGroups& symbolLayersGroups)
             {
                 ParseOneSymbolAnimateCase(key, root, symbolLayersGroups);
             }
         }
     };
-    for (unsigned int i = 0; i < sizeof(tags) / sizeof(tags[0]); i++) {
+    for (unsigned int i = 0; i < tags.size(); i++) {
         key = tags[i].c_str();
         if (!root.isMember(key)) {
             continue;
