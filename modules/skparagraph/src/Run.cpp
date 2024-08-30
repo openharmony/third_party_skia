@@ -32,6 +32,8 @@ static bool calcHeightWithTopAndBottom()
 // 1px font size "HarmonyOS Sans" metrics
 constexpr SkScalar DEFAULT_TOP = -1.056;
 constexpr SkScalar DEFAULT_BOTTOM = 0.271;
+constexpr SkScalar DEFAULT_ASCENT = -0.928;
+constexpr SkScalar DEFAULT_DESCENT = 0.244;
 struct ScaleParam {
     SkScalar fontScale;
     SkScalar baselineShiftScale;
@@ -141,8 +143,8 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
     if (!calcHeightWithTopAndBottom()) {
         if (fontCompressionStatus == FontCompressionStatus::SYSTEM &&
             !SkScalarNearlyZero(findCompressionConfigWithFont(font).fontScale)) {
-            metrics->fAscent = DEFAULT_TOP * fontSize;
-            metrics->fDescent = DEFAULT_BOTTOM * fontSize;
+            metrics->fAscent = DEFAULT_ASCENT * fontSize;
+            metrics->fDescent = DEFAULT_DESCENT * fontSize;
         }
         return;
     }
