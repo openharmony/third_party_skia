@@ -487,10 +487,7 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
     fBytes += size;
 
     // OH ISSUE: memory count
-    auto pid = resource->getResourceTag().fPid;
-    if (pid && fMemoryOverCheck) {
-        fMemoryOverCheck(pid, size, true);
-    }
+    MemoryCheckManager::getInstance().memoryOverCheck(resource->getResourceTag().fPid, size);
 
 #if GR_CACHE_STATS
     fHighWaterCount = std::max(this->getResourceCount(), fHighWaterCount);
@@ -544,10 +541,7 @@ void GrResourceCache::removeResource(GrGpuResource* resource) {
     fBytes -= size;
 
     // OH ISSUE: memory count
-    auto pid = resource->getResourceTag().fPid;
-    if (pid && fRemoveMemoryFromSnapshotInfo) {
-        fRemoveMemoryFromSnapshotInfo(pid, size);
-    }
+    MemoryCheckManager::getInstance().removeMemoryFromSnapshotInfo(resource->getResourceTag().fPid, size);
 
     if (GrBudgetedType::kBudgeted == resource->resourcePriv().budgetedType()) {
         --fBudgetedCount;
@@ -702,20 +696,6 @@ std::set<GrGpuResourceTag> GrResourceCache::getAllGrGpuResourceTags() const {
         result.insert(tag);
     }
     return result;
-}
-
-// OH ISSUE: set callback for memory check
-void GrResourceCache::setMemoryOverCheck(MemoryOverCheckCallback callback) {
-    if (fMemoryOverCheck == nullptr) {
-        fMemoryOverCheck = callback;
-    }
-}
-
-// OH ISSUE: set callback for memory count
-void GrResourceCache::setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback) {
-    if (fRemoveMemoryFromSnapshotInfo == nullptr) {
-        fRemoveMemoryFromSnapshotInfo = callback;
-    }
 }
 
 void GrResourceCache::refResource(GrGpuResource* resource) {
