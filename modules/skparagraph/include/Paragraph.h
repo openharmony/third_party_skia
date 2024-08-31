@@ -227,6 +227,10 @@ public:
     virtual std::vector<std::unique_ptr<TextLineBase>> GetTextLines() = 0;
     virtual std::unique_ptr<Paragraph> CloneSelf() = 0;
 
+#ifdef OHOS_SUPPORT
+    virtual size_t GetMaxLines() const = 0;
+#endif
+
 protected:
     sk_sp<FontCollection> fFontCollection;
     ParagraphStyle fParagraphStyle;
