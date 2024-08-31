@@ -496,10 +496,25 @@
       "FTTokens": "FTTokens.ttf"
     },
     {
+      "方正仿宋-简": "FZFangS-SC.ttf"
+    },
+    {
+      "FZFangS-SC": "FZFangS-SC.ttf"
+    },
+    {
       "方正仿宋-繁": "FZFangS-TC.ttf"
     },
     {
       "FZFangS-TC": "FZFangS-TC.ttf"
+    },
+    {
+      "FZHeiT-SC Bold": "FZHeiT-SC-Bold.ttf"
+    },
+    {
+      "FZHeiT-SC Light": "FZHeiT-SC-Light.ttf"
+    },
+    {
+      "FZHeiT-SC": "FZHeiT-SC-Regular.ttf"
     },
     {
       "FZHeiT-TC Bold": "FZHeiT-TC-Bold.ttf"
@@ -518,6 +533,12 @@
     },
     {
       "方正黑體-繁": "FZHeiT-TC-Regular.ttf"
+    },
+    {
+      "方正楷体-简": "FZKaiT-SC.ttf"
+    },
+    {
+      "FZKaiT-SC": "FZKaiT-SC.ttf"
     },
     {
       "方正楷體-繁": "FZKaiT-TC.ttf"
@@ -572,6 +593,12 @@
     },
     {
       "FZShouS-TC": "FZShouS-TC.ttf"
+    },
+    {
+      "方正书宋-简": "FZShuS-SC.ttf"
+    },
+    {
+      "FZShuS-SC": "FZShuS-SC.ttf"
     },
     {
       "方正書宋-繁": "FZShuS-TC.ttf"
