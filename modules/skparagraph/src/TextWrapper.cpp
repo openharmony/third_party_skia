@@ -14,7 +14,6 @@ namespace skia {
 namespace textlayout {
 
 namespace {
-#ifdef OHOS_SUPPORT
 struct LineBreakerWithLittleRounding {
     LineBreakerWithLittleRounding(SkScalar maxWidth, bool applyRoundingHack)
         : fLower(maxWidth - 0.25f)
@@ -56,6 +55,7 @@ struct LineBreakerWithLittleRounding {
 };
 }  // namespace
 
+#ifdef OHOS_SUPPORT
 SkScalar TextWrapper::calculateFakeSpacing(Cluster* cluster, bool autoSpacingEnable)
 {
     if (!autoSpacingEnable || cluster == fEndLine.endCluster()) {
@@ -360,7 +360,8 @@ struct TextWrapScorer {
 
         // we trust that clusters are sorted on parent
         bool prevWasWhitespace = false;
-        SkScalar currentWidth = cumulativeLen_ = 0;
+        SkScalar currentWidth = 0;
+        SkScalar cumulativeLen_ = 0;
         for (size_t ix = 0; ix < parent.clusters().size(); ix++) {
             auto& cluster = parent.clusters()[ix];
             auto len = cluster.width();
@@ -369,24 +370,20 @@ struct TextWrapScorer {
 
             if (cluster.isWhitespaceBreak()) {
                 breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
-                LOGD("{%{public}f, WHITE_SPACE, %{public}d},", cumulativeLen_, prevWasWhitespace);
                 prevWasWhitespace = true;
                 currentWidth = 0;
             } else if (cluster.isHardBreak()) {
                 breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_HARD, false);
-                LOGD("{%{public}f, HARD, %{public}d},", cumulativeLen_, prevWasWhitespace);
                 prevWasWhitespace = true;
                 currentWidth = 0;
             } else if (cluster.isIntraWordBreak()) {
                 breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_INTRA, false);
-                LOGD("{%{public}f, INTRA, %{public}d},", cumulativeLen_, prevWasWhitespace);
                 prevWasWhitespace = true;
                 currentWidth = 0;
             } else if (currentWidth > currentTarget_) {
                 cumulativeLen_ -= cluster.width();
                 ix--;
                 breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_FORCED, false);
-                LOGD("{%{public}f, FORCED, %{public}d},", cumulativeLen_, prevWasWhitespace);
                 prevWasWhitespace = false;
                 currentWidth = 0;
             } else {
@@ -401,8 +398,6 @@ struct TextWrapScorer {
         size_t lineNumber;
         SkScalar begin;
         SkScalar remainingTextWidth;
-
-        // internal param
         SkScalar currentMax;
         size_t breakPos;
     };
@@ -437,8 +432,8 @@ struct TextWrapScorer {
         }
 
         // trim possible spaces at the beginning of line
-        while (param.lineNumber > 0 && lastBreakPos_ + 1 < breaks_.size() &&
-            breaks_[lastBreakPos_ + 1].subsequentWhitespace) {
+        while ((param.lineNumber > 0) && (lastBreakPos_ + 1 < breaks_.size()) &&
+            (breaks_[lastBreakPos_ + 1].subsequentWhitespace)) {
             param.remainingTextWidth += (param.begin - breaks_[++lastBreakPos_].width);
             param.begin = breaks_[lastBreakPos_].width;
         }
@@ -968,43 +963,6 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     }
 }
 #else
-struct LineBreakerWithLittleRounding {
-    LineBreakerWithLittleRounding(SkScalar maxWidth, bool applyRoundingHack)
-        : fLower(maxWidth - 0.25f)
-        , fMaxWidth(maxWidth)
-        , fUpper(maxWidth + 0.25f)
-        , fApplyRoundingHack(applyRoundingHack) {}
-    bool breakLine(SkScalar width) const {
-        if (width < fLower) {
-            return false;
-        } else if (width > fUpper) {
-            return true;
-        }
-        auto val = std::fabs(width);
-        SkScalar roundedWidth;
-        if (fApplyRoundingHack) {
-            if (val < 10000) {
-                roundedWidth = SkScalarRoundToScalar(width * 100) * (1.0f/100);
-            } else if (val < 100000) {
-                roundedWidth = SkScalarRoundToScalar(width *  10) * (1.0f/10);
-            } else {
-                roundedWidth = SkScalarFloorToScalar(width);
-            }
-        } else {
-            if (val < 10000) {
-                roundedWidth = SkScalarFloorToScalar(width * 100) * (1.0f/100);
-            } else if (val < 100000) {
-                roundedWidth = SkScalarFloorToScalar(width *  10) * (1.0f/10);
-            } else {
-                roundedWidth = SkScalarFloorToScalar(width);
-            }
-        }
-        return roundedWidth > fMaxWidth;
-    }
-    const SkScalar fLower, fMaxWidth, fUpper;
-    const bool fApplyRoundingHack;
-};
-}  // namespace
 // Since we allow cluster clipping when they don't fit
 // we have to work with stretches - parts of clusters
 void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack) {
