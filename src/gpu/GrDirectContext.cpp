@@ -403,12 +403,6 @@ void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly,
     fResourceCache->purgeCacheBetweenFrames(scratchResourcesOnly, exitedPidSet, protectedPidSet);
 }
 
-void GrDirectContext::asyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
-#ifdef SK_VULKAN
-    GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(nextFrameHasArrived);
-#endif
-}
-
 void GrDirectContext::performDeferredCleanup(std::chrono::milliseconds msNotUsed,
                                              bool scratchResourcesOnly) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
@@ -582,6 +576,59 @@ std::set<GrGpuResourceTag> GrDirectContext::getAllGrGpuResourceTags() const {
         return fResourceCache->getAllGrGpuResourceTags();
     }
     return {};
+}
+
+void GrDirectContext::beginFrame()
+{
+    if (fResourceCache) {
+        fResourceCache->beginFrame();
+    }
+}
+
+void GrDirectContext::endFrame()
+{
+    if (fResourceCache) {
+        fResourceCache->endFrame();
+    }
+}
+
+void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
+{
+#ifdef SK_VULKAN
+    auto grVKGpu = static_cast<GrVkGpu*>(fGpu.get());
+    grVKGpu->memoryReclaimer()->setGpuMemoryAsyncReclaimerSwitch(enabled);
+#endif
+}
+
+void GrDirectContext::flushGpuMemoryInWaitQueue()
+{
+#ifdef SK_VULKAN
+    auto grVKGpu = static_cast<GrVkGpu*>(fGpu.get());
+    grVKGpu->memoryReclaimer()->flushGpuMemoryInWaitQueue();
+#endif
+}
+
+void GrDirectContext::setGpuCacheSuppressWindowSwitch(bool enabled)
+{
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned()) {
+        return;
+    }
+
+    fResourceCache->setGpuCacheSuppressWindowSwitch(enabled);
+}
+
+
+void GrDirectContext::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived)
+{
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned()) {
+        return;
+    }
+
+    fResourceCache->suppressGpuCacheBelowCertainRatio(nextFrameHasArrived);
 }
 
 GrBackendTexture GrDirectContext::createBackendTexture(int width, int height,

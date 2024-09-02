@@ -64,6 +64,8 @@ public:
                                         GrWrapCacheable,
                                         bool forSecondaryCB = false);
 
+    void DestroyAndFreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc, const GrVkImage& image);
+
     ~GrVkImage() override;
 
     VkImage image() const {

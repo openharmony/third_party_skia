@@ -197,14 +197,14 @@ sk_sp<GrGpu> GrVkGpu::Make(const GrVkBackendContext& backendContext,
         return nullptr;
     }
 
-     sk_sp<GrVkGpu> vkGpu(new GrVkGpu(direct, backendContext, std::move(caps), interface,
-                                      instanceVersion, physDevVersion,
-                                      std::move(memoryAllocator)));
-     if (backendContext.fProtectedContext == GrProtected::kYes &&
-         !vkGpu->vkCaps().supportsProtectedMemory()) {
-         return nullptr;
-     }
-     return std::move(vkGpu);
+    sk_sp<GrVkGpu> vkGpu(new GrVkGpu(direct, backendContext, std::move(caps), interface,
+                                    instanceVersion, physDevVersion,
+                                    std::move(memoryAllocator)));
+    if (backendContext.fProtectedContext == GrProtected::kYes &&
+        !vkGpu->vkCaps().supportsProtectedMemory()) {
+        return nullptr;
+    }
+    return std::move(vkGpu);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -241,6 +241,8 @@ GrVkGpu::GrVkGpu(GrDirectContext* direct, const GrVkBackendContext& backendConte
         SkASSERT(this->currentCommandBuffer());
         this->currentCommandBuffer()->begin(this);
     }
+
+    fMemoryReclaimer = std::make_unique<GrVkMemoryReclaimer>();
 }
 
 void GrVkGpu::destroyResources() {
@@ -544,10 +546,6 @@ bool GrVkGpu::onWritePixels(GrSurface* surface,
     }
 
     return success;
-}
-
-void GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
-    GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(nextFrameHasArrived);
 }
 
 bool GrVkGpu::onTransferPixelsTo(GrTexture* texture,

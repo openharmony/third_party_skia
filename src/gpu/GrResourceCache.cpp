@@ -7,6 +7,7 @@
 
 #include "src/gpu/GrResourceCache.h"
 #include <atomic>
+#include <ctime>
 #include <vector>
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
 #include "hitrace_meter.h"
@@ -126,6 +127,11 @@ GrResourceCache::GrResourceCache(GrSingleOwner* singleOwner,
         , fSingleOwner(singleOwner) {
     SkASSERT(owningContextID.isValid());
     SkASSERT(familyID != SK_InvalidUniqueID);
+
+    static int overtimeDuration = std::atoi(OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_overtime", "600").c_str());
+    static int maxBytesRate = std::atof(OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_max_rate", "0.9").c_str());
+    fMaxBytesRate = maxBytesRate;
+    fOvertimeDuration = overtimeDuration;
 }
 
 GrResourceCache::~GrResourceCache() {
@@ -668,7 +674,39 @@ void GrResourceCache::didChangeBudgetStatus(GrGpuResource* resource) {
     this->validate();
 }
 
-void GrResourceCache::purgeAsNeeded() {
+static constexpr int timeUnit = 1000;
+
+bool GrResourceCache::allowToPurge(const std::function<bool(void)>& nextFrameHasArrived)
+{
+    if (!fEnabled) {
+        return true;
+    }
+    if (fFrameInfo.duringFrame == 0) {
+        if (nextFrameHasArrived && nextFrameHasArrived()) {
+            return false;
+        }
+        return true;
+    }
+    if (fFrameInfo.frameCount != fLastFrameCount) {
+        struct timespec startTime = {0, 0};
+        if (clock_gettime(CLOCK_REALTIME, &startTime) == -1) {
+            return true;
+        }
+        fStartTime = startTime.tv_sec * timeUnit * timeUnit + startTime.tv_nsec / timeUnit;
+        fLastFrameCount = fFrameInfo.frameCount;
+        return true;
+    }
+    struct timespec endTime = {0, 0};
+    if (clock_gettime(CLOCK_REALTIME, &endTime) == -1) {
+        return true;
+    }
+    if (((endTime.tv_sec * timeUnit * timeUnit + endTime.tv_nsec / timeUnit) - fStartTime) >= fOvertimeDuration) {
+        return false;
+    }
+    return true;
+}
+
+void GrResourceCache::purgeAsNeeded(const std::function<bool(void)>& nextFrameHasArrived) {
     SkTArray<GrUniqueKeyInvalidatedMessage> invalidKeyMsgs;
     fInvalidUniqueKeyInbox.poll(&invalidKeyMsgs);
     if (invalidKeyMsgs.count()) {
@@ -689,8 +727,8 @@ void GrResourceCache::purgeAsNeeded() {
 
     this->processFreedGpuResources();
 
-    bool stillOverbudget = this->overBudget();
-    while (stillOverbudget && fPurgeableQueue.count()) {
+    bool stillOverbudget = this->overBudget(nextFrameHasArrived);
+    while (stillOverbudget && fPurgeableQueue.count() && this->allowToPurge(nextFrameHasArrived)) {
         GrGpuResource* resource = fPurgeableQueue.peek();
         if (!resource->resourcePriv().isPurgeable()) {
             SkDebugf("OHOS GrResourceCache::purgeAsNeeded() resource is nonPurgeable");
@@ -698,14 +736,14 @@ void GrResourceCache::purgeAsNeeded() {
         }
         SkASSERT(resource->resourcePriv().isPurgeable());
         resource->cacheAccess().release();
-        stillOverbudget = this->overBudget();
+        stillOverbudget = this->overBudget(nextFrameHasArrived);
     }
 
     if (stillOverbudget) {
         fThreadSafeCache->dropUniqueRefs(this);
 
-        stillOverbudget = this->overBudget();
-        while (stillOverbudget && fPurgeableQueue.count()) {
+        stillOverbudget = this->overBudget(nextFrameHasArrived);
+        while (stillOverbudget && fPurgeableQueue.count() && this->allowToPurge(nextFrameHasArrived)) {
             GrGpuResource* resource = fPurgeableQueue.peek();
             if (!resource->resourcePriv().isPurgeable()) {
                 SkDebugf("OHOS GrResourceCache::purgeAsNeeded() resource is nonPurgeable after dropUniqueRefs");
@@ -713,7 +751,7 @@ void GrResourceCache::purgeAsNeeded() {
             }
             SkASSERT(resource->resourcePriv().isPurgeable());
             resource->cacheAccess().release();
-            stillOverbudget = this->overBudget();
+            stillOverbudget = this->overBudget(nextFrameHasArrived);
         }
     }
 
@@ -812,6 +850,13 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
     }
 
     this->validate();
+}
+
+void GrResourceCache::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived) {
+    if (!fEnabled) {
+        return;
+    }
+    this->purgeAsNeeded(nextFrameHasArrived);
 }
 
 void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly,

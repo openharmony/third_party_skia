@@ -313,8 +313,6 @@ public:
      */
     void purgeUnlockedResources(bool scratchResourcesOnly);
 
-    static void asyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived);
-
     /**
      * Gets the maximum supported texture size.
      */
@@ -890,6 +888,13 @@ public:
             fResourceCollector->collectSurfaceProxy(surface);
         }
     }
+
+    void beginFrame();
+    void endFrame();
+    void setGpuCacheSuppressWindowSwitch(bool enabled);
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled);
+    void flushGpuMemoryInWaitQueue();
+    void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
 
 protected:
     GrDirectContext(GrBackendApi backend, const GrContextOptions& options);

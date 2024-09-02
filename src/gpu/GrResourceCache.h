@@ -8,6 +8,7 @@
 #ifndef GrResourceCache_DEFINED
 #define GrResourceCache_DEFINED
 
+#include <cstddef>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -70,6 +71,7 @@ public:
 
     // Default maximum number of bytes of gpu memory of budgeted resources in the cache.
     static const size_t kDefaultMaxSize             = 256 * (1 << 20);
+    static constexpr double kDefaultMaxBytesRate    = 0.9;
 
     /** Used to access functionality needed by GrGpuResource for lifetime management. */
     class ResourceAccess;
@@ -183,7 +185,7 @@ public:
 
     /** Purges resources to become under budget and processes resources with invalidated unique
         keys. */
-    void purgeAsNeeded();
+    void purgeAsNeeded(const std::function<bool(void)>& nextFrameHasArrived = nullptr);
 
     // Purge unlocked resources. If 'scratchResourcesOnly' is true the purgeable resources
     // containing persistent data are spared. If it is false then all purgeable resources will
@@ -211,7 +213,10 @@ public:
      */
     bool purgeToMakeHeadroom(size_t desiredHeadroomBytes);
 
-    bool overBudget() const { return fBudgetedBytes > fMaxBytes; }
+    bool overBudget(const std::function<bool(void)>& nextFrameHasArrived = nullptr) const 
+    {
+        return fBudgetedBytes > (nextFrameHasArrived ? size_t(fMaxBytesRate * fMaxBytes) : fMaxBytes);
+    }
 
     /**
      * Purge unlocked resources from the cache until the the provided byte count has been reached
@@ -292,6 +297,23 @@ public:
     }
 
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const; // Get the tag of all GPU resources
+
+    bool allowToPurge(const std::function<bool(void)>& nextFrameHasArrived);
+
+    void beginFrame() {
+        fFrameInfo.frameCount++;
+        fFrameInfo.duringFrame = 1;
+    }
+
+    void endFrame() {
+        fFrameInfo.duringFrame = 0;
+    }
+
+    void setGpuCacheSuppressWindowSwitch(bool enabled) {
+        fEnabled = enabled;
+    }
+
+    void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
 
 private:
     ///////////////////////////////////////////////////////////////////////////
@@ -401,6 +423,7 @@ private:
 
     // our budget, used in purgeAsNeeded()
     size_t                              fMaxBytes = kDefaultMaxSize;
+    double                              fMaxBytesRate = kDefaultMaxBytesRate;
 
 #if GR_CACHE_STATS
     int                                 fHighWaterCount = 0;
@@ -433,6 +456,19 @@ private:
 
     //Indicates the cached resource tags.
     std::stack<GrGpuResourceTag> grResourceTagCacheStack;
+
+    struct {
+        uint32_t duringFrame : 1;
+        uint32_t frameCount : 31;
+    } fFrameInfo = { 0, 0 };
+
+    uint32_t fLastFrameCount = 0;
+
+    uint64_t fStartTime = 0;
+
+    uint64_t fOvertimeDuration = 0;
+
+    bool fEnabled = false;
 };
 
 class GrResourceCache::ResourceAccess {
