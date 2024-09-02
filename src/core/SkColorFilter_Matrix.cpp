@@ -30,9 +30,10 @@ static bool is_alpha_unchanged(const float matrix[20]) {
         && SkScalarNearlyZero (srcA[4]);
 }
 
-SkColorFilter_Matrix::SkColorFilter_Matrix(const float array[20], Domain domain)
+SkColorFilter_Matrix::SkColorFilter_Matrix(const float array[20], Domain domain, Clamp clamp)
     : fAlphaIsUnchanged(is_alpha_unchanged(array))
-    , fDomain(domain) {
+    , fDomain(domain)
+    , fClamp(clamp) {
     memcpy(fMatrix, array, 20 * sizeof(float));
 }
 
@@ -71,8 +72,9 @@ bool SkColorFilter_Matrix::onAppendStages(const SkStageRec& rec, bool shaderIsOp
     if (           hsla) { p->append(SkRasterPipeline::rgb_to_hsl); }
     if (           true) { p->append(SkRasterPipeline::matrix_4x5, fMatrix); }
     if (           hsla) { p->append(SkRasterPipeline::hsl_to_rgb); }
-    if (           true) { p->append(SkRasterPipeline::clamp_0); }
-    if (           true) { p->append(SkRasterPipeline::clamp_1); }
+    bool needClamp = (fClamp == Clamp::kYes);
+    if (      needClamp) { p->append(SkRasterPipeline::clamp_0); }
+    if (      needClamp) { p->append(SkRasterPipeline::clamp_1); }
     if (!willStayOpaque) { p->append(SkRasterPipeline::premul); }
     return true;
 }
@@ -116,7 +118,7 @@ skvm::Color SkColorFilter_Matrix::onProgram(skvm::Builder* p, skvm::Color c,
         c = {r,g,b,a};
     }
 
-    return premul(clamp01(c));
+    return (fClamp == Clamp::kYes ? premul(clamp01(c)) : premul(c));
 }
 
 #if SK_SUPPORT_GPU
@@ -203,7 +205,7 @@ GrFPResult SkColorFilter_Matrix::asFragmentProcessor(std::unique_ptr<GrFragmentP
         case Domain::kRGBA:
             fp = GrFragmentProcessor::ColorMatrix(std::move(fp), fMatrix,
                                                   /* unpremulInput = */  true,
-                                                  /* clampRGBOutput = */ true,
+                                                  /* clampRGBOutput = */ fClamp == Clamp::kYes,
                                                   /* premulOutput = */   true);
             break;
 
@@ -225,27 +227,28 @@ GrFPResult SkColorFilter_Matrix::asFragmentProcessor(std::unique_ptr<GrFragmentP
 ///////////////////////////////////////////////////////////////////////////////
 
 static sk_sp<SkColorFilter> MakeMatrix(const float array[20],
-                                       SkColorFilter_Matrix::Domain domain) {
+                                       SkColorFilter_Matrix::Domain domain,
+                                       SkColorFilters::Clamp clamp) {
     if (!sk_floats_are_finite(array, 20)) {
         return nullptr;
     }
-    return sk_make_sp<SkColorFilter_Matrix>(array, domain);
+    return sk_make_sp<SkColorFilter_Matrix>(array, domain, clamp);
 }
 
-sk_sp<SkColorFilter> SkColorFilters::Matrix(const float array[20]) {
-    return MakeMatrix(array, SkColorFilter_Matrix::Domain::kRGBA);
+sk_sp<SkColorFilter> SkColorFilters::Matrix(const float array[20], Clamp clamp) {
+    return MakeMatrix(array, SkColorFilter_Matrix::Domain::kRGBA, clamp);
 }
 
-sk_sp<SkColorFilter> SkColorFilters::Matrix(const SkColorMatrix& cm) {
-    return MakeMatrix(cm.fMat.data(), SkColorFilter_Matrix::Domain::kRGBA);
+sk_sp<SkColorFilter> SkColorFilters::Matrix(const SkColorMatrix& cm, Clamp clamp) {
+    return MakeMatrix(cm.fMat.data(), SkColorFilter_Matrix::Domain::kRGBA, clamp);
 }
 
 sk_sp<SkColorFilter> SkColorFilters::HSLAMatrix(const float array[20]) {
-    return MakeMatrix(array, SkColorFilter_Matrix::Domain::kHSLA);
+    return MakeMatrix(array, SkColorFilter_Matrix::Domain::kHSLA, Clamp::kYes);
 }
 
 sk_sp<SkColorFilter> SkColorFilters::HSLAMatrix(const SkColorMatrix& cm) {
-    return MakeMatrix(cm.fMat.data(), SkColorFilter_Matrix::Domain::kHSLA);
+    return MakeMatrix(cm.fMat.data(), SkColorFilter_Matrix::Domain::kHSLA, Clamp::kYes);
 }
 
 void SkColorFilter_Matrix::RegisterFlattenables() {
