@@ -900,6 +900,8 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxyView& proxyView, con
     // reference textureop, resource's refcount should add.
     fGpu->currentCommandBuffer()->addResource(image->textureView());
     fGpu->currentCommandBuffer()->addResource(image->resource());
+    // OH ISSUE : fix hps blur, add GrSurface reference protection
+    fGpu->currentCommandBuffer()->addGrSurface(sk_ref_sp<const GrSurface>(texture));
     SkOriginInfo originInfo {};
     originInfo.imageOrigin = proxyView.origin();
     originInfo.rtOrigin = fOrigin;
