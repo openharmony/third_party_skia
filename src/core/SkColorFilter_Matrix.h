@@ -14,7 +14,9 @@ class SkColorFilter_Matrix : public SkColorFilterBase {
 public:
     enum class Domain : uint8_t { kRGBA, kHSLA };
 
-    explicit SkColorFilter_Matrix(const float array[20], Domain);
+    using Clamp = SkColorFilters::Clamp;
+
+    explicit SkColorFilter_Matrix(const float array[20], Domain, Clamp);
 
     bool onIsAlphaUnchanged() const override { return fAlphaIsUnchanged; }
 
@@ -39,6 +41,7 @@ private:
     float   fMatrix[20];
     bool    fAlphaIsUnchanged;
     Domain  fDomain;
+    Clamp fClamp;
 
     using INHERITED = SkColorFilterBase;
 };
