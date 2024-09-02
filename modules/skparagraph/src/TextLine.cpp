@@ -2039,7 +2039,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                     } else {
 #ifdef OHOS_SUPPORT
                         if ((!context.run->leftToRight()) && ((context.run->fUtf8Range.end() /
-                        context.run->glyphs().size()) > 2)) {
+                            context.run->glyphs().size()) > 2)) {
                             result = { SkToS32(utf16Index + 2), kUpstream};
                         } else {
                             result = { SkToS32(utf16Index + 1), kUpstream};
@@ -2119,7 +2119,8 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                 } else {
 #ifdef OHOS_SUPPORT
                     size_t utf16Index = 0;
-                    if (!context.run->leftToRight() && (context.run->fUtf8Range.end() / context.run->glyphs().size())) {
+                    if (!context.run->leftToRight() && (context.run->fUtf8Range.end() / context.run->glyphs().size()
+                        > 2)) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 2;
                     } else if (!context.run->leftToRight()) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 1;
