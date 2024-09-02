@@ -12,14 +12,20 @@
 #include "modules/skshaper/include/SkShaper.h"
 #include "src/utils/SkUTF.h"
 
-#ifndef USE_SKIA_TXT
+#ifdef USE_SKIA_TXT
+namespace SkiaRsText{
+#endif
 
 class SkShaperPrimitive : public SkShaper {
 public:
     SkShaperPrimitive() {}
 private:
     void shape(const char* utf8, size_t utf8Bytes,
+#ifdef USE_SKIA_TXT
+               const RSFont& srcFont,
+#else
                const SkFont& srcFont,
+#endif
                bool leftToRight,
                SkScalar width,
                RunHandler*) const override;
@@ -75,7 +81,11 @@ static inline bool is_breaking_whitespace(SkUnichar c) {
 }
 
 static size_t linebreak(const char text[], const char stop[],
+#ifdef USE_SKIA_TXT
+                        const RSFont& font, SkScalar width,
+#else
                         const SkFont& font, SkScalar width,
+#endif
                         SkScalar* advance,
                         size_t* trailing)
 {
@@ -141,12 +151,20 @@ void SkShaperPrimitive::shape(const char* utf8, size_t utf8Bytes,
                               SkScalar width,
                               RunHandler* handler) const
 {
+#ifdef USE_SKIA_TXT
+    RSFont skfont;
+#else
     SkFont skfont;
+#endif
     if (!font.atEnd()) {
         font.consume();
         skfont = font.currentFont();
     } else {
+#ifdef USE_SKIA_TXT
+        skfont.SetTypeface(RSTypeface::MakeDefault());
+#else
         skfont.setTypeface(sk_ref_sp(skfont.getTypefaceOrDefault()));
+#endif
     }
     SkASSERT(skfont.getTypeface());
     bool skbidi = 0;
@@ -173,22 +191,40 @@ void SkShaperPrimitive::shape(const char* utf8, size_t utf8Bytes,
 }
 
 void SkShaperPrimitive::shape(const char* utf8, size_t utf8Bytes,
+#ifdef USE_SKIA_TXT
+                              const RSFont& font,
+#else
                               const SkFont& font,
+#endif
                               bool leftToRight,
                               SkScalar width,
                               RunHandler* handler) const {
     sk_ignore_unused_variable(leftToRight);
 
+#ifdef USE_SKIA_TXT
+    int glyphCount = font.CountText(utf8, utf8Bytes, RSDrawing::TextEncoding::UTF8);
+#else
     int glyphCount = font.countText(utf8, utf8Bytes, SkTextEncoding::kUTF8);
+#endif
+
     if (glyphCount < 0) {
         return;
     }
 
     std::unique_ptr<SkGlyphID[]> glyphs(new SkGlyphID[glyphCount]);
+#ifdef USE_SKIA_TXT
+    font.TextToGlyphs(utf8, utf8Bytes, RSDrawing::TextEncoding::UTF8, glyphs.get(), glyphCount);
+#else
     font.textToGlyphs(utf8, utf8Bytes, SkTextEncoding::kUTF8, glyphs.get(), glyphCount);
+#endif
 
     std::unique_ptr<SkScalar[]> advances(new SkScalar[glyphCount]);
+#ifdef USE_SKIA_TXT
+    font.GetWidths(glyphs.get(), glyphCount, advances.get(), nullptr);
+#else
     font.getWidthsBounds(glyphs.get(), glyphCount, advances.get(), nullptr, nullptr);
+#endif
+
 
     size_t glyphOffset = 0;
     size_t utf8Offset = 0;
@@ -202,7 +238,11 @@ void SkShaperPrimitive::shape(const char* utf8, size_t utf8Bytes,
         const RunHandler::RunInfo info = {
             font,
             0,
+#ifdef USE_SKIA_TXT
+            { font.MeasureText(utf8, bytesVisible, RSDrawing::TextEncoding::UTF8), 0 },
+#else
             { font.measureText(utf8, bytesVisible, SkTextEncoding::kUTF8), 0 },
+#endif
             numGlyphs,
             RunHandler::Range(utf8Offset, bytesVisible)
         };
@@ -240,5 +280,6 @@ void SkShaperPrimitive::shape(const char* utf8, size_t utf8Bytes,
 
     return;
 }
-
+#ifdef USE_SKIA_TXT
+}
 #endif
