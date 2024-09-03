@@ -2039,7 +2039,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                     } else {
 #ifdef OHOS_SUPPORT
                         result = { SkToS32(utf16Index + 1), kUpstream};
-                        int glyphCnt = context.run->glyphs().size();
+                        size_t glyphCnt = context.run->glyphs().size();
                         if ((glyphCnt != 0) && (context.run->fUtf8Range.end() / glyphCnt) > 2) {
                             result = { SkToS32(utf16Index + 2), kUpstream};
                         }
