@@ -293,6 +293,22 @@ public:
 
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const; // Get the tag of all GPU resources
 
+#ifdef SKIA_DFX_FOR_OHOS
+    void dumpInfo(SkString* out);
+    std::string cacheInfo();
+
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    static bool purgeUnlocakedResTraceEnabled_;
+    struct SimpleCacheInfo {
+        int fPurgeableQueueCount;
+        int fNonpurgeableResourcesCount;
+        size_t fPurgeableBytes;
+        int fBudgetedCount;
+        size_t fBudgetedBytes;
+    };
+#endif
+#endif
+
 private:
     ///////////////////////////////////////////////////////////////////////////
     /// @name Methods accessible via ResourceAccess
@@ -328,6 +344,44 @@ private:
 #endif
 
     void dumpPidResource();
+
+#ifdef SKIA_DFX_FOR_OHOS
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    void traceBeforePurgeUnlockRes(const std::string& method, SimpleCacheInfo& simpleCacheInfo);
+    void traceAfterPurgeUnlockRes(const std::string& method, const SimpleCacheInfo& simpleCacheInfo);
+    std::string cacheInfoComparison(const SimpleCacheInfo& simpleCacheInfo);
+#endif
+    std::string cacheInfoPurgeableQueue();
+    std::string cacheInfoNoPurgeableQueue();
+    void updatePurgeableWidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoWid,
+                     std::map<uint32_t, int>& sizeInfoWid,
+                     std::map<uint32_t, int>& pidInfoWid,
+                     std::map<uint32_t, int>& countInfoWid);
+    void updatePurgeablePidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoPid,
+                     std::map<uint32_t, int>& sizeInfoPid,
+                     std::map<uint32_t, int>& countInfoPid);
+    void updatePurgeableFidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoFid,
+                     std::map<uint32_t, int>& sizeInfoFid,
+                     std::map<uint32_t, int>& countInfoFid);
+    void updatePurgeableWidInfo(std::string& infoStr,
+                     std::map<uint32_t, std::string>& nameInfoWid,
+                     std::map<uint32_t, int>& sizeInfoWid,
+                     std::map<uint32_t, int>& pidInfoWid,
+                     std::map<uint32_t, int>& countInfoWid);
+    void updatePurgeablePidInfo(std::string& infoStr,
+                     std::map<uint32_t, std::string>& nameInfoPid,
+                     std::map<uint32_t, int>& sizeInfoPid,
+                     std::map<uint32_t, int>& countInfoPid);
+    void updatePurgeableFidInfo(std::string& infoStr,
+                     std::map<uint32_t, std::string>& nameInfoFid,
+                     std::map<uint32_t, int>& sizeInfoFid,
+                     std::map<uint32_t, int>& countInfoFid);
+    void updatePurgeableUnknownInfo(std::string& infoStr, const std::string& unknownPrefix,
+        const int countUnknown, const int sizeUnknown);
+#endif
 
     class AutoValidate;
 
