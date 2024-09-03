@@ -85,6 +85,8 @@ public:
 
     virtual size_t lineNumber() = 0;
 
+    virtual TextRange getEllipsisTextRange() = 0;
+
     virtual void markDirty() = 0;
 
     // This function will return the number of unresolved glyphs or

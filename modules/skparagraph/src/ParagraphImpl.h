@@ -132,6 +132,10 @@ public:
 
     size_t lineNumber() override { return fLineNumber; }
 
+#ifdef OHOS_SUPPORT
+    TextRange getEllipsisTextRange() override;
+#endif
+
     TextLine& addLine(SkVector offset, SkVector advance,
                       TextRange textExcludingSpaces, TextRange text, TextRange textIncludingNewlines,
                       ClusterRange clusters, ClusterRange clustersWithGhosts, SkScalar widthWithSpaces,
@@ -408,6 +412,10 @@ private:
 
     size_t fLineNumber;
     uint32_t hash_{0u};
+
+#ifdef OHOS_SUPPORT
+    TextRange fEllipsisRange{EMPTY_RANGE};
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia
