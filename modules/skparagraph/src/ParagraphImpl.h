@@ -230,7 +230,9 @@ public:
     void updateFontSize(size_t from, size_t to, SkScalar fontSize) override;
     void updateForegroundPaint(size_t from, size_t to, SkPaint paint) override;
     void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) override;
+#ifdef OHOS_SUPPORT
     std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) override;
+#endif
 
     void visit(const Visitor&) override;
 
@@ -352,7 +354,10 @@ private:
         exceededMaxLines = fExceededMaxLines;
     }
 
+#ifdef OHOS_SUPPORT
     ParagraphPainter::PaintID updateTextStyleColorAndForeground(TextStyle& TextStyle, SkColor color);
+    TextBox getEmptyTextRect(RectHeightStyle rectHeightStyle) const;
+#endif
 
     // Input
     SkTArray<StyleBlock<SkScalar>> fLetterSpaceStyles;
