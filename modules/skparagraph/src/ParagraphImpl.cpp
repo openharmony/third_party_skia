@@ -304,6 +304,9 @@ bool ParagraphImpl::middleEllipsisDeal()
                 charend = ltrTextSize[end].charOver;
                 fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
                 fText.insert(ltrTextSize[start].charbegin, ellStr);
+#ifdef OHOS_SUPPORT
+                fEllipsisRange = TextRange(charbegin, charend);
+#endif
             }
         }
         ltrTextSize.clear();
@@ -319,6 +322,9 @@ bool ParagraphImpl::middleEllipsisDeal()
             fText.remove(rtlTextSize[start - 1].charbegin,
                 rtlTextSize[end + PARAM_DOUBLE].charbegin - rtlTextSize[start - 1].charbegin);
             fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
+#ifdef OHOS_SUPPORT
+            fEllipsisRange = TextRange(charbegin, charend);
+#endif
         }
         rtlTextSize.clear();
     }
@@ -327,6 +333,9 @@ bool ParagraphImpl::middleEllipsisDeal()
         TextRange deletedRange(charbegin, charend);
         resetTextStyleRange(deletedRange);
         resetPlaceholderRange(deletedRange);
+#ifdef OHOS_SUPPORT
+        fEllipsisRange = deletedRange;
+#endif
     }
 
     // end = 0 means the text does not exceed the width limit
@@ -462,6 +471,9 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
         fText = tmpParagraph->fText;
         fTextStyles = tmpParagraph->fTextStyles;
         fPlaceholders = tmpParagraph->fPlaceholders;
+#ifdef OHOS_SUPPORT
+        fEllipsisRange = tmpParagraph->fEllipsisRange;
+#endif
     }
 }
 
@@ -481,15 +493,15 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
 
-    #ifdef OHOS_SUPPORT
+#ifdef OHOS_SUPPORT
     bool isMaxLinesZero = false;
-    #endif
+#endif
     if (fParagraphStyle.getMaxLines() == 0) {
-        #ifdef OHOS_SUPPORT
+#ifdef OHOS_SUPPORT
         if (fText.size() != 0) {
             isMaxLinesZero = true;
         }
-        #endif
+#endif
         fText.reset();
     }
 
@@ -527,11 +539,11 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
             this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
             if (!this->shapeTextIntoEndlessLine()) {
                 this->resetContext();
-                #ifdef OHOS_SUPPORT
+#ifdef OHOS_SUPPORT
                 if (isMaxLinesZero) {
                     fExceededMaxLines  = true;
                 }
-                #endif
+#endif
                 // TODO: merge the two next calls - they always come together
                 this->resolveStrut();
                 this->computeEmptyMetrics();
@@ -656,6 +668,27 @@ void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOff
         line.paint(painter, path, hOffset, vOffset);
     }
 }
+
+#ifdef OHOS_SUPPORT
+TextRange ParagraphImpl::getEllipsisTextRange() {
+    if (fState < kLineBroken) {
+        return EMPTY_RANGE;
+    }
+    if (!fEllipsisRange.empty()) {
+        return fEllipsisRange;
+    }
+    this->ensureUTF16Mapping();
+    for (const auto& line: fLines) {
+        if (line.getTextRangeReplacedByEllipsis().empty()) {
+            continue;
+        }
+        auto ellipsisClusterRange = line.getTextRangeReplacedByEllipsis();
+        return TextRange(getUTF16Index(ellipsisClusterRange.start),
+                                      getUTF16Index(ellipsisClusterRange.end));
+    }
+    return EMPTY_RANGE;
+}
+#endif
 
 void ParagraphImpl::resetContext() {
     fAlphabeticBaseline = 0;
@@ -2168,6 +2201,7 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fHasWhitespacesInside = this->fHasWhitespacesInside;
     paragraph->fTrailingSpaces = this->fTrailingSpaces;
     paragraph->fLineNumber = this->fLineNumber;
+    paragraph->fEllipsisRange = this->fEllipsisRange;
 
     for (auto& run : paragraph->fRuns) {
         run.setOwner(paragraph.get());
