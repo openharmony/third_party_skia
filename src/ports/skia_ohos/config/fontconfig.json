@@ -1259,6 +1259,12 @@
     },
     {
       "书宋-简": "ShuS-SC.ttf"
+    },
+    {
+      "KaiT-SC": "KaiT-SC.ttf"
+    },
+    {
+      "楷体-简": "KaiT-SC.ttf"
     }
   ]
 }
