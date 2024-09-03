@@ -11,7 +11,6 @@
 #include <vector>
 #include <map>
 #include <sstream>
-#include <parameters.h>
 #include "include/core/SkString.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/private/GrSingleOwner.h"
