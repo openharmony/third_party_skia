@@ -354,6 +354,16 @@ void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
 }
 
 void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value) {
+    if (paragraph.fRuns.size() == value->fRuns.size()) {
+        for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
+            if (!value->fRuns[idx].isPlaceholder()) {
+                continue;
+            }
+            value->fRuns[idx].fFontMetrics = paragraph.fRuns[idx].fFontMetrics;
+            value->fRuns[idx].fCorrectAscent = paragraph.fRuns[idx].fCorrectAscent;
+            value->fRuns[idx].fCorrectDescent = paragraph.fRuns[idx].fCorrectDescent;
+        }
+    }
     value->fLines.reset();
     value->indents.clear();
 
@@ -382,29 +392,40 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
     if (!entry || !*entry) {
         return false;
     }
-
-    if (auto value = (*entry)->fValue.get()) {
-        // Check if we have a match, that should be pretty much only lentgh and wrapping modes
-        // if the paragraph and text style match otherwise
-        if (useCachedLayout(paragraph, value)) {
-            // Need to ensure we have sufficient info for restoring
-            // need some additionaö metrics
-            if (value->fLines.empty()) {
-                return false;
+    ParagraphCacheValue* value = (*entry)->fValue.get();
+    if (!value) {
+        return false;
+    }
+    // Check if we have a match, that should be pretty much only lentgh and wrapping modes
+    // if the paragraph and text style match otherwise
+    if (!useCachedLayout(paragraph, value)) {
+        return false;
+    }
+    // Need to ensure we have sufficient info for restoring
+    // need some additionaö metrics
+    if (value->fLines.empty()) {
+        return false;
+    }
+    if (paragraph.fRuns.size() == value->fRuns.size()) {
+        for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
+            if (!value->fRuns[idx].isPlaceholder()) {
+                continue;
             }
-            paragraph.fLines.reset();
-            for (auto& line : value->fLines) {
-                paragraph.fLines.emplace_back(line.CloneSelf());
-                paragraph.fLines.back().setParagraphImpl(&paragraph);
-            }
-            paragraph.setSize(value->fHeight, value->fWidth, value->fLongestLine);
-            paragraph.setIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
-                value->fAlphabeticBaseline, value->fIdeographicBaseline,
-                value->fExceededMaxLines);
-            return true;
+            paragraph.fRuns[idx].fFontMetrics = value->fRuns[idx].fFontMetrics;
+            paragraph.fRuns[idx].fCorrectAscent = value->fRuns[idx].fCorrectAscent;
+            paragraph.fRuns[idx].fCorrectDescent = value->fRuns[idx].fCorrectDescent;
         }
     }
-    return false;
+    paragraph.fLines.reset();
+    for (auto& line : value->fLines) {
+        paragraph.fLines.emplace_back(line.CloneSelf());
+        paragraph.fLines.back().setParagraphImpl(&paragraph);
+    }
+    paragraph.setSize(value->fHeight, value->fWidth, value->fLongestLine);
+    paragraph.setIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
+        value->fAlphabeticBaseline, value->fIdeographicBaseline,
+        value->fExceededMaxLines);
+    return true;
 }
 #endif
 
