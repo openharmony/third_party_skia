@@ -2118,7 +2118,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                 } else {
 #ifdef OHOS_SUPPORT
                     size_t utf16Index = 0;
-                    int glyphCnt = context.run->glyphs().size();
+                    size_t glyphCnt = context.run->glyphs().size();
                     if ((glyphCnt != 0) && !context.run->leftToRight() && (context.run->fUtf8Range.end() /
                         glyphCnt > 2)) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 2;
