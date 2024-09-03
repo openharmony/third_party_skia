@@ -2038,14 +2038,10 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                         keepLooking = false;
                     } else {
 #ifdef OHOS_SUPPORT
+                        result = { SkToS32(utf16Index + 1), kUpstream};
                         int glyphCnt = context.run->glyphs().size();
-                        if ( glyphCnt == 0) {
-                            glyphCnt = 1;
-                        }
-                        if ((!context.run->leftToRight()) && ((context.run->fUtf8Range.end() / glyphCnt) > 2)) {
+                        if ((glyphCnt != 0) && (context.run->fUtf8Range.end() / glyphCnt) > 2) {
                             result = { SkToS32(utf16Index + 2), kUpstream};
-                        } else {
-                            result = { SkToS32(utf16Index + 1), kUpstream};
                         }
 #else
                         result = { SkToS32(utf16Index + 1), kUpstream};
@@ -2123,10 +2119,8 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
 #ifdef OHOS_SUPPORT
                     size_t utf16Index = 0;
                     int glyphCnt = context.run->glyphs().size();
-                    if (glyphCnt == 0 ) {
-                        glyphCnt = 1;
-                    }
-                    if (!context.run->leftToRight() && (context.run->fUtf8Range.end() / glyphCnt > 2)) {
+                    if ((glyphCnt != 0) && !context.run->leftToRight() && (context.run->fUtf8Range.end() /
+                        glyphCnt > 2)) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 2;
                     } else if (!context.run->leftToRight()) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 1;
