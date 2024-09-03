@@ -301,6 +301,10 @@ public:
         return hash_;
     }
 
+#ifdef OHOS_SUPPORT
+    size_t GetMaxLines() const override { return fParagraphStyle.getMaxLines(); }
+#endif
+
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
