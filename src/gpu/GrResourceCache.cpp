@@ -11,6 +11,7 @@
 #include <vector>
 #include <map>
 #include <sstream>
+#include <parameters.h>
 #include "include/core/SkString.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/private/GrSingleOwner.h"
@@ -29,10 +30,6 @@
 #include "src/gpu/GrThreadSafeCache.h"
 #include "src/gpu/GrTracing.h"
 #include "src/gpu/SkGr.h"
-
-#ifdef NOT_BUILD_FOR_OHOS_SDK
-#include <parameters.h>
-#endif
 
 DECLARE_SKMESSAGEBUS_MESSAGE(GrUniqueKeyInvalidatedMessage, uint32_t, true);
 
