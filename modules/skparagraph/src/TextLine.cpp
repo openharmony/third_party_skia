@@ -2037,7 +2037,15 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                         result = { SkToS32(utf16Index), kDownstream};
                         keepLooking = false;
                     } else {
+#ifdef OHOS_SUPPORT
                         result = { SkToS32(utf16Index + 1), kUpstream};
+                        size_t glyphCnt = context.run->glyphs().size();
+                        if ((glyphCnt != 0) && (context.run->fUtf8Range.end() / glyphCnt) > 2) {
+                            result = { SkToS32(utf16Index + 2), kUpstream};
+                        }
+#else
+                        result = { SkToS32(utf16Index + 1), kUpstream};
+#endif
                         // If we haven't reached the end of the run we need to keep looking
                         keepLooking = context.pos != 0;
                     }
@@ -2108,9 +2116,22 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                     size_t utf16Index = fOwner->getUTF16Index(clusterIndex8);
                     result = { SkToS32(utf16Index), kDownstream };
                 } else {
+#ifdef OHOS_SUPPORT
+                    size_t utf16Index = 0;
+                    size_t glyphCnt = context.run->glyphs().size();
+                    if ((glyphCnt != 0) && !context.run->leftToRight() && (context.run->fUtf8Range.end() /
+                        glyphCnt > 2)) {
+                        utf16Index = fOwner->getUTF16Index(clusterIndex8) + 2;
+                    } else if (!context.run->leftToRight()) {
+                        utf16Index = fOwner->getUTF16Index(clusterIndex8) + 1;
+                    } else {
+                        utf16Index = fOwner->getUTF16Index(clusterEnd8);
+                    }
+#else
                     size_t utf16Index = context.run->leftToRight()
                                                 ? fOwner->getUTF16Index(clusterEnd8)
                                                 : fOwner->getUTF16Index(clusterIndex8) + 1;
+#endif        
                     result = { SkToS32(utf16Index), kUpstream };
                 }
 
