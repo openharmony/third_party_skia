@@ -32,9 +32,6 @@
 #include "src/gpu/GrTextureProxyPriv.h"
 #include "src/gpu/GrTracing.h"
 #include "src/sksl/SkSLCompiler.h"
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -537,8 +534,8 @@ bool GrGpu::writePixels(GrSurface* surface,
                         std::chrono::steady_clock::now().time_since_epoch()).count());
             int duration = endTimestamp - startTimestamp;
             if (duration > TEXT_UPLOAD_TIME) {
-                HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "TEXT_UPLOAD_TIME = %d µs, Texture upload(%u) %ix%i",
-                        duration, surface->uniqueID().asUInt(), rect.width(), rect.height());
+                HITRACE_OHOS_NAME_FMT_ALWAYS("TEXT_UPLOAD_TIME = %d µs, Texture upload(%u) %ix%i",
+                    duration, surface->uniqueID().asUInt(), rect.width(), rect.height());
             }
         }
 #endif

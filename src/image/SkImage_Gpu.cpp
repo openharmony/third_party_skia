@@ -499,7 +499,8 @@ sk_sp<SkImage> SkImage::MakeFromAdoptedTexture(GrRecordingContext* rContext,
 sk_sp<SkImage> SkImage::MakeTextureFromCompressed(GrDirectContext* direct, sk_sp<SkData> data,
                                                   int width, int height, CompressionType type,
                                                   GrMipmapped mipMapped,
-                                                  GrProtected isProtected) {
+                                                  GrProtected isProtected,
+                                                  sk_sp<SkColorSpace> colorSpace) {
     if (!direct || !data) {
         return nullptr;
     }
@@ -529,7 +530,7 @@ sk_sp<SkImage> SkImage::MakeTextureFromCompressed(GrDirectContext* direct, sk_sp
     return sk_make_sp<SkImage_Gpu>(sk_ref_sp(direct),
                                    kNeedNewImageUniqueID,
                                    std::move(view),
-                                   SkColorInfo(colorType, alphaType, nullptr));
+                                   SkColorInfo(colorType, alphaType, colorSpace));
 }
 
 sk_sp<SkImage> SkImage::makeTextureImage(GrDirectContext* dContext,

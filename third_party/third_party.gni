@@ -34,12 +34,12 @@ template("third_party_config") {
           if (third_party_isystem) {
             cflags += [
               "-isystem",
-              rebase_path(dir),
+              rebase_path(dir, root_build_dir),
             ]
           } else {
             cflags += [
               "-I",
-              rebase_path(dir),
+              rebase_path(dir, root_build_dir),
             ]
           }
         }

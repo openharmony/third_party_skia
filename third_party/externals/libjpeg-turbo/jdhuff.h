@@ -16,10 +16,55 @@
 
 #include "jconfigint.h"
 
-
+#ifndef HUFF_DECODE_OPT
+#define HUFF_LOOKAHEAD  8
+#define HUFF_CODE_LARGE_LONG_ALIGNED 0
+#else
+// OH ISSUE: jpeg optimize
 /* Derived data constructed for each Huffman table */
+#define MAX_HUFF_CODE_LEN 16
 
-#define HUFF_LOOKAHEAD  8       /* # of bits of lookahead */
+#define HUFF_LOOKAHEAD  10      /* # of bits of lookahead  9-13 maybe */
+#define HUFF_AC_SYMBOLS 192
+
+#define HUFF_L_REM (16 - HUFF_LOOKAHEAD)
+#define HUFF_L_DUP ((1 << HUFF_L_REM) - (HUFF_L_REM + 1))
+#define HUFF_L_UNUSED ((1 << HUFF_L_REM) - (1 << ((HUFF_L_REM)/2)) - (1 << ((HUFF_L_REM + 1)/2)) + 1)
+#define HUFF_L_SIZE (HUFF_AC_SYMBOLS + HUFF_L_DUP + HUFF_L_UNUSED)
+#define HUFF_CODE_LARGE_LONG_ALIGNED (HUFF_L_SIZE + (-HUFF_L_SIZE & 0xf))
+
+#define COEF_BITS_OFFSET 0
+#define COEF_BITS_BITS 4
+#define ZERO_NUM1_OFFSET 4
+#define ZERO_NUM_BITS 7
+#define NB_OFFSET 11
+#define NB_BITS 5
+#define COEF1_OFFSET 16
+#define COEF_VALUE_BITS 16
+
+#define EXTRA_BITS_OFFSET COEF_BITS_OFFSET  // 2nd table offset bits
+#define EXTRA_BITS_BITS COEF_BITS_BITS
+
+#define SYM_OFFSET COEF_BITS_OFFSET
+
+#define MAKE_BITS(x, s)  (x) << (s)
+#define GETS_BITS(x, s, l)  (((x) >> (s)) & ((0x1L << (l)) - 1))
+
+#define MAKE_ZERO_NUM1(x) MAKE_BITS((x), ZERO_NUM1_OFFSET)
+#define MAKE_COEF_BITS(x) MAKE_BITS((x), COEF_BITS_OFFSET)
+#define MAKE_SYM(x) MAKE_BITS((x), SYM_OFFSET)
+#define MAKE_NB(x) MAKE_BITS((x), NB_OFFSET)
+#define MAKE_COEF1(x) (unsigned long long) MAKE_BITS((UINT16) (x), COEF1_OFFSET)
+#define MAKE_BASE(x) MAKE_BITS((x), COEF1_OFFSET)
+#define MAKE_EXTRA_BITS(x) MAKE_BITS((x), EXTRA_BITS_OFFSET)
+
+#define GET_ZERO_NUM1(x) GETS_BITS((x), ZERO_NUM1_OFFSET, ZERO_NUM_BITS)
+#define GET_COEF_BITS(x) GETS_BITS((x), COEF_BITS_OFFSET, COEF_BITS_BITS)
+#define GET_NB(x) GETS_BITS((x), NB_OFFSET, NB_BITS)
+#define GET_COEF1(x) GETS_BITS((x), COEF1_OFFSET, COEF_VALUE_BITS)
+#define GET_BASE(x) GETS_BITS((x), COEF1_OFFSET, COEF_VALUE_BITS)
+#define GET_EXTRA_BITS(x) GETS_BITS((x), EXTRA_BITS_OFFSET, EXTRA_BITS_BITS)
+#endif
 
 typedef struct {
   /* Basic tables: (element [0] of each array is unused) */
@@ -44,7 +89,7 @@ typedef struct {
    * if too long.  The next 8 bits of each entry contain the
    * symbol.
    */
-  int lookup[1 << HUFF_LOOKAHEAD];
+  int lookup[(1 << HUFF_LOOKAHEAD) + HUFF_CODE_LARGE_LONG_ALIGNED];
 } d_derived_tbl;
 
 /* Expand a Huffman table definition into the derived format */

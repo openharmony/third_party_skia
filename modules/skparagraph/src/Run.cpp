@@ -11,25 +11,186 @@
 #include "modules/skshaper/include/SkShaper.h"
 #include "src/utils/SkUTF.h"
 #include "log.h"
+#ifdef TXT_USE_PARAMETER
+#include "parameters.h"
+#endif
 
 namespace skia {
 namespace textlayout {
 constexpr SkScalar PARAM_TWO = 2.0;
-
 #ifdef OHOS_SUPPORT
-#ifdef USE_SKIA_TXT
-void metricsIncludeFontPadding(RSFontMetrics* metrics)
+static bool calcHeightWithTopAndBottom()
+{
+#ifdef TXT_USE_PARAMETER
+    static bool topAndBootomEnabled =
+        std::atoi((OHOS::system::GetParameter("persist.sys.text.top_and_bottom.enable", "0")).c_str()) != 0;
+    return topAndBootomEnabled;
 #else
-void metricsIncludeFontPadding(SkFontMetrics* metrics)
+    return false;
+#endif
+}
+// 1px font size "HarmonyOS Sans" metrics
+constexpr SkScalar DEFAULT_TOP = -1.056;
+constexpr SkScalar DEFAULT_BOTTOM = 0.271;
+constexpr SkScalar DEFAULT_ASCENT = -0.928;
+constexpr SkScalar DEFAULT_DESCENT = 0.244;
+struct ScaleParam {
+    SkScalar fontScale;
+    SkScalar baselineShiftScale;
+};
+// unordered_map<familyName, ScaleParam>: compress <familyName> font height, shift font baseline.
+// target height = (DEFAULT_BOTTOM - DEFAULT_TOP) * font size * ScaleParam.scale.
+// target baseline = -(DEFAULT_BOTTOM - DEFAULT_TOP) * font size * ScaleParam.baselineShiftScale.
+const std::unordered_map<std::string, ScaleParam> FONT_FAMILY_COMPRESSION_CONFIG = {
+    {"Noto Serif Tibetan", ScaleParam{ .fontScale = 0.79, .baselineShiftScale = 0.1 }},
+    {"Noto Sans Tibetan", ScaleParam{ .fontScale = 0.79, .baselineShiftScale = 0.1 }},
+};
+const ScaleParam DEFAULT_SCALE_PARAM = ScaleParam{ .fontScale = 0, .baselineShiftScale = 0 };
+enum FontCompressionStatus {
+    UNDEFINED, // undefined font, the typeface is null.
+    SYSTEM,    // system font, need to be compressed.
+    CUSTOM,    // custom font, doesn't need to be compressed.
+};
+// the font padding does not take effect for these font families.
+const std::unordered_set<std::string> FONT_PADDING_NOT_EFFECT_FAMILY = {
+    "Harmony Clock_01",
+    "Harmony Clock_02",
+    "Harmony Clock_03",
+    "Harmony Clock_04",
+    "Harmony Clock_05",
+    "Harmony Clock_06",
+    "Harmony Clock_07",
+    "Harmony Clock_08",
+// symbol: need to ensure "the symbol height = the font size".
+// so the height compression is not enabled for symbol.
+    "Noto Sans Symbols",
+    "Noto Sans Symbols 2",
+    "HM Symbol",
+};
+
+#ifdef USE_SKIA_TXT
+FontCompressionStatus getFontCompressionStatus(const RSFont& font)
+{
+    auto typeface = font.GetTypeface();
+    if (typeface == nullptr) {
+        return FontCompressionStatus::UNDEFINED;
+    }
+    return typeface->IsCustomTypeface() ? FontCompressionStatus::CUSTOM : FontCompressionStatus::SYSTEM;
+}
+std::string getFamilyNameFromFont(const RSFont& font)
+{
+    auto typeface = font.GetTypeface();
+    return typeface == nullptr ? "" : typeface->GetFamilyName();
+}
+#else
+FontCompressionStatus getFontCompressionStatus(const SkFont& font)
+{
+    auto typeface = font.refTypeface();
+    if (typeface == nullptr) {
+        return FontCompressionStatus::UNDEFINED;
+    }
+    return typeface->isCustomTypeface() ? FontCompressionStatus::CUSTOM : FontCompressionStatus::SYSTEM;
+}
+std::string getFamilyNameFromFont(const SkFont& font)
+{
+    auto typeface = font.refTypeface();
+    if (typeface == nullptr) {
+        return "";
+    }
+    SkString familyName;
+    typeface->getFamilyName(&familyName);
+    return std::string(familyName.c_str(), familyName.size());
+}
+#endif
+
+#ifdef USE_SKIA_TXT
+const ScaleParam& findCompressionConfigWithFont(const RSFont& font)
+#else
+const ScaleParam& findCompressionConfigWithFont(const SkFont& font)
+#endif
+{
+    auto fontCompressionStatus = getFontCompressionStatus(font);
+    if (fontCompressionStatus != FontCompressionStatus::SYSTEM) {
+        return DEFAULT_SCALE_PARAM;
+    }
+
+    std::string familyName = getFamilyNameFromFont(font);
+    auto iter = FONT_FAMILY_COMPRESSION_CONFIG.find(familyName);
+    if (iter == FONT_FAMILY_COMPRESSION_CONFIG.end()) {
+        return DEFAULT_SCALE_PARAM;
+    }
+    return iter->second;
+}
+
+#ifdef USE_SKIA_TXT
+void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font)
+#else
+void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
 #endif
 {
     if (metrics == nullptr) {
         return;
     }
-    // use top and bottom as ascent and descent.
-    // calculate height with top and bottom.(includeFontPadding)
-    metrics->fAscent = metrics->fTop;
-    metrics->fDescent = metrics->fBottom;
+    auto fontCompressionStatus = getFontCompressionStatus(font);
+    if (fontCompressionStatus == FontCompressionStatus::UNDEFINED) {
+        return;
+    }
+#ifdef USE_SKIA_TXT
+    SkScalar fontSize = font.GetSize();
+#else
+    SkScalar fontSize = font.getSize();
+#endif
+    if (!calcHeightWithTopAndBottom()) {
+        if (fontCompressionStatus == FontCompressionStatus::SYSTEM &&
+            !SkScalarNearlyZero(findCompressionConfigWithFont(font).fontScale)) {
+            metrics->fAscent = DEFAULT_ASCENT * fontSize;
+            metrics->fDescent = DEFAULT_DESCENT * fontSize;
+        }
+        return;
+    }
+    if (fontCompressionStatus == FontCompressionStatus::SYSTEM) {
+        metrics->fTop = DEFAULT_TOP * fontSize;
+        metrics->fBottom = DEFAULT_BOTTOM * fontSize;
+    }
+
+    std::string curFamilyName = getFamilyNameFromFont(font);
+    auto setIter = FONT_PADDING_NOT_EFFECT_FAMILY.find(curFamilyName);
+    if (setIter == FONT_PADDING_NOT_EFFECT_FAMILY.end()) {
+        // use top and bottom as ascent and descent.
+        // calculate height with top and bottom.(includeFontPadding)
+        metrics->fAscent = metrics->fTop;
+        metrics->fDescent = metrics->fBottom;
+    }
+}
+
+#ifdef USE_SKIA_TXT
+void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op)
+{
+    SkScalar fontSize = font.GetSize();
+#else
+void scaleFontWithCompressionConfig(SkFont& font, ScaleOP op)
+{
+    SkScalar fontSize = font.getSize();
+#endif
+    auto config = findCompressionConfigWithFont(font);
+    if (SkScalarNearlyZero(config.fontScale)) {
+        return;
+    }
+    switch (op) {
+    case ScaleOP::COMPRESS:
+        fontSize *= config.fontScale;
+        break;
+    case ScaleOP::DECOMPRESS:
+        fontSize /= config.fontScale;
+        break;
+    default:
+        return;
+    }
+#ifdef USE_SKIA_TXT
+    font.SetSize(fontSize);
+#else
+    font.setSize(fontSize);
+#endif
 }
 #endif
 
@@ -74,7 +235,11 @@ Run::Run(ParagraphImpl* owner,
 #endif
 
 #ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&fFontMetrics);
+    auto decompressFont = info.fFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    metricsIncludeFontPadding(&fFontMetrics, decompressFont);
+    auto config = findCompressionConfigWithFont(decompressFont);
+    fCompressionBaselineShift = (fFontMetrics.fDescent - fFontMetrics.fAscent) * config.baselineShiftScale;
 #endif
 
     this->calculateMetrics();

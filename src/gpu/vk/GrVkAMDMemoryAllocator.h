@@ -23,7 +23,9 @@ public:
                                            uint32_t physicalDeviceVersion,
                                            const GrVkExtensions* extensions,
                                            sk_sp<const GrVkInterface> interface,
-                                           const GrVkCaps* caps);
+                                           const GrVkCaps* caps,
+                                           bool cacheFlag = false,
+                                           size_t maxBlockCount = SIZE_MAX);
 };
 
 #else
@@ -38,7 +40,9 @@ public:
                                            uint32_t physicalDeviceVersion,
                                            const GrVkExtensions* extensions,
                                            sk_sp<const GrVkInterface> interface,
-                                           const GrVkCaps* caps);
+                                           const GrVkCaps* caps,
+                                           bool cacheFlag = false,
+                                           size_t maxBlockCount = SIZE_MAX);
 
     ~GrVkAMDMemoryAllocator() override;
 
@@ -61,6 +65,9 @@ public:
 
     uint64_t totalUsedMemory() const override;
     uint64_t totalAllocatedMemory() const override;
+
+    void vmaDefragment() override;
+    void dumpVmaStats(SkString *out, const char *sep = ", ") const override;
 
 private:
     GrVkAMDMemoryAllocator(VmaAllocator allocator, sk_sp<const GrVkInterface> interface,

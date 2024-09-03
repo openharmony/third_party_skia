@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("../build_overrides/skia.gni")
 import("oh_skia.gni")
 import("platform.gni")
@@ -102,7 +101,9 @@ declare_args() {
     skia_use_vulkan = true
   } else {
     skia_use_vulkan = false
-    if (graphic_2d_feature_enable_vulkan) {
+    if (skia_feature_product == "phone" || skia_feature_product == "pc" ||
+        skia_feature_product == "tablet" ||
+        skia_feature_product == "wearable") {
       skia_use_vulkan = true
       skia_vk_enable_partialrender = true
     }

@@ -233,6 +233,18 @@ uint32_t GrGpuResource::CreateUniqueID() {
     return id;
 }
 
+void GrGpuResource::setResourceTag(const GrGpuResourceTag tag)
+{
+    int32_t pid = fGrResourceTag.fPid;
+    fGrResourceTag = tag;
+    if (pid == tag.fPid) {
+        return;
+    }
+    size_t size = this->gpuMemorySize();
+    MemoryCheckManager::getInstance().memoryOverCheck(tag.fPid, size);
+    MemoryCheckManager::getInstance().removeMemoryFromSnapshotInfo(pid, size);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 
 void GrGpuResource::ProxyAccess::ref(GrResourceCache* cache) {

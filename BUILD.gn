@@ -47,18 +47,17 @@ config("skia_wno") {
     cflags += [ "-flto=thin" ]
     if (enhanced_opt) {
       cflags += [ "-fwhole-program-vtables" ]
-      if (graphic_2d_feature_enable_pgo &&
-          graphic_2d_feature_product != "default") {
+      if (skia_feature_enable_pgo && skia_feature_product != "default") {
         cflags += [
-          "-fprofile-use=" + rebase_path(
-                  "${graphic_2d_feature_pgo_path}/libskia_canvaskit.profdata",
-                  root_build_dir),
+          "-fprofile-use=" +
+              rebase_path("${skia_feature_pgo_path}/libskia_canvaskit.profdata",
+                          root_build_dir),
           "-Wno-error=backend-plugin",
           "-Wno-profile-instr-out-of-date",
           "-Wno-profile-instr-unprofiled",
         ]
       }
-      if (graphic_2d_feature_product == "pc" && target_cpu == "arm64" &&
+      if (skia_feature_product == "pc" && target_cpu == "arm64" &&
           current_cpu == "arm64") {
         cflags += [ "-moutline-atomics" ]
       }
@@ -84,9 +83,11 @@ config("skia_public") {
   }
   if (is_ohos && (target_cpu == "arm" || target_cpu == "arm64")) {
     defines += [
+      "SKIA_OHOS",
       "SKIA_OHOS_FOR_OHOS_TRACE",
       "SKIA_OHOS_FOR_OHOS_LOG",
       "SKIA_OHOS_SHADER_REDUCE",
+      "SKIA_DFX_FOR_OHOS",
     ]
   }
   cflags_objcc = []
@@ -147,6 +148,12 @@ config("skia_public") {
   }
   if (is_win) {
     defines += [ "SK_BUILD_FOR_WIN" ]
+  }
+
+  # OH ISSUE: jpeg optimize
+  if (target_platform == "pc") {
+    defines += [ "TURBO_JPEG_HUFF_DECODE_OPT" ]
+    defines += [ "TURBO_PNG_MULTY_LINE_OPT" ]
   }
 }
 
@@ -1173,7 +1180,6 @@ optional("gpu") {
       if (use_oh_skia) {
         external_deps = [
           "egl:libEGL",
-          "hitrace:hitrace_meter",
           "opengles:libGLES",
         ]
         external_deps += [
@@ -1321,7 +1327,10 @@ optional("gpu") {
   }
 
   if (is_ohos) {
-    external_deps += [ "hilog:libhilog" ]
+    external_deps += [
+      "hilog:libhilog",
+      "hitrace:hitrace_meter",
+    ]
   }
 }
 
@@ -1598,7 +1607,11 @@ skia_component("skia") {
 
 if (use_oh_skia) {
   config("skia_config") {
-    include_dirs = [ "//third_party/skia" ]
+    include_dirs = [
+      "//third_party/skia",
+      "//third_party/skia/include/core",
+      "//third_party/skia/src/core",
+    ]
 
     defines = skia_common_defines
   }
@@ -1828,7 +1841,7 @@ if (use_oh_skia) {
         "-Wl,-Bsymbolic",
       ]
 
-      if (graphic_2d_feature_enable_pgo && enable_enhanced_opt) {
+      if (skia_feature_enable_pgo && enable_enhanced_opt) {
         ldflags += [
           "-Wl,-mllvm,-vectorization-bonus-factor=4",
           "-Wl,-mllvm,-vectorizer-min-trip-count=4",
@@ -1842,7 +1855,11 @@ if (use_oh_skia) {
     innerapi_tags = [ "platformsdk" ]
     subsystem_name = "thirdparty"
 
-    include_dirs = [ "${skia_third_party_dir}/externals/libgifcodec" ]
+    include_dirs = [
+      "${skia_third_party_dir}/externals/libgifcodec",
+      "${skia_third_party_dir}/include/core",
+      "${skia_third_party_dir}/src/core",
+    ]
     public_configs = [
       ":skia_public",
       ":skia_config",
@@ -2120,6 +2137,13 @@ if (use_oh_skia) {
 
     if (skia_include_multiframe_procs) {
       sources += [ "tools/SkSharingProc.cpp" ]
+    }
+    if (!build_ohos_sdk && !is_arkui_x) {
+      if (defined(defines)) {
+        defines += [ "NOT_BUILD_FOR_OHOS_SDK" ]
+      } else {
+        defines = [ "NOT_BUILD_FOR_OHOS_SDK" ]
+      }
     }
 
     if (defined(ddgr_ext_configs)) {

@@ -81,8 +81,6 @@ const int ERROR_CONFIG_FORMAT_NOT_SUPPORTED = 2; // the formation of configurati
 const int ERROR_CONFIG_INVALID_VALUE_TYPE = 4; // invalid value type in the configuration
 const int ERROR_TYPE_COUNT = 11;
 
-HmSymbolConfig_OHOS* HmSymbolConfig_OHOS::symbolSingleton_ = nullptr;
-
 static const std::map<std::string, AnimationType> ANIMATIONS_TYPES = {
     {"scale", AnimationType::SCALE_TYPE},
     {"appear", AnimationType::APPEAR_TYPE},
@@ -204,21 +202,8 @@ bool HmSymbolConfig_OHOS::GetHmSymbolEnable()
 
 HmSymbolConfig_OHOS* HmSymbolConfig_OHOS::GetInstance()
 {
-    static SkOnce once;
-    once([] {
-        if (symbolSingleton_ == nullptr) {
-            symbolSingleton_ = new HmSymbolConfig_OHOS();
-        }
-    });
-    return symbolSingleton_;
-}
-
-HmSymbolConfig_OHOS::~HmSymbolConfig_OHOS()
-{
-    if (symbolSingleton_ != nullptr) {
-        delete symbolSingleton_;
-        symbolSingleton_ = nullptr;
-    }
+    static HmSymbolConfig_OHOS singleton;
+    return &singleton;
 }
 
 SymbolLayersGroups HmSymbolConfig_OHOS::GetSymbolLayersGroups(uint16_t glyphId)

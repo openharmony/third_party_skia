@@ -30,7 +30,7 @@
 #include <string>
 #include <utility>
 #include "log.h"
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
 #include "parameter.h"
 #endif
 
@@ -100,6 +100,9 @@ Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             , fMaxIntrinsicWidth(0)
             , fMinIntrinsicWidth(0)
             , fLongestLine(0)
+#ifdef OHOS_SUPPORT
+            , fLongestLineWithIndent(0)
+#endif
             , fExceededMaxLines(0)
 { }
 
@@ -190,7 +193,9 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
             targetRun.fFont.GetMetrics(&newFontMetrics);
 #endif
 #ifdef OHOS_SUPPORT
-            metricsIncludeFontPadding(&newFontMetrics);
+            auto decompressFont = targetRun.fFont;
+            scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+            metricsIncludeFontPadding(&newFontMetrics, decompressFont);
 #endif
             fontMetrics.emplace_back(newFontMetrics);
         }
@@ -476,7 +481,15 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
 
+    #ifdef OHOS_SUPPORT
+    bool isMaxLinesZero = false;
+    #endif
     if (fParagraphStyle.getMaxLines() == 0) {
+        #ifdef OHOS_SUPPORT
+        if (fText.size() != 0) {
+            isMaxLinesZero = true;
+        }
+        #endif
         fText.reset();
     }
 
@@ -514,6 +527,11 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
             this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
             if (!this->shapeTextIntoEndlessLine()) {
                 this->resetContext();
+                #ifdef OHOS_SUPPORT
+                if (isMaxLinesZero) {
+                    fExceededMaxLines  = true;
+                }
+                #endif
                 // TODO: merge the two next calls - they always come together
                 this->resolveStrut();
                 this->computeEmptyMetrics();
@@ -551,16 +569,21 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->resolveStrut();
         this->computeEmptyMetrics();
         this->fLines.reset();
-
+#ifdef OHOS_SUPPORT
         // fast path
         if (!fHasLineBreaks &&
             !fHasWhitespacesInside &&
             fPlaceholders.size() == 1 &&
             (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= floorWidth - this->detectIndents(0))) {
             positionShapedTextIntoLine(floorWidth);
-        } else {
+        } else if (!paragraphCache->GetStoredLayout(*this)) {
             breakShapedTextIntoLines(floorWidth);
+            // text breaking did not go to fast path and we did not have cached layout
+            paragraphCache->SetStoredLayout(*this);
         }
+#else
+        this->breakShapedTextIntoLines(floorWidth);
+#endif
         fState = kLineBroken;
     }
 
@@ -642,6 +665,9 @@ void ParagraphImpl::resetContext() {
     fMaxIntrinsicWidth = 0;
     fMinIntrinsicWidth = 0;
     fLongestLine = 0;
+#ifdef OHOS_SUPPORT
+    fLongestLineWithIndent = 0;
+#endif
     fMaxWidthWithTrailingSpaces = 0;
     fExceededMaxLines = false;
 }
@@ -717,6 +743,7 @@ static bool is_ascii_7bit_space(int c) {
 #undef M
 }
 
+#ifdef OHOS_SUPPORT
 static std::vector<SkRange<SkUnichar>> CJK_UNICODE_SET = {
     SkRange<SkUnichar>(0x4E00, 0x9FFF),
     SkRange<SkUnichar>(0x3400, 0x4DBF),
@@ -749,7 +776,7 @@ constexpr SkUnichar COPYRIGHT_UNICODE = 0x00A9;
 struct UnicodeSet {
     std::unordered_set<SkUnichar> set_;
     explicit UnicodeSet(const std::vector<SkRange<SkUnichar>>& unicodeSet) {
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
         static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
         char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
         GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
@@ -772,6 +799,7 @@ struct UnicodeSet {
 
 static const UnicodeSet CJK_SET(CJK_UNICODE_SET);
 static const UnicodeSet WESTERN_SET(WESTERN_UNICODE_SET);
+#endif
 
 Cluster::Cluster(ParagraphImpl* owner,
                  RunIndex runIndex,
@@ -1285,14 +1313,25 @@ void ParagraphImpl::resolveStrut() {
 #ifndef USE_SKIA_TXT
     SkFont font(typefaces.front(), strutStyle.getFontSize());
     SkFontMetrics metrics;
+#ifdef OHOS_SUPPORT
+    SkFont compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.getMetrics(&metrics);
+    metricsIncludeFontPadding(&metrics, font);
+#else
     font.getMetrics(&metrics);
+#endif
 #else
     RSFont font(typefaces.front(), strutStyle.getFontSize(), 1, 0);
     RSFontMetrics metrics;
+#ifdef OHOS_SUPPORT
+    RSFont compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.GetMetrics(&metrics);
+    metricsIncludeFontPadding(&metrics, font);
+#else
     font.GetMetrics(&metrics);
 #endif
-#ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics);
 #endif
 
     if (strutStyle.getHeightOverride()) {
@@ -1982,7 +2021,9 @@ SkFontMetrics ParagraphImpl::measureText() {
     auto firstStr = text(fRuns.front().textRange());
     firstFont.getMetrics(&metrics);
 #ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics);
+    auto decompressFont = firstFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    metricsIncludeFontPadding(&metrics, decompressFont);
 #endif
     firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
     fGlyphsBoundsTop = firstBounds.top();
@@ -2021,7 +2062,9 @@ RSFontMetrics ParagraphImpl::measureText()
     auto firstStr = text(fRuns.front().textRange());
     firstFont.GetMetrics(&metrics);
 #ifdef OHOS_SUPPORT
-    metricsIncludeFontPadding(&metrics);
+    auto decompressFont = firstFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    metricsIncludeFontPadding(&metrics, decompressFont);
 #endif
     firstFont.MeasureText(firstStr.data(), firstStr.size(), RSDrawing::TextEncoding::UTF8, &firstBounds);
     fGlyphsBoundsTop = firstBounds.GetTop();

@@ -11,6 +11,7 @@
 #include "include/core/SkRect.h"
 #include "include/gpu/GrBackendDrawableInfo.h"
 #include "include/gpu/GrDirectContext.h"
+#include "src/core/SkTraceEvent.h"
 #include "src/gpu/GrBackendUtils.h"
 #include "src/gpu/GrDirectContextPriv.h"
 #include "src/gpu/GrOpFlushState.h"
@@ -23,15 +24,13 @@
 #include "src/gpu/vk/GrVkFramebuffer.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkImage.h"
+#include "src/gpu/vk/GrVkImageView.h"
 #include "src/gpu/vk/GrVkPipeline.h"
 #include "src/gpu/vk/GrVkRenderPass.h"
 #include "src/gpu/vk/GrVkRenderTarget.h"
 #include "src/gpu/vk/GrVkResourceProvider.h"
 #include "src/gpu/vk/GrVkSemaphore.h"
 #include "src/gpu/vk/GrVkTexture.h"
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -882,21 +881,31 @@ void GrVkOpsRenderPass::onExecuteDrawable(std::unique_ptr<SkDrawable::GpuDrawHan
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxy* proxy, const SkBlurArg& blurArg)
+void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxyView& proxyView, const SkBlurArg& blurArg)
 {
-    if (!proxy) {
+    if (!proxyView.proxy()) {
         return;
     }
 
-    GrVkImage* image = static_cast<GrVkTexture*>(proxy->peekTexture())->textureImage();
+    GrVkTexture* texture = static_cast<GrVkTexture*>(proxyView.proxy()->peekTexture());
+    if (!texture) {
+        return;
+    }
+    GrVkImage* image = texture->textureImage();
     if (!image) {
         return;
     }
 
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP, "DrawBlurImage");
-#endif
+    HITRACE_OHOS_NAME_ALWAYS("DrawBlurImage");
+    // reference textureop, resource's refcount should add.
+    fGpu->currentCommandBuffer()->addResource(image->textureView());
+    fGpu->currentCommandBuffer()->addResource(image->resource());
+    // OH ISSUE : fix hps blur, add GrSurface reference protection
+    fGpu->currentCommandBuffer()->addGrSurface(sk_ref_sp<const GrSurface>(texture));
+    SkOriginInfo originInfo {};
+    originInfo.imageOrigin = proxyView.origin();
+    originInfo.rtOrigin = fOrigin;
     fGpu->currentCommandBuffer()->drawBlurImage(fGpu, image, fFramebuffer->colorAttachment()->dimensions(),
-                                                fOrigin, blurArg);
+                                                originInfo, blurArg);
     return;
 }

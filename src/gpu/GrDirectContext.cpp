@@ -70,6 +70,41 @@ public:
 
 #define ASSERT_SINGLE_OWNER GR_ASSERT_SINGLE_OWNER(this->singleOwner())
 
+// OH ISSUE: MemoryCheckManager is used to count the memory in rs
+MemoryCheckManager& MemoryCheckManager::getInstance()
+{
+    static MemoryCheckManager instance;
+    return instance;
+}
+
+void MemoryCheckManager::setMemoryOverCheck(MemoryOverCheckCallback callback)
+{
+    if (fMemoryOverCheck == nullptr) {
+        fMemoryOverCheck = callback;
+    }
+}
+
+void MemoryCheckManager::setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback)
+{
+    if (fRemoveMemoryFromSnapshotInfo == nullptr) {
+        fRemoveMemoryFromSnapshotInfo = callback;
+    }
+}
+
+void MemoryCheckManager::memoryOverCheck(const int32_t pid, const size_t size)
+{
+    if (pid && fMemoryOverCheck) {
+        fMemoryOverCheck(pid, size, true);
+    }
+}
+
+void MemoryCheckManager::removeMemoryFromSnapshotInfo(const int32_t pid, const size_t size)
+{
+    if (pid && fRemoveMemoryFromSnapshotInfo) {
+        fRemoveMemoryFromSnapshotInfo(pid, size);
+    }
+}
+
 GrDirectContext::DirectContextID GrDirectContext::DirectContextID::Next() {
     static std::atomic<uint32_t> nextID{1};
     uint32_t id;
@@ -578,6 +613,29 @@ std::set<GrGpuResourceTag> GrDirectContext::getAllGrGpuResourceTags() const {
     return {};
 }
 
+void GrDirectContext::vmaDefragment()
+{
+    if (fGpu) {
+        fGpu->vmaDefragment();
+    }
+}
+
+void GrDirectContext::dumpVmaStats(SkString *out)
+{
+    if (out == nullptr) {
+        return;
+    }
+    if (fGpu) {
+        fGpu->dumpVmaStats(out);
+    }
+}
+
+// OH ISSUE: set callback for memory check
+void GrDirectContext::setMemoryOverCheck(MemoryOverCheckCallback callback)
+{
+    MemoryCheckManager::getInstance().setMemoryOverCheck(callback);
+}
+
 void GrDirectContext::beginFrame()
 {
     if (fResourceCache) {
@@ -619,7 +677,6 @@ void GrDirectContext::setGpuCacheSuppressWindowSwitch(bool enabled)
     fResourceCache->setGpuCacheSuppressWindowSwitch(enabled);
 }
 
-
 void GrDirectContext::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived)
 {
     ASSERT_SINGLE_OWNER
@@ -629,6 +686,12 @@ void GrDirectContext::suppressGpuCacheBelowCertainRatio(const std::function<bool
     }
 
     fResourceCache->suppressGpuCacheBelowCertainRatio(nextFrameHasArrived);
+}
+
+// OH ISSUE: set callback for memory count
+void GrDirectContext::setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback)
+{
+    MemoryCheckManager::getInstance().setRemoveMemoryFromSnapshotInfo(callback);
 }
 
 GrBackendTexture GrDirectContext::createBackendTexture(int width, int height,

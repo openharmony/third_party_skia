@@ -18,6 +18,7 @@
 #include "GrVkCommandBuffer.h"
 #include "GrVkGpu.h"
 #include "include/core/SkExecutor.h"
+#include "src/core/SkTraceEvent.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkImageView.h"
 #include "src/gpu/vk/GrVkMemory.h"
@@ -28,7 +29,6 @@
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
 #include <parameter.h>
 #include <parameters.h>
-#include "hitrace_meter.h"
 #include "param/sys_param.h"
 #endif
 
@@ -287,6 +287,9 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
         , fMutableState(std::move(mutableState))
         , fFramebufferView(std::move(framebufferView))
         , fTextureView(std::move(textureView))
+#ifdef SKIA_OHOS
+        , fBudgeted(budgeted)
+#endif
         , fIsBorrowed(false) {
     this->init(gpu, false);
     this->registerWithCache(budgeted);
@@ -597,9 +600,7 @@ void GrVkImage::PurgeAllocatedTextureBetweenFrames() {
     if (isFoldScreenFlag) {
         return;
     }
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PurgeAllocatedTextureBetweenFrames");
-#endif
+    HITRACE_OHOS_NAME_ALWAYS("PurgeAllocatedTextureBetweenFrames");
     ImagePool &imagePool = ImagePool::getInstance();
     GrVkGpu *gpu = imagePool.getGpu();
     if (!gpu) {
@@ -633,9 +634,7 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
             if (!available) {
                 continue;
             }
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Hit pre-allocated image cache");
-#endif
+            HITRACE_OHOS_NAME_ALWAYS("Hit pre-allocated image cache");
             available = false;
             q.availabledCacheCount--;
             *info = cachedInfo;
@@ -712,7 +711,8 @@ bool GrVkImage::InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrV
                                       ? GrMemoryless::kYes
                                       : GrMemoryless::kNo;
     GrVkAlloc alloc;
-    if (!GrVkMemory::AllocAndBindImageMemory(gpu, image, memoryless, &alloc) ||
+    if (!GrVkMemory::AllocAndBindImageMemory(gpu, image, memoryless, &alloc,
+        imageDesc.fWidth * imageDesc.fHeight * 4) ||
         (memoryless == GrMemoryless::kYes &&
          !SkToBool(alloc.fFlags & GrVkAlloc::kLazilyAllocated_Flag))) {
         VK_CALL(gpu, DestroyImage(gpu->device(), image, nullptr));
@@ -798,9 +798,7 @@ void GrVkImage::Resource::freeGPUData() const {
             if (!(cachedInfo.fImage == this->fImage && cachedInfo.fAlloc == this->fAlloc)) {
                 continue;
             }
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "Back pre-allocated image cache");
-#endif
+            HITRACE_OHOS_NAME_ALWAYS("Back pre-allocated image cache");
             if (q.availabledCacheCount < q.cachePoolSize) {
                 available = true;
                 cached = true;

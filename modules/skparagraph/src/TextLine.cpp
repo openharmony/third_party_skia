@@ -24,7 +24,8 @@
 #include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skshaper/include/SkShaper.h"
-#ifdef TXT_AUTO_SPACING
+#include "src/Run.h"
+#ifdef TXT_USE_PARAMETER
 #include "parameter.h"
 #endif
 #include "log.h"
@@ -150,7 +151,13 @@ TextLine::TextLine(ParagraphImpl* owner,
         if (b->fStyle.hasBackground()) {
             fHasBackground = true;
         }
+
+#ifdef OHOS_SUPPORT
+        if (b->fStyle.getDecorationType() != TextDecoration::kNoDecoration &&
+            b->fStyle.getDecorationThicknessMultiplier() > 0) {
+#else
         if (b->fStyle.getDecorationType() != TextDecoration::kNoDecoration) {
+#endif
             fHasDecorations = true;
         }
         if (b->fStyle.getShadowNumber() > 0) {
@@ -195,6 +202,8 @@ TextLine::TextLine(ParagraphImpl* owner,
     }
 
     fTextRangeReplacedByEllipsis = EMPTY_RANGE;
+    fEllipsisIndex = EMPTY_INDEX;
+    fLastClipRunLtr = false;
 }
 
 void TextLine::paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset) {
@@ -490,8 +499,9 @@ SkScalar TextLine::calculateSpacing(const Cluster prevCluster, const Cluster cur
     return 0;
 }
 
+#ifdef OHOS_SUPPORT
 SkScalar TextLine::autoSpacing() {
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
     static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
     char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
     GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
@@ -514,6 +524,7 @@ SkScalar TextLine::autoSpacing() {
     this->fAdvance.fX += spacing;
     return spacing;
 }
+#endif
 
 void TextLine::scanStyles(StyleType styleType, const RunStyleVisitor& visitor) {
     if (this->empty()) {
@@ -613,7 +624,11 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
 #endif
 
     record.fOffset = SkPoint::Make(this->offset().fX + context.fTextShift,
+#ifdef OHOS_SUPPORT
+        this->offset().fY + correctedBaseline - (context.run ? context.run->fCompressionBaselineShift : 0));
+#else
                                    this->offset().fY + correctedBaseline);
+#endif
 #ifdef OHOS_SUPPORT
 #ifndef USE_SKIA_TXT
     SkFont font;
@@ -1402,6 +1417,29 @@ void TextLine::iterateThroughClustersInGlyphsOrder(bool reversed,
     });
 }
 
+#ifdef OHOS_SUPPORT
+void TextLine::computeNextPaintGlyphRange(ClipContext& context,
+    const TextRange& lastGlyphRange, StyleType styleType) const
+{
+    if (styleType != StyleType::kForeground) {
+        return;
+    }
+    TextRange curGlyphRange = TextRange(context.pos, context.pos + context.size);
+    auto intersect = intersected(lastGlyphRange, curGlyphRange);
+    if (intersect == EMPTY_TEXT || (intersect.start != curGlyphRange.start && intersect.end != curGlyphRange.end)) {
+        return;
+    }
+    if (intersect.start == curGlyphRange.start) {
+        curGlyphRange = TextRange(intersect.end, curGlyphRange.end);
+    } else if (intersect.end == curGlyphRange.end) {
+        curGlyphRange = TextRange(curGlyphRange.start, intersect.start);
+    }
+
+    context.pos = curGlyphRange.start;
+    context.size = curGlyphRange.width();
+}
+#endif
+
 SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment,
                                                    const Run* run,
                                                    SkScalar runOffset,
@@ -1426,11 +1464,20 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         // Extra efforts to get the ellipsis text style
         ClipContext clipContext = correctContext(run->textRange(), 0.0f);
         for (BlockIndex index = fBlockRange.start; index < fBlockRange.end; ++index) {
-           auto block = fOwner->styles().begin() + index;
+            auto block = fOwner->styles().begin() + index;
+#ifdef OHOS_SUPPORT
+            TextRange intersect = intersected(block->fRange,
+                TextRange(fEllipsis->textRange().start - 1, fEllipsis->textRange().end));
+            if (intersect.width() > 0) {
+                visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
+                return run->advance().fX;
+            }
+#else
            if (block->fRange.start >= run->fClusterStart && block->fRange.end < run->fClusterStart) {
                visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
                return run->advance().fX;
            }
+#endif
         }
         SkASSERT(false);
     }
@@ -1453,7 +1500,9 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
     size_t size = 0;
     const TextStyle* prevStyle = nullptr;
     SkScalar textOffsetInRun = 0;
-
+#ifdef OHOS_SUPPORT
+    TextRange lastGlyphRange = EMPTY_TEXT;
+#endif
     const BlockIndex blockRangeSize = fBlockRange.end - fBlockRange.start;
     for (BlockIndex index = 0; index <= blockRangeSize; ++index) {
 
@@ -1509,10 +1558,20 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         if (styleType == StyleType::kBackground &&
             prevStyle->getBackgroundRect() != temp &&
             prevStyle->getHeight() != 0) {
+#ifdef OHOS_SUPPORT
+                clipContext.clip.fTop = run->fFontMetrics.fAscent + this->baseline();
+#else
                 clipContext.clip.fTop = run->fFontMetrics.fAscent - run->fCorrectAscent;
+#endif
                 clipContext.clip.fBottom = clipContext.clip.fTop + run->fFontMetrics.fDescent -
                     run->fFontMetrics.fAscent;
         }
+#ifdef OHOS_SUPPORT
+        computeNextPaintGlyphRange(clipContext, lastGlyphRange, styleType);
+        if (clipContext.size != 0) {
+            lastGlyphRange = TextRange(clipContext.pos, clipContext.pos + clipContext.size);
+        }
+#endif
         visitor(runStyleTextRange, *prevStyle, clipContext);
 
         // Start all over again
@@ -1689,7 +1748,9 @@ LineMetrics TextLine::getMetrics() const {
             run->fFont.GetMetrics(&fontMetrics);
 #endif
 #ifdef OHOS_SUPPORT
-            metricsIncludeFontPadding(&fontMetrics);
+            auto decompressFont = run->fFont;
+            scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+            metricsIncludeFontPadding(&fontMetrics, decompressFont);
 #endif
             StyleMetrics styleMetrics(&style, fontMetrics);
             result.fLineMetrics.emplace(textRange.start, styleMetrics);
@@ -2147,6 +2208,9 @@ TextLine TextLine::CloneSelf()
 
     textLine.roundRectAttrs = this->roundRectAttrs;
     textLine.fTextBlobCache = this->fTextBlobCache;
+    textLine.fTextRangeReplacedByEllipsis = this->fTextRangeReplacedByEllipsis;
+    textLine.fEllipsisIndex = this->fEllipsisIndex;
+    textLine.fLastClipRunLtr = this->fLastClipRunLtr;
     return textLine;
 }
 }  // namespace textlayout

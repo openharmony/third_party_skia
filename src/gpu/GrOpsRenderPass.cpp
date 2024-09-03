@@ -59,8 +59,8 @@ void GrOpsRenderPass::executeDrawable(std::unique_ptr<SkDrawable::GpuDrawHandler
     this->onExecuteDrawable(std::move(drawable));
 }
 
-void GrOpsRenderPass::drawBlurImage(const GrSurfaceProxy* proxy, SkBlurArg& blurArg) {
-    this->onDrawBlurImage(proxy, blurArg);
+void GrOpsRenderPass::drawBlurImage(const GrSurfaceProxyView& proxyView, SkBlurArg& blurArg) {
+    this->onDrawBlurImage(proxyView, blurArg);
 }
 
 void GrOpsRenderPass::bindPipeline(const GrProgramInfo& programInfo, const SkRect& drawBounds) {
