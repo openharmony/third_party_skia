@@ -31,6 +31,10 @@
 #include "src/gpu/GrTracing.h"
 #include "src/gpu/SkGr.h"
 
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+#include <parameters.h>
+#endif
+
 DECLARE_SKMESSAGEBUS_MESSAGE(GrUniqueKeyInvalidatedMessage, uint32_t, true);
 
 DECLARE_SKMESSAGEBUS_MESSAGE(GrTextureFreedMessage, GrDirectContext::DirectContextID, true);
@@ -124,9 +128,17 @@ GrResourceCache::GrResourceCache(GrSingleOwner* singleOwner,
         , fSingleOwner(singleOwner) {
     SkASSERT(owningContextID.isValid());
     SkASSERT(familyID != SK_InvalidUniqueID);
-
-    static int overtimeDuration = std::atoi(OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_overtime", "600").c_str());
-    static int maxBytesRate = std::atof(OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_max_rate", "0.9").c_str());
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+    static int overtimeDuration = std::atoi(
+            OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_overtime", "600")
+                    .c_str());
+    static double maxBytesRate = std::atof(
+            OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_max_rate", "0.9")
+                    .c_str());
+#else
+    static int overtimeDuration = 600;
+    static double maxBytesRate = 0.9;
+#endif
     fMaxBytesRate = maxBytesRate;
     fOvertimeDuration = overtimeDuration;
 }
