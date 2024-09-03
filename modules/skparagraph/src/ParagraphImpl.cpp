@@ -1112,7 +1112,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto spacing = line.autoSpacing();
     auto longestLine = std::max(run.advance().fX, advance.fX) + spacing;
     setSize(advance.fY, maxWidth, longestLine);
-    setLongestLineWithIndent(std::min(longestLine + offsetX, maxWidth));
+    setLongestLineWithIndent(longestLine + offsetX);
     setIntrinsicSize(run.advance().fX, advance.fX,
                      fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
                      fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
@@ -1148,10 +1148,9 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
                 auto spacing = line.autoSpacing();
-                auto longestLine = std::max(line.width(), widthWithSpaces) + spacing;
+                auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces()) + spacing;
                 fLongestLine = std::max(fLongestLine, longestLine);
-                fLongestLineWithIndent =
-                        std::min(std::max(fLongestLineWithIndent, longestLine + indent), maxWidth);
+                fLongestLineWithIndent = std::max(fLongestLineWithIndent, longestLine + indent);
             });
     setSize(textWrapper.height(), maxWidth, fLongestLine);
     setIntrinsicSize(textWrapper.maxIntrinsicWidth(), textWrapper.minIntrinsicWidth(),
