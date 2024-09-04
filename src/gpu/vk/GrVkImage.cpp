@@ -238,6 +238,8 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
 #endif
         , fIsBorrowed(false) {
     this->init(gpu, false);
+    this->setRealAlloc(true); // OH ISSUE: set real alloc flag
+    this->setRealAllocSize(dimensions.height() * dimensions.width() * 4); // OH ISSUE: set real alloc size
     this->registerWithCache(budgeted);
 }
 

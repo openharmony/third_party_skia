@@ -114,6 +114,13 @@ public:
      */
     size_t getResourceBytes() const { return fBytes; }
 
+#ifdef SKIA_DFX_FOR_OHOS
+    void addAllocImageBytes(size_t bytes) { fAllocImageBytes += bytes; }
+    void removeAllocImageBytes(size_t bytes) { fAllocImageBytes -= bytes; }
+    void addAllocBufferBytes(size_t bytes) { fAllocBufferBytes += bytes; }
+    void removeAllocBufferBytes(size_t bytes) { fAllocBufferBytes -= bytes; }
+#endif
+
     /**
      * Returns the number of bytes held by unlocked resources which are available for purging.
      */
@@ -317,6 +324,8 @@ public:
         size_t fPurgeableBytes;
         int fBudgetedCount;
         size_t fBudgetedBytes;
+        size_t fAllocImageBytes;
+        size_t fAllocBufferBytes;
     };
 #endif
 #endif
@@ -385,6 +394,9 @@ private:
 #endif
     std::string cacheInfoPurgeableQueue();
     std::string cacheInfoNoPurgeableQueue();
+    size_t cacheInfoRealAllocSize();
+    std::string cacheInfoRealAllocQueue();
+    std::string realBytesOfPid();
     void updatePurgeableWidMap(GrGpuResource* resource,
                      std::map<uint32_t, std::string>& nameInfoWid,
                      std::map<uint32_t, int>& sizeInfoWid,
@@ -395,6 +407,19 @@ private:
                      std::map<uint32_t, int>& sizeInfoPid,
                      std::map<uint32_t, int>& countInfoPid);
     void updatePurgeableFidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoFid,
+                     std::map<uint32_t, int>& sizeInfoFid,
+                     std::map<uint32_t, int>& countInfoFid);
+    void updateRealAllocWidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoWid,
+                     std::map<uint32_t, int>& sizeInfoWid,
+                     std::map<uint32_t, int>& pidInfoWid,
+                     std::map<uint32_t, int>& countInfoWid);
+    void updateRealAllocPidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoPid,
+                     std::map<uint32_t, int>& sizeInfoPid,
+                     std::map<uint32_t, int>& countInfoPid);
+    void updateRealAllocFidMap(GrGpuResource* resource,
                      std::map<uint32_t, std::string>& nameInfoFid,
                      std::map<uint32_t, int>& sizeInfoFid,
                      std::map<uint32_t, int>& countInfoFid);
@@ -499,6 +524,10 @@ private:
     // our current stats for all resources
     SkDEBUGCODE(int                     fCount = 0;)
     size_t                              fBytes = 0;
+#ifdef SKIA_DFX_FOR_OHOS
+    size_t                              fAllocImageBytes = 0;
+    size_t                              fAllocBufferBytes = 0;
+#endif
 
     // our current stats for resources that count against the budget
     int                                 fBudgetedCount = 0;

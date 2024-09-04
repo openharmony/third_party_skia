@@ -32,6 +32,8 @@ GrVkBuffer::GrVkBuffer(GrVkGpu* gpu,
     // We always require dynamic buffers to be mappable
     SkASSERT(accessPattern != kDynamic_GrAccessPattern || this->isVkMappable());
     SkASSERT(bufferType != GrGpuBufferType::kUniform || uniformDescriptorSet);
+    this->setRealAlloc(true); // OH ISSUE: set real alloc flag
+    this->setRealAllocSize(sizeInBytes); // OH ISSUE: set real alloc size
     this->registerWithCache(SkBudgeted::kYes);
 }
 
@@ -133,7 +135,11 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
         return nullptr;
     }
 
+#ifdef SKIA_DFX_FOR_OHOS
+    if (!GrVkMemory::AllocAndBindBufferMemory(gpu, buffer, allocUsage, &alloc, size)) {
+#else
     if (!GrVkMemory::AllocAndBindBufferMemory(gpu, buffer, allocUsage, &alloc)) {
+#endif
         VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
         return nullptr;
     }

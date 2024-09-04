@@ -210,6 +210,13 @@ public:
     void vmaDefragment() override { fMemoryAllocatorCacheImage->vmaDefragment(); }
     void dumpVmaStats(SkString *out) override;
 
+#ifdef SKIA_DFX_FOR_OHOS
+    void addAllocImageBytes(size_t bytes);
+    void removeAllocImageBytes(size_t bytes);
+    void addAllocBufferBytes(size_t bytes);
+    void removeAllocBufferBytes(size_t bytes);
+#endif
+
 private:
     enum SyncQueue {
         kForce_SyncQueue,
