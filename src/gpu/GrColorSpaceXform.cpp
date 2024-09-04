@@ -82,7 +82,8 @@ bool GrColorSpaceXformEffect::onIsEqual(const GrFragmentProcessor& s) const {
     return GrColorSpaceXform::Equals(fColorXform.get(), other.fColorXform.get());
 }
 
-SkString GrColorSpaceXformEffect::getShaderDfxInfo() const {
+SkString GrColorSpaceXformEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrColorSpaceXformEffect_%d", GrColorSpaceXform::XformKey(fColorXform.get()));
     return format;

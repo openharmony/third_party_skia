@@ -5,8 +5,8 @@
 #include "modules/skparagraph/include/FontCollection.h"
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
-#include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/include/TextLineBase.h"
+#include "modules/skparagraph/include/TextStyle.h"
 #include <unordered_set>
 #include "drawing.h"
 
@@ -42,7 +42,8 @@ public:
 
     SkScalar getLongestLineWithIndent() { return fLongestLineWithIndent; }
 
-    void setLongestLineWithIndent(SkScalar longestLineWithIndent) {
+    void setLongestLineWithIndent(SkScalar longestLineWithIndent)
+    {
         fLongestLineWithIndent = longestLineWithIndent;
     }
 
