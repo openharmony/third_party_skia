@@ -288,7 +288,8 @@ std::unique_ptr<GrFragmentProcessor::ProgramImpl> GrMorphologyEffect::onMakeProg
     return std::make_unique<Impl>();
 }
 
-SkString GrMorphologyEffect::getShaderDfxInfo() const {
+SkString GrMorphologyEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrMorphologyEffect_%d_%d_%d_%d", fRadius, fType, fDirection, fUseRange);
     return format;

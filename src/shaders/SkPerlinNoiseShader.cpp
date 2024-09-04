@@ -896,7 +896,8 @@ void GrPerlinNoise2Effect::Impl::onSetData(const GrGLSLProgramDataManager& pdman
     }
 }
 
-SkString GrPerlinNoise2Effect::getShaderDfxInfo() const {
+SkString GrPerlinNoise2Effect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrPerlinNoise2Effect_%d_%d_%d", fNumOctaves, fType, fStitchTiles);
     return format;

@@ -45,7 +45,8 @@ private:
     using INHERITED = GrXferProcessor;
 };
 
-SkString CoverageSetOpXP::getShaderDfxInfo() const {
+SkString CoverageSetOpXP::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_CoverageSetOpXP_%d", fInvertCoverage);
     return format;

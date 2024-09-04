@@ -96,6 +96,7 @@ static constexpr uint32_t kTAG_cicp_bytes = 12;
 
 static constexpr uint32_t kICCProfileSize = kTAG_cprt_Offset + kTAG_cprt_Bytes;
 static constexpr uint32_t kICCProfileSizeWithCicp = kICCProfileSize + kTAG_cicp_bytes;
+
 static constexpr int TOXYZ_MATRIX_COL_ZERO = 0;
 static constexpr int TOXYZ_MATRIX_COL_ONE = 1;
 static constexpr int TOXYZ_MATRIX_COL_TWO = 2;
@@ -389,7 +390,8 @@ sk_sp<SkData> SkWriteICCProfileWithCicp(const skcms_TransferFunction& fn,
     pProfile += sizeof(kICCTagTable);
 
     // Write profile description tag
-    if (memcpy_s(pProfile, sizeof(kDescriptionTagHeader), kDescriptionTagHeader, sizeof(kDescriptionTagHeader)) != EOK) {
+    if (memcpy_s(pProfile, sizeof(kDescriptionTagHeader), kDescriptionTagHeader,
+        sizeof(kDescriptionTagHeader)) != EOK) {
         return nullptr;
     }
     pProfile += sizeof(kDescriptionTagHeader);
@@ -427,7 +429,7 @@ sk_sp<SkData> SkWriteICCProfileWithCicp(const skcms_TransferFunction& fn,
         return nullptr;
     }
     pProfile += sizeof(kCopyrightTagBody);
-    
+
     // Write cicp tag
     write_cicp_tag((uint32_t*) pProfile, cicp);
     pProfile += kTAG_cicp_bytes;
