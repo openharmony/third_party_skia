@@ -85,7 +85,8 @@ GrFPResult GrConvexPolyEffect::Make(std::unique_ptr<GrFragmentProcessor> inputFP
 
 GrConvexPolyEffect::~GrConvexPolyEffect() {}
 
-SkString GrConvexPolyEffect::getShaderDfxInfo() const {
+SkString GrConvexPolyEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrConvexPolyEffect_%d_%d", fEdgeCount, fEdgeType);
     return format;

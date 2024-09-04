@@ -300,7 +300,8 @@ std::unique_ptr<GrFragmentProcessor> GrMatrixConvolutionEffect::clone() const {
     return std::unique_ptr<GrFragmentProcessor>(new GrMatrixConvolutionEffect(*this));
 }
 
-SkString GrMatrixConvolutionEffect::getShaderDfxInfo() const {
+SkString GrMatrixConvolutionEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrMatrixConvolutionEffect_%d_%d_%d",
         fKernel.size().width(), fKernel.size().height(), fConvolveAlpha);
