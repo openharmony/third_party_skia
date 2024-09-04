@@ -337,6 +337,7 @@ void GrVkBuffer::vkRelease() {
     SkASSERT(fBuffer);
     SkASSERT(fAlloc.fMemory && fAlloc.fBackendMemory);
 
+    // OH ISSUE: asyn memory reclaimer
     auto reclaimer = this->getVkGpu()->memoryReclaimer();
     if (!reclaimer || !reclaimer->addMemoryToWaitQueue(this->getVkGpu(), fAlloc, fBuffer)) {
         DestroyAndFreeBufferMemory(this->getVkGpu(), fAlloc, fBuffer);

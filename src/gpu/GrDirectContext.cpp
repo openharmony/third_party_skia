@@ -636,6 +636,7 @@ void GrDirectContext::setMemoryOverCheck(MemoryOverCheckCallback callback)
     MemoryCheckManager::getInstance().setMemoryOverCheck(callback);
 }
 
+// OH ISSUE: provide intra frame and inter frame identification
 void GrDirectContext::beginFrame()
 {
     if (fResourceCache) {
@@ -643,6 +644,7 @@ void GrDirectContext::beginFrame()
     }
 }
 
+// OH ISSUE: provide intra frame and inter frame identification
 void GrDirectContext::endFrame()
 {
     if (fResourceCache) {
@@ -650,6 +652,7 @@ void GrDirectContext::endFrame()
     }
 }
 
+// OH ISSUE: provide inter frame low watermark switch and interface
 void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
 {
 #ifdef SK_VULKAN
@@ -658,6 +661,7 @@ void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
 #endif
 }
 
+// OH ISSUE: provide inter frame low watermark switch and interface
 void GrDirectContext::flushGpuMemoryInWaitQueue()
 {
 #ifdef SK_VULKAN
@@ -666,6 +670,7 @@ void GrDirectContext::flushGpuMemoryInWaitQueue()
 #endif
 }
 
+// OH ISSUE: provide intra frame release duration switch and interface
 void GrDirectContext::setGpuCacheSuppressWindowSwitch(bool enabled)
 {
     ASSERT_SINGLE_OWNER
@@ -677,6 +682,7 @@ void GrDirectContext::setGpuCacheSuppressWindowSwitch(bool enabled)
     fResourceCache->setGpuCacheSuppressWindowSwitch(enabled);
 }
 
+// OH ISSUE: provide intra frame release duration switch and interface
 void GrDirectContext::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived)
 {
     ASSERT_SINGLE_OWNER

@@ -185,6 +185,7 @@ public:
 
     /** Purges resources to become under budget and processes resources with invalidated unique
         keys. */
+    // OH ISSUE: this function can interrupt
     void purgeAsNeeded(const std::function<bool(void)>& nextFrameHasArrived = nullptr);
 
     // Purge unlocked resources. If 'scratchResourcesOnly' is true the purgeable resources
@@ -213,6 +214,7 @@ public:
      */
     bool purgeToMakeHeadroom(size_t desiredHeadroomBytes);
 
+    // OH ISSUE: adjust the value when there is an interrupt
     bool overBudget(const std::function<bool(void)>& nextFrameHasArrived = nullptr) const 
     {
         return fBudgetedBytes > (nextFrameHasArrived ? size_t(fMaxBytesRate * fMaxBytes) : fMaxBytes);
@@ -314,21 +316,26 @@ public:
 #endif
 #endif
 
+    // OH ISSUE: allow access to release interface
     bool allowToPurge(const std::function<bool(void)>& nextFrameHasArrived);
 
+    // OH ISSUE: intra frame and inter frame identification
     void beginFrame() {
         fFrameInfo.frameCount++;
         fFrameInfo.duringFrame = 1;
     }
 
+    // OH ISSUE: intra frame and inter frame identification
     void endFrame() {
         fFrameInfo.duringFrame = 0;
     }
 
+    // OH ISSUE: suppress release window
     void setGpuCacheSuppressWindowSwitch(bool enabled) {
         fEnabled = enabled;
     }
 
+    // OH ISSUE: suppress release window
     void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
 
 private:

@@ -920,11 +920,16 @@ public:
     void setMemoryOverCheck(MemoryOverCheckCallback callback);
     void setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback);
 
+    // OH ISSUE: intra frame and inter frame identification
     void beginFrame();
     void endFrame();
-    void setGpuCacheSuppressWindowSwitch(bool enabled);
+    
+    // OH ISSUE: asyn memory reclaimer
     void setGpuMemoryAsyncReclaimerSwitch(bool enabled);
     void flushGpuMemoryInWaitQueue();
+
+    // OH ISSUE: suppress release window
+    void setGpuCacheSuppressWindowSwitch(bool enabled);
     void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
 
 protected:

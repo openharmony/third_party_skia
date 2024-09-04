@@ -815,9 +815,11 @@ void GrVkImage::Resource::freeGPUData() const {
     }
     freeGPUDataInner();
 }
+
 void GrVkImage::Resource::freeGPUDataInner() const {
     this->invokeReleaseProc();
 
+    // OH ISSUE: asyn memory reclaimer
     auto reclaimer = this->getVkGpu()->memoryReclaimer();
     if (reclaimer && reclaimer->addMemoryToWaitQueue(fGpu, fAlloc, fImage)) {
         return;
