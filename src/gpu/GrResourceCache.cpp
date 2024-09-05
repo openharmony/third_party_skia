@@ -487,7 +487,12 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
     fBytes += size;
 
     // OH ISSUE: memory count
-    MemoryCheckManager::getInstance().memoryOverCheck(resource->getResourceTag().fPid, size);
+    auto pid = resource->getResourceTag().fPid;
+    if (pid) {
+        auto& pidSize = fBytesOfPid[pid];
+        pidSize += size;
+        fUpdatedBytesOfPid[pid] = pidSize;
+    }
 
 #if GR_CACHE_STATS
     fHighWaterCount = std::max(this->getResourceCount(), fHighWaterCount);
@@ -541,7 +546,15 @@ void GrResourceCache::removeResource(GrGpuResource* resource) {
     fBytes -= size;
 
     // OH ISSUE: memory count
-    MemoryCheckManager::getInstance().removeMemoryFromSnapshotInfo(resource->getResourceTag().fPid, size);
+    auto pid = resource->getResourceTag().fPid;
+    if (pid) {
+        auto& pidSize = fBytesOfPid[pid];
+        pidSize -= size;
+        fUpdatedBytesOfPid[pid] = pidSize;
+        if (pidSize == 0) {
+            fBytesOfPid.erase(pid);
+        }
+    }
 
     if (GrBudgetedType::kBudgeted == resource->resourcePriv().budgetedType()) {
         --fBudgetedCount;
@@ -696,6 +709,30 @@ std::set<GrGpuResourceTag> GrResourceCache::getAllGrGpuResourceTags() const {
         result.insert(tag);
     }
     return result;
+}
+
+// OH ISSUE: get the memory information of the updated pid.
+void GrResourceCache::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out)
+{
+    fUpdatedBytesOfPid.swap(out);
+}
+
+// OH ISSUE: change the fbyte when the resource tag changes.
+void GrResourceCache::changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes)
+{
+    if (beforePid) {
+        auto& pidSize = fBytesOfPid[beforePid];
+        pidSize -= bytes;
+        fUpdatedBytesOfPid[beforePid] = pidSize;
+        if (pidSize == 0) {
+            fBytesOfPid.erase(beforePid);
+        }
+    }
+    if (afterPid) {
+        auto& size = fBytesOfPid[afterPid];
+        size += bytes;
+        fUpdatedBytesOfPid[afterPid] = size;
+    }
 }
 
 void GrResourceCache::refResource(GrGpuResource* resource) {
