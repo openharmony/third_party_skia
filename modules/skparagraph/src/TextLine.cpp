@@ -1674,8 +1674,8 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
     }
 
     if (!includingGhostSpaces && compareRound(totalWidth, this->width(), fOwner->getApplyRoundingHack()) != 0) {
-        // This is a very important assert!
-        // It asserts that 2 different ways of calculation come with the same results
+    // This is a very important assert!
+    // It asserts that 2 different ways of calculation come with the same results
         SkDebugf("ASSERT: %f != %f\n", totalWidth, this->width());
         SkASSERT(false);
     }
