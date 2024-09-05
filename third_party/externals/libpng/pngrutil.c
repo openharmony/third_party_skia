@@ -302,7 +302,6 @@ png_read_buffer(png_structrp png_ptr, png_alloc_size_t new_size, int warn)
    if (buffer != NULL && new_size > png_ptr->read_buffer_size)
    {
       png_ptr->read_buffer = NULL;
-      png_ptr->read_buffer = NULL;
       png_ptr->read_buffer_size = 0;
       png_free(png_ptr, buffer);
       buffer = NULL;
@@ -4135,7 +4134,12 @@ png_read_filter_row(png_structrp pp, png_row_infop row_info, png_bytep row,
     * PNG_FILTER_OPTIMIZATIONS to a function that overrides the generic
     * implementations.  See png_init_filter_functions above.
     */
+#ifdef PNG_MULTY_LINE_ENABLE
+   // OH ISSUE: png optimize
+   if (filter > PNG_FILTER_VALUE_NONE && filter < PNG_FILTER_VALUE_LAST_X2)
+#else
    if (filter > PNG_FILTER_VALUE_NONE && filter < PNG_FILTER_VALUE_LAST)
+#endif
    {
       if (pp->read_filter[0] == NULL)
          png_init_filter_functions(pp);
@@ -4607,7 +4611,24 @@ defined(PNG_USER_TRANSFORM_PTR_SUPPORTED)
              row_bytes + 48);
 
       else
+      {
+#ifdef PNG_MULTY_LINE_ENABLE
+         // OH ISSUE: png optimize
+         png_uint_32 row_num = 1;
+         if (png_ptr->bit_depth == 8 && // 8 is 1 pixel 8 bytes
+             (png_ptr->transformations & PNG_CHECK) == 0)
+         {
+            row_num = png_ptr->height < PNG_INFLATE_ROWS ?
+               png_ptr->height : PNG_INFLATE_ROWS;
+         }
+         png_ptr->big_row_buf = (png_bytep)png_malloc(
+            png_ptr, row_bytes * row_num + 48); // 48 is boundary protection
+         if (png_ptr->big_row_buf == NULL)
+            png_error(png_ptr, "png_malloc failed");
+#else
          png_ptr->big_row_buf = (png_bytep)png_malloc(png_ptr, row_bytes + 48);
+#endif
+      }
 
       png_ptr->big_prev_row = (png_bytep)png_malloc(png_ptr, row_bytes + 48);
 

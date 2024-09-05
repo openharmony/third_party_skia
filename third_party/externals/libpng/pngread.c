@@ -54,7 +54,12 @@ png_create_read_struct_2,(png_const_charp user_png_ver, png_voidp error_ptr,
        * required (it will be zero in a write structure.)
        */
 #     ifdef PNG_SEQUENTIAL_READ_SUPPORTED
+#ifdef PNG_MULTY_LINE_ENABLE
+         // OH ISSUE: png optimize
+         png_ptr->IDAT_read_size = PNG_INFLATE_MAX_SIZE;
+#else
          png_ptr->IDAT_read_size = PNG_IDAT_READ_SIZE;
+#endif
 #     endif
 
 #     ifdef PNG_BENIGN_READ_ERRORS_SUPPORTED
@@ -684,6 +689,224 @@ png_read_rows(png_structrp png_ptr, png_bytepp row,
 #endif /* SEQUENTIAL_READ */
 
 #ifdef PNG_SEQUENTIAL_READ_SUPPORTED
+
+#ifdef PNG_MULTY_LINE_ENABLE
+// OH ISSUE: png optimize
+static void png_read_two_rows(png_structrp png_ptr, png_bytepp rows, png_uint_32 i,
+                         png_row_info row_info)
+{
+   png_debug1(1, "in png_read_two_rows %d", png_ptr->row_buf[0]);
+   png_read_filter_row(png_ptr, &row_info, png_ptr->row_buf + 1,
+      png_ptr->prev_row + 1, png_ptr->row_buf[0] + 4); // 4 is the increment of x2_filter
+
+#ifdef PNG_MNG_FEATURES_SUPPORTED
+   if ((png_ptr->mng_features_permitted & PNG_FLAG_MNG_FILTER_64) != 0 &&
+      (png_ptr->filter_type == PNG_INTRAPIXEL_DIFFERENCING))
+   {
+      /* Intrapixel differencing */
+      png_do_read_intrapixel(&row_info, png_ptr->row_buf + 1);
+   }
+#endif
+
+#ifdef PNG_READ_TRANSFORMS_SUPPORTED
+   if (png_ptr->transformations
+#       ifdef PNG_CHECK_FOR_INVALID_INDEX_SUPPORTED
+         || png_ptr->num_palette_max >= 0
+#       endif
+      )
+      png_do_read_transformations(png_ptr, &row_info);
+#endif
+
+   /* The transformed pixel depth should match the depth now in row_info. */
+   if (png_ptr->transformed_pixel_depth == 0)
+   {
+      png_ptr->transformed_pixel_depth = row_info.pixel_depth;
+      if (row_info.pixel_depth > png_ptr->maximum_pixel_depth)
+         png_error(png_ptr, "sequential row overflow");
+   }
+
+   else if (png_ptr->transformed_pixel_depth != row_info.pixel_depth)
+      png_error(png_ptr, "internal sequential row size calculation error");
+
+   if (rows[i] != NULL)
+      png_combine_row(png_ptr, rows[i], -1);
+
+   png_read_finish_row(png_ptr);
+
+   if (png_ptr->read_row_fn != NULL)
+      (*(png_ptr->read_row_fn))(png_ptr, png_ptr->row_number, png_ptr->pass);
+
+   png_ptr->row_buf = png_ptr->row_buf + row_info.rowbytes + 1;
+
+   // do again next line
+   memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info.rowbytes + 1);
+
+#ifdef PNG_MNG_FEATURES_SUPPORTED
+   if ((png_ptr->mng_features_permitted & PNG_FLAG_MNG_FILTER_64) != 0 &&
+      (png_ptr->filter_type == PNG_INTRAPIXEL_DIFFERENCING))
+   {
+      /* Intrapixel differencing */
+      png_do_read_intrapixel(&row_info, png_ptr->row_buf + 1);
+   }
+#endif
+
+#ifdef PNG_READ_TRANSFORMS_SUPPORTED
+   if (png_ptr->transformations
+#       ifdef PNG_CHECK_FOR_INVALID_INDEX_SUPPORTED
+         || png_ptr->num_palette_max >= 0
+#       endif
+      )
+      png_do_read_transformations(png_ptr, &row_info);
+#endif
+
+   /* The transformed pixel depth should match the depth now in row_info. */
+   if (png_ptr->transformed_pixel_depth == 0)
+   {
+      png_ptr->transformed_pixel_depth = row_info.pixel_depth;
+      if (row_info.pixel_depth > png_ptr->maximum_pixel_depth)
+         png_error(png_ptr, "sequential row overflow");
+   }
+
+   else if (png_ptr->transformed_pixel_depth != row_info.pixel_depth)
+      png_error(png_ptr, "internal sequential row size calculation error");
+
+   if (rows[i+1] != NULL)
+      png_combine_row(png_ptr, rows[i+1], -1);
+
+   png_read_finish_row(png_ptr);
+
+   if (png_ptr->read_row_fn != NULL)
+      (*(png_ptr->read_row_fn))(png_ptr, png_ptr->row_number, png_ptr->pass);
+
+   png_ptr->row_buf = png_ptr->row_buf + row_info.rowbytes + 1;
+}
+
+static void png_read_muilty_rows(png_structrp png_ptr, png_bytepp rows,
+   png_uint_32 row_num, png_row_info row_info_in)
+{
+   if (png_ptr == NULL)
+      return;
+
+   png_debug2(1, "in png_read_muilty_rows (row %lu, pass %d)",
+       (unsigned long)png_ptr->row_number, png_ptr->pass);
+
+   if ((png_ptr->mode & PNG_HAVE_IDAT) == 0)
+         png_error(png_ptr, "Invalid attempt to read row data");
+
+   /* Fill the row with IDAT data: */
+   uInt row_bytes =  row_info_in.rowbytes;
+   png_ptr->row_buf[0]=255; /* 255 to force error if no data was found */
+   png_read_IDAT_data(png_ptr, png_ptr->row_buf, (row_bytes + 1) * row_num);
+   png_bytep temp_row = png_ptr->row_buf;
+
+   for (png_uint_32 i = 0; i < row_num; i++) {
+      png_row_info row_info = row_info_in;
+      // check if the x2_filter is effective: only supports channels 3 or 4
+      if ((row_info_in.channels == 3 || row_info_in.channels == 4) &&
+          i < row_num -1 && png_ptr->row_buf[0] > PNG_FILTER_VALUE_SUB &&
+          png_ptr->row_buf[0] < PNG_FILTER_VALUE_LAST &&
+          png_ptr->row_buf[0] == png_ptr->row_buf[row_info_in.rowbytes + 1])
+      {
+         png_read_two_rows(png_ptr, rows, i, row_info);
+         i++;
+         continue;
+      }
+      if (png_ptr->row_buf[0] > PNG_FILTER_VALUE_NONE)
+      {
+         if (png_ptr->row_buf[0] < PNG_FILTER_VALUE_LAST)
+            png_read_filter_row(png_ptr, &row_info, png_ptr->row_buf + 1,
+               png_ptr->prev_row + 1, png_ptr->row_buf[0]);
+         else
+            png_debug1(1, "bad adaptive filter value %d", png_ptr->row_buf[0]);
+      }
+
+      memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info_in.rowbytes + 1);
+
+#ifdef PNG_MNG_FEATURES_SUPPORTED
+      if ((png_ptr->mng_features_permitted & PNG_FLAG_MNG_FILTER_64) != 0 &&
+         (png_ptr->filter_type == PNG_INTRAPIXEL_DIFFERENCING))
+      {
+         /* Intrapixel differencing */
+         png_do_read_intrapixel(&row_info, png_ptr->row_buf + 1);
+      }
+#endif
+
+#ifdef PNG_READ_TRANSFORMS_SUPPORTED
+      if (png_ptr->transformations
+#        ifdef PNG_CHECK_FOR_INVALID_INDEX_SUPPORTED
+            || png_ptr->num_palette_max >= 0
+#        endif
+         )
+         png_do_read_transformations(png_ptr, &row_info);
+#endif
+
+      /* The transformed pixel depth should match the depth now in row_info. */
+      if (png_ptr->transformed_pixel_depth == 0)
+      {
+         png_ptr->transformed_pixel_depth = row_info.pixel_depth;
+         if (row_info.pixel_depth > png_ptr->maximum_pixel_depth)
+            png_error(png_ptr, "sequential row overflow");
+      }
+
+      else if (png_ptr->transformed_pixel_depth != row_info.pixel_depth)
+         png_error(png_ptr, "internal sequential row size calculation error");
+
+      if (rows[i] != NULL)
+         png_combine_row(png_ptr, rows[i], -1);
+
+      png_read_finish_row(png_ptr);
+
+      if (png_ptr->read_row_fn != NULL)
+         (*(png_ptr->read_row_fn))(png_ptr, png_ptr->row_number, png_ptr->pass);
+
+      png_ptr->row_buf = png_ptr->row_buf + row_bytes + 1;
+   }
+   png_ptr->row_buf = temp_row;
+}
+
+static void png_warn_check(png_structrp png_ptr)
+{
+#ifdef PNG_WARNINGS_SUPPORTED
+   /* Check for transforms that have been set but were defined out */
+#if defined(PNG_WRITE_INVERT_SUPPORTED) && !defined(PNG_READ_INVERT_SUPPORTED)
+   if ((png_ptr->transformations & PNG_INVERT_MONO) != 0)
+      png_warning(png_ptr, "PNG_READ_INVERT_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_FILLER_SUPPORTED) && !defined(PNG_READ_FILLER_SUPPORTED)
+   if ((png_ptr->transformations & PNG_FILLER) != 0)
+      png_warning(png_ptr, "PNG_READ_FILLER_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_PACKSWAP_SUPPORTED) && \
+    !defined(PNG_READ_PACKSWAP_SUPPORTED)
+   if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
+      png_warning(png_ptr, "PNG_READ_PACKSWAP_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_PACK_SUPPORTED) && !defined(PNG_READ_PACK_SUPPORTED)
+   if ((png_ptr->transformations & PNG_PACK) != 0)
+      png_warning(png_ptr, "PNG_READ_PACK_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_SHIFT_SUPPORTED) && !defined(PNG_READ_SHIFT_SUPPORTED)
+   if ((png_ptr->transformations & PNG_SHIFT) != 0)
+      png_warning(png_ptr, "PNG_READ_SHIFT_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_BGR_SUPPORTED) && !defined(PNG_READ_BGR_SUPPORTED)
+   if ((png_ptr->transformations & PNG_BGR) != 0)
+      png_warning(png_ptr, "PNG_READ_BGR_SUPPORTED is not defined");
+#endif
+
+#if defined(PNG_WRITE_SWAP_SUPPORTED) && !defined(PNG_READ_SWAP_SUPPORTED)
+   if ((png_ptr->transformations & PNG_SWAP_BYTES) != 0)
+      png_warning(png_ptr, "PNG_READ_SWAP_SUPPORTED is not defined");
+#endif
+#endif /* WARNINGS */
+}
+#endif // PNG_MULTY_LINE_ENABLE
+
 /* Read the entire image.  If the image has an alpha channel or a tRNS
  * chunk, and you have called png_handle_alpha()[*], you will need to
  * initialize the image to the current image that PNG will be overlaying.
@@ -745,13 +968,45 @@ png_read_image(png_structrp png_ptr, png_bytepp image)
 
    image_height=png_ptr->height;
 
-   for (j = 0; j < pass; j++)
-   {
+#ifdef PNG_MULTY_LINE_ENABLE
+   // OH ISSUE: png optimize
+   if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8 is 1 pixel 8 bytes
+       (png_ptr->transformations & PNG_CHECK) == 0) {
+      if ((png_ptr->flags & PNG_FLAG_ROW_INIT) == 0)
+         png_read_start_row(png_ptr);
+
+      png_warn_check(png_ptr);
+      png_row_info row_info;
+      row_info.width = png_ptr->iwidth;
+      row_info.color_type = png_ptr->color_type;
+      row_info.bit_depth = png_ptr->bit_depth;
+      row_info.channels = png_ptr->channels;
+      row_info.pixel_depth = png_ptr->pixel_depth;
+      row_info.rowbytes = png_ptr->rowbytes;
+
       rp = image;
-      for (i = 0; i < image_height; i++)
+      int row_num = PNG_INFLATE_ROWS;
+      for (i = 0; i < image_height; i += PNG_INFLATE_ROWS)
       {
-         png_read_row(png_ptr, *rp, NULL);
-         rp++;
+         if (image_height - i < PNG_INFLATE_ROWS)
+         {
+            row_num = image_height - i;
+         }
+         png_read_muilty_rows(png_ptr, rp, row_num, row_info);
+         rp += row_num;
+      }
+   }
+   else
+#endif
+   {
+      for (j = 0; j < pass; j++)
+      {
+         rp = image;
+         for (i = 0; i < image_height; i++)
+         {
+            png_read_row(png_ptr, *rp, NULL);
+            rp++;
+         }
       }
    }
 }

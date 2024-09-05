@@ -6,6 +6,7 @@
 #include <mutex>
 #include <optional>
 #include <set>
+#include <shared_mutex>
 #include <unordered_map>
 #include "include/core/SkFontMgr.h"
 #include "include/core/SkRefCnt.h"
@@ -34,7 +35,10 @@ public:
     void setDefaultFontManager(sk_sp<SkFontMgr> fontManager, const char defaultFamilyName[]);
     void setDefaultFontManager(sk_sp<SkFontMgr> fontManager, const std::vector<SkString>& defaultFamilyNames);
 
-    sk_sp<SkFontMgr> getFallbackManager() const { return fDefaultFontManager; }
+    sk_sp<SkFontMgr> getFallbackManager() const {
+        std::shared_lock<std::shared_mutex> readLock(mutex_);
+        return fDefaultFontManager;
+    }
 
     std::vector<sk_sp<SkTypeface>> findTypefaces(const std::vector<SkString>& familyNames, SkFontStyle fontStyle);
     std::vector<sk_sp<SkTypeface>> findTypefaces(const std::vector<SkString>& familyNames, SkFontStyle fontStyle, const std::optional<FontArguments>& fontArgs);
@@ -49,7 +53,10 @@ public:
     void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const char defaultFamilyName[]);
     void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const std::vector<SkString>& defaultFamilyNames);
 
-    std::shared_ptr<RSFontMgr> getFallbackManager() const { return fDefaultFontManager; }
+    std::shared_ptr<RSFontMgr> getFallbackManager() const {
+        std::shared_lock<std::shared_mutex> readLock(mutex_);
+        return fDefaultFontManager;
+    }
 
     std::vector<std::shared_ptr<RSTypeface>> findTypefaces(
         const std::vector<SkString>& familyNames, RSFontStyle fontStyle);
@@ -70,9 +77,15 @@ public:
 
     void disableFontFallback();
     void enableFontFallback();
-    bool fontFallbackEnabled() { return fEnableFontFallback; }
+    bool fontFallbackEnabled() {
+        std::shared_lock<std::shared_mutex> readLock(mutex_);
+        return fEnableFontFallback;
+    }
 
-    ParagraphCache* getParagraphCache() { return &fParagraphCache; }
+    ParagraphCache* getParagraphCache() {
+        std::shared_lock<std::shared_mutex> readLock(mutex_);
+        return &fParagraphCache;
+    }
 
     void clearCaches();
 
@@ -131,6 +144,7 @@ private:
     std::mutex fMutex;
     std::vector<SkString> fDefaultFamilyNames;
     ParagraphCache fParagraphCache;
+    mutable std::shared_mutex mutex_;
 };
 }  // namespace textlayout
 }  // namespace skia

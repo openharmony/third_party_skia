@@ -16,6 +16,7 @@
 #include "HmSymbolConfig_ohos.h"
 
 #include <functional>
+#include <fstream>
 
 #include "securec.h"
 
@@ -164,27 +165,28 @@ int LogErrInfo(int err, const char* key, Json::ValueType expected = Json::nullVa
  * \return The pointer of content of the file
  * \note The returned pointer should be freed by the caller
  */
-char* GetDataFromFile(const char* fname, int& size)
+std::unique_ptr<char[]> GetDataFromFile(const char* fname, int& size)
 {
-    FILE* fp = fopen(fname, "r");
-    if (fp == nullptr) {
+    auto file = std::make_unique<std::ifstream>(fname);
+    if (file == nullptr || !file->is_open()) {
+        size = 0;
         return nullptr;
     }
-    fseek(fp, 0L, SEEK_END);
-    size = ftell(fp) + 1;
-    rewind(fp);
-    void* data = malloc(size);
+
+    file->seekg(0, std::ios::end);
+    size = file->tellg(); // get the length of file
+    if (size <= 0) {
+        size = 0;
+        return nullptr;
+    }
+    auto data = std::make_unique<char[]>(size);
     if (data == nullptr) {
-        fclose(fp);
+        size = 0;
         return nullptr;
     }
-    if (memset_s(data, size, 0, size) != 0) {
-        fclose(fp);
-        return nullptr;
-    }
-    (void) fread(data, size, 1, fp);
-    fclose(fp);
-    return (char*)data;
+    file->seekg(0, std::ios::beg);
+    file->read(data.get(), size); // read data a block
+    return data;
 }
 
 bool HmSymbolConfig_OHOS::GetHmSymbolEnable()
@@ -200,18 +202,8 @@ bool HmSymbolConfig_OHOS::GetHmSymbolEnable()
 
 HmSymbolConfig_OHOS* HmSymbolConfig_OHOS::GetInstance()
 {
-    static SkOnce once;
-    static HmSymbolConfig_OHOS* singleton;
-
-    once([] {
-        singleton = new HmSymbolConfig_OHOS();
-    });
-    return singleton;
-}
-
-SymbolLayersGroups HmSymbolConfig_OHOS::GetSymbolLayersGroups(uint32_t glyphId)
-{
-    GetSymbolLayersGroups(static_cast<uint16_t>(glyphId));
+    static HmSymbolConfig_OHOS singleton;
+    return &singleton;
 }
 
 SymbolLayersGroups HmSymbolConfig_OHOS::GetSymbolLayersGroups(uint16_t glyphId)
@@ -255,16 +247,14 @@ std::vector<std::vector<PiecewiseParameter>> HmSymbolConfig_OHOS::GetGroupParame
 int HmSymbolConfig_OHOS::CheckConfigFile(const char* fname, Json::Value& root)
 {
     int size = 0;
-    char* data = GetDataFromFile(fname, size);
+    auto data = GetDataFromFile(fname, size);
     if (data == nullptr) {
         return LogErrInfo(ERROR_CONFIG_NOT_FOUND, fname);
     }
     JSONCPP_STRING errs;
     Json::CharReaderBuilder charReaderBuilder;
     std::unique_ptr<Json::CharReader> jsonReader(charReaderBuilder.newCharReader());
-    bool isJson = jsonReader->parse(data, data + size, &root, &errs);
-    free((void*)data);
-    data = nullptr;
+    bool isJson = jsonReader->parse(data.get(), data.get() + size, &root, &errs);
 
     if (!isJson || !errs.empty()) {
         return LogErrInfo(ERROR_CONFIG_FORMAT_NOT_SUPPORTED, fname);

@@ -33,7 +33,16 @@ GrVkTextureRenderTarget::GrVkTextureRenderTarget(
         , GrVkTexture(gpu, dimensions, std::move(texture), mipmapStatus)
         , GrVkRenderTarget(gpu, dimensions, std::move(colorAttachment),
                            std::move(resolveAttachment), CreateType::kFromTextureRT) {
+#ifdef SKIA_OHOS
+    GrVkImage* image = textureImage();
+    if (image && image->GetBudgeted() == SkBudgeted::kYes) {
+        this->registerWithCache(SkBudgeted::kNo);
+    } else {
+        this->registerWithCache(budgeted);
+    }
+#else
     this->registerWithCache(budgeted);
+#endif
 }
 
 GrVkTextureRenderTarget::GrVkTextureRenderTarget(

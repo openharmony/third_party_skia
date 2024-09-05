@@ -10,6 +10,10 @@
 #include "include/core/SkTypes.h"
 #include <stdio.h>
 
+#ifdef SKIA_OHOS_SHADER_REDUCE
+#include <parameters.h>
+#endif
+
 #define LOG_TAG "skia"
 #include "hilog/log.h"
 
@@ -35,3 +39,11 @@ void SkDebugf(const char format[], ...) {
 
     va_end(args1);
 }
+
+#ifdef SKIA_OHOS_SHADER_REDUCE
+bool SkShaderReduceProperty()
+{
+    static bool debugProp = std::atoi(OHOS::system::GetParameter("persist.sys.skia.shader.reduce", "1").c_str()) != 0;
+    return debugProp;
+}
+#endif

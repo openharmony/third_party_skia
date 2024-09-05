@@ -30,7 +30,7 @@
 #include <string>
 #include <utility>
 #include "log.h"
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
 #include "parameter.h"
 #endif
 
@@ -100,6 +100,9 @@ Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             , fMaxIntrinsicWidth(0)
             , fMinIntrinsicWidth(0)
             , fLongestLine(0)
+#ifdef OHOS_SUPPORT
+            , fLongestLineWithIndent(0)
+#endif
             , fExceededMaxLines(0)
 { }
 
@@ -188,6 +191,11 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
 #else
             RSFontMetrics newFontMetrics;
             targetRun.fFont.GetMetrics(&newFontMetrics);
+#endif
+#ifdef OHOS_SUPPORT
+            auto decompressFont = targetRun.fFont;
+            scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+            metricsIncludeFontPadding(&newFontMetrics, decompressFont);
 #endif
             fontMetrics.emplace_back(newFontMetrics);
         }
@@ -296,6 +304,9 @@ bool ParagraphImpl::middleEllipsisDeal()
                 charend = ltrTextSize[end].charOver;
                 fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
                 fText.insert(ltrTextSize[start].charbegin, ellStr);
+#ifdef OHOS_SUPPORT
+                fEllipsisRange = TextRange(charbegin, charend);
+#endif
             }
         }
         ltrTextSize.clear();
@@ -311,6 +322,9 @@ bool ParagraphImpl::middleEllipsisDeal()
             fText.remove(rtlTextSize[start - 1].charbegin,
                 rtlTextSize[end + PARAM_DOUBLE].charbegin - rtlTextSize[start - 1].charbegin);
             fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
+#ifdef OHOS_SUPPORT
+            fEllipsisRange = TextRange(charbegin, charend);
+#endif
         }
         rtlTextSize.clear();
     }
@@ -319,6 +333,9 @@ bool ParagraphImpl::middleEllipsisDeal()
         TextRange deletedRange(charbegin, charend);
         resetTextStyleRange(deletedRange);
         resetPlaceholderRange(deletedRange);
+#ifdef OHOS_SUPPORT
+        fEllipsisRange = deletedRange;
+#endif
     }
 
     // end = 0 means the text does not exceed the width limit
@@ -454,6 +471,9 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
         fText = tmpParagraph->fText;
         fTextStyles = tmpParagraph->fTextStyles;
         fPlaceholders = tmpParagraph->fPlaceholders;
+#ifdef OHOS_SUPPORT
+        fEllipsisRange = tmpParagraph->fEllipsisRange;
+#endif
     }
 }
 
@@ -473,7 +493,15 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
 
+#ifdef OHOS_SUPPORT
+    bool isMaxLinesZero = false;
+#endif
     if (fParagraphStyle.getMaxLines() == 0) {
+#ifdef OHOS_SUPPORT
+        if (fText.size() != 0) {
+            isMaxLinesZero = true;
+        }
+#endif
         fText.reset();
     }
 
@@ -511,6 +539,11 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
             this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
             if (!this->shapeTextIntoEndlessLine()) {
                 this->resetContext();
+#ifdef OHOS_SUPPORT
+                if (isMaxLinesZero) {
+                    fExceededMaxLines  = true;
+                }
+#endif
                 // TODO: merge the two next calls - they always come together
                 this->resolveStrut();
                 this->computeEmptyMetrics();
@@ -548,16 +581,21 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->resolveStrut();
         this->computeEmptyMetrics();
         this->fLines.reset();
-
+#ifdef OHOS_SUPPORT
         // fast path
         if (!fHasLineBreaks &&
             !fHasWhitespacesInside &&
             fPlaceholders.size() == 1 &&
             (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= floorWidth - this->detectIndents(0))) {
             positionShapedTextIntoLine(floorWidth);
-        } else {
+        } else if (!paragraphCache->GetStoredLayout(*this)) {
             breakShapedTextIntoLines(floorWidth);
+            // text breaking did not go to fast path and we did not have cached layout
+            paragraphCache->SetStoredLayout(*this);
         }
+#else
+        this->breakShapedTextIntoLines(floorWidth);
+#endif
         fState = kLineBroken;
     }
 
@@ -631,6 +669,27 @@ void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOff
     }
 }
 
+#ifdef OHOS_SUPPORT
+TextRange ParagraphImpl::getEllipsisTextRange() {
+    if (fState < kLineBroken) {
+        return EMPTY_RANGE;
+    }
+    if (!fEllipsisRange.empty()) {
+        return fEllipsisRange;
+    }
+    this->ensureUTF16Mapping();
+    for (const auto& line: fLines) {
+        if (line.getTextRangeReplacedByEllipsis().empty()) {
+            continue;
+        }
+        auto ellipsisClusterRange = line.getTextRangeReplacedByEllipsis();
+        return TextRange(getUTF16Index(ellipsisClusterRange.start),
+                                      getUTF16Index(ellipsisClusterRange.end));
+    }
+    return EMPTY_RANGE;
+}
+#endif
+
 void ParagraphImpl::resetContext() {
     fAlphabeticBaseline = 0;
     fHeight = 0;
@@ -639,6 +698,9 @@ void ParagraphImpl::resetContext() {
     fMaxIntrinsicWidth = 0;
     fMinIntrinsicWidth = 0;
     fLongestLine = 0;
+#ifdef OHOS_SUPPORT
+    fLongestLineWithIndent = 0;
+#endif
     fMaxWidthWithTrailingSpaces = 0;
     fExceededMaxLines = false;
 }
@@ -714,6 +776,7 @@ static bool is_ascii_7bit_space(int c) {
 #undef M
 }
 
+#ifdef OHOS_SUPPORT
 static std::vector<SkRange<SkUnichar>> CJK_UNICODE_SET = {
     SkRange<SkUnichar>(0x4E00, 0x9FFF),
     SkRange<SkUnichar>(0x3400, 0x4DBF),
@@ -746,7 +809,7 @@ constexpr SkUnichar COPYRIGHT_UNICODE = 0x00A9;
 struct UnicodeSet {
     std::unordered_set<SkUnichar> set_;
     explicit UnicodeSet(const std::vector<SkRange<SkUnichar>>& unicodeSet) {
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
         static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
         char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
         GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
@@ -769,6 +832,7 @@ struct UnicodeSet {
 
 static const UnicodeSet CJK_SET(CJK_UNICODE_SET);
 static const UnicodeSet WESTERN_SET(WESTERN_UNICODE_SET);
+#endif
 
 Cluster::Cluster(ParagraphImpl* owner,
                  RunIndex runIndex,
@@ -1047,6 +1111,7 @@ SkScalar ParagraphImpl::detectIndents(size_t index)
     return indent;
 }
 
+#ifdef OHOS_SUPPORT
 void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     resetAutoSpacing();
     // This is a short version of a line breaking when we know that:
@@ -1099,7 +1164,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
                   metrics);
     auto longestLine = std::max(run.advance().fX, advance.fX);
     setSize(advance.fY, maxWidth, longestLine);
-    setLongestLineWithIndent(std::min(longestLine + offsetX, maxWidth));
+    setLongestLineWithIndent(longestLine + offsetX);
     setIntrinsicSize(run.advance().fX, advance.fX,
             fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
             fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
@@ -1108,9 +1173,6 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
 
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     resetAutoSpacing();
-    for (auto& run : fRuns) {
-        run.resetAutoSpacing();
-    }
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
             this,
@@ -1137,17 +1199,114 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
                 auto spacing = line.autoSpacing();
-                auto longestLine = std::max(line.width(), widthWithSpaces) + spacing;
+                auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces()) + spacing;
                 fLongestLine = std::max(fLongestLine, longestLine);
-                fLongestLineWithIndent =
-                        std::min(std::max(fLongestLineWithIndent, longestLine + indent), maxWidth);
+                fLongestLineWithIndent = std::max(fLongestLineWithIndent, longestLine + indent);
             });
-    setSize(textWrapper.height(), maxWidth, textWrapper.maxIntrinsicWidth());
+    setSize(textWrapper.height(), maxWidth, fLongestLine);
     setIntrinsicSize(textWrapper.maxIntrinsicWidth(), textWrapper.minIntrinsicWidth(),
         fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
         fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
         textWrapper.exceededMaxLines());
 }
+#else
+void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
+
+    if (!fHasLineBreaks &&
+        !fHasWhitespacesInside &&
+        fPlaceholders.size() == 1 &&
+        fRuns.size() == 1 && fRuns[0].fAdvance.fX <= maxWidth) {
+        // This is a short version of a line breaking when we know that:
+        // 1. We have only one line of text
+        // 2. It's shaped into a single run
+        // 3. There are no placeholders
+        // 4. There are no linebreaks (which will format text into multiple lines)
+        // 5. There are no whitespaces so the minIntrinsicWidth=maxIntrinsicWidth
+        // (To think about that, the last condition is not quite right;
+        // we should calculate minIntrinsicWidth by soft line breaks.
+        // However, it's how it's done in Flutter now)
+        auto& run = this->fRuns[0];
+        auto advance = run.advance();
+        auto textRange = TextRange(0, this->text().size());
+        auto textExcludingSpaces = TextRange(0, fTrailingSpaces);
+        InternalLineMetrics metrics(this->strutForceHeight());
+        metrics.add(&run);
+        auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() &
+                                  TextHeightBehavior::kDisableFirstAscent;
+        auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() &
+                                  TextHeightBehavior::kDisableLastDescent;
+        if (disableFirstAscent) {
+            metrics.fAscent = metrics.fRawAscent;
+        }
+        if (disableLastDescent) {
+            metrics.fDescent = metrics.fRawDescent;
+        }
+        if (this->strutEnabled()) {
+            this->strutMetrics().updateLineMetrics(metrics);
+        }
+        ClusterIndex trailingSpaces = fClusters.size();
+        do {
+            --trailingSpaces;
+            auto& cluster = fClusters[trailingSpaces];
+            if (!cluster.isWhitespaceBreak()) {
+                ++trailingSpaces;
+                break;
+            }
+            advance.fX -= cluster.width();
+        } while (trailingSpaces != 0);
+
+        advance.fY = metrics.height();
+        auto clusterRange = ClusterRange(0, trailingSpaces);
+        auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
+        this->addLine(SkPoint::Make(0, 0), advance,
+                      textExcludingSpaces, textRange, textRange,
+                      clusterRange, clusterRangeWithGhosts, run.advance().x(),
+                      metrics);
+
+        fLongestLine = nearlyZero(advance.fX) ? run.advance().fX : advance.fX;
+        fHeight = advance.fY;
+        fWidth = maxWidth;
+        fMaxIntrinsicWidth = run.advance().fX;
+        fMinIntrinsicWidth = advance.fX;
+        fAlphabeticBaseline = fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline();
+        fIdeographicBaseline = fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline();
+        fExceededMaxLines = false;
+        return;
+    }
+
+    TextWrapper textWrapper;
+    textWrapper.breakTextIntoLines(
+            this,
+            maxWidth,
+            [&](TextRange textExcludingSpaces,
+                TextRange text,
+                TextRange textWithNewlines,
+                ClusterRange clusters,
+                ClusterRange clustersWithGhosts,
+                SkScalar widthWithSpaces,
+                size_t startPos,
+                size_t endPos,
+                SkVector offset,
+                SkVector advance,
+                InternalLineMetrics metrics,
+                bool addEllipsis) {
+                // TODO: Take in account clipped edges
+                auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
+                if (addEllipsis) {
+                    line.createEllipsis(maxWidth, this->getEllipsis(), true);
+                }
+                fLongestLine = std::max(fLongestLine, nearlyZero(advance.fX) ? widthWithSpaces : advance.fX);
+            });
+
+    fHeight = textWrapper.height();
+    fWidth = maxWidth;
+    fMaxIntrinsicWidth = textWrapper.maxIntrinsicWidth();
+    fMinIntrinsicWidth = textWrapper.minIntrinsicWidth();
+    fAlphabeticBaseline = fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline();
+    fIdeographicBaseline = fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline();
+    fExceededMaxLines = textWrapper.exceededMaxLines();
+}
+#endif
 
 void ParagraphImpl::formatLines(SkScalar maxWidth) {
     auto effectiveAlign = fParagraphStyle.effective_align();
@@ -1186,11 +1345,25 @@ void ParagraphImpl::resolveStrut() {
 #ifndef USE_SKIA_TXT
     SkFont font(typefaces.front(), strutStyle.getFontSize());
     SkFontMetrics metrics;
+#ifdef OHOS_SUPPORT
+    SkFont compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.getMetrics(&metrics);
+    metricsIncludeFontPadding(&metrics, font);
+#else
     font.getMetrics(&metrics);
+#endif
 #else
     RSFont font(typefaces.front(), strutStyle.getFontSize(), 1, 0);
     RSFontMetrics metrics;
+#ifdef OHOS_SUPPORT
+    RSFont compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.GetMetrics(&metrics);
+    metricsIncludeFontPadding(&metrics, font);
+#else
     font.GetMetrics(&metrics);
+#endif
 #endif
 
     if (strutStyle.getHeightOverride()) {
@@ -1259,7 +1432,8 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
                                                      RectHeightStyle rectHeightStyle,
                                                      RectWidthStyle rectWidthStyle) {
     std::vector<TextBox> results;
-    if (fText.isEmpty()) {
+    // this method should not be called before kshaped
+    if (fText.isEmpty() || fState < kShaped) {
         if (start == 0 && end > 0) {
             // On account of implied "\n" that is always at the end of the text
             //SkDebugf("getRectsForRange(%d, %d): %f\n", start, end, fHeight);
@@ -1324,7 +1498,8 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
 
 std::vector<TextBox> ParagraphImpl::getRectsForPlaceholders() {
   std::vector<TextBox> boxes;
-  if (fText.isEmpty()) {
+  // this method should not be called before kshaped
+  if (fText.isEmpty() || fState < kShaped) {
        return boxes;
   }
   if (fPlaceholders.size() == 1) {
@@ -1511,7 +1686,11 @@ void ParagraphImpl::computeEmptyMetrics() {
 
     if (!paragraphStyle().getStrutStyle().getForceStrutHeight() &&
         textStyle.getHeightOverride()) {
+#ifdef OHOS_SUPPORT
+        const auto intrinsicHeight = fEmptyMetrics.fDescent - fEmptyMetrics.fAscent + fEmptyMetrics.fLeading;
+#else
         const auto intrinsicHeight = fEmptyMetrics.height();
+#endif
         const auto strutHeight = textStyle.getHeight() * textStyle.getFontSize();
         if (paragraphStyle().getStrutStyle().getHalfLeading()) {
             fEmptyMetrics.update(
@@ -1873,6 +2052,11 @@ SkFontMetrics ParagraphImpl::measureText() {
     SkRect firstBounds;
     auto firstStr = text(fRuns.front().textRange());
     firstFont.getMetrics(&metrics);
+#ifdef OHOS_SUPPORT
+    auto decompressFont = firstFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    metricsIncludeFontPadding(&metrics, decompressFont);
+#endif
     firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
     fGlyphsBoundsTop = firstBounds.top();
     fGlyphsBoundsBottom = firstBounds.bottom();
@@ -1909,6 +2093,11 @@ RSFontMetrics ParagraphImpl::measureText()
     RSRect firstBounds;
     auto firstStr = text(fRuns.front().textRange());
     firstFont.GetMetrics(&metrics);
+#ifdef OHOS_SUPPORT
+    auto decompressFont = firstFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    metricsIncludeFontPadding(&metrics, decompressFont);
+#endif
     firstFont.MeasureText(firstStr.data(), firstStr.size(), RSDrawing::TextEncoding::UTF8, &firstBounds);
     fGlyphsBoundsTop = firstBounds.GetTop();
     fGlyphsBoundsBottom = firstBounds.GetBottom();
@@ -2012,6 +2201,7 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fHasWhitespacesInside = this->fHasWhitespacesInside;
     paragraph->fTrailingSpaces = this->fTrailingSpaces;
     paragraph->fLineNumber = this->fLineNumber;
+    paragraph->fEllipsisRange = this->fEllipsisRange;
 
     for (auto& run : paragraph->fRuns) {
         run.setOwner(paragraph.get());

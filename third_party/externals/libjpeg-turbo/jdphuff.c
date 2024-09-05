@@ -71,6 +71,129 @@ METHODDEF(boolean) decode_mcu_DC_refine(j_decompress_ptr cinfo,
 METHODDEF(boolean) decode_mcu_AC_refine(j_decompress_ptr cinfo,
                                         JBLOCKROW *MCU_data);
 
+#ifdef HUFF_DECODE_OPT
+// OH ISSUE: jpeg optimize
+LOCAL(void)
+jpeg_make_dp_derived_tbl(j_decompress_ptr cinfo, boolean isDC, int tblno,
+                        d_derived_tbl **pdtbl)
+{
+  JHUFF_TBL *htbl;
+  d_derived_tbl *dtbl;
+  int p, i, l, si, numsymbols;
+  int lookbits, ctr;
+  char huffsize[257];
+  unsigned int huffcode[257];
+  unsigned int code;
+
+  /* Note that huffsize[] and huffcode[] are filled in code-length order,
+   * paralleling the order of the symbols themselves in htbl->huffval[].
+   */
+
+  /* Find the input Huffman table */
+  if (tblno < 0 || tblno >= NUM_HUFF_TBLS)
+    ERREXIT1(cinfo, JERR_NO_HUFF_TABLE, tblno);
+  htbl =
+    isDC ? cinfo->dc_huff_tbl_ptrs[tblno] : cinfo->ac_huff_tbl_ptrs[tblno];
+  if (htbl == NULL)
+    ERREXIT1(cinfo, JERR_NO_HUFF_TABLE, tblno);
+
+  /* Allocate a workspace if we haven't already done so. */
+  if (*pdtbl == NULL)
+    *pdtbl = (d_derived_tbl *)
+      (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                  sizeof(d_derived_tbl));
+  dtbl = *pdtbl;
+  dtbl->pub = htbl;             /* fill in back link */
+
+  /* Figure C.1: make table of Huffman code length for each symbol */
+
+  p = 0;
+  for (l = 1; l <= MAX_HUFF_CODE_LEN; l++) {
+    i = (int)htbl->bits[l];
+    if (i < 0 || p + i > 256)   /* protect against table overrun, 256 is the max number of symbols */
+      ERREXIT(cinfo, JERR_BAD_HUFF_TABLE);
+    while (i--)
+      huffsize[p++] = (char)l;
+  }
+  huffsize[p] = 0;
+  numsymbols = p;
+
+  /* Figure C.2: generate the codes themselves */
+  /* We also validate that the counts represent a legal Huffman code tree. */
+
+  code = 0;
+  si = huffsize[0];
+  p = 0;
+  while (huffsize[p]) {
+    while (((int)huffsize[p]) == si) {
+      huffcode[p++] = code;
+      code++;
+    }
+    /* code is now 1 more than the last code used for codelength si; but
+     * it must still fit in si bits, since no code is allowed to be all ones.
+     */
+    if (((JLONG)code) >= (((JLONG)1) << si))
+      ERREXIT(cinfo, JERR_BAD_HUFF_TABLE);
+    code <<= 1;
+    si++;
+  }
+
+  /* Figure F.15: generate decoding tables for bit-sequential decoding */
+
+  p = 0;
+  for (l = 1; l <= MAX_HUFF_CODE_LEN; l++) {
+    if (htbl->bits[l]) {
+      /* valoffset[l] = huffval[] index of 1st symbol of code length l,
+       * minus the minimum code of length l
+       */
+      dtbl->valoffset[l] = (JLONG)p - (JLONG)huffcode[p];
+      p += htbl->bits[l];
+      dtbl->maxcode[l] = huffcode[p - 1]; /* maximum code of length l */
+    } else {
+      dtbl->maxcode[l] = -1;    /* -1 if no codes of this length */
+    }
+  }
+  dtbl->valoffset[17] = 0; /* 17 is always max symbol length in Huffman spec */
+  dtbl->maxcode[17] = 0xFFFFFL; /* ensures jpeg_huff_decode terminates, 17 has the same meaning above */
+
+  /* Compute lookahead tables to speed up decoding.
+   * First we set all the table entries to 0, indicating "too long";
+   * then we iterate through the Huffman codes that are short enough and
+   * fill in all the entries that correspond to bit sequences starting
+   * with that code.
+   */
+
+  for (i = 0; i < (1 << HUFF_LOOKAHEAD); i++)
+    dtbl->lookup[i] = (HUFF_LOOKAHEAD + 1) << HUFF_LOOKAHEAD;
+
+  p = 0;
+  for (l = 1; l <= HUFF_LOOKAHEAD; l++) {
+    for (i = 1; i <= (int)htbl->bits[l]; i++, p++) {
+      /* l = current code's length, p = its index in huffcode[] & huffval[]. */
+      /* Generate left-justified code followed by all possible bit sequences */
+      lookbits = huffcode[p] << (HUFF_LOOKAHEAD - l);
+      for (ctr = 1 << (HUFF_LOOKAHEAD - l); ctr > 0; ctr--) {
+        dtbl->lookup[lookbits] = (l << HUFF_LOOKAHEAD) | htbl->huffval[p];
+        lookbits++;
+      }
+    }
+  }
+
+  /* Validate symbols as being reasonable.
+   * For AC tables, we make no check, but accept all byte values 0..255.
+   * For DC tables, we require the symbols to be in range 0..15.
+   * (Tighter bounds could be applied depending on the data depth and mode,
+   * but this is sufficient to ensure safe decoding.)
+   */
+  if (isDC) {
+    for (i = 0; i < numsymbols; i++) {
+      int sym = htbl->huffval[i];
+      if (sym < 0 || sym > 15) // 15 is the max value of DC symbol
+        ERREXIT(cinfo, JERR_BAD_HUFF_TABLE);
+    }
+  }
+}
+#endif
 
 /*
  * Initialize for a Huffman-compressed scan.
@@ -163,12 +286,22 @@ start_pass_phuff_decoder(j_decompress_ptr cinfo)
       if (cinfo->Ah == 0) {     /* DC refinement needs no table */
         tbl = compptr->dc_tbl_no;
         pdtbl = (d_derived_tbl **)(entropy->derived_tbls) + tbl;
+#ifdef HUFF_DECODE_OPT
+        // OH ISSUE: jpeg optimize
+        jpeg_make_dp_derived_tbl(cinfo, TRUE, tbl, pdtbl);
+#else
         jpeg_make_d_derived_tbl(cinfo, TRUE, tbl, pdtbl);
+#endif
       }
     } else {
       tbl = compptr->ac_tbl_no;
       pdtbl = (d_derived_tbl **)(entropy->derived_tbls) + tbl;
+#ifdef HUFF_DECODE_OPT
+      // OH ISSUE: jpeg optimize
+      jpeg_make_dp_derived_tbl(cinfo, FALSE, tbl, pdtbl);
+#else
       jpeg_make_d_derived_tbl(cinfo, FALSE, tbl, pdtbl);
+#endif
       /* remember the single active table */
       entropy->ac_derived_tbl = entropy->derived_tbls[tbl];
     }

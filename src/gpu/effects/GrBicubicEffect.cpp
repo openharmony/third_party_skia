@@ -213,7 +213,8 @@ GrBicubicEffect::GrBicubicEffect(const GrBicubicEffect& that)
         , fDirection(that.fDirection)
         , fClamp(that.fClamp) {}
 
-SkString GrBicubicEffect::getShaderDfxInfo() const {
+SkString GrBicubicEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrBicubicEffect_%d_%d", fDirection, fClamp);
     return format;

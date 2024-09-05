@@ -844,7 +844,8 @@ GrGeometryProcessor* DashingCircleEffect::Make(SkArenaAlloc* arena,
     });
 }
 
-SkString DashingCircleEffect::getShaderDfxInfo() const {
+SkString DashingCircleEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_DashingCircleEffect_%d_%d_%d_%d_%d", fUsesLocalCoords, fAAMode,
         fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());
@@ -1067,7 +1068,8 @@ GrGeometryProcessor* DashingLineEffect::Make(SkArenaAlloc* arena,
     });
 }
 
-SkString DashingLineEffect::getShaderDfxInfo() const {
+SkString DashingLineEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_DashingLineEffect_%d_%d_%d_%d_%d", fUsesLocalCoords, fAAMode,
         fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());

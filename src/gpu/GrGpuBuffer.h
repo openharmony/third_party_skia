@@ -92,7 +92,21 @@ private:
     virtual bool onUpdateData(const void* src, size_t srcSizeInBytes) = 0;
 
     size_t onGpuMemorySize() const override { return fSizeInBytes; }
+#ifdef SKIA_DFX_FOR_OHOS
+    inline static const char* fGpuBufferTypeName[] = {
+        "kVertex Buffer",
+        "kIndex Buffer",
+        "kDrawIndirect Buffer",
+        "kXferCpuToGpu Buffer",
+        "kXferGpuToCpu Buffer",
+        "kUniform Buffer",
+    };
+    const char* getResourceType() const override {
+        return fGpuBufferTypeName[static_cast<int>(fIntendedType)];
+    }
+#else
     const char* getResourceType() const override { return "Buffer Object"; }
+#endif
     void computeScratchKey(GrScratchKey* key) const override;
 
     size_t            fSizeInBytes;

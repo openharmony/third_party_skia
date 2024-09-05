@@ -23,17 +23,20 @@ namespace skgpu::v1 {
 BlurOp::BlurOp(GrSurfaceProxyView proxyView, const SkBlurArg& blurArg)
     : GrOp(ClassID()),
       fProxyView(proxyView),
-      skBlurArg(blurArg){
+      skBlurArg(blurArg)
+{
     this->setBounds(skBlurArg.srcRect, HasAABloat::kNo, IsHairline::kNo);
 }
 
-GrOp::CombineResult BlurOp::onCombineIfPossible(GrOp* t, SkArenaAlloc*, const GrCaps& caps) {
+GrOp::CombineResult BlurOp::onCombineIfPossible(GrOp* t, SkArenaAlloc*, const GrCaps& caps)
+{
     return CombineResult::kCannotCombine;
 }
 
-void BlurOp::onExecute(GrOpFlushState* state, const SkRect& chainBounds) {
+void BlurOp::onExecute(GrOpFlushState* state, const SkRect& chainBounds)
+{
     SkASSERT(state->opsRenderPass());
-    state->opsRenderPass()->drawBlurImage(fProxyView.proxy(), skBlurArg);
+    state->opsRenderPass()->drawBlurImage(fProxyView, skBlurArg);
 }
 
 } // namespace skgpu::v1

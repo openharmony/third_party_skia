@@ -6,9 +6,7 @@
 
 #include "include/core/SkTypes.h"
 #include "include/utils/SkTraceEventPhase.h"
-#ifdef SKIA_OHOS_DEBUG
-#include "hitrace_meter.h"
-#endif
+
 // Trace events are for tracking application performance and resource usage.
 // Macros are provided to track:
 //    Duration of scoped regions
@@ -65,6 +63,9 @@
 
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
 #define TRACE_EVENT0(cg, n) TRACE_EMPTY
 #define TRACE_EVENT0_ALWAYS(cg, n) TRACE_EMPTY
 #define TRACE_EVENT1(cg, n, a1n, a1v) TRACE_EMPTY
@@ -140,6 +141,9 @@ public:
 
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) SkAndroidFrameworkTraceUtil __trace(true, fmt, ##__VA_ARGS__)
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) SkAndroidFrameworkTraceUtilAlways __trace_always(fmt, ##__VA_ARGS__)
+#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
 
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. In the framework, the arguments are ignored.
@@ -192,35 +196,94 @@ public:
 #define TRACE_EVENT_CATEGORY_GROUP_ENABLED(category_group, ret)             \
   do { *ret = false; } while (0)
 
+#elif defined(SKIA_OHOS_FOR_OHOS_TRACE)
+
+#include "hitrace_meter.h"
+
+#define UNLIKELY(exp) (__builtin_expect((exp) != 0, false))
+#define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
+#define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_ALWAYS(name) HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name)
+#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) \
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, ##__VA_ARGS__)
+
+// print ohos trace without SKIA_OHOS_DEBUG macro
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) \
+    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
+
+// Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
+// associated arguments. If the category is not enabled, then this does nothing.
+#ifdef SKIA_OHOS_DEBUG
+#define TRACE_EVENT0(category_group, name) \
+    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
+
+#define TRACE_EVENT0_ALWAYS(category_group, name) \
+    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
+
+#define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
+    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
+
+#define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
+    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
+#else
+#define TRACE_EVENT0(category_group, name) TRACE_EMPTY
+#define TRACE_EVENT0_ALWAYS(category_group, name) TRACE_EMPTY
+#define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) TRACE_EMPTY
+#define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) TRACE_EMPTY
+#endif
+
+// Records a single event called "name" immediately, with 0, 1 or 2 associated arguments. If the
+// category is not enabled, then this does nothing.
+#define TRACE_EVENT_INSTANT0(category_group, name, scope) TRACE_EMPTY
+#define TRACE_EVENT_INSTANT1(category_group, name, scope, arg1_name, arg1_val) TRACE_EMPTY
+#define TRACE_EVENT_INSTANT2(category_group, name, scope, arg1_name, arg1_val, arg2_name, arg2_val) TRACE_EMPTY
+
+// Records the value of a counter called "name" immediately. Value
+// must be representable as a 32 bit integer.
+#define TRACE_COUNTER1(category_group, name, value) TRACE_EMPTY
+
+// Records the values of a multi-parted counter called "name" immediately.
+#ifdef SKIA_OHOS_DEBUG
+#define TRACE_COUNTER2(category_group, name, value1_name, value1_val, value2_name, value2_val) \
+    do { \
+        if (UNLIKELY(IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP))) { \
+            std::string tid = std::to_string(gettid()); \
+            std::string threadValue1Name = tid + "-" + name + "-" + value1_name; \
+            std::string threadValue2Name = tid + "-" + name + "-" + value2_name; \
+            CountTrace(HITRACE_TAG_GRAPHIC_AGP, threadValue1Name, value1_val); \
+            CountTrace(HITRACE_TAG_GRAPHIC_AGP, threadValue2Name, value2_val); \
+        } \
+    } while (0)
+#else
+#define TRACE_COUNTER2(category_group, name, value1_name, value1_val, value2_name, value2_val) TRACE_EMPTY
+#endif
+
+#define TRACE_EVENT_ASYNC_BEGIN0(category, name, id) TRACE_EMPTY
+#define TRACE_EVENT_ASYNC_BEGIN1(category, name, id, arg1_name, arg1_val) TRACE_EMPTY
+#define TRACE_EVENT_ASYNC_BEGIN2(category, name, id, arg1_name, arg1_val, arg2_name, arg2_val) TRACE_EMPTY
+#define TRACE_EVENT_ASYNC_END0(category, name, id) TRACE_EMPTY
+#define TRACE_EVENT_ASYNC_END1(category, name, id, arg1_name, arg1_val) TRACE_EMPTY
+#define TRACE_EVENT_ASYNC_END2(category, name, id, arg1_name, arg1_val, arg2_name, arg2_val) TRACE_EMPTY
+
+// Macros to track the life time and value of arbitrary client objects.
+#define TRACE_EVENT_OBJECT_CREATED_WITH_ID(category_group, name, id) TRACE_EMPTY
+#define TRACE_EVENT_OBJECT_SNAPSHOT_WITH_ID(category_group, name, id, snapshot) TRACE_EMPTY
+#define TRACE_EVENT_OBJECT_DELETED_WITH_ID(category_group, name, id) TRACE_EMPTY
+
+// Macro to efficiently determine if a given category group is enabled.
+#define TRACE_EVENT_CATEGORY_GROUP_ENABLED(category_group, ret)             \
+    do { *ret = false; } while (0)
+
 #else // !SK_BUILD_FOR_ANDROID_FRAMEWORK && !SK_DISABLE_TRACING
 
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
 
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this does nothing.
-
-// print ohos trace without SKIA_OHOS_DEBUG macro
-#define SKIA_OHOS_TRACE_PRIV(category_group, name) \
-  HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
-#ifdef SKIA_OHOS_DEBUG
-#define TRACE_EVENT0(category_group, name) \
-  HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
-
-#define TRACE_EVENT0_ALWAYS(category_group, name) \
-  HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
-
-#define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
-  HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \  
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
-
-#define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
-  HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name); \  
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val)
-#else
 #define TRACE_EVENT0(category_group, name) \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
 
@@ -232,7 +295,7 @@ public:
 
 #define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val)
-#endif
+
 // Records a single event called "name" immediately, with 0, 1 or 2 associated arguments. If the
 // category is not enabled, then this does nothing.
 #define TRACE_EVENT_INSTANT0(category_group, name, scope)                   \

@@ -21,9 +21,9 @@
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
+#include "modules/skparagraph/include/TextLineBase.h"
 #include "modules/skparagraph/include/TextShadow.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skparagraph/include/TextLineBase.h"
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skunicode/include/SkUnicode.h"
@@ -131,6 +131,10 @@ public:
     bool getApplyRoundingHack() const { return false; }
 
     size_t lineNumber() override { return fLineNumber; }
+
+#ifdef OHOS_SUPPORT
+    TextRange getEllipsisTextRange() override;
+#endif
 
     TextLine& addLine(SkVector offset, SkVector advance,
                       TextRange textExcludingSpaces, TextRange text, TextRange textIncludingNewlines,
@@ -301,6 +305,10 @@ public:
         return hash_;
     }
 
+#ifdef OHOS_SUPPORT
+    size_t GetMaxLines() const override { return fParagraphStyle.getMaxLines(); }
+#endif
+
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
@@ -408,6 +416,10 @@ private:
 
     size_t fLineNumber;
     uint32_t hash_{0u};
+
+#ifdef OHOS_SUPPORT
+    TextRange fEllipsisRange{EMPTY_RANGE};
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia

@@ -12,6 +12,10 @@
 #include <unistd.h>
 #include <cstring>
 
+#ifdef SK_BUILD_FONT_MGR_FOR_OHOS
+#include <parameters.h>
+#endif
+
 #include "securec.h"
 
 #include "SkFontStyle.h"
@@ -20,7 +24,12 @@
 using namespace ErrorCode;
 static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
 
-const bool G_IS_HMSYMBOL_ENABLE = HmSymbolConfig_OHOS::GetInstance()->GetHmSymbolEnable();
+#ifdef SK_BUILD_FONT_MGR_FOR_OHOS
+    static const bool G_IS_HMSYMBOL_ENABLE =
+        (std::atoi(OHOS::system::GetParameter("persist.sys.graphic.hmsymbolcfg.enable", "1").c_str()) != 0);
+#else
+    static const bool G_IS_HMSYMBOL_ENABLE = true;
+#endif
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
 static const char* OHOS_DEFAULT_CONFIG = "fontconfig.json";
@@ -297,6 +306,10 @@ uint32_t FontConfig_OHOS::getFontStyleDifference(const SkFontStyle& dstStyle,
         {2, 0, 1},
         {2, 1, 0}
     };
+    if (dstStyle.slant() < 0 || dstStyle.slant() >= 3 || srcStyle.slant() < 0 || srcStyle.slant() >= 3) {
+        LOGE("Slant out of range, dst:%{public}d, src:%{public}d", dstStyle.slant(), srcStyle.slant());
+        return 0;
+    }
     uint32_t slantDiff = diffSlantValue[dstStyle.slant()][srcStyle.slant()];
 
     int dstWeight = dstStyle.weight();
@@ -886,6 +899,10 @@ void FontConfig_OHOS::getAxisValues(const AxisDefinitions& axisDefs,
     position.coordinates = variation.axis.data();
 
     int count = axisDefs.count();
+    if (count <= 0) {
+        LOGE("Invalid axis count:%{public}d", count);
+        return;
+    }
     SkFixed axisValues[count];
     SkTypeface_FreeType::Scanner::computeAxisValues(axisDefs, position,
         axisValues, font.familyName);

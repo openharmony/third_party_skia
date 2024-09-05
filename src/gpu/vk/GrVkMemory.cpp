@@ -11,12 +11,10 @@
 #endif
 
 #include "include/core/SkExecutor.h"
+#include "src/core/SkTraceEvent.h"
+#include "src/core/SkUtils.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkUtil.h"
-
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include "hitrace_meter.h"
-#endif
 
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
 
@@ -70,6 +68,9 @@ void GrVkMemory::AsyncFreeVMAMemoryManager::FreeMemoryInWaitQueue(std::function<
                 VK_CALL(free.fGpu, FreeMemory(free.fGpu->device(), free.fAlloc.fMemory, nullptr));
             } else {
                 GrVkMemoryAllocator* allocator = free.fGpu->memoryAllocator();
+                if (free.fAlloc.fAllocator != nullptr) {
+                    allocator = free.fAlloc.fAllocator;
+                }
                 allocator->freeMemory(free.fAlloc.fBackendMemory);
             }
             pair.second.fTotalFreedMemorySize -= free.fAlloc.fSize;
@@ -155,9 +156,7 @@ bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
                                            OH_NativeBuffer *nativeBuffer,
                                            VkBuffer buffer,
                                            GrVkAlloc* alloc) {
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "ImportAndBindBufferMemory");
-#endif
+    HITRACE_OHOS_NAME_ALWAYS("ImportAndBindBufferMemory");
     VkDevice device = gpu->device();
     VkMemoryRequirements memReqs{};
     VK_CALL(gpu, GetBufferMemoryRequirements(device, buffer, &memReqs));
@@ -218,6 +217,9 @@ void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
     } else {
         SkASSERT(alloc.fBackendMemory);
         GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
+        if (alloc.fAllocator != nullptr) {
+            allocator = alloc.fAllocator;
+        }
         allocator->freeMemory(alloc.fBackendMemory);
     }
 }
@@ -225,14 +227,19 @@ void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
 bool GrVkMemory::AllocAndBindImageMemory(GrVkGpu* gpu,
                                          VkImage image,
                                          GrMemoryless memoryless,
-                                         GrVkAlloc* alloc) {
+                                         GrVkAlloc* alloc,
+                                         int memorySize) {
     GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
     GrVkBackendMemory memory = 0;
 
+    bool vmaFlag = SkGetVmaCacheFlag();
+    bool vmaCacheFlag = vmaFlag && memorySize > SkGetNeedCachedMemroySize();
+    if (vmaCacheFlag) {
+        allocator = gpu->memoryAllocatorCacheImage();
+    }
+
     VkMemoryRequirements memReqs;
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "AllocAndBindImageMemory");
-#endif
+    HITRACE_OHOS_NAME_ALWAYS("AllocAndBindImageMemory");
     GR_VK_CALL(gpu->vkInterface(), GetImageMemoryRequirements(gpu->device(), image, &memReqs));
 
     AllocationPropertyFlags propFlags;
@@ -240,7 +247,9 @@ bool GrVkMemory::AllocAndBindImageMemory(GrVkGpu* gpu,
     // memory we can add a size check here to force the use of dedicate memory. However for now,
     // we let the allocators decide. The allocator can query the GPU for each image to see if the
     // GPU recommends or requires the use of dedicated memory.
-    if (gpu->vkCaps().shouldAlwaysUseDedicatedImageMemory()) {
+    if (vmaCacheFlag) {
+        propFlags = AllocationPropertyFlags::kNone;
+    } else if (gpu->vkCaps().shouldAlwaysUseDedicatedImageMemory()) {
         propFlags = AllocationPropertyFlags::kDedicatedAllocation;
     } else {
         propFlags = AllocationPropertyFlags::kNone;
@@ -279,6 +288,9 @@ void GrVkMemory::FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
     }
     SkASSERT(alloc.fBackendMemory);
     GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
+    if (alloc.fAllocator != nullptr) {
+        allocator = alloc.fAllocator;
+    }
     allocator->freeMemory(alloc.fBackendMemory);
 }
 
@@ -286,6 +298,9 @@ void* GrVkMemory::MapAlloc(GrVkGpu* gpu, const GrVkAlloc& alloc) {
     SkASSERT(GrVkAlloc::kMappable_Flag & alloc.fFlags);
     SkASSERT(alloc.fBackendMemory);
     GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
+    if (alloc.fAllocator != nullptr) {
+        allocator = alloc.fAllocator;
+    }
     void* mapPtr;
     VkResult result = allocator->mapMemory(alloc.fBackendMemory, &mapPtr);
     if (!gpu->checkVkResult(result)) {
@@ -297,6 +312,9 @@ void* GrVkMemory::MapAlloc(GrVkGpu* gpu, const GrVkAlloc& alloc) {
 void GrVkMemory::UnmapAlloc(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
     SkASSERT(alloc.fBackendMemory);
     GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
+    if (alloc.fAllocator != nullptr) {
+        allocator = alloc.fAllocator;
+    }
     allocator->unmapMemory(alloc.fBackendMemory);
 }
 
@@ -330,6 +348,9 @@ void GrVkMemory::FlushMappedAlloc(GrVkGpu* gpu, const GrVkAlloc& alloc, VkDevice
         SkASSERT(size <= alloc.fSize);
         SkASSERT(alloc.fBackendMemory);
         GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
+        if (alloc.fAllocator != nullptr) {
+            allocator = alloc.fAllocator;
+        }
         VkResult result = allocator->flushMemory(alloc.fBackendMemory, offset, size);
         gpu->checkVkResult(result);
     }
@@ -342,6 +363,9 @@ void GrVkMemory::InvalidateMappedAlloc(GrVkGpu* gpu, const GrVkAlloc& alloc,
         SkASSERT(size <= alloc.fSize);
         SkASSERT(alloc.fBackendMemory);
         GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
+        if (alloc.fAllocator != nullptr) {
+            allocator = alloc.fAllocator;
+        }
         VkResult result = allocator->invalidateMemory(alloc.fBackendMemory, offset, size);
         gpu->checkVkResult(result);
     }

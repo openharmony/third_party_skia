@@ -264,9 +264,22 @@ png_push_read_chunk(png_structrp png_ptr, png_inforp info_ptr)
       png_ptr->idat_size = png_ptr->push_length;
       png_ptr->process_mode = PNG_READ_IDAT_MODE;
       png_push_have_info(png_ptr, info_ptr);
-      png_ptr->zstream.avail_out =
-          (uInt) PNG_ROWBYTES(png_ptr->pixel_depth,
-          png_ptr->iwidth) + 1;
+#ifdef PNG_MULTY_LINE_ENABLE
+      // OH ISSUE: png optimize
+      if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8 represents 1 pixel
+         (png_ptr->transformations & PNG_CHECK) == 0) {
+         int rest = png_ptr->num_rows - png_ptr->row_number;
+         int row_num = rest < PNG_INFLATE_ROWS ? rest : PNG_INFLATE_ROWS;
+         png_ptr->zstream.avail_out = (uInt)(PNG_ROWBYTES(png_ptr->pixel_depth,
+             png_ptr->iwidth) + 1) * row_num;
+      }
+      else
+#endif
+      {
+         png_ptr->zstream.avail_out =
+            (uInt) PNG_ROWBYTES(png_ptr->pixel_depth,
+            png_ptr->iwidth) + 1;
+      }
       png_ptr->zstream.next_out = png_ptr->row_buf;
       return;
    }
@@ -623,6 +636,92 @@ png_push_read_IDAT(png_structrp png_ptr)
    }
 }
 
+#ifdef PNG_MULTY_LINE_ENABLE
+// OH ISSUE: png optimize
+static void png_push_process_row_x2(png_structrp png_ptr,
+   png_row_info row_info_in)
+{
+   png_debug(1, "in png_push_process_row_x2");
+   png_row_info row_info = row_info_in;
+   png_read_filter_row(png_ptr, &row_info, png_ptr->row_buf + 1,
+      png_ptr->prev_row + 1, png_ptr->row_buf[0] + 4); // 4 is the increment of x2_filter
+
+#ifdef PNG_READ_TRANSFORMS_SUPPORTED
+   if (png_ptr->transformations != 0)
+      png_do_read_transformations(png_ptr, &row_info);
+#endif
+
+   if (png_ptr->transformed_pixel_depth == 0)
+   {
+      png_ptr->transformed_pixel_depth = row_info.pixel_depth;
+      if (row_info.pixel_depth > png_ptr->maximum_pixel_depth)
+         png_error(png_ptr, "progressive row overflow");
+   }
+
+   png_push_have_row(png_ptr, png_ptr->row_buf + 1);
+   png_read_push_finish_row(png_ptr);
+
+   png_ptr->row_buf = png_ptr->row_buf + png_ptr->rowbytes + 1;
+
+   // do it again
+   if (png_ptr->transformations != 0)
+   {
+      memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info.rowbytes + 1);
+   }
+   else
+   {
+      png_ptr->prev_row = png_ptr->row_buf;
+   }
+#ifdef PNG_READ_TRANSFORMS_SUPPORTED
+   if (png_ptr->transformations != 0)
+      png_do_read_transformations(png_ptr, &row_info);
+#endif
+
+   png_push_have_row(png_ptr, png_ptr->row_buf + 1);
+   png_read_push_finish_row(png_ptr);
+}
+
+static void png_push_process_multi_rows(png_structrp png_ptr, int row_num)
+{
+   png_debug(1, "in png_push_process_multi_rows");
+   uInt row_bytes =  png_ptr->rowbytes + 1;
+
+   png_row_info row_info;
+   row_info.width = png_ptr->iwidth;
+   row_info.color_type = png_ptr->color_type;
+   row_info.bit_depth = png_ptr->bit_depth;
+   row_info.channels = png_ptr->channels;
+   row_info.pixel_depth = png_ptr->pixel_depth;
+   row_info.rowbytes = png_ptr->rowbytes;
+
+   png_bytep temp_row = png_ptr->row_buf;
+   png_bytep temp_prev_row = png_ptr->prev_row;
+
+   for (int i = 0; i < row_num; i++) {
+      // check if the x2_filter is effective: only supports channels 3 or 4
+      if ((png_ptr->channels == 3 || png_ptr->channels == 4) &&
+          i < row_num -1 && png_ptr->row_buf[0] > PNG_FILTER_VALUE_SUB &&
+          png_ptr->row_buf[0] < PNG_FILTER_VALUE_LAST &&
+          png_ptr->row_buf[0] == png_ptr->row_buf[row_bytes])
+      {
+         png_push_process_row_x2(png_ptr, row_info);
+         png_ptr->row_buf = png_ptr->row_buf + row_bytes;
+         i++;
+         continue;
+      }
+      png_push_process_row(png_ptr);
+      png_ptr->row_buf = png_ptr->row_buf + row_bytes;
+   }
+
+   if (png_ptr->transformations == 0 && png_ptr->interlaced == 0)
+   {
+      png_ptr->prev_row = temp_prev_row;
+      memcpy(png_ptr->prev_row, png_ptr->row_buf - row_bytes, row_bytes);
+   }
+   png_ptr->row_buf = temp_row;
+}
+#endif
+
 void /* PRIVATE */
 png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
     size_t buffer_length)
@@ -638,6 +737,17 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
    png_ptr->zstream.next_in = buffer;
    /* TODO: WARNING: TRUNCATION ERROR: DANGER WILL ROBINSON: */
    png_ptr->zstream.avail_in = (uInt)buffer_length;
+
+#ifdef PNG_MULTY_LINE_ENABLE
+   // OH ISSUE: png optimize
+   int row_num = 1;
+   if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8 is 1 pixel and 8 bytes
+       (png_ptr->transformations & PNG_CHECK) == 0)
+   {
+      int rest = png_ptr->num_rows - png_ptr->row_number;
+      row_num = rest < PNG_INFLATE_ROWS ? rest : PNG_INFLATE_ROWS;
+   }
+#endif
 
    /* Keep going until the decompressed data is all processed
     * or the stream marked as finished.
@@ -655,9 +765,20 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
       if (!(png_ptr->zstream.avail_out > 0))
       {
          /* TODO: WARNING: TRUNCATION ERROR: DANGER WILL ROBINSON: */
+#ifdef PNG_MULTY_LINE_ENABLE
+         // OH ISSUE: png optimize
+         if (png_ptr->interlaced == 0 && png_ptr->bit_depth == 8 && // 8 is 1 pixel and 8 bytes
+             (png_ptr->transformations & PNG_CHECK) == 0)
+         {
+            int rest = png_ptr->num_rows - png_ptr->row_number;
+            row_num = rest < PNG_INFLATE_ROWS ? rest : PNG_INFLATE_ROWS;
+         }
+         png_ptr->zstream.avail_out = (uInt)(PNG_ROWBYTES(png_ptr->pixel_depth,
+             png_ptr->iwidth) + 1) * row_num;
+#else
          png_ptr->zstream.avail_out = (uInt)(PNG_ROWBYTES(png_ptr->pixel_depth,
              png_ptr->iwidth) + 1);
-
+#endif
          png_ptr->zstream.next_out = png_ptr->row_buf;
       }
 
@@ -719,7 +840,12 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
 
          /* Do we have a complete row? */
          if (png_ptr->zstream.avail_out == 0)
+#ifdef PNG_MULTY_LINE_ENABLE
+            // OH ISSUE: png optimize
+            png_push_process_multi_rows(png_ptr, row_num);
+#else
             png_push_process_row(png_ptr);
+#endif
       }
 
       /* And check for the end of the stream. */
@@ -738,6 +864,7 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
 void /* PRIVATE */
 png_push_process_row(png_structrp png_ptr)
 {
+   png_debug(1, "in png_push_process_row");
    /* 1.5.6: row_info moved out of png_struct to a local here. */
    png_row_info row_info;
 
@@ -762,7 +889,19 @@ png_push_process_row(png_structrp png_ptr)
     * it may not be in the future, so this was changed just to copy the
     * interlaced row count:
     */
+#ifdef PNG_MULTY_LINE_ENABLE
+   // OH ISSUE: png optimize
+   if (png_ptr->transformations == 0 && png_ptr->interlaced == 0)
+   {
+      png_ptr->prev_row = png_ptr->row_buf;
+   }
+   else
+   {
+      memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info.rowbytes + 1);
+   }
+#else
    memcpy(png_ptr->prev_row, png_ptr->row_buf, row_info.rowbytes + 1);
+#endif
 
 #ifdef PNG_READ_TRANSFORMS_SUPPORTED
    if (png_ptr->transformations != 0)

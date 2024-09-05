@@ -695,6 +695,10 @@ void VertexArray::onSubjectStateChange(angle::SubjectIndex index, angle::Subject
             setDependentDirtyBit(false, index);
             break;
 
+        //cve-2022-0297 angle
+        case angle::SubjectMessage::BufferVkStorageChanged:
+            break;
+
         default:
             UNREACHABLE();
             break;
