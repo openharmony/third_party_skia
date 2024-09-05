@@ -30,7 +30,7 @@
 #include <string>
 #include <utility>
 #include "log.h"
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
 #include "parameter.h"
 #endif
 
@@ -188,6 +188,11 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
 #else
             RSFontMetrics newFontMetrics;
             targetRun.fFont.GetMetrics(&newFontMetrics);
+#endif
+#ifdef OHOS_SUPPORT
+            auto decompressFont = targetRun.fFont;
+            scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+            metricsIncludeFontPadding(&newFontMetrics, decompressFont);
 #endif
             fontMetrics.emplace_back(newFontMetrics);
         }
@@ -714,6 +719,7 @@ static bool is_ascii_7bit_space(int c) {
 #undef M
 }
 
+#ifdef OHOS_SUPPORT
 static std::vector<SkRange<SkUnichar>> CJK_UNICODE_SET = {
     SkRange<SkUnichar>(0x4E00, 0x9FFF),
     SkRange<SkUnichar>(0x3400, 0x4DBF),
@@ -746,7 +752,7 @@ constexpr SkUnichar COPYRIGHT_UNICODE = 0x00A9;
 struct UnicodeSet {
     std::unordered_set<SkUnichar> set_;
     explicit UnicodeSet(const std::vector<SkRange<SkUnichar>>& unicodeSet) {
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
         static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
         char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
         GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
@@ -769,6 +775,7 @@ struct UnicodeSet {
 
 static const UnicodeSet CJK_SET(CJK_UNICODE_SET);
 static const UnicodeSet WESTERN_SET(WESTERN_UNICODE_SET);
+#endif
 
 Cluster::Cluster(ParagraphImpl* owner,
                  RunIndex runIndex,
@@ -1282,11 +1289,25 @@ void ParagraphImpl::resolveStrut() {
 #ifndef USE_SKIA_TXT
     SkFont font(typefaces.front(), strutStyle.getFontSize());
     SkFontMetrics metrics;
+#ifdef OHOS_SUPPORT
+    SkFont compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.getMetrics(&metrics);
+    metricsIncludeFontPadding(&metrics, font);
+#else
     font.getMetrics(&metrics);
+#endif
 #else
     RSFont font(typefaces.front(), strutStyle.getFontSize(), 1, 0);
     RSFontMetrics metrics;
+#ifdef OHOS_SUPPORT
+    RSFont compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.GetMetrics(&metrics);
+    metricsIncludeFontPadding(&metrics, font);
+#else
     font.GetMetrics(&metrics);
+#endif
 #endif
 
     if (strutStyle.getHeightOverride()) {
@@ -1609,7 +1630,11 @@ void ParagraphImpl::computeEmptyMetrics() {
 
     if (!paragraphStyle().getStrutStyle().getForceStrutHeight() &&
         textStyle.getHeightOverride()) {
+#ifdef OHOS_SUPPORT
+        const auto intrinsicHeight = fEmptyMetrics.fDescent - fEmptyMetrics.fAscent + fEmptyMetrics.fLeading;
+#else
         const auto intrinsicHeight = fEmptyMetrics.height();
+#endif
         const auto strutHeight = textStyle.getHeight() * textStyle.getFontSize();
         if (paragraphStyle().getStrutStyle().getHalfLeading()) {
             fEmptyMetrics.update(
@@ -1971,6 +1996,11 @@ SkFontMetrics ParagraphImpl::measureText() {
     SkRect firstBounds;
     auto firstStr = text(fRuns.front().textRange());
     firstFont.getMetrics(&metrics);
+#ifdef OHOS_SUPPORT
+    auto decompressFont = firstFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    metricsIncludeFontPadding(&metrics, decompressFont);
+#endif
     firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
     fGlyphsBoundsTop = firstBounds.top();
     fGlyphsBoundsBottom = firstBounds.bottom();
@@ -2007,6 +2037,11 @@ RSFontMetrics ParagraphImpl::measureText()
     RSRect firstBounds;
     auto firstStr = text(fRuns.front().textRange());
     firstFont.GetMetrics(&metrics);
+#ifdef OHOS_SUPPORT
+    auto decompressFont = firstFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    metricsIncludeFontPadding(&metrics, decompressFont);
+#endif
     firstFont.MeasureText(firstStr.data(), firstStr.size(), RSDrawing::TextEncoding::UTF8, &firstBounds);
     fGlyphsBoundsTop = firstBounds.GetTop();
     fGlyphsBoundsBottom = firstBounds.GetBottom();

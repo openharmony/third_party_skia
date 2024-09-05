@@ -6,7 +6,7 @@
 #include <cstring>
 #include "Run.h"
 #include "log.h"
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
 #include "parameter.h"
 #endif
 
@@ -658,8 +658,9 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     auto disableLastDescent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
     bool firstLine = true; // We only interested in fist line if we have to disable the first ascent
 
+#ifdef OHOS_SUPPORT
     bool autoSpacingEnableFlag = false;
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
     static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
     char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
     GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
@@ -677,6 +678,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         }
     }
     LOGD("Got %{public}lu", static_cast<unsigned long>(balancedWidths.size()));
+#endif
 
     SkScalar softLineMaxIntrinsicWidth = 0;
     fEndLine = TextStretch(span.begin(), span.begin(), parent->strutForceHeight());

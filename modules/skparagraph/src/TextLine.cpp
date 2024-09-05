@@ -24,7 +24,8 @@
 #include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skshaper/include/SkShaper.h"
-#ifdef TXT_AUTO_SPACING
+#include "src/Run.h"
+#ifdef TXT_USE_PARAMETER
 #include "parameter.h"
 #endif
 #include "log.h"
@@ -490,8 +491,9 @@ SkScalar TextLine::calculateSpacing(const Cluster prevCluster, const Cluster cur
     return 0;
 }
 
+#ifdef OHOS_SUPPORT
 SkScalar TextLine::autoSpacing() {
-#ifdef TXT_AUTO_SPACING
+#ifdef TXT_USE_PARAMETER
     static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
     char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
     GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
@@ -514,6 +516,7 @@ SkScalar TextLine::autoSpacing() {
     this->fAdvance.fX += spacing;
     return spacing;
 }
+#endif
 
 void TextLine::scanStyles(StyleType styleType, const RunStyleVisitor& visitor) {
     if (this->empty()) {
@@ -613,7 +616,11 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
 #endif
 
     record.fOffset = SkPoint::Make(this->offset().fX + context.fTextShift,
+#ifdef OHOS_SUPPORT
+        this->offset().fY + correctedBaseline - (context.run ? context.run->fCompressionBaselineShift : 0));
+#else
                                    this->offset().fY + correctedBaseline);
+#endif
 #ifdef OHOS_SUPPORT
 #ifndef USE_SKIA_TXT
     SkFont font;
@@ -1718,6 +1725,11 @@ LineMetrics TextLine::getMetrics() const {
 #else
             RSFontMetrics fontMetrics;
             run->fFont.GetMetrics(&fontMetrics);
+#endif
+#ifdef OHOS_SUPPORT
+            auto decompressFont = run->fFont;
+            scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+            metricsIncludeFontPadding(&fontMetrics, decompressFont);
 #endif
             StyleMetrics styleMetrics(&style, fontMetrics);
             result.fLineMetrics.emplace(textRange.start, styleMetrics);

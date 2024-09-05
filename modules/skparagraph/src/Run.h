@@ -63,6 +63,20 @@ enum class RoundRectType {
 // first: words length, second: spacing width ratio
 constexpr SkScalar AUTO_SPACING_WIDTH_RATIO = 8;
 
+#ifdef OHOS_SUPPORT
+enum class ScaleOP {
+    COMPRESS,
+    DECOMPRESS,
+};
+#ifdef USE_SKIA_TXT
+void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op);
+void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font);
+#else
+void scaleFontWithCompressionConfig(SkFont& font, ScaleOP op);
+void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font);
+#endif
+#endif
+
 class Run {
 public:
     Run(ParagraphImpl* owner,
@@ -276,6 +290,9 @@ private:
     SkScalar fBottomInGroup = 0.0f;
     SkScalar fMaxRoundRectRadius = 0.0f;
     size_t indexInLine;
+#ifdef OHOS_SUPPORT
+    SkScalar fCompressionBaselineShift{ 0.0f };
+#endif
 };
 
 template<typename Visitor>
@@ -484,6 +501,11 @@ public:
     InternalLineMetrics(const RSFont& font, bool forceStrut) {
         RSFontMetrics metrics;
         font.GetMetrics(&metrics);
+#endif
+#ifdef OHOS_SUPPORT
+        auto decompressFont = font;
+        scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+        metricsIncludeFontPadding(&metrics, decompressFont);
 #endif
         fAscent = metrics.fAscent;
         fDescent = metrics.fDescent;
