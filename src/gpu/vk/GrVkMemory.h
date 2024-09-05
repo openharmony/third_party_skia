@@ -23,7 +23,7 @@ namespace GrVkMemory {
     public:
         struct WaitQueueItem {
             WaitQueueItem(const GrVkGpu* gpu, const GrVkAlloc& alloc, bool isBuffer)
-                    : fGpu(gpu), fAlloc(alloc), fIsBuffer(isBuffer) {}
+                : fGpu(gpu), fAlloc(alloc), fIsBuffer(isBuffer) {}
 
             const GrVkGpu* fGpu;
             const GrVkAlloc fAlloc;
@@ -39,7 +39,7 @@ namespace GrVkMemory {
         AsyncFreeVMAMemoryManager& operator=(const AsyncFreeVMAMemoryManager&) = delete;
 
         void FreeMemoryInWaitQueue(std::function<bool(void)> nextFrameHasArrived);
-        void AddMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, bool isBuffer);
+        bool AddMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, bool isBuffer);
 
     private:
         AsyncFreeVMAMemoryManager();
