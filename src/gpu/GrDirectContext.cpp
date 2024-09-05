@@ -391,9 +391,9 @@ void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, con
 #endif
 }
 
-void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
-    const std::set<int>& protectedPidSet)
-{
+void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly,
+                                              const std::set<int>& exitedPidSet,
+                                              const std::set<int>& protectedPidSet) {
     ASSERT_SINGLE_OWNER
 
     if (this->abandoned()) {
