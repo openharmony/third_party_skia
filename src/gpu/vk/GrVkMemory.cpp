@@ -44,10 +44,9 @@ static bool FindMemoryType(GrVkGpu *gpu, uint32_t typeFilter, VkMemoryPropertyFl
 }
 
 GrVkMemory::AsyncFreeVMAMemoryManager::AsyncFreeVMAMemoryManager() {
-    fAsyncFreedMemoryEnabled =
-            (std::atoi(OHOS::system::GetParameter(
-                               "persist.sys.graphic.mem.async_free_between_frames_enabled", "1")
-                               .c_str()) != 0);
+    fAsyncFreedMemoryEnabled = (std::atoi(
+        OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_between_frames_enabled", "1").c_str()
+    ) != 0);
 }
 
 GrVkMemory::AsyncFreeVMAMemoryManager& GrVkMemory::AsyncFreeVMAMemoryManager::GetInstance() {
