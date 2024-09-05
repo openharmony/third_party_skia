@@ -80,4 +80,5 @@ declare_args() {
   use_oh_skia = true
   skia_use_freetype2 = true
   is_skia_component_build = false
+  skia_feature_zlib = ""
 }

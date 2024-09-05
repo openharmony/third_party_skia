@@ -5,7 +5,6 @@
 
 declare_args() {
   skia_use_system_libpng = is_official_build
-  skia_feature_zlib = ""
 }
 
 import("../../gn/oh_skia.gni")
