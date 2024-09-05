@@ -1626,7 +1626,6 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
         totalWidth += width;
     }
 
-
     for (auto& runIndex : fRunsInVisualOrder) {
         // add the lastClipRun's left ellipsis if necessary
         if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex &&
