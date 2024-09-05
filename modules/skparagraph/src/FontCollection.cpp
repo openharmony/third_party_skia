@@ -2,6 +2,9 @@
 #include "include/core/SkTypeface.h"
 #include "modules/skparagraph/include/FontCollection.h"
 #include "modules/skparagraph/include/Paragraph.h"
+#ifdef OHOS_SUPPORT
+#include "modules/skparagraph/src/log.h"
+#endif
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skshaper/include/SkShaper.h"
 
@@ -26,6 +29,10 @@ std::shared_ptr<RSTypeface> RSLegacyMakeTypeface(
 #endif
 
 constexpr int MAX_VARTYPEFACE_SIZE = 32;
+#ifdef OHOS_SUPPORT
+std::unordered_map<uint32_t, std::shared_ptr<RSTypeface>> g_faceTypeCache(MAX_VARTYPEFACE_SIZE);
+#endif
+
 }
 
 bool FontCollection::FamilyKey::operator==(const FontCollection::FamilyKey& other) const {
@@ -389,12 +396,6 @@ private:
     SkMutex& fMutex;
 };
 
-static SkLRUCacheMgr GetLRUCacheInstance() {
-    static SkMutex gFaceCacheMutex;
-    static SkLRUCache<uint32_t, std::shared_ptr<RSTypeface>> gFaceCache(MAX_VARTYPEFACE_SIZE);
-    return SkLRUCacheMgr(gFaceCache, gFaceCacheMutex);
-}
-
 #ifndef USE_SKIA_TXT
 sk_sp<SkTypeface> FontCollection::CloneTypeface(sk_sp<SkTypeface> typeface,
     const std::optional<FontArguments>& fontArgs)
@@ -403,37 +404,50 @@ sk_sp<SkTypeface> FontCollection::CloneTypeface(sk_sp<SkTypeface> typeface,
 std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSTypeface> typeface,
     const std::optional<FontArguments>& fontArgs)
 {
-    std::shared_lock<std::shared_mutex> readLock(mutex_);
-#ifndef USE_SKIA_TXT
-    if (!typeface || !fontArgs || typeface->isCustomTypeface()) {
-#else
-    if (!typeface || !fontArgs || typeface->IsCustomTypeface()) {
 #endif
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+#ifdef OHOS_SUPPORT
+    if (!typeface || !fontArgs) {
         return typeface;
     }
 
     size_t hash = 0;
     hash ^= std::hash<FontArguments>()(fontArgs.value());
 #ifndef USE_SKIA_TXT
-    hash ^= std::hash<uint32_t>()(typeface->uniqueID());
+    hash ^= std::hash<std::string>()(std::string(typeface->getFamilyName().c_str()));
 #else
-    hash ^= std::hash<uint32_t>()(typeface->GetUniqueID());
+    hash ^= std::hash<std::string>()(typeface->GetFamilyName());
 #endif
 
 //    std::unique_lock<std::mutex> lock(fMutex);
-    auto cached = GetLRUCacheInstance().find(hash);
-    if (cached) {
-        return cached;
-    } else {
-        auto varTypeface = fontArgs->CloneTypeface(typeface);
-        if (!varTypeface) {
+    auto cached = g_faceTypeCache.find(hash);
+    if (cached != g_faceTypeCache.end()) {
+        return cached->second;
+    }
+    if (g_faceTypeCache.size() >= MAX_VARTYPEFACE_SIZE) {
+        return typeface;
+    }
+    auto varTypeface = fontArgs->CloneTypeface(typeface);
+    if (!varTypeface) {
+        return typeface;
+    }
+    g_faceTypeCache[hash] = varTypeface;
+
+#ifndef USE_SKIA_TXT
+    if (varTypeface->isCustomTypeface() && RSTypeface::GetTypefaceRegisterCallBack() != nullptr) {
+#else
+    if (varTypeface->IsCustomTypeface() && RSTypeface::GetTypefaceRegisterCallBack() != nullptr) {
+#endif
+        if (!RSTypeface::GetTypefaceRegisterCallBack()(varTypeface)) {
+            g_faceTypeCache.erase(hash);
             return typeface;
         }
-        GetLRUCacheInstance().insert(hash, varTypeface);
-        return varTypeface;
     }
-}
+    return varTypeface;
+#else
+    return typeface;
 #endif
+}
 
 void FontCollection::disableFontFallback() {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
