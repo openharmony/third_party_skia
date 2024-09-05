@@ -1672,7 +1672,7 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
         const auto run = &this->fOwner->run(runIndex);
         auto lineIntersection = intersected(run->textRange(), textRange);
         if (lineIntersection.width() == 0 && this->width() != 0) {
-            // deal with empty runs in a better way
+            // TODO: deal with empty runs in a better way
             continue;
         }
         if (!run->leftToRight() && runOffset == 0 && includingGhostSpaces) {
