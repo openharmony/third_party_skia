@@ -1425,6 +1425,50 @@ TextLine& ParagraphImpl::addLine(SkVector offset,
                                clusters, clustersWithGhosts, widthWithSpaces, sizes);
 }
 
+#ifdef OHOS_SUPPORT
+TextBox ParagraphImpl::getEmptyTextRect(RectHeightStyle rectHeightStyle) const
+{
+    // get textStyle to calculate text box when text is empty(reference to ParagraphImpl::computeEmptyMetrics())
+    bool emptyParagraph = fRuns.empty();
+    TextStyle textStyle = paragraphStyle().getTextStyle();
+    if (emptyParagraph && !fTextStyles.empty()) {
+        textStyle = fTextStyles.back().fStyle;
+    }
+
+    // calculate text box(reference to TextLine::getRectsForRange(), switch(rectHeightStyle))
+    TextBox box(SkRect::MakeXYWH(0, 0, 0, fHeight), fParagraphStyle.getTextDirection());
+    auto verticalShift = fEmptyMetrics.rawAscent() - fEmptyMetrics.ascent();
+    switch (rectHeightStyle) {
+    case RectHeightStyle::kTight:
+        if (textStyle.getHeightOverride() && textStyle.getHeight() > 0) {
+            const auto effectiveBaseline = fEmptyMetrics.baseline() + fEmptyMetrics.delta();
+            box.rect.fTop = effectiveBaseline + fEmptyMetrics.rawAscent();
+            box.rect.fBottom = effectiveBaseline + fEmptyMetrics.rawDescent();
+        }
+        return box;
+    case RectHeightStyle::kMax:
+        box.rect.fBottom = fHeight;
+        box.rect.fTop = fEmptyMetrics.delta();
+        return box;
+    case RectHeightStyle::kIncludeLineSpacingMiddle:
+    case RectHeightStyle::kIncludeLineSpacingTop:
+    case RectHeightStyle::kIncludeLineSpacingBottom:
+        box.rect.fBottom = fHeight;
+        box.rect.fTop = fEmptyMetrics.delta() + verticalShift;
+        return box;
+    case RectHeightStyle::kStrut:
+        if (fParagraphStyle.getStrutStyle().getStrutEnabled() && fParagraphStyle.getStrutStyle().getFontSize() > 0) {
+            auto baseline = fEmptyMetrics.baseline();
+            box.rect.fTop = baseline + fStrutMetrics.ascent();
+            box.rect.fBottom = baseline + fStrutMetrics.descent();
+        }
+        return box;
+    default:
+        return box;
+    }
+}
+#endif
+
 // Returns a vector of bounding boxes that enclose all text between
 // start and end glyph indexes, including start and excluding end
 std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
@@ -1437,7 +1481,11 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
         if (start == 0 && end > 0) {
             // On account of implied "\n" that is always at the end of the text
             //SkDebugf("getRectsForRange(%d, %d): %f\n", start, end, fHeight);
+#ifdef OHOS_SUPPORT
+            results.emplace_back(getEmptyTextRect(rectHeightStyle));
+#else
             results.emplace_back(SkRect::MakeXYWH(0, 0, 0, fHeight), fParagraphStyle.getTextDirection());
+#endif
         }
         return results;
     }
@@ -1788,6 +1836,7 @@ void ParagraphImpl::updateBackgroundPaint(size_t from, size_t to, SkPaint paint)
     }
 }
 
+#ifdef OHOS_SUPPORT
 ParagraphPainter::PaintID ParagraphImpl::updateTextStyleColorAndForeground(TextStyle& textStyle, SkColor color)
 {
     textStyle.setColor(color);
@@ -1842,6 +1891,7 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
     }
     return unresolvedPaintID;
 }
+#endif
 
 SkTArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
     textRange = textRange.intersection({0, fText.size()});
