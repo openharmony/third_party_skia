@@ -260,6 +260,7 @@ sk_sp<GrVkImage> GrVkImage::MakeWrapped(GrVkGpu* gpu,
                                           forSecondaryCB));
 }
 
+// OH ISSUE: Integrate Destroy and Free
 void GrVkImage::DestroyAndFreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc, const GrVkImage& image)
 {
     VK_CALL(gpu, DestroyImage(gpu->device(), image, nullptr));

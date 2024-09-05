@@ -981,6 +981,7 @@ void GrResourceCache::didChangeBudgetStatus(GrGpuResource* resource) {
 
 static constexpr int timeUnit = 1000;
 
+// OH ISSUE: allow access to release interface
 bool GrResourceCache::allowToPurge(const std::function<bool(void)>& nextFrameHasArrived)
 {
     if (!fEnabled) {
@@ -992,7 +993,7 @@ bool GrResourceCache::allowToPurge(const std::function<bool(void)>& nextFrameHas
         }
         return true;
     }
-    if (fFrameInfo.frameCount != fLastFrameCount) {
+    if (fFrameInfo.frameCount != fLastFrameCount) { // the next frame arrives
         struct timespec startTime = {0, 0};
         if (clock_gettime(CLOCK_REALTIME, &startTime) == -1) {
             return true;
@@ -1173,6 +1174,7 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
 #endif
 }
 
+// OH ISSUE: suppress release window
 void GrResourceCache::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived) {
     if (!fEnabled) {
         return;

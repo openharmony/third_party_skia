@@ -219,6 +219,7 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
     return sk_sp<GrVkBuffer>(new GrVkBuffer(gpu, bufferSize, bufferType, accessPattern, buffer, alloc, nullptr));
 }
 
+// OH ISSUE: Integrate Destroy and Free
 void GrVkBuffer::DestroyAndFreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkBuffer& buffer)
 {
     VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
