@@ -372,7 +372,8 @@ void SkNWayCanvas::onFlush() {
     }
 }
 
-bool SkNWayCanvas::onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg) {
+bool SkNWayCanvas::onDrawBlurImage(const SkImage* image, const SkBlurArg& blurArg)
+{
     Iter iter(fList);
     bool result = false;
     while (iter.next()) {

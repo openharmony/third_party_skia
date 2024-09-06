@@ -24,7 +24,7 @@ typedef struct VkRenderPassDamageRegionBeginInfo {
     const VkRect2D*             regions;
 } VkRenderPassDamageRegionBeginInfo;
 
-#define VK_HUAWEI_draw_blur_image 1
+#define VK_HUAWEI_DRAW_BLUR_IMAGE 1
 #define VK_HUAWEI_DRAW_BLUR_IMAGE_SPEC_VERSION 10
 #define VK_HUAWEI_DRAW_BLUR_IMAGE_EXTENSION_NAME "VK_HUAWEI_draw_blur_image"
 
@@ -56,7 +56,8 @@ typedef struct VkBlurColorFilterInfoHUAWEI {
     float                             brightness;
 } VkBlurColorFilterInfoHUAWEI;
 
-typedef void (VKAPI_PTR *PFN_vkCmdDrawBlurImageHUAWEI)(VkCommandBuffer commandBuffer, const VkDrawBlurImageInfoHUAWEI *drawBlurImageInfo);
+typedef void (VKAPI_PTR *PFN_vkCmdDrawBlurImageHUAWEI)(VkCommandBuffer commandBuffer,\
+    const VkDrawBlurImageInfoHUAWEI* drawBlurImageInfo);
 
 typedef VkResult (VKAPI_PTR *PFN_vkGetBlurImageSizeHUAWEI)(VkDevice device, \
     const VkDrawBlurImageInfoHUAWEI *drawBlurImageInfo, VkRect2D *pSize);

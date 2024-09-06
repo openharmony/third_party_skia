@@ -720,7 +720,8 @@ std::unique_ptr<GrFragmentProcessor::ProgramImpl> GrTextureEffect::onMakeProgram
     return std::make_unique<Impl>();
 }
 
-SkString GrTextureEffect::getShaderDfxInfo() const {
+SkString GrTextureEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrTextureEffect_%d_%d", fShaderModes[0], fShaderModes[1]);
     return format;

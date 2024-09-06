@@ -219,7 +219,8 @@ GrGaussianConvolutionFragmentProcessor::GrGaussianConvolutionFragmentProcessor(
     memcpy(fOffsets, that.fOffsets, SkGpuBlurUtils::LinearKernelWidth(fRadius) * sizeof(float));
 }
 
-SkString GrGaussianConvolutionFragmentProcessor::getShaderDfxInfo() const {
+SkString GrGaussianConvolutionFragmentProcessor::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrGaussianConvolution_%d", fRadius);
     return format;
