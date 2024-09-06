@@ -954,7 +954,8 @@ void GrVkPrimaryCommandBuffer::drawBlurImage(const GrVkGpu* gpu,
                                              const GrVkImage* image,
                                              SkISize colorAttachmentDimensions,
                                              const SkOriginInfo& originInfo,
-                                             const SkBlurArg& blurArg) {
+                                             const SkBlurArg& blurArg) 
+{
     if ((gpu == nullptr) || (image == nullptr)) {
         return;
     }
@@ -968,15 +969,15 @@ void GrVkPrimaryCommandBuffer::drawBlurImage(const GrVkGpu* gpu,
     dstRegion.offset = { blurArg.dstRect.fLeft , blurArg.dstRect.fTop };
     dstRegion.extent = { (uint32_t)blurArg.dstRect.width(), (uint32_t)blurArg.dstRect.height() };
 
+    if (originInfo.rtOrigin == kBottomLeft_GrSurfaceOrigin) {
+        dstRegion.offset.y = colorAttachmentDimensions.height() - blurArg.dstRect.fBottom;
+    }
+
     VkBlurColorFilterInfoHUAWEI colorFilterInfo {};
     colorFilterInfo.sType = VkStructureTypeHUAWEI::VK_STRUCTURE_TYPE_BLUR_COLOR_FILTER_INFO_HUAWEI;
     colorFilterInfo.pNext = nullptr;
     colorFilterInfo.saturation = blurArg.saturation;
     colorFilterInfo.brightness = blurArg.brightness;
-
-    if (originInfo.rtOrigin == kBottomLeft_GrSurfaceOrigin) {
-        dstRegion.offset.y = colorAttachmentDimensions.height() - blurArg.dstRect.fBottom;
-    }
 
     VkDrawBlurImageInfoHUAWEI drawBlurImageInfo {};
     drawBlurImageInfo.sType = VkStructureTypeHUAWEI::VK_STRUCTURE_TYPE_DRAW_BLUR_IMAGE_INFO_HUAWEI;
