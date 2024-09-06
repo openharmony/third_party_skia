@@ -1101,17 +1101,18 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
     SkScalar offsetX = this->detectIndents(0);
     auto &line = this->addLine(SkPoint::Make(offsetX, 0), advance,
-        textExcludingSpaces, textRange, textRange,
-        clusterRange, clusterRangeWithGhosts, run.advance().x(),
-        metrics);
+                               textExcludingSpaces, textRange, textRange,
+                               clusterRange, clusterRangeWithGhosts, run.advance().x(),
+                               metrics);
     auto spacing = line.autoSpacing();
     auto longestLine = std::max(run.advance().fX, advance.fX) + spacing;
     setSize(advance.fY, maxWidth, longestLine);
     setLongestLineWithIndent(std::min(longestLine + offsetX, maxWidth));
     setIntrinsicSize(run.advance().fX, advance.fX,
-        fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
-        fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
-        false);
+                     fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
+                     fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
+                     false);
+    return;
 }
 
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
