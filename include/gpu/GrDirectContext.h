@@ -876,21 +876,6 @@ public:
      */
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const;
 
-    class SK_API ResourceCollector {
-    public:
-        virtual void collectSurfaceProxy(sk_sp<GrSurfaceProxy>& surface) = 0;
-    };
-
-    void setResourceCollector(ResourceCollector* collector) {
-        fResourceCollector = collector;
-    }
-
-    void collectResource(sk_sp<GrSurfaceProxy>& surface) {
-        if (fResourceCollector != nullptr) {
-            fResourceCollector->collectSurfaceProxy(surface);
-        }
-    }
-
     void vmaDefragment();
     void dumpVmaStats(SkString *out);
 
@@ -942,8 +927,6 @@ private:
     std::unique_ptr<GrAtlasManager> fAtlasManager;
 
     std::unique_ptr<skgpu::v1::SmallPathAtlasMgr> fSmallPathAtlasMgr;
-
-    ResourceCollector* fResourceCollector = nullptr;
 
     friend class GrDirectContextPriv;
 
