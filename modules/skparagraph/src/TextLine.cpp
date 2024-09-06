@@ -1590,9 +1590,6 @@ bool TextLine::processEllipsisRun(bool& isAlreadyUseEllipsis,
 void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
                                         bool includingGhostSpaces,
                                         const RunVisitor& visitor) const {
-#else
-void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& visitor) const {
-#endif
     // Walk through all the runs that intersect with the line in visual order
     SkScalar width = 0;
     SkScalar runOffset = 0;
@@ -1601,23 +1598,14 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
     bool isAlreadyUseEllipsis = false;
     auto textRange = includingGhostSpaces ? this->textWithNewlines() : this->trimmedText();
 
-#ifdef OHOS_SUPPORT
     if (fRunsInVisualOrder.size() == 0 && fEllipsis != nullptr) {
         if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
             return;
         }
         totalWidth += width;
     }
-#else
-    if (this->ellipsis() != nullptr && fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
-        runOffset = this->ellipsis()->offset().fX;
-        if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
-        }
-    }
-#endif
 
     for (auto& runIndex : fRunsInVisualOrder) {
-#ifdef OHOS_SUPPORT
         // add the lastClipRun's left ellipsis if necessary
         if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex &&
             ((!fLastClipRunLtr && !ellipsisModeIsHead) || (ellipsisModeIsHead && fLastClipRunLtr))) {
@@ -1627,7 +1615,6 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
             runOffset += width;
             totalWidth += width;
         }
-#endif
 
         const auto run = &this->fOwner->run(runIndex);
         auto lineIntersection = intersected(run->textRange(), textRange);
@@ -1642,7 +1629,8 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
             TextRange whitespaces = intersected(
                     TextRange(fTextExcludingSpaces.end, fTextIncludingNewlines.end), run->fTextRange);
             if (whitespaces.width() > 0) {
-                auto whitespacesLen = measureTextInsideOneRun(whitespaces, run, runOffset, 0, true, TextAdjustment::GlyphCluster).clip.width();
+                auto whitespacesLen = measureTextInsideOneRun(whitespaces, run, runOffset, 0, true,
+                                                              TextAdjustment::GlyphCluster).clip.width();
                 runOffset -= whitespacesLen;
             }
         }
@@ -1656,11 +1644,9 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
 
         // add the lastClipRun's right ellipsis if necessary
         if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex) {
-#ifdef OHOS_SUPPORT
-            if(!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
+            if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
                 return;
             }
-#endif
             runOffset += width;
             totalWidth += width;
         }
@@ -1673,6 +1659,57 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
         SkASSERT(false);
     }
 }
+#else
+void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& visitor) const {
+
+    // Walk through all the runs that intersect with the line in visual order
+    SkScalar width = 0;
+    SkScalar runOffset = 0;
+    SkScalar totalWidth = 0;
+    auto textRange = includingGhostSpaces ? this->textWithNewlines() : this->trimmedText();
+    for (auto& runIndex : fRunsInVisualOrder) {
+
+        const auto run = &this->fOwner->run(runIndex);
+        auto lineIntersection = intersected(run->textRange(), textRange);
+        if (lineIntersection.width() == 0 && this->width() != 0) {
+            // TODO: deal with empty runs in a better way
+            continue;
+        }
+        if (!run->leftToRight() && runOffset == 0 && includingGhostSpaces) {
+            // runOffset does not take in account a possibility
+            // that RTL run could start before the line (trailing spaces)
+            // so we need to do runOffset -= "trailing whitespaces length"
+            TextRange whitespaces = intersected(
+                    TextRange(fTextExcludingSpaces.end, fTextIncludingNewlines.end), run->fTextRange);
+            if (whitespaces.width() > 0) {
+                auto whitespacesLen = measureTextInsideOneRun(whitespaces, run, runOffset, 0, true, false).clip.width();
+                runOffset -= whitespacesLen;
+            }
+        }
+        runOffset += width;
+        totalWidth += width;
+        if (!visitor(run, runOffset, lineIntersection, &width)) {
+            return;
+        }
+    }
+
+    runOffset += width;
+    totalWidth += width;
+
+    if (this->ellipsis() != nullptr) {
+        if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
+            totalWidth += width;
+        }
+    }
+
+    // This is a very important assert!
+    // It asserts that 2 different ways of calculation come with the same results
+    if (!includingGhostSpaces && compareRound(totalWidth, this->width()) != 0) {
+        SkDebugf("ASSERT: %f != %f\n", totalWidth, this->width());
+        SkASSERT(false);
+    }
+}
+#endif
 
 SkVector TextLine::offset() const {
     return fOffset + SkVector::Make(fShift, 0);
