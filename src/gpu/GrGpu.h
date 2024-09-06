@@ -442,8 +442,9 @@ void popGrResourceTag()
     virtual void releaseUnlockedBackendObjects() {}
 
     virtual std::array<int, 2> GetHpsDimension(const SkBlurArg& blurArg) const { return {0, 0}; }
-
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
     const int TEXT_UPLOAD_TIME = 500;
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     // Debugging and Stats
