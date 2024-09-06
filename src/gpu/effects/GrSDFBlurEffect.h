@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef Gr_SDF_BLUR_EFFECT_DEFINED
-#define Gr_SDF_BLUR_EFFECT_DEFINED
+#ifndef GR_SDF_BLUR_EFFECT_DEFINED
+#define GR_SDF_BLUR_EFFECT_DEFINED
 
 #include "include/core/SkPoint.h"
 #include "src/core/SkRuntimeEffectPriv.h"
