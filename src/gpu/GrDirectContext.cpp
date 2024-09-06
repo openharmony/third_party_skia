@@ -588,12 +588,6 @@ void GrDirectContext::dumpVmaStats(SkString *out)
     }
 }
 
-// OH ISSUE: set callback for memory check
-void GrDirectContext::setMemoryOverCheck(MemoryOverCheckCallback callback)
-{
-    MemoryCheckManager::getInstance().setMemoryOverCheck(callback);
-}
-
 // OH ISSUE: intra frame and inter frame identification
 void GrDirectContext::beginFrame()
 {
@@ -650,12 +644,6 @@ void GrDirectContext::suppressGpuCacheBelowCertainRatio(const std::function<bool
     }
 
     fResourceCache->suppressGpuCacheBelowCertainRatio(nextFrameHasArrived);
-}
-
-// OH ISSUE: set callback for memory count
-void GrDirectContext::setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback)
-{
-    MemoryCheckManager::getInstance().setRemoveMemoryFromSnapshotInfo(callback);
 }
 
 GrBackendTexture GrDirectContext::createBackendTexture(int width, int height,
