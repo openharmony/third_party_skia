@@ -78,7 +78,7 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
     while (p < end) {
         auto tmp = p;
         auto unichar = SkUTF::NextUTF8(&p, end);
-        for(auto i = 0; i < p - tmp; ++i) {
+        for (auto i = 0; i < p - tmp; ++i) {
             fUnicodeIndexForUTF8Index.emplace_back(result.size());
         }
         result.emplace_back(unichar);
@@ -179,7 +179,7 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
         size_t currentRunCharNumber = targetRun.clusterRange().end -
             targetRun.clusterRange().start;
         for (;textRange < lineCharCount; textRange++) {
-            if(++runClock > currentRunCharNumber) {
+            if (++runClock > currentRunCharNumber) {
                 break;
             }
 #ifndef USE_SKIA_TXT
@@ -540,7 +540,8 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
                 this->fOldHeight = this->fHeight;
 
                 return;
-            } else {
+            } else if (!(fParagraphStyle.getMaxLines() == 1 &&
+                fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE)) {
                 // Add the paragraph to the cache
                 paragraphCache->updateParagraph(this);
             }
@@ -630,7 +631,6 @@ void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOff
             break;
     }
     hOffset += align * (fMaxIntrinsicWidth - style.getLetterSpacing() - path->GetLength(false));
-
     for (auto& line : fLines) {
         line.paint(painter, path, hOffset, vOffset);
     }
@@ -1099,19 +1099,19 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     advance.fY = metrics.height();
     auto clusterRange = ClusterRange(0, trailingSpaces);
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
-
     SkScalar offsetX = this->detectIndents(0);
-    this->addLine(SkPoint::Make(offsetX, 0), advance,
-                  textExcludingSpaces, textRange, textRange,
-                  clusterRange, clusterRangeWithGhosts, run.advance().x(),
-                  metrics);
-    auto longestLine = std::max(run.advance().fX, advance.fX);
+    auto &line = this->addLine(SkPoint::Make(offsetX, 0), advance,
+        textExcludingSpaces, textRange, textRange,
+        clusterRange, clusterRangeWithGhosts, run.advance().x(),
+        metrics);
+    auto spacing = line.autoSpacing();
+    auto longestLine = std::max(run.advance().fX, advance.fX) + spacing;
     setSize(advance.fY, maxWidth, longestLine);
     setLongestLineWithIndent(std::min(longestLine + offsetX, maxWidth));
     setIntrinsicSize(run.advance().fX, advance.fX,
-            fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
-            fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
-            false);
+        fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
+        fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
+        false);
 }
 
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
@@ -1363,7 +1363,7 @@ TextLine& ParagraphImpl::addLine(SkVector offset,
                                  SkScalar widthWithSpaces,
                                  InternalLineMetrics sizes) {
     // Define a list of styles that covers the line
-    auto blocks = findAllBlocks(textExcludingSpaces);
+    auto blocks = findAllBlocks(textIncludingNewLines);
     return fLines.emplace_back(this, offset, advance, blocks,
                                textExcludingSpaces, text, textIncludingNewLines,
                                clusters, clustersWithGhosts, widthWithSpaces, sizes);
