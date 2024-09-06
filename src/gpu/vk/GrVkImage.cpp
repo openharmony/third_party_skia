@@ -7,69 +7,14 @@
 
 #include "src/gpu/vk/GrVkImage.h"
 
-#include <algorithm>
-#include <chrono>
-#include <cstdint>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <string>
-
-#include "GrVkCommandBuffer.h"
-#include "GrVkGpu.h"
-#include "include/core/SkExecutor.h"
-#include "src/core/SkTraceEvent.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkImageView.h"
 #include "src/gpu/vk/GrVkMemory.h"
 #include "src/gpu/vk/GrVkTexture.h"
 #include "src/gpu/vk/GrVkUtil.h"
 
-
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
-#include <parameter.h>
-#include <parameters.h>
-#include "param/sys_param.h"
-#endif
-
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
 constexpr uint32_t VKIMAGE_LIMIT_SIZE = 10000 * 10000; // Vk-Image Size need less than 10000*10000
-
-namespace {
-constexpr int32_t PRE_ALLOCATE_DURATION = 10;
-const SkTArray<std::pair<GrVkImage::ImageDesc, int64_t>> BAR_IMAGEDESC = {
-    {
-        {
-            VK_IMAGE_TYPE_2D,
-            VK_FORMAT_R8_UNORM,
-            66,
-            67,
-            1,
-            1,
-            VK_IMAGE_TILING_OPTIMAL,
-            7,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            GrProtected::kNo
-        },
-        2
-    },
-    {
-        {
-            VK_IMAGE_TYPE_2D,
-            VK_FORMAT_R8G8B8A8_UNORM,
-            1260,
-            2720,
-            1,
-            1,
-            VK_IMAGE_TILING_OPTIMAL,
-            151,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            GrProtected::kNo
-        },
-        2
-    }
-};
-}
 
 sk_sp<GrVkImage> GrVkImage::MakeStencil(GrVkGpu* gpu,
                                         SkISize dimensions,
@@ -516,137 +461,7 @@ void GrVkImage::setImageLayoutAndQueueIndex(const GrVkGpu* gpu,
     this->setQueueFamilyIndex(newQueueFamilyIndex);
 }
 
-GrVkImage::ImagePool& GrVkImage::ImagePool::getInstance() {
-    static GrVkImage::ImagePool imagePool;
-    return imagePool;
-}
-
-void GrVkImage::SetLastTouchDownTime() {
-    ImagePool::getInstance().setLastTouchDownTime(std::chrono::system_clock::now());
-}
-
-bool GrVkImage::ImagePool::forSpecificImageQueue(const ImageDesc& desc,
-                                                 std::function<bool(DescSpecificQueue&)> action,
-                                                 bool createQueueWhenNotExist,
-                                                 int64_t cachePoolSize) {
-    std::lock_guard<std::mutex> guard(fQueuesLock);
-    for (auto& q : fQueues) {
-        if (q.fDesc == desc) {
-            return action(q);
-        }
-    }
-    if (createQueueWhenNotExist) {
-        fQueues.push_back({desc, cachePoolSize, {}});
-        DescSpecificQueue& back = fQueues.back();
-        return action(back);
-    }
-    return false;
-}
-
-void GrVkImage::ImagePool::forEachImageQueue(std::function<bool(DescSpecificQueue&)> action) {
-    std::lock_guard<std::mutex> guard(fQueuesLock);
-    for (auto& q : fQueues) {
-        if (action(q)) {
-            break;
-        }
-    }
-}
-
-void GrVkImage::PreAllocateTextureBetweenFrames() {
-    static bool isFoldScreenFlag = OHOS::system::GetParameter("const.window.foldscreen.type", "") != "";
-    if (isFoldScreenFlag) {
-        return;
-    }
-    ImagePool &imagePool = ImagePool::getInstance();
-    GrVkGpu *gpu = imagePool.getGpu();
-    if (!gpu) {
-        return;
-    }
-    auto passedTime = std::chrono::duration_cast<std::chrono::seconds>(
-        std::chrono::system_clock::now() - imagePool.getLastTouchDownTime());
-    if (passedTime.count() > PRE_ALLOCATE_DURATION) {
-        return;
-    }
-    for (auto& [imageDesc, cachePoolSize] : BAR_IMAGEDESC) {
-        bool isAllocated = imagePool.forSpecificImageQueue(
-            imageDesc,
-            [gpu](ImagePool::DescSpecificQueue& q) {
-                if (q.availabledCacheCount >= q.cachePoolSize) {
-                    return false;
-                }
-                if (GrVkImageInfo info; InitImageInfoInner(gpu, q.fDesc, &info)) {
-                    q.fQueue.push_back({true, info});
-                    q.availabledCacheCount++;
-                    return true;
-                }
-                return false;
-            },
-            true,
-            cachePoolSize);
-        if (isAllocated) {
-            return;
-        }
-    }
-}
-
-void GrVkImage::PurgeAllocatedTextureBetweenFrames() {
-    static bool isFoldScreenFlag = OHOS::system::GetParameter("const.window.foldscreen.type", "") != "";
-    if (isFoldScreenFlag) {
-        return;
-    }
-    HITRACE_OHOS_NAME_ALWAYS("PurgeAllocatedTextureBetweenFrames");
-    ImagePool &imagePool = ImagePool::getInstance();
-    GrVkGpu *gpu = imagePool.getGpu();
-    if (!gpu) {
-        return;
-    }
-    imagePool.forEachImageQueue([gpu](ImagePool::DescSpecificQueue &q) {
-        auto it = q.fQueue.end();
-        while (it != q.fQueue.begin()) {
-            --it;
-            if (it->first) {
-                GrVkImage::DestroyImageInfo(gpu, &it->second);
-                it = q.fQueue.erase(it);
-            }
-        }
-        if (!q.fQueue.empty() && q.fQueue.front().first) {
-            GrVkImage::DestroyImageInfo(gpu, &q.fQueue.front().second);
-            q.fQueue.erase(q.fQueue.begin());
-        }
-        q.availabledCacheCount = 0;
-        return false;
-    });
-    auto lastTouchDownTime = imagePool.getLastTouchDownTime();
-    imagePool.setLastTouchDownTime(lastTouchDownTime - std::chrono::seconds(PRE_ALLOCATE_DURATION));
-}
-
 bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
-    ImagePool& imagePool = ImagePool::getInstance();
-    bool cacheHit = false;
-    imagePool.forSpecificImageQueue(imageDesc, [info, &cacheHit](ImagePool::DescSpecificQueue& q) {
-        for (auto& [available, cachedInfo] : q.fQueue) {
-            if (!available) {
-                continue;
-            }
-            HITRACE_OHOS_NAME_ALWAYS("Hit pre-allocated image cache");
-            available = false;
-            q.availabledCacheCount--;
-            *info = cachedInfo;
-            cacheHit = true;
-            return true;
-        }
-        return false;
-    });
-    if (imagePool.getGpu() == nullptr) {
-        imagePool.setGpu(gpu);
-    }
-    if (cacheHit) {
-        return true;
-    }
-    return InitImageInfoInner(gpu, imageDesc, info);
-}
-
-bool GrVkImage::InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImageInfo* info) {
     if (0 == imageDesc.fWidth || 0 == imageDesc.fHeight) {
         return false;
     }
@@ -786,31 +601,6 @@ void GrVkImage::setResourceRelease(sk_sp<GrRefCntedCallback> releaseHelper) {
 }
 
 void GrVkImage::Resource::freeGPUData() const {
-    bool cached = false;
-    ImagePool::getInstance().forEachImageQueue([this, &cached](ImagePool::DescSpecificQueue& q) {
-        for (auto it = q.fQueue.begin(); it != q.fQueue.end(); it++) {
-            auto& [available, cachedInfo] = *it;
-            if (!(cachedInfo.fImage == this->fImage && cachedInfo.fAlloc == this->fAlloc)) {
-                continue;
-            }
-            HITRACE_OHOS_NAME_ALWAYS("Back pre-allocated image cache");
-            if (q.availabledCacheCount < q.cachePoolSize) {
-                available = true;
-                cached = true;
-                q.availabledCacheCount++;
-                return true;
-            }
-            q.fQueue.erase(it);
-            return true;
-        }
-        return false;
-    });
-    if (cached) {
-        return;
-    }
-    freeGPUDataInner();
-}
-void GrVkImage::Resource::freeGPUDataInner() const {
     this->invokeReleaseProc();
     VK_CALL(fGpu, DestroyImage(fGpu->device(), fImage, nullptr));
     GrVkMemory::FreeImageMemory(fGpu, fAlloc);
