@@ -438,6 +438,7 @@ std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSType
     if (varTypeface->IsCustomTypeface() && RSTypeface::GetTypefaceRegisterCallBack() != nullptr) {
 #endif
         if (!RSTypeface::GetTypefaceRegisterCallBack()(varTypeface)) {
+            TEXT_LOGE_LIMIT3_HOUR("Failed to register typeface with render server");
             g_faceTypeCache.erase(hash);
             return typeface;
         }
@@ -452,6 +453,7 @@ void FontCollection::disableFontFallback() {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fEnableFontFallback = false;
 }
+
 void FontCollection::enableFontFallback() {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fEnableFontFallback = true;

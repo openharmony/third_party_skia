@@ -177,7 +177,8 @@ void GrBitmapTextGeoProc::addNewViews(const GrSurfaceProxyView* views,
     this->setTextureSamplerCnt(numActiveViews);
 }
 
-SkString GrBitmapTextGeoProc::getShaderDfxInfo() const {
+SkString GrBitmapTextGeoProc::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrBitmapTextGeoProc_%d_%d_%d_%d_%d_%d", fUsesW, fMaskFormat, numTextureSamplers(),
         fLocalMatrix.isIdentity(), fLocalMatrix.isScaleTranslate(), fLocalMatrix.hasPerspective());

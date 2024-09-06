@@ -1972,7 +1972,8 @@ VkShaderStageFlags GrVkCaps::getPushConstantStageFlags() const {
     return stageFlags;
 }
 
-bool GrVkCaps::supportsHpsBlur(const GrSurfaceProxyView* proxyViewPtr) const {
+bool GrVkCaps::supportsHpsBlur(const GrSurfaceProxyView* proxyViewPtr) const 
+{
     if (proxyViewPtr == nullptr) {
         return false;
     }
@@ -1984,7 +1985,9 @@ bool GrVkCaps::supportsHpsBlur(const GrSurfaceProxyView* proxyViewPtr) const {
     if (!grBackendFormat.asVkFormat(&format)) {
         return false;
     }
-    if (((format == VkFormat::VK_FORMAT_R8G8B8A8_UNORM) || (format == VkFormat::VK_FORMAT_R8G8B8_UNORM)) && fSupportHpsBlur) {
+    if (((format == VkFormat::VK_FORMAT_R8G8B8A8_UNORM)
+        || (format == VkFormat::VK_FORMAT_R8G8B8_UNORM))
+        && fSupportHpsBlur) {
         return true;
     }
     return false;

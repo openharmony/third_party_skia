@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef TextLineBase_DEFINED
-#define TextLineBase_DEFINED
+#ifndef TEXT_LINE_BASE_DEFINED
+#define TEXT_LINE_BASE_DEFINED
 
 #include <stddef.h>
-#include "RunBase.h"
+
 #include "modules/skparagraph/include/DartTypes.h"
+#include "RunBase.h"
 
 namespace skia {
 namespace textlayout {
@@ -34,4 +35,4 @@ public:
 }  // namespace textlayout
 }  // namespace skia
 
-#endif  // TextLineBase_DEFINED
+#endif  // TEXT_LINE_BASE_DEFINED

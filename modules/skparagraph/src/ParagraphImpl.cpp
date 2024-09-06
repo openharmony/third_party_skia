@@ -78,7 +78,7 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
     while (p < end) {
         auto tmp = p;
         auto unichar = SkUTF::NextUTF8(&p, end);
-        for(auto i = 0; i < p - tmp; ++i) {
+        for (auto i = 0; i < p - tmp; ++i) {
             fUnicodeIndexForUTF8Index.emplace_back(result.size());
         }
         result.emplace_back(unichar);
@@ -182,7 +182,7 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
         size_t currentRunCharNumber = targetRun.clusterRange().end -
             targetRun.clusterRange().start;
         for (;textRange < lineCharCount; textRange++) {
-            if(++runClock > currentRunCharNumber) {
+            if (++runClock > currentRunCharNumber) {
                 break;
             }
 #ifndef USE_SKIA_TXT
@@ -279,59 +279,78 @@ void ParagraphImpl::resetPlaceholderRange(const TextRange& deletedRange)
     }
 }
 
+#ifdef OHOS_SUPPORT
 bool ParagraphImpl::middleEllipsisDeal()
 {
     if (fRuns.empty()) {
         return false;
     }
     isMiddleEllipsis = false;
-    const SkString& ell = this->getEllipsis();
-    const char *ellStr = ell.c_str();
-    size_t start = 0;
+
     size_t end = 0;
     size_t charbegin = 0;
     size_t charend = 0;
     if (fRuns.begin()->leftToRight()) {
-        if (ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
-            fText.reset();
-            fText.set(ellStr);
-            end = 1;
-            charend = ell.size();
-        } else {
-            scanTextCutPoint(ltrTextSize, start, end);
-            if (end) {
-                charbegin = ltrTextSize[start].charbegin;
-                charend = ltrTextSize[end].charOver;
-                fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
-                fText.insert(ltrTextSize[start].charbegin, ellStr);
-            }
-        }
-        ltrTextSize.clear();
+        middleEllipsisLtrDeal(end, charbegin, charend);
     } else {
-        scanTextCutPoint(rtlTextSize, start, end);
-        if (start < 1 || end + PARAM_DOUBLE >= rtlTextSize.size()) {
-            start = 0;
-            end = 0;
-        }
-        if (end) {
-            charbegin = rtlTextSize[start - 1].charbegin;
-            charend = rtlTextSize[end + PARAM_DOUBLE].charbegin;
-            fText.remove(rtlTextSize[start - 1].charbegin,
-                rtlTextSize[end + PARAM_DOUBLE].charbegin - rtlTextSize[start - 1].charbegin);
-            fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
-        }
-        rtlTextSize.clear();
+        middleEllipsisRtlDeal(end, charbegin, charend);
     }
-
     if (end != 0) {
         TextRange deletedRange(charbegin, charend);
         resetTextStyleRange(deletedRange);
         resetPlaceholderRange(deletedRange);
+        fEllipsisRange = deletedRange;
     }
-
     // end = 0 means the text does not exceed the width limit
     return end != 0;
 }
+
+void ParagraphImpl::middleEllipsisLtrDeal(size_t& end,
+                                                       size_t& charbegin,
+                                                       size_t& charend)
+{
+    const SkString& ell = this->getEllipsis();
+    const char *ellStr = ell.c_str();
+    size_t start = 0;
+    if (ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
+        fText.reset();
+        fText.set(ellStr);
+        end = 1;
+        charend = ell.size();
+    } else {
+        scanTextCutPoint(ltrTextSize, start, end);
+        if (end) {
+            charbegin = ltrTextSize[start].charbegin;
+            charend = ltrTextSize[end].charOver;
+            fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
+            fText.insert(ltrTextSize[start].charbegin, ellStr);
+        }
+    }
+    ltrTextSize.clear();
+}
+
+void ParagraphImpl::middleEllipsisRtlDeal(size_t& end,
+                                                       size_t& charbegin,
+                                                       size_t& charend)
+{
+    const SkString& ell = this->getEllipsis();
+    const char *ellStr = ell.c_str();
+    size_t start = 0;
+    scanTextCutPoint(rtlTextSize, start, end);
+    if (start < 1 || end + PARAM_DOUBLE >= rtlTextSize.size()) {
+        start = 0;
+        end = 0;
+    }
+    if (end) {
+        charbegin = rtlTextSize[start - 1].charbegin;
+        charend = rtlTextSize[end + PARAM_DOUBLE].charbegin;
+        fText.remove(rtlTextSize[start - 1].charbegin,
+                     rtlTextSize[end + PARAM_DOUBLE].charbegin - rtlTextSize[start - 1].charbegin);
+        fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
+    }
+    rtlTextSize.clear();
+}
+#endif
 
 SkScalar ParagraphImpl::resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex)
 {
@@ -462,6 +481,9 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
         fText = tmpParagraph->fText;
         fTextStyles = tmpParagraph->fTextStyles;
         fPlaceholders = tmpParagraph->fPlaceholders;
+#ifdef OHOS_SUPPORT
+        fEllipsisRange = tmpParagraph->fEllipsisRange;
+#endif
     }
 }
 
@@ -481,15 +503,15 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
 
-    #ifdef OHOS_SUPPORT
+#ifdef OHOS_SUPPORT
     bool isMaxLinesZero = false;
-    #endif
+#endif
     if (fParagraphStyle.getMaxLines() == 0) {
-        #ifdef OHOS_SUPPORT
+#ifdef OHOS_SUPPORT
         if (fText.size() != 0) {
             isMaxLinesZero = true;
         }
-        #endif
+#endif
         fText.reset();
     }
 
@@ -527,11 +549,11 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
             this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
             if (!this->shapeTextIntoEndlessLine()) {
                 this->resetContext();
-                #ifdef OHOS_SUPPORT
+#ifdef OHOS_SUPPORT
                 if (isMaxLinesZero) {
                     fExceededMaxLines  = true;
                 }
-                #endif
+#endif
                 // TODO: merge the two next calls - they always come together
                 this->resolveStrut();
                 this->computeEmptyMetrics();
@@ -556,7 +578,8 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
                 this->fOldHeight = this->fHeight;
 
                 return;
-            } else {
+            } else if (!(fParagraphStyle.getMaxLines() == 1 &&
+                fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE)) {
                 // Add the paragraph to the cache
                 paragraphCache->updateParagraph(this);
             }
@@ -651,11 +674,31 @@ void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOff
             break;
     }
     hOffset += align * (fMaxIntrinsicWidth - style.getLetterSpacing() - path->GetLength(false));
-
     for (auto& line : fLines) {
         line.paint(painter, path, hOffset, vOffset);
     }
 }
+
+#ifdef OHOS_SUPPORT
+TextRange ParagraphImpl::getEllipsisTextRange() {
+    if (fState < kLineBroken) {
+        return EMPTY_RANGE;
+    }
+    if (!fEllipsisRange.empty()) {
+        return fEllipsisRange;
+    }
+    this->ensureUTF16Mapping();
+    for (const auto& line: fLines) {
+        if (line.getTextRangeReplacedByEllipsis().empty()) {
+            continue;
+        }
+        auto ellipsisClusterRange = line.getTextRangeReplacedByEllipsis();
+        return TextRange(getUTF16Index(ellipsisClusterRange.start),
+                                      getUTF16Index(ellipsisClusterRange.end));
+    }
+    return EMPTY_RANGE;
+}
+#endif
 
 void ParagraphImpl::resetContext() {
     fAlphabeticBaseline = 0;
@@ -1123,19 +1166,19 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     advance.fY = metrics.height();
     auto clusterRange = ClusterRange(0, trailingSpaces);
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
-
     SkScalar offsetX = this->detectIndents(0);
-    this->addLine(SkPoint::Make(offsetX, 0), advance,
-                  textExcludingSpaces, textRange, textRange,
-                  clusterRange, clusterRangeWithGhosts, run.advance().x(),
-                  metrics);
-    auto longestLine = std::max(run.advance().fX, advance.fX);
+    auto &line = this->addLine(SkPoint::Make(offsetX, 0), advance,
+        textExcludingSpaces, textRange, textRange,
+        clusterRange, clusterRangeWithGhosts, run.advance().x(),
+        metrics);
+    auto spacing = line.autoSpacing();
+    auto longestLine = std::max(run.advance().fX, advance.fX) + spacing;
     setSize(advance.fY, maxWidth, longestLine);
-    setLongestLineWithIndent(std::min(longestLine + offsetX, maxWidth));
+    setLongestLineWithIndent(longestLine + offsetX);
     setIntrinsicSize(run.advance().fX, advance.fX,
-            fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
-            fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
-            false);
+        fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
+        fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
+        false);
 }
 
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
@@ -1166,10 +1209,9 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
                 auto spacing = line.autoSpacing();
-                auto longestLine = std::max(line.width(), widthWithSpaces) + spacing;
+                auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces()) + spacing;
                 fLongestLine = std::max(fLongestLine, longestLine);
-                fLongestLineWithIndent =
-                        std::min(std::max(fLongestLineWithIndent, longestLine + indent), maxWidth);
+                fLongestLineWithIndent = std::max(fLongestLineWithIndent, longestLine + indent);
             });
     setSize(textWrapper.height(), maxWidth, fLongestLine);
     setIntrinsicSize(textWrapper.maxIntrinsicWidth(), textWrapper.minIntrinsicWidth(),
@@ -1387,11 +1429,55 @@ TextLine& ParagraphImpl::addLine(SkVector offset,
                                  SkScalar widthWithSpaces,
                                  InternalLineMetrics sizes) {
     // Define a list of styles that covers the line
-    auto blocks = findAllBlocks(textExcludingSpaces);
+    auto blocks = findAllBlocks(textIncludingNewLines);
     return fLines.emplace_back(this, offset, advance, blocks,
                                textExcludingSpaces, text, textIncludingNewLines,
                                clusters, clustersWithGhosts, widthWithSpaces, sizes);
 }
+
+#ifdef OHOS_SUPPORT
+TextBox ParagraphImpl::getEmptyTextRect(RectHeightStyle rectHeightStyle) const
+{
+    // get textStyle to calculate text box when text is empty(reference to ParagraphImpl::computeEmptyMetrics())
+    bool emptyParagraph = fRuns.empty();
+    TextStyle textStyle = paragraphStyle().getTextStyle();
+    if (emptyParagraph && !fTextStyles.empty()) {
+        textStyle = fTextStyles.back().fStyle;
+    }
+
+    // calculate text box(reference to TextLine::getRectsForRange(), switch(rectHeightStyle))
+    TextBox box(SkRect::MakeXYWH(0, 0, 0, fHeight), fParagraphStyle.getTextDirection());
+    auto verticalShift = fEmptyMetrics.rawAscent() - fEmptyMetrics.ascent();
+    switch (rectHeightStyle) {
+    case RectHeightStyle::kTight:
+        if (textStyle.getHeightOverride() && textStyle.getHeight() > 0) {
+            const auto effectiveBaseline = fEmptyMetrics.baseline() + fEmptyMetrics.delta();
+            box.rect.fTop = effectiveBaseline + fEmptyMetrics.rawAscent();
+            box.rect.fBottom = effectiveBaseline + fEmptyMetrics.rawDescent();
+        }
+        return box;
+    case RectHeightStyle::kMax:
+        box.rect.fBottom = fHeight;
+        box.rect.fTop = fEmptyMetrics.delta();
+        return box;
+    case RectHeightStyle::kIncludeLineSpacingMiddle:
+    case RectHeightStyle::kIncludeLineSpacingTop:
+    case RectHeightStyle::kIncludeLineSpacingBottom:
+        box.rect.fBottom = fHeight;
+        box.rect.fTop = fEmptyMetrics.delta() + verticalShift;
+        return box;
+    case RectHeightStyle::kStrut:
+        if (fParagraphStyle.getStrutStyle().getStrutEnabled() && fParagraphStyle.getStrutStyle().getFontSize() > 0) {
+            auto baseline = fEmptyMetrics.baseline();
+            box.rect.fTop = baseline + fStrutMetrics.ascent();
+            box.rect.fBottom = baseline + fStrutMetrics.descent();
+        }
+        return box;
+    default:
+        return box;
+    }
+}
+#endif
 
 // Returns a vector of bounding boxes that enclose all text between
 // start and end glyph indexes, including start and excluding end
@@ -1405,7 +1491,11 @@ std::vector<TextBox> ParagraphImpl::getRectsForRange(unsigned start,
         if (start == 0 && end > 0) {
             // On account of implied "\n" that is always at the end of the text
             //SkDebugf("getRectsForRange(%d, %d): %f\n", start, end, fHeight);
+#ifdef OHOS_SUPPORT
+            results.emplace_back(getEmptyTextRect(rectHeightStyle));
+#else
             results.emplace_back(SkRect::MakeXYWH(0, 0, 0, fHeight), fParagraphStyle.getTextDirection());
+#endif
         }
         return results;
     }
@@ -1756,6 +1846,7 @@ void ParagraphImpl::updateBackgroundPaint(size_t from, size_t to, SkPaint paint)
     }
 }
 
+#ifdef OHOS_SUPPORT
 ParagraphPainter::PaintID ParagraphImpl::updateTextStyleColorAndForeground(TextStyle& textStyle, SkColor color)
 {
     textStyle.setColor(color);
@@ -1810,6 +1901,7 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
     }
     return unresolvedPaintID;
 }
+#endif
 
 SkTArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
     textRange = textRange.intersection({0, fText.size()});
@@ -2169,6 +2261,7 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fHasWhitespacesInside = this->fHasWhitespacesInside;
     paragraph->fTrailingSpaces = this->fTrailingSpaces;
     paragraph->fLineNumber = this->fLineNumber;
+    paragraph->fEllipsisRange = this->fEllipsisRange;
 
     for (auto& run : paragraph->fRuns) {
         run.setOwner(paragraph.get());

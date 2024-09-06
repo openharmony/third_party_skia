@@ -63,8 +63,8 @@ inline SkScalar SpotBlurRadius(SkScalar occluderZ, SkScalar lightZ, SkScalar lig
 }
 
 inline void GetSpotParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY, SkScalar lightZ,
-                          SkScalar lightRadius,
-                          SkScalar* blurRadius, SkScalar* scale, SkVector* translate, bool isLimitElevation) {
+                          SkScalar lightRadius, SkScalar* blurRadius, SkScalar* scale, SkVector* translate,
+                          bool isLimitElevation) {
     SkScalar zRatio = divide_and_pin(occluderZ, lightZ - occluderZ, 0.0f, 0.95f);
     *blurRadius = lightRadius*zRatio;
     *scale = divide_and_pin(lightZ, lightZ - occluderZ, 1.0f, 1.95f);
@@ -80,7 +80,6 @@ inline void GetSpotParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY, 
 inline void GetSpotParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY, SkScalar lightZ,
                           SkScalar lightRadius,
                           SkScalar* blurRadius, SkScalar* scale, SkVector* translate) {
-
     GetSpotParams(occluderZ, lightX, lightY, lightZ, lightRadius, blurRadius, scale, translate, false);
 }
 

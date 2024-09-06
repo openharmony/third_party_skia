@@ -451,7 +451,8 @@ GrDisplacementMapEffect::onMakeProgramImpl() const {
     return std::make_unique<Impl>();
 }
 
-SkString GrDisplacementMapEffect::getShaderDfxInfo() const {
+SkString GrDisplacementMapEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrDisplacementMapEffect_%d_%d", fXChannelSelector, fYChannelSelector);
     return format;

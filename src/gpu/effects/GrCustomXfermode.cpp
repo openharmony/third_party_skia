@@ -105,7 +105,8 @@ private:
     using INHERITED = GrXferProcessor;
 };
 
-SkString CustomXP::getShaderDfxInfo() const {
+SkString CustomXP::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_CustomXP_%d_%d", hasHWBlendEquation(), fMode);
     return format;

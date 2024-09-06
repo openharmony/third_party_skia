@@ -151,7 +151,8 @@ void GrConicEffect::Impl::onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) {
 
 GrConicEffect::~GrConicEffect() = default;
 
-SkString GrConicEffect::getShaderDfxInfo() const {
+SkString GrConicEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrConicEffect_%d_%d_%d_%d_%d_%d_%d_%d", fCoverageScale, fUsesLocalCoords,
         fViewMatrix.isIdentity(), fViewMatrix.isScaleTranslate(), fViewMatrix.hasPerspective(),
@@ -312,7 +313,8 @@ void GrQuadEffect::Impl::onEmitCode(EmitArgs& args, GrGPArgs* gpArgs) {
 
 GrQuadEffect::~GrQuadEffect() = default;
 
-SkString GrQuadEffect::getShaderDfxInfo() const {
+SkString GrQuadEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrQuadEffect_%d_%d_%d_%d_%d_%d_%d_%d", fCoverageScale, fUsesLocalCoords,
         fViewMatrix.isIdentity(), fViewMatrix.isScaleTranslate(), fViewMatrix.hasPerspective(),

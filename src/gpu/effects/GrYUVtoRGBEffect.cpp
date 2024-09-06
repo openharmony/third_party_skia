@@ -336,7 +336,8 @@ std::unique_ptr<GrFragmentProcessor::ProgramImpl> GrYUVtoRGBEffect::onMakeProgra
     return std::make_unique<Impl>();
 }
 
-SkString GrYUVtoRGBEffect::getShaderDfxInfo() const {
+SkString GrYUVtoRGBEffect::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_GrYUVtoRGBEffect");
     for (auto [plane, channel] : fLocations) {

@@ -20,7 +20,6 @@
 #include "src/shaders/SkBitmapProcShader.h"
 
 #if SK_SUPPORT_GPU
-#include "include/gpu/GrDirectContext.h"
 #include "src/gpu/GrRecordingContextPriv.h"
 #include "src/gpu/SkGr.h"
 #include "src/gpu/effects/GrBicubicEffect.h"
@@ -179,23 +178,6 @@ SkImage_Raster::SkImage_Raster(const SkImageInfo& info, sk_sp<SkData> data, size
 
 SkImage_Raster::~SkImage_Raster() {
 #if SK_SUPPORT_GPU
-    if (fPinnedView) {
-        GrDirectContext* context = nullptr;
-        auto proxy = fPinnedView.refProxy();
-        do {
-            if (!proxy) {
-                break;
-            }
-            if (!proxy->peekSurface()) {
-                break;
-            }
-            context = proxy->peekSurface()->getContext();
-            if (context) {
-                context->collectResource(proxy);
-                return;
-            }
-        } while (false);
-    }
     SkASSERT(!fPinnedView);  // want the caller to have manually unpinned
 #endif
 }

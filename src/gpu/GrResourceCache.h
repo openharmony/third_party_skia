@@ -300,6 +300,12 @@ public:
 
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const; // Get the tag of all GPU resources
 
+    // OH ISSUE: get the memory information of the updated pid.
+    void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
+
+    // OH ISSUE: change the fbyte when the resource tag changes.
+    void changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes);
+
 #ifdef SKIA_DFX_FOR_OHOS
     void dumpInfo(SkString* out);
     std::string cacheInfo();
@@ -530,6 +536,11 @@ private:
     uint64_t fOvertimeDuration = 0;
 
     bool fEnabled = false;
+
+    // OH ISSUE: stores fBytes of each pid.
+    std::unordered_map<int32_t, size_t> fBytesOfPid;
+    // OH ISSUE: stores the memory information of the updated pid.
+    std::unordered_map<int32_t, size_t> fUpdatedBytesOfPid;
 };
 
 class GrResourceCache::ResourceAccess {
@@ -601,6 +612,12 @@ private:
      * Called by GrGpuResources when they change from budgeted to unbudgeted or vice versa.
      */
     void didChangeBudgetStatus(GrGpuResource* resource) { fCache->didChangeBudgetStatus(resource); }
+
+    // OH ISSUE: change the fbyte when the resource tag changes.
+    void changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes)
+    {
+        fCache->changeByteOfPid(beforePid, afterPid, bytes);
+    }
 
     // No taking addresses of this type.
     const ResourceAccess* operator&() const;

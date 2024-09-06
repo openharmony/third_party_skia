@@ -70,41 +70,6 @@ public:
 
 #define ASSERT_SINGLE_OWNER GR_ASSERT_SINGLE_OWNER(this->singleOwner())
 
-// OH ISSUE: MemoryCheckManager is used to count the memory in rs
-MemoryCheckManager& MemoryCheckManager::getInstance()
-{
-    static MemoryCheckManager instance;
-    return instance;
-}
-
-void MemoryCheckManager::setMemoryOverCheck(MemoryOverCheckCallback callback)
-{
-    if (fMemoryOverCheck == nullptr) {
-        fMemoryOverCheck = callback;
-    }
-}
-
-void MemoryCheckManager::setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback)
-{
-    if (fRemoveMemoryFromSnapshotInfo == nullptr) {
-        fRemoveMemoryFromSnapshotInfo = callback;
-    }
-}
-
-void MemoryCheckManager::memoryOverCheck(const int32_t pid, const size_t size)
-{
-    if (pid && fMemoryOverCheck) {
-        fMemoryOverCheck(pid, size, true);
-    }
-}
-
-void MemoryCheckManager::removeMemoryFromSnapshotInfo(const int32_t pid, const size_t size)
-{
-    if (pid && fRemoveMemoryFromSnapshotInfo) {
-        fRemoveMemoryFromSnapshotInfo(pid, size);
-    }
-}
-
 GrDirectContext::DirectContextID GrDirectContext::DirectContextID::Next() {
     static std::atomic<uint32_t> nextID{1};
     uint32_t id;
@@ -200,18 +165,6 @@ bool GrDirectContext::abandoned() {
 }
 
 bool GrDirectContext::oomed() { return fGpu ? fGpu->checkAndResetOOMed() : false; }
-
-void GrDirectContext::preAllocateTextureBetweenFrames() {
-#ifdef SK_VULKAN
-    GrVkImage::PreAllocateTextureBetweenFrames();
-#endif
-}
-
-void GrDirectContext::setLastTouchDownTime() {
-#ifdef SK_VULKAN
-    GrVkImage::SetLastTouchDownTime();
-#endif
-}
 
 void GrDirectContext::releaseResourcesAndAbandonContext() {
     if (INHERITED::abandoned()) {
@@ -421,14 +374,11 @@ void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, con
     // The StrikeCache indirectly references typeface, and in order to dereference the typeface,
     // it is necessary to clear the StrikeCache when the application exits.
     fStrikeCache->freeAll();
-#ifdef SK_VULKAN
-    GrVkImage::PurgeAllocatedTextureBetweenFrames();
-#endif
 }
 
-void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly,
-                                              const std::set<int>& exitedPidSet,
-                                              const std::set<int>& protectedPidSet) {
+void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+    const std::set<int>& protectedPidSet)
+{
     ASSERT_SINGLE_OWNER
 
     if (this->abandoned()) {
@@ -611,6 +561,14 @@ std::set<GrGpuResourceTag> GrDirectContext::getAllGrGpuResourceTags() const {
         return fResourceCache->getAllGrGpuResourceTags();
     }
     return {};
+}
+
+// OH ISSUE: get the memory information of the updated pid.
+void GrDirectContext::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out)
+{
+    if (fResourceCache) {
+        fResourceCache->getUpdatedMemoryMap(out);
+    }
 }
 
 void GrDirectContext::vmaDefragment()

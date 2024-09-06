@@ -38,6 +38,9 @@ std::shared_ptr<RSTypeface> GetRSTypefaceOrDefault(std::shared_ptr<RSTypeface> t
 }
 #endif
 
+#ifdef USE_SKIA_TXT
+namespace SkiaRsText {
+#endif
 #ifndef USE_SKIA_TXT
 std::unique_ptr<SkShaper> SkShaper::Make(sk_sp<SkFontMgr> fontmgr) {
 #else
@@ -392,4 +395,7 @@ void SkTextBlobBuilderRunHandler::commitLine() {
 sk_sp<SkTextBlob> SkTextBlobBuilderRunHandler::makeBlob() {
     return fBuilder.make();
 }
+#endif
+#ifdef USE_SKIA_TXT
+} // namespace SkiaRsText
 #endif

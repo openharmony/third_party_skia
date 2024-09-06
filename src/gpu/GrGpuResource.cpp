@@ -241,8 +241,7 @@ void GrGpuResource::setResourceTag(const GrGpuResourceTag tag)
         return;
     }
     size_t size = this->gpuMemorySize();
-    MemoryCheckManager::getInstance().memoryOverCheck(tag.fPid, size);
-    MemoryCheckManager::getInstance().removeMemoryFromSnapshotInfo(pid, size);
+    get_resource_cache(fGpu)->resourceAccess().changeByteOfPid(pid, tag.fPid, size);
 }
 
 //////////////////////////////////////////////////////////////////////////////
