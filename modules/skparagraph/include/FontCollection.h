@@ -35,7 +35,8 @@ public:
     void setDefaultFontManager(sk_sp<SkFontMgr> fontManager, const char defaultFamilyName[]);
     void setDefaultFontManager(sk_sp<SkFontMgr> fontManager, const std::vector<SkString>& defaultFamilyNames);
 
-    sk_sp<SkFontMgr> getFallbackManager() const {
+    sk_sp<SkFontMgr> getFallbackManager() const
+    {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
         return fDefaultFontManager;
     }
@@ -53,7 +54,8 @@ public:
     void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const char defaultFamilyName[]);
     void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const std::vector<SkString>& defaultFamilyNames);
 
-    std::shared_ptr<RSFontMgr> getFallbackManager() const {
+    std::shared_ptr<RSFontMgr> getFallbackManager() const
+    {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
         return fDefaultFontManager;
     }
@@ -77,12 +79,14 @@ public:
 
     void disableFontFallback();
     void enableFontFallback();
-    bool fontFallbackEnabled() {
+    bool fontFallbackEnabled()
+    {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
         return fEnableFontFallback;
     }
 
-    ParagraphCache* getParagraphCache() {
+    ParagraphCache* getParagraphCache()
+    {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
         return &fParagraphCache;
     }

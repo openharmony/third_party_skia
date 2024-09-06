@@ -453,6 +453,7 @@ void FontCollection::disableFontFallback() {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fEnableFontFallback = false;
 }
+
 void FontCollection::enableFontFallback() {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fEnableFontFallback = true;

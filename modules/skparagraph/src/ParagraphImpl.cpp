@@ -279,68 +279,78 @@ void ParagraphImpl::resetPlaceholderRange(const TextRange& deletedRange)
     }
 }
 
+#ifdef OHOS_SUPPORT
 bool ParagraphImpl::middleEllipsisDeal()
 {
     if (fRuns.empty()) {
         return false;
     }
     isMiddleEllipsis = false;
-    const SkString& ell = this->getEllipsis();
-    const char *ellStr = ell.c_str();
-    size_t start = 0;
+
     size_t end = 0;
     size_t charbegin = 0;
     size_t charend = 0;
     if (fRuns.begin()->leftToRight()) {
-        if (ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
-            fText.reset();
-            fText.set(ellStr);
-            end = 1;
-            charend = ell.size();
-        } else {
-            scanTextCutPoint(ltrTextSize, start, end);
-            if (end) {
-                charbegin = ltrTextSize[start].charbegin;
-                charend = ltrTextSize[end].charOver;
-                fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
-                fText.insert(ltrTextSize[start].charbegin, ellStr);
-#ifdef OHOS_SUPPORT
-                fEllipsisRange = TextRange(charbegin, charend);
-#endif
-            }
-        }
-        ltrTextSize.clear();
+        middleEllipsisLtrDeal(end, charbegin, charend);
     } else {
-        scanTextCutPoint(rtlTextSize, start, end);
-        if (start < 1 || end + PARAM_DOUBLE >= rtlTextSize.size()) {
-            start = 0;
-            end = 0;
-        }
-        if (end) {
-            charbegin = rtlTextSize[start - 1].charbegin;
-            charend = rtlTextSize[end + PARAM_DOUBLE].charbegin;
-            fText.remove(rtlTextSize[start - 1].charbegin,
-                rtlTextSize[end + PARAM_DOUBLE].charbegin - rtlTextSize[start - 1].charbegin);
-            fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
-#ifdef OHOS_SUPPORT
-            fEllipsisRange = TextRange(charbegin, charend);
-#endif
-        }
-        rtlTextSize.clear();
+        middleEllipsisRtlDeal(end, charbegin, charend);
     }
-
     if (end != 0) {
         TextRange deletedRange(charbegin, charend);
         resetTextStyleRange(deletedRange);
         resetPlaceholderRange(deletedRange);
-#ifdef OHOS_SUPPORT
         fEllipsisRange = deletedRange;
-#endif
     }
-
     // end = 0 means the text does not exceed the width limit
     return end != 0;
 }
+
+void ParagraphImpl::middleEllipsisLtrDeal(size_t& end,
+                                                       size_t& charbegin,
+                                                       size_t& charend)
+{
+    const SkString& ell = this->getEllipsis();
+    const char *ellStr = ell.c_str();
+    size_t start = 0;
+    if (ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
+        fText.reset();
+        fText.set(ellStr);
+        end = 1;
+        charend = ell.size();
+    } else {
+        scanTextCutPoint(ltrTextSize, start, end);
+        if (end) {
+            charbegin = ltrTextSize[start].charbegin;
+            charend = ltrTextSize[end].charOver;
+            fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
+            fText.insert(ltrTextSize[start].charbegin, ellStr);
+        }
+    }
+    ltrTextSize.clear();
+}
+
+void ParagraphImpl::middleEllipsisRtlDeal(size_t& end,
+                                                       size_t& charbegin,
+                                                       size_t& charend)
+{
+    const SkString& ell = this->getEllipsis();
+    const char *ellStr = ell.c_str();
+    size_t start = 0;
+    scanTextCutPoint(rtlTextSize, start, end);
+    if (start < 1 || end + PARAM_DOUBLE >= rtlTextSize.size()) {
+        start = 0;
+        end = 0;
+    }
+    if (end) {
+        charbegin = rtlTextSize[start - 1].charbegin;
+        charend = rtlTextSize[end + PARAM_DOUBLE].charbegin;
+        fText.remove(rtlTextSize[start - 1].charbegin,
+                     rtlTextSize[end + PARAM_DOUBLE].charbegin - rtlTextSize[start - 1].charbegin);
+        fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
+    }
+    rtlTextSize.clear();
+}
+#endif
 
 SkScalar ParagraphImpl::resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex)
 {
