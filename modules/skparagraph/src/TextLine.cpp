@@ -268,8 +268,8 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
             [painter, x, y, this]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
                 *runWidthInLine = this->iterateThroughSingleRunByStyles(
-                    TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kDecorations,
-                    [painter, x, y, this]
+                    TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange,
+                    StyleType::kDecorations, [painter, x, y, this]
                     (TextRange textRange, const TextStyle& style, const ClipContext& context) {
                     if (style.getDecoration().fType == TextDecoration::kUnderline) {
                         SkScalar tmpThick = this->calculateThickness(style, context);
@@ -1030,6 +1030,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
 
+#ifdef OHOS_SUPPORT
 void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool) {
     if (fAdvance.fX <= maxWidth) {
         return;
@@ -1065,7 +1066,7 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         fTextRangeReplacedByEllipsis = TextRange(0, cluster.textRange().start);
         fClusterRange.start = clusterIndex;
         fGhostClusterRange.start = fClusterRange.start;
-        fEllipsis->fClusterStart = cluster.textRange().start;
+        fEllipsis->fClusterStart = 0;
         fText.start = cluster.textRange().start;
         fTextIncludingNewlines.start = cluster.textRange().start;
         fTextExcludingSpaces.start = cluster.textRange().start;
@@ -1076,6 +1077,7 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     ellipsisNotFitProcess(EllipsisModal::HEAD);
 }
+#endif
 
 static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
     SkUnichar val = SkUTF::NextUTF8(ptr, end);

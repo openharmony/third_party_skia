@@ -86,7 +86,8 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
                   painter->translate(context.fTextShift, 0);
                   calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, fThickness, textStyle);
                   painter->drawPath(fPath, fDecorStyle);
-                  calculateGaps(context, SkRect::MakeXYWH(left, bottom, width, fThickness), baseline, fThickness, textStyle);
+                  calculateGaps(context, SkRect::MakeXYWH(left, bottom, width, fThickness), baseline,
+                      fThickness, textStyle);
                   painter->drawPath(fPath, fDecorStyle);
               } else {
                   draw_line_as_rect(painter, x,      y, width, fDecorStyle);
