@@ -591,17 +591,21 @@ void GrDirectContext::dumpVmaStats(SkString *out)
 // OH ISSUE: intra frame and inter frame identification
 void GrDirectContext::beginFrame()
 {
+#ifdef SK_VULKAN
     if (fResourceCache) {
         fResourceCache->beginFrame();
     }
+#endif
 }
 
 // OH ISSUE: intra frame and inter frame identification
 void GrDirectContext::endFrame()
 {
+#ifdef SK_VULKAN
     if (fResourceCache) {
         fResourceCache->endFrame();
     }
+#endif
 }
 
 // OH ISSUE: asyn memory reclaimer
@@ -625,6 +629,7 @@ void GrDirectContext::flushGpuMemoryInWaitQueue()
 // OH ISSUE: suppress release window
 void GrDirectContext::setGpuCacheSuppressWindowSwitch(bool enabled)
 {
+#ifdef SK_VULKAN
     ASSERT_SINGLE_OWNER
 
     if (this->abandoned()) {
@@ -632,11 +637,13 @@ void GrDirectContext::setGpuCacheSuppressWindowSwitch(bool enabled)
     }
 
     fResourceCache->setGpuCacheSuppressWindowSwitch(enabled);
+#endif
 }
 
 // OH ISSUE: suppress release window
 void GrDirectContext::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived)
 {
+#ifdef SK_VULKAN
     ASSERT_SINGLE_OWNER
 
     if (this->abandoned()) {
@@ -644,6 +651,7 @@ void GrDirectContext::suppressGpuCacheBelowCertainRatio(const std::function<bool
     }
 
     fResourceCache->suppressGpuCacheBelowCertainRatio(nextFrameHasArrived);
+#endif
 }
 
 GrBackendTexture GrDirectContext::createBackendTexture(int width, int height,

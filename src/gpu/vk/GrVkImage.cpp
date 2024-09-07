@@ -607,32 +607,6 @@ void GrVkImage::setResourceRelease(sk_sp<GrRefCntedCallback> releaseHelper) {
 }
 
 void GrVkImage::Resource::freeGPUData() const {
-    bool cached = false;
-    ImagePool::getInstance().forEachImageQueue([this, &cached](ImagePool::DescSpecificQueue& q) {
-        for (auto it = q.fQueue.begin(); it != q.fQueue.end(); it++) {
-            auto& [available, cachedInfo] = *it;
-            if (!(cachedInfo.fImage == this->fImage && cachedInfo.fAlloc == this->fAlloc)) {
-                continue;
-            }
-            HITRACE_OHOS_NAME_ALWAYS("Back pre-allocated image cache");
-            if (q.availabledCacheCount < q.cachePoolSize) {
-                available = true;
-                cached = true;
-                q.availabledCacheCount++;
-                return true;
-            }
-            q.fQueue.erase(it);
-            return true;
-        }
-        return false;
-    });
-    if (cached) {
-        return;
-    }
-    freeGPUDataInner();
-}
-
-void GrVkImage::Resource::freeGPUDataInner() const {
     this->invokeReleaseProc();
 
     // OH ISSUE: asyn memory reclaimer
