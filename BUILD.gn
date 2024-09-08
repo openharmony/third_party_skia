@@ -2121,6 +2121,13 @@ if (use_oh_skia) {
     if (skia_include_multiframe_procs) {
       sources += [ "tools/SkSharingProc.cpp" ]
     }
+    if (!build_ohos_sdk && !is_arkui_x) {
+      if (defined(defines)) {
+        defines += [ "NOT_BUILD_FOR_OHOS_SDK" ]
+      } else {
+        defines = [ "NOT_BUILD_FOR_OHOS_SDK" ]
+      }
+    }
 
     if (defined(ddgr_ext_configs)) {
       defines += ddgr_ext_configs.ddgr_defines

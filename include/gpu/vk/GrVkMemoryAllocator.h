@@ -9,6 +9,7 @@
 #define GrVkMemoryAllocator_DEFINED
 
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkString.h"
 #include "include/gpu/GrTypes.h"
 #include "include/gpu/vk/GrVkTypes.h"
 
@@ -133,6 +134,9 @@ public:
 
     // Returns the total amount of memory that is allocated by this allocator.
     virtual uint64_t totalAllocatedMemory() const = 0;
+
+    virtual void vmaDefragment() {}
+    virtual void dumpVmaStats(SkString *out, const char *sep = ", ") const {}
 };
 
 GR_MAKE_BITFIELD_CLASS_OPS(GrVkMemoryAllocator::AllocationPropertyFlags)
