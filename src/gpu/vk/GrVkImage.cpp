@@ -706,7 +706,8 @@ bool GrVkImage::InitImageInfoInner(GrVkGpu* gpu, const ImageDesc& imageDesc, GrV
                                       ? GrMemoryless::kYes
                                       : GrMemoryless::kNo;
     GrVkAlloc alloc;
-    if (!GrVkMemory::AllocAndBindImageMemory(gpu, image, memoryless, &alloc) ||
+    if (!GrVkMemory::AllocAndBindImageMemory(gpu, image, memoryless, &alloc,
+        imageDesc.fWidth * imageDesc.fHeight * 4) ||
         (memoryless == GrMemoryless::kYes &&
          !SkToBool(alloc.fFlags & GrVkAlloc::kLazilyAllocated_Flag))) {
         VK_CALL(gpu, DestroyImage(gpu->device(), image, nullptr));

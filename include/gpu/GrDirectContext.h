@@ -891,6 +891,9 @@ public:
         }
     }
 
+    void vmaDefragment();
+    void dumpVmaStats(SkString *out);
+
 protected:
     GrDirectContext(GrBackendApi backend, const GrContextOptions& options);
 
