@@ -1432,7 +1432,11 @@ optional("pdf") {
   if (use_oh_skia) {
     external_deps += [ "zlib:libz" ]
   } else {
-    deps += [ "${skia_third_party_dir}/zlib" ]
+    if (skia_feature_zlib != "") {
+      external_deps += [ skia_feature_zlib ]
+    } else {
+      deps += [ "${skia_third_party_dir}/zlib" ]
+    }
   }
   if (is_ohos && !build_ohos_sdk) {
     external_deps += [ "hitrace:hitrace_meter" ]
