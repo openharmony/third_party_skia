@@ -584,6 +584,14 @@ std::set<GrGpuResourceTag> GrDirectContext::getAllGrGpuResourceTags() const {
     return {};
 }
 
+// OH ISSUE: get the memory information of the updated pid.
+void GrDirectContext::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out)
+{
+    if (fResourceCache) {
+        fResourceCache->getUpdatedMemoryMap(out);
+    }
+}
+
 void GrDirectContext::vmaDefragment()
 {
     if (fGpu) {
