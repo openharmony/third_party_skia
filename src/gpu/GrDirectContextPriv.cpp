@@ -108,6 +108,9 @@ void GrDirectContextPriv::resetGpuStats() const {
 void GrDirectContextPriv::dumpGpuStats(SkString* out) const {
 #if GR_GPU_STATS
     this->context()->fGpu->stats()->dump(out);
+#ifdef SKIA_DFX_FOR_OHOS
+    this->context()->fResourceCache->dumpInfo(out);
+#endif
     if (auto builder = this->context()->fGpu->pipelineBuilder()) {
         builder->stats()->dump(out);
     }
