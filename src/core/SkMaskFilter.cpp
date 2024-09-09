@@ -360,7 +360,7 @@ float SkMaskFilterBase::getNoxFormedSigma3() const
 }
 
 GrSurfaceProxyView SkMaskFilterBase::filterMaskGPUNoxFormed(GrRecordingContext*, GrSurfaceProxyView view,
-    GrColorType srcColorType, SkAlphaType srcAlphaType, const SkIRect& maskRect,
+    GrColorType srcColorType, SkAlphaType srcAlphaType, const SkMatrix& viewMatrix, const SkIRect& maskRect,
     const SkRRect& srcRRect) const
 {
     return {};
