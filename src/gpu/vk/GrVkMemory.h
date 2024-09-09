@@ -19,37 +19,6 @@
 class GrVkGpu;
 
 namespace GrVkMemory {
-    class AsyncFreeVMAMemoryManager {
-    public:
-        struct WaitQueueItem {
-            WaitQueueItem(const GrVkGpu* gpu, const GrVkAlloc& alloc, bool isBuffer)
-                : fGpu(gpu), fAlloc(alloc), fIsBuffer(isBuffer) {}
-
-            const GrVkGpu* fGpu;
-            const GrVkAlloc fAlloc;
-            bool fIsBuffer = false;
-        };
-        struct FreeVMAMemoryWaitQueue {
-            uint64_t fTotalFreedMemorySize = 0;
-            std::vector<WaitQueueItem> fQueue;
-        };
-
-        static AsyncFreeVMAMemoryManager& GetInstance();
-        AsyncFreeVMAMemoryManager(const AsyncFreeVMAMemoryManager&) = delete;
-        AsyncFreeVMAMemoryManager& operator=(const AsyncFreeVMAMemoryManager&) = delete;
-
-        void FreeMemoryInWaitQueue(std::function<bool(void)> nextFrameHasArrived);
-        bool AddMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, bool isBuffer);
-
-    private:
-        AsyncFreeVMAMemoryManager();
-        ~AsyncFreeVMAMemoryManager() = default;
-        bool fAsyncFreedMemoryEnabled = false;
-        const uint64_t fLimitFreedMemorySize = 15728640;
-        const uint64_t fThresholdFreedMemorySize = 65536;
-        std::vector<std::pair<pid_t, FreeVMAMemoryWaitQueue>> fWaitQueues;
-        std::mutex fWaitQueuesLock;
-    };
     /**
     * Allocates vulkan device memory and binds it to the gpu's device for the given object.
     * Returns true if allocation succeeded.
@@ -92,8 +61,6 @@ namespace GrVkMemory {
     // memory.
     void GetNonCoherentMappedMemoryRange(const GrVkAlloc&, VkDeviceSize offset, VkDeviceSize size,
                                          VkDeviceSize alignment, VkMappedMemoryRange*);
-
-    void AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived);
 }  // namespace GrVkMemory
 
 #endif

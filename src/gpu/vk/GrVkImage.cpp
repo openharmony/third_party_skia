@@ -205,6 +205,13 @@ sk_sp<GrVkImage> GrVkImage::MakeWrapped(GrVkGpu* gpu,
                                           forSecondaryCB));
 }
 
+// OH ISSUE: Integrate Destroy and Free
+void GrVkImage::DestroyAndFreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc, const GrVkImage& image)
+{
+    VK_CALL(gpu, DestroyImage(gpu->device(), image, nullptr));
+    GrVkMemory::FreeImageMemory(gpu, alloc);
+}
+
 GrVkImage::GrVkImage(GrVkGpu* gpu,
                      SkISize dimensions,
                      UsageFlags supportedUsages,
@@ -544,8 +551,7 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
 }
 
 void GrVkImage::DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo* info) {
-    VK_CALL(gpu, DestroyImage(gpu->device(), info->fImage, nullptr));
-    GrVkMemory::FreeImageMemory(gpu, info->fAlloc);
+    DestroyAndFreeImageMemory(gpu, info->fAlloc, info->fImage)
 }
 
 GrVkImage::~GrVkImage() {
@@ -602,8 +608,14 @@ void GrVkImage::setResourceRelease(sk_sp<GrRefCntedCallback> releaseHelper) {
 
 void GrVkImage::Resource::freeGPUData() const {
     this->invokeReleaseProc();
-    VK_CALL(fGpu, DestroyImage(fGpu->device(), fImage, nullptr));
-    GrVkMemory::FreeImageMemory(fGpu, fAlloc);
+
+    // OH ISSUE: asyn memory reclaimer
+    auto reclaimer = this->getVkGpu()->memoryReclaimer();
+    if (reclaimer && reclaimer->addMemoryToWaitQueue(fGpu, fAlloc, fImage)) {
+        return;
+    }
+    
+    DestroyAndFreeImageMemory(fGpu, fAlloc, fImage);
 }
 
 void GrVkImage::BorrowedResource::freeGPUData() const {

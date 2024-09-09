@@ -315,8 +315,6 @@ public:
      */
     void purgeUnlockedResources(bool scratchResourcesOnly);
 
-    static void asyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived);
-
     /**
      * Gets the maximum supported texture size.
      */
@@ -880,6 +878,18 @@ public:
 
     // OH ISSUE: get the memory information of the updated pid.
     void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
+
+    // OH ISSUE: intra frame and inter frame identification
+    void beginFrame();
+    void endFrame();
+    
+    // OH ISSUE: asyn memory reclaimer
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled);
+    void flushGpuMemoryInWaitQueue();
+
+    // OH ISSUE: suppress release window
+    void setGpuCacheSuppressWindowSwitch(bool enabled);
+    void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
 
 protected:
     GrDirectContext(GrBackendApi backend, const GrContextOptions& options);

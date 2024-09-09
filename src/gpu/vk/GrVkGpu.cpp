@@ -253,6 +253,8 @@ GrVkGpu::GrVkGpu(GrDirectContext* direct, const GrVkBackendContext& backendConte
         SkASSERT(this->currentCommandBuffer());
         this->currentCommandBuffer()->begin(this);
     }
+
+    fMemoryReclaimer = std::make_unique<GrVkMemoryReclaimer>();
 }
 
 void GrVkGpu::destroyResources() {
@@ -557,10 +559,6 @@ bool GrVkGpu::onWritePixels(GrSurface* surface,
     }
 
     return success;
-}
-
-void GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
-    GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(nextFrameHasArrived);
 }
 
 bool GrVkGpu::onTransferPixelsTo(GrTexture* texture,

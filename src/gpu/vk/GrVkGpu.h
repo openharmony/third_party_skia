@@ -15,6 +15,7 @@
 #include "src/gpu/vk/GrVkCaps.h"
 #include "src/gpu/vk/GrVkMSAALoadManager.h"
 #include "src/gpu/vk/GrVkMemory.h"
+#include "src/gpu/vk/GrVkMemoryReclaimer.h"
 #include "src/gpu/vk/GrVkResourceProvider.h"
 #include "src/gpu/vk/GrVkSemaphore.h"
 #include "src/gpu/vk/GrVkUtil.h"
@@ -61,6 +62,8 @@ public:
 
     GrVkMemoryAllocator* memoryAllocator() const { return fMemoryAllocator.get(); }
     GrVkMemoryAllocator* memoryAllocatorCacheImage() const { return fMemoryAllocatorCacheImage.get(); }
+
+    GrVkMemoryReclaimer* memoryReclaimer() const { return fMemoryReclaimer.get(); }
 
     VkPhysicalDevice physicalDevice() const { return fPhysicalDevice; }
     VkDevice device() const { return fDevice; }
@@ -434,6 +437,8 @@ private:
     GrProtected                                           fProtectedContext;
 
     std::unique_ptr<GrVkOpsRenderPass>                    fCachedOpsRenderPass;
+
+    std::unique_ptr<GrVkMemoryReclaimer>                    fMemoryReclaimer;
 
     using INHERITED = GrGpu;
 };
