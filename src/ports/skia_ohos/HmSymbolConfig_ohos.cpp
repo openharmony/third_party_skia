@@ -174,7 +174,7 @@ std::unique_ptr<char[]> GetDataFromFile(const char* fname, int& size)
     }
 
     file->seekg(0, std::ios::end);
-    size = file->tellg(); // get the length of file
+    size = static_cast<int>(file->tellg()); // get the length of file
     if (size <= 0) {
         size = 0;
         return nullptr;
@@ -255,7 +255,6 @@ int HmSymbolConfig_OHOS::CheckConfigFile(const char* fname, Json::Value& root)
     Json::CharReaderBuilder charReaderBuilder;
     std::unique_ptr<Json::CharReader> jsonReader(charReaderBuilder.newCharReader());
     bool isJson = jsonReader->parse(data.get(), data.get() + size, &root, &errs);
-
     if (!isJson || !errs.empty()) {
         return LogErrInfo(ERROR_CONFIG_FORMAT_NOT_SUPPORTED, fname);
     }
