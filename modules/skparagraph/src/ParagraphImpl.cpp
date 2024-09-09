@@ -1439,32 +1439,33 @@ TextBox ParagraphImpl::getEmptyTextRect(RectHeightStyle rectHeightStyle) const
     TextBox box(SkRect::MakeXYWH(0, 0, 0, fHeight), fParagraphStyle.getTextDirection());
     auto verticalShift = fEmptyMetrics.rawAscent() - fEmptyMetrics.ascent();
     switch (rectHeightStyle) {
-    case RectHeightStyle::kTight:
-        if (textStyle.getHeightOverride() && textStyle.getHeight() > 0) {
-            const auto effectiveBaseline = fEmptyMetrics.baseline() + fEmptyMetrics.delta();
-            box.rect.fTop = effectiveBaseline + fEmptyMetrics.rawAscent();
-            box.rect.fBottom = effectiveBaseline + fEmptyMetrics.rawDescent();
-        }
-        return box;
-    case RectHeightStyle::kMax:
-        box.rect.fBottom = fHeight;
-        box.rect.fTop = fEmptyMetrics.delta();
-        return box;
-    case RectHeightStyle::kIncludeLineSpacingMiddle:
-    case RectHeightStyle::kIncludeLineSpacingTop:
-    case RectHeightStyle::kIncludeLineSpacingBottom:
-        box.rect.fBottom = fHeight;
-        box.rect.fTop = fEmptyMetrics.delta() + verticalShift;
-        return box;
-    case RectHeightStyle::kStrut:
-        if (fParagraphStyle.getStrutStyle().getStrutEnabled() && fParagraphStyle.getStrutStyle().getFontSize() > 0) {
-            auto baseline = fEmptyMetrics.baseline();
-            box.rect.fTop = baseline + fStrutMetrics.ascent();
-            box.rect.fBottom = baseline + fStrutMetrics.descent();
-        }
-        return box;
-    default:
-        return box;
+        case RectHeightStyle::kTight:
+            if (textStyle.getHeightOverride() && textStyle.getHeight() > 0) {
+                const auto effectiveBaseline = fEmptyMetrics.baseline() + fEmptyMetrics.delta();
+                box.rect.fTop = effectiveBaseline + fEmptyMetrics.rawAscent();
+                box.rect.fBottom = effectiveBaseline + fEmptyMetrics.rawDescent();
+            }
+            return box;
+        case RectHeightStyle::kMax:
+            box.rect.fBottom = fHeight;
+            box.rect.fTop = fEmptyMetrics.delta();
+            return box;
+        case RectHeightStyle::kIncludeLineSpacingMiddle:
+        case RectHeightStyle::kIncludeLineSpacingTop:
+        case RectHeightStyle::kIncludeLineSpacingBottom:
+            box.rect.fBottom = fHeight;
+            box.rect.fTop = fEmptyMetrics.delta() + verticalShift;
+            return box;
+        case RectHeightStyle::kStrut:
+            if (fParagraphStyle.getStrutStyle().getStrutEnabled() &&
+                fParagraphStyle.getStrutStyle().getFontSize() > 0) {
+                auto baseline = fEmptyMetrics.baseline();
+                box.rect.fTop = baseline + fStrutMetrics.ascent();
+                box.rect.fBottom = baseline + fStrutMetrics.descent();
+            }
+            return box;
+        default:
+            return box;
     }
 }
 #endif
