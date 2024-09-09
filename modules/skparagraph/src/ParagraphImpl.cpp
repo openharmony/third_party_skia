@@ -4,10 +4,7 @@
 #include "include/core/SkFontMetrics.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPictureRecorder.h"
-#include "include/core/SkScalar.h"
 #include "include/core/SkSpan.h"
-#include "include/core/SkString.h"
-#include "include/core/SkTypes.h"
 #include "include/core/SkTypeface.h"
 #include "include/private/SkTFitsIn.h"
 #include "include/private/SkTo.h"
@@ -19,19 +16,18 @@
 #include "modules/skparagraph/src/OneLineShaper.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/ParagraphPainterImpl.h"
-#include "modules/skparagraph/src/TextLineBaseImpl.h"
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skparagraph/src/TextWrapper.h"
-#include "modules/skunicode/include/SkUnicode.h"
 #include "src/utils/SkUTF.h"
 #include <math.h>
 #include <algorithm>
-#include <string>
 #include <utility>
+
+#ifdef OHOS_SUPPORT
 #include "log.h"
-#ifdef TXT_USE_PARAMETER
-#include "parameter.h"
+#include "modules/skparagraph/src/TextLineBaseImpl.h"
+#include "TextParameter.h"
 #endif
 
 namespace skia {
@@ -825,16 +821,9 @@ constexpr SkUnichar COPYRIGHT_UNICODE = 0x00A9;
 struct UnicodeSet {
     std::unordered_set<SkUnichar> set_;
     explicit UnicodeSet(const std::vector<SkRange<SkUnichar>>& unicodeSet) {
-#ifdef TXT_USE_PARAMETER
-        static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
-        char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
-        GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
-        if (!std::strcmp(autoSpacingEnable, "0")) {
+        if (!TextParameter::GetAutoSpacingEnable()) {
             return;
         }
-#else
-        return;
-#endif
         for (auto unicodeSetRange : unicodeSet) {
             for (auto i = unicodeSetRange.start; i <= unicodeSetRange.end; ++i) {
                 set_.insert(i);

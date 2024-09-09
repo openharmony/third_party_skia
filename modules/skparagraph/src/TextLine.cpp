@@ -11,7 +11,6 @@
 #include "include/core/SkTypes.h"
 #include "include/private/SkTemplates.h"
 #include "include/private/SkTo.h"
-#include "log.h"
 #include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
@@ -21,17 +20,8 @@
 #include "modules/skparagraph/src/Decorations.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/ParagraphPainterImpl.h"
-#include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLine.h"
-#ifdef OHOS_SUPPORT
-#include "modules/skparagraph/src/TextLineBaseImpl.h"
-#endif
 #include "modules/skshaper/include/SkShaper.h"
-#include "src/Run.h"
-#ifdef TXT_USE_PARAMETER
-#include "parameter.h"
-#endif
-#include "log.h"
 
 #include <algorithm>
 #include <iterator>
@@ -41,6 +31,13 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+
+#ifdef OHOS_SUPPORT
+#include "log.h"
+#include "modules/skparagraph/src/RunBaseImpl.h"
+#include "modules/skparagraph/src/TextLineBaseImpl.h"
+#include "TextParameter.h"
+#endif
 
 namespace skia {
 namespace textlayout {
@@ -505,16 +502,9 @@ SkScalar TextLine::calculateSpacing(const Cluster prevCluster, const Cluster cur
 
 #ifdef OHOS_SUPPORT
 SkScalar TextLine::autoSpacing() {
-#ifdef TXT_USE_PARAMETER
-    static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
-    char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
-    GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
-    if (!std::strcmp(autoSpacingEnable, "0")) {
+    if (!TextParameter::GetAutoSpacingEnable()) {
         return 0;
     }
-#else
-    return 0;
-#endif
     SkScalar spacing = 0.0;
     auto prevCluster = fOwner->cluster(fClusterRange.start);
     for (auto clusterIndex = fClusterRange.start + 1; clusterIndex < fClusterRange.end; ++clusterIndex) {
