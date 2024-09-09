@@ -22,9 +22,6 @@ enum SkHeifColorFormat {
     kHeifColorFormat_BGRA_8888,
     kHeifColorFormat_NV12,
     kHeifColorFormat_NV21,
-    kHeifColorFormat_RGBA_1010102,
-    kHeifColorFormat_P010_NV12,
-    kHeifColorFormat_P010_NV21,
 };
 
 struct HeifStream {
@@ -85,6 +82,7 @@ struct HeifDecoder {
     virtual bool getScanline(uint8_t* dst) = 0;
 
     virtual size_t skipScanlines(int count) = 0;
+    virtual void getErrMsg(std::string& errMsg) = 0;
     virtual bool getImageInfo(HeifFrameInfo *frameInfo) = 0;
     virtual bool decodeGainmap() = 0;
     virtual void setGainmapDstBuffer(uint8_t* dstBuffer, size_t rowStride) = 0;
@@ -94,7 +92,6 @@ struct HeifDecoder {
     virtual void getVividMetadata(std::vector<uint8_t>& uwaInfo, std::vector<uint8_t>& displayInfo,
         std::vector<uint8_t>& lightInfo) = 0;
     virtual void getISOMetadata(std::vector<uint8_t>& isoMetadata) = 0;
-    virtual void getErrMsg(std::string& errMsg) = 0;
 };
 
 struct StubHeifDecoder : HeifDecoder {
@@ -131,6 +128,10 @@ struct StubHeifDecoder : HeifDecoder {
         return 0;
     }
 
+    void getErrMsg(std::string& errMsg) override {
+        return;
+    }
+
     bool getImageInfo(HeifFrameInfo *frameInfo) override {
         return false;
     }
@@ -161,10 +162,6 @@ struct StubHeifDecoder : HeifDecoder {
     }
 
     void getISOMetadata(std::vector<uint8_t>& isoMetadata) override {
-        return;
-    }
-
-    void getErrMsg(std::string& errMsg) override {
         return;
     }
 };
