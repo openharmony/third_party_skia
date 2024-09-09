@@ -2153,10 +2153,6 @@ if (use_oh_skia) {
         defines = [ "NOT_BUILD_FOR_OHOS_SDK" ]
       }
     }
-
-    if (defined(ddgr_ext_configs)) {
-      defines += ddgr_ext_configs.ddgr_defines
-    }
   }
 
   foreach(item, ace_platforms) {
