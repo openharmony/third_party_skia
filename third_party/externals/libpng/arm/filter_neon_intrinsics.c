@@ -616,7 +616,7 @@ void png_read_filter_row_sub4_neon(png_row_infop row_info, png_bytep row,
 
       vdest.val[0] = vadd_u8(vdest.val[IND3], vrp1.val[0]);
       vdest.val[1] = vadd_u8(vdest.val[0], vrp1.val[1]);
-
+      vdest.val[IND3] = vdest.val[1];
       vdest_val1 = png_ldr(uint32x2x2_t, &vdest);
       vst2_lane_u32(png_ptr(uint32_t, rp), vdest_val1, 0);
 
@@ -634,7 +634,7 @@ void png_read_filter_row_sub4_neon(png_row_infop row_info, png_bytep row,
    uint32x2_t *temp_pointer;
    uint32x2_t vdest_val2;
 
-   vdest.val[0] = vadd_u8(vdest.val[1], vrp2);
+   vdest.val[0] = vadd_u8(vdest.val[IND3], vrp2);
    vdest_val2 = png_ldr(uint32x2_t, &vdest);
    vst1_lane_u32(png_ptr(uint32_t, rp), vdest_val2, 0);
 
@@ -996,7 +996,7 @@ void png_read_filter_row_avg4_neon(png_row_infop row_info, png_bytep row,
       vdest.val[0] = vadd_u8(vdest.val[0], vrp1.val[0]);
       vdest.val[1] = vhadd_u8(vdest.val[0], vpp1.val[1]);
       vdest.val[1] = vadd_u8(vdest.val[1], vrp1.val[1]);
-
+      vdest.val[IND3] = vdest.val[1];
       vdest_val1 = png_ldr(uint32x2x2_t, &vdest);
       vst2_lane_u32(png_ptr(uint32_t, rp), vdest_val1, 0);
 
@@ -1022,7 +1022,7 @@ void png_read_filter_row_avg4_neon(png_row_infop row_info, png_bytep row,
    vppt2 = png_ptr(uint8x8_t, &vtmp2);
    vpp2 = *vppt2;
 
-   vdest.val[0] = vhadd_u8(vdest.val[1], vpp2);
+   vdest.val[0] = vhadd_u8(vdest.val[IND3], vpp2);
    vdest.val[0] = vadd_u8(vdest.val[0], vrp2);
 
    vdest_val2 = png_ldr(uint32x2_t, &vdest);
@@ -1115,7 +1115,7 @@ void png_read_filter_row_avg4_x2_neon(png_row_infop row_info, png_bytep row,
       vdest.val[0] = vadd_u8(vdest.val[0], vrp1.val[0]);
       vdest.val[1] = vhadd_u8(vdest.val[0], vpp1.val[1]);
       vdest.val[1] = vadd_u8(vdest.val[1], vrp1.val[1]);
-
+      vdest.val[IND3] = vdest.val[1];
       vdest_val1 = png_ldr(uint32x2x2_t, &vdest);
       vst2_lane_u32(png_ptr(uint32_t, rp), vdest_val1, 0);
 
@@ -1123,7 +1123,7 @@ void png_read_filter_row_avg4_x2_neon(png_row_infop row_info, png_bytep row,
       vdestN.val[0] = vadd_u8(vdestN.val[0], vnp1.val[0]);
       vdestN.val[1] = vhadd_u8(vdestN.val[0], vdest.val[1]);
       vdestN.val[1] = vadd_u8(vdestN.val[1], vnp1.val[1]);
-
+      vdestN.val[IND3] = vdestN.val[1];
       vdest_val1 = png_ldr(uint32x2x2_t, &vdestN);
       vst2_lane_u32(png_ptr(uint32_t, np), vdest_val1, 0);
 
@@ -1153,13 +1153,13 @@ void png_read_filter_row_avg4_x2_neon(png_row_infop row_info, png_bytep row,
    vnpt2 = png_ptr(uint8x8_t, &vtmp2);
    vnp2 = *vnpt2;
 
-   vdest.val[0] = vhadd_u8(vdest.val[1], vpp2);
+   vdest.val[0] = vhadd_u8(vdest.val[IND3], vpp2);
    vdest.val[0] = vadd_u8(vdest.val[0], vrp2);
 
    vdest_val2 = png_ldr(uint32x2_t, &vdest);
    vst1_lane_u32(png_ptr(uint32_t, rp), vdest_val2, 0);
 
-   vdestN.val[0] = vhadd_u8(vdestN.val[1], vdest.val[0]);
+   vdestN.val[0] = vhadd_u8(vdestN.val[IND3], vdest.val[0]);
    vdestN.val[0] = vadd_u8(vdestN.val[0], vnp2);
 
    vdest_val2 = png_ldr(uint32x2_t, &vdestN);
