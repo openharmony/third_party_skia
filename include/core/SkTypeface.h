@@ -8,6 +8,8 @@
 #ifndef SkTypeface_DEFINED
 #define SkTypeface_DEFINED
 
+#include <vector>
+
 #include "include/core/SkFontArguments.h"
 #include "include/core/SkFontParameters.h"
 #include "include/core/SkFontStyle.h"
@@ -133,6 +135,10 @@ public:
      *  returns nullptr.
      */
     static sk_sp<SkTypeface> MakeFromData(sk_sp<SkData>, int index = 0);
+
+#ifdef OHOS_SUPPORT
+    static std::vector<sk_sp<SkTypeface>> GetSystemFonts();
+#endif
 
     /** Return a new typeface based on this typeface but parameterized as specified in the
         SkFontArguments. If the SkFontArguments does not supply an argument for a parameter
@@ -303,6 +309,10 @@ public:
      */
     void getFamilyName(SkString* name) const;
 
+#ifdef OHOS_SUPPORT
+    void getFontPath(SkString* path) const;
+#endif
+
     /**
      *  Return the PostScript name for this typeface.
      *  Value may change based on variation parameters.
@@ -413,6 +423,11 @@ protected:
      *  This name may or may not be produced by the family name iterator.
      */
     virtual void onGetFamilyName(SkString* familyName) const = 0;
+
+#ifdef OHOS_SUPPORT
+    virtual void onGetFontPath(SkString* path) const { path->reset(); }
+#endif
+
     virtual bool onGetPostScriptName(SkString*) const = 0;
 
     /** Returns an iterator over the family names in the font. */
