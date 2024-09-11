@@ -71,11 +71,15 @@ public:
         return outer ? outer->makeComposed(inner) : inner;
     }
     static sk_sp<SkColorFilter> Blend(SkColor c, SkBlendMode mode);
-
+#ifdef SKIA_OPTION_UNCLAMPED_COLOR_MATRIX_FILTER
+    // OH ISSUE: HDR needs unclamped ColorMatrixFilter
     enum class Clamp : bool { kNo, kYes };
 
-    static sk_sp<SkColorFilter> Matrix(const SkColorMatrix&, Clamp clamp = Clamp::kYes);
-    static sk_sp<SkColorFilter> Matrix(const float rowMajor[20], Clamp clamp = Clamp::kYes);
+    static sk_sp<SkColorFilter> Matrix(const SkColorMatrix&, Clamp clamp);
+    static sk_sp<SkColorFilter> Matrix(const float rowMajor[20], Clamp clamp);
+#endif
+    static sk_sp<SkColorFilter> Matrix(const SkColorMatrix&);
+    static sk_sp<SkColorFilter> Matrix(const float rowMajor[20]);
 
     // A version of Matrix which operates in HSLA space instead of RGBA.
     // I.e. HSLA-to-RGBA(Matrix(RGBA-to-HSLA(input))).
