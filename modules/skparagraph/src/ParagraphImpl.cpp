@@ -2118,6 +2118,7 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fMaxIntrinsicWidth = this->fMaxIntrinsicWidth;
     paragraph->fMinIntrinsicWidth = this->fMinIntrinsicWidth;
     paragraph->fLongestLine = this->fLongestLine;
+    paragraph->fLongestLineWithIndent = this->fLongestLineWithIndent;
     paragraph->fExceededMaxLines = this->fExceededMaxLines;
 
     paragraph->fLetterSpaceStyles = this->fLetterSpaceStyles;
