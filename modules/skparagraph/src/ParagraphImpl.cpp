@@ -100,6 +100,9 @@ Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             , fMaxIntrinsicWidth(0)
             , fMinIntrinsicWidth(0)
             , fLongestLine(0)
+#ifdef OHOS_SUPPORT
+            , fLongestLineWithIndent(0)
+#endif
             , fExceededMaxLines(0)
 { }
 
@@ -649,6 +652,9 @@ void ParagraphImpl::resetContext() {
     fMaxIntrinsicWidth = 0;
     fMinIntrinsicWidth = 0;
     fLongestLine = 0;
+#ifdef OHOS_SUPPORT
+    fLongestLineWithIndent = 0;
+#endif
     fMaxWidthWithTrailingSpaces = 0;
     fExceededMaxLines = false;
 }
@@ -2005,6 +2011,9 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fMaxIntrinsicWidth = this->fMaxIntrinsicWidth;
     paragraph->fMinIntrinsicWidth = this->fMinIntrinsicWidth;
     paragraph->fLongestLine = this->fLongestLine;
+#ifdef OHOS_SUPPORT
+    paragraph->fLongestLineWithIndent = this->fLongestLineWithIndent;
+#endif
     paragraph->fExceededMaxLines = this->fExceededMaxLines;
 
     paragraph->fLetterSpaceStyles = this->fLetterSpaceStyles;
