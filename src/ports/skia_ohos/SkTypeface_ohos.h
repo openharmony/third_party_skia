@@ -25,11 +25,6 @@ protected:
     virtual std::unique_ptr<SkFontData> onMakeFontData() const override;
     virtual void onGetFontDescriptor(SkFontDescriptor* descriptor, bool* isLocal) const override;
     virtual void onGetFamilyName(SkString* familyName) const override;
-
-#ifdef OHOS_SUPPORT
-    virtual void onGetFontPath(SkString* path) const override;
-#endif
-
     virtual sk_sp<SkTypeface> onMakeClone(const SkFontArguments& args) const override;
 private:
     SkString specifiedName; // specified family name which is defined in the configuration file

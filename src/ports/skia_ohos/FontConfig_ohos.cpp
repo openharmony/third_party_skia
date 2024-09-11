@@ -158,12 +158,6 @@ int FontConfig_OHOS::getTypefaceCount(int styleIndex, bool isFallback) const
 SkTypeface_OHOS* FontConfig_OHOS::getTypeface(int styleIndex, int index,
     bool isFallback) const
 {
-    sk_sp<SkTypeface_OHOS> typeface = getTypefaceSP(styleIndex, index, isFallback);
-    return (typeface == nullptr) ? nullptr : typeface.get();
-}
-
-sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getTypefaceSP(int styleIndex, int index, bool isFallback) const
-{
     if (styleIndex < 0 || index < 0 ||
         (isFallback && (unsigned int)styleIndex >= fallbackSet.size()) ||
         (!isFallback && (unsigned int)styleIndex >= genericFamilySet.size())) {
@@ -172,12 +166,12 @@ sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getTypefaceSP(int styleIndex, int index,
     if (isFallback) {
         const TypefaceSet& tpSet = *(fallbackSet[styleIndex]->typefaceSet.get());
         if ((unsigned int)index < tpSet.size()) {
-            return tpSet[index];
+            return tpSet[index].get();
         }
     } else {
         const TypefaceSet& tpSet = *(genericFamilySet[styleIndex]->typefaceSet.get());
         if ((unsigned int)index < tpSet.size()) {
-            return tpSet[index];
+            return tpSet[index].get();
         }
     }
     return nullptr;
