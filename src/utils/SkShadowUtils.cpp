@@ -798,8 +798,9 @@ void SkBaseDevice::drawShadow(const SkPath& path, const SkDrawShadowRec& rec) {
                                                           &factory.fOffset);
             } else {
                 SkDrawShadowMetrics::GetSpotParams(zPlaneParams.fZ, devLightPos.fX - center.fX,
-                                                   devLightPos.fY - center.fY, devLightPos.fZ, lightRadius,
-                                                   &radius, &scale, &factory.fOffset, rec.isLimitElevation);
+                                                   devLightPos.fY - center.fY, devLightPos.fZ,
+                                                   lightRadius, &radius, &scale, &factory.fOffset,
+                                                   rec.isLimitElevation);
             }
 
             SkRect devBounds;
