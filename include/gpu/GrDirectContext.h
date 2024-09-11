@@ -12,6 +12,8 @@
 
 #include <array>
 
+#include <unordered_map>
+
 #include "include/gpu/GrRecordingContext.h"
 
 #include "include/gpu/GrBackendSurface.h"
@@ -875,6 +877,9 @@ public:
 
     void vmaDefragment();
     void dumpVmaStats(SkString *out);
+
+    // OH ISSUE: get the memory information of the updated pid.
+    void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
 
 protected:
     GrDirectContext(GrBackendApi backend, const GrContextOptions& options);
