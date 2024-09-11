@@ -77,7 +77,7 @@ public:
     float getNoxFormedSigma3() const override;
 
     GrSurfaceProxyView filterMaskGPUNoxFormed(GrRecordingContext*, GrSurfaceProxyView srcView,
-        GrColorType srcColorType, SkAlphaType srcAlphaType, const SkIRect& maskRect,
+        GrColorType srcColorType, SkAlphaType srcAlphaType, const SkMatrix& viewMatrix, const SkIRect& maskRect,
         const SkRRect& srcRRect) const override;
 #endif
 
@@ -1597,9 +1597,8 @@ bool SkBlurMaskFilterImpl::canFilterMaskGPU(const GrStyledShape& shape,
         SkRRect srcRRect;
         bool inverted;
         if (canUseSDFBlur && shape.asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
-            SkScalar sx = 1.f;
-            SkScalar sy = 1.f;
-            SDFBlur::GetSDFBlurScaleFactor(srcRRect, sx, sy);
+            SkScalar sx = ctm.getScaleX();
+            SkScalar sy = ctm.getScaleY();
             float noxFormedSigma3 = this->getNoxFormedSigma3();
             int sigmaX = noxFormedSigma3 * sx;
             int sigmaY = noxFormedSigma3 * sy;
@@ -1686,7 +1685,7 @@ float SkBlurMaskFilterImpl::getNoxFormedSigma3() const
 }
 
 GrSurfaceProxyView SkBlurMaskFilterImpl::filterMaskGPUNoxFormed(GrRecordingContext* context,
-    GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType,
+    GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType, const SkMatrix& viewMatrix,
     const SkIRect& maskRect, const SkRRect& srcRRect) const
 {
     const SkIRect clipRect = SkIRect::MakeWH(maskRect.width(), maskRect.height());
@@ -1699,7 +1698,7 @@ GrSurfaceProxyView SkBlurMaskFilterImpl::filterMaskGPUNoxFormed(GrRecordingConte
     }
     auto srcBounds = SkIRect::MakeSize(srcView.proxy()->dimensions());
     auto surfaceDrawContext = SDFBlur::SDFBlur(context, srcView, srcColorType, srcAlphaType, nullptr,
-        clipRect, srcBounds, noxFormedSigma, SkTileMode::kClamp, srcRRect);
+        clipRect, srcBounds, noxFormedSigma, SkTileMode::kClamp, viewMatrix, srcRRect);
     if (!surfaceDrawContext || !surfaceDrawContext->asTextureProxy()) {
         return {};
     }

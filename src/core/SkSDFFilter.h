@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef Sk_SDF_Filter_DEFINED
-#define Sk_SDF_Filter_DEFINED
+#ifndef SK_SDF_Filter_DEFINED
+#define SK_SDF_Filter_DEFINED
 
 #include "src/core/SkMaskFilterBase.h"
 
@@ -38,7 +38,7 @@ struct DrawRectData {
 
 bool isSDFBlur(const GrStyledShape& shape);
 
-void GetSDFBlurScaleFactor(const SkRRect srcRRect, SkScalar& sx, SkScalar& sy);
+void GetSDFBlurScaleFactor(const SkRRect srcRRect, const SkMatrix& viewMatrix, SkScalar& sx, SkScalar& sy);
 
 bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
     const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter,
@@ -47,7 +47,7 @@ bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext
 std::unique_ptr<skgpu::v1::SurfaceDrawContext> SDFBlur(GrRecordingContext* rContext,
     GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType,
     sk_sp<SkColorSpace> colorSpace, SkIRect dstBounds, SkIRect srcBounds, float noxFormedSigma,
-    SkTileMode mode, const SkRRect& srcRRect, SkBackingFit fit = SkBackingFit::kApprox);
+    SkTileMode mode, const SkMatrix& viewMatrix, const SkRRect& srcRRect, SkBackingFit fit = SkBackingFit::kApprox);
 
 } // SDFBlur
 #endif

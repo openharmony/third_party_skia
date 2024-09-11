@@ -450,7 +450,7 @@ static GrSurfaceProxyView hw_create_filtered_mask(GrDirectContext* dContext,
         filteredMaskView = filter->filterMaskGPUNoxFormed(dContext, maskSDC->readSurfaceView(),
                                                           maskSDC->colorInfo().colorType(),
                                                           maskSDC->colorInfo().alphaType(),
-                                                          *maskRect, srcRRect);
+                                                          viewMatrix, *maskRect, srcRRect);
     } else {
         filteredMaskView = filter->filterMaskGPU(dContext, maskSDC->readSurfaceView(),
                                                  maskSDC->colorInfo().colorType(),
@@ -524,7 +524,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     SkRRect srcRRect;
     bool inverted;
     if (canUseSDFBlur && shape->asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
-        SDFBlur::GetSDFBlurScaleFactor(srcRRect, sx, sy);
+        SDFBlur::GetSDFBlurScaleFactor(srcRRect, viewMatrix, sx, sy);
     }
     SkMatrix matrixScale = SkMatrix::I().Scale(sx, sy);
     SkIRect unclippedDevShapeBounds, devClipBounds;
