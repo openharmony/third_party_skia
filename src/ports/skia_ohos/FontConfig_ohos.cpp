@@ -5,12 +5,12 @@
 #include "FontConfig_ohos.h"
 
 #include<array>
+#include <cstring>
 #include <dirent.h>
 #include <libgen.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <cstring>
 
 #ifdef SK_BUILD_FONT_MGR_FOR_OHOS
 #include <parameters.h>
@@ -295,7 +295,7 @@ uint32_t FontConfig_OHOS::getFontStyleDifference(const SkFontStyle& dstStyle,
         widthDiff = (srcWidth >= dstWidth) ? (srcWidth - dstWidth)
                                            : (dstWidth - srcWidth + kWidthDiffThreshold);
     }
-    
+
     constexpr int SLANT_RANGE = 3;
     int diffSlantValue[SLANT_RANGE][SLANT_RANGE] = {
         {0, 2, 1},
@@ -528,7 +528,8 @@ int FontConfig_OHOS::parseFontDir(const char* fname, const Json::Value& root)
             if (strcmp(fname, OHOS_DEFAULT_CONFIG) == 0) {
                 dir = strcmp(root[i].asCString(), "/system/fonts/") ? root[i].asCString() : "fonts";
             } else {
-                dir = strcmp(root[i].asCString(), "/system/fonts/") ? root[i].asCString() : "../../../../hms/previewer/resources/fonts";
+                dir = strcmp(root[i].asCString(), "/system/fonts/") ?
+                    root[i].asCString() : "../../../../hms/previewer/resources/fonts";
             }
 #else
             dir = root[i].asCString();
@@ -1063,7 +1064,7 @@ int FontConfig_OHOS::scanFonts(const SkTypeface_FreeType::Scanner& fontScanner)
         fontDirSet.emplace_back(SkString("fonts"));
 #else
         fontDirSet.emplace_back(SkString("/system/fonts/"));
-#endif        
+#endif
     }
     for (unsigned int i = 0; i < fontDirSet.size(); i++) {
         DIR* dir = opendir(fontDirSet[i].c_str());
