@@ -306,8 +306,8 @@ bool ParagraphImpl::middleEllipsisDeal()
 }
 
 void ParagraphImpl::middleEllipsisLtrDeal(size_t& end,
-                                                       size_t& charbegin,
-                                                       size_t& charend)
+                                          size_t& charbegin,
+                                          size_t& charend)
 {
     const SkString& ell = this->getEllipsis();
     const char *ellStr = ell.c_str();
@@ -330,8 +330,8 @@ void ParagraphImpl::middleEllipsisLtrDeal(size_t& end,
 }
 
 void ParagraphImpl::middleEllipsisRtlDeal(size_t& end,
-                                                       size_t& charbegin,
-                                                       size_t& charend)
+                                          size_t& charbegin,
+                                          size_t& charend)
 {
     const SkString& ell = this->getEllipsis();
     const char *ellStr = ell.c_str();
@@ -345,7 +345,7 @@ void ParagraphImpl::middleEllipsisRtlDeal(size_t& end,
         charbegin = rtlTextSize[start - 1].charbegin;
         charend = rtlTextSize[end + PARAM_DOUBLE].charbegin;
         fText.remove(rtlTextSize[start - 1].charbegin,
-                     rtlTextSize[end + PARAM_DOUBLE].charbegin - rtlTextSize[start - 1].charbegin);
+            rtlTextSize[end + PARAM_DOUBLE].charbegin - rtlTextSize[start - 1].charbegin);
         fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
     }
     rtlTextSize.clear();
@@ -549,6 +549,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
             this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
             if (!this->shapeTextIntoEndlessLine()) {
                 this->resetContext();
+
 #ifdef OHOS_SUPPORT
                 if (isMaxLinesZero) {
                     fExceededMaxLines  = true;

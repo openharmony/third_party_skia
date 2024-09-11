@@ -319,7 +319,6 @@ private:
 
     friend class TextWrapper;
     friend class OneLineShaper;
-
 #ifdef OHOS_SUPPORT
     void middleEllipsisLtrDeal(size_t& end, size_t& charbegin, size_t& charend);
     void middleEllipsisRtlDeal(size_t& end, size_t& charbegin, size_t& charend);
