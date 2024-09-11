@@ -71,7 +71,11 @@ public:
 
 private:
     GrVkAMDMemoryAllocator(VmaAllocator allocator, sk_sp<const GrVkInterface> interface,
+#ifdef NOT_USE_PRE_ALLOC
                            bool mustUseCoherentHostVisibleMemory);
+#else
+                           bool mustUseCoherentHostVisibleMemory, bool cacheFlag);
+#endif
 
     VmaAllocator fAllocator;
 
@@ -84,6 +88,8 @@ private:
     // to support a host visible and coherent memory type. This is used to work around bugs for
     // devices that don't handle non coherent memory correctly.
     bool fMustUseCoherentHostVisibleMemory;
+
+    bool fCacheFlag = false;
 
     using INHERITED = GrVkMemoryAllocator;
 };
