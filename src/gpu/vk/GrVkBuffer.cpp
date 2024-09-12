@@ -159,18 +159,10 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
                                                      GrAccessPattern accessPattern) {
     SkASSERT(gpu);
     SkASSERT(nativeBuffer);
- 
+
     VkBuffer buffer;
     GrVkAlloc alloc;
- 
-    // The only time we don't require mappable buffers is when we have a static access pattern and
-    // we're on a device where gpu only memory has faster reads on the gpu than memory that is also
-    // mappable on the cpu. Protected memory always uses mappable buffers.
-    bool requiresMappable = gpu->protectedContext() ||
-                            accessPattern == kDynamic_GrAccessPattern ||
-                            accessPattern == kStream_GrAccessPattern ||
-                            !gpu->vkCaps().gpuOnlyBuffersMorePerformant();
- 
+
     // create the buffer object
     VkBufferCreateInfo bufInfo{};
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -196,26 +188,29 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
             bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             break;
     }
-    // We may not always get a mappable buffer for non dynamic access buffers. Thus we set the
-    // transfer dst usage bit in case we need to do a copy to write data.
+
+    bool requiresMappable = gpu->protectedContext() ||
+                            accessPattern == kDynamic_GrAccessPattern ||
+                            accessPattern == kStream_GrAccessPattern ||
+                            !gpu->vkCaps().gpuOnlyBuffersMorePerformant();
     if (!requiresMappable) {
         bufInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     }
- 
+
     bufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     bufInfo.queueFamilyIndexCount = 0;
     bufInfo.pQueueFamilyIndices = nullptr;
- 
+
     VkResult err = VK_CALL(gpu, CreateBuffer(gpu->device(), &bufInfo, nullptr, &buffer));
     if (err) {
         return nullptr;
     }
- 
+
     if (!GrVkMemory::ImportAndBindBufferMemory(gpu, nativeBuffer, buffer, &alloc)) {
         VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
         return nullptr;
     }
- 
+
     return sk_sp<GrVkBuffer>(new GrVkBuffer(gpu, bufferSize, bufferType, accessPattern, buffer, alloc, nullptr));
 }
 
