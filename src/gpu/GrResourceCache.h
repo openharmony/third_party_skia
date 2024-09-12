@@ -10,7 +10,6 @@
 
 #include <cstddef>
 #include <set>
-#include <sstream>
 #include <stack>
 
 #include "include/core/SkLog.h"
@@ -377,8 +376,6 @@ private:
 #else
     void validate() const {}
 #endif
-
-    void dumpPidResource();
 
 #ifdef SKIA_DFX_FOR_OHOS
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
