@@ -15,8 +15,13 @@ GrFPResult GrOvalEffect::Make(std::unique_ptr<GrFragmentProcessor> inputFP, GrCl
     SkScalar h = oval.height();
     if (SkScalarNearlyEqual(w, h)) {
         w /= 2;
+#ifdef SKIA_OHOS
+        return GrFragmentProcessor::CircleSDF(std::move(inputFP), edgeType,
+            SkPoint::Make(oval.fLeft + w, oval.fTop + w), w);
+#else
         return GrFragmentProcessor::Circle(std::move(inputFP), edgeType,
                                            SkPoint::Make(oval.fLeft + w, oval.fTop + w), w);
+#endif
     } else {
         w /= 2;
         h /= 2;
