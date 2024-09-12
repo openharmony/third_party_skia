@@ -35,7 +35,7 @@ public:
     /**
      *  Returns the ptr to the data.
      *  USE WITH CAUTION.
-     *  If SKData object is created from SKData::MakeFromOHNativeBuffer,
+     *  If SkData object is created from SkData::MakeFromOHNativeBuffer,
      *  this function always returns nullptr, and gets OH_NativeBuffer via getNativeBuffer().
      */
     const void* data() const { return fPtr; }
