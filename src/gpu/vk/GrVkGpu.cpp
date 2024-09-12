@@ -893,7 +893,6 @@ static size_t fill_in_compressed_regions(SkTArray<VkBufferImageCopy>* regions,
     if (mipmapped == GrMipmapped::kYes) {
         mipmapLevelCount = SkMipmap::ComputeLevelCount(dimensions.width(), dimensions.height()) + 1;
     }
-
     regions->reserve_back(mipmapLevelCount);
     individualMipOffsets->reserve_back(mipmapLevelCount);
 
@@ -909,8 +908,8 @@ static size_t fill_in_compressed_regions(SkTArray<VkBufferImageCopy>* regions,
         if (compression == SkImage::CompressionType::kASTC_RGBA8_4x4 ||
             compression == SkImage::CompressionType::kASTC_RGBA8_6x6 ||
             compression == SkImage::CompressionType::kASTC_RGBA8_8x8) {
-                region.bufferOffset += ASTC_HEADER_SIZE;
-            }
+            region.bufferOffset += ASTC_HEADER_SIZE;
+        }
         SkISize compressedDimensions = GrCompressedDimensions(compression, dimensions);
         region.bufferRowLength = compressedDimensions.width();
         region.bufferImageHeight = compressedDimensions.height();
@@ -919,6 +918,7 @@ static size_t fill_in_compressed_regions(SkTArray<VkBufferImageCopy>* regions,
         region.imageExtent.width = SkToU32(dimensions.width());
         region.imageExtent.height = SkToU32(dimensions.height());
         region.imageExtent.depth = 1;
+
         dimensions = {std::max(1, dimensions.width() / 2),
                       std::max(1, dimensions.height() / 2)};
     }
@@ -1270,7 +1270,7 @@ sk_sp<GrTexture> GrVkGpu::onCreateCompressedTexture(SkISize dimensions,
     }
 
     sk_sp<GrVkTexture> texture = GrVkTexture::MakeNewTexture(this, budgeted, dimensions, pixelFormat,
-                                           mipmapLevelCount, isProtected, mipmapStatus);
+                                                             mipmapLevelCount, isProtected, mipmapStatus);
     if (!texture) {
         return nullptr;
     }
