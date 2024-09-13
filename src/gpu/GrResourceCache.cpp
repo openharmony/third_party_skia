@@ -460,6 +460,9 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
         auto& pidSize = fBytesOfPid[pid];
         pidSize += size;
         fUpdatedBytesOfPid[pid] = pidSize;
+        if (pidSize >= fMemoryControl_ && pidSize - size < fMemoryControl_ && fMemoryOverflowCallback_) {
+            fMemoryOverflowCallback_(pid, pidSize, true);
+        }
     }
 
 #if GR_CACHE_STATS
@@ -682,6 +685,15 @@ std::set<GrGpuResourceTag> GrResourceCache::getAllGrGpuResourceTags() const {
 void GrResourceCache::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out)
 {
     fUpdatedBytesOfPid.swap(out);
+}
+
+// OH ISSUE: init gpu memory limit.
+void GrResourceCache::initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size)
+{
+    if (fMemoryOverflowCallback_ == nullptr) {
+        fMemoryOverflowCallback_ = callback;
+        fMemoryControl_ = size;
+    }
 }
 
 // OH ISSUE: change the fbyte when the resource tag changes.

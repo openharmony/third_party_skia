@@ -52,6 +52,9 @@ class SkSurfaceProps;
 class SkTaskGroup;
 class SkTraceMemoryDump;
 
+// OH ISSUE: callback for memory protect.
+using MemoryOverflowCalllback = std::function<void(int32_t, size_t, bool)>;
+
 namespace skgpu { namespace v1 { class SmallPathAtlasMgr; }}
 
 class SK_API GrDirectContext : public GrRecordingContext {
@@ -877,6 +880,8 @@ public:
 
     // OH ISSUE: get the memory information of the updated pid.
     void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
+    // OH ISSUE: init gpu memory limit.
+    void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
 
     // OH ISSUE: intra frame and inter frame identification
     void beginFrame();

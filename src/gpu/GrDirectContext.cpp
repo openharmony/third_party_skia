@@ -570,6 +570,14 @@ void GrDirectContext::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &o
     }
 }
 
+// OH ISSUE: init gpu memory limit.
+void GrDirectContext::initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size)
+{
+    if (fResourceCache) {
+        fResourceCache->initGpuMemoryLimit(callback, size);
+    }
+}
+
 void GrDirectContext::vmaDefragment()
 {
     if (fGpu) {
