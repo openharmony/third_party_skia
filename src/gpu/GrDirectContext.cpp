@@ -51,7 +51,6 @@ public:
 #endif
 #ifdef SK_VULKAN
 #include "src/gpu/vk/GrVkGpu.h"
-#include "src/gpu/vk/GrVkImage.h"
 #endif
 #ifdef SK_DIRECT3D
 #include "src/gpu/d3d/GrD3DGpu.h"
@@ -377,7 +376,7 @@ void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, con
 }
 
 void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
-    const std::set<int>& protectedPidSet)
+        const std::set<int>& protectedPidSet)
 {
     ASSERT_SINGLE_OWNER
 
