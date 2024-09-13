@@ -44,6 +44,7 @@ namespace textlayout {
 #define MAX_INT_VALUE 0x7FFFFFFF
 #define EMOJI_UNICODE_START 0x1F300
 #define EMOJI_UNICODE_END 0x1F9EF
+#define EMOJI_WIDTH 4
 
 namespace {
 
@@ -2079,7 +2080,8 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
 #ifdef OHOS_SUPPORT
                         result = { SkToS32(utf16Index + 1), kUpstream};
                         size_t glyphCnt = context.run->glyphs().size();
-                        if ((glyphCnt != 0) && (context.run->fUtf8Range.end() / glyphCnt) > 2) {
+                        if ((glyphCnt != 0) && (context.run->fUtf8Range.end() - context.run->fUtf8Range.begin()) /
+                            glyphCnt == EMOJI_WIDTH) {
                             result = { SkToS32(utf16Index + 2), kUpstream};
                         }
 #else
@@ -2132,7 +2134,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                 auto clusterEnd8 = context.run->globalClusterIndex(found + 1);
                 auto graphemes = fOwner->countSurroundingGraphemes({clusterIndex8, clusterEnd8});
 
-                SkScalar center = glyphemePosLeft + glyphemesWidth * fOwner->getTextSplitRatio();
+                SkScalar center = (context.clip.right() + context.clip.left()) / 2;
                 if (graphemes.size() > 1) {
                     // Calculate the position proportionally based on grapheme count
                     SkScalar averageGraphemeWidth = glyphemesWidth / graphemes.size();
@@ -2158,8 +2160,8 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
 #ifdef OHOS_SUPPORT
                     size_t utf16Index = 0;
                     size_t glyphCnt = context.run->glyphs().size();
-                    if ((glyphCnt != 0) && !context.run->leftToRight() && (context.run->fUtf8Range.end() /
-                        glyphCnt > 2)) {
+                    if ((glyphCnt != 0) && !context.run->leftToRight() && (context.run->fUtf8Range.end() -
+                        context.run->fUtf8Range.begin()) / glyphCnt == EMOJI_WIDTH) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 2;
                     } else if (!context.run->leftToRight()) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 1;
