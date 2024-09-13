@@ -80,7 +80,7 @@ declare_args() {
   skia_ohos_debug = false
   skia_use_xeg = true
   skia_vtune_path = ""
-  skia_enable_standard_fonts = false
+  skia_enable_standard_fonts = true
 
   if (is_ios) {
     skia_ios_identity = ".*Google.*"
