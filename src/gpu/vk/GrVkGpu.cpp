@@ -1164,7 +1164,8 @@ sk_sp<GrTexture> GrVkGpu::onCreateTexture(SkISize dimensions,
     SkASSERT(!GrVkFormatIsCompressed(pixelFormat));
     SkASSERT(mipLevelCount > 0);
 
-    HITRACE_OHOS_NAME_FMT_ALWAYS("onCreateTexture width = %d, height = %d",
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "GrVkGpu::onCreateTexture width = %d, height = %d",
         dimensions.width(), dimensions.height());
 #endif
     GrMipmapStatus mipmapStatus =
