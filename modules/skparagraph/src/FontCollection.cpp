@@ -35,6 +35,10 @@ std::unordered_map<uint32_t, std::shared_ptr<RSTypeface>> g_faceTypeCache(MAX_VA
 
 }
 
+#ifdef OHOS_SUPPORT
+bool FontCollection::fIsAdpaterTextHeightEnabled = false;
+#endif
+
 bool FontCollection::FamilyKey::operator==(const FontCollection::FamilyKey& other) const {
     return fFamilyNames == other.fFamilyNames &&
            fFontStyle == other.fFontStyle &&
