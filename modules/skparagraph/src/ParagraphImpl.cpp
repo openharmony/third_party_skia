@@ -2212,6 +2212,9 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fMaxIntrinsicWidth = this->fMaxIntrinsicWidth;
     paragraph->fMinIntrinsicWidth = this->fMinIntrinsicWidth;
     paragraph->fLongestLine = this->fLongestLine;
+#ifdef OHOS_SUPPORT
+    paragraph->fLongestLineWithIndent = this->fLongestLineWithIndent;
+#endif
     paragraph->fExceededMaxLines = this->fExceededMaxLines;
 
     paragraph->fLetterSpaceStyles = this->fLetterSpaceStyles;
