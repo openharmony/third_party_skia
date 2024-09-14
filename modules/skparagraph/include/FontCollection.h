@@ -93,6 +93,21 @@ public:
 
     void clearCaches();
 
+#ifdef OHOS_SUPPORT
+    // set fIsAdpaterTextHeightEnabled with once_flag.
+    static void SetAdapterTextHeightEnabled(bool adapterTextHeightEnabled)
+    {
+        static std::once_flag flag;
+        std::call_once(flag, [adapterTextHeightEnabled]() {
+            fIsAdpaterTextHeightEnabled = adapterTextHeightEnabled;
+        });
+    }
+
+    static bool IsAdapterTextHeightEnabled()
+    {
+        return fIsAdpaterTextHeightEnabled;
+    }
+#endif
 private:
 #ifndef USE_SKIA_TXT
     std::vector<sk_sp<SkFontMgr>> getFontManagerOrder() const;
@@ -130,6 +145,9 @@ private:
             size_t operator()(const FamilyKey& key) const;
         };
     };
+#ifdef OHOS_SUPPORT
+    static bool fIsAdpaterTextHeightEnabled;
+#endif
 
     bool fEnableFontFallback;
 #ifndef USE_SKIA_TXT
