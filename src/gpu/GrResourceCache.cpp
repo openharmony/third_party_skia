@@ -208,7 +208,8 @@ void GrResourceCache::dumpInfo(SkString* out) {
     }
 }
 
-std::string GrResourceCache::cacheInfo() {
+std::string GrResourceCache::cacheInfo()
+{
     auto fPurgeableQueueInfoStr = cacheInfoPurgeableQueue();
     auto fNonpurgeableResourcesInfoStr = cacheInfoNoPurgeableQueue();
 
@@ -230,7 +231,8 @@ std::string GrResourceCache::cacheInfo() {
 }
 
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-void GrResourceCache::traceBeforePurgeUnlockRes(const std::string& method, SimpleCacheInfo& simpleCacheInfo) {
+void GrResourceCache::traceBeforePurgeUnlockRes(const std::string& method, SimpleCacheInfo& simpleCacheInfo)
+{
     if (purgeUnlocakedResTraceEnabled_) {
         StartTrace(HITRACE_TAG_GRAPHIC_AGP, method + " begin cacheInfo = " + cacheInfo());
     } else {
@@ -242,7 +244,8 @@ void GrResourceCache::traceBeforePurgeUnlockRes(const std::string& method, Simpl
     }
 }
 
-void GrResourceCache::traceAfterPurgeUnlockRes(const std::string& method, const SimpleCacheInfo& simpleCacheInfo) {
+void GrResourceCache::traceAfterPurgeUnlockRes(const std::string& method, const SimpleCacheInfo& simpleCacheInfo)
+{
     if (purgeUnlocakedResTraceEnabled_) {
         HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "%s end cacheInfo= %s", method.c_str(), cacheInfo().c_str());
         FinishTrace(HITRACE_TAG_GRAPHIC_AGP);
@@ -252,10 +255,13 @@ void GrResourceCache::traceAfterPurgeUnlockRes(const std::string& method, const 
     }
 }
 
-std::string GrResourceCache::cacheInfoComparison(const SimpleCacheInfo& simpleCacheInfo) {
+std::string GrResourceCache::cacheInfoComparison(const SimpleCacheInfo& simpleCacheInfo)
+{
     std::ostringstream cacheInfoComparison;
-    cacheInfoComparison << "PurgeableCount : " << simpleCacheInfo.fPurgeableQueueCount << " / " << fPurgeableQueue.count()
-        << "; NonpurgeableCount : " << simpleCacheInfo.fNonpurgeableResourcesCount << " / " << fNonpurgeableResources.count()
+    cacheInfoComparison << "PurgeableCount : " << simpleCacheInfo.fPurgeableQueueCount
+        << " / " << fPurgeableQueue.count()
+        << "; NonpurgeableCount : " << simpleCacheInfo.fNonpurgeableResourcesCount
+        << " / " << fNonpurgeableResources.count()
         << "; PurgeableBytes : " << simpleCacheInfo.fPurgeableBytes << " / " << fPurgeableBytes
         << "; BudgetedCount : " << simpleCacheInfo.fBudgetedCount << " / " << fBudgetedCount
         << "; BudgetedBytes : " << simpleCacheInfo.fBudgetedBytes << " / " << fBudgetedBytes;
@@ -263,7 +269,8 @@ std::string GrResourceCache::cacheInfoComparison(const SimpleCacheInfo& simpleCa
 }
 #endif // SKIA_OHOS_FOR_OHOS_TRACE
 
-std::string GrResourceCache::cacheInfoPurgeableQueue() {
+std::string GrResourceCache::cacheInfoPurgeableQueue()
+{
     std::map<uint32_t, int> purgSizeInfoWid;
     std::map<uint32_t, int> purgCountInfoWid;
     std::map<uint32_t, std::string> purgNameInfoWid;
@@ -312,7 +319,8 @@ std::string GrResourceCache::cacheInfoPurgeableQueue() {
     return infoStr;
 }
 
-std::string GrResourceCache::cacheInfoNoPurgeableQueue() {
+std::string GrResourceCache::cacheInfoNoPurgeableQueue()
+{
     std::map<uint32_t, int> noPurgSizeInfoWid;
     std::map<uint32_t, int> noPurgCountInfoWid;
     std::map<uint32_t, std::string> noPurgNameInfoWid;
@@ -337,9 +345,9 @@ std::string GrResourceCache::cacheInfoNoPurgeableQueue() {
         auto resourceTag = resource->getResourceTag();
         if (resourceTag.fWid != 0) {
             updatePurgeableWidMap(resource, noPurgNameInfoWid, noPurgSizeInfoWid, noPurgPidInfoWid, noPurgCountInfoWid);
-        } else if (resourceTag.fPid != 0){
+        } else if (resourceTag.fPid != 0) {
             updatePurgeablePidMap(resource, noPurgNameInfoPid, noPurgSizeInfoPid, noPurgCountInfoPid);
-        } else if (resourceTag.fFid != 0){
+        } else if (resourceTag.fFid != 0) {
             updatePurgeableFidMap(resource, noPurgNameInfoFid, noPurgSizeInfoFid, noPurgCountInfoFid);
         } else {
             noPurgCountUnknown++;
@@ -365,10 +373,11 @@ std::string GrResourceCache::cacheInfoNoPurgeableQueue() {
 }
 
 inline void GrResourceCache::updatePurgeableWidMap(GrGpuResource* resource,
-                     std::map<uint32_t, std::string>& nameInfoWid,
-                     std::map<uint32_t, int>& sizeInfoWid,
-                     std::map<uint32_t, int>& pidInfoWid,
-                     std::map<uint32_t, int>& countInfoWid) {
+                                                   std::map<uint32_t, std::string>& nameInfoWid,
+                                                   std::map<uint32_t, int>& sizeInfoWid,
+                                                   std::map<uint32_t, int>& pidInfoWid,
+                                                   std::map<uint32_t, int>& countInfoWid)
+{
     auto resourceTag = resource->getResourceTag();
     auto it = sizeInfoWid.find(resourceTag.fWid);
     if (it != sizeInfoWid.end()) {
@@ -383,9 +392,10 @@ inline void GrResourceCache::updatePurgeableWidMap(GrGpuResource* resource,
 }
 
 inline void GrResourceCache::updatePurgeablePidMap(GrGpuResource* resource,
-                     std::map<uint32_t, std::string>& nameInfoPid,
-                     std::map<uint32_t, int>& sizeInfoPid,
-                     std::map<uint32_t, int>& countInfoPid) {
+                                                   std::map<uint32_t, std::string>& nameInfoPid,
+                                                   std::map<uint32_t, int>& sizeInfoPid,
+                                                   std::map<uint32_t, int>& countInfoPid)
+{
     auto resourceTag = resource->getResourceTag();
     auto it = sizeInfoPid.find(resourceTag.fPid);
     if (it != sizeInfoPid.end()) {
@@ -399,9 +409,10 @@ inline void GrResourceCache::updatePurgeablePidMap(GrGpuResource* resource,
 }
 
 inline void GrResourceCache::updatePurgeableFidMap(GrGpuResource* resource,
-                     std::map<uint32_t, std::string>& nameInfoFid,
-                     std::map<uint32_t, int>& sizeInfoFid,
-                     std::map<uint32_t, int>& countInfoFid) {
+                                                   std::map<uint32_t, std::string>& nameInfoFid,
+                                                   std::map<uint32_t, int>& sizeInfoFid,
+                                                   std::map<uint32_t, int>& countInfoFid)
+{
     auto resourceTag = resource->getResourceTag();
     auto it = sizeInfoFid.find(resourceTag.fFid);
     if (it != sizeInfoFid.end()) {
@@ -415,10 +426,11 @@ inline void GrResourceCache::updatePurgeableFidMap(GrGpuResource* resource,
 }
 
 void GrResourceCache::updatePurgeableWidInfo(std::string& infoStr,
-                                  std::map<uint32_t, std::string>& nameInfoWid,
-                                  std::map<uint32_t, int>& sizeInfoWid,
-                                  std::map<uint32_t, int>& pidInfoWid,
-                                  std::map<uint32_t, int>& countInfoWid) {
+                                             std::map<uint32_t, std::string>& nameInfoWid,
+                                             std::map<uint32_t, int>& sizeInfoWid,
+                                             std::map<uint32_t, int>& pidInfoWid,
+                                             std::map<uint32_t, int>& countInfoWid)
+{
     for (auto it = sizeInfoWid.begin(); it != sizeInfoWid.end(); it++) {
         infoStr += "[" + nameInfoWid[it->first] +
             ",pid=" + std::to_string(pidInfoWid[it->first]) +
@@ -431,9 +443,10 @@ void GrResourceCache::updatePurgeableWidInfo(std::string& infoStr,
 }
 
 void GrResourceCache::updatePurgeablePidInfo(std::string& infoStr,
-                 std::map<uint32_t, std::string>& nameInfoPid,
-                 std::map<uint32_t, int>& sizeInfoPid,
-                 std::map<uint32_t, int>& countInfoPid) {
+                                             std::map<uint32_t, std::string>& nameInfoPid,
+                                             std::map<uint32_t, int>& sizeInfoPid,
+                                             std::map<uint32_t, int>& countInfoPid)
+{
     for (auto it = sizeInfoPid.begin(); it != sizeInfoPid.end(); it++) {
         infoStr += "[" + nameInfoPid[it->first] +
             ",pid=" + std::to_string(it->first) +
@@ -445,9 +458,10 @@ void GrResourceCache::updatePurgeablePidInfo(std::string& infoStr,
 }
 
 void GrResourceCache::updatePurgeableFidInfo(std::string& infoStr,
-                 std::map<uint32_t, std::string>& nameInfoFid,
-                 std::map<uint32_t, int>& sizeInfoFid,
-                 std::map<uint32_t, int>& countInfoFid) {
+                                             std::map<uint32_t, std::string>& nameInfoFid,
+                                             std::map<uint32_t, int>& sizeInfoFid,
+                                             std::map<uint32_t, int>& countInfoFid)
+{
     for (auto it = sizeInfoFid.begin(); it != sizeInfoFid.end(); it++) {
         infoStr += "[" + nameInfoFid[it->first] +
             ",typeid=" + std::to_string(it->first) +
@@ -458,8 +472,9 @@ void GrResourceCache::updatePurgeableFidInfo(std::string& infoStr,
     infoStr += ']';
 }
 
-inline void GrResourceCache::updatePurgeableUnknownInfo(std::string& infoStr, const std::string& unknownPrefix,
-        const int countUnknown, const int sizeUnknown) {
+inline void GrResourceCache::updatePurgeableUnknownInfo(
+    std::string& infoStr, const std::string& unknownPrefix, const int countUnknown, const int sizeUnknown)
+{
     if (countUnknown > 0) {
         infoStr += unknownPrefix +
             "[count=" + std::to_string(countUnknown) +
@@ -469,7 +484,8 @@ inline void GrResourceCache::updatePurgeableUnknownInfo(std::string& infoStr, co
 }
 #endif
 
-void GrResourceCache::insertResource(GrGpuResource* resource) {
+void GrResourceCache::insertResource(GrGpuResource* resource)
+{
     ASSERT_SINGLE_OWNER
     SkASSERT(resource);
     SkASSERT(!this->isInCache(resource));
