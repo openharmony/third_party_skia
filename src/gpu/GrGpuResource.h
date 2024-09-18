@@ -208,6 +208,11 @@ public:
      */
     bool wasDestroyed() const { return nullptr == fGpu; }
 
+    void setRealAlloc(bool realAlloc) { fRealAlloc = realAlloc; } // OH ISSUE: set real alloc flag
+    bool isRealAlloc() { return fRealAlloc; } // OH ISSUE: get real alloc flag
+    void setRealAllocSize(size_t realAllocSize) { fRealAllocSize = realAllocSize; } // OH ISSUE: set real alloc size
+    size_t getRealAllocSize() { return fRealAllocSize; } // OH ISSUE: get real alloc size
+
     /**
      * Retrieves the context that owns the object. Note that it is possible for
      * this to return NULL. When objects have been release()ed or abandon()ed
@@ -417,6 +422,9 @@ private:
     friend class GrIORef<GrGpuResource>; // to access notifyRefCntWillBeZero and
                                          // notifyARefCntIsZero.
     std::mutex mutex_; // The gpu cache is released abnormally due to multi threads.
+
+    bool fRealAlloc = false; // OH ISSUE: real alloc flag
+    size_t fRealAllocSize = 0; // OH ISSUE: real alloc size
 };
 
 class GrGpuResource::ProxyAccess {

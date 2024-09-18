@@ -26,7 +26,12 @@ namespace GrVkMemory {
     bool AllocAndBindBufferMemory(GrVkGpu* gpu,
                                   VkBuffer buffer,
                                   GrVkMemoryAllocator::BufferUsage,
+#ifdef SKIA_DFX_FOR_OHOS
+                                  GrVkAlloc* alloc,
+                                  size_t size);
+#else
                                   GrVkAlloc* alloc);
+#endif
 
     bool ImportAndBindBufferMemory(GrVkGpu* gpu,
                                    OH_NativeBuffer *nativeBuffer,
