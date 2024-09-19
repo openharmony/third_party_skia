@@ -422,6 +422,11 @@ static GrSurfaceProxyView hw_create_filtered_mask(GrDirectContext* dContext,
             SkASSERT(cachedView.origin() == kMaskOrigin);
 
             *maskRect = extract_draw_rect_from_data(data.get(), unclippedDevShapeBounds);
+        #ifdef SKIA_OHOS_FOR_OHOS_TRACE
+            if (SDFBlur::GetSDFBlurDebugTraceEnabled()) {
+                HITRACE_OHOS_NAME_ALWAYS("hw_create_filtered_mask cache hit successful");
+            }
+        #endif
             return cachedView;
         }
     }
@@ -447,11 +452,17 @@ static GrSurfaceProxyView hw_create_filtered_mask(GrDirectContext* dContext,
     SkRRect srcRRect;
     bool inverted;
     if (canUseSDFBlur && shape.asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
+        HITRACE_OHOS_NAME_ALWAYS("hw_create_filtered_mask : cache hit failed, do SDFBlur");
         filteredMaskView = filter->filterMaskGPUNoxFormed(dContext, maskSDC->readSurfaceView(),
                                                           maskSDC->colorInfo().colorType(),
                                                           maskSDC->colorInfo().alphaType(),
-                                                          *maskRect, srcRRect);
+                                                          viewMatrix, *maskRect, srcRRect);
     } else {
+    #ifdef SKIA_OHOS_FOR_OHOS_TRACE
+        if (SDFBlur::GetSDFBlurDebugTraceEnabled()) {
+            HITRACE_OHOS_NAME_ALWAYS("hw_create_filtered_mask : cache hit failed, do GaussianBlur");
+        }
+    #endif
         filteredMaskView = filter->filterMaskGPU(dContext, maskSDC->readSurfaceView(),
                                                  maskSDC->colorInfo().colorType(),
                                                  maskSDC->colorInfo().alphaType(),
@@ -524,7 +535,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     SkRRect srcRRect;
     bool inverted;
     if (canUseSDFBlur && shape->asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
-        SDFBlur::GetSDFBlurScaleFactor(srcRRect, sx, sy);
+        SDFBlur::GetSDFBlurScaleFactor(srcRRect, viewMatrix, sx, sy);
     }
     SkMatrix matrixScale = SkMatrix::I().Scale(sx, sy);
     SkIRect unclippedDevShapeBounds, devClipBounds;
