@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef SK_SDF_Filter_DEFINED
-#define SK_SDF_Filter_DEFINED
+#ifndef SK_SDF_FILTER_DEFINED
+#define SK_SDF_FILTER_DEFINED
 
 #include "src/core/SkMaskFilterBase.h"
 
@@ -23,7 +23,6 @@
 #include "src/gpu/geometry/GrStyledShape.h"
 #include "src/gpu/v1/SurfaceDrawContext_v1.h"
 #include "include/gpu/GrRecordingContext.h"
-
 
 namespace skgpu { namespace v1 { class SurfaceDrawContext; }}
 
@@ -38,11 +37,13 @@ struct DrawRectData {
 
 bool isSDFBlur(const GrStyledShape& shape);
 
+bool GetSDFBlurDebugTraceEnabled();
+
 void GetSDFBlurScaleFactor(const SkRRect srcRRect, const SkMatrix& viewMatrix, SkScalar& sx, SkScalar& sy);
 
-bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
-    const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter,
-    const SkScalar sx, const SkScalar sy);
+bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip,
+    const SkMatrix& viewMatrix, const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask,
+    const SkMaskFilterBase* maskFilter, const SkScalar sx, const SkScalar sy);
 
 std::unique_ptr<skgpu::v1::SurfaceDrawContext> SDFBlur(GrRecordingContext* rContext,
     GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType,
