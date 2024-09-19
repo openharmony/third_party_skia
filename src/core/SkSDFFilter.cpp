@@ -17,44 +17,75 @@
 #include "src/gpu/SkGr.h"
 #include "src/gpu/effects/GrBlendFragmentProcessor.h"
 
+#ifdef SK_ENABLE_SDF_BLUR_SWITCH
+#include <parameters.h>
+#endif
+
 namespace SDFBlur {
+
+static bool GetSDFBlurEnabled()
+{
+#ifdef SK_ENABLE_SDF_BLUR_SWITCH
+    constexpr int enableFlag = 1;
+    static bool enabled = std::atoi(
+        (OHOS::system::GetParameter("persist.sys.graphic.SDFBlurEnabled", "1")).c_str()) == enableFlag;
+    return enabled;
+#else
+    return false;
+#endif
+}
+
+bool GetSDFBlurDebugTraceEnabled()
+{
+#ifdef SK_ENABLE_SDF_BLUR_SWITCH
+    constexpr int enableFlag = 1;
+    static bool enabled = std::atoi(
+        (OHOS::system::GetParameter("persist.sys.graphic.SDFBlurDebugTraceEnabled", "0")).c_str()) == enableFlag;
+    return enabled;
+#else
+    return false;
+#endif
+}
 
 // Only the equal Radii RRect use SDFblur.
 bool isSDFBlur(const GrStyledShape& shape)
 {
     SkRRect srcRRect;
     bool inverted;
-    if (!shape.asRRect(&srcRRect, nullptr, nullptr, &inverted) || inverted ||
+    if (!GetSDFBlurEnabled() || !shape.asRRect(&srcRRect, nullptr, nullptr, &inverted) || inverted ||
         (!(srcRRect.getType() == SkRRect::kSimple_Type) && !(srcRRect.getType() == SkRRect::kNinePatch_Type))) {
         return false;
     }
     return true;
 }
 
-void GetSDFBlurScaleFactor(const SkRRect srcRRect, SkScalar& sx, SkScalar& sy)
+void GetSDFBlurScaleFactor(const SkRRect srcRRect, const SkMatrix& viewMatrix, SkScalar& sx, SkScalar& sy)
 {
+    if (viewMatrix.getScaleX() >= 1.f || viewMatrix.getScaleY() >= 1.f) {
+        return;
+    }
     constexpr float minScaleFactor = 1.f;
-    constexpr float maxScaleFactor = 3.f;
+    constexpr float maxScaleFactor = 2.f;
     constexpr float sizeThreshold = 500.f;
     int srcRRectW = srcRRect.rect().width();
     int srcRRectH = srcRRect.rect().height();
-    // When the input size is greater than the threshold, it needs to be scaled. scale factor will be clamped in [1.0, 3.0].
+    // When the input size is greater than the threshold, it needs to be scaled. scale factor will be clamped in [1.0, 2.0].
     int scaleX = std::max(minScaleFactor, std::min(std::ceil(srcRRectW / sizeThreshold), maxScaleFactor));
     int scaleY = std::max(minScaleFactor, std::min(std::ceil(srcRRectH / sizeThreshold), maxScaleFactor));
     sx = SK_Scalar1 / scaleX;
     sy = SK_Scalar1 / scaleY;
 }
 
-bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip, const SkMatrix& viewMatrix,
-    const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask, const SkMaskFilterBase* maskFilter,
-    const SkScalar sx, const SkScalar sy)
+bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip,
+    const SkMatrix& viewMatrix, const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask,
+    const SkMaskFilterBase* maskFilter, const SkScalar sx, const SkScalar sy)
 {
     float noxFormedSigma3 = maskFilter->getNoxFormedSigma3();
     mask.concatSwizzle(GrSwizzle("aaaa"));
 
     SkMatrix matrixTrans =
             SkMatrix::Translate(-SkIntToScalar(noxFormedSigma3), -SkIntToScalar(noxFormedSigma3));
-    SkMatrix matrixInverseScale =SkMatrix::Scale(1 / sx, 1 / sy);
+    SkMatrix matrixInverseScale = SkMatrix::Scale(1 / sx, 1 / sy);
     SkMatrix matrix;
     matrix.preConcat(viewMatrix);
     matrix.preConcat(matrixTrans);
@@ -74,16 +105,14 @@ bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext
         }
     )");
     SkASSERT(SkRuntimeEffectPriv::SupportsConstantOutputForConstantInput(effect));
-    auto inputFP = GrSkSLFP::Make(effect, "OverrideInput", nullptr, 
+    auto inputFP = GrSkSLFP::Make(effect, "OverrideInput", nullptr,
         origColor.isOpaque() ? GrSkSLFP::OptFlags::kPreservesOpaqueInput : GrSkSLFP::OptFlags::kNone,
         "fp", std::move(inputFp), "colorPaint", origColor);
 
-    auto paintFP = GrBlendFragmentProcessor::Make(std::move(inputFP),
-                                                /*dst=*/nullptr,
-                                                SkBlendMode::kSrc);
-#ifndef SK_IGNORE_GPU_DITHER
+    auto paintFP = GrBlendFragmentProcessor::Make(std::move(inputFP), nullptr, SkBlendMode::kSrc);
+    #ifndef SK_IGNORE_GPU_DITHER
     paintFP = make_dither_effect(rContext, std::move(paintFP), ditherRange, rContext->priv().caps());
-#endif
+    #endif
     paint.setColorFragmentProcessor(std::move(paintFP));
     sdc->drawRect(clip, std::move(paint), GrAA::kYes, matrix,
                   SkRect::MakeXYWH(0, 0, maskBounds.width(), maskBounds.height()));
@@ -93,7 +122,7 @@ bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext
 static std::unique_ptr<skgpu::v1::SurfaceDrawContext> sdf_2d(GrRecordingContext* rContext,
     GrSurfaceProxyView srcView, GrColorType srcColorType, const SkIRect& srcBounds, const SkIRect& dstBounds,
     float noxFormedSigma, SkTileMode mode, sk_sp<SkColorSpace> finalCS, SkBackingFit dstFit,
-    const SkRRect& srcRRect)
+    const SkMatrix& viewMatrix, const SkRRect& srcRRect)
 {
     auto sdc = skgpu::v1::SurfaceDrawContext::Make(
         rContext, srcColorType, std::move(finalCS), dstFit, dstBounds.size(), SkSurfaceProps(),
@@ -108,13 +137,11 @@ static std::unique_ptr<skgpu::v1::SurfaceDrawContext> sdf_2d(GrRecordingContext*
     if (!sdfFp) {
         return nullptr;
     }
-
     paint.setColorFragmentProcessor(std::move(sdfFp));
     paint.setPorterDuffXPFactory(SkBlendMode::kSrc);
 
-    SkScalar sx = 1.f;
-    SkScalar sy = 1.f;
-    SDFBlur::GetSDFBlurScaleFactor(srcRRect, sx, sy);
+    SkScalar sx = viewMatrix.getScaleX();
+    SkScalar sy = viewMatrix.getScaleY();
     sdc->drawPaint(nullptr, std::move(paint), SkMatrix::I().Scale(sx, sy));
 
     return sdc;
@@ -123,7 +150,7 @@ static std::unique_ptr<skgpu::v1::SurfaceDrawContext> sdf_2d(GrRecordingContext*
 std::unique_ptr<skgpu::v1::SurfaceDrawContext> SDFBlur(GrRecordingContext* rContext,
     GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType,
     sk_sp<SkColorSpace> colorSpace, SkIRect dstBounds, SkIRect srcBounds, float noxFormedSigma,
-    SkTileMode mode, const SkRRect& srcRRect, SkBackingFit fit)
+    SkTileMode mode, const SkMatrix& viewMatrix, const SkRRect& srcRRect, SkBackingFit fit)
 {
     SkASSERT(rContext);
     TRACE_EVENT0("skia.gpu", "SDFBlur");
@@ -138,6 +165,6 @@ std::unique_ptr<skgpu::v1::SurfaceDrawContext> SDFBlur(GrRecordingContext* rCont
     }
 
     return sdf_2d(rContext, std::move(srcView), srcColorType, srcBounds, dstBounds, noxFormedSigma, mode,
-                  std::move(colorSpace), fit, srcRRect);
+                  std::move(colorSpace), fit,  viewMatrix, srcRRect);
 }
 } // SDFBlur
