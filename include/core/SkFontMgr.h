@@ -17,7 +17,9 @@
 #include <string>
 #endif
 
+#ifdef OHOS_SUPPORT
 #include <vector>
+#endif
 
 class SkData;
 class SkFontData;
