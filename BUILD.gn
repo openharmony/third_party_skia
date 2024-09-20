@@ -74,7 +74,10 @@ config("skia_wno") {
 # Skia public API, generally provided by :skia.
 config("skia_public") {
   include_dirs = [ "." ]
-  defines = [ "NEW_SKIA" ]
+  defines = [
+    "NEW_SKIA",
+    "OHOS_SUPPORT",
+  ]
   if (defined(skia_ohos_debug) && skia_ohos_debug) {
     defines += [ "SKIA_OHOS_DEBUG" ]
   }
