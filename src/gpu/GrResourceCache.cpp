@@ -1140,7 +1140,7 @@ void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly, const s
         const std::set<int>& protectedPidSet) {
     #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PurgeGrResourceCache cur=%d, limit=%d", 
-        fBudgetedBytes, MaxBytes);
+        fBudgetedBytes, fMaxBytes);
     #endif
     if (exitedPidSet.size() > 1) {
         for (int i = 1; i < fPurgeableQueue.count(); i++) {
