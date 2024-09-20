@@ -8,7 +8,9 @@
 #ifndef SkTypeface_DEFINED
 #define SkTypeface_DEFINED
 
+#ifdef OHOS_SUPPORT
 #include <vector>
+#endif
 
 #include "include/core/SkFontArguments.h"
 #include "include/core/SkFontParameters.h"
