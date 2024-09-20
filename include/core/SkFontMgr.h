@@ -19,6 +19,19 @@
 
 #include <vector>
 
+#ifdef OHOS_SUPPORT
+enum FontCheckCode {
+    SUCCESSED                  = 0, /** no error */
+    ERROR_PARSE_CONFIG_FAILED  = 1, /** failed to parse the JSON configuration file */
+    ERROR_TYPE_OTHER           = 2  /** other reasons, such as empty input parameters or other internal reasons */
+};
+
+struct SkByteArray {
+    std::unique_ptr<uint8_t[]> strData; // A byte array in UTF-16BE encoding
+    uint32_t strLen;
+};
+#endif
+
 class SkData;
 class SkFontData;
 class SkStreamAsset;
@@ -148,6 +161,25 @@ public:
     {
         containerFontPath = containerFontBasePath;
         runtimeOS = runtime;
+    }
+#endif
+
+#ifdef OHOS_SUPPORT
+    /**
+     *  Adding a base class interface function to a subclass, generally doesn't go here
+     *  0 means valid
+     */
+    virtual int GetFontFullName(int fontFd, std::vector<SkByteArray> &fullnameVec)
+    {
+        return ERROR_TYPE_OTHER;
+    }
+    /**
+     *  Adding a base class interface function to a subclass, generally doesn't go here
+     *  0 means success
+     */
+    virtual int ParseInstallFontConfig(const std::string& configPath, std::vector<std::string>& fontPathVec)
+    {
+        return ERROR_PARSE_CONFIG_FAILED;
     }
 #endif
 

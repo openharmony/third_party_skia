@@ -52,6 +52,11 @@
 #include <freetype/tttables.h>
 #include <freetype/t1tables.h>
 #include <freetype/ftfntfmt.h>
+#ifdef OHOS_SUPPORT
+#include <freetype/ftsnames.h>
+#include <freetype/ttnameid.h>
+#include <securec.h>
+#endif
 
 // SK_FREETYPE_MINIMUM_RUNTIME_VERSION 0x<major><minor><patch><flags>
 // Flag SK_FREETYPE_DLOPEN: also try dlopen to get newer features.
@@ -1925,6 +1930,41 @@ bool SkTypeface_FreeType::Scanner::scanFont(
     }
     return true;
 }
+
+#ifdef OHOS_SUPPORT
+/**
+ *  Gets fullname from stream, true means success
+ */
+bool SkTypeface_FreeType::Scanner::GetTypefaceFullname(SkStreamAsset* stream,
+    int ttcIndex, SkByteArray& fullname) const {
+    if (stream == nullptr) {
+        return false;
+    }
+    SkAutoMutexExclusive libraryLock(fLibraryMutex);
+    FT_StreamRec streamRec;
+    SkUniqueFTFace face(this->openFace(stream, ttcIndex, &streamRec));
+    if (!face) {
+        return false;
+    }
+    FT_SfntName sfntName;
+    FT_UInt nameCount = FT_Get_Sfnt_Name_Count(face.get());
+    for (FT_UInt i = 0; i < nameCount; ++i) {
+        if (FT_Get_Sfnt_Name(face.get(), i, &sfntName) != 0) {
+            continue;
+        }
+        if (sfntName.name_id != TT_NAME_ID_FULL_NAME) {
+            continue;
+        }
+        fullname.strData = std::make_unique<uint8_t[]>(sfntName.string_len);
+        if (memcpy_s(fullname.strData.get(), sfntName.string_len, sfntName.string, sfntName.string_len) == EOK) {
+            fullname.strLen = sfntName.string_len;
+            return true;
+        }
+        return false;
+    }
+    return false;
+}
+#endif
 
 bool SkTypeface_FreeType::Scanner::GetAxes(FT_Face face, AxisDefinitions* axes) {
     SkASSERT(face && axes);
