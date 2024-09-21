@@ -308,6 +308,8 @@ public:
 
     // OH ISSUE: get the memory information of the updated pid.
     void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
+    // OH ISSUE: init gpu memory limit.
+    void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
 
     // OH ISSUE: change the fbyte when the resource tag changes.
     void changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes);
@@ -567,6 +569,10 @@ private:
     std::unordered_map<int32_t, size_t> fBytesOfPid;
     // OH ISSUE: stores the memory information of the updated pid.
     std::unordered_map<int32_t, size_t> fUpdatedBytesOfPid;
+    // OH ISSUE: gpu memory limit.
+    uint64_t fMemoryControl_ = UINT64_MAX;
+    // OH ISSUE: memory overflow callback.
+    MemoryOverflowCalllback fMemoryOverflowCallback_ = nullptr;
 };
 
 class GrResourceCache::ResourceAccess {
