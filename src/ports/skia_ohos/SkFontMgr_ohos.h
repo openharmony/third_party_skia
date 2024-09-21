@@ -23,6 +23,8 @@ class SK_API SkFontMgr_OHOS : public SkFontMgr {
 public:
     explicit SkFontMgr_OHOS(const char* path = nullptr);
     virtual ~SkFontMgr_OHOS() override = default;
+
+    int GetFontFullName(int fontFd, std::vector<SkByteArray> &fullnameVec) override;
 protected:
     virtual int onCountFamilies() const override;
     virtual void onGetFamilyName(int index, SkString* familyName) const override;
