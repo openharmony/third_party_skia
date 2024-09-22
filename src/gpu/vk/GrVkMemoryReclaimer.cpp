@@ -19,7 +19,8 @@
 
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
 
-SkExecutor& GrVkMemoryReclaimer::getThreadPool() {
+SkExecutor& GrVkMemoryReclaimer::getThreadPool()
+{
     static std::unique_ptr<SkExecutor> executor = ({
         auto executor = SkExecutor::MakeFIFOThreadPool(1, false);
         executor->add([]() {
