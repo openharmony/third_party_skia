@@ -18,6 +18,8 @@
 
 #include "include/gpu/vk/GrVkTypes.h"
 
+#include "include/core/SkExecutor.h"
+
 #include "src/gpu/vk/GrVkImage.h"
 #include "src/gpu/vk/GrVkBuffer.h"
 
@@ -38,6 +40,7 @@ public:
         };
     };
 
+    SkExecutor& getThreadPool();
     void setGpuMemoryAsyncReclaimerSwitch(bool enabled);
     bool addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkBuffer& buffer);
     bool addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkImage& image);
