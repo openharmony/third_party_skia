@@ -16,7 +16,7 @@
 #include "src/gpu/vk/GrVkMemoryReclaimer.h"
 
 
-#include "include/core/Sklog.h"
+#include "include/core/SkLog.h"
 #include "include/core/SkExecutor.h"
 
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
@@ -26,7 +26,7 @@ static SkExecutor& GetThreadPool()
     static std::unique_ptr<SkExecutor> executor = SkExecutor::MakeFIFOThreadPool(1, false);
     static auto call_once = []() ->int {
         executor->add([]() {
-            int err = pthread_setname_np(pthread_Self(), "async_memory_reclaimer");
+            int err = pthread_setname_np(pthread_self(), "async_memory_reclaimer");
             if (err) {
                 SK_LOGE("GrVkMemoryReclaimer::GetThreadPool pthread_setname_np, error = %d", err);
             }
