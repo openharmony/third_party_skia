@@ -2189,7 +2189,12 @@ RSFontMetrics ParagraphImpl::measureText()
 std::vector<std::unique_ptr<TextLineBase>> ParagraphImpl::GetTextLines() {
     std::vector<std::unique_ptr<TextLineBase>> textLineBases;
     for (auto& line: fLines) {
+#ifdef OHOS_SUPPORT
+        std::unique_ptr<TextLineBaseImpl> textLineBaseImplPtr =
+            std::make_unique<TextLineBaseImpl>(std::make_unique<TextLine>(std::move(line)));
+#else
         std::unique_ptr<TextLineBaseImpl> textLineBaseImplPtr = std::make_unique<TextLineBaseImpl>(&line);
+#endif
         textLineBases.emplace_back(std::move(textLineBaseImplPtr));
     }
 

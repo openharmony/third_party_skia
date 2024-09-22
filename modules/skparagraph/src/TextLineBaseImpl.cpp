@@ -17,7 +17,12 @@
 
 namespace skia {
 namespace textlayout {
+#ifdef OHOS_SUPPORT
+TextLineBaseImpl::TextLineBaseImpl(std::unique_ptr<TextLine> visitorTextLine)
+                : fVisitorTextLine(std::move(visitorTextLine))
+#else
 TextLineBaseImpl::TextLineBaseImpl(TextLine* visitorTextLine) : fVisitorTextLine(visitorTextLine)
+#endif
 {
 }
 
@@ -55,5 +60,79 @@ void TextLineBaseImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y)
     return fVisitorTextLine->paint(painter, x, y);
 }
 
+#ifdef OHOS_SUPPORT
+std::unique_ptr<TextLineBase> TextLineBaseImpl::createTruncatedLine(double width, EllipsisModal ellipsisMode,
+    const std::string& ellipsisStr)
+{
+    if (!fVisitorTextLine) {
+        return nullptr;
+    }
+
+    return fVisitorTextLine->createTruncatedLine(width, ellipsisMode, ellipsisStr);
+}
+
+double TextLineBaseImpl::getTypographicBounds(double* ascent, double* descent, double* leading) const
+{
+    if (!fVisitorTextLine) {
+        return 0.0;
+    }
+
+    return fVisitorTextLine->getTypographicBounds(ascent, descent, leading);
+}
+
+RSRect TextLineBaseImpl::getImageBounds() const
+{
+    if (!fVisitorTextLine) {
+        return {};
+    }
+
+    return fVisitorTextLine->getImageBounds();
+}
+
+double TextLineBaseImpl::getTrailingSpaceWidth() const
+{
+    if (!fVisitorTextLine) {
+        return 0.0;
+    }
+
+    return fVisitorTextLine->getTrailingSpaceWidth();
+}
+
+int32_t TextLineBaseImpl::getStringIndexForPosition(SkPoint point) const
+{
+    if (!fVisitorTextLine) {
+        return 0;
+    }
+
+    return fVisitorTextLine->getStringIndexForPosition(point);
+}
+
+double TextLineBaseImpl::getOffsetForStringIndex(int32_t index) const
+{
+    if (!fVisitorTextLine) {
+        return 0.0;
+    }
+
+    return fVisitorTextLine->getOffsetForStringIndex(index);
+}
+
+std::map<int32_t, double> TextLineBaseImpl::getIndexAndOffsets(bool& isHardBreak) const
+{
+    if (!fVisitorTextLine) {
+        return {};
+    }
+
+    return fVisitorTextLine->getIndexAndOffsets(isHardBreak);
+}
+
+double TextLineBaseImpl::getAlignmentOffset(double alignmentFactor, double alignmentWidth) const
+{
+    if (!fVisitorTextLine) {
+        return 0.0;
+    }
+
+    return fVisitorTextLine->getAlignmentOffset(alignmentFactor, alignmentWidth);
+}
+#endif
 }  // namespace textlayout
 }  // namespace skia

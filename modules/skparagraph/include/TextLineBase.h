@@ -31,6 +31,18 @@ public:
     virtual std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const = 0;
     virtual SkRange<size_t> getTextRange() const = 0;
     virtual void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) = 0;
+
+#ifdef OHOS_SUPPORT
+    virtual std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
+        const std::string& ellipsisStr) = 0;
+    virtual double getTypographicBounds(double* ascent, double* descent, double* leading) const = 0;
+    virtual RSRect getImageBounds() const = 0;
+    virtual double getTrailingSpaceWidth() const = 0;
+    virtual int32_t getStringIndexForPosition(SkPoint point) const = 0;
+    virtual double getOffsetForStringIndex(int32_t index) const = 0;
+    virtual std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const = 0;
+    virtual double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const = 0;
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia

@@ -23,14 +23,34 @@ namespace skia {
 namespace textlayout {
 class TextLineBaseImpl : public TextLineBase {
 public:
+#ifdef OHOS_SUPPORT
+    TextLineBaseImpl(std::unique_ptr<TextLine> visitorTextLine);
+#else
     TextLineBaseImpl(TextLine* visitorTextLine);
+#endif
     size_t getGlyphCount() const override;
     std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const override;
     SkRange<size_t> getTextRange() const override;
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) override;
 
+#ifdef OHOS_SUPPORT
+    std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
+        const std::string& ellipsisStr) override;
+    double getTypographicBounds(double* ascent, double* descent, double* leading) const override;
+    RSRect getImageBounds() const override;
+    double getTrailingSpaceWidth() const override;
+    int32_t getStringIndexForPosition(SkPoint point) const override;
+    double getOffsetForStringIndex(int32_t index) const override;
+    std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const override;
+    double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const override;
+#endif
+
 private:
+#ifdef OHOS_SUPPORT
+    std::unique_ptr<TextLine> fVisitorTextLine;
+#else
     TextLine* fVisitorTextLine;
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia
