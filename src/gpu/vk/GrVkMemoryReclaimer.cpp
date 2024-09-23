@@ -15,18 +15,24 @@
 
 #include "src/gpu/vk/GrVkMemoryReclaimer.h"
 
-#include <parameters.h>
+#include "include/core/SkLog.h"
 
-#include "GrVkBuffer.h"
-#include "GrVkCommandBuffer.h"
-#include "src/gpu/vk/GrVkGpu.h"
-#include "src/gpu/vk/GrVkImageView.h"
-#include "src/gpu/vk/GrVkMemory.h"
-#include "src/gpu/vk/GrVkBuffer.h"
-#include "src/gpu/vk/GrVkTexture.h"
-#include "src/gpu/vk/GrVkUtil.h"
+#define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
 
-#define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
+SkExecutor& GrVkMemoryReclaimer::getThreadPool()
+{
+    static std::unique_ptr<SkExecutor> executor = ({
+        auto executor = SkExecutor::MakeFIFOThreadPool(1, false);
+        executor->add([]() {
+            int err = pthread_setname_np(pthread_self(), "async-reclaimer");
+            if (err) {
+                SK_LOGE("GrVkMemoryReclaimer::GetThreadPool pthread_setname_np, error = %d", err);
+            }
+        });
+        std::move(executor);
+    });
+    return *executor;
+}
 
 bool GrVkMemoryReclaimer::addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkBuffer& buffer)
 {
@@ -40,7 +46,7 @@ bool GrVkMemoryReclaimer::addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAll
     return true;
 }
 
-bool GrVkMemoryReclaimer::addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, GrVkImage& image)
+bool GrVkMemoryReclaimer::addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkImage& image)
 {
     if (!fEnabled) {
         return false;
@@ -63,9 +69,9 @@ void GrVkMemoryReclaimer::flushGpuMemoryInWaitQueue()
     invokeParallelReclaiming();
 }
 
-void GrVkMemoryReclaimer::nvokeParallelReclaiming()
+void GrVkMemoryReclaimer::invokeParallelReclaiming()
 {
-    fExecutor->add([freeQueues {std::move(fWaitQueues)}] {
+    getThreadPool().add([freeQueues {std::move(fWaitQueues)}] {
         for (auto& item : freeQueues) {
             if (item.fType == ItemType::BUFFER) {
                 GrVkBuffer::DestroyAndFreeBufferMemory(item.fGpu, item.fAlloc, item.fBuffer);
@@ -74,4 +80,9 @@ void GrVkMemoryReclaimer::nvokeParallelReclaiming()
             }
         }
     });
+}
+
+void GrVkMemoryReclaimer::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
+{
+    fEnabled = enabled;
 }

@@ -206,7 +206,7 @@ sk_sp<GrVkImage> GrVkImage::MakeWrapped(GrVkGpu* gpu,
 }
 
 // OH ISSUE: Integrate Destroy and Free
-void GrVkImage::DestroyAndFreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc, const GrVkImage& image)
+void GrVkImage::DestroyAndFreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkImage& image)
 {
     VK_CALL(gpu, DestroyImage(gpu->device(), image, nullptr));
     GrVkMemory::FreeImageMemory(gpu, alloc);
@@ -553,7 +553,7 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
 }
 
 void GrVkImage::DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo* info) {
-    DestroyAndFreeImageMemory(gpu, info->fAlloc, info->fImage)
+    DestroyAndFreeImageMemory(gpu, info->fAlloc, info->fImage);
 }
 
 GrVkImage::~GrVkImage() {
@@ -612,7 +612,7 @@ void GrVkImage::Resource::freeGPUData() const {
     this->invokeReleaseProc();
 
     // OH ISSUE: asyn memory reclaimer
-    auto reclaimer = this->getVkGpu()->memoryReclaimer();
+    auto reclaimer = fGpu->memoryReclaimer();
     if (reclaimer && reclaimer->addMemoryToWaitQueue(fGpu, fAlloc, fImage)) {
         return;
     }
