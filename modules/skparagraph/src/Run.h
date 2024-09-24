@@ -156,6 +156,9 @@ public:
     SkScalar addSpacesEvenly(SkScalar space);
     void shift(const Cluster* cluster, SkScalar offset);
 
+#ifdef OHOS_SUPPORT
+    void extendClusterWidth(Cluster* cluster, SkScalar space);
+#endif
     SkScalar calculateHeight(LineMetricStyle ascentStyle, LineMetricStyle descentStyle) const {
         auto ascent = ascentStyle == LineMetricStyle::Typographic ? this->ascent()
                                     : this->correctAscent();
@@ -394,6 +397,9 @@ public:
     bool isCJK() const { return fIsCJK; }
     bool isCopyright() const { return fIsCopyright; }
     bool isWestern() const { return fIsWestern; }
+#ifdef OHOS_SUPPORT
+    bool isTabulation() const { return fIsTabulation; }
+#endif
 
     bool isSoftBreak() const;
     bool isGraphemeBreak() const;
@@ -458,6 +464,9 @@ private:
     bool fIsCJK;
     bool fIsCopyright;
     bool fIsWestern;
+#ifdef OHOS_SUPPORT
+    bool fIsTabulation;
+#endif
 };
 
 class InternalLineMetrics {

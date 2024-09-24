@@ -735,7 +735,12 @@ bool ParagraphImpl::computeCodeUnitProperties() {
     // (and also substitute \t with a space while we are at it)
     if (!fUnicode->computeCodeUnitFlags(&fText[0],
                                         fText.size(),
+#ifdef OHOS_SUPPORT
+                                        this->paragraphStyle().getReplaceTabCharacters() ||
+                                        (this->paragraphStyle().getTextTab().location != 0),
+#else
                                         this->paragraphStyle().getReplaceTabCharacters(),
+#endif
                                         &fCodeUnitProperties)) {
         return false;
     }
@@ -889,6 +894,10 @@ Cluster::Cluster(ParagraphImpl* owner,
     fIsIntraWordBreak = intraWordBreakLen == fTextRange.width();
     fIsHardBreak = fOwner->codeUnitHasProperty(fTextRange.end,
                                                SkUnicode::CodeUnitFlags::kHardLineBreakBefore);
+#ifdef OHOS_SUPPORT
+    fIsTabulation = fOwner->codeUnitHasProperty(fTextRange.start,
+                                                SkUnicode::CodeUnitFlags::kTabulation);
+#endif
     auto unicodeStart = fOwner->getUnicodeIndex(fTextRange.start);
     auto unicodeEnd = fOwner->getUnicodeIndex(fTextRange.end);
     SkUnichar unicode = 0;

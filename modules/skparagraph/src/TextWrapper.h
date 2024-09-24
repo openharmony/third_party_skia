@@ -11,6 +11,9 @@ namespace skia {
 namespace textlayout {
 
 class ParagraphImpl;
+#ifdef OHOS_SUPPORT
+class TextTabAlign;
+#endif
 
 class TextWrapper {
     class ClusterPos {
@@ -152,6 +155,11 @@ class TextWrapper {
             fMetrics.clean();
         }
 
+#ifdef OHOS_SUPPORT
+        void shiftWidth(SkScalar width) {
+            fWidth += width;
+        }
+#endif
     private:
         ClusterPos fStart;
         ClusterPos fEnd;
@@ -193,6 +201,9 @@ public:
     bool exceededMaxLines() const { return fExceededMaxLines; }
 
 private:
+#ifdef OHOS_SUPPORT
+    friend TextTabAlign;
+#endif
     TextStretch fWords;
     TextStretch fClusters;
     TextStretch fClip;

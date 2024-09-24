@@ -4,6 +4,9 @@
 #include "include/core/SkScalar.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextWrapper.h"
+#ifdef OHOS_SUPPORT
+#include "modules/skparagraph/src/TextTabAlign.h"
+#endif
 #include <cfloat>
 #include <cstring>
 #include "Run.h"
@@ -92,6 +95,8 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     fClip.startFrom(fEndLine.startCluster(), fEndLine.startPos());
 
     bool isFirstWord = true;
+    TextTabAlign textTabAlign(endOfClusters->getOwner()->paragraphStyle().getTextTab());
+    textTabAlign.init(maxWidth, endOfClusters);
 
     LineBreakerWithLittleRounding breaker(maxWidth, applyRoundingHack);
     Cluster* nextNonBreakingSpace = nullptr;
@@ -112,6 +117,16 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 // It's the end of the word
                 isFirstWord = false;
                 fClusters.extend(cluster);
+
+                bool tabAlignRet = false;
+                if (cluster->isTabulation()) {
+                    tabAlignRet = textTabAlign.processTab(fWords, fClusters, cluster, totalFakeSpacing);
+                } else {
+                    tabAlignRet = textTabAlign.processEndofWord(fWords, fClusters, cluster, totalFakeSpacing);
+                }
+                if (tabAlignRet) {
+                    break;
+                }
                 fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, this->getClustersTrimmedWidth());
                 fWords.extend(fClusters);
                 continue;
@@ -134,6 +149,8 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 }
                 break;
             }
+
+            textTabAlign.processEndofLine(fWords, fClusters, cluster, totalFakeSpacing);
 
             // Walk further to see if there is a too long word, cluster or glyph
             SkScalar nextWordLength = fClusters.width();
@@ -211,12 +228,32 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
             fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, cluster->width());
             fWords.extend(cluster);
         } else {
-            fClusters.extend(cluster);
+            if (cluster->isTabulation()) {
+                if (textTabAlign.processTab(fWords, fClusters, cluster, totalFakeSpacing)) {
+                    break;
+                }
+                fClusters.extend(cluster);
 
-            // Keep adding clusters/words
-            if (fClusters.endOfWord()) {
                 fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
                 fWords.extend(fClusters);
+            } else {
+                fClusters.extend(cluster);
+                if (fClusters.endOfWord()) { // Keep adding clusters/words
+                    if (textTabAlign.processEndofWord(fWords, fClusters, cluster, totalFakeSpacing)) {
+                        if (wordBreakType == WordBreakType::BREAK_ALL) {
+                            fClusters.trim(cluster);
+                        }
+                        break;
+                    }
+
+                    fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
+                    fWords.extend(fClusters);
+                } else {
+                    if (textTabAlign.processCluster(fWords, fClusters, cluster, totalFakeSpacing)) {
+                        fClusters.trim(cluster);
+                        break;
+                    }
+                }
             }
         }
 
@@ -308,7 +345,7 @@ std::tuple<Cluster*, size_t, SkScalar> TextWrapper::trimStartSpaces(Cluster* end
     // It's a soft line break so we need to move lineStart forward skipping all the spaces
     auto width = fEndLine.widthWithGhostSpaces();
     auto cluster = fEndLine.breakCluster() + 1;
-    while (cluster < endOfClusters && cluster->isWhitespaceBreak()) {
+    while (cluster < endOfClusters && cluster->isWhitespaceBreak() && !cluster->isTabulation()) {
         width += cluster->width();
         ++cluster;
     }
