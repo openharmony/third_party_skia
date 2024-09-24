@@ -257,7 +257,6 @@ int HmSymbolConfig_OHOS::CheckConfigFile(const char* fname, Json::Value& root)
     Json::CharReaderBuilder charReaderBuilder;
     std::unique_ptr<Json::CharReader> jsonReader(charReaderBuilder.newCharReader());
     bool isJson = jsonReader->parse(data.get(), data.get() + size, &root, &errs);
-
     if (!isJson || !errs.empty()) {
         return LogErrInfo(ERROR_CONFIG_FORMAT_NOT_SUPPORTED, fname);
     }
@@ -270,13 +269,19 @@ int HmSymbolConfig_OHOS::ParseConfigOfHmSymbol(const char* fname, SkString fontD
     if (GetInit()) {
         return NO_ERROR;
     }
+    if (fname == nullptr || strlen(fname) == 0) {
+        return ERROR_CONFIG_NOT_FOUND;
+    }
     Clear();
+    if (fontDir.size() == 0) {
+        fontDir.append(".");
+    }
     std::string fullname(fontDir.c_str(), fontDir.size());
     char separator = '/';
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN)
     separator = '\\';
 #endif
-    if (fontDir.size() > 0 && fontDir[fontDir.size() - 1] != separator) {
+    if (fontDir[fontDir.size() - 1] != separator) {
         fullname += separator;
     }
     std::string fnameStr(fname, strlen(fname));
