@@ -59,6 +59,14 @@ static inline float SkBits2Float(int32_t floatAsBits) {
 constexpr int32_t gFloatBits_exponent_mask = 0x7F800000;
 constexpr int32_t gFloatBits_matissa_mask  = 0x007FFFFF;
 
+#ifdef OHOS_SUPPORT
+static inline float SkFloatBits_GetFiniteFloat() {
+    SkFloatIntUnion data;
+    data.fSignBitInt = gFloatBits_exponent_mask;
+    return data.fFloat;
+}
+#endif
+
 static inline bool SkFloatBits_IsFinite(int32_t bits) {
     return (bits & gFloatBits_exponent_mask) != gFloatBits_exponent_mask;
 }

@@ -231,6 +231,11 @@ public:
     virtual std::unique_ptr<Paragraph> CloneSelf() = 0;
 
 #ifdef OHOS_SUPPORT
+    virtual size_t getUnicodeIndex(TextIndex index) const = 0;
+    virtual const std::vector<SkUnichar>& unicodeText() const = 0;
+    virtual std::unique_ptr<Paragraph> createCroppedCopy(
+            size_t startIndex, size_t count = std::numeric_limits<size_t>::max()) = 0;
+    virtual void initUnicodeText() = 0;
     virtual size_t GetMaxLines() const = 0;
 #endif
 

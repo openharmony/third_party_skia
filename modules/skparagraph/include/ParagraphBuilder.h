@@ -8,6 +8,9 @@
 #include <tuple>
 #include "modules/skparagraph/include/FontCollection.h"
 #include "modules/skparagraph/include/Paragraph.h"
+#ifdef OHOS_SUPPORT
+#include "modules/skparagraph/include/ParagraphLineFetcher.h"
+#endif
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skunicode/include/SkUnicode.h"
@@ -56,6 +59,9 @@ public:
     // Constructs a SkParagraph object that can be used to layout and paint the text to a SkCanvas.
     virtual std::unique_ptr<Paragraph> Build() = 0;
 
+#ifdef OHOS_SUPPORT
+    virtual std::unique_ptr<ParagraphLineFetcher> buildLineFetcher() = 0;
+#endif
     virtual SkSpan<char> getText() = 0;
     virtual const ParagraphStyle& getParagraphStyle() const = 0;
 

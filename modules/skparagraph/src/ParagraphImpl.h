@@ -143,6 +143,18 @@ public:
 
     SkSpan<const char> text() const { return SkSpan<const char>(fText.c_str(), fText.size()); }
     std::vector<SkUnichar> convertUtf8ToUnicode(const SkString& utf8);
+#ifdef OHOS_SUPPORT
+    std::unique_ptr<Paragraph> createCroppedCopy(
+            size_t startIndex, size_t count = std::numeric_limits<size_t>::max()) override;
+    void initUnicodeText() override;
+    const std::vector<SkUnichar>& unicodeText() const override { return fUnicodeText; }
+    size_t getUnicodeIndex(TextIndex index) const override {
+        if (index >= fUnicodeIndexForUTF8Index.size()) {
+            return fUnicodeIndexForUTF8Index.empty() ? 0 : fUnicodeIndexForUTF8Index.back() + 1;
+        }
+        return fUnicodeIndexForUTF8Index[index];
+    }
+#else
     const std::vector<SkUnichar>& unicodeText() const { return fUnicodeText; }
     size_t getUnicodeIndex(TextIndex index) const {
         if (index >= fUnicodeIndexForUTF8Index.size()) {
@@ -150,6 +162,7 @@ public:
         }
         return fUnicodeIndexForUTF8Index[index];
     }
+#endif
     InternalState state() const { return fState; }
     SkSpan<Run> runs() { return SkSpan<Run>(fRuns.data(), fRuns.size()); }
     SkSpan<Block> styles() {
@@ -368,6 +381,8 @@ private:
 #ifdef OHOS_SUPPORT
     ParagraphPainter::PaintID updateTextStyleColorAndForeground(TextStyle& TextStyle, SkColor color);
     TextBox getEmptyTextRect(RectHeightStyle rectHeightStyle) const;
+    size_t prefixByteCountUntilChar(size_t index);
+    void copyProperties(const ParagraphImpl& source);
 #endif
 
     // Input

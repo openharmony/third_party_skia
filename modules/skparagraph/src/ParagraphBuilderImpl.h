@@ -13,6 +13,9 @@
 #include "modules/skparagraph/include/ParagraphBuilder.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
+#ifdef OHOS_SUPPORT
+#include "modules/skparagraph/include/ParagraphLineFetcher.h"
+#endif
 
 namespace skia {
 namespace textlayout {
@@ -59,7 +62,9 @@ public:
 
     // Constructs a SkParagraph object that can be used to layout and paint the text to a SkCanvas.
     std::unique_ptr<Paragraph> Build() override;
-
+#ifdef OHOS_SUPPORT
+    std::unique_ptr<ParagraphLineFetcher> buildLineFetcher() override;
+#endif
     // Support for "Client" unicode
     SkSpan<char> getText() override;
     const ParagraphStyle& getParagraphStyle() const override;

@@ -2210,6 +2210,75 @@ std::vector<std::unique_ptr<TextLineBase>> ParagraphImpl::GetTextLines() {
     return textLineBases;
 }
 
+#ifdef OHOS_SUPPORT
+size_t ParagraphImpl::prefixByteCountUntilChar(size_t index) {
+    convertUtf8ToUnicode(fText);
+    if (fUnicodeIndexForUTF8Index.empty()) {
+        return std::numeric_limits<size_t>::max();
+    }
+    auto it = std::lower_bound(fUnicodeIndexForUTF8Index.begin(), fUnicodeIndexForUTF8Index.end(), index);
+    if (it != fUnicodeIndexForUTF8Index.end() && *it == index) {
+        return std::distance(fUnicodeIndexForUTF8Index.begin(), it);
+    } else {
+        return std::numeric_limits<size_t>::max();
+    }
+}
+
+void ParagraphImpl::copyProperties(const ParagraphImpl& source) {
+    fText = source.fText;
+    fTextStyles = source.fTextStyles;
+    fPlaceholders = source.fPlaceholders;
+    fParagraphStyle = source.fParagraphStyle;
+    fFontCollection = source.fFontCollection;
+    fUnicode = source.fUnicode;
+
+    fState = kUnknown;
+    fUnresolvedGlyphs = 0;
+    fPicture = nullptr;
+    fStrutMetrics = false;
+    fOldWidth = 0;
+    fOldHeight = 0;
+    fHasLineBreaks = false;
+    fHasWhitespacesInside = false;
+    fTrailingSpaces = 0;
+}
+
+std::unique_ptr<Paragraph> ParagraphImpl::createCroppedCopy(size_t startIndex, size_t count) {
+    std::unique_ptr<ParagraphImpl> paragraph = std::make_unique<ParagraphImpl>();
+    paragraph->copyProperties(*this);
+
+    // change range
+    auto validStart = prefixByteCountUntilChar(startIndex);
+    if (validStart == std::numeric_limits<size_t>::max()) {
+        return nullptr;
+    }
+    // For example, when the clipped string str1 is "123456789"
+    // startIndex=2, count=std:: numeric_imits<size_t>:: max(), the resulting string str2 is "3456789". 
+    // When startIndex=3 and count=3, crop the generated string str3 to "456"
+    TextRange firstDeleteRange(0, validStart);
+    paragraph->fText.remove(0, validStart);
+    paragraph->resetTextStyleRange(firstDeleteRange);
+    paragraph->resetPlaceholderRange(firstDeleteRange);
+
+    if (count != std::numeric_limits<size_t>::max()) {
+        auto invalidStart = paragraph->prefixByteCountUntilChar(count);
+        if (invalidStart == std::numeric_limits<size_t>::max()) {
+            return nullptr;
+        }
+        auto invalidEnd = paragraph->fText.size();
+        TextRange secodeDeleteRange(invalidStart, invalidEnd);
+        paragraph->fText.remove(invalidStart, invalidEnd - invalidStart);
+        paragraph->resetTextStyleRange(secodeDeleteRange);
+        paragraph->resetPlaceholderRange(secodeDeleteRange);
+    }
+    return paragraph;
+}
+
+void ParagraphImpl::initUnicodeText() {
+    this->fUnicodeText = convertUtf8ToUnicode(fText);
+}
+#endif
+
 std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
 {
     std::unique_ptr<ParagraphImpl> paragraph = std::make_unique<ParagraphImpl>();
