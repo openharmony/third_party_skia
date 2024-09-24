@@ -1986,7 +1986,8 @@ bool GrVkCaps::supportsHpsBlur(const GrSurfaceProxyView* proxyViewPtr) const
         return false;
     }
     if (((format == VkFormat::VK_FORMAT_R8G8B8A8_UNORM)
-        || (format == VkFormat::VK_FORMAT_R8G8B8_UNORM))
+        || (format == VkFormat::VK_FORMAT_R8G8B8_UNORM)
+        || (format == VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT))
         && fSupportHpsBlur) {
         return true;
     }
