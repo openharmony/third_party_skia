@@ -35,6 +35,19 @@ public:
     virtual std::vector<RSPoint> getPositions() const = 0;
     virtual std::vector<RSPoint> getOffsets() const = 0;
 
+#ifdef OHOS_SUPPORT
+    virtual std::vector<uint16_t> getGlyphs(int64_t start, int64_t length) const = 0;
+    virtual void getStringRange(uint64_t* location, uint64_t* length) const = 0;
+    virtual std::vector<uint64_t> getStringIndices(int64_t start, int64_t length) const = 0;
+    virtual float getTypographicBounds(float* ascent, float* descent, float* leading) const = 0;
+#ifndef USE_SKIA_TXT
+    virtual SkRect getImageBounds() const = 0;
+    virtual std::vector<SkPoint> getPositions(int64_t start, int64_t length) const = 0;
+#else
+    virtual RSRect getImageBounds() const = 0;
+    virtual std::vector<RSPoint> getPositions(int64_t start, int64_t length) const = 0;
+#endif
+#endif
     virtual void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) = 0;
 };
 }  // namespace textlayout
