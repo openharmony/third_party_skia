@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <set>
 #include <stack>
+#include <unordered_set>
 
 #include "include/core/SkLog.h"
 #include "include/core/SkRefCnt.h"
@@ -311,6 +312,8 @@ public:
     // OH ISSUE: init gpu memory limit.
     void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
 
+    // OH ISSUE: check whether the PID is abnormal.
+    bool isPidAbnormal() const;
     // OH ISSUE: change the fbyte when the resource tag changes.
     void changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes);
 
@@ -573,6 +576,7 @@ private:
     uint64_t fMemoryControl_ = UINT64_MAX;
     // OH ISSUE: memory overflow callback.
     MemoryOverflowCalllback fMemoryOverflowCallback_ = nullptr;
+    std::unordered_set<int32_t> fExitedPid_;
 };
 
 class GrResourceCache::ResourceAccess {
