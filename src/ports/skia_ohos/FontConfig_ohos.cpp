@@ -740,7 +740,7 @@ int FontConfig_OHOS::parseFallbackItem(const Json::Value& root)
             hasVariations = true;
         } else if (members[i] == "index") {
             hasIndex = true;
-        } else if (members[i] != "variation") {
+        } else {
             key = members[i].c_str();
         }
     }

@@ -34,7 +34,7 @@
           "weight": 200, "to": 900
         }
       ],
-      "variation": [
+      "font-variations": [
         {
           "weight": 100, "wght": 100
         },
@@ -62,7 +62,7 @@
           "HarmonyOS-Sans-Condensed": 0
         }
       ],
-      "variation": [
+      "font-variations": [
         {
           "weight": 100, "wght": 100
         },
@@ -119,7 +119,7 @@
         },
         {
           "und-Arab": "HarmonyOS Sans Naskh Arabic UI",
-          "variation": [
+          "font-variations": [
             {
               "weight": 100, "wght": 100
             },
@@ -397,7 +397,7 @@
         },
         {
           "zh-Hans": "HarmonyOS Sans SC",
-          "variation": [
+          "font-variations": [
             {
               "weight": 100, "wght": 100
             },
@@ -423,7 +423,7 @@
         },
         {
           "zh-Hant": "HarmonyOS Sans TC",
-          "variation": [
+          "font-variations": [
             {
               "weight": 100, "wght": 100
             },
