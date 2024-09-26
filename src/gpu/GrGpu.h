@@ -680,7 +680,7 @@ void popGrResourceTag()
     virtual void dumpVmaStats(SkString *out) {}
 
     // OH ISSUE: asyn memory reclaimer
-    virtual bool setGpuMemoryAsyncReclaimerSwitch(bool enabled) {}
+    virtual void setGpuMemoryAsyncReclaimerSwitch(bool enabled) {}
     virtual void flushGpuMemoryInWaitQueue() {}
 
 protected:
