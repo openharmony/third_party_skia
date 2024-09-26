@@ -449,6 +449,15 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
         auto& pidSize = fBytesOfPid[pid];
         pidSize += size;
         fUpdatedBytesOfPid[pid] = pidSize;
+        if (pidSize >= fMemoryControl_ && fExitedPid_.find(pid) == fExitedPid_.end() && fMemoryOverflowCallback_) {
+            fMemoryOverflowCallback_(pid, pidSize, true);
+            fExitedPid_.insert(pid);
+            SkDebugf("OHOS resource overflow! pid[%{public}d], size[%{public}zu]", pid, pidSize);
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+            HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "OHOS gpu resource overflow: pid(%d), size:(%zu)",
+                pid, pidSize);
+#endif
+        }
     }
 
 #if GR_CACHE_STATS
@@ -672,6 +681,21 @@ std::set<GrGpuResourceTag> GrResourceCache::getAllGrGpuResourceTags() const {
 void GrResourceCache::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out)
 {
     fUpdatedBytesOfPid.swap(out);
+}
+
+// OH ISSUE: init gpu memory limit.
+void GrResourceCache::initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size)
+{
+    if (fMemoryOverflowCallback_ == nullptr) {
+        fMemoryOverflowCallback_ = callback;
+        fMemoryControl_ = size;
+    }
+}
+
+// OH ISSUE: check whether the PID is abnormal.
+bool GrResourceCache::isPidAbnormal() const
+{
+    return fExitedPid_.find(getCurrentGrResourceTag().fPid) != fExitedPid_.end();
 }
 
 // OH ISSUE: change the fbyte when the resource tag changes.
@@ -1199,6 +1223,10 @@ void GrResourceCache::purgeUnlockedResourcesByPid(bool scratchResourceOnly, cons
     }
     for (int i = 0; i <scratchResources.count(); i++) {
         scratchResources.getAt(i)->cacheAccess().release();
+    }
+
+    for (auto pid : exitedPidSet) {
+        fExitedPid_.erase(pid);
     }
 
     this->validate();
