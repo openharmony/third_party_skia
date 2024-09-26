@@ -1936,7 +1936,8 @@ bool SkTypeface_FreeType::Scanner::scanFont(
  *  Gets fullname from stream, true means success
  */
 bool SkTypeface_FreeType::Scanner::GetTypefaceFullname(SkStreamAsset* stream,
-    int ttcIndex, SkByteArray& fullname) const {
+    int ttcIndex, SkByteArray& fullname) const
+{
     if (stream == nullptr) {
         return false;
     }
