@@ -118,7 +118,6 @@
           "": "Noto Sans"
         },
         {
-          "und-Arab": "HarmonyOS Sans Naskh Arabic UI",
           "font-variations": [
             {
               "weight": 100, "wght": 100
@@ -138,7 +137,8 @@
             {
               "weight": 900, "wght": 844
             }
-          ]
+          ],
+          "und-Arab": "HarmonyOS Sans Naskh Arabic UI"
         },
         {
           "und-Ethi": "Noto Sans Ethiopic"
@@ -396,7 +396,6 @@
           "und-Vaii": "Noto Sans Vai"
         },
         {
-          "zh-Hans": "HarmonyOS Sans SC",
           "font-variations": [
             {
               "weight": 100, "wght": 100
@@ -419,10 +418,10 @@
             {
               "weight": 900, "wght": 844
             }
-          ]
+          ],
+          "zh-Hans": "HarmonyOS Sans SC"
         },
         {
-          "zh-Hant": "HarmonyOS Sans TC",
           "font-variations": [
             {
               "weight": 100, "wght": 100
@@ -442,7 +441,8 @@
             {
               "weight": 900, "wght": 844
             }
-          ]
+          ],
+          "zh-Hant": "HarmonyOS Sans TC"
         },
         {
           "ja": "Noto Sans CJK JP"
