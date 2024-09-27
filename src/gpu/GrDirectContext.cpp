@@ -619,8 +619,9 @@ void GrDirectContext::endFrame()
 void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
 {
 #ifdef SK_VULKAN
-    auto grVKGpu = static_cast<GrVkGpu*>(fGpu.get());
-    grVKGpu->memoryReclaimer()->setGpuMemoryAsyncReclaimerSwitch(enabled);
+    if (fGpu) {
+        fGpu->setGpuMemoryAsyncReclaimerSwitch(enabled);
+    }
 #endif
 }
 
@@ -628,8 +629,9 @@ void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
 void GrDirectContext::flushGpuMemoryInWaitQueue()
 {
 #ifdef SK_VULKAN
-    auto grVKGpu = static_cast<GrVkGpu*>(fGpu.get());
-    grVKGpu->memoryReclaimer()->flushGpuMemoryInWaitQueue();
+    if (fGpu) {
+        fGpu->flushGpuMemoryInWaitQueue();
+    }
 #endif
 }
 

@@ -63,8 +63,6 @@ public:
     GrVkMemoryAllocator* memoryAllocator() const { return fMemoryAllocator.get(); }
     GrVkMemoryAllocator* memoryAllocatorCacheImage() const { return fMemoryAllocatorCacheImage.get(); }
 
-    GrVkMemoryReclaimer* memoryReclaimer() const { return fMemoryReclaimer.get(); }
-
     VkPhysicalDevice physicalDevice() const { return fPhysicalDevice; }
     VkDevice device() const { return fDevice; }
     VkQueue  queue() const { return fQueue; }
@@ -209,6 +207,11 @@ public:
 
     void vmaDefragment() override { fMemoryAllocatorCacheImage->vmaDefragment(); }
     void dumpVmaStats(SkString *out) override;
+
+    // OH ISSUE: asyn memory reclaimer
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled) override;
+    void flushGpuMemoryInWaitQueue() override;
+    GrVkMemoryReclaimer* memoryReclaimer() const { return fMemoryReclaimer.get(); }
 
 #ifdef SKIA_DFX_FOR_OHOS
     void addAllocImageBytes(size_t bytes);

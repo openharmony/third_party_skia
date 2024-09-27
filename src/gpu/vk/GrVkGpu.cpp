@@ -253,8 +253,6 @@ GrVkGpu::GrVkGpu(GrDirectContext* direct, const GrVkBackendContext& backendConte
         SkASSERT(this->currentCommandBuffer());
         this->currentCommandBuffer()->begin(this);
     }
-
-    fMemoryReclaimer = std::make_unique<GrVkMemoryReclaimer>();
 }
 
 void GrVkGpu::destroyResources() {
@@ -2734,6 +2732,24 @@ void GrVkGpu::dumpVmaStats(SkString *out) {
     out->appendf("dumpVmaCacheStats:\n");
     fMemoryAllocatorCacheImage->dumpVmaStats(out, "\n");
 }
+
+// OH ISSUE: asyn memory reclaimer
+void GrVkGpu::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
+{   
+    if (!fMemoryReclaimer) {
+        fMemoryReclaimer = std::make_unique<GrVkMemoryReclaimer>();
+    }
+    fMemoryReclaimer->setGpuMemoryAsyncReclaimerSwitch(enabled);
+}
+
+// OH ISSUE: asyn memory reclaimer
+void GrVkGpu::flushGpuMemoryInWaitQueue()
+{
+    if (fMemoryReclaimer) {
+        fMemoryReclaimer->flushGpuMemoryInWaitQueue();
+    }
+}
+    
 
 #ifdef SKIA_DFX_FOR_OHOS
 void GrVkGpu::addAllocImageBytes(size_t bytes)
