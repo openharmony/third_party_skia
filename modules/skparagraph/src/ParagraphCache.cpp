@@ -105,6 +105,7 @@ public:
     SkScalar fAlphabeticBaseline;
     SkScalar fIdeographicBaseline;
     SkScalar fLongestLine;
+    SkScalar fLongestLineWithIndent;
     bool fExceededMaxLines;
     // criteria to apply the layout cache, should presumably hash it, same
     // hash could be used to check if the entry has cached layout available
@@ -372,6 +373,7 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
         value->fLines.emplace_back(line.CloneSelf());
     }
     paragraph.getSize(value->fHeight, value->fWidth, value->fLongestLine);
+    value->fLongestLineWithIndent = paragraph.getLongestLineWithIndent();
     paragraph.getIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
         value->fAlphabeticBaseline, value->fIdeographicBaseline,
         value->fExceededMaxLines);
@@ -424,6 +426,7 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
         paragraph.fLines.back().setParagraphImpl(&paragraph);
     }
     paragraph.setSize(value->fHeight, value->fWidth, value->fLongestLine);
+    paragraph.setLongestLineWithIndent(value->fLongestLineWithIndent);
     paragraph.setIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
         value->fAlphabeticBaseline, value->fIdeographicBaseline,
         value->fExceededMaxLines);
