@@ -733,7 +733,7 @@ bool ParagraphImpl::computeCodeUnitProperties() {
                                         fText.size(),
 #ifdef OHOS_SUPPORT
                                         this->paragraphStyle().getReplaceTabCharacters() ||
-                                        (this->paragraphStyle().getTextTab().location != 0),
+                                        (!(this->paragraphStyle().getTextTab().location < 1.0)),
 #else
                                         this->paragraphStyle().getReplaceTabCharacters(),
 #endif
