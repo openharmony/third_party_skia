@@ -4,6 +4,9 @@
 #include "modules/skparagraph/include/FontArguments.h"
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
+#ifdef OHOS_SUPPORT
+#include "utils/text_trace.h"
+#endif
 #include "log.h"
 
 namespace skia {
@@ -435,6 +438,9 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
 #endif
 
 bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE("ParagraphCache::findParagraph");
+#endif
     if (!fCacheIsOn) {
         return false;
     }

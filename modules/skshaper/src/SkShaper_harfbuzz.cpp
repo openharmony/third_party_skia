@@ -30,6 +30,9 @@
 #include "src/core/SkTDPQueue.h"
 #include "src/utils/SkUTF.h"
 #include "src/core/SkLRUCache.h"
+#ifdef OHOS_SUPPORT
+#include "utils/text_trace.h"
+#endif
 
 #include <hb.h>
 #include <hb-ot.h>
@@ -1509,6 +1512,9 @@ ShapedRun ShaperHarfBuzz::shape(char const * const utf8,
                                   const FontRunIterator& font,
                                   Feature const * const features, size_t const featuresSize) const
 {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE("ShaperHarfBuzz::shape");
+#endif
     size_t utf8runLength = utf8End - utf8Start;
     ShapedRun run(RunHandler::Range(utf8Start - utf8, utf8runLength),
                   font.currentFont(), bidi.currentLevel(), nullptr, 0);

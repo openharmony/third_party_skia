@@ -4,6 +4,9 @@
 #include "modules/skparagraph/src/OneLineShaper.h"
 #include "src/Run.h"
 #include "src/utils/SkUTF.h"
+#ifdef OHOS_SUPPORT
+#include "utils/text_trace.h"
+#endif
 
 #include <algorithm>
 #include <cstdint>
@@ -149,6 +152,9 @@ void OneLineShaper::fillGaps(size_t startingCount) {
 }
 
 void OneLineShaper::finish(const Block& block, SkScalar height, SkScalar& advanceX) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE("OneLineShaper::finish");
+#endif
     auto blockText = block.fRange;
 
     // Add all unresolved blocks to resolved blocks
@@ -431,6 +437,9 @@ void OneLineShaper::iterateThroughFontStyles(TextRange textRange,
 
 void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                                        const TypefaceVisitor& visitor) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE("OneLineShaper::matchResolvedFonts");
+#endif
 #ifndef USE_SKIA_TXT
     std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
 #else
@@ -637,7 +646,9 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
 }
 
 bool OneLineShaper::shape() {
-
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE("OneLineShaper::shape");
+#endif
     // The text can be broken into many shaping sequences
     // (by place holders, possibly, by hard line breaks or tabs, too)
     auto limitlessWidth = std::numeric_limits<SkScalar>::max();
@@ -671,7 +682,9 @@ bool OneLineShaper::shape() {
 #else
             this->matchResolvedFonts(block.fStyle, [&](std::shared_ptr<RSTypeface> typeface) {
 #endif
-
+#ifdef OHOS_SUPPORT
+                TEXT_TRACE("OneLineShaper::handle_typeface");
+#endif
                 // Create one more font to try
 #ifndef USE_SKIA_TXT
                 SkFont font(std::move(typeface), block.fStyle.getFontSize());
