@@ -578,6 +578,15 @@ void GrDirectContext::initGpuMemoryLimit(MemoryOverflowCalllback callback, uint6
     }
 }
 
+// OH ISSUE: check whether the PID is abnormal.
+bool GrDirectContext::isPidAbnormal() const
+{
+    if (fResourceCache) {
+        return fResourceCache->isPidAbnormal();
+    }
+    return false;
+}
+
 void GrDirectContext::vmaDefragment()
 {
     if (fGpu) {

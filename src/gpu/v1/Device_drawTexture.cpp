@@ -767,6 +767,11 @@ void Device::drawImageQuad(const SkImage* image,
         return;
     }
 
+    // OH ISSUE: restricting the drawing of abnormal processes
+    if (fContext->isPidAbnormal()) {
+        return;
+    }
+
     if (src.contains(image->bounds())) {
         constraint = SkCanvas::kFast_SrcRectConstraint;
     }

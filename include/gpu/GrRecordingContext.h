@@ -113,6 +113,9 @@ public:
         GrSubRunAllocator* fRecordTimeSubRunAllocator;
     };
 
+    // OH ISSUE: check whether the PID is abnormal.
+    virtual bool isPidAbnormal() const { return false; }
+
 protected:
     friend class GrRecordingContextPriv;    // for hidden functions
     friend class SkDeferredDisplayList;     // for OwnedArenas
