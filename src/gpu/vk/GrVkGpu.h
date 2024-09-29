@@ -15,6 +15,7 @@
 #include "src/gpu/vk/GrVkCaps.h"
 #include "src/gpu/vk/GrVkMSAALoadManager.h"
 #include "src/gpu/vk/GrVkMemory.h"
+#include "src/gpu/vk/GrVkMemoryReclaimer.h"
 #include "src/gpu/vk/GrVkResourceProvider.h"
 #include "src/gpu/vk/GrVkSemaphore.h"
 #include "src/gpu/vk/GrVkUtil.h"
@@ -206,6 +207,18 @@ public:
 
     void vmaDefragment() override { fMemoryAllocatorCacheImage->vmaDefragment(); }
     void dumpVmaStats(SkString *out) override;
+
+    // OH ISSUE: asyn memory reclaimer
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled) override;
+    void flushGpuMemoryInWaitQueue() override;
+    GrVkMemoryReclaimer* memoryReclaimer() const { return fMemoryReclaimer.get(); }
+
+#ifdef SKIA_DFX_FOR_OHOS
+    void addAllocImageBytes(size_t bytes);
+    void removeAllocImageBytes(size_t bytes);
+    void addAllocBufferBytes(size_t bytes);
+    void removeAllocBufferBytes(size_t bytes);
+#endif
 
 private:
     enum SyncQueue {
@@ -434,6 +447,8 @@ private:
     GrProtected                                           fProtectedContext;
 
     std::unique_ptr<GrVkOpsRenderPass>                    fCachedOpsRenderPass;
+
+    std::unique_ptr<GrVkMemoryReclaimer>                    fMemoryReclaimer;
 
     using INHERITED = GrGpu;
 };

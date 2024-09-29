@@ -13,21 +13,30 @@
  * limitations under the License.
  */
 
-#ifndef GR_SDF_BLUR_EFFECT_DEFINED
-#define GR_SDF_BLUR_EFFECT_DEFINED
+#ifndef TEXT_PARAMETER_DEFINED
+#define TEXT_PARAMETER_DEFINED
 
-#include "include/core/SkPoint.h"
-#include "src/core/SkRuntimeEffectPriv.h"
-#include "src/gpu/effects/GrSkSLFP.h"
-#include "src/gpu/effects/GrMatrixEffect.h"
-#include "src/gpu/GrFragmentProcessor.h"
-#include "include/effects/SkRuntimeEffect.h"
-
-class GrSDFBlurEffect : public GrFragmentProcessor {
-public:
-    inline static constexpr float kHalfFactor = 2.f;
-
-    static std::unique_ptr<GrFragmentProcessor> Make(GrRecordingContext* context, float noxFormedSigma,
-        const SkRRect& srcRRect);
-};
+#ifdef OHOS_SUPPORT
+#ifdef OHOS_TEXT_ENABLE
+#include "parameters.h"
 #endif
+
+namespace skia {
+namespace textlayout {
+class TextParameter {
+public:
+    static bool GetAutoSpacingEnable()
+    {
+#ifdef OHOS_TEXT_ENABLE
+        static bool autoSpacingEnable = OHOS::system::GetBoolParameter("persist.sys.text.autospacing.enable", false);
+        return autoSpacingEnable;
+#else
+        return false;
+#endif
+    }
+};
+}  // namespace textlayout
+}  // namespace skia
+
+#endif // OHOS_SUPPORT
+#endif // TEXT_PARAMETER_DEFINED

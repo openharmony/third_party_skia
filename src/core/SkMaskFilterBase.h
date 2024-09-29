@@ -138,8 +138,8 @@ public:
     virtual float getNoxFormedSigma3() const;
 
     virtual GrSurfaceProxyView filterMaskGPUNoxFormed(GrRecordingContext*,
-        GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType, const SkIRect& maskRect,
-        const SkRRect& srcRRect) const;
+        GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType, const SkMatrix& viewMatrix,
+        const SkIRect& maskRect, const SkRRect& srcRRect) const;
 #endif
 
     /**

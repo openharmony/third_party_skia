@@ -21,9 +21,9 @@
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
+#include "modules/skparagraph/include/TextLineBase.h"
 #include "modules/skparagraph/include/TextShadow.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#include "modules/skparagraph/include/TextLineBase.h"
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skunicode/include/SkUnicode.h"
@@ -132,6 +132,10 @@ public:
 
     size_t lineNumber() override { return fLineNumber; }
 
+#ifdef OHOS_SUPPORT
+    TextRange getEllipsisTextRange() override;
+#endif
+
     TextLine& addLine(SkVector offset, SkVector advance,
                       TextRange textExcludingSpaces, TextRange text, TextRange textIncludingNewlines,
                       ClusterRange clusters, ClusterRange clustersWithGhosts, SkScalar widthWithSpaces,
@@ -139,6 +143,18 @@ public:
 
     SkSpan<const char> text() const { return SkSpan<const char>(fText.c_str(), fText.size()); }
     std::vector<SkUnichar> convertUtf8ToUnicode(const SkString& utf8);
+#ifdef OHOS_SUPPORT
+    std::unique_ptr<Paragraph> createCroppedCopy(
+            size_t startIndex, size_t count = std::numeric_limits<size_t>::max()) override;
+    void initUnicodeText() override;
+    const std::vector<SkUnichar>& unicodeText() const override { return fUnicodeText; }
+    size_t getUnicodeIndex(TextIndex index) const override {
+        if (index >= fUnicodeIndexForUTF8Index.size()) {
+            return fUnicodeIndexForUTF8Index.empty() ? 0 : fUnicodeIndexForUTF8Index.back() + 1;
+        }
+        return fUnicodeIndexForUTF8Index[index];
+    }
+#else
     const std::vector<SkUnichar>& unicodeText() const { return fUnicodeText; }
     size_t getUnicodeIndex(TextIndex index) const {
         if (index >= fUnicodeIndexForUTF8Index.size()) {
@@ -146,6 +162,7 @@ public:
         }
         return fUnicodeIndexForUTF8Index[index];
     }
+#endif
     InternalState state() const { return fState; }
     SkSpan<Run> runs() { return SkSpan<Run>(fRuns.data(), fRuns.size()); }
     SkSpan<Block> styles() {
@@ -230,7 +247,9 @@ public:
     void updateFontSize(size_t from, size_t to, SkScalar fontSize) override;
     void updateForegroundPaint(size_t from, size_t to, SkPaint paint) override;
     void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) override;
+#ifdef OHOS_SUPPORT
     std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) override;
+#endif
 
     void visit(const Visitor&) override;
 
@@ -301,6 +320,10 @@ public:
         return hash_;
     }
 
+#ifdef OHOS_SUPPORT
+    size_t GetMaxLines() const override { return fParagraphStyle.getMaxLines(); }
+#endif
+
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
@@ -309,7 +332,10 @@ private:
 
     friend class TextWrapper;
     friend class OneLineShaper;
-
+#ifdef OHOS_SUPPORT
+    void middleEllipsisLtrDeal(size_t& end, size_t& charbegin, size_t& charend);
+    void middleEllipsisRtlDeal(size_t& end, size_t& charbegin, size_t& charend);
+#endif
     void computeEmptyMetrics();
     void middleEllipsisAddText(size_t charStart,
                                size_t charEnd,
@@ -352,7 +378,12 @@ private:
         exceededMaxLines = fExceededMaxLines;
     }
 
+#ifdef OHOS_SUPPORT
     ParagraphPainter::PaintID updateTextStyleColorAndForeground(TextStyle& TextStyle, SkColor color);
+    TextBox getEmptyTextRect(RectHeightStyle rectHeightStyle) const;
+    size_t prefixByteCountUntilChar(size_t index);
+    void copyProperties(const ParagraphImpl& source);
+#endif
 
     // Input
     SkTArray<StyleBlock<SkScalar>> fLetterSpaceStyles;
@@ -408,6 +439,10 @@ private:
 
     size_t fLineNumber;
     uint32_t hash_{0u};
+
+#ifdef OHOS_SUPPORT
+    TextRange fEllipsisRange{EMPTY_RANGE};
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia

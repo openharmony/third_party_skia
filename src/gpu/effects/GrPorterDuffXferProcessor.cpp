@@ -441,7 +441,8 @@ static void append_color_output(const PorterDuffXferProcessor& xp,
     }
 }
 
-SkString PorterDuffXferProcessor::getShaderDfxInfo() const {
+SkString PorterDuffXferProcessor::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_PorterDuffXfer_%d_%d", fBlendFormula.primaryOutput(), fBlendFormula.secondaryOutput());
     return format;
@@ -510,7 +511,8 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 
-SkString ShaderPDXferProcessor::getShaderDfxInfo() const {
+SkString ShaderPDXferProcessor::getShaderDfxInfo() const
+{
     SkString format;
     format.printf("ShaderDfx_ShaderPDXfer_%d", fXfermode);
     return format;

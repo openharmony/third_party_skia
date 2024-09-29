@@ -35,7 +35,8 @@ public:
     void setDefaultFontManager(sk_sp<SkFontMgr> fontManager, const char defaultFamilyName[]);
     void setDefaultFontManager(sk_sp<SkFontMgr> fontManager, const std::vector<SkString>& defaultFamilyNames);
 
-    sk_sp<SkFontMgr> getFallbackManager() const {
+    sk_sp<SkFontMgr> getFallbackManager() const
+    {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
         return fDefaultFontManager;
     }
@@ -53,7 +54,8 @@ public:
     void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const char defaultFamilyName[]);
     void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const std::vector<SkString>& defaultFamilyNames);
 
-    std::shared_ptr<RSFontMgr> getFallbackManager() const {
+    std::shared_ptr<RSFontMgr> getFallbackManager() const
+    {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
         return fDefaultFontManager;
     }
@@ -77,18 +79,35 @@ public:
 
     void disableFontFallback();
     void enableFontFallback();
-    bool fontFallbackEnabled() {
+    bool fontFallbackEnabled()
+    {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
         return fEnableFontFallback;
     }
 
-    ParagraphCache* getParagraphCache() {
+    ParagraphCache* getParagraphCache()
+    {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
         return &fParagraphCache;
     }
 
     void clearCaches();
 
+#ifdef OHOS_SUPPORT
+    // set fIsAdpaterTextHeightEnabled with once_flag.
+    static void SetAdapterTextHeightEnabled(bool adapterTextHeightEnabled)
+    {
+        static std::once_flag flag;
+        std::call_once(flag, [adapterTextHeightEnabled]() {
+            fIsAdpaterTextHeightEnabled = adapterTextHeightEnabled;
+        });
+    }
+
+    static bool IsAdapterTextHeightEnabled()
+    {
+        return fIsAdpaterTextHeightEnabled;
+    }
+#endif
 private:
 #ifndef USE_SKIA_TXT
     std::vector<sk_sp<SkFontMgr>> getFontManagerOrder() const;
@@ -126,6 +145,9 @@ private:
             size_t operator()(const FamilyKey& key) const;
         };
     };
+#ifdef OHOS_SUPPORT
+    static bool fIsAdpaterTextHeightEnabled;
+#endif
 
     bool fEnableFontFallback;
 #ifndef USE_SKIA_TXT

@@ -60,5 +60,6 @@ int SkGetNeedCachedMemroySize();
 bool SkGetVmaDefragmentOn();
 size_t SkGetVmaBlockCountMax();
 bool SkGetVmaDebugFlag();
+bool SkGetPreAllocFlag();
 
 #endif

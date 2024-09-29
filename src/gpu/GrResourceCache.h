@@ -8,8 +8,8 @@
 #ifndef GrResourceCache_DEFINED
 #define GrResourceCache_DEFINED
 
+#include <cstddef>
 #include <set>
-#include <sstream>
 #include <stack>
 
 #include "include/core/SkLog.h"
@@ -70,6 +70,7 @@ public:
 
     // Default maximum number of bytes of gpu memory of budgeted resources in the cache.
     static const size_t kDefaultMaxSize             = 256 * (1 << 20);
+    static constexpr double kDefaultMaxBytesRate    = 0.9;
 
     /** Used to access functionality needed by GrGpuResource for lifetime management. */
     class ResourceAccess;
@@ -112,6 +113,13 @@ public:
      * Returns the number of bytes consumed by resources.
      */
     size_t getResourceBytes() const { return fBytes; }
+
+#ifdef SKIA_DFX_FOR_OHOS
+    void addAllocImageBytes(size_t bytes) { fAllocImageBytes += bytes; }
+    void removeAllocImageBytes(size_t bytes) { fAllocImageBytes -= bytes; }
+    void addAllocBufferBytes(size_t bytes) { fAllocBufferBytes += bytes; }
+    void removeAllocBufferBytes(size_t bytes) { fAllocBufferBytes -= bytes; }
+#endif
 
     /**
      * Returns the number of bytes held by unlocked resources which are available for purging.
@@ -183,7 +191,8 @@ public:
 
     /** Purges resources to become under budget and processes resources with invalidated unique
         keys. */
-    void purgeAsNeeded();
+    // OH ISSUE: this function can interrupt
+    void purgeAsNeeded(const std::function<bool(void)>& nextFrameHasArrived = nullptr);
 
     // Purge unlocked resources. If 'scratchResourcesOnly' is true the purgeable resources
     // containing persistent data are spared. If it is false then all purgeable resources will
@@ -211,7 +220,11 @@ public:
      */
     bool purgeToMakeHeadroom(size_t desiredHeadroomBytes);
 
-    bool overBudget() const { return fBudgetedBytes > fMaxBytes; }
+    // OH ISSUE: adjust the value when there is an interrupt
+    bool overBudget(const std::function<bool(void)>& nextFrameHasArrived = nullptr) const 
+    {
+        return fBudgetedBytes > (nextFrameHasArrived ? size_t(fMaxBytesRate * fMaxBytes) : fMaxBytes);
+    }
 
     /**
      * Purge unlocked resources from the cache until the the provided byte count has been reached
@@ -293,6 +306,14 @@ public:
 
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const; // Get the tag of all GPU resources
 
+    // OH ISSUE: get the memory information of the updated pid.
+    void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
+    // OH ISSUE: init gpu memory limit.
+    void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
+
+    // OH ISSUE: change the fbyte when the resource tag changes.
+    void changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes);
+
 #ifdef SKIA_DFX_FOR_OHOS
     void dumpInfo(SkString* out);
     std::string cacheInfo();
@@ -305,9 +326,33 @@ public:
         size_t fPurgeableBytes;
         int fBudgetedCount;
         size_t fBudgetedBytes;
+        size_t fAllocImageBytes;
+        size_t fAllocBufferBytes;
     };
 #endif
 #endif
+
+    // OH ISSUE: allow access to release interface
+    bool allowToPurge(const std::function<bool(void)>& nextFrameHasArrived);
+
+    // OH ISSUE: intra frame and inter frame identification
+    void beginFrame() {
+        fFrameInfo.frameCount++;
+        fFrameInfo.duringFrame = 1;
+    }
+
+    // OH ISSUE: intra frame and inter frame identification
+    void endFrame() {
+        fFrameInfo.duringFrame = 0;
+    }
+
+    // OH ISSUE: suppress release window
+    void setGpuCacheSuppressWindowSwitch(bool enabled) {
+        fEnabled = enabled;
+    }
+
+    // OH ISSUE: suppress release window
+    void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
 
 private:
     ///////////////////////////////////////////////////////////////////////////
@@ -343,8 +388,6 @@ private:
     void validate() const {}
 #endif
 
-    void dumpPidResource();
-
 #ifdef SKIA_DFX_FOR_OHOS
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     void traceBeforePurgeUnlockRes(const std::string& method, SimpleCacheInfo& simpleCacheInfo);
@@ -353,6 +396,9 @@ private:
 #endif
     std::string cacheInfoPurgeableQueue();
     std::string cacheInfoNoPurgeableQueue();
+    size_t cacheInfoRealAllocSize();
+    std::string cacheInfoRealAllocQueue();
+    std::string realBytesOfPid();
     void updatePurgeableWidMap(GrGpuResource* resource,
                      std::map<uint32_t, std::string>& nameInfoWid,
                      std::map<uint32_t, int>& sizeInfoWid,
@@ -363,6 +409,19 @@ private:
                      std::map<uint32_t, int>& sizeInfoPid,
                      std::map<uint32_t, int>& countInfoPid);
     void updatePurgeableFidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoFid,
+                     std::map<uint32_t, int>& sizeInfoFid,
+                     std::map<uint32_t, int>& countInfoFid);
+    void updateRealAllocWidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoWid,
+                     std::map<uint32_t, int>& sizeInfoWid,
+                     std::map<uint32_t, int>& pidInfoWid,
+                     std::map<uint32_t, int>& countInfoWid);
+    void updateRealAllocPidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoPid,
+                     std::map<uint32_t, int>& sizeInfoPid,
+                     std::map<uint32_t, int>& countInfoPid);
+    void updateRealAllocFidMap(GrGpuResource* resource,
                      std::map<uint32_t, std::string>& nameInfoFid,
                      std::map<uint32_t, int>& sizeInfoFid,
                      std::map<uint32_t, int>& countInfoFid);
@@ -455,6 +514,7 @@ private:
 
     // our budget, used in purgeAsNeeded()
     size_t                              fMaxBytes = kDefaultMaxSize;
+    double                              fMaxBytesRate = kDefaultMaxBytesRate;
 
 #if GR_CACHE_STATS
     int                                 fHighWaterCount = 0;
@@ -466,6 +526,10 @@ private:
     // our current stats for all resources
     SkDEBUGCODE(int                     fCount = 0;)
     size_t                              fBytes = 0;
+#ifdef SKIA_DFX_FOR_OHOS
+    size_t                              fAllocImageBytes = 0;
+    size_t                              fAllocBufferBytes = 0;
+#endif
 
     // our current stats for resources that count against the budget
     int                                 fBudgetedCount = 0;
@@ -487,6 +551,28 @@ private:
 
     //Indicates the cached resource tags.
     std::stack<GrGpuResourceTag> grResourceTagCacheStack;
+
+    struct {
+        uint32_t duringFrame : 1;
+        uint32_t frameCount : 31;
+    } fFrameInfo = { 0, 0 };
+
+    uint32_t fLastFrameCount = 0;
+
+    uint64_t fStartTime = 0;
+
+    uint64_t fOvertimeDuration = 0;
+
+    bool fEnabled = false;
+
+    // OH ISSUE: stores fBytes of each pid.
+    std::unordered_map<int32_t, size_t> fBytesOfPid;
+    // OH ISSUE: stores the memory information of the updated pid.
+    std::unordered_map<int32_t, size_t> fUpdatedBytesOfPid;
+    // OH ISSUE: gpu memory limit.
+    uint64_t fMemoryControl_ = UINT64_MAX;
+    // OH ISSUE: memory overflow callback.
+    MemoryOverflowCalllback fMemoryOverflowCallback_ = nullptr;
 };
 
 class GrResourceCache::ResourceAccess {
@@ -558,6 +644,12 @@ private:
      * Called by GrGpuResources when they change from budgeted to unbudgeted or vice versa.
      */
     void didChangeBudgetStatus(GrGpuResource* resource) { fCache->didChangeBudgetStatus(resource); }
+
+    // OH ISSUE: change the fbyte when the resource tag changes.
+    void changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes)
+    {
+        fCache->changeByteOfPid(beforePid, afterPid, bytes);
+    }
 
     // No taking addresses of this type.
     const ResourceAccess* operator&() const;

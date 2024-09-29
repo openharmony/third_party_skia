@@ -74,7 +74,10 @@ config("skia_wno") {
 # Skia public API, generally provided by :skia.
 config("skia_public") {
   include_dirs = [ "." ]
-  defines = [ "NEW_SKIA" ]
+  defines = [
+    "NEW_SKIA",
+    "OHOS_SUPPORT",
+  ]
   if (defined(skia_ohos_debug) && skia_ohos_debug) {
     defines += [ "SKIA_OHOS_DEBUG" ]
   }
@@ -90,6 +93,8 @@ config("skia_public") {
       "SKIA_DFX_FOR_OHOS",
     ]
   }
+  defines += [ "OHOS_SUPPORT" ]
+  defines += [ "SKIA_OPTION_UNCLAMPED_COLOR_MATRIX_FILTER" ]
   cflags_objcc = []
   if (is_skia_dev_build) {
     defines += [ "GR_TEST_UTILS=1" ]
@@ -832,7 +837,7 @@ if (use_oh_skia && !is_arkui_x) {
 
     if (graphic_2d_feature_wuji_enable) {
       deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
-    } else if (ace_engine_standard_fonts_enable) {
+    } else if (skia_enable_standard_fonts) {
       deps += [
         "//base/global/system_resources:ohos_fonts",
         "//third_party/noto-cjk:fonts_notocjk",
@@ -1432,7 +1437,11 @@ optional("pdf") {
   if (use_oh_skia) {
     external_deps += [ "zlib:libz" ]
   } else {
-    deps += [ "${skia_third_party_dir}/zlib" ]
+    if (skia_feature_zlib != "") {
+      external_deps += [ skia_feature_zlib ]
+    } else {
+      deps += [ "${skia_third_party_dir}/zlib" ]
+    }
   }
   if (is_ohos && !build_ohos_sdk) {
     external_deps += [ "hitrace:hitrace_meter" ]
@@ -1523,6 +1532,12 @@ optional("typeface_freetype") {
   }
 
   deps = [ "${skia_third_party_dir}/freetype2" ]
+  if (defined(external_deps)) {
+    external_deps += [ "bounds_checking_function:libsec_shared" ]
+  } else {
+    external_deps = [ "bounds_checking_function:libsec_shared" ]
+  }
+
   sources = [
     "src/ports/SkFontHost_FreeType.cpp",
     "src/ports/SkFontHost_FreeType_common.cpp",
@@ -2050,6 +2065,7 @@ if (use_oh_skia) {
         "hitrace:hitrace_meter",
         "init:libbegetutil",
       ]
+      defines += [ "SK_ENABLE_SDF_BLUR_SWITCH" ]
       defines += [ "SK_ENABLE_PATH_COMPLEXITY_DFX" ]
     }
 
@@ -2144,10 +2160,6 @@ if (use_oh_skia) {
       } else {
         defines = [ "NOT_BUILD_FOR_OHOS_SDK" ]
       }
-    }
-
-    if (defined(ddgr_ext_configs)) {
-      defines += ddgr_ext_configs.ddgr_defines
     }
   }
 

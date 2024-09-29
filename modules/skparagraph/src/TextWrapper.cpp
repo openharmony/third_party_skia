@@ -1,19 +1,19 @@
 // Copyright 2019 Google LLC.
-#include "include/ParagraphStyle.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextWrapper.h"
-#include <cfloat>
-#include <cstring>
-#include "Run.h"
+
+#ifdef OHOS_SUPPORT
 #include "log.h"
-#ifdef TXT_USE_PARAMETER
-#include "parameter.h"
+#include "modules/skparagraph/src/TextTabAlign.h"
+#include "TextParameter.h"
 #endif
 
 namespace skia {
 namespace textlayout {
 
 namespace {
+const size_t BREAK_NUM_TWO = 2;
+
 struct LineBreakerWithLittleRounding {
     LineBreakerWithLittleRounding(SkScalar maxWidth, bool applyRoundingHack)
         : fLower(maxWidth - 0.25f)
@@ -88,6 +88,8 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     fClip.startFrom(fEndLine.startCluster(), fEndLine.startPos());
 
     bool isFirstWord = true;
+    TextTabAlign textTabAlign(endOfClusters->getOwner()->paragraphStyle().getTextTab());
+    textTabAlign.init(maxWidth, endOfClusters);
 
     LineBreakerWithLittleRounding breaker(maxWidth, applyRoundingHack);
     Cluster* nextNonBreakingSpace = nullptr;
@@ -108,6 +110,16 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 // It's the end of the word
                 isFirstWord = false;
                 fClusters.extend(cluster);
+
+                bool tabAlignRet = false;
+                if (cluster->isTabulation()) {
+                    tabAlignRet = textTabAlign.processTab(fWords, fClusters, cluster, totalFakeSpacing);
+                } else {
+                    tabAlignRet = textTabAlign.processEndofWord(fWords, fClusters, cluster, totalFakeSpacing);
+                }
+                if (tabAlignRet) {
+                    break;
+                }
                 fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, this->getClustersTrimmedWidth());
                 fWords.extend(fClusters);
                 continue;
@@ -130,6 +142,8 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 }
                 break;
             }
+
+            textTabAlign.processEndofLine(fWords, fClusters, cluster, totalFakeSpacing);
 
             // Walk further to see if there is a too long word, cluster or glyph
             SkScalar nextWordLength = fClusters.width();
@@ -207,12 +221,32 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
             fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, cluster->width());
             fWords.extend(cluster);
         } else {
-            fClusters.extend(cluster);
+            if (cluster->isTabulation()) {
+                if (textTabAlign.processTab(fWords, fClusters, cluster, totalFakeSpacing)) {
+                    break;
+                }
+                fClusters.extend(cluster);
 
-            // Keep adding clusters/words
-            if (fClusters.endOfWord()) {
                 fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
                 fWords.extend(fClusters);
+            } else {
+                fClusters.extend(cluster);
+                if (fClusters.endOfWord()) { // Keep adding clusters/words
+                    if (textTabAlign.processEndofWord(fWords, fClusters, cluster, totalFakeSpacing)) {
+                        if (wordBreakType == WordBreakType::BREAK_ALL) {
+                            fClusters.trim(cluster);
+                        }
+                        break;
+                    }
+
+                    fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
+                    fWords.extend(fClusters);
+                } else {
+                    if (textTabAlign.processCluster(fWords, fClusters, cluster, totalFakeSpacing)) {
+                        fClusters.trim(cluster);
+                        break;
+                    }
+                }
             }
         }
 
@@ -304,7 +338,7 @@ std::tuple<Cluster*, size_t, SkScalar> TextWrapper::trimStartSpaces(Cluster* end
     // It's a soft line break so we need to move lineStart forward skipping all the spaces
     auto width = fEndLine.widthWithGhostSpaces();
     auto cluster = fEndLine.breakCluster() + 1;
-    while (cluster < endOfClusters && cluster->isWhitespaceBreak()) {
+    while (cluster < endOfClusters && cluster->isWhitespaceBreak() && !cluster->isTabulation()) {
         width += cluster->width();
         ++cluster;
     }
@@ -450,8 +484,9 @@ struct TextWrapScorer {
         if (param.breakPos == lastBreakPos_ && param.remainingTextWidth > param.currentMax) {
             // If we were unable to find a break that matches the criteria, insert new one
             // This may happen if there is a long word and per line indent for this particular line
-            breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false));
-            param.breakPos += 2;
+            breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax,
+                Break::BreakType::BREAKTYPE_FORCED, false));
+            param.breakPos += BREAK_NUM_TWO;
         }
 
         LOGD("Line %{public}lu about to loop %{public}f, %{public}lu, %{public}lu, max: %{public}f",
@@ -483,9 +518,11 @@ struct TextWrapScorer {
                 newWidth = std::min(breaks_[--param.breakPos].width - param.begin, param.currentMax);
             }
 
-            if (looped && ((lastBreakPos_ == param.breakPos) || (newWidth/param.currentMax*UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
+            if (looped && ((lastBreakPos_ == param.breakPos) ||
+                (newWidth/param.currentMax*UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
                 LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
-                    static_cast<unsigned long>(param.lineNumber), param.begin, static_cast<unsigned long>(param.breakPos), newWidth, maxWidth_);
+                    static_cast<unsigned long>(param.lineNumber), param.begin,
+                        static_cast<unsigned long>(param.breakPos), newWidth, maxWidth_);
                 break;
             }
 
@@ -583,13 +620,15 @@ private:
         SkScalar width { 0 };
         bool operator==(const Index& other) const
         {
-            return (
-                lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE && fabs(width - other.width) < WIDTH_TOLERANCE);
+            return (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE &&
+                fabs(width - other.width) < WIDTH_TOLERANCE);
         }
         bool operator<(const Index& other) const
         {
-            return lineNumber < other.lineNumber || (lineNumber == other.lineNumber && other.begin - begin > WIDTH_TOLERANCE) ||
-                (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE && other.width - width > WIDTH_TOLERANCE);
+            return lineNumber < other.lineNumber ||
+                (lineNumber == other.lineNumber && other.begin - begin > WIDTH_TOLERANCE) ||
+                (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE &&
+                other.width - width > WIDTH_TOLERANCE);
         }
     };
 
@@ -707,27 +746,20 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     auto disableLastDescent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
     bool firstLine = true; // We only interested in fist line if we have to disable the first ascent
 
-#ifdef OHOS_SUPPORT
-    bool autoSpacingEnableFlag = false;
-#ifdef TXT_USE_PARAMETER
-    static constexpr int AUTO_SPACING_ENABLE_LENGTH = 10;
-    char autoSpacingEnable[AUTO_SPACING_ENABLE_LENGTH] = {0};
-    GetParameter("persist.sys.text.autospacing.enable", "0", autoSpacingEnable, AUTO_SPACING_ENABLE_LENGTH);
-    autoSpacingEnableFlag = std::strcmp(autoSpacingEnable, "0") != 0;
-#endif
+    bool autoSpacingEnableFlag = TextParameter::GetAutoSpacingEnable();
     // Resolve balanced line widths
     std::vector<SkScalar> balancedWidths;
 
     // if word breaking strategy is nontrivial (balanced / optimal), AND word break mode is not BREAK_ALL
-    if (parent->getWordBreakType() != WordBreakType::BREAK_ALL && parent->getLineBreakStrategy() != LineBreakStrategy::GREEDY) {
+    if (parent->getWordBreakType() != WordBreakType::BREAK_ALL &&
+        parent->getLineBreakStrategy() != LineBreakStrategy::GREEDY) {
         if (CalculateBestScore(balancedWidths, maxWidth, parent, maxLines) < 0) {
             // if the line breaking strategy returns a negative score, the algorithm could not fit or break the text
             // fall back to default, greedy algorithm
             balancedWidths.clear();
         }
+        LOGD("Got %{public}lu", static_cast<unsigned long>(balancedWidths.size()));
     }
-    LOGD("Got %{public}lu", static_cast<unsigned long>(balancedWidths.size()));
-#endif
 
     SkScalar softLineMaxIntrinsicWidth = 0;
     fEndLine = TextStretch(span.begin(), span.begin(), parent->strutForceHeight());
@@ -804,7 +836,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         if (disableFirstAscent && firstLine) {
             fEndLine.metrics().fAscent = fEndLine.metrics().fRawAscent;
         }
-        if (disableLastDescent && (lastLine || (startLine == end && !fHardLineBreak ))) {
+        if (disableLastDescent && (lastLine || (startLine == end && !fHardLineBreak))) {
             fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
         }
 
@@ -976,7 +1008,6 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     for (auto cluster = fEndLine.endCluster(); cluster < endOfClusters; ++cluster) {
         if (cluster->isHardBreak()) {
         } else if (
-                // TODO: Trying to deal with flutter rounding problem. Must be removed...
                 SkScalar width = fWords.width() + fClusters.width() + cluster->width();
                 breaker.breakLine(width)) {
             if (cluster->isWhitespaceBreak()) {
@@ -1032,7 +1063,8 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                     if (SkScalar shortLength = fWords.width() + nextShortWordLength;
                         !breaker.breakLine(shortLength)) {
                         // We can add the short word to the existing line
-                        fClusters = TextStretch(fClusters.startCluster(), nextNonBreakingSpace, fClusters.metrics().getForceStrut());
+                        fClusters = TextStretch(fClusters.startCluster(), nextNonBreakingSpace,
+                            fClusters.metrics().getForceStrut());
                         fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, nextShortWordLength);
                         fWords.extend(fClusters);
                     } else {
@@ -1167,7 +1199,6 @@ std::tuple<Cluster*, size_t, SkScalar> TextWrapper::trimStartSpaces(Cluster* end
     }
     return std::make_tuple(cluster, 0, width);
 }
-// TODO: refactor the code for line ending (with/without ellipsis)
 void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                                      SkScalar maxWidth,
                                      const AddLineToParagraph& addLine) {
@@ -1233,7 +1264,6 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         // let's save it for GetRectsForRange(RectHeightStyle::kMax)
         maxRunMetrics = fEndLine.metrics();
         maxRunMetrics.fForceStrut = false;
-        // TODO: keep start/end/break info for text and runs but in a better way that below
         TextRange textExcludingSpaces(fEndLine.startCluster()->textRange().start, fEndLine.endCluster()->textRange().end);
         TextRange text(fEndLine.startCluster()->textRange().start, fEndLine.breakCluster()->textRange().start);
         TextRange textIncludingNewlines(fEndLine.startCluster()->textRange().start, startLine->textRange().start);
@@ -1297,7 +1327,6 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         ++fLineNumber;
     }
     // We finished formatting the text but we need to scan the rest for some numbers
-    // TODO: make it a case of a normal flow
     if (fEndLine.endCluster() != nullptr) {
         auto lastWordLength = 0.0f;
         auto cluster = fEndLine.endCluster();

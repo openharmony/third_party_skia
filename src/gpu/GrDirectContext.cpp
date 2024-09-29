@@ -51,7 +51,6 @@ public:
 #endif
 #ifdef SK_VULKAN
 #include "src/gpu/vk/GrVkGpu.h"
-#include "src/gpu/vk/GrVkImage.h"
 #endif
 #ifdef SK_DIRECT3D
 #include "src/gpu/d3d/GrD3DGpu.h"
@@ -69,41 +68,6 @@ public:
 #endif
 
 #define ASSERT_SINGLE_OWNER GR_ASSERT_SINGLE_OWNER(this->singleOwner())
-
-// OH ISSUE: MemoryCheckManager is used to count the memory in rs
-MemoryCheckManager& MemoryCheckManager::getInstance()
-{
-    static MemoryCheckManager instance;
-    return instance;
-}
-
-void MemoryCheckManager::setMemoryOverCheck(MemoryOverCheckCallback callback)
-{
-    if (fMemoryOverCheck == nullptr) {
-        fMemoryOverCheck = callback;
-    }
-}
-
-void MemoryCheckManager::setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback)
-{
-    if (fRemoveMemoryFromSnapshotInfo == nullptr) {
-        fRemoveMemoryFromSnapshotInfo = callback;
-    }
-}
-
-void MemoryCheckManager::memoryOverCheck(const int32_t pid, const size_t size)
-{
-    if (pid && fMemoryOverCheck) {
-        fMemoryOverCheck(pid, size, true);
-    }
-}
-
-void MemoryCheckManager::removeMemoryFromSnapshotInfo(const int32_t pid, const size_t size)
-{
-    if (pid && fRemoveMemoryFromSnapshotInfo) {
-        fRemoveMemoryFromSnapshotInfo(pid, size);
-    }
-}
 
 GrDirectContext::DirectContextID GrDirectContext::DirectContextID::Next() {
     static std::atomic<uint32_t> nextID{1};
@@ -200,18 +164,6 @@ bool GrDirectContext::abandoned() {
 }
 
 bool GrDirectContext::oomed() { return fGpu ? fGpu->checkAndResetOOMed() : false; }
-
-void GrDirectContext::preAllocateTextureBetweenFrames() {
-#ifdef SK_VULKAN
-    GrVkImage::PreAllocateTextureBetweenFrames();
-#endif
-}
-
-void GrDirectContext::setLastTouchDownTime() {
-#ifdef SK_VULKAN
-    GrVkImage::SetLastTouchDownTime();
-#endif
-}
 
 void GrDirectContext::releaseResourcesAndAbandonContext() {
     if (INHERITED::abandoned()) {
@@ -421,14 +373,11 @@ void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, con
     // The StrikeCache indirectly references typeface, and in order to dereference the typeface,
     // it is necessary to clear the StrikeCache when the application exits.
     fStrikeCache->freeAll();
-#ifdef SK_VULKAN
-    GrVkImage::PurgeAllocatedTextureBetweenFrames();
-#endif
 }
 
-void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly,
-                                              const std::set<int>& exitedPidSet,
-                                              const std::set<int>& protectedPidSet) {
+void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+        const std::set<int>& protectedPidSet)
+{
     ASSERT_SINGLE_OWNER
 
     if (this->abandoned()) {
@@ -436,12 +385,6 @@ void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly,
     }
 
     fResourceCache->purgeCacheBetweenFrames(scratchResourcesOnly, exitedPidSet, protectedPidSet);
-}
-
-void GrDirectContext::asyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
-#ifdef SK_VULKAN
-    GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(nextFrameHasArrived);
-#endif
 }
 
 void GrDirectContext::performDeferredCleanup(std::chrono::milliseconds msNotUsed,
@@ -619,6 +562,22 @@ std::set<GrGpuResourceTag> GrDirectContext::getAllGrGpuResourceTags() const {
     return {};
 }
 
+// OH ISSUE: get the memory information of the updated pid.
+void GrDirectContext::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out)
+{
+    if (fResourceCache) {
+        fResourceCache->getUpdatedMemoryMap(out);
+    }
+}
+
+// OH ISSUE: init gpu memory limit.
+void GrDirectContext::initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size)
+{
+    if (fResourceCache) {
+        fResourceCache->initGpuMemoryLimit(callback, size);
+    }
+}
+
 void GrDirectContext::vmaDefragment()
 {
     if (fGpu) {
@@ -636,16 +595,72 @@ void GrDirectContext::dumpVmaStats(SkString *out)
     }
 }
 
-// OH ISSUE: set callback for memory check
-void GrDirectContext::setMemoryOverCheck(MemoryOverCheckCallback callback)
+// OH ISSUE: intra frame and inter frame identification
+void GrDirectContext::beginFrame()
 {
-    MemoryCheckManager::getInstance().setMemoryOverCheck(callback);
+#ifdef SK_VULKAN
+    if (fResourceCache) {
+        fResourceCache->beginFrame();
+    }
+#endif
 }
 
-// OH ISSUE: set callback for memory count
-void GrDirectContext::setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback)
+// OH ISSUE: intra frame and inter frame identification
+void GrDirectContext::endFrame()
 {
-    MemoryCheckManager::getInstance().setRemoveMemoryFromSnapshotInfo(callback);
+#ifdef SK_VULKAN
+    if (fResourceCache) {
+        fResourceCache->endFrame();
+    }
+#endif
+}
+
+// OH ISSUE: asyn memory reclaimer
+void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
+{
+#ifdef SK_VULKAN
+    if (fGpu) {
+        fGpu->setGpuMemoryAsyncReclaimerSwitch(enabled);
+    }
+#endif
+}
+
+// OH ISSUE: asyn memory reclaimer
+void GrDirectContext::flushGpuMemoryInWaitQueue()
+{
+#ifdef SK_VULKAN
+    if (fGpu) {
+        fGpu->flushGpuMemoryInWaitQueue();
+    }
+#endif
+}
+
+// OH ISSUE: suppress release window
+void GrDirectContext::setGpuCacheSuppressWindowSwitch(bool enabled)
+{
+#ifdef SK_VULKAN
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned()) {
+        return;
+    }
+
+    fResourceCache->setGpuCacheSuppressWindowSwitch(enabled);
+#endif
+}
+
+// OH ISSUE: suppress release window
+void GrDirectContext::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived)
+{
+#ifdef SK_VULKAN
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned()) {
+        return;
+    }
+
+    fResourceCache->suppressGpuCacheBelowCertainRatio(nextFrameHasArrived);
+#endif
 }
 
 GrBackendTexture GrDirectContext::createBackendTexture(int width, int height,

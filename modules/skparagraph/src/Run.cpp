@@ -10,25 +10,16 @@
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skshaper/include/SkShaper.h"
 #include "src/utils/SkUTF.h"
+
+#ifdef OHOS_SUPPORT
+#include "include/FontCollection.h"
 #include "log.h"
-#ifdef TXT_USE_PARAMETER
-#include "parameters.h"
 #endif
 
 namespace skia {
 namespace textlayout {
 constexpr SkScalar PARAM_TWO = 2.0;
 #ifdef OHOS_SUPPORT
-static bool calcHeightWithTopAndBottom()
-{
-#ifdef TXT_USE_PARAMETER
-    static bool topAndBootomEnabled =
-        std::atoi((OHOS::system::GetParameter("persist.sys.text.top_and_bottom.enable", "0")).c_str()) != 0;
-    return topAndBootomEnabled;
-#else
-    return false;
-#endif
-}
 // 1px font size "HarmonyOS Sans" metrics
 constexpr SkScalar DEFAULT_TOP = -1.056;
 constexpr SkScalar DEFAULT_BOTTOM = 0.271;
@@ -39,11 +30,15 @@ struct ScaleParam {
     SkScalar baselineShiftScale;
 };
 // unordered_map<familyName, ScaleParam>: compress <familyName> font height, shift font baseline.
-// target height = (DEFAULT_BOTTOM - DEFAULT_TOP) * font size * ScaleParam.scale.
-// target baseline = -(DEFAULT_BOTTOM - DEFAULT_TOP) * font size * ScaleParam.baselineShiftScale.
+// target font size = font size * ScaleParam.scale.
+// target baseline = baseline - height * font size * ScaleParam.baselineShiftScale.
 const std::unordered_map<std::string, ScaleParam> FONT_FAMILY_COMPRESSION_CONFIG = {
     {"Noto Serif Tibetan", ScaleParam{ .fontScale = 0.79, .baselineShiftScale = 0.1 }},
     {"Noto Sans Tibetan", ScaleParam{ .fontScale = 0.79, .baselineShiftScale = 0.1 }},
+};
+const std::unordered_map<std::string, ScaleParam> FONT_FAMILY_COMPRESSION_WITH_HEIGHT_ADAPTER_CONFIG = {
+    {"Noto Serif Tibetan", ScaleParam{ .fontScale = 0.85, .baselineShiftScale = 0.11 }},
+    {"Noto Sans Tibetan", ScaleParam{ .fontScale = 0.85, .baselineShiftScale = 0.11 }},
 };
 const ScaleParam DEFAULT_SCALE_PARAM = ScaleParam{ .fontScale = 0, .baselineShiftScale = 0 };
 enum FontCompressionStatus {
@@ -63,8 +58,6 @@ const std::unordered_set<std::string> FONT_PADDING_NOT_EFFECT_FAMILY = {
     "Harmony Clock_08",
 // symbol: need to ensure "the symbol height = the font size".
 // so the height compression is not enabled for symbol.
-    "Noto Sans Symbols",
-    "Noto Sans Symbols 2",
     "HM Symbol",
 };
 
@@ -114,9 +107,11 @@ const ScaleParam& findCompressionConfigWithFont(const SkFont& font)
         return DEFAULT_SCALE_PARAM;
     }
 
+    const auto& config = FontCollection::IsAdapterTextHeightEnabled() ?
+        FONT_FAMILY_COMPRESSION_WITH_HEIGHT_ADAPTER_CONFIG : FONT_FAMILY_COMPRESSION_CONFIG;
     std::string familyName = getFamilyNameFromFont(font);
-    auto iter = FONT_FAMILY_COMPRESSION_CONFIG.find(familyName);
-    if (iter == FONT_FAMILY_COMPRESSION_CONFIG.end()) {
+    auto iter = config.find(familyName);
+    if (iter == config.end()) {
         return DEFAULT_SCALE_PARAM;
     }
     return iter->second;
@@ -140,7 +135,7 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
 #else
     SkScalar fontSize = font.getSize();
 #endif
-    if (!calcHeightWithTopAndBottom()) {
+    if (!FontCollection::IsAdapterTextHeightEnabled()) {
         if (fontCompressionStatus == FontCompressionStatus::SYSTEM &&
             !SkScalarNearlyZero(findCompressionConfigWithFont(font).fontScale)) {
             metrics->fAscent = DEFAULT_ASCENT * fontSize;
@@ -148,14 +143,15 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
         }
         return;
     }
-    if (fontCompressionStatus == FontCompressionStatus::SYSTEM) {
-        metrics->fTop = DEFAULT_TOP * fontSize;
-        metrics->fBottom = DEFAULT_BOTTOM * fontSize;
-    }
 
     std::string curFamilyName = getFamilyNameFromFont(font);
     auto setIter = FONT_PADDING_NOT_EFFECT_FAMILY.find(curFamilyName);
     if (setIter == FONT_PADDING_NOT_EFFECT_FAMILY.end()) {
+        if (fontCompressionStatus == FontCompressionStatus::SYSTEM) {
+            metrics->fAscent = DEFAULT_TOP * fontSize;
+            metrics->fDescent = DEFAULT_BOTTOM * fontSize;
+            return;
+        }
         // use top and bottom as ascent and descent.
         // calculate height with top and bottom.(includeFontPadding)
         metrics->fAscent = metrics->fTop;
@@ -497,6 +493,15 @@ void Run::shift(const Cluster* cluster, SkScalar offset) {
         fPositions[cluster->endPos()].fX += offset;
     }
 }
+
+#ifdef OHOS_SUPPORT
+void Run::extendClusterWidth(Cluster* cluster, SkScalar space) {
+    addSpacesAtTheEnd(space, cluster);
+    for (size_t pos = cluster->endPos(); pos < fPositions.size(); pos++) {
+        fPositions[pos].fX += space;
+    }
+}
+#endif
 
 void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
 

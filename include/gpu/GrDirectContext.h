@@ -12,6 +12,8 @@
 
 #include <array>
 
+#include <unordered_map>
+
 #include "include/gpu/GrRecordingContext.h"
 
 #include "include/gpu/GrBackendSurface.h"
@@ -50,31 +52,10 @@ class SkSurfaceProps;
 class SkTaskGroup;
 class SkTraceMemoryDump;
 
+// OH ISSUE: callback for memory protect.
+using MemoryOverflowCalllback = std::function<void(int32_t, size_t, bool)>;
+
 namespace skgpu { namespace v1 { class SmallPathAtlasMgr; }}
-
-// OH ISSUE: add callback for memory count
-using MemoryOverCheckCallback = void(*)(const int32_t, const size_t, bool);
-using RemoveMemoryFromSnapshotInfoCallback = std::function<void(const int32_t, const size_t)>;
-
-// OH ISSUE: this class is used to count the memory in rs
-class MemoryCheckManager {
-public:
-    static MemoryCheckManager& getInstance();
-    void setMemoryOverCheck(MemoryOverCheckCallback callback);
-    void setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback);
-    void memoryOverCheck(const int32_t pid, const size_t size);
-    void removeMemoryFromSnapshotInfo(const int32_t pid, const size_t size);
-private:
-    MemoryCheckManager() = default;
-    ~MemoryCheckManager() = default;
-    MemoryCheckManager(const MemoryCheckManager&) = delete;
-    MemoryCheckManager(const MemoryCheckManager&&) = delete;
-    MemoryCheckManager& operator=(const MemoryCheckManager&) = delete;
-    MemoryCheckManager& operator=(const MemoryCheckManager&&) = delete;
-
-    MemoryOverCheckCallback fMemoryOverCheck = nullptr;
-    RemoveMemoryFromSnapshotInfoCallback fRemoveMemoryFromSnapshotInfo = nullptr;
-};
 
 class SK_API GrDirectContext : public GrRecordingContext {
 public:
@@ -316,9 +297,8 @@ public:
     void purgeUnlockedResources(size_t bytesToPurge, bool preferScratchResources);
     void purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag& tag);
     void purgeUnlockedResourcesByPid(bool scratchResourcesOnly, const std::set<int>& exitedPidSet);
-    void purgeCacheBetweenFrames(bool scratchResourcesOnly,
-                                 const std::set<int>& exitedPidSet,
-                                 const std::set<int>& protectedPidSet);
+    void purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+        const std::set<int>& protectedPidSet);
     void purgeUnlockAndSafeCacheGpuResources();
 
     std::array<int, 2> CalcHpsBluredImageDimension(const SkBlurArg& blurArg);
@@ -336,8 +316,6 @@ public:
      *                               enforcing the budget requirements.
      */
     void purgeUnlockedResources(bool scratchResourcesOnly);
-
-    static void asyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived);
 
     /**
      * Gets the maximum supported texture size.
@@ -452,9 +430,6 @@ public:
 
     void storeVkPipelineCacheData();
 
-    static void preAllocateTextureBetweenFrames();
-
-    static void setLastTouchDownTime();
     /**
      * Retrieve the default GrBackendFormat for a given SkColorType and renderability.
      * It is guaranteed that this backend format will be the one used by the following
@@ -900,27 +875,25 @@ public:
      */
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const;
 
-    class SK_API ResourceCollector {
-    public:
-        virtual void collectSurfaceProxy(sk_sp<GrSurfaceProxy>& surface) = 0;
-    };
-
-    void setResourceCollector(ResourceCollector* collector) {
-        fResourceCollector = collector;
-    }
-
-    void collectResource(sk_sp<GrSurfaceProxy>& surface) {
-        if (fResourceCollector != nullptr) {
-            fResourceCollector->collectSurfaceProxy(surface);
-        }
-    }
-
     void vmaDefragment();
     void dumpVmaStats(SkString *out);
 
-    // OH ISSUE: set callback for memory count
-    void setMemoryOverCheck(MemoryOverCheckCallback callback);
-    void setRemoveMemoryFromSnapshotInfo(RemoveMemoryFromSnapshotInfoCallback callback);
+    // OH ISSUE: get the memory information of the updated pid.
+    void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
+    // OH ISSUE: init gpu memory limit.
+    void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
+
+    // OH ISSUE: intra frame and inter frame identification
+    void beginFrame();
+    void endFrame();
+    
+    // OH ISSUE: asyn memory reclaimer
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled);
+    void flushGpuMemoryInWaitQueue();
+
+    // OH ISSUE: suppress release window
+    void setGpuCacheSuppressWindowSwitch(bool enabled);
+    void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
 
 protected:
     GrDirectContext(GrBackendApi backend, const GrContextOptions& options);
@@ -967,8 +940,6 @@ private:
     std::unique_ptr<GrAtlasManager> fAtlasManager;
 
     std::unique_ptr<skgpu::v1::SmallPathAtlasMgr> fSmallPathAtlasMgr;
-
-    ResourceCollector* fResourceCollector = nullptr;
 
     friend class GrDirectContextPriv;
 

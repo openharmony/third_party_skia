@@ -7,12 +7,21 @@
 
 #include "src/gpu/vk/GrVkAMDMemoryAllocator.h"
 
+#include <semaphore>
+
+#include "include/core/SkExecutor.h"
 #include "include/gpu/vk/GrVkExtensions.h"
 #include "src/core/SkTraceEvent.h"
 #include "src/gpu/vk/GrVkInterface.h"
 #include "src/gpu/vk/GrVkMemory.h"
 #include "src/gpu/vk/GrVkUtil.h"
 #include "src/core/SkUtils.h"
+
+static std::binary_semaphore reversedBlockSem(1);
+static SkExecutor& GetThreadPool() {
+    static std::unique_ptr<SkExecutor> executor = SkExecutor::MakeFIFOThreadPool(1, false);
+    return *executor;
+}
 
 #ifndef SK_USE_VMA
 sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
@@ -65,7 +74,7 @@ sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
     GR_COPY_FUNCTION_KHR(GetPhysicalDeviceMemoryProperties2);
 
     VmaAllocatorCreateInfo info;
-    info.flags = VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT;
+    info.flags = 0; // OH ISSUE: enable vma lock protect
     if (physicalDeviceVersion >= VK_MAKE_VERSION(1, 1, 0) ||
         (extensions->hasExtension(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME, 1) &&
          extensions->hasExtension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, 1))) {
@@ -97,15 +106,29 @@ sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
     vmaCreateAllocator(&info, &allocator);
 
     return sk_sp<GrVkAMDMemoryAllocator>(new GrVkAMDMemoryAllocator(
+#ifdef NOT_USE_PRE_ALLOC
             allocator, std::move(interface), caps->mustUseCoherentHostVisibleMemory()));
+#else
+            allocator, std::move(interface), caps->mustUseCoherentHostVisibleMemory(), cacheFlag));
+#endif
 }
 
 GrVkAMDMemoryAllocator::GrVkAMDMemoryAllocator(VmaAllocator allocator,
                                                sk_sp<const GrVkInterface> interface,
+#ifdef NOT_USE_PRE_ALLOC
                                                bool mustUseCoherentHostVisibleMemory)
+#else
+                                               bool mustUseCoherentHostVisibleMemory,
+                                               bool cacheFlag)
+#endif
         : fAllocator(allocator)
         , fInterface(std::move(interface))
+#ifdef NOT_USE_PRE_ALLOC
         , fMustUseCoherentHostVisibleMemory(mustUseCoherentHostVisibleMemory) {}
+#else
+        , fMustUseCoherentHostVisibleMemory(mustUseCoherentHostVisibleMemory)
+        , fCacheFlag(cacheFlag) {}
+#endif
 
 GrVkAMDMemoryAllocator::~GrVkAMDMemoryAllocator() {
     vmaDestroyAllocator(fAllocator);
@@ -140,6 +163,48 @@ VkResult GrVkAMDMemoryAllocator::allocateImageMemory(VkImage image, AllocationPr
     VkResult result = vmaAllocateMemoryForImage(fAllocator, image, &info, &allocation, nullptr);
     if (VK_SUCCESS == result) {
         *backendMemory = (GrVkBackendMemory)allocation;
+    }
+
+    bool newBlockflag = false;
+    vmaGetNewBlockStats(allocation, &newBlockflag);
+    if (newBlockflag && fCacheFlag && SkGetPreAllocFlag()) {
+        vmaClearNewBlockStats(allocation);
+        reversedBlockSem.acquire();
+        VkResult result2 = vmaSwapReservedBlock(fAllocator, image, &info, &allocation, nullptr);
+        if (result2 == VK_NOT_READY) {
+            GetThreadPool().add([=] {
+                VmaAllocation ReservedAllocation;
+                VkImage fakeImage;
+                reversedBlockSem.acquire();
+                vmaCreateFakeImage(fAllocator, &fakeImage);
+                vmaAllocateReservedMemoryForImage(fAllocator, fakeImage, &info, &ReservedAllocation, nullptr);
+                vmaBindImageMemory(fAllocator, ReservedAllocation, fakeImage);
+                vmaDestroyFakeImage(fAllocator, fakeImage);
+                vmaFreeReservedMemory(fAllocator, ReservedAllocation);
+                reversedBlockSem.release();
+            });
+            reversedBlockSem.release();
+            return result;
+        }
+        if (result2 == VK_SUCCESS) {
+            GetThreadPool().add([=] {
+                VkImage fakeImage;
+                reversedBlockSem.acquire();
+                vmaCreateFakeImage(fAllocator, &fakeImage);
+                vmaBindImageMemory(fAllocator, allocation, fakeImage);
+                vmaDestroyFakeImage(fAllocator, fakeImage);
+                vmaFreeReservedMemory(fAllocator, allocation);
+                reversedBlockSem.release();
+            });
+            VmaAllocation newAllocation;
+            VkResult result3 = vmaAllocateMemoryForImage(fAllocator, image, &info, &newAllocation, nullptr);
+            if (result3 == VK_SUCCESS) {
+                *backendMemory = (GrVkBackendMemory)newAllocation;
+            }
+            reversedBlockSem.release();
+            return result3;
+        }
+        reversedBlockSem.release();
     }
     return result;
 }
@@ -321,6 +386,9 @@ void GrVkAMDMemoryAllocator::dumpVmaStats(SkString *out, const char *sep) const
 
 void GrVkAMDMemoryAllocator::vmaDefragment()
 {
+    if (!fCacheFlag) {
+        return;
+    }
     bool flag = SkGetVmaDefragmentOn();
     if (!flag) {
         return;

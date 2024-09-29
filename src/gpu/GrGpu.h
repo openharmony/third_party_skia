@@ -442,8 +442,9 @@ void popGrResourceTag()
     virtual void releaseUnlockedBackendObjects() {}
 
     virtual std::array<int, 2> GetHpsDimension(const SkBlurArg& blurArg) const { return {0, 0}; }
-
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
     const int TEXT_UPLOAD_TIME = 500;
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     // Debugging and Stats
@@ -677,6 +678,10 @@ void popGrResourceTag()
 
     virtual void vmaDefragment() {}
     virtual void dumpVmaStats(SkString *out) {}
+
+    // OH ISSUE: asyn memory reclaimer
+    virtual void setGpuMemoryAsyncReclaimerSwitch(bool enabled) {}
+    virtual void flushGpuMemoryInWaitQueue() {}
 
 protected:
     static bool CompressedDataIsCorrect(SkISize dimensions,

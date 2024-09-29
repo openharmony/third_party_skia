@@ -5,8 +5,8 @@
 #include "modules/skparagraph/include/FontCollection.h"
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
-#include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/include/TextLineBase.h"
+#include "modules/skparagraph/include/TextStyle.h"
 #include <unordered_set>
 #include "drawing.h"
 
@@ -42,7 +42,8 @@ public:
 
     SkScalar getLongestLineWithIndent() { return fLongestLineWithIndent; }
 
-    void setLongestLineWithIndent(SkScalar longestLineWithIndent) {
+    void setLongestLineWithIndent(SkScalar longestLineWithIndent)
+    {
         fLongestLineWithIndent = longestLineWithIndent;
     }
 
@@ -84,6 +85,8 @@ public:
     virtual void getLineMetrics(std::vector<LineMetrics>&) = 0;
 
     virtual size_t lineNumber() = 0;
+
+    virtual TextRange getEllipsisTextRange() = 0;
 
     virtual void markDirty() = 0;
 
@@ -226,6 +229,15 @@ public:
 #endif
     virtual std::vector<std::unique_ptr<TextLineBase>> GetTextLines() = 0;
     virtual std::unique_ptr<Paragraph> CloneSelf() = 0;
+
+#ifdef OHOS_SUPPORT
+    virtual size_t getUnicodeIndex(TextIndex index) const = 0;
+    virtual const std::vector<SkUnichar>& unicodeText() const = 0;
+    virtual std::unique_ptr<Paragraph> createCroppedCopy(
+            size_t startIndex, size_t count = std::numeric_limits<size_t>::max()) = 0;
+    virtual void initUnicodeText() = 0;
+    virtual size_t GetMaxLines() const = 0;
+#endif
 
 protected:
     sk_sp<FontCollection> fFontCollection;

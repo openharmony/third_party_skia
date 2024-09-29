@@ -724,43 +724,34 @@ GrFPResult GrFragmentProcessor::Circle(std::unique_ptr<GrFragmentProcessor> inpu
 GrFPResult GrFragmentProcessor::CircleSDF(std::unique_ptr<GrFragmentProcessor> inputFP,
     GrClipEdgeType edgeType, SkPoint center, float radius)
 {
-    // A radius below half causes the implicit insetting done by this processor to become
-    // inverted. We could handle this case by making the processor code more complicated.
     if (radius < .5f && GrClipEdgeTypeIsInverseFill(edgeType)) {
         return GrFPFailure(std::move(inputFP));
     }
 
-    SkDebugf("Skia: GrFragmentProcessor get into CircleSDF.");
     static auto effect = SkMakeRuntimeEffect(SkRuntimeEffect::MakeForShader, CLIP_EDGE_SKSL R"(
-        uniform int edgeType;  // GrClipEdgeType, specialized
-        // The circle uniform is (center.x, center.y, radius + 0.5, 1 / (radius + 0.5)) for regular
-        // fills and (..., radius - 0.5, 1 / (radius - 0.5)) for inverse fills.
+        uniform int edgeType;
         uniform float4 circle;
 
         half4 main(float2 xy, half4 inColor) {
-            // TODO: Right now the distance to circle calculation is performed in a space normalized
-            // to the radius and then denormalized. This is to mitigate overflow on devices that
-            // don't have full float.
             float2 localXY = (sk_FragCoord.xy - circle.xy) / (circle.z - 0.5);
             float dfLocalD_recip = (circle.z - 0.5) / (2.0 * (abs(localXY.x) + abs(localXY.y)));
-            half d;
+            half d = 0;
             if (edgeType == kInverseFillBW || edgeType == kInverseFillAA) {
                 d = (dot(localXY, localXY) - 1.0) * dfLocalD_recip - 0.5;
             } else {
                 d = 0.5 - (dot(localXY, localXY) - 1.0) * dfLocalD_recip;
             }
             if (edgeType == kFillAA || edgeType == kInverseFillAA) {
-                return inColor * saturate(d);
+                return saturate(d) * inColor;
             } else {
                 return d > 0.5 ? inColor : half4(0);
             }
         }
     )");
-
+    // Avoid inf * 0 in the shader.
     SkScalar effectiveRadius = radius;
     if (GrClipEdgeTypeIsInverseFill(edgeType)) {
         effectiveRadius -= 0.5f;
-        // When the radius is 0.5 effectiveRadius is 0 which causes an inf * 0 in the shader.
         effectiveRadius = std::max(0.001f, effectiveRadius);
     } else {
         effectiveRadius += 0.5f;

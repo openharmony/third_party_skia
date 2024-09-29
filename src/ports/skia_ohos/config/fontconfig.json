@@ -33,6 +33,26 @@
         {
           "weight": 200, "to": 900
         }
+      ],
+      "font-variations": [
+        {
+          "weight": 100, "wght": 100
+        },
+        {
+          "weight": 300, "wght": 247
+        },
+        {
+          "weight": 400, "wght": 400
+        },
+        {
+          "weight": 500, "wght": 500
+        },
+        {
+          "weight": 700, "wght": 706
+        },
+        {
+          "weight": 900, "wght": 844
+        }
       ]
     },
     {
@@ -40,6 +60,26 @@
       "alias": [
         {
           "HarmonyOS-Sans-Condensed": 0
+        }
+      ],
+      "font-variations": [
+        {
+          "weight": 100, "wght": 100
+        },
+        {
+          "weight": 300, "wght": 247
+        },
+        {
+          "weight": 400, "wght": 400
+        },
+        {
+          "weight": 500, "wght": 500
+        },
+        {
+          "weight": 700, "wght": 706
+        },
+        {
+          "weight": 900, "wght": 844
         }
       ]
     },
@@ -78,7 +118,27 @@
           "": "Noto Sans"
         },
         {
-          "und-Arab": "HarmonyOS Sans Naskh Arabic UI"
+          "und-Arab": "HarmonyOS Sans Naskh Arabic UI",
+          "font-variations": [
+            {
+              "weight": 100, "wght": 100
+            },
+            {
+              "weight": 300, "wght": 247
+            },
+            {
+              "weight": 400, "wght": 400
+            },
+            {
+              "weight": 500, "wght": 500
+            },
+            {
+              "weight": 700, "wght": 706
+            },
+            {
+              "weight": 900, "wght": 844
+            }
+          ]
         },
         {
           "und-Ethi": "Noto Sans Ethiopic"
@@ -336,10 +396,53 @@
           "und-Vaii": "Noto Sans Vai"
         },
         {
-          "zh-Hans": "HarmonyOS Sans SC"
+          "zh-Hans": "HarmonyOS Sans SC",
+          "font-variations": [
+            {
+              "weight": 100, "wght": 100
+            },
+            {
+              "weight": 300, "wght": 247
+            },
+            {
+              "weight": 400, "wght": 400
+            },
+            {
+              "weight": 500, "wght": 500
+            },
+            {
+              "weight": 600, "wght": 603
+            },
+            {
+              "weight": 700, "wght": 706
+            },
+            {
+              "weight": 900, "wght": 844
+            }
+          ]
         },
         {
-          "zh-Hant": "HarmonyOS Sans TC"
+          "zh-Hant": "HarmonyOS Sans TC",
+          "font-variations": [
+            {
+              "weight": 100, "wght": 100
+            },
+            {
+              "weight": 300, "wght": 247
+            },
+            {
+              "weight": 400, "wght": 400
+            },
+            {
+              "weight": 500, "wght": 500
+            },
+            {
+              "weight": 700, "wght": 706
+            },
+            {
+              "weight": 900, "wght": 844
+            }
+          ]
         },
         {
           "ja": "Noto Sans CJK JP"
@@ -472,29 +575,29 @@
         },
         {
           "und-Math": "Noto Sans Math"
+        },
+        {
+          "und-Zmth": "DejaVu Math TeX Gyre"
+        },
+        {
+          "und-Zsym": "FTSymbol"
+        },
+        {
+          "und-Zsym": "FTToken"
+        },
+        {
+          "und-Zsym": "FTToken2"
+        },
+        {
+          "und-Zsym": "FTToken3"
+        },
+        {
+          "und-Zsym": "FTTokens"
         }
       ]
     }
   ],
   "font_file_map" : [
-    {
-      "DejaVuMathTeXGyre-Regular": "DejaVuMathTeXGyre.ttf"
-    },
-    {
-      "FTSymbol": "FTSymbol.ttf"
-    },
-    {
-      "FTToken": "FTToken.ttf"
-    },
-    {
-      "FTToken2": "FTToken2.ttf"
-    },
-    {
-      "FTToken3": "FTToken3.ttf"
-    },
-    {
-      "FTTokens": "FTTokens.ttf"
-    },
     {
       "方正仿宋-简": "FZFangS-SC.ttf"
     },

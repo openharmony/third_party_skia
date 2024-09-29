@@ -111,10 +111,17 @@ public:
         kBlenderInEffects                   = 88,
         kNoExpandingClipOps                 = 89,
         kBackdropScaleFactor                = 90,
+#ifdef SKIA_OPTION_UNCLAMPED_COLOR_MATRIX_FILTER
+        kUnclampedMatrixColorFilter         = 91,
+#endif
 
         // Only SKPs within the min/current picture version range (inclusive) can be read.
         kMin_Version     = kPictureShaderFilterParam_Version,
+#ifdef SKIA_OPTION_UNCLAMPED_COLOR_MATRIX_FILTER
+        kCurrent_Version = kUnclampedMatrixColorFilter
+#else
         kCurrent_Version = kBackdropScaleFactor
+#endif
     };
 };
 

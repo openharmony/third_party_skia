@@ -13,6 +13,7 @@
 #include "src/gpu/vk/GrVkDescriptorSet.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkMemory.h"
+#include "src/gpu/vk/GrVkMemoryReclaimer.h"
 #include "src/gpu/vk/GrVkUtil.h"
 
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
@@ -31,6 +32,8 @@ GrVkBuffer::GrVkBuffer(GrVkGpu* gpu,
     // We always require dynamic buffers to be mappable
     SkASSERT(accessPattern != kDynamic_GrAccessPattern || this->isVkMappable());
     SkASSERT(bufferType != GrGpuBufferType::kUniform || uniformDescriptorSet);
+    this->setRealAlloc(true); // OH ISSUE: set real alloc flag
+    this->setRealAllocSize(sizeInBytes); // OH ISSUE: set real alloc size
     this->registerWithCache(SkBudgeted::kYes);
 }
 
@@ -132,7 +135,11 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
         return nullptr;
     }
 
+#ifdef SKIA_DFX_FOR_OHOS
+    if (!GrVkMemory::AllocAndBindBufferMemory(gpu, buffer, allocUsage, &alloc, size)) {
+#else
     if (!GrVkMemory::AllocAndBindBufferMemory(gpu, buffer, allocUsage, &alloc)) {
+#endif
         VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
         return nullptr;
     }
@@ -142,8 +149,7 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
     if (bufferType == GrGpuBufferType::kUniform) {
         uniformDescSet = make_uniform_desc_set(gpu, buffer, size);
         if (!uniformDescSet) {
-            VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
-            GrVkMemory::FreeBufferMemory(gpu, alloc);
+            DestroyAndFreeBufferMemory(gpu, alloc, buffer);
             return nullptr;
         }
     }
@@ -159,18 +165,10 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
                                                      GrAccessPattern accessPattern) {
     SkASSERT(gpu);
     SkASSERT(nativeBuffer);
- 
+
     VkBuffer buffer;
     GrVkAlloc alloc;
- 
-    // The only time we don't require mappable buffers is when we have a static access pattern and
-    // we're on a device where gpu only memory has faster reads on the gpu than memory that is also
-    // mappable on the cpu. Protected memory always uses mappable buffers.
-    bool requiresMappable = gpu->protectedContext() ||
-                            accessPattern == kDynamic_GrAccessPattern ||
-                            accessPattern == kStream_GrAccessPattern ||
-                            !gpu->vkCaps().gpuOnlyBuffersMorePerformant();
- 
+
     // create the buffer object
     VkBufferCreateInfo bufInfo{};
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -196,27 +194,37 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
             bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             break;
     }
-    // We may not always get a mappable buffer for non dynamic access buffers. Thus we set the
-    // transfer dst usage bit in case we need to do a copy to write data.
+
+    bool requiresMappable = gpu->protectedContext() ||
+                            accessPattern == kDynamic_GrAccessPattern ||
+                            accessPattern == kStream_GrAccessPattern ||
+                            !gpu->vkCaps().gpuOnlyBuffersMorePerformant();
     if (!requiresMappable) {
         bufInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     }
- 
+
     bufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     bufInfo.queueFamilyIndexCount = 0;
     bufInfo.pQueueFamilyIndices = nullptr;
- 
+
     VkResult err = VK_CALL(gpu, CreateBuffer(gpu->device(), &bufInfo, nullptr, &buffer));
     if (err) {
         return nullptr;
     }
- 
+
     if (!GrVkMemory::ImportAndBindBufferMemory(gpu, nativeBuffer, buffer, &alloc)) {
         VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
         return nullptr;
     }
- 
+
     return sk_sp<GrVkBuffer>(new GrVkBuffer(gpu, bufferSize, bufferType, accessPattern, buffer, alloc, nullptr));
+}
+
+// OH ISSUE: Integrate Destroy and Free
+void GrVkBuffer::DestroyAndFreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkBuffer& buffer)
+{
+    VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
+    GrVkMemory::FreeBufferMemory(gpu, alloc);
 }
 
 void GrVkBuffer::vkMap(size_t size) {
@@ -330,10 +338,14 @@ void GrVkBuffer::vkRelease() {
 
     SkASSERT(fBuffer);
     SkASSERT(fAlloc.fMemory && fAlloc.fBackendMemory);
-    VK_CALL(this->getVkGpu(), DestroyBuffer(this->getVkGpu()->device(), fBuffer, nullptr));
-    fBuffer = VK_NULL_HANDLE;
 
-    GrVkMemory::FreeBufferMemory(this->getVkGpu(), fAlloc);
+    // OH ISSUE: asyn memory reclaimer
+    auto reclaimer = this->getVkGpu()->memoryReclaimer();
+    if (!reclaimer || !reclaimer->addMemoryToWaitQueue(this->getVkGpu(), fAlloc, fBuffer)) {
+        DestroyAndFreeBufferMemory(this->getVkGpu(), fAlloc, fBuffer);
+    }
+
+    fBuffer = VK_NULL_HANDLE;
     fAlloc.fMemory = VK_NULL_HANDLE;
     fAlloc.fBackendMemory = 0;
 }

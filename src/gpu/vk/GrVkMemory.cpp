@@ -41,86 +41,15 @@ static bool FindMemoryType(GrVkGpu *gpu, uint32_t typeFilter, VkMemoryPropertyFl
     return hasFound;
 }
 
-GrVkMemory::AsyncFreeVMAMemoryManager::AsyncFreeVMAMemoryManager() {
-    fAsyncFreedMemoryEnabled =
-            (std::atoi(OHOS::system::GetParameter(
-                               "persist.sys.graphic.mem.async_free_between_frames_enabled", "1")
-                               .c_str()) != 0);
-}
-
-GrVkMemory::AsyncFreeVMAMemoryManager& GrVkMemory::AsyncFreeVMAMemoryManager::GetInstance() {
-    static GrVkMemory::AsyncFreeVMAMemoryManager asyncFreeVMAMemoryManager;
-    return asyncFreeVMAMemoryManager;
-}
-
-void GrVkMemory::AsyncFreeVMAMemoryManager::FreeMemoryInWaitQueue(std::function<bool(void)> nextFrameHasArrived) {
-    if (!fAsyncFreedMemoryEnabled) {
-        return;
-    }
-    std::lock_guard<std::mutex> guard(fWaitQueuesLock);
-    thread_local pid_t tid = gettid();
-    for (auto& pair : fWaitQueues) {
-        if (tid != pair.first) {
-            continue;
-        }
-        while (!pair.second.fQueue.empty()) {
-            auto& free = pair.second.fQueue.back();
-            if (free.fIsBuffer && free.fAlloc.fIsExternalMemory) {
-                VK_CALL(free.fGpu, FreeMemory(free.fGpu->device(), free.fAlloc.fMemory, nullptr));
-            } else {
-                GrVkMemoryAllocator* allocator = free.fGpu->memoryAllocator();
-                if (free.fAlloc.fAllocator != nullptr) {
-                    allocator = free.fAlloc.fAllocator;
-                }
-                allocator->freeMemory(free.fAlloc.fBackendMemory);
-            }
-            pair.second.fTotalFreedMemorySize -= free.fAlloc.fSize;
-            pair.second.fQueue.pop_back();
-            if (nextFrameHasArrived()) {
-                return;
-            }
-        }
-        return;
-    }
-    fWaitQueues.emplace_back(tid, AsyncFreeVMAMemoryManager::FreeVMAMemoryWaitQueue());
-}
-
-bool GrVkMemory::AsyncFreeVMAMemoryManager::AddMemoryToWaitQueue(const GrVkGpu* gpu,
-                                                                 const GrVkAlloc& alloc,
-                                                                 bool isBuffer) {
-    if (!fAsyncFreedMemoryEnabled) {
-        return false;
-    }
-    if (alloc.fSize > fThresholdFreedMemorySize) {
-        return false;
-    }
-    std::lock_guard<std::mutex> guard(fWaitQueuesLock);
-    thread_local pid_t tid = gettid();
-    for (auto& pair : fWaitQueues) {
-        if (tid != pair.first) {
-            continue;
-        }
-        if ((pair.second.fTotalFreedMemorySize + alloc.fSize) > fLimitFreedMemorySize) {
-            return false;
-        }
-        if (!isBuffer || !alloc.fIsExternalMemory) {
-            SkASSERT(alloc.fBackendMemory);
-        }
-        pair.second.fTotalFreedMemorySize += alloc.fSize;
-        pair.second.fQueue.emplace_back(gpu, alloc, isBuffer);
-        return true;
-    }
-    return false;
-}
-
-void GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
-    AsyncFreeVMAMemoryManager::GetInstance().FreeMemoryInWaitQueue(nextFrameHasArrived);
-}
-
 bool GrVkMemory::AllocAndBindBufferMemory(GrVkGpu* gpu,
                                           VkBuffer buffer,
                                           BufferUsage usage,
+#ifdef SKIA_DFX_FOR_OHOS
+                                          GrVkAlloc* alloc,
+                                          size_t size) {
+#else
                                           GrVkAlloc* alloc) {
+#endif
     GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
     GrVkBackendMemory memory = 0;
 
@@ -140,6 +69,11 @@ bool GrVkMemory::AllocAndBindBufferMemory(GrVkGpu* gpu,
         return false;
     }
     allocator->getAllocInfo(memory, alloc);
+
+#ifdef SKIA_DFX_FOR_OHOS
+    alloc->fBytes = size;
+    gpu->addAllocBufferBytes(size);
+#endif
 
     // Bind buffer
     VkResult err;
@@ -210,9 +144,9 @@ bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
 }
 
 void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
-    if (AsyncFreeVMAMemoryManager::GetInstance().AddMemoryToWaitQueue(gpu, alloc, true)) {
-        return;
-    }
+#ifdef SKIA_DFX_FOR_OHOS
+    ((GrVkGpu*)gpu)->removeAllocBufferBytes(alloc.fBytes);
+#endif
     if (alloc.fIsExternalMemory) {
         VK_CALL(gpu, FreeMemory(gpu->device(), alloc.fMemory, nullptr));
     } else {
@@ -240,7 +174,8 @@ bool GrVkMemory::AllocAndBindImageMemory(GrVkGpu* gpu,
     }
 
     VkMemoryRequirements memReqs;
-    HITRACE_OHOS_NAME_ALWAYS("AllocAndBindImageMemory");
+    HITRACE_OHOS_NAME_FMT_ALWAYS("AllocAndBindImageMemory vmaCacheFlag %d memSizeOver %d",
+                                  vmaCacheFlag, memorySize > SkGetNeedCachedMemroySize());
     GR_VK_CALL(gpu->vkInterface(), GetImageMemoryRequirements(gpu->device(), image, &memReqs));
 
     AllocationPropertyFlags propFlags;
@@ -264,29 +199,39 @@ bool GrVkMemory::AllocAndBindImageMemory(GrVkGpu* gpu,
         propFlags |= AllocationPropertyFlags::kLazyAllocation;
     }
 
-    VkResult result = allocator->allocateImageMemory(image, propFlags, &memory);
-    if (!gpu->checkVkResult(result)) {
-        return false;
+    { // OH ISSUE: add trace for vulkan interface
+        HITRACE_OHOS_NAME_ALWAYS("allocateImageMemory");
+        VkResult result = allocator->allocateImageMemory(image, propFlags, &memory);
+        if (!gpu->checkVkResult(result)) {
+            return false;
+        }
     }
 
     allocator->getAllocInfo(memory, alloc);
+#ifdef SKIA_DFX_FOR_OHOS
+    alloc->fBytes = memorySize;
+    gpu->addAllocImageBytes(memorySize);
+#endif
 
-    // Bind buffer
-    VkResult err;
-    GR_VK_CALL_RESULT(gpu, err, BindImageMemory(gpu->device(), image, alloc->fMemory,
-                                                alloc->fOffset));
-    if (err) {
-        FreeImageMemory(gpu, *alloc);
-        return false;
+    { // OH ISSUE: add trace for vulkan interface
+        HITRACE_OHOS_NAME_ALWAYS("BindImageMemory");
+        // Bind buffer
+        VkResult err;
+        GR_VK_CALL_RESULT(gpu, err, BindImageMemory(gpu->device(), image, alloc->fMemory,
+                                                    alloc->fOffset));
+        if (err) {
+            FreeImageMemory(gpu, *alloc);
+            return false;
+        }
     }
 
     return true;
 }
 
 void GrVkMemory::FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
-    if (AsyncFreeVMAMemoryManager::GetInstance().AddMemoryToWaitQueue(gpu, alloc, false)) {
-        return;
-    }
+#ifdef SKIA_DFX_FOR_OHOS
+    ((GrVkGpu*)gpu)->removeAllocImageBytes(alloc.fBytes);
+#endif
     SkASSERT(alloc.fBackendMemory);
     GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
     if (alloc.fAllocator != nullptr) {

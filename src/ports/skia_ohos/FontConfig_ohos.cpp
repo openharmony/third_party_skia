@@ -5,12 +5,12 @@
 #include "FontConfig_ohos.h"
 
 #include<array>
+#include <cstring>
 #include <dirent.h>
 #include <libgen.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <cstring>
 
 #ifdef SK_BUILD_FONT_MGR_FOR_OHOS
 #include <parameters.h>
@@ -158,6 +158,12 @@ int FontConfig_OHOS::getTypefaceCount(int styleIndex, bool isFallback) const
 SkTypeface_OHOS* FontConfig_OHOS::getTypeface(int styleIndex, int index,
     bool isFallback) const
 {
+    sk_sp<SkTypeface_OHOS> typeface = getTypefaceSP(styleIndex, index, isFallback);
+    return (typeface == nullptr) ? nullptr : typeface.get();
+}
+
+sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getTypefaceSP(int styleIndex, int index, bool isFallback) const
+{
     if (styleIndex < 0 || index < 0 ||
         (isFallback && (unsigned int)styleIndex >= fallbackSet.size()) ||
         (!isFallback && (unsigned int)styleIndex >= genericFamilySet.size())) {
@@ -166,12 +172,12 @@ SkTypeface_OHOS* FontConfig_OHOS::getTypeface(int styleIndex, int index,
     if (isFallback) {
         const TypefaceSet& tpSet = *(fallbackSet[styleIndex]->typefaceSet.get());
         if ((unsigned int)index < tpSet.size()) {
-            return tpSet[index].get();
+            return tpSet[index];
         }
     } else {
         const TypefaceSet& tpSet = *(genericFamilySet[styleIndex]->typefaceSet.get());
         if ((unsigned int)index < tpSet.size()) {
-            return tpSet[index].get();
+            return tpSet[index];
         }
     }
     return nullptr;
@@ -287,26 +293,23 @@ uint32_t FontConfig_OHOS::getFontStyleDifference(const SkFontStyle& dstStyle,
     // If dstWidth > kNormal_Width, first check wider values, then narrower values.
     // When dstWidth and srcWidth are at different side of kNormal_Width,
     // the width difference between them should be more than 5 (9/2+1)
+    constexpr int kWidthDiffThreshold = 9 / 2 + 1;
     if (dstWidth <= normalWidth) {
-        if (srcWidth <= dstWidth) {
-            widthDiff = dstWidth - srcWidth;
-        } else {
-            widthDiff = srcWidth - dstWidth + 5;
-        }
+        widthDiff = (srcWidth <= dstWidth) ? (dstWidth - srcWidth)
+                                           : (srcWidth - dstWidth + kWidthDiffThreshold);
     } else {
-        if (srcWidth >= dstWidth) {
-            widthDiff = srcWidth - dstWidth;
-        } else {
-            widthDiff = dstWidth - srcWidth + 5;
-        }
+        widthDiff = (srcWidth >= dstWidth) ? (srcWidth - dstWidth)
+                                           : (dstWidth - srcWidth + kWidthDiffThreshold);
     }
 
-    int diffSlantValue[3][3] = {
+    constexpr int SLANT_RANGE = 3;
+    int diffSlantValue[SLANT_RANGE][SLANT_RANGE] = {
         {0, 2, 1},
         {2, 0, 1},
         {2, 1, 0}
     };
-    if (dstStyle.slant() < 0 || dstStyle.slant() >= 3 || srcStyle.slant() < 0 || srcStyle.slant() >= 3) {
+    if (dstStyle.slant() < 0 || dstStyle.slant() >= SLANT_RANGE ||
+        srcStyle.slant() < 0 || srcStyle.slant() >= SLANT_RANGE) {
         LOGE("Slant out of range, dst:%{public}d, src:%{public}d", dstStyle.slant(), srcStyle.slant());
         return 0;
     }
@@ -318,21 +321,16 @@ uint32_t FontConfig_OHOS::getFontStyleDifference(const SkFontStyle& dstStyle,
 
     // The maximum weight is kExtraBlack_Weight (1000), when dstWeight and srcWeight are at the different
     // side of kNormal_Weight, the weight difference between them should be more than 500 (1000/2)
+    constexpr int kWeightDiffThreshold = 1000 / 2;
     if ((dstWeight == SkFontStyle::kNormal_Weight && srcWeight == SkFontStyle::kMedium_Weight) ||
         (dstWeight == SkFontStyle::kMedium_Weight && srcWeight == SkFontStyle::kNormal_Weight)) {
         weightDiff = 50;
     } else if (dstWeight <= SkFontStyle::kNormal_Weight) {
-        if (srcWeight <= dstWeight) {
-            weightDiff = dstWeight - srcWeight;
-        } else {
-            weightDiff = srcWeight - dstWeight + 500;
-        }
+        weightDiff = (srcWeight <= dstWeight) ? (dstWeight - srcWeight)
+                                              : (srcWeight - dstWeight + kWeightDiffThreshold);
     } else if (dstWeight > SkFontStyle::kNormal_Weight) {
-        if (srcWeight >= dstWeight) {
-            weightDiff = srcWeight - dstWeight;
-        } else {
-            weightDiff = dstWeight - srcWeight + 500;
-        }
+        weightDiff = (srcWeight >= dstWeight) ? (srcWeight - dstWeight)
+                                              : (dstWeight - srcWeight + kWeightDiffThreshold);
     }
     // The first 2 bytes to save weight difference, the third byte to save slant difference,
     // and the fourth byte to save width difference
@@ -536,7 +534,8 @@ int FontConfig_OHOS::parseFontDir(const char* fname, const Json::Value& root)
             if (strcmp(fname, OHOS_DEFAULT_CONFIG) == 0) {
                 dir = strcmp(root[i].asCString(), "/system/fonts/") ? root[i].asCString() : "fonts";
             } else {
-                dir = strcmp(root[i].asCString(), "/system/fonts/") ? root[i].asCString() : "../../../../hms/previewer/resources/fonts";
+                dir = strcmp(root[i].asCString(), "/system/fonts/") ?
+                    root[i].asCString() : "../../../../hms/previewer/resources/fonts";
             }
 #else
             dir = root[i].asCString();
@@ -1071,7 +1070,7 @@ int FontConfig_OHOS::scanFonts(const SkTypeface_FreeType::Scanner& fontScanner)
         fontDirSet.emplace_back(SkString("fonts"));
 #else
         fontDirSet.emplace_back(SkString("/system/fonts/"));
-#endif        
+#endif
     }
     for (unsigned int i = 0; i < fontDirSet.size(); i++) {
         DIR* dir = opendir(fontDirSet[i].c_str());

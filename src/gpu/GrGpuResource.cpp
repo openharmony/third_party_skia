@@ -237,12 +237,11 @@ void GrGpuResource::setResourceTag(const GrGpuResourceTag tag)
 {
     int32_t pid = fGrResourceTag.fPid;
     fGrResourceTag = tag;
-    if (pid == tag.fPid) {
+    if (pid == tag.fPid || !fRealAlloc) {
         return;
     }
     size_t size = this->gpuMemorySize();
-    MemoryCheckManager::getInstance().memoryOverCheck(tag.fPid, size);
-    MemoryCheckManager::getInstance().removeMemoryFromSnapshotInfo(pid, size);
+    get_resource_cache(fGpu)->resourceAccess().changeByteOfPid(pid, tag.fPid, fRealAllocSize);
 }
 
 //////////////////////////////////////////////////////////////////////////////

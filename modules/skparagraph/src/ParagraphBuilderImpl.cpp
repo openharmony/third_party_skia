@@ -8,6 +8,9 @@
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/src/ParagraphBuilderImpl.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
+#ifdef OHOS_SUPPORT
+#include "modules/skparagraph/src/ParagraphLineFetcherImpl.h"
+#endif
 
 #include <algorithm>
 #include <utility>
@@ -198,6 +201,17 @@ std::unique_ptr<Paragraph> ParagraphBuilderImpl::Build() {
     return std::make_unique<ParagraphImpl>(
             fUtf8, fParagraphStyle, fStyledBlocks, fPlaceholders, fFontCollection, fUnicode);
 }
+
+#ifdef OHOS_SUPPORT
+std::unique_ptr<ParagraphLineFetcher> ParagraphBuilderImpl::buildLineFetcher() {
+    if (fUtf8.isEmpty()) {
+        return nullptr;
+    }
+    fParagraphStyle.setMaxLines(1);
+    fParagraphStyle.setTextAlign(TextAlign::kLeft);
+    return std::make_unique<ParagraphLineFetcherImpl>(Build());
+}
+#endif
 
 SkSpan<char> ParagraphBuilderImpl::getText() {
     this->finalize();
