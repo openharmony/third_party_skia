@@ -1174,7 +1174,6 @@ optional("gpu") {
       if (use_oh_skia) {
         external_deps = [
           "egl:libEGL",
-          "hitrace:hitrace_meter",
           "opengles:libGLES",
         ]
         external_deps += [
@@ -1322,7 +1321,10 @@ optional("gpu") {
   }
 
   if (is_ohos) {
-    external_deps += [ "hilog:libhilog" ]
+    external_deps += [
+      "hilog:libhilog",
+      "hitrace:hitrace_meter",
+    ]
   }
 }
 

@@ -23,7 +23,6 @@
 #include "include/core/SkScalar.h"
 
 #ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
-#include "hitrace_meter.h"
 #include <parameters.h>
 
 class SkPathComplexityDfx {

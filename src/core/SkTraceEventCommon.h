@@ -63,6 +63,9 @@
 
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
 #define TRACE_EVENT0(cg, n) TRACE_EMPTY
 #define TRACE_EVENT0_ALWAYS(cg, n) TRACE_EMPTY
 #define TRACE_EVENT1(cg, n, a1n, a1v) TRACE_EMPTY
@@ -138,6 +141,9 @@ public:
 
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) SkAndroidFrameworkTraceUtil __trace(true, fmt, ##__VA_ARGS__)
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) SkAndroidFrameworkTraceUtilAlways __trace_always(fmt, ##__VA_ARGS__)
+#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
 
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. In the framework, the arguments are ignored.
@@ -197,6 +203,9 @@ public:
 #define UNLIKELY(exp) (__builtin_expect((exp) != 0, false))
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_ALWAYS(name) HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name)
+#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) \
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, ##__VA_ARGS__)
 
 // print ohos trace without SKIA_OHOS_DEBUG macro
 #define SKIA_OHOS_TRACE_PRIV(category_group, name) \
@@ -238,8 +247,11 @@ public:
 #define TRACE_COUNTER2(category_group, name, value1_name, value1_val, value2_name, value2_val) \
     do { \
         if (UNLIKELY(IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP))) { \
-            CountTrace(HITRACE_TAG_GRAPHIC_AGP, name "-" value1_name, value1_val); \
-            CountTrace(HITRACE_TAG_GRAPHIC_AGP, name "-" value2_name, value2_val); \
+            std::string tid = std::to_string(gettid()); \
+            std::string threadValue1Name = tid + "-" + name + "-" + value1_name; \
+            std::string threadValue2Name = tid + "-" + name + "-" + value2_name; \
+            CountTrace(HITRACE_TAG_GRAPHIC_AGP, threadValue1Name, value1_val); \
+            CountTrace(HITRACE_TAG_GRAPHIC_AGP, threadValue2Name, value2_val); \
         } \
     } while (0)
 #else
@@ -266,6 +278,8 @@ public:
 
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
 #define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
 
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
