@@ -33,6 +33,26 @@
         {
           "weight": 200, "to": 900
         }
+      ],
+      "font-variations": [
+        {
+          "weight": 100, "wght": 100
+        },
+        {
+          "weight": 300, "wght": 247
+        },
+        {
+          "weight": 400, "wght": 400
+        },
+        {
+          "weight": 500, "wght": 500
+        },
+        {
+          "weight": 700, "wght": 706
+        },
+        {
+          "weight": 900, "wght": 844
+        }
       ]
     },
     {
@@ -40,6 +60,26 @@
       "alias": [
         {
           "HarmonyOS-Sans-Condensed": 0
+        }
+      ],
+      "font-variations": [
+        {
+          "weight": 100, "wght": 100
+        },
+        {
+          "weight": 300, "wght": 247
+        },
+        {
+          "weight": 400, "wght": 400
+        },
+        {
+          "weight": 500, "wght": 500
+        },
+        {
+          "weight": 700, "wght": 706
+        },
+        {
+          "weight": 900, "wght": 844
         }
       ]
     },
@@ -78,6 +118,26 @@
           "": "Noto Sans"
         },
         {
+          "font-variations": [
+            {
+              "weight": 100, "wght": 100
+            },
+            {
+              "weight": 300, "wght": 247
+            },
+            {
+              "weight": 400, "wght": 400
+            },
+            {
+              "weight": 500, "wght": 500
+            },
+            {
+              "weight": 700, "wght": 706
+            },
+            {
+              "weight": 900, "wght": 844
+            }
+          ],
           "und-Arab": "HarmonyOS Sans Naskh Arabic UI"
         },
         {
@@ -336,9 +396,52 @@
           "und-Vaii": "Noto Sans Vai"
         },
         {
+          "font-variations": [
+            {
+              "weight": 100, "wght": 100
+            },
+            {
+              "weight": 300, "wght": 247
+            },
+            {
+              "weight": 400, "wght": 400
+            },
+            {
+              "weight": 500, "wght": 500
+            },
+            {
+              "weight": 600, "wght": 603
+            },
+            {
+              "weight": 700, "wght": 706
+            },
+            {
+              "weight": 900, "wght": 844
+            }
+          ],
           "zh-Hans": "HarmonyOS Sans SC"
         },
         {
+          "font-variations": [
+            {
+              "weight": 100, "wght": 100
+            },
+            {
+              "weight": 300, "wght": 247
+            },
+            {
+              "weight": 400, "wght": 400
+            },
+            {
+              "weight": 500, "wght": 500
+            },
+            {
+              "weight": 700, "wght": 706
+            },
+            {
+              "weight": 900, "wght": 844
+            }
+          ],
           "zh-Hant": "HarmonyOS Sans TC"
         },
         {
