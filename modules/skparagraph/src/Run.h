@@ -493,19 +493,25 @@ public:
         fForceStrut = false;
     }
 
-#ifndef USE_SKIA_TXT
+#ifdef OHOS_SUPPORT
+#ifdef USE_SKIA_TXT
+    InternalLineMetrics(const RSFont& font, bool forceStrut) {
+        RSFontMetrics metrics;
+        auto compressFont = font;
+        scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+        compressFont.GetMetrics(&metrics);
+#else
+    InternalLineMetrics(const SkFont& font, bool forceStrut) {
+        SkFontMetrics metrics;
+        auto compressFont = font;
+        scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+        compressFont.getMetrics(&metrics);
+#endif
+        metricsIncludeFontPadding(&metrics, font);
+#else
     InternalLineMetrics(const SkFont& font, bool forceStrut) {
         SkFontMetrics metrics;
         font.getMetrics(&metrics);
-#else
-    InternalLineMetrics(const RSFont& font, bool forceStrut) {
-        RSFontMetrics metrics;
-        font.GetMetrics(&metrics);
-#endif
-#ifdef OHOS_SUPPORT
-        auto decompressFont = font;
-        scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
-        metricsIncludeFontPadding(&metrics, decompressFont);
 #endif
         fAscent = metrics.fAscent;
         fDescent = metrics.fDescent;
