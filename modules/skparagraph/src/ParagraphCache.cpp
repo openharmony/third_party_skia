@@ -392,6 +392,9 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
 }
 
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE("ParagraphCache::GetStoredLayout");
+#endif
     SkAutoMutexExclusive lock(fParagraphMutex);
     auto key = ParagraphCacheKey(&paragraph);
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
