@@ -1316,7 +1316,8 @@ TextBox ParagraphImpl::getEmptyTextRect(RectHeightStyle rectHeightStyle) const
             box.rect.fTop = fEmptyMetrics.delta() + verticalShift;
             return box;
         case RectHeightStyle::kStrut:
-            if (fParagraphStyle.getStrutStyle().getStrutEnabled() && fParagraphStyle.getStrutStyle().getFontSize() > 0) {
+            if (fParagraphStyle.getStrutStyle().getStrutEnabled() &&
+                fParagraphStyle.getStrutStyle().getFontSize() > 0) {
                 auto baseline = fEmptyMetrics.baseline();
                 box.rect.fTop = baseline + fStrutMetrics.ascent();
                 box.rect.fBottom = baseline + fStrutMetrics.descent();
