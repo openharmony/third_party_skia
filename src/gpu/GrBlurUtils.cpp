@@ -32,6 +32,7 @@
 #include "src/core/SkMatrixProvider.h"
 #include "src/core/SkSDFFilter.h"
 #include "src/core/SkTLazy.h"
+#include "src/core/SkTraceEvent.h"
 #include "src/gpu/SkGr.h"
 
 static bool clip_bounds_quick_reject(const SkIRect& clipBounds, const SkIRect& rect) {
@@ -422,6 +423,11 @@ static GrSurfaceProxyView hw_create_filtered_mask(GrDirectContext* dContext,
             SkASSERT(cachedView.origin() == kMaskOrigin);
 
             *maskRect = extract_draw_rect_from_data(data.get(), unclippedDevShapeBounds);
+        #ifdef SKIA_OHOS_FOR_OHOS_TRACE
+            if (SDFBlur::GetSDFBlurDebugTraceEnabled()) {
+                HITRACE_OHOS_NAME_ALWAYS("hw_create_filtered_mask cache hit successful");
+            }
+        #endif
             return cachedView;
         }
     }
@@ -447,11 +453,17 @@ static GrSurfaceProxyView hw_create_filtered_mask(GrDirectContext* dContext,
     SkRRect srcRRect;
     bool inverted;
     if (canUseSDFBlur && shape.asRRect(&srcRRect, nullptr, nullptr, &inverted)) {
+        HITRACE_OHOS_NAME_ALWAYS("hw_create_filtered_mask: cache hit failed, do SDFBlur");
         filteredMaskView = filter->filterMaskGPUNoxFormed(dContext, maskSDC->readSurfaceView(),
                                                           maskSDC->colorInfo().colorType(),
                                                           maskSDC->colorInfo().alphaType(),
                                                           viewMatrix, *maskRect, srcRRect);
     } else {
+    #ifdef SKIA_OHOS_FOR_OHOS_TRACE
+        if (SDFBlur::GetSDFBlurDebugTraceEnabled()) {
+            HITRACE_OHOS_NAME_ALWAYS("hw_create_filtered_mask: cache hit failed, do GaussianBlur");
+        }
+    #endif
         filteredMaskView = filter->filterMaskGPU(dContext, maskSDC->readSurfaceView(),
                                                  maskSDC->colorInfo().colorType(),
                                                  maskSDC->colorInfo().alphaType(),
@@ -506,9 +518,8 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     }
 
     bool canUseSDFBlur = SDFBlur::isSDFBlur(*shape) && (paint.numTotalFragmentProcessors() == 0);
-
-    if (!canUseSDFBlur && maskFilter->directFilterMaskGPU(rContext, sdc, std::move(paint), clip,
-                                        viewMatrix, *shape)) {
+    if (!canUseSDFBlur &&
+        maskFilter->directFilterMaskGPU(rContext, sdc, std::move(paint), clip, viewMatrix, *shape)) {
         // the mask filter was able to draw itself directly, so there's nothing
         // left to do.
         return;
@@ -575,6 +586,11 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     // Either HW mask rendering failed or we're in a DDL recording thread
     if (canUseSDFBlur) {
         // Update Key With ViewMatrix
+        if (!get_shape_and_clip_bounds(sdc, clip, *shape, viewMatrix, &unclippedDevShapeBounds, &devClipBounds)) {
+            if (!inverseFilled) {
+                return;
+            }
+        }
         if (!compute_key_and_clip_bounds(&maskKey, &boundsForClip, sdc->caps(), viewMatrix, inverseFilled, maskFilter,
             *shape, unclippedDevShapeBounds, devClipBounds)) {
                 return;
