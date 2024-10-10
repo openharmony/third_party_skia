@@ -31,6 +31,8 @@ GrVkBuffer::GrVkBuffer(GrVkGpu* gpu,
     // We always require dynamic buffers to be mappable
     SkASSERT(accessPattern != kDynamic_GrAccessPattern || this->isVkMappable());
     SkASSERT(bufferType != GrGpuBufferType::kUniform || uniformDescriptorSet);
+    this->setRealAlloc(true); // OH ISSUE: set real alloc flag
+    this->setRealAllocSize(sizeInBytes); // OH ISSUE: set real alloc size
     this->registerWithCache(SkBudgeted::kYes);
 }
 

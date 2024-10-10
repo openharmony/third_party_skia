@@ -15,6 +15,7 @@
 
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
 constexpr uint32_t VKIMAGE_LIMIT_SIZE = 10000 * 10000; // Vk-Image Size need less than 10000*10000
+constexpr uint32_t PIXEL_SIZE = 4; // 4 bytes per pixel
 
 sk_sp<GrVkImage> GrVkImage::MakeStencil(GrVkGpu* gpu,
                                         SkISize dimensions,
@@ -228,6 +229,8 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
         , fTextureView(std::move(textureView))
         , fIsBorrowed(false) {
     this->init(gpu, false);
+    this->setRealAlloc(true); // OH ISSUE: set real alloc flag
+    this->setRealAllocSize(dimensions.height() * dimensions.width() * PIXEL_SIZE); // OH ISSUE: set real alloc size
     this->registerWithCache(budgeted);
 }
 
