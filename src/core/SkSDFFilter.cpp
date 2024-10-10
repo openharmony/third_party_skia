@@ -17,13 +17,42 @@
 #include "src/gpu/SkGr.h"
 #include "src/gpu/effects/GrBlendFragmentProcessor.h"
 
+#ifdef SK_ENABLE_SDF_BLUR_SWITCH
+#include <parameters.h>
+#endif
+
 namespace SDFBlur {
+
+static bool GetSDFBlurEnabled()
+{
+#ifdef SK_ENABLE_SDF_BLUR_SWITCH
+    constexpr int enableFlag = 1;
+    static bool enabled = std::atoi(
+        (OHOS::system::GetParameter("persist.sys.graphic.SDFBlurEnabled", "1")).c_str()) == enableFlag;
+    return enabled;
+#else
+    return false;
+#endif
+}
+
+bool GetSDFBlurDebugTraceEnabled()
+{
+#ifdef SK_ENABLE_SDF_BLUR_SWITCH
+    constexpr int enableFlag = 1;
+    static bool enabled = std::atoi(
+        (OHOS::system::GetParameter("persist.sys.graphic.SDFBlurDebugTraceEnabled", "0")).c_str()) == enableFlag;
+    return enabled;
+#else
+    return false;
+#endif
+}
+
 // Only the equal Radii RRect use SDFblur.
 bool isSDFBlur(const GrStyledShape& shape)
 {
     SkRRect srcRRect;
     bool inverted;
-    if (!shape.asRRect(&srcRRect, nullptr, nullptr, &inverted) || inverted ||
+    if (!GetSDFBlurEnabled() || !shape.asRRect(&srcRRect, nullptr, nullptr, &inverted) || inverted ||
         (!(srcRRect.getType() == SkRRect::kSimple_Type) && !(srcRRect.getType() == SkRRect::kNinePatch_Type))) {
         return false;
     }
