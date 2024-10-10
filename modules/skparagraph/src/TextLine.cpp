@@ -1481,7 +1481,8 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
     if (styleType == StyleType::kNone) {
         ClipContext clipContext = correctContext(textRange, 0.0f);
 #ifdef OHOS_SUPPORT
-        if (clipContext.clip.height() > 0 || (run->isPlaceholder() && clipContext.clip.height() == 0)) {
+        if (clipContext.clip.height() > 0 ||
+            (run->isPlaceholder() && SkScalarNearlyZero(clipContext.clip.height()))) {
 #else
         if (clipContext.clip.height() > 0) {
 #endif
