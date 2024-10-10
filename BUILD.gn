@@ -388,7 +388,6 @@ template("optional") {
       if (defined(invoker.configs)) {
         configs += invoker.configs
       }
-      all_dependent_configs = [ ":" + target_name + "_public" ]
       public_configs = [ ":" + target_name + "_public" ]
     }
     if (defined(invoker.sources_for_tests) && skia_enable_tools) {
@@ -422,7 +421,6 @@ template("optional") {
           deps = []
         }
         deps += [ ":test" ]
-        all_dependent_configs = [ ":" + target_name + "_public" ]
         public_configs = [ ":" + target_name + "_public" ]
       }
     }
@@ -2489,7 +2487,6 @@ if (skia_enable_tools) {
 
     # Bots and even devs may not have Vulkan headers, so put
     # include/third_party/vulkan on our path so they're always available.
-    all_dependent_configs = [ ":our_vulkan_headers" ]
     public_configs = [ ":our_vulkan_headers" ]
     defines = []
     if (skia_enable_discrete_gpu) {
