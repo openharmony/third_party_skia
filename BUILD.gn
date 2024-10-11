@@ -1423,7 +1423,7 @@ optional("pdf") {
   public_defines = [ "SK_SUPPORT_PDF" ]
   deps = []
   external_deps = []
-  if (use_oh_skia) {
+  if (is_mingw) {
     external_deps += [ "zlib:libz" ]
   } else {
     deps += [ "${skia_third_party_dir}/zlib" ]
