@@ -79,7 +79,7 @@ sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
     // many small allocations. The AMD allocator will start making blocks at 1/8 the max size and
     // builds up block size as needed before capping at the max set here.
     if (cacheFlag) {
-        info.preferredLargeHeapBlockSize = SkGetVmaBlockSizeMB() * 1024 * 1024;
+        info.preferredLargeHeapBlockSize = SkGetVmaBlockSizeMB() * 1024 * 1024; // 1024 = 1K
     } else {
         info.preferredLargeHeapBlockSize = 4 * 1024 * 1024;
     }

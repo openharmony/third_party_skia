@@ -101,7 +101,8 @@ private:
         "kXferGpuToCpu Buffer",
         "kUniform Buffer",
     };
-    const char* getResourceType() const override {
+    const char* getResourceType() const override
+    {
         return fGpuBufferTypeName[static_cast<int>(fIntendedType)];
     }
 #else
