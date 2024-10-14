@@ -28,6 +28,9 @@ class GrVkMemoryAllocator;
  */
 struct GrVkAlloc {
     GrVkMemoryAllocator* fAllocator = nullptr;
+#ifdef SKIA_DFX_FOR_OHOS
+    VkDeviceSize      fBytes = 0;
+#endif
     // can be VK_NULL_HANDLE iff is an RT and is borrowed
     VkDeviceMemory    fMemory = VK_NULL_HANDLE;
     VkDeviceSize      fOffset = 0;

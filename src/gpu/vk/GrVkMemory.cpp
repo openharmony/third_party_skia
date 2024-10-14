@@ -119,7 +119,12 @@ void GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextF
 bool GrVkMemory::AllocAndBindBufferMemory(GrVkGpu* gpu,
                                           VkBuffer buffer,
                                           BufferUsage usage,
+#ifdef SKIA_DFX_FOR_OHOS
+                                          GrVkAlloc* alloc,
+                                          size_t size) {
+#else
                                           GrVkAlloc* alloc) {
+#endif
     GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
     GrVkBackendMemory memory = 0;
 
@@ -139,6 +144,11 @@ bool GrVkMemory::AllocAndBindBufferMemory(GrVkGpu* gpu,
         return false;
     }
     allocator->getAllocInfo(memory, alloc);
+
+#ifdef SKIA_DFX_FOR_OHOS
+    alloc->fBytes = size;
+    gpu->addAllocBufferBytes(size);
+#endif
 
     // Bind buffer
     VkResult err;
@@ -209,6 +219,9 @@ bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
 }
 
 void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
+#ifdef SKIA_DFX_FOR_OHOS
+    ((GrVkGpu*)gpu)->removeAllocBufferBytes(alloc.fBytes);
+#endif
     if (AsyncFreeVMAMemoryManager::GetInstance().AddMemoryToWaitQueue(gpu, alloc, true)) {
         return;
     }
@@ -263,26 +276,39 @@ bool GrVkMemory::AllocAndBindImageMemory(GrVkGpu* gpu,
         propFlags |= AllocationPropertyFlags::kLazyAllocation;
     }
 
-    VkResult result = allocator->allocateImageMemory(image, propFlags, &memory);
-    if (!gpu->checkVkResult(result)) {
-        return false;
-    }
+    { // OH ISSUE: add trace for vulkan interface
+        HITRACE_OHOS_NAME_ALWAYS("allocateImageMemory");
+        VkResult result = allocator->allocateImageMemory(image, propFlags, &memory);
+        if (!gpu->checkVkResult(result)) {
+            return false;
+        }
+     }
 
     allocator->getAllocInfo(memory, alloc);
+#ifdef SKIA_DFX_FOR_OHOS
+    alloc->fBytes = memorySize;
+    gpu->addAllocImageBytes(memorySize);
+#endif
 
-    // Bind buffer
-    VkResult err;
-    GR_VK_CALL_RESULT(gpu, err, BindImageMemory(gpu->device(), image, alloc->fMemory,
-                                                alloc->fOffset));
-    if (err) {
-        FreeImageMemory(gpu, *alloc);
-        return false;
-    }
+    { // OH ISSUE: add trace for vulkan interface
+        HITRACE_OHOS_NAME_ALWAYS("BindImageMemory");
+        // Bind buffer
+        VkResult err;
+        GR_VK_CALL_RESULT(gpu, err, BindImageMemory(gpu->device(), image, alloc->fMemory,
+                                                    alloc->fOffset));
+        if (err) {
+            FreeImageMemory(gpu, *alloc);
+            return false;
+        }
+     }
 
     return true;
 }
 
 void GrVkMemory::FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
+#ifdef SKIA_DFX_FOR_OHOS
+    ((GrVkGpu*)gpu)->removeAllocImageBytes(alloc.fBytes);
+#endif
     if (AsyncFreeVMAMemoryManager::GetInstance().AddMemoryToWaitQueue(gpu, alloc, false)) {
         return;
     }
