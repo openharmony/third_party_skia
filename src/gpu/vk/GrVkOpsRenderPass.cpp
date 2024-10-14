@@ -878,9 +878,6 @@ void GrVkOpsRenderPass::onExecuteDrawable(std::unique_ptr<SkDrawable::GpuDrawHan
     fGpu->addDrawable(std::move(drawable));
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
 void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxyView& proxyView, const SkBlurArg& blurArg)
 {
     if (!proxyView.proxy()) {
