@@ -12,8 +12,6 @@
 
 #include <array>
 
-#include <unordered_map>
-
 #include "include/gpu/GrRecordingContext.h"
 
 #include "include/gpu/GrBackendSurface.h"
@@ -297,9 +295,8 @@ public:
     void purgeUnlockedResources(size_t bytesToPurge, bool preferScratchResources);
     void purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag& tag);
     void purgeUnlockedResourcesByPid(bool scratchResourcesOnly, const std::set<int>& exitedPidSet);
-    void purgeCacheBetweenFrames(bool scratchResourcesOnly,
-                                 const std::set<int>& exitedPidSet,
-                                 const std::set<int>& protectedPidSet);
+    void purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+        const std::set<int>& protectedPidSet);
     void purgeUnlockAndSafeCacheGpuResources();
 
     std::array<int, 2> CalcHpsBluredImageDimension(const SkBlurArg& blurArg);
