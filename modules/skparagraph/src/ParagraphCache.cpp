@@ -393,7 +393,7 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
 
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
 #ifdef OHOS_SUPPORT
-    TEXT_TRACE("ParagraphCache::GetStoredLayout");
+    TEXT_TRACE_FUNC();
 #endif
     SkAutoMutexExclusive lock(fParagraphMutex);
     auto key = ParagraphCacheKey(&paragraph);
@@ -442,7 +442,7 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
 
 bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
 #ifdef OHOS_SUPPORT
-    TEXT_TRACE("ParagraphCache::findParagraph");
+    TEXT_TRACE_FUNC();
 #endif
     if (!fCacheIsOn) {
         return false;

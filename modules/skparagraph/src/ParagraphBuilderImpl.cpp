@@ -62,7 +62,7 @@ ParagraphBuilderImpl::~ParagraphBuilderImpl() = default;
 
 void ParagraphBuilderImpl::pushStyle(const TextStyle& style) {
 #ifdef OHOS_SUPPORT
-    TEXT_TRACE("ParagraphBuilderImpl::pushStyle");
+    TEXT_TRACE_FUNC();
 #endif
     fTextStyles.push_back(style);
     if (!fStyledBlocks.empty() && fStyledBlocks.back().fRange.end == fUtf8.size() &&
@@ -187,7 +187,7 @@ void ParagraphBuilderImpl::finalize() {
 
 std::unique_ptr<Paragraph> ParagraphBuilderImpl::Build() {
 #ifdef OHOS_SUPPORT
-    TEXT_TRACE("ParagraphBuilderImpl::Build");
+    TEXT_TRACE_FUNC();
 #endif
     this->finalize();
     // Add one fake placeholder with the rest of the text

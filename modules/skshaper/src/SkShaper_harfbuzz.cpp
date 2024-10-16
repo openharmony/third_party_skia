@@ -1513,7 +1513,7 @@ ShapedRun ShaperHarfBuzz::shape(char const * const utf8,
                                   Feature const * const features, size_t const featuresSize) const
 {
 #ifdef OHOS_SUPPORT
-    TEXT_TRACE("ShaperHarfBuzz::shape");
+    TEXT_TRACE_FUNC();
 #endif
     size_t utf8runLength = utf8End - utf8Start;
     ShapedRun run(RunHandler::Range(utf8Start - utf8, utf8runLength),
