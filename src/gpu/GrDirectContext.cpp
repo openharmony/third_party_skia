@@ -576,6 +576,23 @@ void GrDirectContext::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &o
     }
 }
 
+// OH ISSUE: init gpu memory limit.
+void GrDirectContext::initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size)
+{
+    if (fResourceCache) {
+        fResourceCache->initGpuMemoryLimit(callback, size);
+    }
+}
+
+// OH ISSUE: check whether the PID is abnormal.
+bool GrDirectContext::isPidAbnormal() const
+{
+    if (fResourceCache) {
+        return fResourceCache->isPidAbnormal();
+    }
+    return false;
+}
+
 void GrDirectContext::vmaDefragment()
 {
     if (fGpu) {
