@@ -683,7 +683,7 @@ bool OneLineShaper::shape() {
             this->matchResolvedFonts(block.fStyle, [&](std::shared_ptr<RSTypeface> typeface) {
 #endif
 #ifdef OHOS_SUPPORT
-                TEXT_TRACE_FUNC();
+                TEXT_TRACE("OneLineShaper::HandleTypeface");
 #endif
                 // Create one more font to try
 #ifndef USE_SKIA_TXT
