@@ -69,7 +69,8 @@ void GetSDFBlurScaleFactor(const SkRRect srcRRect, const SkMatrix& viewMatrix, S
     constexpr float sizeThreshold = 500.f;
     int srcRRectW = srcRRect.rect().width();
     int srcRRectH = srcRRect.rect().height();
-    // When the input size is greater than the threshold, it needs to be scaled. scale factor will be clamped in [1.0, 2.0].
+    // When the input size is greater than the threshold, it needs to be scaled.
+    // scale factor will be clamped in [1.0, 2.0].
     int scaleX = std::max(minScaleFactor, std::min(std::ceil(srcRRectW / sizeThreshold), maxScaleFactor));
     int scaleY = std::max(minScaleFactor, std::min(std::ceil(srcRRectH / sizeThreshold), maxScaleFactor));
     sx = SK_Scalar1 / scaleX;
@@ -110,6 +111,7 @@ bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext
         "fp", std::move(inputFp), "colorPaint", origColor);
 
     auto paintFP = GrBlendFragmentProcessor::Make(std::move(inputFP), nullptr, SkBlendMode::kSrc);
+
     #ifndef SK_IGNORE_GPU_DITHER
     paintFP = make_dither_effect(rContext, std::move(paintFP), ditherRange, rContext->priv().caps());
     #endif
@@ -133,10 +135,10 @@ static std::unique_ptr<skgpu::v1::SurfaceDrawContext> sdf_2d(GrRecordingContext*
 
     GrPaint paint;
     auto sdfFp = GrSDFBlurEffect::Make(rContext, noxFormedSigma, srcRRect);
-
     if (!sdfFp) {
         return nullptr;
     }
+    
     paint.setColorFragmentProcessor(std::move(sdfFp));
     paint.setPorterDuffXPFactory(SkBlendMode::kSrc);
 
@@ -165,6 +167,6 @@ std::unique_ptr<skgpu::v1::SurfaceDrawContext> SDFBlur(GrRecordingContext* rCont
     }
 
     return sdf_2d(rContext, std::move(srcView), srcColorType, srcBounds, dstBounds, noxFormedSigma, mode,
-                  std::move(colorSpace), fit,  viewMatrix, srcRRect);
+                  std::move(colorSpace), fit, viewMatrix, srcRRect);
 }
 } // SDFBlur
