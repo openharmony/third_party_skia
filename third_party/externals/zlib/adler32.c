@@ -71,7 +71,7 @@ uLong ZEXPORT adler32_z(adler, buf, len)
     z_size_t len;
 {
 #if defined(ADLER32_SIMD_NEON)
-    if (buf && buf >= 64)
+    if (buf && len >= 64)
         return adler32_simd_(adler, buf, len);
 #endif
     unsigned long sum2;
