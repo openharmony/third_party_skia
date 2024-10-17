@@ -460,9 +460,9 @@ void GrResourceCache::insertResource(GrGpuResource* resource)
 
     // OH ISSUE: memory count
     auto pid = resource->getResourceTag().fPid;
-    if (pid) {
+    if (pid && resource->isRealAlloc()) {
         auto& pidSize = fBytesOfPid[pid];
-        pidSize += size;
+        pidSize += resource->getRealAllocSize();
         fUpdatedBytesOfPid[pid] = pidSize;
         if (pidSize >= fMemoryControl_ && fExitedPid_.find(pid) == fExitedPid_.end() && fMemoryOverflowCallback_) {
             fMemoryOverflowCallback_(pid, pidSize, true);
@@ -528,9 +528,9 @@ void GrResourceCache::removeResource(GrGpuResource* resource) {
 
     // OH ISSUE: memory count
     auto pid = resource->getResourceTag().fPid;
-    if (pid) {
+    if (pid && resource->isRealAlloc()) {
         auto& pidSize = fBytesOfPid[pid];
-        pidSize -= size;
+        pidSize -= resource->getRealAllocSize();
         fUpdatedBytesOfPid[pid] = pidSize;
         if (pidSize == 0) {
             fBytesOfPid.erase(pid);
