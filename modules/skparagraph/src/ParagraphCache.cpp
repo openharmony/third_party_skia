@@ -4,6 +4,9 @@
 #include "modules/skparagraph/include/FontArguments.h"
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
+#ifdef OHOS_SUPPORT
+#include "utils/text_trace.h"
+#endif
 #include "log.h"
 
 namespace skia {
@@ -389,6 +392,9 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
 }
 
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     SkAutoMutexExclusive lock(fParagraphMutex);
     auto key = ParagraphCacheKey(&paragraph);
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
@@ -435,6 +441,9 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
 #endif
 
 bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     if (!fCacheIsOn) {
         return false;
     }

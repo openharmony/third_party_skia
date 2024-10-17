@@ -19,6 +19,9 @@
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skparagraph/src/TextWrapper.h"
+#ifdef OHOS_SUPPORT
+#include "utils/text_trace.h"
+#endif
 #include "src/utils/SkUTF.h"
 #include <math.h>
 #include <algorithm>
@@ -484,6 +487,9 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 }
 
 void ParagraphImpl::layout(SkScalar rawWidth) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     fLineNumber = 1;
     allTextWidth = 0;
     fLayoutRawWidth = rawWidth;
@@ -714,7 +720,9 @@ void ParagraphImpl::resetContext() {
 
 // shapeTextIntoEndlessLine is the thing that calls this method
 bool ParagraphImpl::computeCodeUnitProperties() {
-
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     if (nullptr == fUnicode) {
         return false;
     }
@@ -1086,7 +1094,9 @@ void ParagraphImpl::buildClusterTable() {
 }
 
 bool ParagraphImpl::shapeTextIntoEndlessLine() {
-
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     if (fText.size() == 0) {
         return false;
     }
@@ -1181,6 +1191,9 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
 }
 
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     resetAutoSpacing();
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
@@ -1318,6 +1331,9 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
 #endif
 
 void ParagraphImpl::formatLines(SkScalar maxWidth) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     auto effectiveAlign = fParagraphStyle.effective_align();
     const bool isLeftAligned = effectiveAlign == TextAlign::kLeft
         || (effectiveAlign == TextAlign::kJustify && fParagraphStyle.getTextDirection() == TextDirection::kLtr);

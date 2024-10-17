@@ -10,6 +10,7 @@
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #ifdef OHOS_SUPPORT
 #include "modules/skparagraph/src/ParagraphLineFetcherImpl.h"
+#include "utils/text_trace.h"
 #endif
 
 #include <algorithm>
@@ -60,6 +61,9 @@ ParagraphBuilderImpl::ParagraphBuilderImpl(
 ParagraphBuilderImpl::~ParagraphBuilderImpl() = default;
 
 void ParagraphBuilderImpl::pushStyle(const TextStyle& style) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     fTextStyles.push_back(style);
     if (!fStyledBlocks.empty() && fStyledBlocks.back().fRange.end == fUtf8.size() &&
         fStyledBlocks.back().fStyle == style) {
@@ -182,6 +186,9 @@ void ParagraphBuilderImpl::finalize() {
 }
 
 std::unique_ptr<Paragraph> ParagraphBuilderImpl::Build() {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     this->finalize();
     // Add one fake placeholder with the rest of the text
     this->addPlaceholder(PlaceholderStyle(), true);
