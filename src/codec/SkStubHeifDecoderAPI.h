@@ -22,6 +22,9 @@ enum SkHeifColorFormat {
     kHeifColorFormat_BGRA_8888,
     kHeifColorFormat_NV12,
     kHeifColorFormat_NV21,
+    kHeifColorFormat_RGBA_1010102,
+    kHeifColorFormat_P010_NV12,
+    kHeifColorFormat_P010_NV21,
 };
 
 struct HeifStream {
@@ -83,6 +86,7 @@ struct HeifDecoder {
 
     virtual size_t skipScanlines(int count) = 0;
     virtual void getErrMsg(std::string& errMsg) = 0;
+
     virtual bool getImageInfo(HeifFrameInfo *frameInfo) = 0;
     virtual bool decodeGainmap() = 0;
     virtual void setGainmapDstBuffer(uint8_t* dstBuffer, size_t rowStride) = 0;
