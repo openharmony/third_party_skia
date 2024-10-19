@@ -475,9 +475,12 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
 
+#ifdef OHOS_SUPPORT
+    fPaintRegion.reset();
     if (fParagraphStyle.getMaxLines() == 0) {
         fText.reset();
     }
+#endif
 
     if ((!SkScalarIsFinite(rawWidth) || fLongestLine <= floorWidth) &&
         fState >= kLineBroken &&
@@ -2037,6 +2040,28 @@ std::vector<std::unique_ptr<TextLineBase>> ParagraphImpl::GetTextLines() {
 
     return textLineBases;
 }
+
+#ifdef OHOS_SUPPORT
+// Currently, only support to generate text and text shadow paint regions.
+// Can't accurately calculate the paint region of italic fonts(including fake italic).
+SkIRect ParagraphImpl::generatePaintRegion(SkScalar x, SkScalar y) {
+    if (fState < kFormatted) {
+        TEXT_LOGW("Call generatePaintRegion when paragraph is not formatted");
+        return SkIRect::MakeXYWH(x, y, 0, 0);
+    }
+
+    if (fPaintRegion.has_value()) {
+        return fPaintRegion.value().makeOffset(x, y).roundOut();
+    }
+
+    fPaintRegion = SkRect::MakeEmpty();
+    for (auto& line : fLines) {
+        SkRect linePaintRegion = line.generatePaintRegion(0, 0);
+        fPaintRegion->join(linePaintRegion);
+    }
+    return fPaintRegion.value().makeOffset(x, y).roundOut();
+}
+#endif
 
 std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
 {
