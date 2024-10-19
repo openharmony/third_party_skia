@@ -249,6 +249,7 @@ public:
     void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) override;
 #ifdef OHOS_SUPPORT
     std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) override;
+    SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
 #endif
 
     void visit(const Visitor&) override;
@@ -442,6 +443,7 @@ private:
 
 #ifdef OHOS_SUPPORT
     TextRange fEllipsisRange{EMPTY_RANGE};
+    std::optional<SkRect> fPaintRegion;
 #endif
 };
 }  // namespace textlayout
