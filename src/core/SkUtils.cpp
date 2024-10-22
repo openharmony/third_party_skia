@@ -69,7 +69,7 @@ int SkGetVmaBlockSizeMB()
         std::atoi(OHOS::system::GetParameter("sys.graphic.vma.blockSize", "64").c_str()),
         MAX_VMA_BLOCK_SIZE, DEFAULT_VMA_BLOCK_SIZE);
 #else
-    static int g_vmaBlockSize = 4; // default value 4
+    static int g_vmaBlockSize = 4; // default value: 4
 #endif
     return g_vmaBlockSize;
 }
