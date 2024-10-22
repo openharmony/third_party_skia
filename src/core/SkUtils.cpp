@@ -63,14 +63,14 @@ bool GetBoolParamWithFlag(bool paramValue)
 int SkGetVmaBlockSizeMB()
 {
 #ifdef NOT_BUILD_FOR_OHOS_SDK
+    constexpr int DEFAULT_VMA_BLOCK_SIZE = 48;
 #ifdef USE_LARGE_VMA_BLOCK
     constexpr int MAX_VMA_BLOCK_SIZE = 256;
-    constexpr int DEFAULT_VMA_BLOCK_SIZE = 48;
     static int g_vmaBlockSize = GetIntParamWithDefault(
         std::atoi(OHOS::system::GetParameter("sys.graphic.vma.blockSize", "48").c_str()),
         MAX_VMA_BLOCK_SIZE, DEFAULT_VMA_BLOCK_SIZE);
 #else
-    static int g_vmaBlockSize = 48;
+    static int g_vmaBlockSize = DEFAULT_VMA_BLOCK_SIZE;
 #endif
 #else
     static int g_vmaBlockSize = 4; // default value
@@ -111,6 +111,20 @@ bool SkGetPreAllocFlag()
     return g_vmaPreAllocFlag;
 #else
     return false;
+#endif
+}
+
+size_t SkGetPreAllocDelay()
+{
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+    constexpr int MAX_VMA_PREALLOC_DELAY = 5000;
+    constexpr int DEFAULT_VMA_PREALLOC_DELAY = 250;
+    static int g_vmaBlockCountMax = GetIntParamWithDefault(
+        std::atoi(OHOS::system::GetParameter("sys.graphic.vma.preAllocDelay", "250").c_str()),
+        MAX_VMA_PREALLOC_DELAY, DEFAULT_VMA_PREALLOC_DELAY);
+    return g_vmaBlockCountMax;
+#else
+    return SIZE_MAX; // default value
 #endif
 }
 
