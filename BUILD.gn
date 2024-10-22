@@ -544,7 +544,7 @@ optional("fontmgr_symbol_load") {
       "//third_party/jsoncpp:jsoncpp_static",
     ]
   } else {
-    external_deps = [ "jsoncpp:jsoncpp_static" ]
+    external_deps = [ "jsoncpp:jsoncpp" ]
     if (is_component_build) {
       external_deps += [ "bounds_checking_function:libsec_shared" ]
     } else {
@@ -708,7 +708,7 @@ optional("fontmgr_mac_ct") {
       "//third_party/skia/src/ports/skia_ohos",
     ]
     defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
-    external_deps = [ "jsoncpp:jsoncpp_static" ]
+    external_deps = [ "jsoncpp:jsoncpp" ]
     deps = [
       ":fontmgr_symbol_load",
       "${skia_third_party_dir}/expat",
@@ -781,7 +781,7 @@ optional("fontmgr_win") {
     if (is_arkui_x) {
       deps += [ "//third_party/jsoncpp:jsoncpp_static" ]
     } else {
-      external_deps = [ "jsoncpp:jsoncpp_static" ]
+      external_deps = [ "jsoncpp:jsoncpp" ]
     }
   }
 }
@@ -824,7 +824,7 @@ if (use_oh_skia && !is_arkui_x) {
       ":typeface_freetype",
       "${skia_third_party_dir}/expat",
     ]
-    external_deps = [ "jsoncpp:jsoncpp_static" ]
+    external_deps = [ "jsoncpp:jsoncpp" ]
     if (is_component_build) {
       external_deps += [ "bounds_checking_function:libsec_shared" ]
     } else {
