@@ -381,7 +381,8 @@ std::string GrResourceCache::cacheInfoRealAllocQueue()
         }
         auto resourceTag = resource->getResourceTag();
         if (resourceTag.fWid != 0) {
-            updateRealAllocWidMap(resource, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
+            updateRealAllocWidMap(
+                resource, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
         } else if (resourceTag.fPid != 0) {
             updateRealAllocPidMap(resource, realAllocNameInfoPid, realAllocSizeInfoPid, realAllocCountInfoPid);
         } else if (resourceTag.fFid != 0) {
@@ -399,7 +400,8 @@ std::string GrResourceCache::cacheInfoRealAllocQueue()
         }
         auto resourceTag = resource->getResourceTag();
         if (resourceTag.fWid != 0) {
-            updateRealAllocWidMap(resource, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
+            updateRealAllocWidMap(
+                resource, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
         } else if (resourceTag.fPid != 0) {
             updateRealAllocPidMap(resource, realAllocNameInfoPid, realAllocSizeInfoPid, realAllocCountInfoPid);
         } else if (resourceTag.fFid != 0) {
@@ -413,7 +415,8 @@ std::string GrResourceCache::cacheInfoRealAllocQueue()
     std::string infoStr;
     if (realAllocSizeInfoWid.size() > 0) {
         infoStr += ";RealAllocInfo_Node:[";
-        updatePurgeableWidInfo(infoStr, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
+        updatePurgeableWidInfo(
+            infoStr, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
     }
     if (realAllocSizeInfoPid.size() > 0) {
         infoStr += ";RealAllocInfo_Pid:[";
