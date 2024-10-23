@@ -18,7 +18,9 @@
             "skia_feature_product",
             "skia_feature_enable_pgo",
             "skia_feature_pgo_path",
-            "skia_feature_zlib"
+            "skia_feature_zlib",
+            "skia_feature_wuji_enable",
+            "skia_feature_ace_enable_gpu"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "",

@@ -4,12 +4,14 @@
 # found in the LICENSE file.
 
 import("//build/ohos.gni")
-import("//foundation/arkui/ace_engine/ace_config.gni")
-import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("gn/flutter_defines.gni")
 import("gn/fuchsia_defines.gni")
 import("gn/shared_sources.gni")
 import("gn/skia.gni")
+
+if (is_arkui_x) {
+  import("//foundation/arkui/ace_engine/ace_config.gni")
+}
 
 if (defined(is_mingw) && is_mingw == true) {
   is_win = true
@@ -833,7 +835,7 @@ if (use_oh_skia && !is_arkui_x) {
 
     deps += [ ":ohos_fontconfig.json" ]
 
-    if (graphic_2d_feature_wuji_enable) {
+    if (skia_feature_wuji_enable) {
       deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
     } else if (skia_enable_standard_fonts) {
       deps += [
@@ -1734,7 +1736,13 @@ if (use_oh_skia) {
     if (is_arkui_x) {
       deps += [ "//third_party/bounds_checking_function:libsec_static" ]
     }
-
+    if (is_ohos) {
+      external_deps = [
+        "bounds_checking_function:libsec_shared",
+        "hilog:libhilog",
+        "hitrace:hitrace_meter",
+      ]
+    }
     public = skia_core_public
     public += skia_utils_public
     public += skia_effects_public
@@ -2160,15 +2168,16 @@ if (use_oh_skia) {
       }
     }
   }
+  if (is_arkui_x) {
+    foreach(item, ace_platforms) {
+      make_skia_deps(item.name) {
+        platform = item.name
+        config = {
+        }
 
-  foreach(item, ace_platforms) {
-    make_skia_deps(item.name) {
-      platform = item.name
-      config = {
-      }
-
-      if (defined(item.config)) {
-        config = item.config
+        if (defined(item.config)) {
+          config = item.config
+        }
       }
     }
   }
