@@ -15,7 +15,8 @@ if (skia_use_system_zlib) {
   }
 } else {
   # ARM optimizations disabled for Windows on Arm MSVC builds, see http://crbug.com/v8/10012.
-  use_arm_neon_optimizations = current_cpu == "arm64" && !(is_win && !is_clang)
+  use_arm_neon_optimizations =
+      (current_cpu == "arm" || current_cpu == "arm64") && !(is_win && !is_clang)
   use_x86_x64_optimizations =
       (current_cpu == "x86" || current_cpu == "x64") && !is_ios
 
@@ -43,8 +44,8 @@ if (skia_use_system_zlib) {
         # iOS@ARM is a special case where we always have NEON but don't check
         # for crypto extensions.
         defines += [ "ARM_OS_IOS" ]
-      }  # else {
-         # assert(false, "Unsupported ARM OS")
+      } # else {
+        # assert(false, "Unsupported ARM OS")
       # }
     }
 
@@ -182,7 +183,6 @@ if (skia_use_system_zlib) {
       defines += [ "CPU_NO_SIMD" ]
       sources += [ "../externals/zlib/inflate.c" ]
     } else {
-      defines += [ "ADLER32_SIMD_NEON" ]
       configs += [ ":zlib_simd_config" ]
       deps += [
         ":zlib_adler32_simd",
