@@ -70,10 +70,6 @@ uLong ZEXPORT adler32_z(adler, buf, len)
     const Bytef *buf;
     z_size_t len;
 {
-#if defined(ADLER32_SIMD_NEON)
-    if (buf && buf >= 64)
-        return adler32_simd_(adler, buf, len);
-#endif
     unsigned long sum2;
     unsigned n;
 
