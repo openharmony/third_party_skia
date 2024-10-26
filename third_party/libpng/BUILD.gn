@@ -22,7 +22,7 @@ if (skia_use_system_libpng) {
     ]
 
     defines = [ "PNG_SET_OPTION_SUPPORTED" ]
-    if (is_mingw) {
+    if (use_oh_skia) {
       external_deps = [ "zlib:libz" ]
     } else {
       if (skia_feature_zlib != "") {
