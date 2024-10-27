@@ -216,9 +216,10 @@ VkResult GrVkAMDMemoryAllocator::allocateImageMemory(VkImage image, AllocationPr
 
     VmaAllocation allocation;
     VkResult result = vmaAllocateMemoryForImage(fAllocator, image, &info, &allocation, nullptr);
-    if (VK_SUCCESS == result) {
-        *backendMemory = (GrVkBackendMemory)allocation;
-    }
+    if (VK_SUCCESS != result) {
+        return result;
+    } 
+    *backendMemory = (GrVkBackendMemory)allocation;
 
     // OH ISSUE: VMA preAlloc
     bool newBlockflag = false;
