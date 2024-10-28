@@ -6,6 +6,7 @@
 
 #include "include/core/SkData.h"
 #include "SkTypeface_ohos.h"
+#include <string>
 
 using namespace ErrorCode;
 
@@ -102,6 +103,39 @@ SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyle(const char familyName[], const Sk
     return SkSafeRef(fontConfig->getTypeface(styleIndex, style, isFallback));
 }
 
+struct SpecialUnicodeFamilyName {
+    SkUnichar unicode;
+    std::string familyName;
+};
+
+SkTypeface* SkFontMgr_OHOS::findSpecialTypeface(SkUnichar character, const SkFontStyle& style) const
+{
+    // The key values in this list are Unicode that support the identification characters
+    // of several high-frequency languages in the fallback list corresponding to Chinese, Uyghur, and Tibetan
+    static std::vector<SpecialUnicodeFamilyName> specialLists = {
+        {0x7B80, "HarmonyOS Sans SC"},
+        {0x7E41, "HarmonyOS Sans SC"},
+        {0x0626, "HarmonyOS Sans Naskh Arabic UI"},
+        {0x0F56, "Noto Serif Tibetan"}
+    };
+
+    std::string name;
+    for (int i = 0; i < specialLists.size(); i++) {
+        if (character == specialLists[i].unicode) {
+            name.assign(specialLists[i].familyName);
+            break;
+        }
+    }
+
+    if (name.empty()) {
+        return nullptr;
+    }
+
+    SkString fname(name.c_str());
+    sk_sp<SkTypeface_OHOS> typeface = fontConfig->getFallbackTypeface(fname, style);
+    return SkSafeRef(typeface.get());
+}
+
 /*! To get a matched typeface
  * \n Use the system fallback to find a typeface for the given character.
  * \param familyName the family name which the typeface is fallback For
@@ -119,6 +153,10 @@ SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[],
 {
     if (fontConfig == nullptr) {
         return nullptr;
+    }
+    SkTypeface* retTp = findSpecialTypeface(character, style);
+    if (retTp != nullptr) {
+        return retTp;
     }
     const FallbackForMap& fallbackForMap = fontConfig->getFallbackForMap();
     const FallbackSet& fallbackSet = fontConfig->getFallbackSet();
@@ -142,7 +180,7 @@ SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[],
     }
     while (true) {
         if (bcp47Count > 0) {
-            SkTypeface* retTp = findTypeface(*item, style, bcp47, bcp47Count, character);
+            retTp = findTypeface(*item, style, bcp47, bcp47Count, character);
             if (retTp) {
                 return retTp;
             }
