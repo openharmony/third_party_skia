@@ -65,6 +65,7 @@ private:
     SkTypeface* findTypeface(const FallbackSetPos& fallbackItem, const SkFontStyle& style,
                              const char* bcp47[], int bcp47Count,
                              SkUnichar character) const;
+    SkTypeface* findSpecialTypeface(SkUnichar character, const SkFontStyle& style) const;
 };
 
 SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS(const char* path);

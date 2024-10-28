@@ -93,6 +93,21 @@ int FontConfig_OHOS::getFamilyCount() const
     return genericFamilySet.size();
 }
 
+sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getFallbackTypeface(const SkString& familyName, const SkFontStyle& style) const
+{
+    int* index = fallbackNames.find(familyName);
+    if (index == nullptr) {
+        return nullptr;
+    }
+
+    const TypefaceSet& tpSet = *(fallbackSet[*index]->typefaceSet.get());
+    if (tpSet.size() == 0) {
+        return nullptr;
+    }
+    sk_sp<SkTypeface_OHOS> typeface = FontConfig_OHOS::matchFontStyle(tpSet, style);
+    return typeface;
+}
+
 /*! To get the family name of the default font style set
  *  \param[out] familyName a pointer of SkString object, to which the family value will be set.
  *  \return The count of typeface in this font style set
