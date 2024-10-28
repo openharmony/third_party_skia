@@ -313,6 +313,12 @@ class SkUnicode_icu : public SkUnicode {
         return sk_u_hasBinaryProperty(unichar, UCHAR_IDEOGRAPHIC);
     }
 
+#ifdef OHOS_SUPPORT
+    static bool isGraphemeExtend(SkUnichar unichar) {
+        return sk_u_hasBinaryProperty(unichar, UCHAR_GRAPHEME_EXTEND);
+    }
+#endif
+
 public:
     ~SkUnicode_icu() override { }
     std::unique_ptr<SkBidiIterator> makeBidiIterator(const uint16_t text[], int count,
@@ -425,6 +431,13 @@ public:
                     results->at(i) |= SkUnicode::kIdeographic;
                 }
             }
+
+#ifdef OHOS_SUPPORT
+            if (SkUnicode_icu::isGraphemeExtend(unichar)) {
+                // Current unichar is a combining one. we regard it as a grapheme boundary for being shaped separately.
+                results->at(before) |= SkUnicode::kGraphemeStart;
+            }
+#endif
         }
 
         return true;
