@@ -666,7 +666,7 @@ void GrResourceCache::insertResource(GrGpuResource* resource)
     SkASSERT(!resource->cacheAccess().isUsableAsScratch());
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     if (fBudgetedBytes >= fMaxBytes) {
-        HITRACE_OHOS_NAME_FMT_ALWAYS("cache over fBudgetedBytes:(%u), fMaxBytes:(%u)", fBudgetedBytes, fMaxBytes);
+        HITRACE_OHOS_NAME_FMT_ALWAYS("cache over fBudgetedBytes:(%u),fMaxBytes:(%u)", fBudgetedBytes, fMaxBytes);
 #ifdef SKIA_DFX_FOR_OHOS
         SimpleCacheInfo simpleCacheInfo;
         traceBeforePurgeUnlockRes("insertResource", simpleCacheInfo);
@@ -1333,9 +1333,8 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
 #endif
 }
 
-void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly,
-                                              const std::set<int>& exitedPidSet,
-                                              const std::set<int>& protectedPidSet) {
+void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+        const std::set<int>& protectedPidSet) {
     HITRACE_OHOS_NAME_FMT_ALWAYS("PurgeGrResourceCache cur=%d, limit=%d", fBudgetedBytes, fMaxBytes);
     if (exitedPidSet.size() > 1) {
         for (int i = 1; i < fPurgeableQueue.count(); i++) {
@@ -1349,23 +1348,20 @@ void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly,
         }
     }
     fPurgeableQueue.sort();
-
-#ifdef NOT_BUILD_FOR_OHOS_SDK
     const char* softLimitPercentage = "0.9";
-    const char* softLimitProperty = "persist.sys.graphic.mem.soft_limit";
-    static int softLimit =
-            std::atof(OHOS::system::GetParameter(softLimitProperty, softLimitPercentage).c_str()) *
-            fMaxBytes;
-#else
-    const float softLimitPercentage = 0.9;
-    static int softLimit = softLimitPercentage * fMaxBytes;
-#endif
+    #ifdef NOT_BUILD_FOR_OHOS_SDK
+    static int softLimit = 
+        std::atof(OHOS::system::GetParameter("persist.sys.graphic.mem.soft_limit", 
+        softLimitPercentage).c_str()) * fMaxBytes;
+    #else
+    static int softLimit = 0.9 * fMaxBytes;
+    #endif
     if (fBudgetedBytes >= softLimit) {
-        for (int i = 0; i < fPurgeableQueue.count(); i++) {
+        for (int i=0; i < fPurgeableQueue.count(); i++) {
             GrGpuResource* resource = fPurgeableQueue.at(i);
             SkASSERT(resource->resourcePriv().isPurgeable());
-            if (protectedPidSet.find(resource->getResourceTag().fPid) == protectedPidSet.end() &&
-                (!scratchResourcesOnly || !resource->getUniqueKey().isValid())) {
+            if (protectedPidSet.find(resource->getResourceTag().fPid) == protectedPidSet.end()
+                && (!scratchResourcesOnly || !resource->getUniqueKey().isValid())) {
                 resource->cacheAccess().release();
                 this->validate();
                 return;
