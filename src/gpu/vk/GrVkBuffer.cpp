@@ -13,6 +13,7 @@
 #include "src/gpu/vk/GrVkDescriptorSet.h"
 #include "src/gpu/vk/GrVkGpu.h"
 #include "src/gpu/vk/GrVkMemory.h"
+#include "src/gpu/vk/GrVkMemoryReclaimer.h"
 #include "src/gpu/vk/GrVkUtil.h"
 
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
@@ -148,8 +149,7 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
     if (bufferType == GrGpuBufferType::kUniform) {
         uniformDescSet = make_uniform_desc_set(gpu, buffer, size);
         if (!uniformDescSet) {
-            VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
-            GrVkMemory::FreeBufferMemory(gpu, alloc);
+            DestroyAndFreeBufferMemory(gpu, alloc, buffer);
             return nullptr;
         }
     }
@@ -218,6 +218,13 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
     }
 
     return sk_sp<GrVkBuffer>(new GrVkBuffer(gpu, bufferSize, bufferType, accessPattern, buffer, alloc, nullptr));
+}
+
+// OH ISSUE: Integrate Destroy and Free
+void GrVkBuffer::DestroyAndFreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkBuffer& buffer)
+{
+    VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
+    GrVkMemory::FreeBufferMemory(gpu, alloc);
 }
 
 void GrVkBuffer::vkMap(size_t size) {
@@ -331,10 +338,14 @@ void GrVkBuffer::vkRelease() {
 
     SkASSERT(fBuffer);
     SkASSERT(fAlloc.fMemory && fAlloc.fBackendMemory);
-    VK_CALL(this->getVkGpu(), DestroyBuffer(this->getVkGpu()->device(), fBuffer, nullptr));
-    fBuffer = VK_NULL_HANDLE;
+    
+    // OH ISSUE: asyn memory reclaimer
+    auto reclaimer = this->getVkGpu()->memoryReclaimer();
+    if (!reclaimer || !reclaimer->addMemoryToWaitQueue(this->getVkGpu(), fAlloc, fBuffer)) {
+        DestroyAndFreeBufferMemory(this->getVkGpu(), fAlloc, fBuffer);
+    }
 
-    GrVkMemory::FreeBufferMemory(this->getVkGpu(), fAlloc);
+    fBuffer = VK_NULL_HANDLE;
     fAlloc.fMemory = VK_NULL_HANDLE;
     fAlloc.fBackendMemory = 0;
 }

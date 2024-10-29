@@ -27,6 +27,9 @@ public:
                                                     GrGpuBufferType bufferType,
                                                     GrAccessPattern accessPattern);
 
+    // OH ISSUE: Integrate Destroy and Free
+    static void DestroyAndFreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkBuffer& buffer);
+
     VkBuffer vkBuffer() const { return fBuffer; }
 
     void addMemoryBarrier(VkAccessFlags srcAccessMask,
