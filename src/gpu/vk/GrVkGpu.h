@@ -96,8 +96,6 @@ public:
 
     bool compile(const GrProgramDesc&, const GrProgramInfo&) override;
 
-    static void AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived);
-
 #if GR_TEST_UTILS
     bool isTestingOnlyBackendTexture(const GrBackendTexture&) const override;
 
