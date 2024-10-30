@@ -506,16 +506,15 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     }
 
 #ifdef OHOS_SUPPORT
+    fPaintRegion.reset();
     bool isMaxLinesZero = false;
-#endif
     if (fParagraphStyle.getMaxLines() == 0) {
-#ifdef OHOS_SUPPORT
         if (fText.size() != 0) {
             isMaxLinesZero = true;
         }
-#endif
         fText.reset();
     }
+#endif
 
     if ((!SkScalarIsFinite(rawWidth) || fLongestLine <= floorWidth) &&
         fState >= kLineBroken &&
@@ -2281,6 +2280,24 @@ std::unique_ptr<Paragraph> ParagraphImpl::createCroppedCopy(size_t startIndex, s
 
 void ParagraphImpl::initUnicodeText() {
     this->fUnicodeText = convertUtf8ToUnicode(fText);
+}
+
+SkIRect ParagraphImpl::generatePaintRegion(SkScalar x, SkScalar y) {
+    if (fState < kFormatted) {
+        TEXT_LOGW("Call generatePaintRegion when paragraph is not formatted");
+        return SkIRect::MakeXYWH(x, y, 0, 0);
+    }
+
+    if (fPaintRegion.has_value()) {
+        return fPaintRegion.value().makeOffset(x, y).roundOut();
+    }
+
+    fPaintRegion = SkRect::MakeEmpty();
+    for (auto& line : fLines) {
+        SkRect linePaintRegion = line.generatePaintRegion(0, 0);
+        fPaintRegion->join(linePaintRegion);
+    }
+    return fPaintRegion.value().makeOffset(x, y).roundOut();
 }
 #endif
 

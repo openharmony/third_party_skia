@@ -212,6 +212,7 @@ public:
     double getOffsetForStringIndex(int32_t index) const;
     std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const;
     double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const;
+    SkRect generatePaintRegion(SkScalar x, SkScalar y);
 #endif
 
 private:
@@ -253,6 +254,8 @@ private:
 #ifdef OHOS_SUPPORT
     void measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const;
     void computeNextPaintGlyphRange(ClipContext& context, const TextRange& lastGlyphRange, StyleType styleType) const;
+    SkRect computeShadowRect(SkScalar x, SkScalar y, const TextStyle& style, const ClipContext& context) const;
+    SkRect getAllShadowsRect(SkScalar x, SkScalar y) const;
 #endif
 
     ParagraphImpl* fOwner;
