@@ -984,6 +984,9 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
 
     int currentWidth = rect.width();
     int currentHeight = rect.height();
+#ifdef SKIA_OHOS
+    bool isTagEnabled = IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP);
+#endif
     for (int currentMipLevel = 0; currentMipLevel < mipLevelCount; currentMipLevel++) {
         if (texelsShallowCopy[currentMipLevel].fPixels) {
             const size_t trimRowBytes = currentWidth * bpp;
@@ -995,7 +998,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
 #ifdef SKIA_OHOS
             int memStartTimestamp = 0;
             int memEndTimestamp = 0;
-            if (UNLIKELY(IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP))) {
+            if (UNLIKELY(isTagEnabled)) {
                 memStartTimestamp = static_cast<int>(
                     std::chrono::duration_cast<std::chrono::microseconds>(
                     std::chrono::steady_clock::now().time_since_epoch()).count());
@@ -1003,7 +1006,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
 #endif
             SkRectMemcpy(dst, trimRowBytes, src, rowBytes, trimRowBytes, currentHeight);
 #ifdef SKIA_OHOS
-            if (UNLIKELY(IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP))) {
+            if (UNLIKELY(isTagEnabled)) {
                 memEndTimestamp = static_cast<int>(
                     std::chrono::duration_cast<std::chrono::microseconds>(
                     std::chrono::steady_clock::now().time_since_epoch()).count());
@@ -1045,7 +1048,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
 #ifdef SKIA_OHOS
     int copyStartTimestamp = 0;
     int copyEndTimestamp = 0;
-    if (UNLIKELY(IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP))) {
+    if (UNLIKELY(isTagEnabled)) {
         copyStartTimestamp = static_cast<int>(
             std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count());
@@ -1058,7 +1061,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
                                                     regions.count(),
                                                     regions.begin());
 #ifdef SKIA_OHOS
-    if (UNLIKELY(IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP))) {
+    if (UNLIKELY(isTagEnabled)) {
         copyEndTimestamp = static_cast<int>(
             std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count());
