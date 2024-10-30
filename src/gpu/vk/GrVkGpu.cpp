@@ -1009,7 +1009,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
                     std::chrono::steady_clock::now().time_since_epoch()).count());
                 int duration = memEndTimestamp - memStartTimestamp;
                 if (duration > TRACE_LIMIT_TIME) {
-                    HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal SkRectMemcpy: %zu Time: %d ",
+                    HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal SkRectMemcpy: %zu Time: %d",
                         trimRowBytes * currentHeight, duration);
                 }
             }
