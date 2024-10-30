@@ -15,6 +15,7 @@
 #include "src/gpu/vk/GrVkCaps.h"
 #include "src/gpu/vk/GrVkMSAALoadManager.h"
 #include "src/gpu/vk/GrVkMemory.h"
+#include "src/gpu/vk/GrVkMemoryReclaimer.h"
 #include "src/gpu/vk/GrVkResourceProvider.h"
 #include "src/gpu/vk/GrVkSemaphore.h"
 #include "src/gpu/vk/GrVkUtil.h"
@@ -94,8 +95,6 @@ public:
     void deleteBackendTexture(const GrBackendTexture&) override;
 
     bool compile(const GrProgramDesc&, const GrProgramInfo&) override;
-
-    static void AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived);
 
 #if GR_TEST_UTILS
     bool isTestingOnlyBackendTexture(const GrBackendTexture&) const override;
@@ -213,6 +212,11 @@ public:
     void addAllocBufferBytes(size_t bytes);
     void removeAllocBufferBytes(size_t bytes);
 #endif
+
+    // OH ISSUE: asyn memory reclaimer
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled) override;
+    void flushGpuMemoryInWaitQueue() override;
+    GrVkMemoryReclaimer* memoryReclaimer() const { return fMemoryReclaimer.get(); }
 
 private:
     enum SyncQueue {
@@ -441,6 +445,8 @@ private:
     GrProtected                                           fProtectedContext;
 
     std::unique_ptr<GrVkOpsRenderPass>                    fCachedOpsRenderPass;
+
+    std::unique_ptr<GrVkMemoryReclaimer>                    fMemoryReclaimer;
 
     using INHERITED = GrGpu;
 };

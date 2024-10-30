@@ -315,8 +315,6 @@ public:
      */
     void purgeUnlockedResources(bool scratchResourcesOnly);
 
-    static void asyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived);
-
     /**
      * Gets the maximum supported texture size.
      */
@@ -884,6 +882,18 @@ public:
     void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
     // OH ISSUE: check whether the PID is abnormal.
     bool isPidAbnormal() const override;
+
+    // OH ISSUE: intra frame and inter frame identification
+    void beginFrame();
+    void endFrame();
+    
+    // OH ISSUE: asyn memory reclaimer
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled);
+    void flushGpuMemoryInWaitQueue();
+
+    // OH ISSUE: suppress release window
+    void setGpuCacheSuppressWindowSwitch(bool enabled);
+    void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
 
 protected:
     GrDirectContext(GrBackendApi backend, const GrContextOptions& options);

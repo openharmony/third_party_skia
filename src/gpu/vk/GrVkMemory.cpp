@@ -41,81 +41,6 @@ static bool FindMemoryType(GrVkGpu *gpu, uint32_t typeFilter, VkMemoryPropertyFl
     return hasFound;
 }
 
-GrVkMemory::AsyncFreeVMAMemoryManager::AsyncFreeVMAMemoryManager() {
-    fAsyncFreedMemoryEnabled = (std::atoi(
-        OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_between_frames_enabled", "1").c_str()
-    ) != 0);
-}
-
-GrVkMemory::AsyncFreeVMAMemoryManager& GrVkMemory::AsyncFreeVMAMemoryManager::GetInstance() {
-    static GrVkMemory::AsyncFreeVMAMemoryManager asyncFreeVMAMemoryManager;
-    return asyncFreeVMAMemoryManager;
-}
-
-void GrVkMemory::AsyncFreeVMAMemoryManager::FreeMemoryInWaitQueue(std::function<bool(void)> nextFrameHasArrived) {
-    if (!fAsyncFreedMemoryEnabled) {
-        return;
-    }
-    std::lock_guard<std::mutex> guard(fWaitQueuesLock);
-    thread_local pid_t tid = gettid();
-    for (auto& pair : fWaitQueues) {
-        if (tid != pair.first) {
-            continue;
-        }
-        while (!pair.second.fQueue.empty()) {
-            auto& free = pair.second.fQueue.back();
-            if (free.fIsBuffer && free.fAlloc.fIsExternalMemory) {
-                VK_CALL(free.fGpu, FreeMemory(free.fGpu->device(), free.fAlloc.fMemory, nullptr));
-            } else {
-                GrVkMemoryAllocator* allocator = free.fGpu->memoryAllocator();
-                if (free.fAlloc.fAllocator != nullptr) {
-                    allocator = free.fAlloc.fAllocator;
-                }
-                allocator->freeMemory(free.fAlloc.fBackendMemory);
-            }
-            pair.second.fTotalFreedMemorySize -= free.fAlloc.fSize;
-            pair.second.fQueue.pop_back();
-            if (nextFrameHasArrived()) {
-                return;
-            }
-        }
-        return;
-    }
-    fWaitQueues.emplace_back(tid, AsyncFreeVMAMemoryManager::FreeVMAMemoryWaitQueue());
-}
-
-bool GrVkMemory::AsyncFreeVMAMemoryManager::AddMemoryToWaitQueue(const GrVkGpu* gpu,
-                                                                 const GrVkAlloc& alloc,
-                                                                 bool isBuffer) {
-    if (!fAsyncFreedMemoryEnabled) {
-        return false;
-    }
-    if (alloc.fSize > fThresholdFreedMemorySize) {
-        return false;
-    }
-    std::lock_guard<std::mutex> guard(fWaitQueuesLock);
-    thread_local pid_t tid = gettid();
-    for (auto& pair : fWaitQueues) {
-        if (tid != pair.first) {
-            continue;
-        }
-        if ((pair.second.fTotalFreedMemorySize + alloc.fSize) > fLimitFreedMemorySize) {
-            return false;
-        }
-        if (!isBuffer || !alloc.fIsExternalMemory) {
-            SkASSERT(alloc.fBackendMemory);
-        }
-        pair.second.fTotalFreedMemorySize += alloc.fSize;
-        pair.second.fQueue.emplace_back(gpu, alloc, isBuffer);
-        return true;
-    }
-    return false;
-}
-
-void GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
-    AsyncFreeVMAMemoryManager::GetInstance().FreeMemoryInWaitQueue(nextFrameHasArrived);
-}
-
 bool GrVkMemory::AllocAndBindBufferMemory(GrVkGpu* gpu,
                                           VkBuffer buffer,
                                           BufferUsage usage,
@@ -222,9 +147,6 @@ void GrVkMemory::FreeBufferMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
 #ifdef SKIA_DFX_FOR_OHOS
     ((GrVkGpu*)gpu)->removeAllocBufferBytes(alloc.fBytes);
 #endif
-    if (AsyncFreeVMAMemoryManager::GetInstance().AddMemoryToWaitQueue(gpu, alloc, true)) {
-        return;
-    }
     if (alloc.fIsExternalMemory) {
         VK_CALL(gpu, FreeMemory(gpu->device(), alloc.fMemory, nullptr));
     } else {
@@ -309,9 +231,6 @@ void GrVkMemory::FreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc) {
 #ifdef SKIA_DFX_FOR_OHOS
     ((GrVkGpu*)gpu)->removeAllocImageBytes(alloc.fBytes);
 #endif
-    if (AsyncFreeVMAMemoryManager::GetInstance().AddMemoryToWaitQueue(gpu, alloc, false)) {
-        return;
-    }
     SkASSERT(alloc.fBackendMemory);
     GrVkMemoryAllocator* allocator = gpu->memoryAllocator();
     if (alloc.fAllocator != nullptr) {

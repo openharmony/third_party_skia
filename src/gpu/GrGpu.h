@@ -679,6 +679,10 @@ void popGrResourceTag()
     virtual void vmaDefragment() {}
     virtual void dumpVmaStats(SkString *out) {}
 
+    // OH ISSUE: asyn memory reclaimer
+    virtual void setGpuMemoryAsyncReclaimerSwitch(bool enabled) {}
+    virtual void flushGpuMemoryInWaitQueue() {}
+
 protected:
     static bool CompressedDataIsCorrect(SkISize dimensions,
                                         SkImage::CompressionType,

@@ -559,10 +559,6 @@ bool GrVkGpu::onWritePixels(GrSurface* surface,
     return success;
 }
 
-void GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
-    GrVkMemory::AsyncFreeVMAMemoryBetweenFrames(nextFrameHasArrived);
-}
-
 bool GrVkGpu::onTransferPixelsTo(GrTexture* texture,
                                  SkIRect rect,
                                  GrColorType surfaceColorType,
@@ -2775,6 +2771,23 @@ void GrVkGpu::removeAllocBufferBytes(size_t bytes)
     cache->removeAllocBufferBytes(bytes);
 }
 #endif
+
+// OH ISSUE: asyn memory reclaimer
+void GrVkGpu::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
+{   
+    if (!fMemoryReclaimer) {
+        fMemoryReclaimer = std::make_unique<GrVkMemoryReclaimer>();
+    }
+    fMemoryReclaimer->setGpuMemoryAsyncReclaimerSwitch(enabled);
+}
+
+// OH ISSUE: asyn memory reclaimer
+void GrVkGpu::flushGpuMemoryInWaitQueue()
+{
+    if (fMemoryReclaimer) {
+        fMemoryReclaimer->flushGpuMemoryInWaitQueue();
+    }
+}
 
 void GrVkGpu::submitSecondaryCommandBuffer(std::unique_ptr<GrVkSecondaryCommandBuffer> buffer) {
     if (!this->currentCommandBuffer()) {
