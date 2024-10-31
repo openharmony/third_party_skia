@@ -918,10 +918,10 @@ static size_t fill_in_compressed_regions(SkTArray<VkBufferImageCopy>* regions,
     return bufferSize;
 }
 
-static int get_time_now() {
+static int get_current_time() {
     return static_cast<int>(
-                    std::chrono::duration_cast<std::chrono::microseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()).count());
+        std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count());
 }
 
 bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
@@ -1005,13 +1005,13 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
             int memStartTimestamp = 0;
             int memEndTimestamp = 0;
             if (UNLIKELY(isTagEnabled)) {
-                memStartTimestamp = get_time_now();
+                memStartTimestamp = get_current_time();
             }
 #endif
             SkRectMemcpy(dst, trimRowBytes, src, rowBytes, trimRowBytes, currentHeight);
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
             if (UNLIKELY(isTagEnabled)) {
-                memEndTimestamp = get_time_now();
+                memEndTimestamp = get_current_time();
                 int duration = memEndTimestamp - memStartTimestamp;
                 if (duration > TRACE_LIMIT_TIME) {
                     HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal SkRectMemcpy: %zu Time: %d µs bpp = %zu "
@@ -1052,7 +1052,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
     int copyStartTimestamp = 0;
     int copyEndTimestamp = 0;
     if (UNLIKELY(isTagEnabled)) {
-        copyStartTimestamp = get_time_now();
+        copyStartTimestamp = get_current_time();
     }
 #endif
     this->currentCommandBuffer()->copyBufferToImage(this,
@@ -1063,7 +1063,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
                                                     regions.begin());
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     if (UNLIKELY(isTagEnabled)) {
-        copyEndTimestamp = get_time_now();
+        copyEndTimestamp = get_current_time();
         int duration = copyEndTimestamp - copyStartTimestamp;
         if (duration > TRACE_LIMIT_TIME) {
             HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal copyBufferToImage Time: %d µs width: %d height: %d",
