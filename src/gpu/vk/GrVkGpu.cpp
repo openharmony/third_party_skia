@@ -918,6 +918,12 @@ static size_t fill_in_compressed_regions(SkTArray<VkBufferImageCopy>* regions,
     return bufferSize;
 }
 
+static int get_time_now() {
+    return static_cast<int>(
+                    std::chrono::duration_cast<std::chrono::microseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count());
+}
+
 bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
                                    SkIRect rect,
                                    GrColorType dataColorType,
@@ -999,21 +1005,18 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
             int memStartTimestamp = 0;
             int memEndTimestamp = 0;
             if (UNLIKELY(isTagEnabled)) {
-                memStartTimestamp = static_cast<int>(
-                    std::chrono::duration_cast<std::chrono::microseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()).count());
+                memStartTimestamp = get_time_now();
             }
 #endif
             SkRectMemcpy(dst, trimRowBytes, src, rowBytes, trimRowBytes, currentHeight);
 #ifdef SKIA_OHOS
             if (UNLIKELY(isTagEnabled)) {
-                memEndTimestamp = static_cast<int>(
-                    std::chrono::duration_cast<std::chrono::microseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()).count());
+                memEndTimestamp = get_time_now();
                 int duration = memEndTimestamp - memStartTimestamp;
                 if (duration > TRACE_LIMIT_TIME) {
-                    HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal SkRectMemcpy: %zu Time: %d µs",
-                        trimRowBytes * currentHeight, duration);
+                    HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal SkRectMemcpy: %zu Time: %d µs bpp = %zu "
+                        "width: %d height: %d",
+                        trimRowBytes * currentHeight, duration, bpp, currentWidth, currentHeight);
                 }
             }
 #endif
@@ -1049,9 +1052,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
     int copyStartTimestamp = 0;
     int copyEndTimestamp = 0;
     if (UNLIKELY(isTagEnabled)) {
-        copyStartTimestamp = static_cast<int>(
-            std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::steady_clock::now().time_since_epoch()).count());
+        copyStartTimestamp = get_time_now();
     }
 #endif
     this->currentCommandBuffer()->copyBufferToImage(this,
@@ -1062,12 +1063,11 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
                                                     regions.begin());
 #ifdef SKIA_OHOS
     if (UNLIKELY(isTagEnabled)) {
-        copyEndTimestamp = static_cast<int>(
-            std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::steady_clock::now().time_since_epoch()).count());
+        copyEndTimestamp = get_time_now();
         int duration = copyEndTimestamp - copyStartTimestamp;
         if (duration > TRACE_LIMIT_TIME) {
-            HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal copyBufferToImage Time: %d µs", duration);
+            HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal copyBufferToImage Time: %d µs width: %d height:%d",
+                duration, rect.width(), rect.height());
         }
     }
 #endif
