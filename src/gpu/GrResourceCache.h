@@ -222,7 +222,7 @@ public:
     bool purgeToMakeHeadroom(size_t desiredHeadroomBytes);
 
     // OH ISSUE: adjust the value when there is an interrupt
-    bool overBudget(const std::function<bool(void)>& nextFrameHasArrived = nullptr) const 
+    bool overBudget(const std::function<bool(void)>& nextFrameHasArrived = nullptr) const
     {
         return fBudgetedBytes > (nextFrameHasArrived ? size_t(fMaxBytesRate * fMaxBytes) : fMaxBytes);
     }
@@ -339,18 +339,21 @@ public:
     bool allowToPurge(const std::function<bool(void)>& nextFrameHasArrived);
 
     // OH ISSUE: intra frame and inter frame identification
-    void beginFrame() {
+    void beginFrame()
+    {
         fFrameInfo.frameCount++;
         fFrameInfo.duringFrame = 1;
     }
 
     // OH ISSUE: intra frame and inter frame identification
-    void endFrame() {
+    void endFrame()
+    {
         fFrameInfo.duringFrame = 0;
     }
 
     // OH ISSUE: suppress release window
-    void setGpuCacheSuppressWindowSwitch(bool enabled) {
+    void setGpuCacheSuppressWindowSwitch(bool enabled)
+    {
         fEnabled = enabled;
     }
 

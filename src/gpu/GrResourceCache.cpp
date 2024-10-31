@@ -127,12 +127,10 @@ GrResourceCache::GrResourceCache(GrSingleOwner* singleOwner,
     SkASSERT(owningContextID.isValid());
     SkASSERT(familyID != SK_InvalidUniqueID);
 #ifdef NOT_BUILD_FOR_OHOS_SDK
-    static int overtimeDuration = std::atoi(
-            OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_overtime", "600")
-                    .c_str());
-    static double maxBytesRate = std::atof(
-            OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_max_rate", "0.9")
-                    .c_str());
+    static int overtimeDuration =
+        std::atoi(OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_overtime", "600").c_str());
+    static double maxBytesRate =
+        std::atof(OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_max_rate", "0.9").c_str());
 #else
     static int overtimeDuration = 600;
     static double maxBytesRate = 0.9;
@@ -1381,7 +1379,8 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
 }
 
 // OH ISSUE: suppress release window
-void GrResourceCache::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived) {
+void GrResourceCache::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived)
+{
     if (!fEnabled) {
         return;
     }
