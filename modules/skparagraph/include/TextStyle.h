@@ -288,6 +288,14 @@ public:
 
     const std::vector<SkString>& getFontFamilies() const { return fFontFamilies; }
     void setFontFamilies(std::vector<SkString> families) {
+#ifdef OHOS_SUPPORT
+        // Adjusting alias of family name, will be removed when font config is updated.
+        std::for_each(families.begin(), families.end(), [](SkString& familyName) {
+            if (familyName.equals("HarmonyOS Sans")) {
+                familyName = "HarmonyOS-Sans";
+            }
+        });
+#endif
         fFontFamilies = std::move(families);
     }
 
