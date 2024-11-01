@@ -455,7 +455,7 @@ struct TextWrapScorer {
             // If we were unable to find a break that matches the criteria, insert new one
             // This may happen if there is a long word and per line indent for this particular line
             breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax,
-            Break::BreakType::BREAKTYPE_FORCED, false));
+                Break::BreakType::BREAKTYPE_FORCED, false));
             param.breakPos += BREAK_NUM_TWO;
         }
 
@@ -488,8 +488,8 @@ struct TextWrapScorer {
                 newWidth = std::min(breaks_[--param.breakPos].width - param.begin, param.currentMax);
             }
 
-            if (looped && ((lastBreakPos_ == param.breakPos)
-                || (newWidth/param.currentMax*UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
+            if (looped && ((lastBreakPos_ == param.breakPos) ||
+                (newWidth/param.currentMax*UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
                 LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
                     static_cast<unsigned long>(param.lineNumber), param.begin,
                         static_cast<unsigned long>(param.breakPos), newWidth, maxWidth_);
@@ -593,8 +593,8 @@ private:
         }
         bool operator<(const Index& other) const
         {
-            return lineNumber < other.lineNumber
-                || (lineNumber == other.lineNumber && other.begin - begin > WIDTH_TOLERANCE) ||
+            return lineNumber < other.lineNumber ||
+                (lineNumber == other.lineNumber && other.begin - begin > WIDTH_TOLERANCE) ||
                 (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE &&
                 other.width - width > WIDTH_TOLERANCE);
         }
