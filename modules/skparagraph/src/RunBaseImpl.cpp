@@ -64,7 +64,7 @@ const RSFont& RunBaseImpl::font() const
 #endif
 {
     if (!fVisitorRun) {
-        return {};
+        return fFont;
     }
     return fVisitorRun->font();
 }

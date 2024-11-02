@@ -20,7 +20,7 @@ class ParagraphPainter;
 class Paragraph {
 
 public:
-    Paragraph();
+    Paragraph() = default;
 
     Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts);
 

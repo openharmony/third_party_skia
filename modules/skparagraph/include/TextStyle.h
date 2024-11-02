@@ -335,7 +335,7 @@ public:
     void setPlaceholder() { fIsPlaceholder = true; }
 
     int getStyleId() const { return fStyleId; }
-    void setStyleId(int styleId) { fStyleId = styleId; }
+    void setStyleId(int styleId) { fStyleId = static_cast<SkColor>(styleId); }
 
     RectStyle getBackgroundRect() const { return fBackgroundRect; }
     void setBackgroundRect(RectStyle rect) { fBackgroundRect = rect; }

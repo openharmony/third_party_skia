@@ -81,7 +81,9 @@ private:
 #endif
 #ifndef USE_SKIA_TXT
     sk_sp<SkTextBlob> fBlob;
+    SkFont fFont;
 #else
+    RSFont fFont;
     std::shared_ptr<RSTextBlob> fBlob;
 #endif
     SkPoint fOffset = SkPoint::Make(0.0f, 0.0f);

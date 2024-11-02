@@ -978,7 +978,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             inWord = false;
         }
         // See if it fits
-        if (width + ellipsisRun->advance().fX > maxWidth) {
+        if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
             if (!cluster.isHardBreak()) {
                 width -= cluster.width();
             }
@@ -1049,7 +1049,7 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             lastRun = cluster.runIndex();
         }
         // See if it fits
-        if (width + ellipsisRun->advance().fX > maxWidth) {
+        if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
             width -= cluster.width();
             // Continue if the ellipsis does not fit
             if (std::floor(width) > 0) {
@@ -2171,7 +2171,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                     size_t utf16Index = context.run->leftToRight()
                                                 ? fOwner->getUTF16Index(clusterEnd8)
                                                 : fOwner->getUTF16Index(clusterIndex8) + 1;
-#endif        
+#endif
                     result = { SkToS32(utf16Index), kUpstream };
                 }
 
@@ -2246,7 +2246,7 @@ std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
         std::unique_ptr<RunBaseImpl> runBaseImplPtr = std::make_unique<RunBaseImpl>(
             blob.fBlob, blob.fOffset, blob.fPaint, blob.fClippingNeeded, blob.fClipRect,
             blob.fVisitor_Run, blob.fVisitor_Pos, pos, trailSpaces, blob.fVisitor_Size);
-        
+
         // Calculate the position of each blob, relative to the entire paragraph
         pos += blob.fVisitor_Size;
         runBases.emplace_back(std::move(runBaseImplPtr));
