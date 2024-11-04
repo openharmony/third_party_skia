@@ -2219,6 +2219,23 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
             return keepLooking;
         }
     );
+
+    // Extending coordinate index if the ellipsis's run is selected.
+    if (fEllipsis) {
+        EllipsisModal ellipsisModal = fOwner->paragraphStyle().getEllipsisMod();
+        if (ellipsisModal == EllipsisModal::TAIL) {
+            if (result.position > fOwner->getEllipsisTextRange().start &&
+                result.position <= fOwner->getEllipsisTextRange().end) {
+                result.position = fOwner->getEllipsisTextRange().end;
+            }
+        } else if (ellipsisModal == EllipsisModal::HEAD) {
+            if (result.position >= fOwner->getEllipsisTextRange().start &&
+                result.position < fOwner->getEllipsisTextRange().end) {
+                result.position = fOwner->getEllipsisTextRange().start;
+            }
+        }
+    }
+
     return result;
 }
 
