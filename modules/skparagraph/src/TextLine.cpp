@@ -1016,7 +1016,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             inWord = false;
         }
         // See if it fits
-        if (width + ellipsisRun->advance().fX > maxWidth) {
+        if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
             if (!cluster.isHardBreak()) {
                 width -= cluster.width();
             }
@@ -1087,7 +1087,7 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             lastRun = cluster.runIndex();
         }
         // See if it fits
-        if (width + ellipsisRun->advance().fX > maxWidth) {
+        if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
             width -= cluster.width();
             // Continue if the ellipsis does not fit
             if (std::floor(width) > 0) {
@@ -2209,7 +2209,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                     size_t utf16Index = context.run->leftToRight()
                                                 ? fOwner->getUTF16Index(clusterEnd8)
                                                 : fOwner->getUTF16Index(clusterIndex8) + 1;
-#endif        
+#endif
                     result = { SkToS32(utf16Index), kUpstream };
                 }
 
