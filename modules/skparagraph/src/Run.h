@@ -184,6 +184,11 @@ public:
     template<typename Visitor>
     void iterateThroughClustersInTextOrder(Visitor visitor);
 
+#ifdef OHOS_SUPPORT
+    template<typename Visitor>
+    void iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor visitor);
+#endif
+
     using ClusterVisitor = std::function<void(Cluster* cluster)>;
     void iterateThroughClusters(const ClusterVisitor& visitor);
 
@@ -343,6 +348,43 @@ void Run::iterateThroughClustersInTextOrder(Visitor visitor) {
         }
     }
 }
+
+#ifdef OHOS_SUPPORT
+template<typename Visitor>
+void Run::iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor visitor) {
+    if (glyphRange.start >= glyphRange.end || glyphRange.end > size()) {
+        return;
+    }
+    if (leftToRight()) {
+        size_t start = glyphRange.start;
+        size_t cluster = this->clusterIndex(start);
+        for (size_t glyph = glyphRange.start + 1; glyph <= glyphRange.end; ++glyph) {
+            auto nextCluster = this->clusterIndex(glyph);
+            if (nextCluster <= cluster) {
+                continue;
+            }
+
+            visitor(start, glyph, fClusterStart + cluster, fClusterStart + nextCluster);
+            start = glyph;
+            cluster = nextCluster;
+        }
+    } else {
+        size_t glyph = glyphRange.end;
+        size_t cluster = this->clusterIndex(glyphRange.end - 1);
+        int32_t glyphStart = std::max((int32_t)glyphRange.start, 0);
+        for (int32_t start = glyphRange.end - 1; start >= glyphStart; --start) {
+            size_t nextCluster = start == 0 ? this->fUtf8Range.end() : this->clusterIndex(start - 1);
+            if (nextCluster <= cluster) {
+                continue;
+            }
+
+            visitor(start, glyph, fClusterStart + cluster, fClusterStart + nextCluster);
+            glyph = start;
+            cluster = nextCluster;
+        }
+    }
+}
+#endif
 
 class Cluster {
 public:

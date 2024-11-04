@@ -2590,7 +2590,7 @@ SkRect TextLine::computeShadowRect(SkScalar x, SkScalar y, const TextStyle& styl
 {
     SkScalar offsetX = x + this->fOffset.fX;
     SkScalar offsetY = y + this->fOffset.fY -
-        (context.run ? context.run->fCompressionBaselineShift : 0);;
+        (context.run ? context.run->fCompressionBaselineShift : 0);
     SkRect shadowRect = SkRect::MakeEmpty();
 
     for (const TextShadow& shadow : style.getShadows()) {

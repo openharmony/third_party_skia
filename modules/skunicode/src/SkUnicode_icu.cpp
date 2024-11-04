@@ -434,8 +434,8 @@ public:
 
 #ifdef OHOS_SUPPORT
             if (SkUnicode_icu::isGraphemeExtend(unichar)) {
-                // Current unichar is a combining one. we regard it as a grapheme boundary for being shaped separately.
-                results->at(before) |= SkUnicode::kGraphemeStart;
+                // Current unichar is a combining one.
+                results->at(before) |= SkUnicode::kCombine;
             }
 #endif
         }

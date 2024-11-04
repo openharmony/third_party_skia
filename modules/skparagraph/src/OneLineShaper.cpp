@@ -151,6 +151,117 @@ void OneLineShaper::fillGaps(size_t startingCount) {
     }
 }
 
+#ifdef OHOS_SUPPORT
+// 1. glyphs in run between [glyphStart, glyphEnd) are all equal to zero.
+// 2. run is nullptr.
+// 3. charStart flag has kCombine.
+// one of the above conditions is met, will return true.
+// anything else, return false.
+bool OneLineShaper::isUnresolvedCombineGlyphRange(std::shared_ptr<Run> run, size_t glyphStart, size_t glyphEnd,
+    size_t charStart) const
+{
+    if (run == nullptr ||
+        (fParagraph != nullptr && !fParagraph->codeUnitHasProperty(charStart, SkUnicode::kCombine))) {
+        return true;
+    }
+    size_t iterGlyphEnd = std::min(run->fGlyphs.size(), glyphEnd);
+    for (size_t glyph = glyphStart; glyph < iterGlyphEnd; ++glyph) {
+        if (run->fGlyphs[glyph] != 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// split unresolvedBlock.
+// extract resolvedBlock(which isUnresolvedGlyphRange is false), emplace back to stagedUnresolvedBlocks.
+// the rest block emplace back to fUnresolvedBlocks without run.
+void OneLineShaper::splitUnresolvedBlockAndStageResolvedSubBlock(
+    std::deque<RunBlock>& stagedUnresolvedBlocks, const RunBlock& unresolvedBlock)
+{
+    if (unresolvedBlock.fRun == nullptr) {
+        return;
+    }
+    std::shared_ptr<Run> run = unresolvedBlock.fRun;
+    bool hasUnresolvedText = false;
+    size_t curTextStart = EMPTY_INDEX;
+    size_t curGlyphEdge = EMPTY_INDEX;
+    run->iterateGlyphRangeInTextOrder(unresolvedBlock.fGlyphs,
+        [&stagedUnresolvedBlocks, &hasUnresolvedText, &curTextStart, &curGlyphEdge, run, this]
+        (size_t glyphStart, size_t glyphEnd, size_t charStart, size_t charEnd) {
+            if (!isUnresolvedCombineGlyphRange(run, glyphStart, glyphEnd, charStart)) {
+                if (curTextStart == EMPTY_INDEX) {
+                    curTextStart = charStart;
+                }
+                if (curGlyphEdge == EMPTY_INDEX) {
+                    curGlyphEdge = run->leftToRight() ? glyphStart : glyphEnd;
+                }
+                return;
+            }
+            hasUnresolvedText = true;
+            this->fUnresolvedBlocks.emplace_back(RunBlock(TextRange(charStart, charEnd)));
+            if (curTextStart == EMPTY_INDEX) {
+                return;
+            }
+            if (run->leftToRight()) {
+                stagedUnresolvedBlocks.emplace_back(
+                    run, TextRange(curTextStart, charStart), GlyphRange(curGlyphEdge, glyphStart), 0);
+            } else {
+                stagedUnresolvedBlocks.emplace_back(
+                    run, TextRange(curTextStart, charStart), GlyphRange(glyphEnd, curGlyphEdge), 0);
+            }
+            curTextStart = EMPTY_INDEX;
+            curGlyphEdge = EMPTY_INDEX;
+        });
+    if (!hasUnresolvedText) {
+        stagedUnresolvedBlocks.emplace_back(unresolvedBlock);
+        return;
+    }
+    if (curTextStart == EMPTY_INDEX) {
+        return;
+    }
+    if (run->leftToRight()) {
+        stagedUnresolvedBlocks.emplace_back(run, TextRange(curTextStart, unresolvedBlock.fText.end),
+            GlyphRange(curGlyphEdge, unresolvedBlock.fGlyphs.end), 0);
+    } else {
+        stagedUnresolvedBlocks.emplace_back(run, TextRange(curTextStart, unresolvedBlock.fText.end),
+            GlyphRange(unresolvedBlock.fGlyphs.start, curGlyphEdge), 0);
+    }
+}
+
+// shape unresolved text separately.
+void OneLineShaper::shapeUnresolvedTextSeparatelyFromUnresolvedBlock(
+    const TextStyle& textStyle, const TypefaceVisitor& visitor)
+{
+    if (fUnresolvedBlocks.empty()) {
+        return;
+    }
+    TEXT_TRACE_FUNC();
+    std::deque<OneLineShaper::RunBlock> stagedUnresolvedBlocks;
+    size_t unresolvedBlockCount = fUnresolvedBlocks.size();
+    while (unresolvedBlockCount-- > 0) {
+        RunBlock unresolvedBlock = fUnresolvedBlocks.front();
+        fUnresolvedBlocks.pop_front();
+
+        if (unresolvedBlock.fText.width() <= 1 || unresolvedBlock.fRun == nullptr) {
+            stagedUnresolvedBlocks.emplace_back(unresolvedBlock);
+            continue;
+        }
+
+        splitUnresolvedBlockAndStageResolvedSubBlock(stagedUnresolvedBlocks, unresolvedBlock);
+    }
+
+    this->matchResolvedFonts(textStyle, visitor);
+
+    while (!stagedUnresolvedBlocks.empty()) {
+        auto block = stagedUnresolvedBlocks.front();
+        stagedUnresolvedBlocks.pop_front();
+        fUnresolvedBlocks.emplace_back(block);
+    }
+}
+#endif
+
 void OneLineShaper::finish(const Block& block, SkScalar height, SkScalar& advanceX) {
     auto blockText = block.fRange;
 
@@ -671,12 +782,15 @@ bool OneLineShaper::shape() {
             fCurrentText = block.fRange;
             fUnresolvedBlocks.emplace_back(RunBlock(block.fRange));
 
-#ifndef USE_SKIA_TXT
-            this->matchResolvedFonts(block.fStyle, [&](sk_sp<SkTypeface> typeface) {
+#ifdef OHOS_SUPPORT
+#ifdef USE_SKIA_TXT
+            auto typefaceVisitor = [&](std::shared_ptr<RSTypeface> typeface) {
 #else
-            this->matchResolvedFonts(block.fStyle, [&](std::shared_ptr<RSTypeface> typeface) {
+            auto typefaceVisitor = [&](sk_sp<SkTypeface> typeface) {
 #endif
-
+#else
+            this->matchResolvedFonts(block.fStyle, [&](sk_sp<SkTypeface> typeface) {
+#endif
                 // Create one more font to try
 #ifndef USE_SKIA_TXT
                 SkFont font(std::move(typeface), block.fStyle.getFontSize());
@@ -770,8 +884,13 @@ bool OneLineShaper::shape() {
                 } else {
                     return Resolved::Nothing;
                 }
+#ifdef OHOS_SUPPORT
+            };
+            this->matchResolvedFonts(block.fStyle, typefaceVisitor);
+            this->shapeUnresolvedTextSeparatelyFromUnresolvedBlock(block.fStyle, typefaceVisitor);
+#else
             });
-
+#endif
             this->finish(block, fHeight, advanceX);
         });
 

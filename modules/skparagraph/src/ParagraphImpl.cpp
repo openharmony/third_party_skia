@@ -2276,6 +2276,8 @@ void ParagraphImpl::initUnicodeText() {
     this->fUnicodeText = convertUtf8ToUnicode(fText);
 }
 
+// Currently, only support to generate text and text shadow paint regions.
+// Can't accurately calculate the paint region of italic fonts(including fake italic).
 SkIRect ParagraphImpl::generatePaintRegion(SkScalar x, SkScalar y) {
     if (fState < kFormatted) {
         TEXT_LOGW("Call generatePaintRegion when paragraph is not formatted");
