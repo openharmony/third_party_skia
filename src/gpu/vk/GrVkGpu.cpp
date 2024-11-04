@@ -1172,6 +1172,11 @@ bool GrVkGpu::uploadTexDataCompressed(GrVkImage* uploadTexture,
                                                                     GrGpuBufferType::kXferCpuToGpu,
                                                                     kDynamic_GrAccessPattern);
 
+    if (vkBuffer == nullptr) {
+        SkDebugf("Can't make vkbuffer from native buffer");
+        return false;
+    }
+
     // Change image layout so it can be copied to.
     uploadTexture->setImageLayout(this, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                   VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, false);
