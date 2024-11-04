@@ -152,9 +152,6 @@ void OneLineShaper::fillGaps(size_t startingCount) {
 }
 
 void OneLineShaper::finish(const Block& block, SkScalar height, SkScalar& advanceX) {
-#ifdef OHOS_SUPPORT
-    TEXT_TRACE_FUNC();
-#endif
     auto blockText = block.fRange;
 
     // Add all unresolved blocks to resolved blocks
@@ -437,9 +434,6 @@ void OneLineShaper::iterateThroughFontStyles(TextRange textRange,
 
 void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                                        const TypefaceVisitor& visitor) {
-#ifdef OHOS_SUPPORT
-    TEXT_TRACE_FUNC();
-#endif
 #ifndef USE_SKIA_TXT
     std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
 #else
@@ -682,9 +676,7 @@ bool OneLineShaper::shape() {
 #else
             this->matchResolvedFonts(block.fStyle, [&](std::shared_ptr<RSTypeface> typeface) {
 #endif
-#ifdef OHOS_SUPPORT
-                TEXT_TRACE("OneLineShaper::HandleTypeface");
-#endif
+
                 // Create one more font to try
 #ifndef USE_SKIA_TXT
                 SkFont font(std::move(typeface), block.fStyle.getFontSize());
