@@ -449,6 +449,10 @@ private:
     std::unique_ptr<GrVkMemoryReclaimer>                    fMemoryReclaimer;
 
     using INHERITED = GrGpu;
+
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    const int TRACE_LIMIT_TIME = 500;
+#endif
 };
 
 #endif
