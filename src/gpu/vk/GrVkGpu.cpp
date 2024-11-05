@@ -1020,6 +1020,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
                 }
             }
 #endif
+
             VkBufferImageCopy& region = regions.push_back();
             memset(&region, 0, sizeof(VkBufferImageCopy));
             region.bufferOffset = slice.fOffset + individualMipOffsets[currentMipLevel];
