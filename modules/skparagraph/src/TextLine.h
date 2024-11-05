@@ -113,6 +113,7 @@ public:
     SkScalar alphabeticBaseline() const { return fSizes.alphabeticBaseline(); }
     SkScalar ideographicBaseline() const { return fSizes.ideographicBaseline(); }
     SkScalar baseline() const { return fSizes.baseline(); }
+    void TextLine::extendCoordinateRange(PositionWithAffinity& positionWithAffinity);
 
     using RunVisitor = std::function<bool(
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;

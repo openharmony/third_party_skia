@@ -2067,6 +2067,26 @@ void TextLine::getRectsForRange(TextRange textRange0,
     }
 }
 
+#ifdef OHOS_SUPPORT
+void TextLine::extendCoordinateRange(PositionWithAffinity& positionWithAffinity) {
+    // Extending coordinate index if the ellipsis's run is selected.
+    if (fEllipsis) {
+        EllipsisModal ellipsisModal = fOwner->paragraphStyle().getEllipsisMod();
+        if (ellipsisModal == EllipsisModal::TAIL) {
+            if (positionWithAffinity.position > fOwner->getEllipsisTextRange().start &&
+                positionWithAffinity.position <= fOwner->getEllipsisTextRange().end) {
+                positionWithAffinity.position = fOwner->getEllipsisTextRange().end;
+            }
+        } else if (ellipsisModal == EllipsisModal::HEAD) {
+            if (positionWithAffinity.position >= fOwner->getEllipsisTextRange().start &&
+                positionWithAffinity.position < fOwner->getEllipsisTextRange().end) {
+                positionWithAffinity.position = fOwner->getEllipsisTextRange().start;
+            }
+        }
+    }
+}
+#endif
+
 PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
 
     if (SkScalarNearlyZero(this->width()) && SkScalarNearlyZero(this->spacesWidth())) {
@@ -2220,21 +2240,9 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
         }
     );
 
-    // Extending coordinate index if the ellipsis's run is selected.
-    if (fEllipsis) {
-        EllipsisModal ellipsisModal = fOwner->paragraphStyle().getEllipsisMod();
-        if (ellipsisModal == EllipsisModal::TAIL) {
-            if (result.position > fOwner->getEllipsisTextRange().start &&
-                result.position <= fOwner->getEllipsisTextRange().end) {
-                result.position = fOwner->getEllipsisTextRange().end;
-            }
-        } else if (ellipsisModal == EllipsisModal::HEAD) {
-            if (result.position >= fOwner->getEllipsisTextRange().start &&
-                result.position < fOwner->getEllipsisTextRange().end) {
-                result.position = fOwner->getEllipsisTextRange().start;
-            }
-        }
-    }
+#ifdef OHOS_SUPPORT
+    extendCoordinateRange(result);
+#endif
 
     return result;
 }
