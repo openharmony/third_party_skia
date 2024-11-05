@@ -114,7 +114,7 @@ public:
     SkScalar ideographicBaseline() const { return fSizes.ideographicBaseline(); }
     SkScalar baseline() const { return fSizes.baseline(); }
 #ifdef OHOS_SUPPORT
-    void TextLine::extendCoordinateRange(PositionWithAffinity& positionWithAffinity);
+    void extendCoordinateRange(PositionWithAffinity& positionWithAffinity);
 #endif
 
     using RunVisitor = std::function<bool(
