@@ -2067,6 +2067,27 @@ void TextLine::getRectsForRange(TextRange textRange0,
     }
 }
 
+#ifdef OHOS_SUPPORT
+void TextLine::extendCoordinateRange(PositionWithAffinity& positionWithAffinity) {
+    if (fEllipsis == nullptr) {
+        return;
+    }
+    // Extending coordinate index if the ellipsis's run is selected.
+    EllipsisModal ellipsisModal = fOwner->paragraphStyle().getEllipsisMod();
+    if (ellipsisModal == EllipsisModal::TAIL) {
+        if (positionWithAffinity.position > fOwner->getEllipsisTextRange().start &&
+            positionWithAffinity.position <= fOwner->getEllipsisTextRange().end) {
+            positionWithAffinity.position = fOwner->getEllipsisTextRange().end;
+        }
+    } else if (ellipsisModal == EllipsisModal::HEAD) {
+        if (positionWithAffinity.position >= fOwner->getEllipsisTextRange().start &&
+            positionWithAffinity.position < fOwner->getEllipsisTextRange().end) {
+            positionWithAffinity.position = fOwner->getEllipsisTextRange().start;
+        }
+    }
+}
+#endif
+
 PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
 
     if (SkScalarNearlyZero(this->width()) && SkScalarNearlyZero(this->spacesWidth())) {
@@ -2219,6 +2240,11 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
             return keepLooking;
         }
     );
+
+#ifdef OHOS_SUPPORT
+    extendCoordinateRange(result);
+#endif
+
     return result;
 }
 
