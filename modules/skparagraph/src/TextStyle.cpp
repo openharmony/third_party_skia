@@ -7,6 +7,26 @@
 namespace skia {
 namespace textlayout {
 
+#ifdef OHOS_SUPPORT
+struct SkStringHash {
+    size_t operator()(const SkString& s) const {
+        size_t hash = 0;
+        for (size_t i = 0; i < s.size(); ++i) {
+            hash ^= std::hash<char>()(s.c_str()[i]);
+        }
+        return hash;
+    }
+};
+
+const std::unordered_map<SkString, SkString, SkStringHash> GENERIC_FAMILY_NAME_MAP = {
+    { SkString{"HarmonyOS Sans"}, SkString{"HarmonyOS-Sans"} },
+    { SkString{"HarmonyOS Sans Condensed"}, SkString{"HarmonyOS-Sans-Condensed"} },
+    { SkString{"HarmonyOS Sans Digit"}, SkString{"HarmonyOS-Sans-Digit"} },
+    { SkString{"Noto Serif"}, SkString{"serif"} },
+    { SkString{"Noto Sans Mono"}, SkString{"monospace"} }
+};
+#endif
+
 const std::vector<SkString>* TextStyle::kDefaultFontFamilies =
         new std::vector<SkString>{SkString(DEFAULT_FONT_FAMILY)};
 
@@ -238,6 +258,17 @@ bool PlaceholderStyle::equals(const PlaceholderStyle& other) const {
            (fAlignment != PlaceholderAlignment::kBaseline ||
             nearlyEqual(fBaselineOffset, other.fBaselineOffset));
 }
+
+#ifdef OHOS_SUPPORT
+void TextStyle::setFontFamilies(std::vector<SkString> families) {
+    std::for_each(families.begin(), families.end(), [](SkString& familyName) {
+        if (GENERIC_FAMILY_NAME_MAP.count(familyName)) {
+            familyName = GENERIC_FAMILY_NAME_MAP.at(familyName);
+        }
+    });
+    TextStyle::getFontFamilies() = std::move(families);
+}
+#endif
 
 }  // namespace textlayout
 }  // namespace skia

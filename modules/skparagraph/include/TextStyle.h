@@ -286,18 +286,19 @@ public:
     SkScalar getFontSize() const { return fFontSize; }
     void setFontSize(SkScalar size) { fFontSize = size; }
 
-    const std::vector<SkString>& getFontFamilies() const { return fFontFamilies; }
-    void setFontFamilies(std::vector<SkString> families) {
-#ifdef OHOS_SUPPORT
-        // Adjusting alias of family name, will be removed when font config is updated.
-        std::for_each(families.begin(), families.end(), [](SkString& familyName) {
-            if (familyName.equals("HarmonyOS Sans")) {
-                familyName = "HarmonyOS-Sans";
-            }
-        });
+#ifdef OHOS_SUPORT
+    std::vector<SkString>& getFontFamilies() { return fFontFamilies; }
 #endif
+
+    const std::vector<SkString>& getFontFamilies() const { return fFontFamilies; }
+
+#ifdef OHOS_SUPORT
+    void setFontFamilies(std::vector<SkString> families);
+#else
+    void setFontFamilies(std::vector<SkString> families) {
         fFontFamilies = std::move(families);
     }
+#endif
 
     SkScalar getBaselineShift() const { return fBaselineShift; }
     void setBaselineShift(SkScalar baselineShift) { fBaselineShift = baselineShift; }
