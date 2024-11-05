@@ -2069,19 +2069,20 @@ void TextLine::getRectsForRange(TextRange textRange0,
 
 #ifdef OHOS_SUPPORT
 void TextLine::extendCoordinateRange(PositionWithAffinity& positionWithAffinity) {
+    if (fEllipsis == nullptr) {
+        return;
+    }
     // Extending coordinate index if the ellipsis's run is selected.
-    if (fEllipsis) {
-        EllipsisModal ellipsisModal = fOwner->paragraphStyle().getEllipsisMod();
-        if (ellipsisModal == EllipsisModal::TAIL) {
-            if (positionWithAffinity.position > fOwner->getEllipsisTextRange().start &&
-                positionWithAffinity.position <= fOwner->getEllipsisTextRange().end) {
-                positionWithAffinity.position = fOwner->getEllipsisTextRange().end;
-            }
-        } else if (ellipsisModal == EllipsisModal::HEAD) {
-            if (positionWithAffinity.position >= fOwner->getEllipsisTextRange().start &&
-                positionWithAffinity.position < fOwner->getEllipsisTextRange().end) {
-                positionWithAffinity.position = fOwner->getEllipsisTextRange().start;
-            }
+    EllipsisModal ellipsisModal = fOwner->paragraphStyle().getEllipsisMod();
+    if (ellipsisModal == EllipsisModal::TAIL) {
+        if (positionWithAffinity.position > fOwner->getEllipsisTextRange().start &&
+            positionWithAffinity.position <= fOwner->getEllipsisTextRange().end) {
+            positionWithAffinity.position = fOwner->getEllipsisTextRange().end;
+        }
+    } else if (ellipsisModal == EllipsisModal::HEAD) {
+        if (positionWithAffinity.position >= fOwner->getEllipsisTextRange().start &&
+            positionWithAffinity.position < fOwner->getEllipsisTextRange().end) {
+            positionWithAffinity.position = fOwner->getEllipsisTextRange().start;
         }
     }
 }
