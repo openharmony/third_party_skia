@@ -1049,11 +1049,11 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
     // upload in the frame.
     GrVkBuffer* vkBuffer = static_cast<GrVkBuffer*>(slice.fBuffer);
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-            int copyStartTimestamp = 0;
-            int copyEndTimestamp = 0;
-            if (UNLIKELY(isTagEnabled)) {
-                copyStartTimestamp = get_current_time();
-            }
+    int copyStartTimestamp = 0;
+    int copyEndTimestamp = 0;
+    if (UNLIKELY(isTagEnabled)) {
+        copyStartTimestamp = get_current_time();
+    }
 #endif
     this->currentCommandBuffer()->copyBufferToImage(this,
                                                     vkBuffer->vkBuffer(),
