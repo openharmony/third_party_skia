@@ -591,7 +591,8 @@ std::unique_ptr<SkAdvancedTypefaceMetrics> SkTypeface::onGetAdvancedMetrics() co
 }
 
 #ifdef OHOS_SUPPORT
-uint32_t SkTypeface::GetHash() const {
+uint32_t SkTypeface::GetHash() const
+{
     if (hash_ != 0) {
         return hash_;
     }
@@ -608,5 +609,8 @@ uint32_t SkTypeface::GetHash() const {
     return hash_;
 }
 
-void SkTypeface::SetHash(uint32_t hash) { hash_ = hash; }
+void SkTypeface::SetHash(uint32_t hash)
+{
+    hash_ = hash;
+}
 #endif
