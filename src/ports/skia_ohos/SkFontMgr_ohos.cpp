@@ -113,14 +113,18 @@ SkTypeface* SkFontMgr_OHOS::findSpecialTypeface(SkUnichar character, const SkFon
     // The key values in this list are Unicode that support the identification characters
     // of several high-frequency languages in the fallback list corresponding to Chinese, Uyghur, and Tibetan
     static std::vector<SpecialUnicodeFamilyName> specialLists = {
-        {0x7B80, "HarmonyOS Sans SC"},
-        {0x7E41, "HarmonyOS Sans SC"},
         {0x0626, "HarmonyOS Sans Naskh Arabic UI"},
         {0x0F56, "Noto Serif Tibetan"}
     };
 
     std::string name;
-    for (int i = 0; i < specialLists.size(); i++) {
+
+    // base chinese unicode range is 0x4E00-0x9FA5
+    if (character >= 0x4E00 && character <= 0x9FA5) {
+        name.assign("HarmonyOS Sans SC");
+    }
+    
+    for (int i = 0; i < specialLists.size() && name.empty(); i++) {
         if (character == specialLists[i].unicode) {
             name.assign(specialLists[i].familyName);
             break;
