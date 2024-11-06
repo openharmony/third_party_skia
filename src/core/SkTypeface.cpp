@@ -600,9 +600,6 @@ uint32_t SkTypeface::GetHash() const
         return hash_;
     }
     std::unique_ptr<SkStreamAsset> ttfStream = openExistingStream(0);
-    if (ttfStream == nullptr) {
-        return hash_;
-    }
     uint32_t seed = ttfStream.get() != nullptr ? ttfStream->getLength() : 0;
     hash_ = SkOpts::hash_fn(skData->data(), skData->size(), seed);
     return hash_;
