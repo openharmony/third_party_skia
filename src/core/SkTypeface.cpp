@@ -22,6 +22,7 @@
 #include "src/core/SkTypefaceCache.h"
 #include "src/sfnt/SkOTTable_OS_2.h"
 #include "src/utils/SkUTF.h"
+#include "SkString.h"
 
 #include <mutex>
 
@@ -114,6 +115,11 @@ public:
 
         size_t hash = 0;
         hash ^= std::hash<uint32_t>()(typeface->uniqueID());
+#ifdef OHOS_SUPPORT
+        SkString familyName;
+        typeface->getFamilyName(&familyName);
+        hash ^= std::hash<std::string>()(std::string(familyName.c_str()));
+#endif
         hash ^= std::hash<int>()(args.getCollectionIndex());
         const auto& positions = args.getVariationDesignPosition();
         for (int i = 0; i < positions.coordinateCount; i++) {
