@@ -22,7 +22,6 @@
 #include "src/core/SkTypefaceCache.h"
 #include "src/sfnt/SkOTTable_OS_2.h"
 #include "src/utils/SkUTF.h"
-#include "SkString.h"
 
 #include <mutex>
 
