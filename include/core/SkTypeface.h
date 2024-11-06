@@ -370,6 +370,11 @@ public:
         return this->onGetCTFontRef();
     }
 
+#ifdef OHOS_SUPPORT
+    uint32_t GetHash() const;
+    void SetHash(uint32_t hash);
+#endif
+
 protected:
     explicit SkTypeface(const SkFontStyle& style, bool isFixedPitch = false);
     ~SkTypeface() override;
@@ -472,6 +477,10 @@ private:
     friend class SkFontPriv;         // GetDefaultTypeface
     friend class SkPaintPriv;        // GetDefaultTypeface
     friend class SkFont;             // getGlyphToUnicodeMap
+
+#ifdef OHOS_SUPPORT
+    mutable uint32_t hash_{0};
+#endif
 
 private:
     SkFontID            fUniqueID;

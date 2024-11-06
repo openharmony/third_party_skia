@@ -116,9 +116,8 @@ public:
         size_t hash = 0;
         hash ^= std::hash<uint32_t>()(typeface->uniqueID());
 #ifdef OHOS_SUPPORT
-        SkString familyName;
-        typeface->getFamilyName(&familyName);
-        hash ^= std::hash<std::string>()(std::string(familyName.c_str()));
+        uint32_t typefaceHash = typeface->GetHash();
+        hash ^= std::hash<uint32_t>()(typefaceHash);
 #endif
         hash ^= std::hash<int>()(args.getCollectionIndex());
         const auto& positions = args.getVariationDesignPosition();
@@ -590,3 +589,24 @@ std::unique_ptr<SkAdvancedTypefaceMetrics> SkTypeface::onGetAdvancedMetrics() co
     SkDEBUGFAIL("Typefaces that need to work with PDF backend must override this.");
     return nullptr;
 }
+
+#ifdef OHOS_SUPPORT
+uint32_t SkTypeface::GetHash() const {
+    if (hash_ != 0) {
+        return hash_;
+    }
+    auto skData = serialize(SkTypeface::SerializeBehavior::kDontIncludeData);
+    if (skData == nullptr) {
+        return hash_;
+    }
+    std::unique_ptr<SkStreamAsset> ttfStream = openExistingStream(0);
+    if (ttfStream == nullptr) {
+        return hash_;
+    }
+    uint32_t seed = ttfStream.get() != nullptr ? ttfStream->getLength() : 0;
+    hash_ = SkOpts::hash_fn(skData->data(), skData->size(), seed);
+    return hash_;
+}
+
+void SkTypeface::SetHash(uint32_t hash) { hash_ = hash; }
+#endif
