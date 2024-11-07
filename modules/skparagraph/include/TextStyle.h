@@ -286,6 +286,10 @@ public:
     SkScalar getFontSize() const { return fFontSize; }
     void setFontSize(SkScalar size) { fFontSize = size; }
 
+#ifdef OHOS_SUPPORT
+    std::vector<SkString>& getFontFamilies() { return fFontFamilies; }
+#endif
+
     const std::vector<SkString>& getFontFamilies() const { return fFontFamilies; }
 
 #ifdef OHOS_SUPPORT
