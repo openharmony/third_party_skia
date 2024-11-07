@@ -8,7 +8,7 @@ namespace skia {
 namespace textlayout {
 
 #ifdef OHOS_SUPPORT
-struct SkStringHash {
+struct SkStringHash{
     size_t operator()(const SkString& s) const {
         size_t hash = 0;
         for (size_t i = 0; i < s.size(); ++i) {
@@ -266,7 +266,7 @@ void TextStyle::setFontFamilies(std::vector<SkString> families) {
             familyName = GENERIC_FAMILY_NAME_MAP.at(familyName);
         }
     });
-    fFontFamilies = std::move(families);
+    TextStyle::getFontFamilies() = std::move(families);
 }
 #endif
 
