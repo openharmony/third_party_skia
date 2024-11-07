@@ -1014,7 +1014,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
                 memEndTimestamp = get_current_time();
                 int duration = memEndTimestamp - memStartTimestamp;
                 if (duration > TRACE_LIMIT_TIME) {
-                    HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal SkRectMemcpy: %zu Time: %d μs bpp = %zu "
+                    HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal SkRectMemcpy: %zu Time: %d µs bpp = %zu "
                         "width: %d height: %d",
                         trimRowBytes * currentHeight, duration, bpp, currentWidth, currentHeight);
                 }
@@ -1066,7 +1066,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
         copyEndTimestamp = get_current_time();
         int duration = copyEndTimestamp - copyStartTimestamp;
         if (duration > TRACE_LIMIT_TIME) {
-            HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal copyBufferToImage Time: %d μs width: %d height: %d",
+            HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal copyBufferToImage Time: %d µs width: %d height: %d",
                 duration, rect.width(), rect.height());
         }
     }
