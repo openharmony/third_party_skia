@@ -266,7 +266,7 @@ void TextStyle::setFontFamilies(std::vector<SkString> families) {
             familyName = GENERIC_FAMILY_NAME_MAP.at(familyName);
         }
     });
-    TextStyle::getFontFamiles() = std::move(families);
+    TextStyle::getFontFamilies() = std::move(families);
 }
 #endif
 
