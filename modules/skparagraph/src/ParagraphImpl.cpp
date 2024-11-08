@@ -87,9 +87,6 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
     return result;
 }
 
-Paragraph::Paragraph()
-{ }
-
 Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             : fFontCollection(std::move(fonts))
             , fParagraphStyle(std::move(style))
@@ -104,9 +101,6 @@ Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             , fLongestLineWithIndent(0)
 #endif
             , fExceededMaxLines(0)
-{ }
-
-ParagraphImpl::ParagraphImpl()
 { }
 
 ParagraphImpl::ParagraphImpl(const SkString& text,
@@ -686,7 +680,7 @@ bool ParagraphImpl::computeCodeUnitProperties() {
     // Get some information about trailing spaces / hard line breaks
     fTrailingSpaces = fText.size();
     TextIndex firstWhitespace = EMPTY_INDEX;
-    for (int i = 0; i < fCodeUnitProperties.size(); ++i) {
+    for (size_t i = 0; i < fCodeUnitProperties.size(); ++i) {
         auto flags = fCodeUnitProperties[i];
         if (SkUnicode::isPartOfWhiteSpaceBreak(flags)) {
             if (fTrailingSpaces  == fText.size()) {
@@ -976,7 +970,7 @@ void ParagraphImpl::buildClusterTable() {
     // It's possible that one grapheme includes few runs; we cannot handle it
     // so we break graphemes by the runs instead
     // It's not the ideal solution and has to be revisited later
-    int cluster_count = 1;
+    size_t cluster_count = 1;
     for (auto& run : fRuns) {
         cluster_count += run.isPlaceholder() ? 1 : run.size();
         fCodeUnitProperties[run.fTextRange.start] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
@@ -1245,7 +1239,7 @@ void ParagraphImpl::resolveStrut() {
 BlockRange ParagraphImpl::findAllBlocks(TextRange textRange) {
     BlockIndex begin = EMPTY_BLOCK;
     BlockIndex end = EMPTY_BLOCK;
-    for (int index = 0; index < fTextStyles.size(); ++index) {
+    for (BlockIndex index = 0; index < fTextStyles.size(); ++index) {
         auto& block = fTextStyles[index];
         if (block.fRange.end <= textRange.start) {
             continue;
@@ -1854,7 +1848,7 @@ void ParagraphImpl::visit(const Visitor& visitor) {
 }
 
 int ParagraphImpl::getLineNumberAt(TextIndex codeUnitIndex) const {
-    for (auto i = 0; i < fLines.size(); ++i) {
+    for (size_t i = 0; i < fLines.size(); ++i) {
         auto& line = fLines[i];
         if (line.text().contains({codeUnitIndex, codeUnitIndex + 1})) {
             return i;
@@ -1864,7 +1858,7 @@ int ParagraphImpl::getLineNumberAt(TextIndex codeUnitIndex) const {
 }
 
 bool ParagraphImpl::getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) const {
-    if (lineNumber < 0 || lineNumber >= fLines.size()) {
+    if (lineNumber < 0 || static_cast<size_t>(lineNumber) >= fLines.size()) {
         return false;
     }
     auto& line = fLines[lineNumber];
@@ -1875,7 +1869,7 @@ bool ParagraphImpl::getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) c
 }
 
 TextRange ParagraphImpl::getActualTextRange(int lineNumber, bool includeSpaces) const {
-    if (lineNumber < 0 || lineNumber >= fLines.size()) {
+    if (lineNumber < 0 || static_cast<size_t>(lineNumber) >= fLines.size()) {
         return EMPTY_TEXT;
     }
     auto& line = fLines[lineNumber];
@@ -1883,7 +1877,7 @@ TextRange ParagraphImpl::getActualTextRange(int lineNumber, bool includeSpaces) 
 }
 
 bool ParagraphImpl::getGlyphClusterAt(TextIndex codeUnitIndex, GlyphClusterInfo* glyphInfo) {
-    for (auto i = 0; i < fLines.size(); ++i) {
+    for (size_t i = 0; i < fLines.size(); ++i) {
         auto& line = fLines[i];
         if (!line.text().contains({codeUnitIndex, codeUnitIndex})) {
             continue;

@@ -177,7 +177,7 @@ void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRe
     RSPath path;
     auto start = rect.fLeft;
     path.MoveTo(rect.fLeft, rect.fTop);
-    for (int i = 0; i < intersections.size(); i += 2) {
+    for (size_t i = 0; i < intersections.size(); i += 2) {
         auto end = intersections[i] - halo;
         if (end - start >= halo) {
             start = intersections[i + 1] + halo;
