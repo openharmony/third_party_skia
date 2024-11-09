@@ -268,26 +268,36 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 
     if (fHasDecorations) {
-        this->fDecorationContext = {0.0f, 0.0f, 0.0f};
 #ifdef OHOS_SUPPORT
+        this->fDecorationContext = {0.0f, 0.0f, 0.0f};
+        // 16 is default value in placeholder-only scenario, calculated by the fontsize 14.
+        SkScalar maxLineHeightWithoutPlaceholder = 16;
         this->iterateThroughVisualRuns(EllipsisReadStrategy::DEFAULT, true,
-#else
-        this->iterateThroughVisualRuns(false,
-#endif
-            [painter, x, y, this]
+            [painter, x, y, this, &maxLineHeightWithoutPlaceholder]
             (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
                 *runWidthInLine = this->iterateThroughSingleRunByStyles(
                     TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange,
-                    StyleType::kDecorations, [painter, x, y, this]
+                    StyleType::kDecorations, [painter, x, y, this, &maxLineHeightWithoutPlaceholder]
                     (TextRange textRange, const TextStyle& style, const ClipContext& context) {
                     if (style.getDecoration().fType == TextDecoration::kUnderline) {
                         SkScalar tmpThick = this->calculateThickness(style, context);
                         fDecorationContext.thickness = fDecorationContext.thickness > tmpThick ?
                             fDecorationContext.thickness : tmpThick;
                     }
+                    auto cur = context.run;
+                    if (cur != nullptr && !cur->isPlaceholder()) {
+                        SkScalar height = round(cur->correctDescent() - cur->correctAscent() + cur->correctLeading());
+                        maxLineHeightWithoutPlaceholder = maxLineHeightWithoutPlaceholder < height ?
+                            height : maxLineHeightWithoutPlaceholder;
+                    }
                 });
                 return true;
         });
+        // 16% of row height wihtout placeholder.
+        fDecorationContext.underlinePosition = maxLineHeightWithoutPlaceholder * 0.16 + baseline();
+        fDecorationContext.textBlobTop = maxLineHeightWithoutPlaceholder * 0.16;
+#endif
+
 #ifdef OHOS_SUPPORT
         this->iterateThroughVisualRuns(EllipsisReadStrategy::DEFAULT, true,
 #else
@@ -299,9 +309,6 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
                 TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kDecorations,
                 [painter, x, y, this]
                 (TextRange textRange, const TextStyle& style, const ClipContext& context) {
-                    // 12% of row height.
-                    fDecorationContext.underlinePosition = (fSizes.height() * 0.12 + this->baseline());
-                    fDecorationContext.textBlobTop = fSizes.height() * 0.12;
                     this->paintDecorations(painter, x, y, textRange, style, context);
                 });
                 return true;
