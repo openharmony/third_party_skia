@@ -241,7 +241,7 @@ void GrGpuResource::setResourceTag(const GrGpuResourceTag tag)
         return;
     }
     size_t size = this->gpuMemorySize();
-    get_resource_cache(fGpu)->resourceAccess().changeByteOfPid(pid, tag.fPid, fRealAllocSize);
+    get_resource_cache(fGpu)->resourceAccess().changeByteOfPid(pid, tag.fPid, size);
 }
 
 //////////////////////////////////////////////////////////////////////////////
