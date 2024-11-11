@@ -1052,7 +1052,7 @@ void GetPointsForTextBlob(const SkTextBlob* blob, std::vector<SkPoint>& points)
         const auto glyphCount = run.glyphCount();
         switch (run.positioning()) {
             case SkTextBlobRunIterator::kFull_Positioning: {
-                for (auto i = 0; i < glyphCount; i++) {
+                for (uint32_t i = 0; i < glyphCount; i++) {
                     const SkPoint* glyphPoints = run.points();
                     const auto* point = glyphPoints + i;
                     points.push_back(*point);
