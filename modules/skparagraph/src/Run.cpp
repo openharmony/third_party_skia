@@ -271,10 +271,8 @@ void Run::calculateMetrics() {
         fCorrectDescent *= multiplier;
     }
     // If we shift the baseline we need to make sure the shifted text fits the line
-#ifndef OHOS_SUPPORT
     fCorrectAscent += fBaselineShift;
     fCorrectDescent += fBaselineShift;
-#endif
 }
 
 SkShaper::RunHandler::Buffer Run::newRunBuffer() {
