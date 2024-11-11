@@ -74,6 +74,15 @@ private:
     using TypefaceVisitor = std::function<Resolved(std::shared_ptr<RSTypeface> typeface)>;
 #endif
     void matchResolvedFonts(const TextStyle& textStyle, const TypefaceVisitor& visitor);
+
+#ifdef OHOS_SUPPORT
+    bool isUnresolvedCombineGlyphRange(std::shared_ptr<Run> run, size_t glyphStart, size_t glyphEnd,
+        size_t charStart) const;
+    void splitUnresolvedBlockAndStageResolvedSubBlock(
+        std::deque<RunBlock>& stagedUnresolvedBlocks, const RunBlock& unresolvedBlock);
+    void shapeUnresolvedTextSeparatelyFromUnresolvedBlock(const TextStyle& textStyle, const TypefaceVisitor& visitor);
+#endif
+
 #ifdef SK_DEBUG
     void printState();
 #endif
