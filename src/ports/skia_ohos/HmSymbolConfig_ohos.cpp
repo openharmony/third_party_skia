@@ -813,7 +813,7 @@ void HmSymbolConfig_OHOS::ParseDefaultColor(const char* defaultColorStr, RenderG
     char defaultColorHex[defaultColorHexLen];
     defaultColorHex[0] = '0';
     defaultColorHex[1] = 'X';
-    if (strlen(defaultColorStr) == defaultColorStrLen) {
+    if (defaultColorStr != nullptr && strlen(defaultColorStr) == defaultColorStrLen) {
         for (unsigned int i = 1; i < defaultColorStrLen; i++) {
             defaultColorHex[i + 1] = defaultColorStr[i];
         }
