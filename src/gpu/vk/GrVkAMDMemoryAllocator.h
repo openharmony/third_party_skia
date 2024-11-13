@@ -9,6 +9,7 @@
 #define GrVkAMDMemoryAllocator_DEFINED
 
 #include "include/gpu/vk/GrVkMemoryAllocator.h"
+#include <mutex>
 
 class GrVkCaps;
 class GrVkExtensions;
@@ -71,7 +72,11 @@ public:
 
 private:
     GrVkAMDMemoryAllocator(VmaAllocator allocator, sk_sp<const GrVkInterface> interface,
+#ifdef NOT_USE_PRE_ALLOC
                            bool mustUseCoherentHostVisibleMemory);
+#else
+                           bool mustUseCoherentHostVisibleMemory, bool cacheFlag);
+#endif
 
     VmaAllocator fAllocator;
 
@@ -84,6 +89,12 @@ private:
     // to support a host visible and coherent memory type. This is used to work around bugs for
     // devices that don't handle non coherent memory correctly.
     bool fMustUseCoherentHostVisibleMemory;
+    // Protect preAlloc block
+    // 1. main thread cannot be allocated and released the preAlloc block at the same time
+    // 2. main thread and sub-thread cannot operate the preAlloc block at the same time
+    std::mutex mPreAllocMutex;
+
+    bool fCacheFlag = false;
 
     using INHERITED = GrVkMemoryAllocator;
 };

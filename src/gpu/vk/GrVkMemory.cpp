@@ -174,7 +174,8 @@ bool GrVkMemory::AllocAndBindImageMemory(GrVkGpu* gpu,
     }
 
     VkMemoryRequirements memReqs;
-    HITRACE_OHOS_NAME_ALWAYS("AllocAndBindImageMemory");
+    HITRACE_OHOS_NAME_FMT_ALWAYS("AllocAndBindImageMemory vmaCacheFlag %d memSizeOver %d",
+        vmaCacheFlag, memorySize > SkGetNeedCachedMemroySize());
     GR_VK_CALL(gpu->vkInterface(), GetImageMemoryRequirements(gpu->device(), image, &memReqs));
 
     AllocationPropertyFlags propFlags;
