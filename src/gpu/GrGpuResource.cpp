@@ -240,7 +240,8 @@ void GrGpuResource::setResourceTag(const GrGpuResourceTag tag)
     if (pid == tag.fPid || !fRealAlloc) {
         return;
     }
-    get_resource_cache(fGpu)->resourceAccess().changeByteOfPid(pid, tag.fPid, fRealAllocSize);
+    size_t size = this->gpuMemorySize();
+    get_resource_cache(fGpu)->resourceAccess().changeByteOfPid(pid, tag.fPid, size);
 }
 
 //////////////////////////////////////////////////////////////////////////////
