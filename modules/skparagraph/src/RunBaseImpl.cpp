@@ -360,14 +360,15 @@ uint64_t RunBaseImpl::calculateActualLength(int64_t start, int64_t length) const
 {
     // Calculate the actual size of the run,
     // start and length equal to 0 means that the data is obtained from start to end, so no filtering is required
-    if (start >= fVisitorSize || start < 0 || length < 0) {
+    if (start < 0 || length < 0 || static_cast<size_t>(start) >= fVisitorSize) {
         return 0;
     }
-    uint64_t actualLength = fVisitorSize - start;
-    actualLength = actualLength > length ? length: actualLength;
+    uint64_t actualLength = static_cast<uint64_t>(fVisitorSize - static_cast<size_t>(start));
+    actualLength = (actualLength > static_cast<uint64_t>(length)) ? static_cast<uint64_t>(length)
+                                                                  : actualLength;
     // If length is equal to 0, the end of the line is obtained
     if (start >= 0 && length == 0) {
-        return fVisitorSize - start;
+        return fVisitorSize - static_cast<size_t>(start);
     }
 
     return actualLength;
