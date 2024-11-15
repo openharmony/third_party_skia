@@ -8,6 +8,7 @@
 #ifndef GrResourceCache_DEFINED
 #define GrResourceCache_DEFINED
 
+#include <cstddef>
 #include <set>
 #include <stack>
 #include <unordered_set>
@@ -70,6 +71,7 @@ public:
 
     // Default maximum number of bytes of gpu memory of budgeted resources in the cache.
     static const size_t kDefaultMaxSize             = 256 * (1 << 20);
+    static constexpr double kDefaultMaxBytesRate    = 0.9;
 
     /** Used to access functionality needed by GrGpuResource for lifetime management. */
     class ResourceAccess;
@@ -190,7 +192,8 @@ public:
 
     /** Purges resources to become under budget and processes resources with invalidated unique
         keys. */
-    void purgeAsNeeded();
+    // OH ISSUE: this function can interrupt
+    void purgeAsNeeded(const std::function<bool(void)>& nextFrameHasArrived = nullptr);
 
     // Purge unlocked resources. If 'scratchResourcesOnly' is true the purgeable resources
     // containing persistent data are spared. If it is false then all purgeable resources will
@@ -218,7 +221,11 @@ public:
      */
     bool purgeToMakeHeadroom(size_t desiredHeadroomBytes);
 
-    bool overBudget() const { return fBudgetedBytes > fMaxBytes; }
+    // OH ISSUE: adjust the value when there is an interrupt
+    bool overBudget(const std::function<bool(void)>& nextFrameHasArrived = nullptr) const
+    {
+        return fBudgetedBytes > (nextFrameHasArrived ? size_t(fMaxBytesRate * fMaxBytes) : fMaxBytes);
+    }
 
     /**
      * Purge unlocked resources from the cache until the the provided byte count has been reached
@@ -327,6 +334,31 @@ public:
     };
 #endif
 #endif
+
+    // OH ISSUE: allow access to release interface
+    bool allowToPurge(const std::function<bool(void)>& nextFrameHasArrived);
+
+    // OH ISSUE: intra frame and inter frame identification
+    void beginFrame()
+    {
+        fFrameInfo.frameCount++;
+        fFrameInfo.duringFrame = 1;
+    }
+
+    // OH ISSUE: intra frame and inter frame identification
+    void endFrame()
+    {
+        fFrameInfo.duringFrame = 0;
+    }
+
+    // OH ISSUE: suppress release window
+    void setGpuCacheSuppressWindowSwitch(bool enabled)
+    {
+        fEnabled = enabled;
+    }
+
+    // OH ISSUE: suppress release window
+    void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
 
 private:
     ///////////////////////////////////////////////////////////////////////////
@@ -488,6 +520,7 @@ private:
 
     // our budget, used in purgeAsNeeded()
     size_t                              fMaxBytes = kDefaultMaxSize;
+    double                              fMaxBytesRate = kDefaultMaxBytesRate;
 
 #if GR_CACHE_STATS
     int                                 fHighWaterCount = 0;
@@ -524,6 +557,19 @@ private:
 
     //Indicates the cached resource tags.
     std::stack<GrGpuResourceTag> grResourceTagCacheStack;
+
+    struct {
+        uint32_t duringFrame : 1;
+        uint32_t frameCount : 31;
+    } fFrameInfo = { 0, 0 };
+
+    uint32_t fLastFrameCount = 0;
+
+    uint64_t fStartTime = 0;
+
+    uint64_t fOvertimeDuration = 0;
+
+    bool fEnabled = false;
 
     // OH ISSUE: stores fBytes of each pid.
     std::unordered_map<int32_t, size_t> fBytesOfPid;

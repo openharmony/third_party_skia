@@ -59,6 +59,9 @@ public:
                                         GrWrapOwnership,
                                         GrWrapCacheable,
                                         bool forSecondaryCB = false);
+    
+    // OH ISSUE: Integrate Destroy and Free
+    static void DestroyAndFreeImageMemory(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkImage& image);
 
     ~GrVkImage() override;
 

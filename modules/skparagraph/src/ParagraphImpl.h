@@ -97,7 +97,7 @@ class ParagraphImpl final : public Paragraph {
 
 public:
 
-    ParagraphImpl();
+    ParagraphImpl() = default;
 
     ParagraphImpl(const SkString& text,
                   ParagraphStyle style,

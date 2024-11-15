@@ -286,10 +286,19 @@ public:
     SkScalar getFontSize() const { return fFontSize; }
     void setFontSize(SkScalar size) { fFontSize = size; }
 
+#ifdef OHOS_SUPPORT
+    std::vector<SkString>& getFontFamilies() { return fFontFamilies; }
+#endif
+
     const std::vector<SkString>& getFontFamilies() const { return fFontFamilies; }
+
+#ifdef OHOS_SUPPORT
+    void setFontFamilies(std::vector<SkString> families);
+#else
     void setFontFamilies(std::vector<SkString> families) {
         fFontFamilies = std::move(families);
     }
+#endif
 
     SkScalar getBaselineShift() const { return fBaselineShift; }
     void setBaselineShift(SkScalar baselineShift) { fBaselineShift = baselineShift; }
@@ -335,7 +344,7 @@ public:
     void setPlaceholder() { fIsPlaceholder = true; }
 
     int getStyleId() const { return fStyleId; }
-    void setStyleId(int styleId) { fStyleId = styleId; }
+    void setStyleId(int styleId) { fStyleId = static_cast<SkColor>(styleId); }
 
     RectStyle getBackgroundRect() const { return fBackgroundRect; }
     void setBackgroundRect(RectStyle rect) { fBackgroundRect = rect; }

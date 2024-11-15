@@ -7,6 +7,7 @@
 
 #include "src/gpu/GrResourceCache.h"
 #include <atomic>
+#include <ctime>
 #include <vector>
 #include <map>
 #include <sstream>
@@ -125,6 +126,17 @@ GrResourceCache::GrResourceCache(GrSingleOwner* singleOwner,
         , fSingleOwner(singleOwner) {
     SkASSERT(owningContextID.isValid());
     SkASSERT(familyID != SK_InvalidUniqueID);
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+    static int overtimeDuration =
+        std::atoi(OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_overtime", "600").c_str());
+    static double maxBytesRate =
+        std::atof(OHOS::system::GetParameter("persist.sys.graphic.mem.async_free_cache_max_rate", "0.9").c_str());
+#else
+    static int overtimeDuration = 600;
+    static double maxBytesRate = 0.9;
+#endif
+    fMaxBytesRate = maxBytesRate;
+    fOvertimeDuration = overtimeDuration;
 }
 
 GrResourceCache::~GrResourceCache() {
@@ -381,7 +393,8 @@ std::string GrResourceCache::cacheInfoRealAllocQueue()
         }
         auto resourceTag = resource->getResourceTag();
         if (resourceTag.fWid != 0) {
-            updateRealAllocWidMap(resource, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
+            updateRealAllocWidMap(
+                resource, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
         } else if (resourceTag.fPid != 0) {
             updateRealAllocPidMap(resource, realAllocNameInfoPid, realAllocSizeInfoPid, realAllocCountInfoPid);
         } else if (resourceTag.fFid != 0) {
@@ -399,7 +412,8 @@ std::string GrResourceCache::cacheInfoRealAllocQueue()
         }
         auto resourceTag = resource->getResourceTag();
         if (resourceTag.fWid != 0) {
-            updateRealAllocWidMap(resource, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
+            updateRealAllocWidMap(
+                resource, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
         } else if (resourceTag.fPid != 0) {
             updateRealAllocPidMap(resource, realAllocNameInfoPid, realAllocSizeInfoPid, realAllocCountInfoPid);
         } else if (resourceTag.fFid != 0) {
@@ -413,7 +427,8 @@ std::string GrResourceCache::cacheInfoRealAllocQueue()
     std::string infoStr;
     if (realAllocSizeInfoWid.size() > 0) {
         infoStr += ";RealAllocInfo_Node:[";
-        updatePurgeableWidInfo(infoStr, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
+        updatePurgeableWidInfo(
+            infoStr, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
     }
     if (realAllocSizeInfoPid.size() > 0) {
         infoStr += ";RealAllocInfo_Pid:[";
@@ -663,7 +678,7 @@ void GrResourceCache::insertResource(GrGpuResource* resource)
     SkASSERT(!resource->cacheAccess().isUsableAsScratch());
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     if (fBudgetedBytes >= fMaxBytes) {
-        HITRACE_OHOS_NAME_FMT_ALWAYS("cache over fBudgetedBytes:(%u), fMaxBytes:(%u)", fBudgetedBytes, fMaxBytes);
+        HITRACE_OHOS_NAME_FMT_ALWAYS("cache over fBudgetedBytes:(%u),fMaxBytes:(%u)", fBudgetedBytes, fMaxBytes);
 #ifdef SKIA_DFX_FOR_OHOS
         SimpleCacheInfo simpleCacheInfo;
         traceBeforePurgeUnlockRes("insertResource", simpleCacheInfo);
@@ -1168,7 +1183,40 @@ void GrResourceCache::didChangeBudgetStatus(GrGpuResource* resource) {
     this->validate();
 }
 
-void GrResourceCache::purgeAsNeeded() {
+static constexpr int timeUnit = 1000;
+
+// OH ISSUE: allow access to release interface
+bool GrResourceCache::allowToPurge(const std::function<bool(void)>& nextFrameHasArrived)
+{
+    if (!fEnabled) {
+        return true;
+    }
+    if (fFrameInfo.duringFrame == 0) {
+        if (nextFrameHasArrived && nextFrameHasArrived()) {
+            return false;
+        }
+        return true;
+    }
+    if (fFrameInfo.frameCount != fLastFrameCount) { // the next frame arrives
+        struct timespec startTime = {0, 0};
+        if (clock_gettime(CLOCK_REALTIME, &startTime) == -1) {
+            return true;
+        }
+        fStartTime = startTime.tv_sec * timeUnit * timeUnit + startTime.tv_nsec / timeUnit;
+        fLastFrameCount = fFrameInfo.frameCount;
+        return true;
+    }
+    struct timespec endTime = {0, 0};
+    if (clock_gettime(CLOCK_REALTIME, &endTime) == -1) {
+        return true;
+    }
+    if (((endTime.tv_sec * timeUnit * timeUnit + endTime.tv_nsec / timeUnit) - fStartTime) >= fOvertimeDuration) {
+        return false;
+    }
+    return true;
+}
+
+void GrResourceCache::purgeAsNeeded(const std::function<bool(void)>& nextFrameHasArrived) {
     SkTArray<GrUniqueKeyInvalidatedMessage> invalidKeyMsgs;
     fInvalidUniqueKeyInbox.poll(&invalidKeyMsgs);
     if (invalidKeyMsgs.count()) {
@@ -1189,8 +1237,8 @@ void GrResourceCache::purgeAsNeeded() {
 
     this->processFreedGpuResources();
 
-    bool stillOverbudget = this->overBudget();
-    while (stillOverbudget && fPurgeableQueue.count()) {
+    bool stillOverbudget = this->overBudget(nextFrameHasArrived);
+    while (stillOverbudget && fPurgeableQueue.count() && this->allowToPurge(nextFrameHasArrived)) {
         GrGpuResource* resource = fPurgeableQueue.peek();
         if (!resource->resourcePriv().isPurgeable()) {
             SkDebugf("OHOS GrResourceCache::purgeAsNeeded() resource is nonPurgeable");
@@ -1198,14 +1246,14 @@ void GrResourceCache::purgeAsNeeded() {
         }
         SkASSERT(resource->resourcePriv().isPurgeable());
         resource->cacheAccess().release();
-        stillOverbudget = this->overBudget();
+        stillOverbudget = this->overBudget(nextFrameHasArrived);
     }
 
     if (stillOverbudget) {
         fThreadSafeCache->dropUniqueRefs(this);
 
-        stillOverbudget = this->overBudget();
-        while (stillOverbudget && fPurgeableQueue.count()) {
+        stillOverbudget = this->overBudget(nextFrameHasArrived);
+        while (stillOverbudget && fPurgeableQueue.count() && this->allowToPurge(nextFrameHasArrived)) {
             GrGpuResource* resource = fPurgeableQueue.peek();
             if (!resource->resourcePriv().isPurgeable()) {
                 SkDebugf("OHOS GrResourceCache::purgeAsNeeded() resource is nonPurgeable after dropUniqueRefs");
@@ -1213,7 +1261,7 @@ void GrResourceCache::purgeAsNeeded() {
             }
             SkASSERT(resource->resourcePriv().isPurgeable());
             resource->cacheAccess().release();
-            stillOverbudget = this->overBudget();
+            stillOverbudget = this->overBudget(nextFrameHasArrived);
         }
     }
 
@@ -1330,9 +1378,17 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
 #endif
 }
 
-void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly,
-                                              const std::set<int>& exitedPidSet,
-                                              const std::set<int>& protectedPidSet) {
+// OH ISSUE: suppress release window
+void GrResourceCache::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived)
+{
+    if (!fEnabled) {
+        return;
+    }
+    this->purgeAsNeeded(nextFrameHasArrived);
+}
+
+void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
+        const std::set<int>& protectedPidSet) {
     HITRACE_OHOS_NAME_FMT_ALWAYS("PurgeGrResourceCache cur=%d, limit=%d", fBudgetedBytes, fMaxBytes);
     if (exitedPidSet.size() > 1) {
         for (int i = 1; i < fPurgeableQueue.count(); i++) {
@@ -1346,23 +1402,20 @@ void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly,
         }
     }
     fPurgeableQueue.sort();
-
-#ifdef NOT_BUILD_FOR_OHOS_SDK
     const char* softLimitPercentage = "0.9";
-    const char* softLimitProperty = "persist.sys.graphic.mem.soft_limit";
-    static int softLimit =
-            std::atof(OHOS::system::GetParameter(softLimitProperty, softLimitPercentage).c_str()) *
-            fMaxBytes;
-#else
-    const float softLimitPercentage = 0.9;
-    static int softLimit = softLimitPercentage * fMaxBytes;
-#endif
+    #ifdef NOT_BUILD_FOR_OHOS_SDK
+    static int softLimit = 
+        std::atof(OHOS::system::GetParameter("persist.sys.graphic.mem.soft_limit", 
+        softLimitPercentage).c_str()) * fMaxBytes;
+    #else
+    static int softLimit = 0.9 * fMaxBytes;
+    #endif
     if (fBudgetedBytes >= softLimit) {
-        for (int i = 0; i < fPurgeableQueue.count(); i++) {
+        for (int i=0; i < fPurgeableQueue.count(); i++) {
             GrGpuResource* resource = fPurgeableQueue.at(i);
             SkASSERT(resource->resourcePriv().isPurgeable());
-            if (protectedPidSet.find(resource->getResourceTag().fPid) == protectedPidSet.end() &&
-                (!scratchResourcesOnly || !resource->getUniqueKey().isValid())) {
+            if (protectedPidSet.find(resource->getResourceTag().fPid) == protectedPidSet.end()
+                && (!scratchResourcesOnly || !resource->getUniqueKey().isValid())) {
                 resource->cacheAccess().release();
                 this->validate();
                 return;

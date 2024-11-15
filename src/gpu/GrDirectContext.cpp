@@ -142,9 +142,6 @@ void GrDirectContext::abandonContext() {
 
     fGpu->disconnect(GrGpu::DisconnectType::kAbandon);
 
-    // Must be after GrResourceCache::abandonAll().
-    fMappedBufferManager.reset();
-
     if (fSmallPathAtlasMgr) {
         fSmallPathAtlasMgr->reset();
     }
@@ -387,12 +384,6 @@ void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly, const s
     fResourceCache->purgeCacheBetweenFrames(scratchResourcesOnly, exitedPidSet, protectedPidSet);
 }
 
-void GrDirectContext::asyncFreeVMAMemoryBetweenFrames(std::function<bool(void)> nextFrameHasArrived) {
-#ifdef SK_VULKAN
-    GrVkGpu::AsyncFreeVMAMemoryBetweenFrames(nextFrameHasArrived);
-#endif
-}
-
 void GrDirectContext::performDeferredCleanup(std::chrono::milliseconds msNotUsed,
                                              bool scratchResourcesOnly) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
@@ -608,6 +599,74 @@ void GrDirectContext::dumpVmaStats(SkString *out)
     if (fGpu) {
         fGpu->dumpVmaStats(out);
     }
+}
+
+// OH ISSUE: intra frame and inter frame identification
+void GrDirectContext::beginFrame()
+{
+#ifdef SK_VULKAN
+    if (fResourceCache) {
+        fResourceCache->beginFrame();
+    }
+#endif
+}
+
+// OH ISSUE: intra frame and inter frame identification
+void GrDirectContext::endFrame()
+{
+#ifdef SK_VULKAN
+    if (fResourceCache) {
+        fResourceCache->endFrame();
+    }
+#endif
+}
+
+// OH ISSUE: asyn memory reclaimer
+void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
+{
+#ifdef SK_VULKAN
+    if (fGpu) {
+        fGpu->setGpuMemoryAsyncReclaimerSwitch(enabled);
+    }
+#endif
+}
+
+// OH ISSUE: asyn memory reclaimer
+void GrDirectContext::flushGpuMemoryInWaitQueue()
+{
+#ifdef SK_VULKAN
+    if (fGpu) {
+        fGpu->flushGpuMemoryInWaitQueue();
+    }
+#endif
+}
+
+// OH ISSUE: suppress release window
+void GrDirectContext::setGpuCacheSuppressWindowSwitch(bool enabled)
+{
+#ifdef SK_VULKAN
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned()) {
+        return;
+    }
+
+    fResourceCache->setGpuCacheSuppressWindowSwitch(enabled);
+#endif
+}
+
+// OH ISSUE: suppress release window
+void GrDirectContext::suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived)
+{
+#ifdef SK_VULKAN
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned()) {
+        return;
+    }
+
+    fResourceCache->suppressGpuCacheBelowCertainRatio(nextFrameHasArrived);
+#endif
 }
 
 GrBackendTexture GrDirectContext::createBackendTexture(int width, int height,
