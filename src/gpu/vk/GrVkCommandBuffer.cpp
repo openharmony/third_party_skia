@@ -963,11 +963,16 @@ void GrVkPrimaryCommandBuffer::drawBlurImage(const GrVkGpu* gpu,
 
     VkRect2D srcRegion;
     srcRegion.offset = { blurArg.srcRect.fLeft , blurArg.srcRect.fTop };
-    srcRegion.extent = { (uint32_t)blurArg.srcRect.width(), (uint32_t)blurArg.srcRect.height() };
-
+    srcRegion.extent = {
+    static_cast<uint32_t>(std::clamp(blurArg.srcRect.width(), 0.0f, static_cast<float>(UINT32_MAX))),
+    static_cast<uint32_t>(std::clamp(blurArg.srcRect.height(), 0.0f, static_cast<float>(UINT32_MAX)))
+    };
     VkRect2D dstRegion;
     dstRegion.offset = { blurArg.dstRect.fLeft , blurArg.dstRect.fTop };
-    dstRegion.extent = { (uint32_t)blurArg.dstRect.width(), (uint32_t)blurArg.dstRect.height() };
+    dstRegion.extent = {
+    static_cast<uint32_t>(std::clamp(blurArg.dstRect.width(), 0.0f, static_cast<float>(UINT32_MAX))),
+    static_cast<uint32_t>(std::clamp(blurArg.dstRect.height(), 0.0f, static_cast<float>(UINT32_MAX)))
+    };
 
     if (originInfo.rtOrigin == kBottomLeft_GrSurfaceOrigin) {
         dstRegion.offset.y = colorAttachmentDimensions.height() - blurArg.dstRect.fBottom;

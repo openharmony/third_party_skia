@@ -2748,11 +2748,17 @@ std::array<int, 2> GrVkGpu::GetHpsDimension(const SkBlurArg& blurArg) const
     int height = 0;
     VkRect2D srcRegion;
     srcRegion.offset = { blurArg.srcRect.fLeft, blurArg.srcRect.fTop };
-    srcRegion.extent = { (uint32_t)blurArg.srcRect.width(), (uint32_t)blurArg.srcRect.height() };
+    srcRegion.extent = {
+    static_cast<uint32_t>(std::clamp(blurArg.srcRect.width(), 0.0f, static_cast<float>(UINT32_MAX))),
+    static_cast<uint32_t>(std::clamp(blurArg.srcRect.height(), 0.0f, static_cast<float>(UINT32_MAX)))
+    };
 
     VkRect2D dstRegion;
     dstRegion.offset = { blurArg.dstRect.fLeft, blurArg.dstRect.fTop };
-    dstRegion.extent = { (uint32_t)blurArg.dstRect.width(), (uint32_t)blurArg.dstRect.height() };
+    dstRegion.extent = {
+    static_cast<uint32_t>(std::clamp(blurArg.dstRect.width(), 0.0f, static_cast<float>(UINT32_MAX))),
+    static_cast<uint32_t>(std::clamp(blurArg.dstRect.height(), 0.0f, static_cast<float>(UINT32_MAX)))
+    };
 
     VkDrawBlurImageInfoHUAWEI drawBlurImageInfo {};
     drawBlurImageInfo.sType = VkStructureTypeHUAWEI::VK_STRUCTURE_TYPE_DRAW_BLUR_IMAGE_INFO_HUAWEI;
