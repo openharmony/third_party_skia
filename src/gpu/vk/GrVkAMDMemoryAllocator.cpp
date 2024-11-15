@@ -149,7 +149,7 @@ static void FirstPreAllocMemory(VmaAllocator allocator, VmaAllocationCreateInfo 
         return;
     }
     {
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "vmaAllocateReservedMemoryForImage");
+        HITRACE_OHOS_NAME_FMT_ALWAYS("vmaAllocateReservedMemoryForImage");
         result = vmaAllocateReservedMemoryForImage(allocator, fakeImage, &info, &reservedAllocation, nullptr);
     }
     if (result != VK_SUCCESS) {
@@ -158,7 +158,7 @@ static void FirstPreAllocMemory(VmaAllocator allocator, VmaAllocationCreateInfo 
         return;
     }
     {
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "vmaBindImageMemory");
+        HITRACE_OHOS_NAME_FMT_ALWAYS("vmaBindImageMemory");
         result = vmaBindImageMemory(allocator, reservedAllocation, fakeImage);
     }
     if (result != VK_SUCCESS) {
@@ -180,7 +180,7 @@ static void PreAllocMemory(VmaAllocator allocator, VmaAllocation reservedAllocat
         return;
     }
     {
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "vmaBindImageMemory");
+        HITRACE_OHOS_NAME_FMT_ALWAYS("vmaBindImageMemory");
         result = vmaBindImageMemory(allocator, reservedAllocation, fakeImage);
     }
     if (result != VK_SUCCESS) {
@@ -225,7 +225,7 @@ VkResult GrVkAMDMemoryAllocator::allocateImageMemory(VkImage image, AllocationPr
     bool newBlockflag = false;
     vmaGetNewBlockStats(allocation, &newBlockflag);
     if (newBlockflag && fCacheFlag && SkGetPreAllocFlag()) {
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "GrVkAMDMemoryAllocator trigger preAlloc");
+        HITRACE_OHOS_NAME_FMT_ALWAYS("GrVkAMDMemoryAllocator trigger preAlloc");
         vmaClearNewBlockStats(allocation);
         std::lock_guard<std::mutex> lock(mPreAllocMutex);
         // After swap, allocation belongs to vma reserved block.
@@ -233,7 +233,7 @@ VkResult GrVkAMDMemoryAllocator::allocateImageMemory(VkImage image, AllocationPr
         if (result2 == VK_NOT_READY) {
             GetThreadPool().add([=] {
                 std::lock_guard<std::mutex> lock(mPreAllocMutex);
-                HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "FirstPreAllocMemory");
+                HITRACE_OHOS_NAME_FMT_ALWAYS("FirstPreAllocMemory");
                 FirstPreAllocMemory(fAllocator, info);
             });
             return result;
@@ -242,7 +242,7 @@ VkResult GrVkAMDMemoryAllocator::allocateImageMemory(VkImage image, AllocationPr
             GetThreadPool().add([=] {
                 std::this_thread::sleep_for(std::chrono::microseconds(SkGetPreAllocDelay()));
                 std::lock_guard<std::mutex> lock(mPreAllocMutex);
-                HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "PreAllocMemory");
+                HITRACE_OHOS_NAME_FMT_ALWAYS("PreAllocMemory");
                 PreAllocMemory(fAllocator, allocation);
             });
             VmaAllocation newAllocation;
