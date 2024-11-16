@@ -42,9 +42,12 @@
 namespace skia {
 namespace textlayout {
 #define MAX_INT_VALUE 0x7FFFFFFF
+
+#ifdef OHOS_SUPPORT
 #define EMOJI_UNICODE_START 0x1F300
 #define EMOJI_UNICODE_END 0x1F9EF
 #define EMOJI_WIDTH 4
+#endif
 
 namespace {
 
@@ -2145,8 +2148,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
 #ifdef OHOS_SUPPORT
                         result = { SkToS32(utf16Index + 1), kUpstream};
                         size_t glyphCnt = context.run->glyphs().size();
-                        if ((glyphCnt != 0) && (context.run->fUtf8Range.end() - context.run->fUtf8Range.begin()) /
-                            glyphCnt == EMOJI_WIDTH) {
+                        if ((glyphCnt != 0) && ((context.run->fUtf8Range.size() / glyphCnt) == EMOJI_WIDTH)) {
                             result = { SkToS32(utf16Index + 2), kUpstream};
                         }
 #else
@@ -2225,8 +2227,8 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
 #ifdef OHOS_SUPPORT
                     size_t utf16Index = 0;
                     size_t glyphCnt = context.run->glyphs().size();
-                    if ((glyphCnt != 0) && !context.run->leftToRight() && (context.run->fUtf8Range.end() -
-                        context.run->fUtf8Range.begin()) / glyphCnt == EMOJI_WIDTH) {
+                    if ((glyphCnt != 0) && !context.run->leftToRight() && ((
+                        context.run->fUtf8Range.size() / glyphCnt) == EMOJI_WIDTH)) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 2;
                     } else if (!context.run->leftToRight()) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 1;
