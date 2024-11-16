@@ -4,10 +4,12 @@
 #include "modules/skparagraph/include/FontArguments.h"
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
+
 #ifdef OHOS_SUPPORT
+#include "log.h"
+#include "src/TextParameter.h"
 #include "utils/text_trace.h"
 #endif
-#include "log.h"
 
 namespace skia {
 namespace textlayout {
@@ -455,8 +457,8 @@ bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
 
     if (!entry) {
-#ifdef USE_SKIA_TXT
-        LOGD("ParagraphCache: cache miss, hash-%{public}d", key.hash());
+#ifdef OHOS_SUPPORT
+        TEXT_LOGD("ParagraphCache: cache miss, hash-%{public}d", key.hash());
 #endif
         // We have a cache miss
 #ifdef PARAGRAPH_CACHE_STATS
@@ -465,14 +467,9 @@ bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
         fChecker(paragraph, "missingParagraph", true);
         return false;
     }
-#ifdef USE_SKIA_TXT
-    LOGD("ParagraphCache: cache hit, hash-%{public}d", key.hash());
-#endif
     updateTo(paragraph, entry->get());
 #ifdef OHOS_SUPPORT
-#ifdef USE_UNSAFE_CACHED_VALUE
-    fLastCachedValue = entry->get()->fValue.get();
-#endif
+    TEXT_LOGD("ParagraphCache: cache hit, hash-%{public}d", key.hash());
     paragraph->hash() = key.hash();
 #endif
     fChecker(paragraph, "foundParagraph", true);
@@ -483,6 +480,13 @@ bool ParagraphCache::updateParagraph(ParagraphImpl* paragraph) {
     if (!fCacheIsOn) {
         return false;
     }
+
+#ifdef OHOS_SUPPORT
+    if (!canBeCached(paragraph)) {
+        return false;
+    }
+#endif
+
 #ifdef PARAGRAPH_CACHE_STATS
     ++fTotalRequests;
 #endif
@@ -522,6 +526,10 @@ ParagraphCacheValue* ParagraphCache::cacheLayout(ParagraphImpl* paragraph) {
     if (!fCacheIsOn) {
         return nullptr;
     }
+
+    if (!canBeCached(paragraph)) {
+        return nullptr;
+    }
 #ifdef PARAGRAPH_CACHE_STATS
     ++fTotalRequests;
 #endif
@@ -546,6 +554,21 @@ ParagraphCacheValue* ParagraphCache::cacheLayout(ParagraphImpl* paragraph) {
         // Paragraph&layout already cached
         return nullptr;
     }
+}
+
+bool ParagraphCache::canBeCached(ParagraphImpl* paragraph) const
+{
+    if (paragraph == nullptr) {
+        return false;
+    }
+
+    if (paragraph->unicodeText().size() > TextParameter::GetUnicodeSizeLimitForParagraphCache()) {
+        TEXT_LOGD("Paragraph unicode size is out of limit, unicode size: %{public}zu",
+            paragraph->unicodeText().size());
+        return false;
+    }
+
+    return true;
 }
 #endif
 

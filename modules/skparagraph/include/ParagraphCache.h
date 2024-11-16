@@ -49,6 +49,7 @@ public:
     bool useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value);
     void SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value);
     ParagraphCacheValue* cacheLayout(ParagraphImpl* paragraph);
+    bool canBeCached(ParagraphImpl* paragraph) const;
 #endif
 
     mutable SkMutex fParagraphMutex;
