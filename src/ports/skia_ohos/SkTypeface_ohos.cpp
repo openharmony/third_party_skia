@@ -144,7 +144,7 @@ sk_sp<SkTypeface> SkTypeface_OHOS::onMakeClone(const SkFontArguments& args) cons
         }
         if (axisDefs.count() > 0) {
             SkFixed axis[axisDefs.count()];
-            fontScanner.computeAxisValues(axisDefs, args.getVariationDesignPosition(),
+            SkTypeface_FreeType::Scanner::computeAxisValues(axisDefs, args.getVariationDesignPosition(),
                 axis, info.familyName);
             info.setAxisSet(axisCount, axis, axisDefs.data());
             info.style = info.computeFontStyle();
