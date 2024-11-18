@@ -15,16 +15,15 @@
 
 #include "src/gpu/vk/GrVkMemoryReclaimer.h"
 
-#include "include/core/SkLog.h"
+#include "include/core/SkLog.hP
 
+#ifdef SKIA_OHOS_TEXTURE_MEM_MGMT
+#include <sched.h>
 #include "res_sched_client.h"
 #include "res_type.h"
-#include <sched.h>
+#endif
 
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
-
-const uint32_t RS_IPC_QOS_LEVEL = 7;
-constexpr const char* RS_BUNDLE_NAME = "render_service";
 
 SkExecutor& GrVkMemoryReclaimer::getThreadPool()
 {
@@ -36,16 +35,16 @@ SkExecutor& GrVkMemoryReclaimer::getThreadPool()
                 SK_LOGE("GrVkMemoryReclaimer::GetThreadPool pthread_setname_np, error = %d", err);
             }
 
-            std::string strBundleName = RS_BUNDLE_NAME;
-            std::string strPid = std::to_string(getpid());
-            std::string strTid = std::to_string(gettid());
-            std::string strQos = std::to_string(RS_IPC_QOS_LEVEL);
-            std::unordered_map<std::string, std::string> mapPayload;
-            mapPayload["pid"] = strPid;
-            mapPayload[strTid] = strQos;
-            mapPayload["bundleName"] = strBundleName;
-            OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(
-                OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE, 0, mapPayload);
+#ifdef SKIA_OHOS_TEXTURE_MEM_MGMT
+            const uint32_t RS_IPC_QOS_LEVEL = 7;
+            std::unordered_map<std::string, std::string> mapPayload = {
+                    {"bundleName", "render_service"},
+                    {"pid", std::to_string(getpid())},
+                    {std::to_string(gettid()), std::to_string(RS_IPC_QOS_LEVEL)}};
+            using namespace OHOS::ResourceSchedule;
+            auto& schedClient = ResSchedClient::GetInstance();
+            schedClient.ReportData(ResType::RES_TYPE_THREAD_QOS_CHANGE, 0, mapPayload);
+#endif
         });
         std::move(executor);
     });
