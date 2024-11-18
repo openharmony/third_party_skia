@@ -111,7 +111,7 @@ private:
     int fMaxTabIndex = 0;
     Cluster* fTabBlockEnd = nullptr;
     Cluster* fEndOfClusters = nullptr;
-    SkScalar fMaxWidth;
+    SkScalar fMaxWidth = 0.0f;
     Cluster* fTabCluster = nullptr;
 
     using TextTabFunc = bool (TextTabAlign::*)(TextWrapper::TextStretch&, TextWrapper::TextStretch&, Cluster*, SkScalar);

@@ -2365,17 +2365,18 @@ std::unique_ptr<TextLineBase> TextLine::createTruncatedLine(double width, Ellips
 {
     if (width > 0 && (ellipsisMode == EllipsisModal::HEAD || ellipsisMode == EllipsisModal::TAIL)) {
         TextLine textLine = CloneSelf();
-        if (width < widthWithEllipsisSpaces() && !ellipsisStr.empty()) {
+        SkScalar widthVal = static_cast<SkScalar>(width);
+        if (widthVal < widthWithEllipsisSpaces() && !ellipsisStr.empty()) {
             if (ellipsisMode == EllipsisModal::HEAD) {
                 textLine.fIsTextLineEllipsisHeadModal = true;
                 textLine.setTextBlobCachePopulated(false);
-                textLine.createHeadEllipsis(width, SkString(ellipsisStr), true);
+                textLine.createHeadEllipsis(widthVal, SkString(ellipsisStr), true);
             } else if (ellipsisMode == EllipsisModal::TAIL) {
                 textLine.fIsTextLineEllipsisHeadModal = false;
                 textLine.setTextBlobCachePopulated(false);
                 int endWhitespaceCount = getEndWhitespaceCount(fGhostClusterRange, fOwner);
-                textLine.fGhostClusterRange.end -= endWhitespaceCount;
-                textLine.createTailEllipsis(width, SkString(ellipsisStr), true, fOwner->getWordBreakType());
+                textLine.fGhostClusterRange.end -= static_cast<size_t>(endWhitespaceCount);
+                textLine.createTailEllipsis(widthVal, SkString(ellipsisStr), true, fOwner->getWordBreakType());
             }
         }
         return std::make_unique<TextLineBaseImpl>(std::make_unique<TextLine>(std::move(textLine)));
@@ -2481,11 +2482,12 @@ RSRect TextLine::getImageBounds() const
     // to calculate the final image bounds.
     SkRect rect = {0.0, 0.0, 0.0, 0.0};
     int endWhitespaceCount = getEndWhitespaceCount(fGhostClusterRange, fOwner);
-    if (endWhitespaceCount == (fGhostClusterRange.end - fGhostClusterRange.start)) {
+    size_t endWhitespaceCountVal = static_cast<size_t>(endWhitespaceCount);
+    if (endWhitespaceCountVal == (fGhostClusterRange.end - fGhostClusterRange.start)) {
         // Full of Spaces.
         return {};
     }
-    SkScalar endAdvance = fOwner->cluster(fGhostClusterRange.end - endWhitespaceCount - 1).width();
+    SkScalar endAdvance = fOwner->cluster(fGhostClusterRange.end - endWhitespaceCountVal - 1).width();
 
     // The first space width of the line needs to be added to the x value.
     SkScalar startWhitespaceAdvance = 0.0;
@@ -2503,12 +2505,12 @@ RSRect TextLine::getImageBounds() const
     auto rectVec = getAllRectInfo(fGhostClusterRange, fOwner);
     // Calculate the final y and height.
     auto joinRect = rectVec[startWhitespaceCount];
-    for (int i = startWhitespaceCount + 1; i < rectVec.size() - endWhitespaceCount; ++i) {
+    for (size_t i = startWhitespaceCount + 1; i < rectVec.size() - endWhitespaceCountVal; ++i) {
         joinRect.Join(rectVec[i]);
     }
 
     SkScalar lineWidth = width();
-    auto endRect = rectVec[rectVec.size() - endWhitespaceCount - 1];
+    auto endRect = rectVec[rectVec.size() - endWhitespaceCountVal - 1];
 #ifndef USE_SKIA_TXT
     SkScalar x = rectVec[startWhitespaceCount].x() + startWhitespaceAdvance;
     SkScalar y = joinRect.bottom();
@@ -2558,13 +2560,14 @@ double TextLine::getOffsetForStringIndex(int32_t index) const
         return offset;
     }
 
-    if (index >= fGhostClusterRange.end) {
+    size_t indexVal = static_cast<size_t>(index);
+    if (indexVal >= fGhostClusterRange.end) {
         offset = widthWithEllipsisSpaces();
-    } else if (index > fGhostClusterRange.start) {
+    } else if (indexVal > fGhostClusterRange.start) {
         size_t clusterIndex = fGhostClusterRange.start;
         while (clusterIndex < fGhostClusterRange.end) {
             offset += fOwner->cluster(clusterIndex).width();
-            if (++clusterIndex == index) {
+            if (++clusterIndex == indexVal) {
                 break;
             }
         }

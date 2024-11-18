@@ -27,17 +27,17 @@ size_t ParagraphLineFetcherImpl::getLineBreak(size_t startIndex, SkScalar width)
     if (startIndex >= fRootParagraph->unicodeText().size()) {
         return 0;
     }
-    auto newParagraph = fRootParagraph->createCroppedCopy(startIndex);
+    std::unique_ptr<Paragraph> newParagraph = fRootParagraph->createCroppedCopy(startIndex);
     if (newParagraph == nullptr) {
         return 0;
     }
     newParagraph->layout(width);
-    auto textRange = newParagraph->getActualTextRange(0, true);
+    TextRange textRange = newParagraph->getActualTextRange(0, true);
     if (textRange == EMPTY_TEXT) {
         return 0;
     }
-    auto count = newParagraph->getUnicodeIndex(textRange.end);
-    auto unicodeText = newParagraph->unicodeText();
+    size_t count = newParagraph->getUnicodeIndex(textRange.end);
+    const std::vector<SkUnichar> unicodeText = newParagraph->unicodeText();
     if (count < unicodeText.size() && unicodeText[count] == '\n') {
         count++;
     }
@@ -46,7 +46,7 @@ size_t ParagraphLineFetcherImpl::getLineBreak(size_t startIndex, SkScalar width)
 
 std::unique_ptr<TextLineBase> ParagraphLineFetcherImpl::createLine(size_t startIndex,
                                                                    size_t count) {
-    auto unicodeSize = fRootParagraph->unicodeText().size();
+    size_t unicodeSize = fRootParagraph->unicodeText().size();
     if (startIndex >= unicodeSize) {
         return nullptr;
     }
