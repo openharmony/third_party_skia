@@ -34,7 +34,8 @@
                 "zlib",
                 "jsoncpp",
                 "egl",
-                "opengles"
+                "opengles",
+                "resource_schedule_service"
             ],
             "third_party": [
                 "vulkan-headers"
