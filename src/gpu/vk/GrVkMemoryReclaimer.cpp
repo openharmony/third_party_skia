@@ -26,7 +26,6 @@
 const uint32_t RS_IPC_QOS_LEVEL = 7;
 constexpr const char* RS_BUNDLE_NAME = "render_service";
 
-
 SkExecutor& GrVkMemoryReclaimer::getThreadPool()
 {
     static std::unique_ptr<SkExecutor> executor = ({
