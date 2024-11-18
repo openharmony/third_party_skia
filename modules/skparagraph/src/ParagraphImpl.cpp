@@ -1207,7 +1207,8 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 SkScalar indent,
                 SkScalar noIndentWidth) {
                 // TODO: Take in account clipped edges
-                auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
+                auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines,
+                    clusters, clustersWithGhosts, widthWithSpaces, metrics);
                 if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
                     line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
                 } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
