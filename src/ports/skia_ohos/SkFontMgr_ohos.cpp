@@ -158,10 +158,6 @@ SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[],
     if (fontConfig == nullptr) {
         return nullptr;
     }
-    SkTypeface* retTp = findSpecialTypeface(character, style);
-    if (retTp != nullptr) {
-        return retTp;
-    }
     const FallbackForMap& fallbackForMap = fontConfig->getFallbackForMap();
     const FallbackSet& fallbackSet = fontConfig->getFallbackSet();
     SkString defaultFamily("");
@@ -184,7 +180,7 @@ SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[],
     }
     while (true) {
         if (bcp47Count > 0) {
-            retTp = findTypeface(*item, style, bcp47, bcp47Count, character);
+            SkTypeface* retTp = findTypeface(*item, style, bcp47, bcp47Count, character);
             if (retTp) {
                 return retTp;
             }
@@ -195,6 +191,10 @@ SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[],
             item = fallbackForMap.find(defaultFamily);
             key = defaultFamily;
         } else {
+            SkTypeface* retTp = findSpecialTypeface(character, style);
+            if (retTp != nullptr) {
+                return retTp;
+            }
             for (unsigned int i = item->index; i < item->index + item->count && i < fallbackSet.size(); i++) {
                 const TypefaceSet& tpSet = *(fallbackSet[i]->typefaceSet.get());
                 if (tpSet.size() > 0 && tpSet[0]->unicharToGlyph(character) != 0) {
