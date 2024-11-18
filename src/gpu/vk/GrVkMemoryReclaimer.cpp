@@ -37,9 +37,9 @@ SkExecutor& GrVkMemoryReclaimer::getThreadPool()
             }
 
             std::string strBundleName = RS_BUNDLE_NAME;
-            std::string strPid = std::tostring(gettid());
-            std::string strTid = std::tostring(gettid());
-            std::string strQos = std::tostring(RS_IPC_QOS_LEVEL);
+            std::string strPid = std::to_string(getpid());
+            std::string strTid = std::to_string(gettid());
+            std::string strQos = std::to_string(RS_IPC_QOS_LEVEL);
             std::unordered_map<std::string, std::string> mapPayload;
             mapPayload["pid"] = strPid;
             mapPayload[strTid] = strQos;
