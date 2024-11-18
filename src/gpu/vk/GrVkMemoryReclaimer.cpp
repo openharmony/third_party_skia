@@ -15,7 +15,7 @@
 
 #include "src/gpu/vk/GrVkMemoryReclaimer.h"
 
-#include "include/core/SkLog.h
+#include "include/core/SkLog.h"
 
 #ifdef SKIA_OHOS_TEXTURE_MEM_MGMT
 #include <sched.h>
