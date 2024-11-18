@@ -17,7 +17,15 @@
 
 #include "include/core/SkLog.h"
 
+#include "res_sched_client.h"
+#include "res_type.h"
+#include <sched.h>
+
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
+
+const uint32_t RS_IPC_QOS_LEVEL = 7;
+constexpr const char* RS_BUNDLE_NAME = "render_service";
+
 
 SkExecutor& GrVkMemoryReclaimer::getThreadPool()
 {
@@ -28,6 +36,17 @@ SkExecutor& GrVkMemoryReclaimer::getThreadPool()
             if (err) {
                 SK_LOGE("GrVkMemoryReclaimer::GetThreadPool pthread_setname_np, error = %d", err);
             }
+
+            std::string strBundleName = RS_BUNDLE_NAME;
+            std::string strPid = std::tostring(gettid());
+            std::string strTid = std::tostring(gettid());
+            std::string strQos = std::tostring(RS_IPC_QOS_LEVEL);
+            std::unordered_map<std::string, std::string> mapPayload;
+            mapPayload["pid"] = strPid;
+            mapPayload[strTid] = strQos;
+            mapPayload["bundleName"] = strBundleName;
+            OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(
+                OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE, 0, mapPayload);
         });
         std::move(executor);
     });
