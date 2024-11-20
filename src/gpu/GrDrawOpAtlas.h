@@ -591,6 +591,7 @@ public:
 #ifdef SK_ENABLE_SMALL_PAGE
     SkISize getARGBDimensions(){ return fARGBDimensions; }
     int resetAsSmallPage();
+    int getPageNums() { return fPageNums; };
 #endif
 
 private:
@@ -602,6 +603,9 @@ private:
 
     SkISize fARGBDimensions;
     int     fMaxTextureSize;
+#ifdef SK_ENABLE_SMALL_PAGE
+    int     fPageNums = 4; // The maximum number of texture pages in the original skia code is 4
+#endif
 };
 
 #endif
