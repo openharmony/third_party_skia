@@ -2085,13 +2085,13 @@ void TextLine::extendCoordinateRange(PositionWithAffinity& positionWithAffinity)
     // Extending coordinate index if the ellipsis's run is selected.
     EllipsisModal ellipsisModal = fOwner->paragraphStyle().getEllipsisMod();
     if (ellipsisModal == EllipsisModal::TAIL) {
-        if (positionWithAffinity.position > fOwner->getEllipsisTextRange().start &&
-            positionWithAffinity.position <= fOwner->getEllipsisTextRange().end) {
+        if (static_cast<size_t>(positionWithAffinity.position) > fOwner->getEllipsisTextRange().start &&
+            static_cast<size_t>(positionWithAffinity.position) <= fOwner->getEllipsisTextRange().end) {
             positionWithAffinity.position = fOwner->getEllipsisTextRange().end;
         }
     } else if (ellipsisModal == EllipsisModal::HEAD) {
-        if (positionWithAffinity.position >= fOwner->getEllipsisTextRange().start &&
-            positionWithAffinity.position < fOwner->getEllipsisTextRange().end) {
+        if (static_cast<size_t>(positionWithAffinity.position) >= fOwner->getEllipsisTextRange().start &&
+            static_cast<size_t>(positionWithAffinity.position) < fOwner->getEllipsisTextRange().end) {
             positionWithAffinity.position = fOwner->getEllipsisTextRange().start;
         }
     }
