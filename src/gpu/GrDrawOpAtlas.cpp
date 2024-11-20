@@ -728,7 +728,9 @@ GrDrawOpAtlasConfig::GrDrawOpAtlasConfig(int maxTextureSize, size_t maxBytes) {
 int GrDrawOpAtlasConfig::resetAsSmallPage() {
     size_t maxBytes = fARGBDimensions.width() * fARGBDimensions.height() * 4;
     fARGBDimensions.set(512, 512);
-    return maxBytes / (fARGBDimensions.width() * fARGBDimensions.height());
+    int calculatedNums = static_cast<int>(maxBytes / (fARGBDimensions.width() * fARGBDimensions.height()));
+    fPageNums = calculatedNums;
+    return calculatedNums;
 }
 #endif
 

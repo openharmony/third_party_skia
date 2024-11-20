@@ -303,7 +303,7 @@ bool GrAtlasManager::initAtlas(GrMaskFormat format) {
     if (fAtlases[index] == nullptr) {
         GrColorType grColorType = GrMaskFormatToColorType(format);
 #ifdef SK_ENABLE_SMALL_PAGE
-        int pageNum = 4; // The maximum number of texture pages in the original skia code is 4
+        int pageNum = fAtlasConfig.getPageNums();
         if ((format == kA8_GrMaskFormat) && (fAtlasConfig.getARGBDimensions().width() > 512)) {
             // reset fAtlasConfig to suit small page.
             pageNum = fAtlasConfig.resetAsSmallPage();
