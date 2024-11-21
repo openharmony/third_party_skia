@@ -1947,6 +1947,8 @@ bool SkTypeface_FreeType::Scanner::GetTypefaceFullname(SkStreamAsset* stream,
     if (!face) {
         return false;
     }
+
+    constexpr FT_UShort EN_LANGUAGE_ID = 1033;
     FT_SfntName sfntName;
     FT_UInt nameCount = FT_Get_Sfnt_Name_Count(face.get());
     for (FT_UInt i = 0; i < nameCount; ++i) {
@@ -1956,14 +1958,19 @@ bool SkTypeface_FreeType::Scanner::GetTypefaceFullname(SkStreamAsset* stream,
         if (sfntName.name_id != TT_NAME_ID_FULL_NAME) {
             continue;
         }
+
+        if (fullname.strData != nullptr && sfntName.language_id != EN_LANGUAGE_ID) {
+            continue;
+        }
         fullname.strData = std::make_unique<uint8_t[]>(sfntName.string_len);
         if (memcpy_s(fullname.strData.get(), sfntName.string_len, sfntName.string, sfntName.string_len) == EOK) {
             fullname.strLen = sfntName.string_len;
-            return true;
+            if (sfntName.language_id == EN_LANGUAGE_ID) {
+                return true;
+            }
         }
-        return false;
     }
-    return false;
+    return fullname.strData != nullptr;
 }
 #endif
 
