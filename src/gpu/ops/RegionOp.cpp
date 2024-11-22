@@ -11,6 +11,7 @@
 #include "src/core/SkMatrixPriv.h"
 #include "src/gpu/BufferWriter.h"
 #include "src/gpu/GrCaps.h"
+#include "src/core/SkSafeMath.h"
 #include "src/gpu/GrDefaultGeoProcFactory.h"
 #include "src/gpu/GrOpFlushState.h"
 #include "src/gpu/GrProgramInfo.h"
@@ -114,11 +115,13 @@ private:
 
         int numRegions = fRegions.count();
         int numRects = 0;
+
+        SkSafeMath safeMath;
         for (int i = 0; i < numRegions; i++) {
-            numRects += fRegions[i].fRegion.computeRegionComplexity();
+            numRects = safeMath.addInt(numRects, fRegions[i].fRegion.computeRegionComplexity());
         }
 
-        if (!numRects) {
+        if (!numRects || !safeMath) {
             return;
         }
 
