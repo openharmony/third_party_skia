@@ -20,7 +20,9 @@ static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
 
 namespace skia {
 namespace textlayout {
+#ifdef OHOS_SUPPORT
 constexpr int UBIDI_LTR = 0;
+#endif
 
 void OneLineShaper::commitRunBuffer(const RunInfo&) {
 
