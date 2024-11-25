@@ -20,6 +20,9 @@ static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
 
 namespace skia {
 namespace textlayout {
+#ifdef OHOS_SUPPORT
+constexpr int UBIDI_LTR = 0;
+#endif
 
 void OneLineShaper::commitRunBuffer(const RunInfo&) {
 
@@ -722,9 +725,13 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
 #endif
 
         // "Shape" the placeholder
+#ifdef OHOS_SUPPORT
+        uint8_t bidiLevel = UBIDI_LTR;
+#else
         uint8_t bidiLevel = (bidiIndex < fParagraph->fBidiRegions.size())
             ? fParagraph->fBidiRegions[bidiIndex].level
             : 2;
+#endif
         const SkShaper::RunHandler::RunInfo runInfo = {
             font,
             bidiLevel,
