@@ -1336,7 +1336,6 @@ optional("gpu") {
     external_deps += [
       "hilog:libhilog",
       "hitrace:hitrace_meter",
-      "resource_schedule_service:ressched_client",
     ]
   }
 }
@@ -2072,7 +2071,6 @@ if (use_oh_skia) {
         "hilog:libhilog",
         "hitrace:hitrace_meter",
         "init:libbegetutil",
-        "resource_schedule_service:ressched_client",
       ]
       defines += [ "SK_ENABLE_SDF_BLUR_SWITCH" ]
       defines += [ "SK_ENABLE_PATH_COMPLEXITY_DFX" ]

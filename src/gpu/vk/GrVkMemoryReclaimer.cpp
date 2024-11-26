@@ -17,34 +17,26 @@
 
 #include "include/core/SkLog.h"
 
-#ifdef SKIA_OHOS_TEXTURE_MEM_MGMT
-#include <sched.h>
-#include "res_sched_client.h"
-#include "res_type.h"
-#endif
-
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
+
+GrVkMemoryReclaimer::GrVkMemoryReclaimer(bool enabled,
+                                         const std::function<void()>& setThreadPriority)
+        : fEnabled(enabled), fSetThreadPriority(setThreadPriority) {}
 
 SkExecutor& GrVkMemoryReclaimer::getThreadPool()
 {
     static std::unique_ptr<SkExecutor> executor = ({
         auto executor = SkExecutor::MakeFIFOThreadPool(1, false);
-        executor->add([]() {
+        executor->add([fSetThreadPriority {fSetThreadPriority}]() {
             int err = pthread_setname_np(pthread_self(), "async-reclaimer");
             if (err) {
                 SK_LOGE("GrVkMemoryReclaimer::GetThreadPool pthread_setname_np, error = %d", err);
             }
 
-#ifdef SKIA_OHOS_TEXTURE_MEM_MGMT
-            const uint32_t RS_IPC_QOS_LEVEL = 7;
-            std::unordered_map<std::string, std::string> mapPayload = {
-                    {"bundleName", "render_service"},
-                    {"pid", std::to_string(getpid())},
-                    {std::to_string(gettid()), std::to_string(RS_IPC_QOS_LEVEL)}};
-            using namespace OHOS::ResourceSchedule;
-            auto& schedClient = ResSchedClient::GetInstance();
-            schedClient.ReportData(ResType::RES_TYPE_THREAD_QOS_CHANGE, 0, mapPayload);
-#endif
+            if (fSetThreadPriority) {
+                fSetThreadPriority()
+            }
+            
         });
         std::move(executor);
     });
@@ -97,9 +89,4 @@ void GrVkMemoryReclaimer::invokeParallelReclaiming()
             }
         }
     });
-}
-
-void GrVkMemoryReclaimer::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
-{
-    fEnabled = enabled;
 }

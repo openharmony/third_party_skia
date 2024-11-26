@@ -40,8 +40,7 @@ public:
         };
     };
 
-    SkExecutor& getThreadPool();
-    void setGpuMemoryAsyncReclaimerSwitch(bool enabled);
+    GrVkMemoryReclaimer(bool enabled, const std::function<void()>& setThreadPriority);
     bool addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkBuffer& buffer);
     bool addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkImage& image);
     void flushGpuMemoryInWaitQueue();
@@ -52,6 +51,8 @@ private:
     const int fMemoryCountThreshold = 50;
 
     std::vector<WaitQueueItem> fWaitQueues;
+
+    const std::function<void()> fSetThreadPriority;
 };
 
 #endif

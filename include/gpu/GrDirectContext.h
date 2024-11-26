@@ -890,7 +890,7 @@ public:
     void endFrame();
     
     // OH ISSUE: asyn memory reclaimer
-    void setGpuMemoryAsyncReclaimerSwitch(bool enabled);
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled, const std::function<void()>& setThreadPriority);
     void flushGpuMemoryInWaitQueue();
 
     // OH ISSUE: suppress release window
