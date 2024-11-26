@@ -19,9 +19,11 @@
 
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
 
-GrVkMemoryReclaimer::GrVkMemoryReclaimer(bool enabled,
-                                         const std::function<void()>& setThreadPriority)
-        : fEnabled(enabled), fSetThreadPriority(setThreadPriority) {}
+GrVkMemoryReclaimer::GrVkMemoryReclaimer(bool enabled, const std::function<void()>& setThreadPriority)
+        : fEnabled(enabled),
+          fSetThreadPriority(setThreadPriority)
+{
+}
 
 SkExecutor& GrVkMemoryReclaimer::getThreadPool()
 {
@@ -34,9 +36,8 @@ SkExecutor& GrVkMemoryReclaimer::getThreadPool()
             }
 
             if (fSetThreadPriority) {
-                fSetThreadPriority()
+                fSetThreadPriority();
             }
-            
         });
         std::move(executor);
     });
