@@ -40,6 +40,7 @@ public:
         };
     };
 
+    SkExecutor& getThreadPool();
     GrVkMemoryReclaimer(bool enabled, const std::function<void()>& setThreadPriority);
     bool addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkBuffer& buffer);
     bool addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkImage& image);
