@@ -21,11 +21,13 @@
 #include "include/core/SkExecutor.h"
 
 #include "src/gpu/vk/GrVkImage.h"
+#include "src/gpu/vk/GrVkImageView.h"
 #include "src/gpu/vk/GrVkBuffer.h"
 
 enum class ItemType {
     BUFFER,
-    IMAGE
+    IMAGE,
+    IMAGE_VIEW
 };
 
 class GrVkMemoryReclaimer {
@@ -37,6 +39,7 @@ public:
         union {
             VkBuffer fBuffer;
             VkImage fImage;
+            VkImageView fImageView;
         };
     };
 
@@ -44,6 +47,7 @@ public:
     void setGpuMemoryAsyncReclaimerSwitch(bool enabled);
     bool addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkBuffer& buffer);
     bool addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAlloc& alloc, const VkImage& image);
+    bool addMemoryToWaitQueue(const GrVkGpu* gpu, const VkImageView& imageView);
     void flushGpuMemoryInWaitQueue();
 private:
     void invokeParallelReclaiming();
