@@ -81,7 +81,7 @@ void GrVkImageView::DestroyImageView(const GrVkGpu* gpu, const VkImageView& imag
 void GrVkImageView::freeGPUData() const {
     // OH ISSUE: asyn memory reclaimer
     auto reclaimer = fGpu->memoryReclaimer();
-    if (!reclaimer && !reclaimer->addMemoryToWaitQueue(fGpu, fImageView)) {
+    if (!reclaimer || !reclaimer->addMemoryToWaitQueue(fGpu, fImageView)) {
         GR_VK_CALL(fGpu->vkInterface(), DestroyImageView(fGpu->device(), fImageView, nullptr));
     }
 
