@@ -68,7 +68,7 @@ bool GrVkMemoryReclaimer::addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAll
     return true;
 }
 
-bool GrVkMemoryReclaimer::addMemoryToWaitQueue(const GrVkGpu* gpu, const VkImageView& imageView);
+bool GrVkMemoryReclaimer::addMemoryToWaitQueue(const GrVkGpu* gpu, const VkImageView& imageView)
 {
     if (!fEnabled) {
         return false;
