@@ -1785,7 +1785,7 @@ if (use_oh_skia) {
 
     defines = skia_common_defines
     if (is_arkui_x) {
-      defines += [ "ARKUI_X" ]
+      defines += [ "ARKUI_X_ENABLE" ]
     }
     cflags = skia_common_cflags
     if (!defined(ace_enable_gpu) || !ace_enable_gpu) {
