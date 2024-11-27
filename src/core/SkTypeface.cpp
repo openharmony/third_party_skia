@@ -239,6 +239,11 @@ void SkTypeface::serialize(SkWStream* wstream, SerializeBehavior behavior) const
     this->onGetFontDescriptor(&desc, &isLocalData);
 
     bool shouldSerializeData = false;
+
+#ifdef ARKUI_X
+    isLocalData = false;
+#endif
+
     switch (behavior) {
         case SerializeBehavior::kDoIncludeData:      shouldSerializeData = true;        break;
         case SerializeBehavior::kDontIncludeData:    shouldSerializeData = false;       break;
