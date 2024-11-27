@@ -29,6 +29,8 @@ public:
                                            const GrVkYcbcrConversionInfo& ycbcrInfo);
 
     VkImageView imageView() const { return fImageView; }
+    // OH ISSUE: Integrate Destroy
+    static void DestroyImageView(const GrVkGpu* gpu, const VkImageView& imageView);
 
 #ifdef SK_TRACE_MANAGED_RESOURCES
     void dumpInfo() const override {
