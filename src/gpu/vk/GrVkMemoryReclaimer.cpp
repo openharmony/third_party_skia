@@ -58,6 +58,18 @@ bool GrVkMemoryReclaimer::addMemoryToWaitQueue(const GrVkGpu* gpu, const GrVkAll
     return true;
 }
 
+bool GrVkMemoryReclaimer::addMemoryToWaitQueue(const GrVkGpu* gpu, const VkImageView& imageView)
+{
+    if (!fEnabled) {
+        return false;
+    }
+    fWaitQueues.emplace_back(WaitQueueItem{.fGpu = gpu, .fType = ItemType::IMAGE_VIEW, .fImageView = imageView});
+    if (fWaitQueues.size() > fMemoryCountThreshold) {
+        invokeParallelReclaiming();
+    }
+    return true;
+}
+
 void GrVkMemoryReclaimer::flushGpuMemoryInWaitQueue()
 {
     if (!fEnabled) {
@@ -73,10 +85,16 @@ void GrVkMemoryReclaimer::invokeParallelReclaiming()
 {
     getThreadPool().add([freeQueues {std::move(fWaitQueues)}] {
         for (auto& item : freeQueues) {
-            if (item.fType == ItemType::BUFFER) {
-                GrVkBuffer::DestroyAndFreeBufferMemory(item.fGpu, item.fAlloc, item.fBuffer);
-            } else {
-                GrVkImage::DestroyAndFreeImageMemory(item.fGpu, item.fAlloc, item.fImage);
+            switch (item.fType) {
+                case ItemType::BUFFER:
+                    GrVkBuffer::DestroyAndFreeBufferMemory(item.fGpu, item.fAlloc, item.fBuffer);
+                    break;
+                case ItemType::IMAGE:
+                    GrVkImage::DestroyAndFreeImageMemory(item.fGpu, item.fAlloc, item.fImage);
+                    break;
+                case ItemType::IMAGE_VIEW:
+                    GrVkImageView::DestroyImageView(item.fGpu, item.fImageView);
+                    break;
             }
         }
     });
