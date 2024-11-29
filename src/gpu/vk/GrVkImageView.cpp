@@ -72,8 +72,18 @@ sk_sp<const GrVkImageView> GrVkImageView::Make(GrVkGpu* gpu,
     return sk_sp<const GrVkImageView>(new GrVkImageView(gpu, imageView, ycbcrConversion));
 }
 
+// OH ISSUE: Integrate Destroy
+void GrVkImageView::DestroyImageView(const GrVkGpu* gpu, const VkImageView& imageView)
+{
+    GR_VK_CALL(gpu->vkInterface(), DestroyImageView(gpu->device(), imageView, nullptr));
+}
+
 void GrVkImageView::freeGPUData() const {
-    GR_VK_CALL(fGpu->vkInterface(), DestroyImageView(fGpu->device(), fImageView, nullptr));
+    // OH ISSUE: asyn memory reclaimer
+    auto reclaimer = fGpu->memoryReclaimer();
+    if (!reclaimer || !reclaimer->addMemoryToWaitQueue(fGpu, fImageView)) {
+        GR_VK_CALL(fGpu->vkInterface(), DestroyImageView(fGpu->device(), fImageView, nullptr));
+    }
 
     if (fYcbcrConversion) {
         fYcbcrConversion->unref();
