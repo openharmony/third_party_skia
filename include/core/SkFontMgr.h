@@ -29,8 +29,8 @@ enum FontCheckCode {
 };
 
 struct SkByteArray {
-    std::unique_ptr<uint8_t[]> strData; // A byte array in UTF-16BE encoding
-    uint32_t strLen;
+    std::unique_ptr<uint8_t[]> strData = nullptr; // A byte array in UTF-16BE encoding
+    uint32_t strLen = 0;
 };
 #endif
 
