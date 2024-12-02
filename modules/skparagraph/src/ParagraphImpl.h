@@ -323,6 +323,8 @@ public:
 
 #ifdef OHOS_SUPPORT
     size_t GetMaxLines() const override { return fParagraphStyle.getMaxLines(); }
+    void setLastAutoSpacingFlag(Cluster::AutoSpacingFlag flag) { fLastAutoSpacingFlag = flag; }
+    const Cluster::AutoSpacingFlag& getLastAutoSpacingFlag() const { return fLastAutoSpacingFlag; }
 #endif
 
 private:
@@ -444,6 +446,8 @@ private:
 #ifdef OHOS_SUPPORT
     TextRange fEllipsisRange{EMPTY_RANGE};
     std::optional<SkRect> fPaintRegion;
+    // just for building cluster table, record the last built unicode autospacing flag;
+    Cluster::AutoSpacingFlag fLastAutoSpacingFlag;
 #endif
 };
 }  // namespace textlayout

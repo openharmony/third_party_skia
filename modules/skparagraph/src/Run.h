@@ -388,6 +388,16 @@ void Run::iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor vis
 
 class Cluster {
 public:
+
+#ifdef OHOS_SUPPORT
+    enum AutoSpacingFlag {
+        NoFlag = 0,
+        CJK,
+        Western,
+        Copyright
+    };
+#endif
+
     enum BreakType {
         None,
         GraphemeBreak,  // calculated for all clusters (UBRK_CHARACTER)
@@ -436,11 +446,9 @@ public:
     bool isHardBreak() const { return fIsHardBreak; }
     bool isIdeographic() const { return fIsIdeographic; }
     bool isWordBreak() const { return isWhitespaceBreak() || isHardBreak() || isSoftBreak() || run().isPlaceholder(); }
-    bool isCJK() const { return fIsCJK; }
-    bool isCopyright() const { return fIsCopyright; }
-    bool isWestern() const { return fIsWestern; }
 #ifdef OHOS_SUPPORT
     bool isTabulation() const { return fIsTabulation; }
+    bool needAutoSpacing() const { return fNeedAutoSpacing; }
 #endif
 
     bool isSoftBreak() const;
@@ -503,11 +511,9 @@ private:
     bool fIsIntraWordBreak;
     bool fIsHardBreak;
     bool fIsIdeographic;
-    bool fIsCJK;
-    bool fIsCopyright;
-    bool fIsWestern;
 #ifdef OHOS_SUPPORT
     bool fIsTabulation;
+    bool fNeedAutoSpacing; // depend on last cluster flag
 #endif
 };
 

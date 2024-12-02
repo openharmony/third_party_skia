@@ -363,6 +363,7 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
     if (paragraph.fRuns.size() == value->fRuns.size()) {
         // update PlaceholderRun metrics cache value for placeholder alignment
         for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
+            value->fRuns[idx].fAutoSpacings = paragraph.fRuns[idx].fAutoSpacings;
             if (!value->fRuns[idx].isPlaceholder()) {
                 continue;
             }
@@ -420,6 +421,7 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
     if (paragraph.fRuns.size() == value->fRuns.size()) {
         // get PlaceholderRun metrics for placeholder alignment
         for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
+            paragraph.fRuns[idx].fAutoSpacings = value->fRuns[idx].fAutoSpacings;
             if (!value->fRuns[idx].isPlaceholder()) {
                 continue;
             }
