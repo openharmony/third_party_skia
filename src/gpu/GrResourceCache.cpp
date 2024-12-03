@@ -629,10 +629,7 @@ void GrResourceCache::insertResource(GrGpuResource* resource)
     SkASSERT(!this->isInCache(resource));
     SkASSERT(!resource->wasDestroyed());
     SkASSERT(!resource->resourcePriv().isPurgeable());
-    if (!resource || this->isInCache(resource) || resource->wasDestroyed() || resource->resourcePriv().isPurgeable()) {
-        SkDebugf("OHOS GrResourceCache::insertResource resource is invalid!!!");
-        return;
-    }
+
     // We must set the timestamp before adding to the array in case the timestamp wraps and we wind
     // up iterating over all the resources that already have timestamps.
     resource->cacheAccess().setTimestamp(this->getNextTimestamp());
@@ -699,10 +696,10 @@ void GrResourceCache::removeResource(GrGpuResource* resource) {
     SkASSERT(this->isInCache(resource));
 
     size_t size = resource->gpuMemorySize();
-    if (resource->resourcePriv().isPurgeable() && this->isInPurgeableCache(resource)) {
+    if (resource->resourcePriv().isPurgeable()) {
         fPurgeableQueue.remove(resource);
         fPurgeableBytes -= size;
-    } else if (this->isInNonpurgeableCache(resource)) {
+    } else {
         this->removeFromNonpurgeableArray(resource);
     }
 
@@ -942,10 +939,6 @@ GrGpuResource* GrResourceCache::findAndRefScratchResource(const GrScratchKey& sc
     GrGpuResource* resource = fScratchMap.find(scratchKey, AvailableForScratchUse());
     if (resource) {
         fScratchMap.remove(scratchKey, resource);
-        if (!this->isInCache(resource)) {
-            SkDebugf("OHOS GrResourceCache::findAndRefScratchResource not in cache, return!!!");
-            return nullptr;
-        }
         this->refAndMakeResourceMRU(resource);
         this->validate();
     }
@@ -1029,15 +1022,9 @@ void GrResourceCache::refAndMakeResourceMRU(GrGpuResource* resource) {
 
     if (resource->resourcePriv().isPurgeable()) {
         // It's about to become unpurgeable.
-        if (this->isInPurgeableCache(resource)) {
-            fPurgeableBytes -= resource->gpuMemorySize();
-            fPurgeableQueue.remove(resource);
-        }
-        if (!this->isInNonpurgeableCache(resource)) {
-            this->addToNonpurgeableArray(resource);
-        } else {
-            SkDebugf("OHOS resource in isInNonpurgeableCache, do not add again!");
-        }
+        fPurgeableBytes -= resource->gpuMemorySize();
+        fPurgeableQueue.remove(resource);
+        this->addToNonpurgeableArray(resource);
     } else if (!resource->cacheAccess().hasRefOrCommandBufferUsage() &&
                resource->resourcePriv().budgetedType() == GrBudgetedType::kBudgeted) {
         SkASSERT(fNumBudgetedResourcesFlushWillMakePurgeable > 0);
@@ -1058,11 +1045,7 @@ void GrResourceCache::notifyARefCntReachedZero(GrGpuResource* resource,
     // This resource should always be in the nonpurgeable array when this function is called. It
     // will be moved to the queue if it is newly purgeable.
     SkASSERT(fNonpurgeableResources[*resource->cacheAccess().accessCacheIndex()] == resource);
-    if (!resource || resource->wasDestroyed() || this->isInPurgeableCache(resource) ||
-        !this->isInNonpurgeableCache(resource)) {
-        SkDebugf("OHOS GrResourceCache::notifyARefCntReachedZero return!");
-        return;
-    }
+
     if (removedRef == GrGpuResource::LastRemovedRef::kMainRef) {
         if (resource->cacheAccess().isUsableAsScratch()) {
             fScratchMap.insert(resource->resourcePriv().getScratchKey(), resource);
@@ -1238,10 +1221,6 @@ void GrResourceCache::purgeAsNeeded(const std::function<bool(void)>& nextFrameHa
     bool stillOverbudget = this->overBudget(nextFrameHasArrived);
     while (stillOverbudget && fPurgeableQueue.count() && this->allowToPurge(nextFrameHasArrived)) {
         GrGpuResource* resource = fPurgeableQueue.peek();
-        if (!resource->resourcePriv().isPurgeable()) {
-            SkDebugf("OHOS GrResourceCache::purgeAsNeeded() resource is nonPurgeable");
-            continue;
-        }
         SkASSERT(resource->resourcePriv().isPurgeable());
         resource->cacheAccess().release();
         stillOverbudget = this->overBudget(nextFrameHasArrived);
@@ -1253,10 +1232,6 @@ void GrResourceCache::purgeAsNeeded(const std::function<bool(void)>& nextFrameHa
         stillOverbudget = this->overBudget(nextFrameHasArrived);
         while (stillOverbudget && fPurgeableQueue.count() && this->allowToPurge(nextFrameHasArrived)) {
             GrGpuResource* resource = fPurgeableQueue.peek();
-            if (!resource->resourcePriv().isPurgeable()) {
-                SkDebugf("OHOS GrResourceCache::purgeAsNeeded() resource is nonPurgeable after dropUniqueRefs");
-                continue;
-            }
             SkASSERT(resource->resourcePriv().isPurgeable());
             resource->cacheAccess().release();
             stillOverbudget = this->overBudget(nextFrameHasArrived);
@@ -1884,7 +1859,6 @@ void GrResourceCache::validate() const {
     // bool overBudget = budgetedBytes > fMaxBytes || budgetedCount > fMaxCount;
     // SkASSERT(!overBudget || locked == count || fPurging);
 }
-#endif // SK_DEBUG
 
 bool GrResourceCache::isInCache(const GrGpuResource* resource) const {
     int index = *resource->cacheAccess().accessCacheIndex();
@@ -1901,29 +1875,7 @@ bool GrResourceCache::isInCache(const GrGpuResource* resource) const {
     return false;
 }
 
-bool GrResourceCache::isInPurgeableCache(const GrGpuResource* resource) const {
-    int index = *resource->cacheAccess().accessCacheIndex();
-    if (index < 0) {
-        return false;
-    }
-    if (index < fPurgeableQueue.count() && fPurgeableQueue.at(index) == resource) {
-        return true;
-    }
-    SkDEBUGFAIL("OHOS Resource index should be -1 or the resource should be in the cache.");
-    return false;
-}
-
-bool GrResourceCache::isInNonpurgeableCache(const GrGpuResource* resource) const {
-    int index = *resource->cacheAccess().accessCacheIndex();
-    if (index < 0) {
-        return false;
-    }
-    if (index < fNonpurgeableResources.count() && fNonpurgeableResources[index] == resource) {
-        return true;
-    }
-    SkDEBUGFAIL("OHOS Resource index should be -1 or the resource should be in the cache.");
-    return false;
-}
+#endif // SK_DEBUG
 
 #if GR_TEST_UTILS
 
