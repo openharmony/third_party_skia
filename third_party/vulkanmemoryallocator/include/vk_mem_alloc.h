@@ -7755,6 +7755,7 @@ public:
     VmaBlockVector* m_pBlockVectors[VK_MAX_MEMORY_TYPES];
     // Reserved pools.
     VmaBlockVector* m_pReservedBlockVectors[VK_MAX_MEMORY_TYPES];
+    bool m_BindComplete = false;
 
     // Each vector is sorted by memory (handle value).
     typedef VmaVector< VmaAllocation, VmaStlAllocator<VmaAllocation> > AllocationVectorType;
@@ -16791,8 +16792,12 @@ VkResult VmaAllocator_T::SwapReservedBlock(
     if (reservedBlockVector->IsEmpty()) {
         return VK_NOT_READY;
     }
+    if (m_BindComplete == false) {
+        return VK_INCOMPLETE;
+    }
     VmaBlockVector* blockVector = m_pBlockVectors[memTypeIndex];
     SwapLastBlock(blockVector, reservedBlockVector);
+    m_BindComplete = false;
     return VK_SUCCESS;
 }
 
@@ -17470,6 +17475,9 @@ VkResult VmaAllocator_T::BindImageMemory(
         VmaDeviceMemoryBlock* pBlock = hAllocation->GetBlock();
         VMA_ASSERT(pBlock && "Binding image to allocation that doesn't belong to any block. Is the allocation lost?");
         res = pBlock->BindImageMemory(this, hAllocation, allocationLocalOffset, hImage, pNext);
+        if (res == VK_SUCCESS) {
+            m_BindComplete = true;
+        }
         break;
     }
     default:
