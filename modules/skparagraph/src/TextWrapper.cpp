@@ -365,31 +365,39 @@ struct TextWrapScorer {
         // we trust that clusters are sorted on parent
         bool prevWasWhitespace = false;
         SkScalar currentWidth = 0;
+        SkScalar currentCount = 0;
         SkScalar cumulativeLen_ = 0;
         for (size_t ix = 0; ix < parent.clusters().size(); ix++) {
             auto& cluster = parent.clusters()[ix];
             auto len = cluster.width();
             cumulativeLen_ += len;
             currentWidth += len;
+            currentCount++;
 
             if (cluster.isWhitespaceBreak()) {
                 breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
                 prevWasWhitespace = true;
                 currentWidth = 0;
+                currentCount = 0;
             } else if (cluster.isHardBreak()) {
                 breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_HARD, false);
                 prevWasWhitespace = true;
                 currentWidth = 0;
+                currentCount = 0;
             } else if (cluster.isIntraWordBreak()) {
                 breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_INTRA, false);
                 prevWasWhitespace = true;
                 currentWidth = 0;
+                currentCount = 0;
             } else if (currentWidth > currentTarget_) {
-                cumulativeLen_ -= cluster.width();
-                ix--;
+                if (currentCount > 1) {
+                    cumulativeLen_ -= cluster.width();
+                    ix--;
+                }
                 breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_FORCED, false);
                 prevWasWhitespace = false;
                 currentWidth = 0;
+                currentCount = 0;
             } else {
                 prevWasWhitespace = false;
             }
