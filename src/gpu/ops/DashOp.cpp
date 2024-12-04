@@ -19,6 +19,7 @@
 #include "src/gpu/GrOpFlushState.h"
 #include "src/gpu/GrProcessor.h"
 #include "src/gpu/GrProgramInfo.h"
+#include "src/core/SkSafeMath.h"
 #include "src/gpu/GrRecordingContextPriv.h"
 #include "src/gpu/GrStyle.h"
 #include "src/gpu/SkGr.h"
@@ -350,6 +351,7 @@ private:
         SkSTArray<kNumStackDashes, SkRect, true> rects;
         SkSTArray<kNumStackDashes, DashDraw, true> draws;
 
+        SkSafeMath safeMath;
         int totalRectCount = 0;
         int rectOffset = 0;
         rects.push_back_n(3 * instanceCount);
@@ -516,9 +518,9 @@ private:
                 devIntervals[0] = lineLength;
             }
 
-            totalRectCount += !lineDone ? 1 : 0;
-            totalRectCount += hasStartRect ? 1 : 0;
-            totalRectCount += hasEndRect ? 1 : 0;
+            totalRectCount = safeMath.addInt(totalRectCount, !lineDone ? 1 : 0);
+            totalRectCount = safeMath.addInt(totalRectCount, hasStartRect ? 1 : 0);
+            totalRectCount = safeMath.addInt(totalRectCount, hasEndRect ? 1 : 0);
 
             if (SkPaint::kRound_Cap == cap && 0 != args.fSrcStrokeWidth) {
                 // need to adjust this for round caps to correctly set the dashPos attrib on
@@ -558,7 +560,7 @@ private:
             draw.fHasEndRect = hasEndRect;
         }
 
-        if (!totalRectCount) {
+        if (!totalRectCount || !safeMath) {
             return;
         }
 

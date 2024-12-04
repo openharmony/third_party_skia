@@ -10,6 +10,7 @@
 #include "src/gpu/GrOpFlushState.h"
 #include "src/gpu/GrOpsRenderPass.h"
 #include "src/gpu/GrRecordingContextPriv.h"
+#include "include/core/SkMath.h"
 #include "src/gpu/GrResourceProvider.h"
 
 GrMeshDrawOp::GrMeshDrawOp(uint32_t classID) : INHERITED(classID) {}
@@ -81,6 +82,12 @@ void GrMeshDrawOp::PatternHelper::init(GrMeshDrawTarget* target, GrPrimitiveType
     if (!indexBuffer) {
         return;
     }
+
+    // Bail out when we get overflow from really large draws.
+    if (repeatCount < 0 || repeatCount > SK_MaxS32 / verticesPerRepetition) {
+        return;
+    }
+    
     sk_sp<const GrBuffer> vertexBuffer;
     int firstVertex;
     int vertexCount = verticesPerRepetition * repeatCount;
