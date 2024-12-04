@@ -29,6 +29,9 @@
 #include <algorithm>
 #include <limits>
 
+constexpr char ORIGIN_MY_LOCALE[] = "my-Qaag";
+constexpr char ANDROID_MY_LOCALE[] = "und-Qaag";
+
 class SkData;
 
 class SkTypeface_Android : public SkTypeface_FreeType {
@@ -364,6 +367,11 @@ protected:
             const SkFontStyle& style, bool elegant,
             const SkString& langTag, SkUnichar character)
     {
+        SkString localeLangTag = langTag;
+        if (localeLangTag.find(ORIGIN_MY_LOCALE)) {
+            localeLangTag = ANDROID_MY_LOCALE;
+        }
+
         for (int i = 0; i < fallbackNameToFamilyMap.count(); ++i) {
             SkFontStyleSet_Android* family = fallbackNameToFamilyMap[i].styleSet;
             if (familyName != family->fFallbackFor) {
@@ -371,9 +379,9 @@ protected:
             }
             sk_sp<SkTypeface_AndroidSystem> face(family->matchStyle(style));
 
-            if (!langTag.isEmpty() &&
+            if (!localeLangTag.isEmpty() &&
                 std::none_of(face->fLang.begin(), face->fLang.end(), [&](SkLanguage lang){
-                    return lang.getTag().startsWith(langTag.c_str());
+                    return lang.getTag().startsWith(localeLangTag.c_str());
                 }))
             {
                 continue;
