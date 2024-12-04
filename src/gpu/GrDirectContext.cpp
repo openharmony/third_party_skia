@@ -513,6 +513,11 @@ bool GrDirectContext::supportsDistanceFieldText() const {
 }
 
 //////////////////////////////////////////////////////////////////////////////
+void GrDirectContext::dumpAllResource(std::stringstream &dump) const {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    fResourceCache->dumpAllResource(dump);
+#endif
+}
 
 void GrDirectContext::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
     ASSERT_SINGLE_OWNER

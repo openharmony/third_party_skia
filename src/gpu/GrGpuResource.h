@@ -11,6 +11,9 @@
 #include "include/private/GrResourceKey.h"
 #include "include/private/GrTypesPriv.h"
 #include "include/private/SkNoncopyable.h"
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include <sstream>
+#endif
 
 class GrGpu;
 class GrResourceCache;
@@ -314,6 +317,11 @@ public:
      * @return all GrGpuResourceTags.
      */
     GrGpuResourceTag getResourceTag() const { return fGrResourceTag; }
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    virtual void dumpVkImageInfo(std::stringstream& dump) const {
+        dump << "\n";
+    }
+#endif
 
 protected:
     // This must be called by every non-wrapped GrGpuObject. It should be called once the object is

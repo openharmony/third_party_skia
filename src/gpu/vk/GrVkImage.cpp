@@ -5,6 +5,9 @@
  * found in the LICENSE file.
  */
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include "include/gpu/vk/GrVulkanTracker.h"
+#endif
 #include "src/gpu/vk/GrVkImage.h"
 
 #include "src/gpu/vk/GrVkGpu.h"
@@ -608,7 +611,40 @@ void GrVkImage::setResourceRelease(sk_sp<GrRefCntedCallback> releaseHelper) {
     fResource->setRelease(std::move(releaseHelper));
 }
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+void GrVkImage::dumpVkImageInfo(std::stringstream& dump) const {
+    VkMemoryRequirements memRequirements;
+    VK_CALL(getVkGpu(), GetImageMemoryRequirements(getVkGpu()->device(), image(), &memRequirements));
+    VkDeviceSize imageSize = memRequirements.size;
+
+    fResource->dumpVkImageResource(dump);
+    dump << "Borrowed: " << isBorrowed() << ", " << "ImageSize: " << imageSize << ", ";
+    fResource->fCaller->Dump(dump);
+    dump << "\n";
+}
+
+void GrVkImage::Resource::dumpVkImageResource(std::stringstream& dump) {
+    dump << "VkImage: " << fResource->fImage << ", "
+        << "Memory: " << fResource->fAlloc.fMemory << ", "
+        << "Offset: " << fResource->fAlloc.fOffset << ", "
+        << "Size: " << fResource->fAlloc.fSize << ", ";
+}
+
+void GrVkimage::Resource::RecordFreeVkImage(bool isBorrowed) const {
+    ParallelDebug::VkImageDestroyRecord::Record(fImage, isBorrowed, fCaller, fAlloc.fMemory);
+}
+#endif
+
+GrVkImage::Resource::~Resource() {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    ParallelDebug::DestroyVkImageInvokeRecord(fCaller);
+#endif
+}
+
 void GrVkImage::Resource::freeGPUData() const {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    RecordFreeVkImage(true);
+#endif
     this->invokeReleaseProc();
 
     // OH ISSUE: asyn memory reclaimer
@@ -621,6 +657,9 @@ void GrVkImage::Resource::freeGPUData() const {
 }
 
 void GrVkImage::BorrowedResource::freeGPUData() const {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    RecordFreeVkImage(false);
+#endif
     this->invokeReleaseProc();
 }
 

@@ -2732,6 +2732,12 @@ bool GrVkGpu::checkVkResult(VkResult result) {
             }
 #endif
             fDeviceIsLost = true;
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+            {
+                std::stringstream dump;
+                getContext()->dumpAllResource(dump);
+            }
+#endif
             return false;
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:
         case VK_ERROR_OUT_OF_HOST_MEMORY:

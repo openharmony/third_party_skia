@@ -1660,6 +1660,32 @@ uint32_t GrResourceCache::getNextTimestamp() {
     return fTimestamp++;
 }
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+void GrResourceCache::dumpAllResource(std::stringstream &dump) const {
+    if (getResourceCount() == 0) {
+        return;
+    }
+    dump << "Purgeable: " << fPurgeableQueue.count() << std::endl;
+    for (int i = 0; i < fPurgeableQueue.count(); ++i) {
+        GrGpuResource* resource = fPurgeableQueue.at(i);
+        if (strcmp(resource->getResourceType(), "VkImage") != 0) continue;
+        dump << i << " " << resource->getResourceType() << " ";
+        resource->dumpVkImageInfo(dump);
+    }
+    dump << "Non-Purgeable: " << fNonpurgeableResources.count() << std::endl;
+    for (int i = 0; i < fNonpurgeableResources.count(); ++i) {
+        GrGpuResource* resource = fNonpurgeableResources[i];
+        if (strcmp(resource->getResourceType(), "VkImage") != 0) continue;
+        dump << i << " " << resource->getResourceType() << " ";
+        resource->dumpVkImageInfo(dump);
+    }
+#ifdef SK_VULKAN
+    dump << "Destroy Record: " << std::endl;
+    ParallelDebug::DumpAllDestroyVkImage(dump);
+#endif
+}
+#endif
+
 void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
     SkTDArray<GrGpuResource*> resources;
     for (int i = 0; i < fNonpurgeableResources.count(); ++i) {

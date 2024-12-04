@@ -9,6 +9,9 @@
 #define GrSurfaceProxyPriv_DEFINED
 
 #include "src/gpu/GrSurfaceProxy.h"
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
+#endif
 
 class GrResourceProvider;
 
@@ -45,7 +48,11 @@ public:
     void setIsPromiseProxy() { fProxy->fIsPromiseProxy = true; }
 
 private:
-    explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) : fProxy(proxy) {}
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) : fProxy(proxy), nodeId(ParallelDebug::GetNodeId()) {};
+#else
+    explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) : fProxy(proxy) {};
+#endif
     // Required until C++17 copy elision
     GrSurfaceProxyPriv(const GrSurfaceProxyPriv&) = default;
     GrSurfaceProxyPriv& operator=(const GrSurfaceProxyPriv&) = delete;
@@ -55,6 +62,9 @@ private:
     GrSurfaceProxyPriv* operator&();
 
     GrSurfaceProxy* fProxy;
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    uint64_t nodeId;
+#endif
 
     friend class GrSurfaceProxy; // to construct/copy this type.
 };
