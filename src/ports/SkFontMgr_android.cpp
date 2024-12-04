@@ -380,7 +380,7 @@ protected:
             sk_sp<SkTypeface_AndroidSystem> face(family->matchStyle(style));
 
             if (!localeLangTag.isEmpty() &&
-                std::none_of(face->fLang.begin(), face->fLang.end(), [&](SkLanguage lang){
+                std::none_of(face->fLang.begin(), face->fLang.end(), [&](SkLanguage lang) {
                     return lang.getTag().startsWith(localeLangTag.c_str());
                 }))
             {
