@@ -6804,6 +6804,9 @@ public:
         uint32_t algorithm);
     // Always call before destruction.
     void Destroy(VmaAllocator allocator);
+
+    void SetBindCompleteFlag(bool flag) { m_BindComplete = flag; }
+    bool GetBindCompleteFlag() const { return m_BindComplete; }
     
     VmaPool GetParentPool() const { return m_hParentPool; }
     VkDeviceMemory GetDeviceMemory() const { return m_hMemory; }
@@ -6850,6 +6853,7 @@ private:
     VMA_MUTEX m_Mutex;
     uint32_t m_MapCount;
     void* m_pMappedData;
+    bool m_BindComplete;
 };
 
 struct VmaPointerLess
@@ -6911,6 +6915,7 @@ public:
     void GetPoolStats(VmaPoolStats* pStats);
 
     bool IsEmpty();
+    bool IsLastBlockBindComplete();
     bool IsCorruptionDetectionEnabled() const;
 
     VkResult Allocate(
@@ -12216,7 +12221,8 @@ VmaDeviceMemoryBlock::VmaDeviceMemoryBlock(VmaAllocator hAllocator) :
     m_Id(0),
     m_hMemory(VK_NULL_HANDLE),
     m_MapCount(0),
-    m_pMappedData(VMA_NULL)
+    m_pMappedData(VMA_NULL),
+    m_BindComplete(false)
 {
 }
 
@@ -12580,6 +12586,19 @@ bool VmaBlockVector::IsEmpty()
 {
     VmaMutexLockRead lock(m_Mutex, m_hAllocator->m_UseMutex);
     return m_Blocks.empty();
+}
+
+bool VmaBlockVector::IsLastBlockBindComplete()
+{
+    VmaMutexLockRead lock(m_Mutex, m_hAllocator->m_UseMutex);
+    if (m_Blocks.empty()) {
+        return false;
+    }
+    VmaDeviceMemoryBlock* lastBlock = m_Blocks.back();
+    if (!lastBlock) {
+        return false;
+    }
+    return lastBlock->GetBindCompleteFlag();
 }
 
 bool VmaBlockVector::IsCorruptionDetectionEnabled() const
@@ -16791,6 +16810,10 @@ VkResult VmaAllocator_T::SwapReservedBlock(
     if (reservedBlockVector->IsEmpty()) {
         return VK_NOT_READY;
     }
+    if (!reservedBlockVector->IsLastBlockBindComplete()) {
+        return VK_INCOMPLETE;
+    }
+
     VmaBlockVector* blockVector = m_pBlockVectors[memTypeIndex];
     SwapLastBlock(blockVector, reservedBlockVector);
     return VK_SUCCESS;
@@ -17470,6 +17493,9 @@ VkResult VmaAllocator_T::BindImageMemory(
         VmaDeviceMemoryBlock* pBlock = hAllocation->GetBlock();
         VMA_ASSERT(pBlock && "Binding image to allocation that doesn't belong to any block. Is the allocation lost?");
         res = pBlock->BindImageMemory(this, hAllocation, allocationLocalOffset, hImage, pNext);
+        if (res == VK_SUCCESS) {
+            pBlock->SetBindCompleteFlag(true);
+        }
         break;
     }
     default:
