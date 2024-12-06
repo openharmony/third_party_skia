@@ -305,7 +305,7 @@ void ParagraphImpl::middleEllipsisLtrDeal(size_t& end,
     const SkString& ell = this->getEllipsis();
     const char *ellStr = ell.c_str();
     size_t start = 0;
-    if (ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
+    if (ltrTextSize.empty() || ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
         fText.reset();
         fText.set(ellStr);
         end = 1;
