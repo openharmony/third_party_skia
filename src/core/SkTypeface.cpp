@@ -202,6 +202,13 @@ sk_sp<SkTypeface> SkTypeface::MakeFromName(const char name[],
     return SkFontMgr::RefDefault()->legacyMakeTypeface(name, fontStyle);
 }
 
+#ifdef OHOS_SUPPORT
+std::vector<sk_sp<SkTypeface>> SkTypeface::GetSystemFonts()
+{
+    return SkFontMgr::RefDefault()->getSystemFonts();
+}
+#endif
+
 sk_sp<SkTypeface> SkTypeface::MakeFromStream(std::unique_ptr<SkStreamAsset> stream, int index) {
     if (!stream) {
         return nullptr;
@@ -494,6 +501,14 @@ void SkTypeface::getFamilyName(SkString* name) const {
     SkASSERT(name);
     this->onGetFamilyName(name);
 }
+
+#ifdef OHOS_SUPPORT
+void SkTypeface::getFontPath(SkString* path) const
+{
+    SkASSERT(path);
+    this->onGetFontPath(path);
+}
+#endif
 
 bool SkTypeface::getPostScriptName(SkString* name) const {
     return this->onGetPostScriptName(name);

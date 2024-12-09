@@ -4,6 +4,7 @@
 
 #include "SkFontMgr_ohos.h"
 
+#include "include/core/SkData.h"
 #include "SkTypeface_ohos.h"
 
 using namespace ErrorCode;
@@ -384,6 +385,36 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::onLegacyMakeTypeface(const char familyName[], 
     return nullptr;
 }
 
+#ifdef OHOS_SUPPORT
+std::vector<sk_sp<SkTypeface>> SkFontMgr_OHOS::onGetSystemFonts() const
+{
+    if (fontConfig == nullptr) {
+        return {};
+    }
+    std::vector<sk_sp<SkTypeface>> skTypefaces;
+    int familyCount = fontConfig->getFamilyCount();
+    for (int i = 0; i < familyCount; ++i) {
+        int typefaceCount = fontConfig->getTypefaceCount(i);
+        for (int j = 0; j < typefaceCount; ++j) {
+            sk_sp<SkTypeface_OHOS> typeface = fontConfig->getTypefaceSP(i, j);
+            if (typeface == nullptr) {
+                continue;
+            }
+            skTypefaces.emplace_back(typeface);
+        }
+    }
+
+    for (auto& item : fontConfig->getFallbackSet()) {
+        if (item->typefaceSet != nullptr) {
+            for (auto& iter : *(item->typefaceSet)) {
+                skTypefaces.emplace_back(iter);
+            }
+        }
+    }
+    return std::move(skTypefaces);
+}
+#endif
+
 /*! To make a typeface from the specified stream and font arguments
  * \param stream the specified stream to be parsed to get font information
  * \param args the arguments of index or axis values
@@ -426,6 +457,42 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::makeTypeface(std::unique_ptr<SkStreamAsset> st
     fontInfo.stream = std::move(stream);
     fontInfo.index = ttcIndex;
     return sk_make_sp<SkTypeface_OHOS>(fontInfo);
+}
+
+/*! Get the fullname of font
+ * \param fontFd      The file descriptor for the font file
+ * \param fullnameVec Read the font fullname list
+ * \return Returns Whether the fullnameVec was successfully obtained, 0 means success, see FontCheckCode for details
+ */
+int SkFontMgr_OHOS::GetFontFullName(int fontFd, std::vector<SkByteArray> &fullnameVec)
+{
+    std::unique_ptr<SkMemoryStream> stream = std::make_unique<SkMemoryStream>(SkData::MakeFromFD(fontFd));
+    int errorCode = SUCCESSED;
+    int numFaces = 0;
+    if (!fontScanner.recognizedFont(stream.get(), &numFaces)) {
+        SkDebugf("Failed to recognizedFont");
+        return ERROR_TYPE_OTHER;
+    }
+    for (int faceIndex = 0; faceIndex < numFaces; ++faceIndex) {
+        bool isFixedPitch = false;
+        SkString realname;
+        SkFontStyle style = SkFontStyle(); // avoid uninitialized warning
+        if (!fontScanner.scanFont(stream.get(), faceIndex, &realname, &style, &isFixedPitch, nullptr)) {
+            SkDebugf("Failed to scanFont, faceIndex:%d", faceIndex);
+            errorCode = ERROR_TYPE_OTHER;
+            break;
+        }
+        SkByteArray skFullName = {nullptr, 0};
+        if (!fontScanner.GetTypefaceFullname(stream.get(), faceIndex, skFullName)) {
+            SkDebugf("Failed to get fullname, faceIndex:%d", faceIndex);
+            errorCode = ERROR_TYPE_OTHER;
+            break;
+        } else {
+            fullnameVec.push_back(std::move(skFullName));
+        }
+    }
+    SkDebugf("GetFontFullName end, errorCode:%d, numFaces:%d, size:%zu", errorCode, numFaces, fullnameVec.size());
+    return errorCode;
 }
 
 /*! To create SkFontMgr object for Harmony platform

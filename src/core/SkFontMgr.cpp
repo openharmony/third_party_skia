@@ -146,6 +146,18 @@ sk_sp<SkTypeface> SkFontMgr::legacyMakeTypeface(const char familyName[], SkFontS
     return this->onLegacyMakeTypeface(familyName, style);
 }
 
+#ifdef OHOS_SUPPORT
+std::vector<sk_sp<SkTypeface>> SkFontMgr::getSystemFonts()
+{
+    return this->onGetSystemFonts();
+}
+
+std::vector<sk_sp<SkTypeface>> SkFontMgr::onGetSystemFonts() const
+{
+    return {};
+}
+#endif
+
 sk_sp<SkFontMgr> SkFontMgr::RefEmpty() {
     static SkEmptyFontMgr singleton;
     return sk_ref_sp(&singleton);

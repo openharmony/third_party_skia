@@ -84,6 +84,9 @@ public:
         bool scanFont(SkStreamAsset* stream, int ttcIndex,
                       SkString* name, SkFontStyle* style, bool* isFixedPitch,
                       AxisDefinitions* axes) const;
+#ifdef OHOS_SUPPORT
+        bool GetTypefaceFullname(SkStreamAsset* stream, int ttcIndex, SkByteArray& fullname) const;
+#endif
         static void computeAxisValues(
             AxisDefinitions axisDefinitions,
             const SkFontArguments::VariationPosition position,
