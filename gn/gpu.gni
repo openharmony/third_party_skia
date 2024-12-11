@@ -599,6 +599,7 @@ skia_vk_sources = [
   "$_include/gpu/vk/GrVkMemoryAllocator.h",
   "$_include/gpu/vk/GrVkTypes.h",
   "$_include/gpu/vk/GrVkVulkan.h",
+  "$_include/gpu/vk/GrVulkanTracker.h",
   "$_include/private/GrVkTypesPriv.h",
   "$_src/gpu/vk/GrVkAMDMemoryAllocator.cpp",
   "$_src/gpu/vk/GrVkAMDMemoryAllocator.h",
@@ -671,6 +672,7 @@ skia_vk_sources = [
   "$_src/gpu/vk/GrVkUtil.h",
   "$_src/gpu/vk/GrVkVaryingHandler.cpp",
   "$_src/gpu/vk/GrVkVaryingHandler.h",
+  "$_src/gpu/vk/GrVulkanTracker.cpp",
 ]
 
 if (skia_vk_enable_partialrender) {

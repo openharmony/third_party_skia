@@ -458,6 +458,10 @@ private:
     bool                   fIgnoredByResourceAllocator = false;
     bool                   fIsDDLTarget = false;
     bool                   fIsPromiseProxy = false;
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    uint64_t fNodeId;
+#endif
+
     GrProtected            fIsProtected;
 
     int                     fTaskTargetCount = 0;
