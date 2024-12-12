@@ -333,6 +333,7 @@ private:
     friend class ParagraphCacheValue;
     friend class ParagraphCache;
 
+    friend struct TextWrapScorer;
     friend class TextWrapper;
     friend class OneLineShaper;
 #ifdef OHOS_SUPPORT

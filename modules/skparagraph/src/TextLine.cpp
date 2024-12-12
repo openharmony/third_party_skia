@@ -838,7 +838,7 @@ void TextLine::justify(SkScalar maxWidth) {
         return;
     }
 
-    SkScalar step = (maxWidth - textLen) / whitespacePatches;
+    SkScalar step = (maxWidth - textLen - (fEllipsis ? fEllipsis->fAdvance.fX : 0)) / whitespacePatches;
     SkScalar shift = 0.0f;
     SkScalar prevShift = 0.0f;
 
@@ -1119,6 +1119,7 @@ static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
 
 std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Cluster* cluster) {
 
+    fEllipsisString = ellipsis;
     class ShapeHandler final : public SkShaper::RunHandler {
     public:
         ShapeHandler(SkScalar lineHeight, bool useHalfLeading, SkScalar baselineShift, const SkString& ellipsis)
@@ -1843,7 +1844,7 @@ bool TextLine::endsWithHardLineBreak() const {
     // TODO: For some reason Flutter imagines a hard line break at the end of the last line.
     //  To be removed...
     return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak()) ||
-           fEllipsis != nullptr ||
+           (fEllipsis != nullptr && fOwner->getEllipsis() == fEllipsisString)  ||
            fGhostClusterRange.end == fOwner->clusters().size() - 1;
 }
 

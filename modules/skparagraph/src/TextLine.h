@@ -317,6 +317,7 @@ private:
 #endif
 public:
     std::vector<TextBlobRecord> fTextBlobCache;
+    SkString fEllipsisString;
 };
 }  // namespace textlayout
 }  // namespace skia

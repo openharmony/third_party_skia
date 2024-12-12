@@ -199,6 +199,7 @@ public:
     SkScalar minIntrinsicWidth() const { return fMinIntrinsicWidth; }
     SkScalar maxIntrinsicWidth() const { return fMaxIntrinsicWidth; }
     bool exceededMaxLines() const { return fExceededMaxLines; }
+    bool brokeLineWithHyphen() const { return fBrokeLineWithHyphen; }
 
 private:
 #ifdef OHOS_SUPPORT
@@ -226,6 +227,7 @@ private:
         fTooLongCluster = false;
         fTooLongWord = false;
         fHardLineBreak = false;
+        fBrokeLineWithHyphen = false;
     }
 
 #ifdef OHOS_SUPPORT
@@ -233,6 +235,9 @@ private:
     void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
     uint64_t CalculateBestScore(std::vector<SkScalar>& widthOut,
         SkScalar maxWidth, ParagraphImpl* parent, size_t maxLines);
+    static size_t tryBreakWord(Cluster* startCluster, Cluster* endOfClusters, SkScalar widthBeforeCluster, SkScalar maxWidth);
+
+    bool fBrokeLineWithHyphen { false };
 #else
     void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack);
     void moveForward(bool hasEllipsis);

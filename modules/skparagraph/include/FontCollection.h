@@ -21,6 +21,7 @@ namespace textlayout {
 
 class TextStyle;
 class Paragraph;
+
 class FontCollection : public SkRefCnt {
 public:
     FontCollection();
@@ -107,6 +108,9 @@ public:
     {
         return fIsAdpaterTextHeightEnabled;
     }
+
+    const uint8_t* getHyphenatorData(const std::string& locale);
+
 #endif
 private:
 #ifndef USE_SKIA_TXT
@@ -167,6 +171,16 @@ private:
     std::vector<SkString> fDefaultFamilyNames;
     ParagraphCache fParagraphCache;
     mutable std::shared_mutex mutex_;
+
+    struct HyphenatorData {
+        const uint8_t* address {nullptr};
+        FILE* filePointer {nullptr};
+        size_t length {0};
+        ~HyphenatorData();
+    };
+
+    std::unordered_map<std::string, HyphenatorData> hyphMap;
+
 };
 }  // namespace textlayout
 }  // namespace skia
