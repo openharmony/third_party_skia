@@ -1691,8 +1691,6 @@ GrSurfaceProxyView SkBlurMaskFilterImpl::filterMaskGPUNoxFormed(GrRecordingConte
     GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType, const SkMatrix& viewMatrix,
     const SkIRect& maskRect, const SkRRect& srcRRect) const
 {
-    const SkIRect clipRect = SkIRect::MakeWH(maskRect.width(), maskRect.height());
-
     float noxFormedSigma = this->getNoxFormedSigma3();
 
     bool isNormalBlur = (kNormal_SkBlurStyle == fBlurStyle);
@@ -1701,7 +1699,7 @@ GrSurfaceProxyView SkBlurMaskFilterImpl::filterMaskGPUNoxFormed(GrRecordingConte
     }
     auto srcBounds = SkIRect::MakeSize(srcView.proxy()->dimensions());
     auto surfaceDrawContext = SDFBlur::SDFBlur(context, srcView, srcColorType, srcAlphaType, nullptr,
-        clipRect, srcBounds, noxFormedSigma, SkTileMode::kClamp, viewMatrix, srcRRect);
+        srcBounds, srcBounds, noxFormedSigma, SkTileMode::kClamp, viewMatrix, srcRRect);
     if (!surfaceDrawContext || !surfaceDrawContext->asTextureProxy()) {
         return {};
     }
