@@ -20,23 +20,21 @@ std::unique_ptr<GrFragmentProcessor> GrSDFBlurEffect::Make(GrRecordingContext* c
     float noxFormedSigma, const SkRRect& srcRRect)
 {
     float blurRadius = noxFormedSigma;
-    SkV2 wh = {srcRRect.width(), srcRRect.height()};
-    SkVector rr = srcRRect.getSimpleRadii();
-    float r = rr.x();
+    float r = srcRRect.getSimpleRadii().x();
+    float areaLen = std::max(std::min({srcRRect.width(), srcRRect.height(), blurRadius}) * SK_ScalarHalf, r);
 
     static auto effect = SkMakeRuntimeEffect(SkRuntimeEffect::MakeForShader,
         "uniform half blurRadius;"
-        "uniform vec2 wh;"
+        "uniform half areaLen;"
         "uniform half r;"
 
-        "float myRoundBoxSDF(vec2 p, vec2 a, float r) {"
-            "vec2 q = abs(p)-a + r;"
+        "float myRoundBoxSDF(vec2 p, float a, float r) {"
+            "vec2 q = p -a + r;"
             "return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;"
         "}"
 
         "half4 main(float2 pos) {"
-            "vec2 a = vec2(wh.x / 2, wh.y / 2);"
-            "float d = myRoundBoxSDF(pos, a, r);"
+            "float d = myRoundBoxSDF(pos, areaLen, r);"
             "float alpha = smoothstep( blurRadius / 2, -blurRadius / 2, d );"
 
             "return half4(alpha);"
@@ -44,17 +42,10 @@ std::unique_ptr<GrFragmentProcessor> GrSDFBlurEffect::Make(GrRecordingContext* c
     );
 
     std::unique_ptr<GrFragmentProcessor> fp = GrSkSLFP::Make(effect, "RRectSDFBlur", nullptr,
-        GrSkSLFP::OptFlags::kCompatibleWithCoverageAsAlpha, "blurRadius", blurRadius, "wh", wh, "r", r);
+        GrSkSLFP::OptFlags::kCompatibleWithCoverageAsAlpha, "blurRadius", blurRadius, "areaLen", areaLen, "r", r);
     
     if (!fp) {
         return nullptr;
     }
-
-    SkMatrix matrix;
-    matrix.setTranslateX(-noxFormedSigma - srcRRect.rect().fLeft - srcRRect.width() / kHalfFactor);
-    matrix.setTranslateY(-noxFormedSigma - srcRRect.rect().fTop - srcRRect.height() / kHalfFactor);
-
-    fp = GrMatrixEffect::Make(matrix, std::move(fp));
-
     return fp;
 }

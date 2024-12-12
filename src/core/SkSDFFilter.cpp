@@ -59,37 +59,24 @@ bool isSDFBlur(const GrStyledShape& shape)
     return true;
 }
 
-void GetSDFBlurScaleFactor(const SkRRect srcRRect, const SkMatrix& viewMatrix, SkScalar& sx, SkScalar& sy)
-{
-    if (viewMatrix.getScaleX() >= 1.f || viewMatrix.getScaleY() >= 1.f) {
-        return;
-    }
-    constexpr float minScaleFactor = 1.f;
-    constexpr float maxScaleFactor = 2.f;
-    constexpr float sizeThreshold = 500.f;
-    int srcRRectW = srcRRect.rect().width();
-    int srcRRectH = srcRRect.rect().height();
-    // When the input size is greater than the threshold, it needs to be scaled. scale factor will be clamped in [1.0, 2.0].
-    int scaleX = std::max(minScaleFactor, std::min(std::ceil(srcRRectW / sizeThreshold), maxScaleFactor));
-    int scaleY = std::max(minScaleFactor, std::min(std::ceil(srcRRectH / sizeThreshold), maxScaleFactor));
-    sx = SK_Scalar1 / scaleX;
-    sy = SK_Scalar1 / scaleY;
-}
-
 bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip,
     const SkMatrix& viewMatrix, const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask,
-    const SkMaskFilterBase* maskFilter, const SkScalar sx, const SkScalar sy)
+    const SkMaskFilterBase* maskFilter, const GrStyledShape& shape)
 {
     float noxFormedSigma3 = maskFilter->getNoxFormedSigma3();
     mask.concatSwizzle(GrSwizzle("aaaa"));
+    SkRRect srcRRect;
+    bool inverted;
+    shape.asRRect(&srcRRect, nullptr, nullptr, &inverted);
+    float r = srcRRect.getSimpleRadii().x();
+    float areaLen = std::max(std::min({srcRRect.width(), srcRRect.height(), noxFormedSigma3}) * SK_ScalarHalf, r);
 
-    SkMatrix matrixTrans =
-            SkMatrix::Translate(-SkIntToScalar(noxFormedSigma3), -SkIntToScalar(noxFormedSigma3));
-    SkMatrix matrixInverseScale = SkMatrix::Scale(1 / sx, 1 / sy);
+    // This vector represents the origin offset vector, not just half the width and height.
+    SkV2 originOffset = {srcRRect.width() * SK_ScalarHalf - areaLen, srcRRect.height() * SK_ScalarHalf - areaLen};
+    SkMatrix matrixTrans = SkMatrix::Translate(-SkIntToScalar(noxFormedSigma3), -SkIntToScalar(noxFormedSigma3));
     SkMatrix matrix;
     matrix.preConcat(viewMatrix);
     matrix.preConcat(matrixTrans);
-    matrix.preConcat(matrixInverseScale);
     // add dither effect to reduce color discontinuity
     constexpr float ditherRange = 1.f / 255.f;
     auto inputFp = GrTextureEffect::Make(std::move(mask), kUnknown_SkAlphaType);
@@ -98,21 +85,36 @@ bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext
     static auto effect = SkMakeRuntimeEffect(SkRuntimeEffect::MakeForShader, R"(
         uniform shader fp;
         uniform half4 colorPaint;
-        half4 main(float2 pos) {
-
-            half4 colorMask = fp.eval(pos);
+        uniform vec2 originOffset;
+        half4 main(float2 xy) {
+            vec2 uv;
+            vec2 pos = abs(xy) - originOffset;
+            half4 colorMask;
+            vec2 isCorner = step(0, pos);
+            if (isCorner == vec2(0, 0)) {
+                return colorPaint;
+            }
+            uv = pos * isCorner;
+            colorMask = fp.eval(uv);
             return colorMask * colorPaint;
         }
     )");
     SkASSERT(SkRuntimeEffectPriv::SupportsConstantOutputForConstantInput(effect));
     auto inputFP = GrSkSLFP::Make(effect, "OverrideInput", nullptr,
         origColor.isOpaque() ? GrSkSLFP::OptFlags::kPreservesOpaqueInput : GrSkSLFP::OptFlags::kNone,
-        "fp", std::move(inputFp), "colorPaint", origColor);
+        "fp", std::move(inputFp), "colorPaint", origColor, "originOffset", originOffset);
 
-    auto paintFP = GrBlendFragmentProcessor::Make(std::move(inputFP), nullptr, SkBlendMode::kSrc);
-    #ifndef SK_IGNORE_GPU_DITHER
+    SkMatrix matrixOffset;
+    matrixOffset.setTranslateX(-noxFormedSigma3 - srcRRect.rect().fLeft - srcRRect.width() * SK_ScalarHalf);
+    matrixOffset.setTranslateY(-noxFormedSigma3 - srcRRect.rect().fTop - srcRRect.height() * SK_ScalarHalf);
+
+    auto inputFPOffset = GrMatrixEffect::Make(matrixOffset, std::move(inputFP));
+
+    auto paintFP = GrBlendFragmentProcessor::Make(std::move(inputFPOffset), nullptr, SkBlendMode::kSrc);
+    
+#ifndef SK_IGNORE_GPU_DITHER
     paintFP = make_dither_effect(rContext, std::move(paintFP), ditherRange, rContext->priv().caps());
-    #endif
+#endif
     paint.setColorFragmentProcessor(std::move(paintFP));
     sdc->drawRect(clip, std::move(paint), GrAA::kYes, matrix,
                   SkRect::MakeXYWH(0, 0, maskBounds.width(), maskBounds.height()));
