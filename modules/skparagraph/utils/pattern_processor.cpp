@@ -526,7 +526,8 @@ int main(int argc, char** argv)
     // - header
     // - main toc. and
     // - mapping array for large code points
-    size_t fulltable = 3;
+    // - version
+    size_t fulltable = 4;
 
     for (size_t ii = fulltable; ii != 0; ii--) {
         uint32_t bytes { 0 };
@@ -650,6 +651,9 @@ int main(int argc, char** argv)
     out.write((const char*)&toc, sizeof(toc));
     // write mappings
     out.write((const char*)&mappingsPos, sizeof(mappingsPos));
+    // write binary version
+    const uint32_t version = 0x1 << 24;
+    out.write((const char*)&version, sizeof(version));
 
     cout << "DONE: With " << to_string(countPat) << "patterns (8bit)" << endl;
 

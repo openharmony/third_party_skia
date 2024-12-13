@@ -97,6 +97,7 @@ struct Header {
     uint8_t maxCp;
     uint32_t toc;
     uint32_t mappings;
+    uint32_t version;
 
     inline uint16_t codeOffset(uint16_t code, const ArrayOf16bits* maps = 0) const
     {
