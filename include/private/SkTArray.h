@@ -376,13 +376,13 @@ public:
     T& operator[] (int i) {
         SkASSERT(i < this->count());
         SkASSERT(i >= 0);
-        return fItemArray[i];
+        return fItemArray[this->checkIndex(i)];
     }
 
     const T& operator[] (int i) const {
         SkASSERT(i < this->count());
         SkASSERT(i >= 0);
-        return fItemArray[i];
+        return fItemArray[this->checkIndex(i)];
     }
 
     T& at(int i) { return (*this)[i]; }
@@ -472,7 +472,19 @@ private:
         fOwnMemory = true;
         fReserved = false;
     }
+    void checkNotEmpty() const {
+        if (this->empty()) {
+            SkUNREACHABLE;
+        }
+    }
 
+    int checkIndex(int i) const {
+        if (0 <= i && i < fCount) {
+            return i;
+        } else {
+            SkUNREACHABLE;
+        }
+    }
     void initWithPreallocatedStorage(int count, void* preallocStorage, int preallocCount) {
         SkASSERT(count >= 0);
         SkASSERT(preallocCount > 0);
