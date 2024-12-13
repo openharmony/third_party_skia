@@ -383,14 +383,14 @@ size_t TextWrapper::tryBreakWord(Cluster* startCluster, Cluster* endOfClusters, 
 {
    auto startPos = startCluster->textRange().start;
 
-    LOGE("### need to search a break: %{public}lu", startPos);
+    LOGE("### need to search a break: %{public}u", startPos);
 
     auto endPos = startPos;
     auto owner = startCluster->getOwner();
     for (auto next = startCluster + 1; next != endOfClusters; next++) {
         // find the end boundary of current word (hard/soft/whitespace break)
         if (next->isWhitespaceBreak() || next->isHardBreak()/* || next->isSoftBreak()*/) {
-            LOGE("### found word break: %{public}lu", endPos);
+            LOGE("### found word break: %{public}u", endPos);
             break;
         } else {
             endPos = next->textRange().end;
@@ -527,7 +527,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                                            breaker.fUpper);
                 // if break position found, set fClusters and fWords accrodingly and break
                 if (endPos > startCluster->textRange().start) {
-                    LOGE("### breaking with hyphen: %{public}lu %{public}lu", startCluster->textRange().start, endPos);
+                    LOGE("### breaking with hyphen: %{public}u %{public}u", startCluster->textRange().start, endPos);
                     // need to break before the mapped end cluster
                     auto owner = startCluster->getOwner();
                     fClusters = TextStretch(startCluster, &owner->cluster(owner->fClustersIndexFromCodeUnit[endPos]) - 1,
