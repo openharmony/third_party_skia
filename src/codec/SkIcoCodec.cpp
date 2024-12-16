@@ -276,7 +276,7 @@ int SkIcoCodec::chooseCodec(const SkISize& requestedSize, int startIndex) {
 
     // FIXME: Cache the index from onGetScaledDimensions?
     for (int i = startIndex; i < fEmbeddedCodecs->count(); i++) {
-        if (fEmbeddedCodecs->operator[](i)->dimensions() == requestedSize) {
+        if (fEmbeddedCodecs->at(i)->dimensions() == requestedSize) {
             return i;
         }
     }
