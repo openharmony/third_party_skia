@@ -2129,7 +2129,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                         keepLooking = false;
                     } else {
 #ifdef OHOS_SUPPORT
-                        result = { SkToS32(utf16Index + 1), kUpstream};
+                        result = { SkToS32(utf16Index + context.run->clusterRange().end), kUpstream};
                         size_t glyphCnt = context.run->glyphs().size();
                         if ((glyphCnt != 0) && ((context.run->fUtf8Range.size() / glyphCnt) == EMOJI_WIDTH)) {
                             result = { SkToS32(utf16Index + 2), kUpstream};
