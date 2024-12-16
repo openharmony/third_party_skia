@@ -198,6 +198,11 @@ public:
     void setTextBlobCachePopulated(const bool textBlobCachePopulated) {
         fTextBlobCachePopulated = textBlobCachePopulated;
     }
+
+#ifdef OHOS_SUPPORT
+    SkRect generatePaintRegion(SkScalar x, SkScalar y);
+#endif
+
 private:
     struct RoundRectAttr {
         int styleId;
@@ -237,6 +242,8 @@ private:
 #ifdef OHOS_SUPPORT
     void measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const;
     void computeNextPaintGlyphRange(ClipContext& context, const TextRange& lastGlyphRange, StyleType styleType) const;
+    SkRect computeShadowRect(SkScalar x, SkScalar y, const TextStyle& style, const ClipContext& context) const;
+    SkRect getAllShadowsRect(SkScalar x, SkScalar y) const;
 #endif
 
     ParagraphImpl* fOwner;
