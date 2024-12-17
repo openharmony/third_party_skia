@@ -677,7 +677,7 @@ void popGrResourceTag()
     virtual void dumpVmaStats(SkString *out) {}
 
     // OH ISSUE: asyn memory reclaimer
-    virtual void setGpuMemoryAsyncReclaimerSwitch(bool enabled) {}
+    virtual void setGpuMemoryAsyncReclaimerSwitch(bool enabled, const std::function<void()>& setThreadPriority) {}
     virtual void flushGpuMemoryInWaitQueue() {}
 
 protected:
