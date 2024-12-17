@@ -232,6 +232,7 @@ public:
     void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) override;
 #ifdef OHOS_SUPPORT
     std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) override;
+    SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
 #endif
 
     void visit(const Visitor&) override;
@@ -417,6 +418,10 @@ private:
 
     size_t fLineNumber;
     uint32_t hash_{0u};
+
+#ifdef OHOS_SUPPORT
+    std::optional<SkRect> fPaintRegion;
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia

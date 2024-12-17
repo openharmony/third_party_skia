@@ -106,6 +106,39 @@ bool IsRSFontEquals(const RSFont& font0, const RSFont& font1) {
 }
 #endif
 
+#ifdef OHOS_SUPPORT
+#ifdef USE_SKIA_TXT
+SkRect GetTextBlobSkTightBound(std::shared_ptr<RSTextBlob> blob, float offsetX, float offsetY, const SkRect& clipRect)
+{
+    if (blob == nullptr || blob->Bounds() == nullptr) {
+        return SkRect::MakeEmpty();
+    }
+
+    RSRect bound = *blob->Bounds();
+    bound.Offset(offsetX, offsetY);
+    if (!clipRect.isEmpty()) {
+        bound.left_ = std::max(bound.left_, clipRect.fLeft);
+        bound.right_ = std::min(bound.right_, clipRect.fRight);
+    }
+    return SkRect::MakeLTRB(bound.left_, bound.top_, bound.right_, bound.bottom_);
+}
+#else
+SkRect GetTextBlobSkTightBound(sk_sp<SkTextBlob> blob, float offsetX, float offsetY, const SkRect& clipRect)
+{
+    if (blob == nullptr) {
+        return SkRect::MakeEmpty();
+    }
+
+    SkRect bound = blob->bounds();
+    if (!clipRect.isEmpty()) {
+        bound.fLeft = std::max(bound.fLeft, clipRect.fLeft);
+        bound.fRight = std::min(bound.fRight, clipRect.fRight);
+    }
+    bound.offset(offsetX, offsetY);
+    return bound;
+}
+#endif
+#endif
 }  // namespace
 
 TextLine::TextLine(ParagraphImpl* owner,
@@ -738,7 +771,12 @@ void TextLine::paintShadow(ParagraphPainter* painter,
 #endif
         painter->drawTextShadow(blob,
             x + this->offset().fX + shadow.fOffset.x() + context.fTextShift,
+#ifdef OHOS_SUPPORT
+            y + this->offset().fY + shadow.fOffset.y() + correctedBaseline -
+                (context.run ? context.run->fCompressionBaselineShift : 0),
+#else
             y + this->offset().fY + shadow.fOffset.y() + correctedBaseline,
+#endif
             shadow.fColor,
             SkDoubleToScalar(shadow.fBlurSigma));
         if (context.clippingNeeded) {
@@ -2210,6 +2248,71 @@ std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
     }
     return runBases;
 }
+
+#ifdef OHOS_SUPPORT
+SkRect TextLine::computeShadowRect(SkScalar x, SkScalar y, const TextStyle& style, const ClipContext& context) const
+{
+    SkScalar offsetX = x + this->fOffset.fX;
+    SkScalar offsetY = y + this->fOffset.fY -
+        (context.run ? context.run->fCompressionBaselineShift : 0);
+    SkRect shadowRect = SkRect::MakeEmpty();
+
+    for (const TextShadow& shadow : style.getShadows()) {
+        if (!shadow.hasShadow()) {
+            continue;
+        }
+
+        SkScalar blurSigma = SkDoubleToScalar(shadow.fBlurSigma);
+        SkRect rect = context.clip
+            .makeOffset(offsetX + shadow.fOffset.fX, offsetY + shadow.fOffset.fY)
+            .makeOutset(blurSigma, blurSigma);
+        shadowRect.join(rect);
+    }
+    return shadowRect;
+}
+
+SkRect TextLine::getAllShadowsRect(SkScalar x, SkScalar y) const
+{
+    if (!fHasShadows) {
+        return SkRect::MakeEmpty();
+    }
+    SkRect paintRegion = SkRect::MakeEmpty();
+    this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, false,
+        [&paintRegion, x, y, this]
+        (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
+            if (runWidthInLine == nullptr) {
+                return true;
+            }
+            *runWidthInLine = this->iterateThroughSingleRunByStyles(
+                TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kShadow,
+                [&paintRegion, x, y, this]
+                (TextRange textRange, const TextStyle& style, const ClipContext& context) {
+                    SkRect rect = computeShadowRect(x, y, style, context);
+                    paintRegion.join(rect);
+                });
+            return true;
+        });
+    return paintRegion;
+}
+
+SkRect TextLine::generatePaintRegion(SkScalar x, SkScalar y)
+{
+    SkRect paintRegion = SkRect::MakeXYWH(x, y, 0, 0);
+    fIsArcText = false;
+
+    SkRect rect = getAllShadowsRect(x, y);
+    paintRegion.join(rect);
+
+    // textblob
+    this->ensureTextBlobCachePopulated();
+    for (auto& record : fTextBlobCache) {
+        rect = GetTextBlobSkTightBound(record.fBlob, x + record.fOffset.fX, y + record.fOffset.fY, record.fClipRect);
+        paintRegion.join(rect);
+    }
+
+    return paintRegion;
+}
+#endif
 
 TextLine TextLine::CloneSelf()
 {
