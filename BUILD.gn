@@ -75,7 +75,10 @@ config("skia_wno") {
 # Skia public API, generally provided by :skia.
 config("skia_public") {
   include_dirs = [ "." ]
-  defines = [ "NEW_SKIA" ]
+  defines = [
+    "NEW_SKIA",
+    "OHOS_SUPPORT",
+  ]
   if (defined(skia_ohos_debug) && skia_ohos_debug) {
     defines += [ "SKIA_OHOS_DEBUG" ]
   }
@@ -1519,6 +1522,12 @@ optional("typeface_freetype") {
   }
 
   deps = [ "${skia_third_party_dir}/freetype2" ]
+  if (defined(external_deps)) {
+    external_deps += [ "bounds_checking_function:libsec_shared" ]
+  } else {
+    external_deps = [ "bounds_checking_function:libsec_shared" ]
+  }
+
   sources = [
     "src/ports/SkFontHost_FreeType.cpp",
     "src/ports/SkFontHost_FreeType_common.cpp",

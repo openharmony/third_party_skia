@@ -230,6 +230,7 @@ public:
 
 #ifdef OHOS_SUPPORT
     virtual SkIRect generatePaintRegion(SkScalar x, SkScalar y) = 0;
+    virtual size_t GetMaxLines() const = 0;
 #endif
 
 protected:
