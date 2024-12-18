@@ -254,7 +254,7 @@ SkISize SkIcoCodec::onGetScaledDimensions(float desiredScale) const {
     float desiredSize = desiredScale * origWidth * origHeight;
 #endif
     // At least one image will have smaller error than this initial value
-    float minError = ((float) (origWidth * origHeight)) - desiredSize + 1.0f;
+    float minError = std::numeric_limits<float>::max();
     int32_t minIndex = -1;
     for (int32_t i = 0; i < fEmbeddedCodecs->count(); i++) {
         auto dimensions = fEmbeddedCodecs->operator[](i)->dimensions();
