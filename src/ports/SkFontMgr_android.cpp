@@ -368,7 +368,7 @@ protected:
             const SkString& langTag, SkUnichar character)
     {
         SkString localeLangTag = langTag;
-        if (localeLangTag.find(ORIGIN_MY_LOCALE)) {
+        if (localeLangTag.find(ORIGIN_MY_LOCALE) >= 0) {
             localeLangTag = ANDROID_MY_LOCALE;
         }
 
