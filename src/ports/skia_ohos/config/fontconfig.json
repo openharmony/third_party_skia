@@ -1368,6 +1368,66 @@
     },
     {
       "楷体-简": "KaiT-SC.ttf"
+    },
+    {
+      "FZShuTi-S05S": "FZSTJW.ttf"
+    },
+    {
+      "方正舒体简体": "FZSTJW.ttf"
+    },
+    {
+      "FZWeiBei-S03S": "FZWBJW.ttf"
+    },
+    {
+      "方正魏碑简体": "FZWBJW.ttf"
+    },
+    {
+      "FZYaYiHei GB18030L2": "FZYAYH-GB18030L2-R.ttf"
+    },
+    {
+      "方正雅意黑 GB18030L2 R": "FZYAYH-GB18030L2-R.ttf"
+    },
+    {
+      "FZCuSong-B09S": "FZCSJW.ttf"
+    },
+    {
+      "方正粗宋简体": "FZZCHJW.ttf"
+    },
+    {
+      "FZZHENGHEIS-B-GB": "FZZCHJW.ttf"
+    },
+    {
+      "方正正粗黑简体": "FZZCHJW.ttf"
+    },
+    {
+      "FZZhengHeiS-EB-GB": "FZZDHJW.ttf"
+    },
+    {
+      "方正正大黑简体": "FZZDHJW.ttf"
+    },
+    {
+      "FZZhengHeiS-R-GB": "FZZHJW.ttf"
+    },
+    {
+      "方正正黑简体": "FZZHJW.ttf"
+    },
+    {
+      "FZZhengHeiS-EL-GB": "FZZXHJW.ttf"
+    },
+    {
+      "方正正纤黑简体": "FZZXHJW.ttf"
+    },
+    {
+      "FZZhengHeiS-DB-GB": "FZZZHONGJW.ttf"
+    },
+    {
+      "方正正中黑简体": "FZZZHONGJW.ttf"
+    },
+    {
+      "FZZhengHeiS-M-GB": "FZZZHUNHJW.ttf"
+    },
+    {
+      "方正正准黑简体": "FZZZHUNHJW.ttf"
     }
   ]
 }
