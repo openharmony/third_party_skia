@@ -356,7 +356,10 @@ public:
 
     bool isCustomTypeface() const;
     void setIsCustomTypeface(bool isCustom);
-
+#ifdef OHOS_SUPPORT
+    bool isThemeTypeface() const;
+    void setIsThemeTypeface(bool isTheme);
+#endif
     // PRIVATE / EXPERIMENTAL -- do not call
     void filterRec(SkScalerContextRec* rec) const {
         this->onFilterRec(rec);
@@ -489,7 +492,9 @@ private:
     mutable SkOnce      fBoundsOnce;
     bool                fIsFixedPitch;
     bool                fIsCustom = false;
-
+#ifdef OHOS_SUPPORT
+    bool                fIsTheme = false;
+#endif
     using INHERITED = SkWeakRefCnt;
 };
 #endif
