@@ -12,38 +12,63 @@ namespace skia {
 namespace textlayout {
 
     const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
-        {"en-us", "hyph-en-us.hpb"}, // default
-        {"ar", "hyph-ar.hpb"},
+        {"as", "hyph-as.hpb"},
+        {"be", "hyph-be.hpb"},
         {"bg", "hyph-bg.hpb"},
         {"bn", "hyph-bn.hpb"},
         {"cs", "hyph-cs.hpb"},
+        {"cy", "hyph-cy.hpb"},
         {"da", "hyph-da.hpb"},
         {"de-1901", "hyph-de-1901.hpb"},
+        {"de-1996", "hyph-de-1996.hpb"},
+        {"de-ch-1901", "hyph-de-ch-1901.hpb"},
         {"el-monoton", "hyph-el-monoton.hpb"},
+        {"el-polyton", "hyph-el-polyton.hpb"},
         {"en-gb", "hyph-en-gb.hpb"},
         {"es", "hyph-es.hpb"},
         {"et", "hyph-et.hpb"},
-        {"fa", "hyph-fa.hpb"},
         {"fr", "hyph-fr.hpb"},
+        {"ga", "hyph-ga.hpb"},
+        {"gl", "hyph-gl.hpb"},
+        {"grc-x-ibycus", "hyph-grc-x-ibycus.hpb"},
+        {"gu", "hyph-gu.hpb"},
         {"hi", "hyph-hi.hpb"},
         {"hr", "hyph-hr.hpb"},
         {"hu", "hyph-hu.hpb"},
+        {"hy", "hyph-hy.hpb"},
         {"id", "hyph-id.hpb"},
+        {"is", "hyph-is.hpb"},
         {"it", "hyph-it.hpb"},
+        {"ka", "hyph-ka.hpb"},
+        {"kn", "hyph-kn.hpb"},
+        {"la", "hyph-la.hpb"},
         {"lt", "hyph-lt.hpb"},
         {"lv", "hyph-lv.hpb"},
         {"mk", "hyph-mk.hpb"},
-        {"nb", "hyph-nb.hpb"},
+        {"ml", "hyph-ml.hpb"},
+        {"mn-cyrl", "hyph-mn-cyrl.hpb"},
+        {"mr", "hyph-mr.hpb"},
+        {"mul-ethi", "hyph-mul-ethi.hpb"},
         {"nl", "hyph-nl.hpb"},
+        {"or", "hyph-or.hpb"},
+        {"pa", "hyph-pa.hpb"},
         {"pl", "hyph-pl.hpb"},
+        {"pt", "hyph-pt.hpb"},
+        {"rm", "hyph-rm.hpb"},
         {"ru", "hyph-ru.hpb"},
+        {"sh-cyrl", "hyph-sh-cyrl.hpb"},
         {"sh-latn", "hyph-sh-latn.hpb"},
         {"sk", "hyph-sk.hpb"},
         {"sl", "hyph-sl.hpb"},
+        {"sr-cyrl", "hyph-sr-cyrl.hpb"},
         {"sv", "hyph-sv.hpb"},
+        {"ta", "hyph-ta.hpb"},
+        {"te", "hyph-te.hpb"},
         {"th", "hyph-th.hpb"},
+        {"tk", "hyph-tk.hpb"},
         {"tr", "hyph-tr.hpb"},
         {"uk", "hyph-uk.hpb"},
+        {"zh-py", "hyph-zh-latn-pinyin.hpb"},
     };
 
     void ReadBinaryFile(const std::string filePath, std::vector<uint8_t>& buffer)
@@ -78,7 +103,7 @@ namespace textlayout {
         if (it != HPB_FILE_NAMES.end()) {
             return it->second;
         }
-        return HPB_FILE_NAMES.at("en-us");
+        return HPB_FILE_NAMES.at("en-gb");
     }
 
     const std::vector<uint8_t>& Hyphenator::GetHyphenatorData(const std::string& locale)
