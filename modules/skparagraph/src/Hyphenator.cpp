@@ -110,7 +110,6 @@ namespace textlayout {
     {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
         if (auto search = hyphMap.find(locale); search != hyphMap.end()) {
-            TEXT_LOGE("## got hyphenator data for locale '%{public}s'", locale.c_str());
             return search->second;
         }
         std::string filename = "/system/usr/ohos_hyphen_data/" + ResolveHpbFile(locale);
