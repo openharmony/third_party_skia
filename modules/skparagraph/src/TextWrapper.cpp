@@ -1,22 +1,29 @@
 // Copyright 2019 Google LLC.
+#ifdef OHOS_SUPPORT
+#include <ucase.h>
+#include <unicode/utf.h>
+#include <unicode/utf8.h>
+#endif
+
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextWrapper.h"
 
 #ifdef OHOS_SUPPORT
 #include "log.h"
+#include "modules/skparagraph/include/Hyphenator.h"
 #include "modules/skparagraph/src/TextTabAlign.h"
 #include "TextParameter.h"
 #endif
-
-#include <ucase.h>
-#include <unicode/utf.h>
-#include <unicode/utf8.h>
 
 namespace skia {
 namespace textlayout {
 
 namespace {
 const size_t BREAK_NUM_TWO = 2;
+constexpr size_t HYPHEN_WORD_SHIFT = 4;
+constexpr size_t HYPHEN_BASE_CODE_SHIFT = 2;
+constexpr size_t HYPHEN_SHIFT_BITS_14 = 14;
+constexpr size_t HYPHEN_SHIFT_BITS_30 = 30;
 
 struct LineBreakerWithLittleRounding {
     LineBreakerWithLittleRounding(SkScalar maxWidth, bool applyRoundingHack)
@@ -58,20 +65,7 @@ struct LineBreakerWithLittleRounding {
     const bool fApplyRoundingHack;
 };
 
-void DebugOutputHyphResults(const std::string& word, std::vector<uint8_t> result) {
-
-    // DEBUG: output hyphenation results
-    LOGE("### Hyphenation results: %{public}s", word.c_str());
-
-    for (auto type: result) {
-        std::string s = "No Break";
-        if (type & 0x1) {
-            s = "Break Before";
-        }
-        LOGE("### HYPH RESULT: %{public}s", s.c_str());
-    }
-}
-
+#ifdef OHOS_SUPPORT
 enum class PathType : uint8_t {
     PATTERN = 0,
     LINEAR = 1,
@@ -90,37 +84,36 @@ struct ArrayOf16bits {
     uint16_t codes[3]; // dynamic
 };
 
-struct Header {
-    uint8_t magic1;
-    uint8_t magic2;
-    uint8_t minCp;
-    uint8_t maxCp;
-    uint32_t toc;
-    uint32_t mappings;
-    uint32_t version;
+struct HyphenatorHeader {
+    uint8_t magic1{0};
+    uint8_t magic2{0};
+    uint8_t minCp{0};
+    uint8_t maxCp{0};
+    uint32_t toc{0};
+    uint32_t mappings{0};
+    uint32_t version{0};
 
     inline uint16_t codeOffset(uint16_t code, const ArrayOf16bits* maps = 0) const
     {
         // need still reconsider what we want to do with a nodes in the middle of graph
         if (maps && (code < minCp || code > maxCp)) {
             // we could assert that count is even
-            for (size_t ii = maps->count; ii != 0;) {
-                ii -= 2;
-                if (maps->codes[ii] == code) {
-                    // cout << "resolved mapping ix: " << (int)m->codes[ii + 1] << endl;
-                    auto offset = maps->codes[ii + 1];
-                    return (maxCp - minCp) * 2 + (offset - maxCp) * 2 + 1;
+            for (size_t i = maps->count; i != 0;) {
+                i -= HYPHEN_BASE_CODE_SHIFT;
+                if (maps->codes[i] == code) {
+                    auto offset = maps->codes[i + 1];
+                    return (maxCp - minCp) * HYPHEN_BASE_CODE_SHIFT + (offset - maxCp) * HYPHEN_BASE_CODE_SHIFT + 1;
                 }
             }
             return maxCount(maps);
         }
         if (maps) {
-            return (code - minCp) * 2 + 1;
             // + 1 because previous end is before next start
             // 2x because every second value to beginning addres
+            return (code - minCp) * HYPHEN_BASE_CODE_SHIFT + 1;
         } else {
             if (code < minCp || code > maxCp) {
-                return maxCp+1;
+                return maxCp + 1;
             }
             return (code - minCp);
         }
@@ -129,235 +122,268 @@ struct Header {
     {
         // Open Harmony seems to have this even before C++20
         code = ucase_tolower(code);
-        // cout << "tolower: " << hex << (int)code << endl;
     }
     inline uint16_t maxCount(const ArrayOf16bits* maps) const
     {
         // need to write this in binary provider !!
-        return (maxCp - minCp) * 2 + maps->count;
+        return (maxCp - minCp) * HYPHEN_BASE_CODE_SHIFT + maps->count;
     }
 };
 
-std::vector<uint8_t> findBreaks(const uint8_t* address, std::vector<uint16_t>& target)
+void formatTarget(std::vector<uint16_t>& target)
 {
-    std::vector<uint8_t> result;
-    result.resize(target.size());
-
-    if (!address) {
-        return result;
-    }
-
-    LOGE("### Magic: %{public}x ", *(uint32_t*)address);
-
-    for(auto& code : target) {
-           Header::toLower(code);
+    for (auto& code : target) {
+        HyphenatorHeader::toLower(code);
     }
 
     target.insert(target.cbegin(), '.');
     target.push_back('.');
-    result.resize(target.size(), 0);
+}
 
-    auto header = reinterpret_cast<const Header*>(address);
-
-    uint16_t minCp = header->minCp;
-    uint16_t maxCp = header->maxCp;
-    uint32_t toc_offset = header->toc;
-
-    // get master table, it always is in direct mode
-    const uint32_t* maindict = (uint32_t*)(address + toc_offset);
-    const uint32_t* pMappings = (uint32_t*)(address + header->mappings);
-    const ArrayOf16bits* mappings = reinterpret_cast<const ArrayOf16bits*>(pMappings);
-    // this is actually beyond the real 32 bit address, but just to have an offset that
-    // is clearly out of bounds without recalculating it again
-    const uint16_t maxcount = header->maxCount(mappings);
-
-    //cout << "min/max: " << minCp << "/" << maxCp << " count " << (int)maxcount << endl;
-
-    //cout << "size of top level mappings: " << (int)mappings->count << endl;
-
-    if (minCp == maxCp && mappings->count == 0) {
-        LOGE("### unexpected min/max in input file-> exit");
-        return result;
+void processPattern(const Pattern* p, size_t ii, uint32_t& ix, std::vector<uint16_t>& word, std::vector<uint8_t>& res)
+{
+    uint16_t code = p->code;
+    // if the code point is defined, the sub index refers to code next to this node
+    if (code) {
+        if (code != word[ii - ix]) {
+            return;
+        }
+    } else {
+        // so qe need to substract if this is the direct ref
+        ix--;
     }
+    uint16_t count = p->count;
+    size_t i{0};
+    // when we reach pattern node (leaf), we need to increase ix by one because of our
+    // own code offset
+    for (size_t jj = ii - ix; jj <= ii && i < count; jj++) {
+        // Todo: don't place markers to two last slots
+        res[jj] = std::max(res[jj], (p->patterns[i]));
+        i++;
+    }
+}
 
-    for (size_t ii = target.size(); ii != 1; --ii) {
-        auto code = target[ii];
+void processLinear(uint16_t* data, size_t ii, uint32_t& ix, std::vector<uint16_t>& word, std::vector<uint8_t>& res)
+{
+    auto p = reinterpret_cast<const ArrayOf16bits*>(data);
+    auto count = p->count;
+    auto origPos = ix;
+    ix++;
+    if (count > ii - ix + 1) {
+        // the pattern is longer than the remaining word
+        return;
+    }
+    bool match = true;
+    // check the rest of the string
+    for (auto jj = 0; jj < count; jj++) {
+        if (p->codes[jj] != word[ii - ix]) {
+            match = false;
+            break;
+        } else {
+            ix++;
+        }
+    }
+    // if we reach the end, apply pattern
+    uint32_t offset = 0;
+    if (match) {
+        offset += count + (count & 0x1);
+        auto p = reinterpret_cast<const Pattern*>(data + offset);
+        size_t i{0};
+        for (size_t jj = ii - origPos - count; jj <= ii && i < p->count; jj++) {
+            res[jj] = std::max(res[jj], p->patterns[i]);
+            i++;
+        }
+    }
+}
 
-        auto offset = header->codeOffset(code, mappings);
-        if (offset == maxcount) {
-            // cout << hex << char(code) << " unable to map, contiue straight" << endl;
-            result[ii] = 0;
-            continue;
+bool processDirect(uint16_t* data, const HyphenatorHeader* header, uint16_t subWord, uint16_t& offset,
+                   uint32_t& nextOffset, PathType& type)
+{
+    offset = header->codeOffset(subWord);
+    if (offset > header->maxCp) {
+        return false;
+    }
+    auto nextValue = *(data + nextOffset + offset);
+    nextOffset = nextValue & 0x3fff;
+    type = (PathType)(nextValue >> HYPHEN_SHIFT_BITS_14);
+    return true;
+}
+
+bool processOtherType(const ArrayOf16bits* data, const HyphenatorHeader* header, uint16_t subWord, uint16_t& code,
+                      uint16_t& offset, uint32_t& nextOffset, PathType& type)
+{
+    uint16_t count = data->count;
+    bool match = false;
+    for (size_t jj = 0; jj < count; jj += HYPHEN_BASE_CODE_SHIFT) {
+        if (data->codes[jj] == subWord) {
+            code = subWord;
+            offset = header->codeOffset(subWord);
+            if (offset > header->maxCp) {
+                break;
+            }
+            nextOffset = data->codes[jj + 1] & 0x3fff;
+            type = (PathType)(data->codes[jj + 1] >> HYPHEN_SHIFT_BITS_14);
+            match = true;
+            break;
+        } else if (data->codes[jj] > subWord) {
+            break;
+        }
+    }
+    return match;
+}
+
+struct HyphenTableInfo {
+    const HyphenatorHeader* header{nullptr};
+    const uint32_t* maindict{nullptr};
+    const ArrayOf16bits* mappings{nullptr};
+    bool initHyphenTableInfo(const std::vector<uint8_t>& hyphenatorData)
+    {
+        if (hyphenatorData.size() < sizeof(HyphenatorHeader)) {
+            return false;
+        }
+        header = reinterpret_cast<const HyphenatorHeader*>(hyphenatorData.data());
+        // get master table, it always is in direct mode
+        maindict = (uint32_t*)(hyphenatorData.data() + header->toc);
+        mappings = reinterpret_cast<const ArrayOf16bits*>(hyphenatorData.data() + header->mappings);
+        // this is actually beyond the real 32 bit address, but just to have an offset that
+        // is clearly out of bounds without recalculating it again
+        return !(header->minCp == header->maxCp && mappings->count == 0);
+    }
+};
+
+struct HyphenSubTable {
+    uint16_t* staticOffset{nullptr};
+    uint32_t nextOffset{0};
+    PathType type{PathType::PATTERN};
+    bool initHyphenSubTableInfo(uint16_t& code, uint16_t& offset, HyphenTableInfo& hyphenInfo)
+    {
+        auto header = hyphenInfo.header;
+        if (offset == header->maxCount(hyphenInfo.mappings)) {
+            code = 0;
+            return false;
         }
 
-        uint32_t baseOffset = *(maindict + offset - 1); // previous entry end
-        uint32_t initialValue = *(maindict + offset);
-        if (initialValue == 0) { // 0 is never valid offset from maindict
-            // cout << char(code) << " is not in main dict, contiue straight" << endl;
-            continue;
+        uint32_t baseOffset = *(hyphenInfo.maindict + offset - 1); // previous entry end
+        uint32_t initialValue = *(hyphenInfo.maindict + offset);
+        if (initialValue == 0) {
+            // 0 is never valid offset from maindict
+            return false;
         }
         // base offset is 16 bit
-        auto staticOffset = (uint16_t*)(address + 2 * baseOffset);
+        auto address = reinterpret_cast<const uint8_t*>(header);
+        this->staticOffset = (uint16_t*)(address + HYPHEN_BASE_CODE_SHIFT * baseOffset);
 
         // get a subtable according character
         // once: read as 32bit, the rest of the access will be 16bit (13bit for offsets)
-        auto nextOffset = (initialValue & 0x3fffffff);
-        PathType type = (PathType)(initialValue >> 30);
+        this->nextOffset = (initialValue & 0x3fffffff);
+        this->type = (PathType)(initialValue >> HYPHEN_SHIFT_BITS_30);
+        return true;
+    }
+};
 
-        // cout << hex << baseOffset << " top level code: '" << code << "' starting with offset: 0x" << hex << offset << " table-offset 0x" << nextOffset << endl;
+struct HyphenFindBreakParam {
+    const HyphenatorHeader* header{nullptr};
+    HyphenSubTable hyphenSubTable;
+    uint16_t code;
+    uint16_t offset;
+};
 
-        uint32_t ix = 0;
-        // enter cycle, we break when we find something that either matches or conflicts with a code point
-        while (true) {
-            //   read access type (header) or null (break)
-            //   move (remove mask bits and add static offset)
-
-            // cout << "#loop c: '" << code << "' starting with offset: 0x" << hex << offset << " table-offset 0x" << nextOffset << " ix: " << ix << endl;
-
-            if (type == PathType::PATTERN) {
-                //   if we have reached pattern, apply it to result
-                auto p = reinterpret_cast<const Pattern*>(staticOffset + nextOffset);
-                uint16_t code = p->code;
-                // if the code point is defined, the sub index refers to code next to this node
-                if (code) {
-                    if (code != target[ii - ix]) {
-                        // cout << "break on pattern: " << hex << (int)code << endl;
-                        break;
-                    }
-                } else {
-                    // so qe need to substract if this is the direct ref
-                    ix--;
-                }
-                uint16_t count = p->count;
-                // cout << "  found pattern with size: " << count << " ix: " << ix << endl;
-                size_t i { 0 };
-                // when we reach pattern node (leaf), we need to increase ix by one because of our own code offset
-                for (size_t jj = ii - ix; jj <= ii && i < count; jj++) { // Todo: don't place markers to two last slots
-                    // cout << "    pattern index: " << i << " value: 0x" << hex << (int)(p->patterns[i]) << endl;
-                    result[jj] = std::max(result[jj], (p->patterns[i]));
-                    i++;
-                }
-                // loop breaks
-                // cout << "break on pattern" << endl;
+void findBreakByType(HyphenFindBreakParam& param, size_t& index, std::vector<uint16_t>& target,
+                     std::vector<uint8_t>& result)
+{
+    auto [staticOffset, nextOffset, type] = param.hyphenSubTable;
+    uint32_t ix = 0;
+    // enter cycle, we break when we find something that either matches or conflicts with a code
+    // point
+    while (true) {
+        //   read access type (header) or null (break)
+        //   move (remove mask bits and add static offset)
+        if (type == PathType::PATTERN) {
+            // if we have reached pattern, apply it to result
+            auto p = reinterpret_cast<const Pattern*>(staticOffset + nextOffset);
+            processPattern(p, index, ix, target, result);
+            // loop breaks
+            break;
+            // else if we can directly point to next entry
+        } else if (type == PathType::DIRECT) {
+            // resolve new code point
+            if (ix == index) {
                 break;
-                //   else if we can directly point to next entry
-            } else if (type == PathType::DIRECT) {
-                // resolve new code point
-                if (ix == ii) { // should never be the case
-                    // cout << "# break loop on direct" << endl;
-                    break;
-                }
-
-                ix++;
-                code = target[ii - ix];
-                offset = header->codeOffset(code);
-                if (offset > maxCp) {
-                    // cout << "# break loop on direct" << endl;
-                    break;
-                }
-                auto nextValue = *(staticOffset + nextOffset + offset);
-                nextOffset = nextValue & 0x3fff;
-                type = (PathType)(nextValue >> 14);
-                // cout << "  found direct: " << char(code) << " : " << hex << nextValue << " with offset: " << nextOffset << endl;
-                // continue looping;
-            } else if (type == PathType::LINEAR) {
-                auto p = reinterpret_cast<const ArrayOf16bits*>(staticOffset + nextOffset);
-                auto count = p->count;
-                auto origPos = ix;
-                ix++;
-                // cout << "  found linear with size: " << count << " looking next " << (int)target[ii - ix] << endl;
-                if (count > ii - ix + 1) {
-                    // the pattern is longer than the remaining word
-                    // cout << "# break loop on linear " << ii << " " << ix << endl;
-                    break;
-                }
-                // cout << "  found linear with size: " << count << " looking next " << (int)target[ii - ix] << endl;
-                bool match = true;
-                //     check the rest of the string
-                for (auto jj = 0; jj < count; jj++) {
-                    // cout << "    linear index: " << jj << " value: " << hex << (int)p->codes[jj] << " vs " << (int)target[ii - ix] << endl;
-                    if (p->codes[jj] != target[ii - ix]) {
-                        match = false;
-                        break;
-                    } else {
-                        ix++;
-                    }
-                }
-
-                //     if we reach the end, apply pattern
-                if (match) {
-                    nextOffset += count + (count & 0x1);
-                    auto p = reinterpret_cast<const Pattern*>(staticOffset + nextOffset);
-                    // cout << "    found match, needed to pad " << (int)(count & 0x1) << " pat count: " << (int)p->count << endl;
-                    size_t i { 0 };
-                    for (size_t jj = ii - origPos - count; jj <= ii && i < p->count; jj++) {
-                        // cout << "       pattern index: " << i << " value: " << hex << (int)p->patterns[i] << endl;
-                        result[jj] = std::max(result[jj], p->patterns[i]);
-                        i++;
-                    }
-                }
-                // either way, break
-                //cout << "# break loop on linear" << endl;
+            }
+            ix++;
+            param.code = target[index - ix];
+            if (!processDirect(staticOffset, param.header, param.code, param.offset, nextOffset, type)) {
                 break;
-            } else {
-                // resolve new code point
-                if (ix == ii) { // should detect this sooner
-                    // cout << "# break loop on pairs" << endl;
-                    break;
-                }
-                auto p = reinterpret_cast<const ArrayOf16bits*>(staticOffset + nextOffset);
-                uint16_t count = p->count;
-                ix++;
-                // cout << "  continue to value pairs with size: " << count << " and code '" << (int)target[ii - ix] << "'" << endl;
-
-                //     check pairs, array is sorted (but small)
-                bool match = false;
-                for (size_t jj = 0; jj < count; jj += 2) {
-                    // cout << "    checking pair: " << jj << " value: " << hex << (int)p->codes[jj] << " vs " << (int)target[ii - ix] << endl;
-                    if (p->codes[jj] == target[ii - ix]) {
-                        code = target[ii - ix];
-                        // cout << "      new value pair in : 0x" << jj << " with code 0x" << hex << (int)code << "'" << endl;
-                        offset = header->codeOffset(code);
-                        if (offset > maxCp) {
-                            break;
-                        }
-                        nextOffset = p->codes[jj + 1] & 0x3fff;
-                        type = (PathType)(p->codes[jj + 1] >> 14);
-                        match = true;
-                        break;
-                    } else if (p->codes[jj] > target[ii - ix]) {
-                        break;
-                    }
-                }
-                if (!match) {
-                    //cout << "# break loop on pairs" << endl;
-                    break;
-                }
+            }
+        } else if (type == PathType::LINEAR) {
+            processLinear((staticOffset + nextOffset), index, ix, target, result);
+            // either way, break
+            break;
+        } else {
+            // resolve new code point
+            if (ix == index) {
+                break;
+            }
+            ix++;
+            auto p = reinterpret_cast<const ArrayOf16bits*>(staticOffset + nextOffset);
+            if (!processOtherType(p, param.header, target[index - ix], param.code, param.offset, nextOffset, type)) {
+                break;
             }
         }
     }
+}
+
+std::vector<uint8_t> findBreaks(const std::vector<uint8_t>& hyphenatorData, std::vector<uint16_t>& target)
+{
+    std::vector<uint8_t> result;
+    result.resize(target.size());
+
+    if (hyphenatorData.empty()) {
+        return result;
+    }
+
+    formatTarget(target);
+    result.resize(target.size(), 0);
+
+    HyphenTableInfo hyphenInfo;
+    if (!hyphenInfo.initHyphenTableInfo(hyphenatorData)) {
+        return result;
+    }
+    
+    if (target.size() > 0) {
+        for (size_t i = target.size() - 1; i >= 1; --i) {
+            HyphenSubTable hyphenSubTable;
+            auto header = hyphenInfo.header;
+            auto code = target[i];
+            auto offset = header->codeOffset(code, hyphenInfo.mappings);
+            if (!hyphenSubTable.initHyphenSubTableInfo(code, offset, hyphenInfo)) {
+                continue;
+            }
+            HyphenFindBreakParam param{header, hyphenSubTable, code, offset};
+            findBreakByType(param, i, target, result);
+        }
+    }
+
     result.erase(result.cbegin());
     result.pop_back();
     return result;
 }
 
-std::vector<uint8_t> findBreakPositions(const uint8_t* hyphenatorData, const SkString& text, size_t startPos, size_t endPos)
+std::vector<uint8_t> FindBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString &text,
+                                        size_t startPos, size_t endPos)
 {
     const auto lastword = std::string(text.c_str() + startPos, text.c_str() + endPos);
-    LOGE("### %{public}p, %{public}s, %{public}zu, %{public}zu", hyphenatorData, lastword.c_str(), startPos, endPos);
     std::vector<uint8_t> result;
     // resolve potential break positions
-    if(hyphenatorData && startPos + 4 < endPos) { // need to have at least 4 characters for hyphenator to process
-        // This a tricky bit, hyphenator expetcs an array of utf16, we have utf8 in fText and unicode in fUnicodeText
-        // Best match currently is obtained running a conversion from utf8 toutf16 but it wastes a bit of memory & cpu
-        // clean this up once the dust settles a bit
+    if (!hyphenatorData.empty() && startPos + HYPHEN_WORD_SHIFT < endPos) {
+        // need to have at least 4 characters for hyphenator to process
+        // This a tricky bit, hyphenator expetcs an array of utf16, we have utf8 in fText and
+        // unicode in fUnicodeText Best match currently is obtained running a conversion from utf8
+        // toutf16 but it wastes a bit of memory & cpu clean this up once the dust settles a bit
         const auto lastword = std::string(text.c_str() + startPos, text.c_str() + endPos);
-        //const auto lastword = std::string(owner->fUnicodeText.begin() + startPos + magic, owner->fUnicodeText.begin() + endPos + magic);
-        //const auto word = std::vector<uint16_t>(owner->fUnicodeText.begin() + startPos + magic, owner->fUnicodeText.begin() + endPos + magic);
-
         std::vector<uint16_t> word;
         int32_t i = 0;
-        const int32_t textLength = endPos-startPos;
+        const int32_t textLength = endPos - startPos;
         uint32_t c = 0;
         while (i < textLength) {
             U8_NEXT(lastword.c_str(), i, textLength, c);
@@ -370,27 +396,22 @@ std::vector<uint8_t> findBreakPositions(const uint8_t* hyphenatorData, const SkS
         }
 
         result = findBreaks(hyphenatorData, word);
-        //hyphenator->hyphenate(word.data(), word.size(), result.data());
-        DebugOutputHyphResults(lastword, result);
     }
     return result;
 }
-}  // namespace
+#endif
+} // namespace
 
 #ifdef OHOS_SUPPORT
-
-size_t TextWrapper::tryBreakWord(Cluster* startCluster, Cluster* endOfClusters, SkScalar widthBeforeCluster, SkScalar maxWidth)
+size_t TextWrapper::tryBreakWord(Cluster *startCluster, Cluster *endOfClusters,
+                                 SkScalar widthBeforeCluster, SkScalar maxWidth)
 {
-   auto startPos = startCluster->textRange().start;
-
-    LOGE("### need to search a break: %{public}u", startPos);
-
+    auto startPos = startCluster->textRange().start;
     auto endPos = startPos;
     auto owner = startCluster->getOwner();
     for (auto next = startCluster + 1; next != endOfClusters; next++) {
         // find the end boundary of current word (hard/soft/whitespace break)
-        if (next->isWhitespaceBreak() || next->isHardBreak()/* || next->isSoftBreak()*/) {
-            LOGE("### found word break: %{public}u", endPos);
+        if (next->isWhitespaceBreak() || next->isHardBreak()) {
             break;
         } else {
             endPos = next->textRange().end;
@@ -403,7 +424,6 @@ size_t TextWrapper::tryBreakWord(Cluster* startCluster, Cluster* endOfClusters, 
     auto mappedEnd = owner->fClustersIndexFromCodeUnit[endPos];
     auto len = widthBeforeCluster + owner->cluster(mappedEnd > 0 ? mappedEnd - 1 : 0).height();
     if (std::isnan(len)) {
-        LOGE("### could not define available lenght");
         len = 0.f;
     }
     // ToDo: We can stop here based on hyhpenation frequency setting
@@ -413,9 +433,8 @@ size_t TextWrapper::tryBreakWord(Cluster* startCluster, Cluster* endOfClusters, 
     }
 
     auto locale = owner->paragraphStyle().getTextStyle().getLocale();
-    LOGE("### trying to hyphen in '%{public}s', space available: %{public}f/%{public}f", locale.c_str(), len, maxWidth);
-    auto hyphenatorData = owner->fontCollection()->getHyphenatorData(locale.c_str());
-    auto result = findBreakPositions(hyphenatorData, owner->fText, startPos, endPos);
+    auto hyphenatorData = Hyphenator::GetInstance().GetHyphenatorData(locale.c_str());
+    auto result = FindBreakPositions(hyphenatorData, owner->fText, startPos, endPos);
 
     endPos = startPos;
     size_t ix = 0;
@@ -424,7 +443,8 @@ size_t TextWrapper::tryBreakWord(Cluster* startCluster, Cluster* endOfClusters, 
         len += (startCluster + ix)->width();
         auto shouldBreak = (len > maxWidth);
         if ((breakPos & 0x1) && !shouldBreak) {
-            endPos = startPos + ix; // we need to break after previous char, but the result needs to be mapped
+            // we need to break after previous char, but the result needs to be mapped
+            endPos = startPos + ix;
         }
         ++ix;
         if (shouldBreak) {
@@ -432,6 +452,30 @@ size_t TextWrapper::tryBreakWord(Cluster* startCluster, Cluster* endOfClusters, 
         }
     }
     return endPos;
+}
+
+bool TextWrapper::lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBeforeCluster, SkScalar maxWidth)
+{
+    auto startCluster = fClusters.startCluster();
+    while (startCluster != endOfClusters && startCluster->isWhitespaceBreak()) {
+        ++startCluster;
+    }
+    if (startCluster == endOfClusters) {
+        return false;
+    }
+    auto endPos = tryBreakWord(startCluster, endOfClusters, widthBeforeCluster - fClusters.width(), maxWidth);
+    // if break position found, set fClusters and fWords accrodingly and break
+    if (endPos > startCluster->textRange().start) {
+        // need to break before the mapped end cluster
+        auto owner = startCluster->getOwner();
+        fClusters = TextStretch(startCluster, &owner->cluster(owner->fClustersIndexFromCodeUnit[endPos]) - 1,
+                                fClusters.metrics().getForceStrut());
+        fWords.extend(fClusters);
+        fBrokeLineWithHyphen = true;
+        return false;
+    }
+    // else let the existing implementation do its best efforts
+    return true;
 }
 
 // Since we allow cluster clipping when they don't fit
@@ -467,14 +511,20 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 SkScalar width = cluster->width() + widthBeforeCluster;
                 (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
                 breaker.breakLine(width)) {
-            // if the hyphenator has already run as balancing algorithm, use the cluster
+            // if the hyphenator has already run as balancing algorithm, use the cluster information
             if (cluster->isHyphenBreak()) {
+                // we dont want to add the current cluster as the hyphenation algorithm marks breaks before a cluster
+                // however, if we cannot fit anything to a line, we need to break out here
+                if (fWords.empty() && fClusters.empty()) {
+                    fClusters.extend(cluster);
+                    fTooLongCluster = true;
+                    break;
+                }
                 fWords.extend(fClusters);
                 fBrokeLineWithHyphen = true;
                 break;
             // let hyphenator try before this if it is enabled
-            } else if ((/*(wordBreakType == WordBreakType::HYPHEN &&*/ attemptedHyphenate) /*|| wordBreakType != WordBreakType::HYPHEN)
-                */&& (cluster->isWhitespaceBreak() || cluster->isSoftBreak())) {
+            } else if ((attemptedHyphenate) && (cluster->isWhitespaceBreak() || cluster->isSoftBreak())) {
                 // It's the end of the word
                 isFirstWord = false;
                 fClusters.extend(cluster);
@@ -513,31 +563,11 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
             }
 
             // should do this only if hyphenation is enabled
-            if (/*wordBreakType == WordBreakType::HYPHEN &&*/ !attemptedHyphenate && !fClusters.empty()) {
+            if (wordBreakType == WordBreakType::BREAK_HYPHEN && !attemptedHyphenate && !fClusters.empty()) {
                 attemptedHyphenate = true;
-                auto startCluster = fClusters.startCluster();
-                while (startCluster != endOfClusters && startCluster->isWhitespaceBreak()) {
-                    ++startCluster;
-                }
-                if (startCluster == endOfClusters) {
+                if (!lookAheadByHyphen(endOfClusters, widthBeforeCluster, breaker.fUpper)) {
                     break;
                 }
-
-                auto endPos = tryBreakWord(startCluster, endOfClusters, widthBeforeCluster - fClusters.width(),
-                                           breaker.fUpper);
-                // if break position found, set fClusters and fWords accrodingly and break
-                if (endPos > startCluster->textRange().start) {
-                    LOGE("### breaking with hyphen: %{public}u %{public}u", startCluster->textRange().start, endPos);
-                    // need to break before the mapped end cluster
-                    auto owner = startCluster->getOwner();
-                    fClusters = TextStretch(startCluster, &owner->cluster(owner->fClustersIndexFromCodeUnit[endPos]) - 1,
-                                            fClusters.metrics().getForceStrut());
-                    fWords.extend(fClusters);
-                    fBrokeLineWithHyphen = true;
-                    // TODO: Should we mind tabulation !!
-                    break;
-                }
-                // else let the existing implementation do its best efforts
             }
 
             textTabAlign.processEndofLine(fWords, fClusters, cluster, totalFakeSpacing);
@@ -779,40 +809,7 @@ struct TextWrapScorer {
     TextWrapScorer(SkScalar maxWidth, ParagraphImpl& parent, size_t maxLines)
         : maxWidth_(maxWidth), currentTarget_(maxWidth), maxLines_(maxLines), parent_(parent)
     {
-        bool prevWasWhitespace = false;
-        const bool hyphenEnabled = parent.getWordBreakType() == WordBreakType::HYPHEN;
-        auto startCluster = &parent.cluster(0);
-        auto endCluster = &parent.cluster(0);
-        auto locale = parent.paragraphStyle().getTextStyle().getLocale();
-        for (size_t clusterIx = 0; clusterIx < parent.clusters().size(); clusterIx++) {
-            auto& cluster = parent.cluster(clusterIx);
-            auto len = cluster.width();
-            cumulativeLen_ += len;
-            bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak());
-            if (hyphenEnabled && !prevWasWhitespace && isWhitespace && endCluster != startCluster ) {
-                LOGD("### Preparing hyphens, found word");
-                prevWasWhitespace = true;
-                auto* hyphenator = parent.fontCollection()->getHyphenatorData(locale.c_str());
-                auto results = findBreakPositions(hyphenator, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
-                size_t prevClusterIx = 0;
-                for (size_t resultIx = 0; resultIx < results.size(); resultIx++) {
-                    if (results[resultIx] & 0x1) {
-                        auto clusterPos = parent.clusterIndex(startCluster->textRange().start + resultIx);
-                        if (clusterPos != prevClusterIx) {
-                            parent.cluster(clusterPos).setHyphenBreak();
-                            prevClusterIx = clusterPos;
-                        }
-                    }
-                }
-                if (clusterIx + 1 < parent.clusters().size()) {
-                    startCluster = &cluster + 1;
-                }
-            } else if (!isWhitespace){
-                // LOGD("### found part of word");
-                prevWasWhitespace = false;
-                endCluster = &cluster;
-            }
-        }
+        CalculateCumulativeLen(parent);
 
         if (parent_.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
             // calculate target width before breaks
@@ -820,10 +817,15 @@ struct TextWrapScorer {
             currentTarget_ = cumulativeLen_ / targetLines;
         }
 
+        GenerateBreaks(parent);
+    }
+
+    void GenerateBreaks(ParagraphImpl& parent)
+    {
         // we trust that clusters are sorted on parent
-        prevWasWhitespace = false;
+        bool prevWasWhitespace = false;
         SkScalar currentWidth = 0;
-        SkScalar currentCount = 0; // in principle currentWidth != 0 should provide same result
+        size_t currentCount = 0; // in principle currentWidth != 0 should provide same result
         SkScalar cumulativeLen = 0;
         for (size_t ix = 0; ix < parent.clusters().size(); ix++) {
             auto& cluster = parent.clusters()[ix];
@@ -837,29 +839,81 @@ struct TextWrapScorer {
                 prevWasWhitespace = true;
                 currentWidth = 0;
                 currentCount = 0;
-            } else {
+            } else if (cluster.isHardBreak()) {
+                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_HARD, false);
                 prevWasWhitespace = true;
-                if (cluster.isHardBreak()) {
-                    breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_HARD, false);
-                    currentWidth = 0;
-                    currentCount = 0;
-                } else if (cluster.isHyphenBreak()) {
-                    breaks_.emplace_back(cumulativeLen + cluster.height(), Break::BreakType::BREAKTYPE_HYPHEN, false);
-                    breaks_.back().reservedSpace = cluster.height();
-                    currentWidth = 0;
-                    currentCount = 0;
-                } else if (cluster.isIntraWordBreak()) {
-                    breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_INTRA, false);
-                    currentWidth = 0;
-                    currentCount = 0;
-                } else if (currentWidth > currentTarget_) {
-                    if (currentCount > 1) {
-                        cumulativeLen -= cluster.width();
-                        ix--;
-                    }
-                    breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_FORCED, false);
-                    currentWidth = 0;
-                    currentCount = 0;
+                currentWidth = 0;
+                currentCount = 0;
+            } else if (cluster.isHyphenBreak()) {
+                breaks_.emplace_back(cumulativeLen - cluster.width() + cluster.height(),
+                                     Break::BreakType::BREAKTYPE_HYPHEN, false);
+                breaks_.back().reservedSpace = cluster.height();
+                prevWasWhitespace = true;
+                currentWidth = 0;
+                currentCount = 0;
+            } else if (cluster.isIntraWordBreak()) {
+                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_INTRA, false);
+                prevWasWhitespace = true;
+                currentWidth = 0;
+                currentCount = 0;
+            } else if (currentWidth > currentTarget_) {
+                if (currentCount > 1) {
+                    cumulativeLen -= cluster.width();
+                    ix--;
+                }
+                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_FORCED, false);
+                prevWasWhitespace = false;
+                currentWidth = 0;
+                currentCount = 0;
+            } else {
+                prevWasWhitespace = false;
+            }
+        }
+    }
+
+    void CalculateCumulativeLen(ParagraphImpl& parent)
+    {
+        auto startCluster = &parent.cluster(0);
+        auto endCluster = &parent.cluster(0);
+        for (size_t clusterIx = 0; clusterIx < parent.clusters().size(); clusterIx++) {
+            auto& cluster = parent.cluster(clusterIx);
+            auto len = cluster.width();
+            cumulativeLen_ += len;
+            CalculateHyphenPos(clusterIx, startCluster, endCluster, parent);
+        }
+    }
+
+    void CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster, Cluster*& endCluster, ParagraphImpl& parent)
+    {
+        bool prevWasWhitespace = false;
+        auto& cluster = parent.cluster(clusterIx);
+        const bool hyphenEnabled = parent.getWordBreakType() == WordBreakType::BREAK_HYPHEN;
+        auto locale = parent.paragraphStyle().getTextStyle().getLocale();
+        bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak());
+        if (hyphenEnabled && !prevWasWhitespace && isWhitespace && endCluster != startCluster) {
+            prevWasWhitespace = true;
+            auto hyphenatorData = Hyphenator::GetInstance().GetHyphenatorData(locale.c_str());
+            auto results = FindBreakPositions(hyphenatorData, parent.fText, startCluster->textRange().start,
+                                              endCluster->textRange().end);
+            CheckHyphenBreak(results, parent, startCluster);
+            if (clusterIx + 1 < parent.clusters().size()) {
+                startCluster = &cluster + 1;
+            }
+        } else if (!isWhitespace) {
+            prevWasWhitespace = false;
+            endCluster = &cluster;
+        }
+    }
+
+    void CheckHyphenBreak(std::vector<uint8_t> results, ParagraphImpl& parent, Cluster*& startCluster)
+    {
+        size_t prevClusterIx = 0;
+        for (size_t resultIx = 0; resultIx < results.size(); resultIx++) {
+            if (results[resultIx] & 0x1) {
+                auto clusterPos = parent.clusterIndex(startCluster->textRange().start + resultIx);
+                if (clusterPos != prevClusterIx) {
+                    parent.cluster(clusterPos).enableHyphenBreak();
+                    prevClusterIx = clusterPos;
                 }
             }
         }
@@ -940,6 +994,28 @@ struct TextWrapScorer {
         return current_;
     }
 
+    SkScalar calculateCurrentWidth(RecursiveParam& param, bool looped)
+    {
+        SkScalar newWidth = param.currentMax;
+
+        if (param.breakPos > 0 && param.begin < breaks_[param.breakPos - 1].width) {
+            newWidth = std::min(breaks_[--param.breakPos].width - param.begin, param.currentMax);
+        }
+
+        if (looped
+            && ((lastBreakPos_ == param.breakPos)
+                || (newWidth / param.currentMax * UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
+            LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
+                 static_cast<unsigned long>(param.lineNumber), param.begin, static_cast<unsigned long>(param.breakPos),
+                 newWidth, maxWidth_);
+            return 0;
+        }
+
+        lastBreakPos_ = param.breakPos;
+
+        return std::min(newWidth, param.remainingTextWidth);
+    }
+
     int64_t FindOptimalSolutionForCurrentLine(RecursiveParam& param)
     {
         // have this in reversed order to avoid extra insertions
@@ -951,23 +1027,10 @@ struct TextWrapScorer {
         do {
             // until the given threshold is crossed (minimum line fill rate)
             // re-break this line, if a result is different, calculate score
-            SkScalar newWidth = param.currentMax;
-
-            if (param.breakPos > 0 && param.begin < breaks_[param.breakPos - 1].width) {
-                newWidth = std::min(breaks_[--param.breakPos].width - param.begin, param.currentMax);
-            }
-
-            if (looped && ((lastBreakPos_ == param.breakPos) ||
-                (newWidth/param.currentMax*UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
-                LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
-                    static_cast<unsigned long>(param.lineNumber), param.begin,
-                        static_cast<unsigned long>(param.breakPos), newWidth, maxWidth_);
+            SkScalar currentWidth = calculateCurrentWidth(param, looped);
+            if (currentWidth == 0) {
                 break;
             }
-
-            lastBreakPos_ = param.breakPos;
-
-            SkScalar currentWidth = std::min(newWidth, param.remainingTextWidth);
             Index index { param.lineNumber, param.begin, currentWidth };
 
             // check cache
@@ -988,7 +1051,7 @@ struct TextWrapScorer {
             overallScore = score;
 
             // Handle last line
-            if ( breaks_[param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN ) {
+            if (breaks_[param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN) {
                 auto copy = currentWidth - breaks_[param.breakPos].reservedSpace;
                 // name is bit confusing as the method enters also recursion
                 // with hyphen break this never is the last line
@@ -1246,12 +1309,11 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         std::tie(startLine, pos, widthWithSpaces) = this->trimStartSpaces(end);
 
         if (needEllipsis && !fHardLineBreak) {
-        //if (needEllipsis && !fHardLineBreak) {
             // This is what we need to do to preserve a space before the ellipsis
             fEndLine.restoreBreak();
             widthWithSpaces = fEndLine.widthWithGhostSpaces();
         } else if (fBrokeLineWithHyphen) {
-            fEndLine.shiftWidth(fEndLine.endCluster()->height());
+            fEndLine.shiftWidth(fEndLine.endCluster()->width());
         }
 
         // If the line is empty with the hard line break, let's take the paragraph font (flutter???)

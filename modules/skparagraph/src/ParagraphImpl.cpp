@@ -1238,17 +1238,16 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
                 } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
-                } else {
-                    //LOGE("### perhaps, %{public}lu %{public}lu %{public}zu %{public}lu %{public}lu %{public}zu ", textExcludingSpaces.end, text.end, textWithNewlines.end, clusters.end, clustersWithGhosts.end, endPos);
-                    if ( textWrapper.brokeLineWithHyphen() || (
-                        (clusters.end == clustersWithGhosts.end) && (clusters.end >= 1) &&
-                        (clusters.end < this->fUnicodeText.size()) &&
-                        (this->fUnicodeText[clusters.end - 1] == 0xad))) {
-                        LOGE("### likely, %{public}lu %{public}zu %{public}x %{public}x", endPos, this->fClusters.size(), this->fUnicodeText[clusters.end - 1], this->fUnicodeText[clusters.end]);
-                        const SkString dash("-");
-                        line.createTailEllipsis(noIndentWidth, dash, true, this->getWordBreakType());
-                    }
-                 }
+                }
+#ifdef OHOS_SUPPORT
+                else if (textWrapper.brokeLineWithHyphen()
+                         || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
+                             && (clusters.end < this->fUnicodeText.size())
+                             && (this->fUnicodeText[clusters.end - 1] == 0xad))) {
+                    const SkString dash("-");
+                    line.createTailEllipsis(noIndentWidth, dash, true, this->getWordBreakType());
+                }
+#endif
                 auto spacing = line.autoSpacing();
                 auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces()) + spacing;
                 fLongestLine = std::max(fLongestLine, longestLine);

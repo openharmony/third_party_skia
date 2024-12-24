@@ -5,10 +5,6 @@
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skshaper/include/SkShaper.h"
 
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include "log.h"
-
 namespace skia {
 namespace textlayout {
 
@@ -63,31 +59,9 @@ size_t FontCollection::FamilyKey::Hasher::operator()(const FontCollection::Famil
 #endif
 }
 
-std::vector<uint8_t> readWholeFile(const std::string& filePath) {
-    LOGE("Attempt to read '%{public}s'", filePath.c_str());
-    FILE* fp = fopen(filePath.c_str(), "r");
-    if(fp == nullptr) {
-        LOGE("FATAL: %{public}d: %{public}s", errno, strerror(errno));
-        return std::vector<uint8_t>(0);
-    }
-    struct stat st;
-    if(fstat(fileno(fp), &st) != 0) {
-        LOGE("FATAL: fstat");
-        return std::vector<uint8_t>(0);
-    }
-    std::vector<uint8_t> result(st.st_size);
-    if(fread(result.data(), 1, st.st_size, fp) != static_cast<size_t>(st.st_size)) {
-        LOGE("FATAL: fread");
-        return std::vector<uint8_t>(0);
-    }
-    fclose(fp);
-    return result;
-}
 FontCollection::FontCollection()
     : fEnableFontFallback(true),
-    fDefaultFamilyNames({SkString(DEFAULT_FONT_FAMILY)}) {
-        LOGE("## FONT COLLECTION");
-    }
+    fDefaultFamilyNames({SkString(DEFAULT_FONT_FAMILY)}) {}
 
 size_t FontCollection::getFontManagersCount() const {
     std::shared_lock<std::shared_mutex> readLock(mutex_);
@@ -488,127 +462,6 @@ void FontCollection::clearCaches() {
     fTypefaces.clear();
 #endif
     SkShaper::PurgeCaches();
-}
-
-const uint8_t* mmapFile(const std::string& filePath, size_t& length, FILE*& filePointer) {
-    LOGE("Attempt to mmap '%{public}s'", filePath.c_str());
-    filePointer = fopen(filePath.c_str(), "r");
-    if(filePointer == nullptr) {
-        LOGE("FATAL: %{public}d: %{public}s", errno, strerror(errno));
-        return nullptr;
-    }
-    struct stat st;
-    if(fstat(fileno(filePointer), &st) != 0) {
-        LOGE("FATAL: fstat");
-        fclose(filePointer);
-        return nullptr;
-    }
-    length = st.st_size;
-    const uint8_t* address = static_cast<const uint8_t*>(mmap(NULL, length, PROT_READ, MAP_PRIVATE, fileno(filePointer), 0u));
-
-    if( address == MAP_FAILED) {
-        LOGE("FATAL: mmap");
-        return nullptr;
-    }
-    LOGE("OK: mmap");
-    return address;
-}
-
-int unmapFile(const uint8_t* address, size_t len, FILE* filePointer) {
-
-    int result = munmap(((void*)address), len);
-
-    if(result != 0) {
-        LOGE("FATAL: %{public}d: %{public}s", errno, strerror(errno));
-    }
-    else {
-        LOGE("OK: munmap");
-    }
-    if(fclose(filePointer) != 0) {
-        LOGE("FATAL: close");
-    }
-    return result;
-
-}
-
-struct HibNamePair {
-    const std::string filename;
-    const std::string locale;
-};
-
-const HibNamePair HibFilenames[] = {
-    {"hyph-en-us.tex.hib", "en-us"}, // default
-    {"hyph-ar.tex.hib", "ar"},
-    {"hyph-bg.tex.hib", "bg"},
-    {"hyph-bn.tex.hib", "bn"},
-    {"hyph-cs.tex.hib", "cs"},
-    {"hyph-da.tex.hib", "da"},
-    {"hyph-de-1901.tex.hib", "de-1901"},
-    {"hyph-el-monoton.tex.hib", "el-monoton"},
-    {"hyph-en-gb.tex.hib", "en-gb"},
-    {"hyph-es.tex.hib", "es"},
-    {"hyph-et.tex.hib", "et"},
-    {"hyph-fa.tex.hib", "fa"},
-    {"hyph-fr.tex.hib", "fr"},
-    {"hyph-hi.tex.hib", "hi"},
-    {"hyph-hr.tex.hib", "hr"},
-    {"hyph-hu.tex.hib", "hu"},
-    {"hyph-id.tex.hib", "id"},
-    {"hyph-it.tex.hib", "it"},
-    {"hyph-lt.tex.hib", "lt"},
-    {"hyph-lv.tex.hib", "lv"},
-    {"hyph-mk.tex.hib", "unknown"},
-    {"hyph-nb.tex.hib", "nb"},
-    {"hyph-nl.tex.hib", "nl"},
-    {"hyph-pl.tex.hib", "pl"},
-    {"hyph-ru.tex.hib", "ru"},
-    {"hyph-sh-latn.tex.hib", "unknonw2"},
-    {"hyph-sk.tex.hib", "sk"},
-    {"hyph-sl.tex.hib", "sl"},
-    {"hyph-sv.tex.hib", "sv"},
-    {"hyph-th.tex.hib", "th"},
-    {"hyph-tr.tex.hib", "tr"},
-    {"hyph-uk.tex.hib", "uk"},
-};
-
-const std::string& resolveHibFile(const std::string& locale) {
-    for (auto& val : HibFilenames) {
-       if (locale == val.locale) {
-          return val.filename;
-       }
-    }
-    return HibFilenames[0].filename;
-}
-
-const uint8_t* FontCollection::getHyphenatorData(const std::string& locale) {
-
-    LOGE("###");
-    std::shared_lock<std::shared_mutex> readLock(mutex_);
-    if (auto search = hyphMap.find(locale); search != hyphMap.end()) {
-        LOGE("## got hyphenator data for locale '%{public}s'", locale.c_str());
-        return search->second.address;
-    }
-
-    LOGE("## try to load hyb file");
-
-    std::string filename = "/system/fonts/" + resolveHibFile(locale);;
-
-    HyphenatorData data;
-
-    LOGE("## try to mmap");
-    data.length = 0;
-    data.address = mmapFile(filename.c_str(), data.length, data.filePointer);
-
-    if(data.address != nullptr && data.length > 0 ) {
-        hyphMap.emplace(locale, std::move(data));
-    }
-
-    return data.address;
-}
-
-FontCollection::HyphenatorData::~HyphenatorData()
-{
-//    unmapFile(address, length, filePointer);
 }
 
 }  // namespace textlayout

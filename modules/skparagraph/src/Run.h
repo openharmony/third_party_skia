@@ -449,7 +449,7 @@ public:
 #ifdef OHOS_SUPPORT
     bool isTabulation() const { return fIsTabulation; }
     bool needAutoSpacing() const { return fNeedAutoSpacing; }
-    void setHyphenBreak() { fHyphenBreak = true; }
+    void enableHyphenBreak() { fHyphenBreak = true; }
     bool isHyphenBreak() const { return fHyphenBreak; }
 #endif
 
@@ -516,7 +516,7 @@ private:
 #ifdef OHOS_SUPPORT
     bool fIsTabulation;
     bool fNeedAutoSpacing; // depend on last cluster flag
-    bool fHyphenBreak {false};
+    bool fHyphenBreak{false};
 #endif
 };
 

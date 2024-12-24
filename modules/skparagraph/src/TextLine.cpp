@@ -837,8 +837,10 @@ void TextLine::justify(SkScalar maxWidth) {
         }
         return;
     }
-
-    SkScalar step = (maxWidth - textLen - (fEllipsis ? fEllipsis->fAdvance.fX : 0)) / whitespacePatches;
+#ifdef OHOS_SUPPORT
+    SkScalar step =
+            (maxWidth - textLen - (fEllipsis ? fEllipsis->fAdvance.fX : 0)) / whitespacePatches;
+#endif
     SkScalar shift = 0.0f;
     SkScalar prevShift = 0.0f;
 
@@ -1009,7 +1011,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             inWord = false;
         }
         // See if it fits
-        if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
+        if (fOwner->getEllipsis() == fEllipsisString && ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
             if (!cluster.isHardBreak()) {
                 width -= cluster.width();
             }
@@ -1118,8 +1120,9 @@ static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
 }
 
 std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Cluster* cluster) {
-
+#ifdef OHOS_SUPPORT
     fEllipsisString = ellipsis;
+#endif
     class ShapeHandler final : public SkShaper::RunHandler {
     public:
         ShapeHandler(SkScalar lineHeight, bool useHalfLeading, SkScalar baselineShift, const SkString& ellipsis)
@@ -1843,9 +1846,15 @@ bool TextLine::isLastLine() const {
 bool TextLine::endsWithHardLineBreak() const {
     // TODO: For some reason Flutter imagines a hard line break at the end of the last line.
     //  To be removed...
+#ifdef OHOS_SUPPORT
     return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak()) ||
-           (fEllipsis != nullptr && fOwner->getEllipsis() == fEllipsisString)  ||
+           (fEllipsis != nullptr && fOwner->getEllipsis() == fEllipsisString) ||
            fGhostClusterRange.end == fOwner->clusters().size() - 1;
+#else
+    return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak()) ||
+           fEllipsis != nullptr ||
+           fGhostClusterRange.end == fOwner->clusters().size() - 1;
+#endif
 }
 
 void TextLine::getRectsForRange(TextRange textRange0,
