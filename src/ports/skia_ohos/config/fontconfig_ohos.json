@@ -1,0 +1,870 @@
+{
+  "font_dir": [
+    "/system/fonts/"
+  ],
+  "fonts": [
+    {
+      "type": 0,
+      "alias": "HarmonyOS-Sans",
+      "family": "HarmonyOS Sans",
+      "file": "HarmonyOS_Sans.ttf"
+    },
+    {
+      "type": 0,
+      "alias": "HarmonyOS-Sans",
+      "family": "HarmonyOS Sans",
+      "file": "HarmonyOS_Sans_Italic.ttf"
+    },
+    {
+      "type": 0,
+      "alias": "HarmonyOS-Sans-Regular",
+      "family": "HarmonyOS Sans",
+      "file": "HarmonyOS_Sans.ttf",
+      "weight": 400
+    },
+    {
+      "type": 0,
+      "alias": "HarmonyOS-Sans-Regular",
+      "family": "HarmonyOS Sans",
+      "file": "HarmonyOS_Sans_Italic.ttf",
+      "weight": 400
+    },
+    {
+      "type": 0,
+      "alias": "HarmonyOS-Sans-Condensed",
+      "family": "HarmonyOS Sans Condensed",
+      "file": "HarmonyOS_Sans_Condensed.ttf"
+    },
+    {
+      "type": 0,
+      "alias": "HarmonyOS-Sans-Digit",
+      "family": "HarmonyOS Sans Digit",
+      "file": "HarmonyOS_Sans_Digit.ttf"
+    },
+    {
+      "type": 0,
+      "alias": "HarmonyOS-Sans-Digit",
+      "family": "HarmonyOS Sans Digit",
+      "file": "HarmonyOS_Sans_Digit_Medium.ttf"
+    },
+    {
+      "type": 0,
+      "alias": "serif",
+      "family": "Noto Serif",
+      "file": "NotoSerif[wdth,wght].ttf"
+    },
+    {
+      "type": 0,
+      "alias": "monospace",
+      "family": "Noto Sans Mono",
+      "file": "NotoSansMono[wdth,wght].ttf",
+      "weight": 400
+    },
+    {
+      "type": 1,
+      "lang": "und-Zsye",
+      "family": "HMOS Color Emoji",
+      "file": "HMOSColorEmojiCompat.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "",
+      "family": "Noto Sans",
+      "file": "NotoSans[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Arab",
+      "family": "HarmonyOS Sans Naskh Arabic UI",
+      "file": "HarmonyOS_Sans_Naskh_Arabic_UI.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Ethi",
+      "family": "Noto Sans Ethiopic",
+      "file": "NotoSansEthiopic[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Hebr",
+      "family": "Noto Sans Hebrew",
+      "file": "NotoSansHebrew[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Thai",
+      "family": "Noto Sans Thai",
+      "file": "NotoSansThai[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Armn",
+      "family": "Noto Sans Armenian",
+      "file": "NotoSansArmenian[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Geor,und-Geok",
+      "family": "Noto Sans Georgian",
+      "file": "NotoSansGeorgian[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Deva",
+      "family": "Noto Sans Devanagari",
+      "file": "NotoSansDevanagari[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Gujr",
+      "family": "Noto Sans Gujarati",
+      "file": "NotoSansGujarati[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Guru",
+      "family": "Noto Sans Gurmukhi",
+      "file": "NotoSansGurmukhi[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Taml",
+      "family": "Noto Sans Tamil",
+      "file": "NotoSansTamil[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Mlym",
+      "family": "Noto Sans Malayalam",
+      "file": "NotoSansMalayalam[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Beng",
+      "family": "Noto Sans Bengali",
+      "file": "NotoSansBengali[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Telu",
+      "family": "Noto Sans Telugu",
+      "file": "NotoSansTelugu[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Knda",
+      "family": "Noto Sans Kannada",
+      "file": "NotoSansKannada[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Orya",
+      "family": "Noto Sans Oriya",
+      "file": "NotoSansOriya[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Sinh",
+      "family": "Noto Sans Sinhala",
+      "file": "NotoSansSinhala[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Khmr",
+      "family": "Noto Sans Khmer",
+      "file": "NotoSansKhmer[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Laoo",
+      "family": "Noto Sans Lao",
+      "file": "NotoSansLao[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Mymr",
+      "family": "Noto Sans Myanmar",
+      "file": "NotoSansMyanmar[wdth,wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Thaa",
+      "family": "Noto Sans Thaana",
+      "file": "NotoSansThaana[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Cham",
+      "family": "Noto Sans Cham",
+      "file": "NotoSansCham[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Ahom",
+      "family": "Noto Serif Ahom",
+      "file": "NotoSerifAhom-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Adlm",
+      "family": "Noto Sans Adlam",
+      "file": "NotoSansAdlam[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Avst",
+      "family": "Noto Sans Avestan",
+      "file": "NotoSansAvestan-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Bali",
+      "family": "Noto Sans Balinese",
+      "file": "NotoSansBalinese[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Bamu",
+      "family": "Noto Sans Bamum",
+      "file": "NotoSansBamum[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Batk",
+      "family": "Noto Sans Batak",
+      "file": "NotoSansBatak-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Brah",
+      "family": "Noto Sans Brahmi",
+      "file": "NotoSansBrahmi-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Bugi",
+      "family": "Noto Sans Buginese",
+      "file": "NotoSansBuginese-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Buhd",
+      "family": "Noto Sans Buhid",
+      "file": "NotoSansBuhid-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Cans",
+      "family": "Noto Sans Canadian Aboriginal",
+      "file": "NotoSansCanadianAboriginal[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Cari",
+      "family": "Noto Sans Carian",
+      "file": "NotoSansCarian-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Cakm",
+      "family": "Noto Sans Chakma",
+      "file": "NotoSansChakma-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Cher",
+      "family": "Noto Sans Cherokee",
+      "file": "NotoSansCherokee[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Copt",
+      "family": "Noto Sans Coptic",
+      "file": "NotoSansCoptic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Xsux",
+      "family": "Noto Sans Cuneiform",
+      "file": "NotoSansCuneiform-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Cprt",
+      "family": "Noto Sans Cypriot",
+      "file": "NotoSansCypriot-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Dsrt",
+      "family": "Noto Sans Deseret",
+      "file": "NotoSansDeseret-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Egyp",
+      "family": "Noto Sans Egyptian Hieroglyphs",
+      "file": "NotoSansEgyptianHieroglyphs-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Elba",
+      "family": "Noto Sans Elbasan",
+      "file": "NotoSansElbasan-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Glag",
+      "family": "Noto Sans Glagolitic",
+      "file": "NotoSansGlagolitic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Goth",
+      "family": "Noto Sans Gothic",
+      "file": "NotoSansGothic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Hano",
+      "family": "Noto Sans Hanunoo",
+      "file": "NotoSansHanunoo-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Armi",
+      "family": "Noto Sans Imperial Aramaic",
+      "file": "NotoSansImperialAramaic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Phli",
+      "family": "Noto Sans Inscriptional Pahlavi",
+      "file": "NotoSansInscriptionalPahlavi-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Prti",
+      "family": "Noto Sans Inscriptional Parthian",
+      "file": "NotoSansInscriptionalParthian-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Java",
+      "family": "Noto Sans Javanese",
+      "file": "NotoSansJavanese[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Kthi",
+      "family": "Noto Sans Kaithi",
+      "file": "NotoSansKaithi-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Kali",
+      "family": "Noto Sans Kayah Li",
+      "file": "NotoSansKayahLi[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Khar",
+      "family": "Noto Sans Kharoshthi",
+      "file": "NotoSansKharoshthi-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Lepc",
+      "family": "Noto Sans Lepcha",
+      "file": "NotoSansLepcha-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Limb",
+      "family": "Noto Sans Limbu",
+      "file": "NotoSansLimbu-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Linb",
+      "family": "Noto Sans Linear B",
+      "file": "NotoSansLinearB-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Lisu",
+      "family": "Noto Sans Lisu",
+      "file": "NotoSansLisu[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Lyci",
+      "family": "Noto Sans Lycian",
+      "file": "NotoSansLycian-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Lydi",
+      "family": "Noto Sans Lydian",
+      "file": "NotoSansLydian-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Mand",
+      "family": "Noto Sans Mandaic",
+      "file": "NotoSansMandaic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Mtei",
+      "family": "Noto Sans Meetei Mayek",
+      "file": "NotoSansMeeteiMayek[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Talu",
+      "family": "Noto Sans New Tai Lue",
+      "file": "NotoSansNewTaiLue[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Nkoo",
+      "family": "Noto Sans NKo",
+      "file": "NotoSansNKo-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Ogam",
+      "family": "Noto Sans Ogham",
+      "file": "NotoSansOgham-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Olck",
+      "family": "Noto Sans Ol Chiki",
+      "file": "NotoSansOlChiki[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Ital",
+      "family": "Noto Sans Old Italic",
+      "file": "NotoSansOldItalic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Xpeo",
+      "family": "Noto Sans Old Persian",
+      "file": "NotoSansOldPersian-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Sarb",
+      "family": "Noto Sans Old South Arabian",
+      "file": "NotoSansOldSouthArabian-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Orkh",
+      "family": "Noto Sans Old Turkic",
+      "file": "NotoSansOldTurkic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Osge",
+      "family": "Noto Sans Osage",
+      "file": "NotoSansOsage-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Osma",
+      "family": "Noto Sans Osmanya",
+      "file": "NotoSansOsmanya-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Phnx",
+      "family": "Noto Sans Phoenician",
+      "file": "NotoSansPhoenician-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Rjng",
+      "family": "Noto Sans Rejang",
+      "file": "NotoSansRejang-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Runr",
+      "family": "Noto Sans Runic",
+      "file": "NotoSansRunic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Samr",
+      "family": "Noto Sans Samaritan",
+      "file": "NotoSansSamaritan-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Saur",
+      "family": "Noto Sans Saurashtra",
+      "file": "NotoSansSaurashtra-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Shaw",
+      "family": "Noto Sans Shavian",
+      "file": "NotoSansShavian-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Sund",
+      "family": "Noto Sans Sundanese",
+      "file": "NotoSansSundanese[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Sylo",
+      "family": "Noto Sans Syloti Nagri",
+      "file": "NotoSansSylotiNagri-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Syrn",
+      "family": "Noto Sans Syriac Eastern",
+      "file": "NotoSansSyriacEastern[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Syrj",
+      "family": "Noto Sans Syriac Western",
+      "file": "NotoSansSyriacWestern[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Tglg",
+      "family": "Noto Sans Tagalog",
+      "file": "NotoSansTagalog-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Tagb",
+      "family": "Noto Sans Tagbanwa",
+      "file": "NotoSansTagbanwa-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Lana",
+      "family": "Noto Sans Tai Tham",
+      "file": "NotoSansTaiTham[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Tavt",
+      "family": "Noto Sans Tai Viet",
+      "file": "NotoSansTaiViet-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Tibt",
+      "family": "Noto Serif Tibetan",
+      "file": "NotoSerifTibetan[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Tfng",
+      "family": "Noto Sans Tifinagh",
+      "file": "NotoSansTifinagh-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Ugar",
+      "family": "Noto Sans Ugaritic",
+      "file": "NotoSansUgaritic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Vaii",
+      "family": "Noto Sans Vai",
+      "file": "NotoSansVai-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "zh-Hans",
+      "family": "HarmonyOS Sans SC",
+      "file": "HarmonyOS_Sans_SC.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "zh-Hant",
+      "family": "HarmonyOS Sans TC",
+      "file": "HarmonyOS_Sans_TC.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "ja",
+      "family": "Noto Sans CJK JP",
+      "file": "NotoSansCJK-Regular.ttc",
+      "index": 0
+    },
+    {
+      "type": 1,
+      "lang": "ko",
+      "family": "Noto Sans CJK KR",
+      "file": "NotoSansCJK-Regular.ttc",
+      "index": 1
+    },
+    {
+      "type": 1,
+      "lang": "und-Zsye",
+      "family": "HMOS Color Emoji Flags",
+      "file": "HMOSColorEmojiFlags.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Zsym",
+      "family": "Noto Sans Symbols",
+      "file": "NotoSansSymbols-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Zsym",
+      "family": "Noto Sans Symbols 2",
+      "file": "NotoSansSymbols2-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Tale",
+      "family": "Noto Sans Tai Le",
+      "file": "NotoSansTaiLe-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Yiii",
+      "family": "Noto Sans Yi",
+      "file": "NotoSansYi-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Mong",
+      "family": "Noto Sans Mongolian",
+      "file": "NotoSansMongolian-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Phag",
+      "family": "Noto Sans Phags-Pa",
+      "file": "NotoSansPhags-Pa-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Hluw",
+      "family": "Noto Sans Anatolian Hieroglyphs",
+      "file": "NotoSansAnatolianHieroglyphs-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Bass",
+      "family": "Noto Sans Bassa Vah",
+      "file": "NotoSansBassaVah[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Bhks",
+      "family": "Noto Sans Bhaiksuki",
+      "file": "NotoSansBhaiksuki-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Hatr",
+      "family": "Noto Sans Hatran",
+      "file": "NotoSansHatran-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Lina",
+      "family": "Noto Sans Linear A",
+      "file": "NotoSansLinearA-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Mani",
+      "family": "Noto Sans Manichaean",
+      "file": "NotoSansManichaean-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Marc",
+      "family": "Noto Sans Marchen",
+      "file": "NotoSansMarchen-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Merc",
+      "family": "Noto Sans Meroitic",
+      "file": "NotoSansMeroitic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Plrd",
+      "family": "Noto Sans Miao",
+      "file": "NotoSansMiao-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Mroo",
+      "family": "Noto Sans Mro",
+      "file": "NotoSansMro-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Mult",
+      "family": "Noto Sans Multani",
+      "file": "NotoSansMultani-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Nbat",
+      "family": "Noto Sans Nabataean",
+      "file": "NotoSansNabataean-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Newa",
+      "family": "Noto Sans Newa",
+      "file": "NotoSansNewa-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Narb",
+      "family": "Noto Sans Old North Arabian",
+      "file": "NotoSansOldNorthArabian-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Perm",
+      "family": "Noto Sans Old Permic",
+      "file": "NotoSansOldPermic-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Hmng",
+      "family": "Noto Sans Pahawh Hmong",
+      "file": "NotoSansPahawhHmong-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Palm",
+      "family": "Noto Sans Palmyrene",
+      "file": "NotoSansPalmyrene-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Pauc",
+      "family": "Noto Sans Pau Cin Hau",
+      "file": "NotoSansPauCinHau-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Shrd",
+      "family": "Noto Sans Sharada",
+      "file": "NotoSansSharada-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Sora",
+      "family": "Noto Sans Sora Sompeng",
+      "file": "NotoSansSoraSompeng[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Gong",
+      "family": "Noto Sans Gunjala Gondi",
+      "file": "NotoSansGunjalaGondi[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Rohg",
+      "family": "Noto Sans Hanifi Rohingya",
+      "file": "NotoSansHanifiRohingya[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Khoj",
+      "family": "Noto Sans Khojki",
+      "file": "NotoSansKhojki-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Gonm",
+      "family": "Noto Sans Masaram Gondi",
+      "file": "NotoSansMasaramGondi-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Wcho",
+      "family": "Noto Sans Wancho",
+      "file": "NotoSansWancho-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Wara",
+      "family": "Noto Sans Warang Citi",
+      "file": "NotoSansWarangCiti-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Gran",
+      "family": "Noto Sans Grantha",
+      "file": "NotoSansGrantha-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Modi",
+      "family": "Noto Sans Modi",
+      "file": "NotoSansModi-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Dogr",
+      "family": "Noto Serif Dogra",
+      "file": "NotoSerifDogra-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Medf",
+      "family": "Noto Sans Medefaidrin",
+      "file": "NotoSansMedefaidrin[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Soyo",
+      "family": "Noto Sans Soyombo",
+      "file": "NotoSansSoyombo-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Takr",
+      "family": "Noto Sans Takri",
+      "file": "NotoSansTakri-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Yezi",
+      "family": "Noto Serif Yezidi",
+      "file": "NotoSerifYezidi[wght].ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Zsym",
+      "family": "HM Symbol",
+      "file": "HMSymbolVF.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Math",
+      "family": "Noto Sans Math",
+      "file": "NotoSansMath-Regular.ttf"
+    }
+  ]
+}
