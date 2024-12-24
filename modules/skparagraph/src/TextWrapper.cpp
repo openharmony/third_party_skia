@@ -157,7 +157,6 @@ void processPattern(const Pattern* p, size_t ii, uint32_t& ix, std::vector<uint1
     // when we reach pattern node (leaf), we need to increase ix by one because of our
     // own code offset
     for (size_t jj = ii - ix; jj <= ii && i < count; jj++) {
-        // Todo: don't place markers to two last slots
         res[jj] = std::max(res[jj], (p->patterns[i]));
         i++;
     }
