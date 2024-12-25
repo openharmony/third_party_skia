@@ -17,11 +17,11 @@ class SK_API SkFontStyleSet_OHOS : public SkFontStyleSet {
 public:
     SkFontStyleSet_OHOS(const std::shared_ptr<FontConfig_OHOS>& fontConfig,
         int index, bool isFallback = false);
-    virtual ~SkFontStyleSet_OHOS() override = default;
-    virtual int count() override;
-    virtual void getStyle(int index, SkFontStyle* style, SkString* styleName) override;
-    virtual SkTypeface* createTypeface(int index) override;
-    virtual SkTypeface* matchStyle(const SkFontStyle& pattern) override;
+    ~SkFontStyleSet_OHOS() override = default;
+    int count() override;
+    void getStyle(int index, SkFontStyle* style, SkString* styleName) override;
+    SkTypeface* createTypeface(int index) override;
+    SkTypeface* matchStyle(const SkFontStyle& pattern) override;
 private:
     std::shared_ptr<FontConfig_OHOS> fontConfig_ = nullptr; // the object of FontConfig_OHOS
     int styleIndex = 0; // the index of the font style set
