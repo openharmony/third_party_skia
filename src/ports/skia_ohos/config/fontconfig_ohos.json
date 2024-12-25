@@ -13,7 +13,15 @@
       "type": 0,
       "alias": "HarmonyOS-Sans",
       "family": "HarmonyOS Sans",
-      "file": "HarmonyOS_Sans_Italic.ttf"
+      "file": "HarmonyOS_Sans_Italic.ttf",
+      "weight": 400
+    },
+    {
+      "type": 0,
+      "alias": "HarmonyOS-Sans-Light",
+      "family": "HarmonyOS Sans",
+      "file": "HarmonyOS_Sans.ttf",
+      "weight": 100
     },
     {
       "type": 0,
@@ -28,6 +36,20 @@
       "family": "HarmonyOS Sans",
       "file": "HarmonyOS_Sans_Italic.ttf",
       "weight": 400
+    },
+    {
+      "type": 0,
+      "alias": "HarmonyOS-Sans-Medium",
+      "family": "HarmonyOS Sans",
+      "file": "HarmonyOS_Sans.ttf",
+      "weight": 700
+    },
+    {
+      "type": 0,
+      "alias": "HarmonyOS-Sans-Bold",
+      "family": "HarmonyOS Sans",
+      "file": "HarmonyOS_Sans.ttf",
+      "weight": 900
     },
     {
       "type": 0,
