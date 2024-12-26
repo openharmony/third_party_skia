@@ -363,7 +363,7 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
 void TextLine::prepareRoundRect() {
     roundRectAttrs.clear();
 #ifdef OHOS_SUPPORT
-        this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, true,
+        this->iterateThroughVisualRuns(EllipsisReadStrategy::DEFAULT, true,
 #else
         this->iterateThroughVisualRuns(true,
 #endif
