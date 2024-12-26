@@ -214,7 +214,7 @@ public:
 #endif
 
     // OH ISSUE: asyn memory reclaimer
-    void setGpuMemoryAsyncReclaimerSwitch(bool enabled) override;
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled, const std::function<void()>& setThreadPriority) override;
     void flushGpuMemoryInWaitQueue() override;
     GrVkMemoryReclaimer* memoryReclaimer() const { return fMemoryReclaimer.get(); }
 

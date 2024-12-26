@@ -19,14 +19,24 @@
 
 #define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
 
+GrVkMemoryReclaimer::GrVkMemoryReclaimer(bool enabled, const std::function<void()>& setThreadPriority)
+    : fEnabled(enabled),
+      fSetThreadPriority(setThreadPriority)
+{
+}
+
 SkExecutor& GrVkMemoryReclaimer::getThreadPool()
 {
     static std::unique_ptr<SkExecutor> executor = ({
         auto executor = SkExecutor::MakeFIFOThreadPool(1, false);
-        executor->add([]() {
+        executor->add([fSetThreadPriority {fSetThreadPriority}]() {
             int err = pthread_setname_np(pthread_self(), "async-reclaimer");
             if (err) {
                 SK_LOGE("GrVkMemoryReclaimer::GetThreadPool pthread_setname_np, error = %d", err);
+            }
+
+            if (fSetThreadPriority) {
+                fSetThreadPriority();
             }
         });
         std::move(executor);
@@ -98,9 +108,4 @@ void GrVkMemoryReclaimer::invokeParallelReclaiming()
             }
         }
     });
-}
-
-void GrVkMemoryReclaimer::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
-{
-    fEnabled = enabled;
 }

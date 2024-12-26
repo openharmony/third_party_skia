@@ -2822,12 +2822,11 @@ void GrVkGpu::removeAllocBufferBytes(size_t bytes)
 #endif
 
 // OH ISSUE: asyn memory reclaimer
-void GrVkGpu::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
+void GrVkGpu::setGpuMemoryAsyncReclaimerSwitch(bool enabled, const std::function<void()>& setThreadPriority)
 {   
     if (!fMemoryReclaimer) {
-        fMemoryReclaimer = std::make_unique<GrVkMemoryReclaimer>();
+        fMemoryReclaimer = std::make_unique<GrVkMemoryReclaimer>(enabled, setThreadPriority);
     }
-    fMemoryReclaimer->setGpuMemoryAsyncReclaimerSwitch(enabled);
 }
 
 // OH ISSUE: asyn memory reclaimer

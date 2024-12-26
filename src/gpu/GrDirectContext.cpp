@@ -622,11 +622,11 @@ void GrDirectContext::endFrame()
 }
 
 // OH ISSUE: asyn memory reclaimer
-void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
+void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled, const std::function<void()>& setThreadPriority)
 {
 #ifdef SK_VULKAN
     if (fGpu) {
-        fGpu->setGpuMemoryAsyncReclaimerSwitch(enabled);
+        fGpu->setGpuMemoryAsyncReclaimerSwitch(enabled, setThreadPriority);
     }
 #endif
 }
