@@ -10,10 +10,9 @@
 #ifndef SKFONTMGR_OHOS_H
 #define SKFONTMGR_OHOS_H
 
+#include "FontConfig_ohos.h"
 #include "SkFontDescriptor.h"
 #include "SkFontMgr.h"
-
-#include "FontConfig_ohos.h"
 #include "SkFontStyleSet_ohos.h"
 
 /*!
@@ -68,6 +67,10 @@ private:
     SkTypeface* findSpecialTypeface(SkUnichar character, const SkFontStyle& style) const;
 };
 
-SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS(const char* path = "/system/etc/fontconfig.json");
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS(const char* path);
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS() {
+    return SkFontMgr_New_OHOS("/system/etc/fontconfig_ohos.json");
+}
+
 
 #endif /* SKFONTMGR_OHOS_H */
