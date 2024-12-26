@@ -68,7 +68,9 @@ FontCompressionStatus getFontCompressionStatus(const RSFont& font)
     if (typeface == nullptr) {
         return FontCompressionStatus::UNDEFINED;
     }
-    return (typeface->IsCustomTypeface() && !typeface->IsThemeTypeface()) ? FontCompressionStatus::UNCOMPRESSED : FontCompressionStatus::COMPRESSED;
+    return (typeface->IsCustomTypeface() && !typeface->IsThemeTypeface())
+                   ? FontCompressionStatus::UNCOMPRESSED
+                   : FontCompressionStatus::COMPRESSED;
 }
 std::string getFamilyNameFromFont(const RSFont& font)
 {
@@ -82,7 +84,9 @@ FontCompressionStatus getFontCompressionStatus(const SkFont& font)
     if (typeface == nullptr) {
         return FontCompressionStatus::UNDEFINED;
     }
-    return (typeface->isCustomTypeface() && !typeface->isThemeTypeface()) ? FontCompressionStatus::UNCOMPRESSED : FontCompressionStatus::COMPRESSED;
+    return (typeface->IsCustomTypeface() && !typeface->IsThemeTypeface())
+                   ? FontCompressionStatus::UNCOMPRESSED
+                   : FontCompressionStatus::COMPRESSED;
 }
 std::string getFamilyNameFromFont(const SkFont& font)
 {
@@ -127,7 +131,8 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
         return;
     }
     auto fontCompressionStatus = getFontCompressionStatus(font);
-    if (fontCompressionStatus == FontCompressionStatus::UNDEFINED) {
+    auto typeface = font.GetTypeface();
+    if (typeface == nullptr || fontCompressionStatus == FontCompressionStatus::UNDEFINED) {
         return;
     }
 #ifdef USE_SKIA_TXT
@@ -137,7 +142,8 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
 #endif
     if (!FontCollection::IsAdapterTextHeightEnabled()) {
         if (fontCompressionStatus == FontCompressionStatus::COMPRESSED &&
-            !SkScalarNearlyZero(findCompressionConfigWithFont(font).fontScale)) {
+            (!SkScalarNearlyZero(findCompressionConfigWithFont(font).fontScale) ||
+            typeface->IsThemeTypeface())) {
             metrics->fAscent = DEFAULT_ASCENT * fontSize;
             metrics->fDescent = DEFAULT_DESCENT * fontSize;
         }
