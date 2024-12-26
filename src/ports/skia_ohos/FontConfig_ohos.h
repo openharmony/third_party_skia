@@ -87,7 +87,9 @@ public:
 
     explicit FontConfig_OHOS(const SkTypeface_FreeType::Scanner& fontScanner, const char* fname = nullptr);
     virtual ~FontConfig_OHOS() = default;
-    const std::vector<Font>& getFallbackSet() const;
+    SkTypeface* matchFallback(SkUnichar character, const SkFontStyle& style) const;
+    SkTypeface* matchFallback(size_t index, SkUnichar character, const SkFontStyle& style) const;
+    std::vector<size_t> matchFallbackByBCP47(std::function<int(const std::string&)>) const;
     int getFamilyCount() const;
     int getDefaultFamily(SkString& familyName) const;
     int getFamilyName(size_t index, SkString& familyName) const;

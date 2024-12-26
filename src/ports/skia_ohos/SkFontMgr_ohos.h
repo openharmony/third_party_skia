@@ -59,7 +59,7 @@ private:
     SkTypeface_FreeType::Scanner fFontScanner; // the scanner to parse a font file
     int fFamilyCount = 0; // the count of font style sets in generic family list
 
-    int compareLangs(const std::string& langs, const char* bcp47[], int bcp47Count, const int tps[]) const;
+    static int compareLangs(const std::string& langs, const char* bcp47[], int bcp47Count);
     sk_sp<SkTypeface> makeTypeface(std::unique_ptr<SkStreamAsset> stream,
                                     const SkFontArguments& args, const char path[]) const;
     SkTypeface* findTypeface(const SkFontStyle& style,

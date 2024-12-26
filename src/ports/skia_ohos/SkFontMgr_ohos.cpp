@@ -160,23 +160,15 @@ SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[],
         return nullptr;
     }
 
-    auto retTp = findTypeface(style, bcp47, bcp47Count, character);
-    if (retTp != nullptr) {
-        return retTp;
-    } else {
-        retTp = findSpecialTypeface(character, style);
-        if (retTp != nullptr) {
-            return retTp;
-        }
-        for (auto& f: fFontConfig->getFallbackSet()) {
-            const auto& tpSet = f.typefaces;
-            if (!tpSet.empty() && tpSet[0]->unicharToGlyph(character) != 0) {
-                auto typeface = FontConfig_OHOS::matchFontStyle(tpSet, style);
-                return SkSafeRef(typeface.get());
-            }
-        }
+    auto res = findTypeface(style, bcp47, bcp47Count, character);
+    if (res != nullptr) {
+        return res;
     }
-    return nullptr;
+    res = findSpecialTypeface(character, style);
+    if (res != nullptr) {
+        return res;
+    }
+    return fFontConfig->matchFallback(character, style);
 }
 
 /*! To find the matched typeface for the given parameters
@@ -196,44 +188,30 @@ SkTypeface* SkFontMgr_OHOS::findTypeface(const SkFontStyle& style,
         return nullptr;
     }
 
-    const auto& fallbackSet = fFontConfig->getFallbackSet();
-    // example bcp47 code : 'zh-Hans' : ('zh' : iso639 code, 'Hans' : iso15924 code)
-    // iso639 code will be taken from bcp47 code, so that we can try to match
-    // bcp47 or only iso639. Therefore totalCount need to be 'bcp47Count * 2'
-    int totalCount = bcp47Count * 2;
-    int tps[totalCount];
-    for (int i = 0; i < totalCount; i++) {
-        tps[i] = -1;
-    }
-    // find the families matching the bcp47 list
-    for (auto i = 0; i < fallbackSet.size(); i += 1) {
-        int ret = compareLangs(fallbackSet[i].lang, bcp47, bcp47Count, tps);
-        if (ret == -1) {
-            continue;
+    std::vector<std::function<int(const std::string& langs)>> funcs = {
+        [&bcp47, &bcp47Count](const std::string& langs) -> int {
+            for (int i = 0; i < bcp47Count; i++) {
+                if (langs == bcp47[i]) {
+                    return i;
+                }
+            }
+            return -1;
+        },
+        [&bcp47, &bcp47Count](const std::string& langs) -> int {
+            return SkFontMgr_OHOS::compareLangs(langs, bcp47, bcp47Count);
         }
-        tps[ret] = i;
-    }
-    // match typeface in families
-    for (int i = bcp47Count - 1; i >= 0; i--) {
-        if (tps[i] == -1) {
-            continue;
-        }
-        const auto& tpSet = fallbackSet[tps[i]].typefaces;
-        if (!tpSet.empty() && tpSet[0]->unicharToGlyph(character) != 0) {
-            sk_sp<SkTypeface> typeface = FontConfig_OHOS::matchFontStyle(tpSet, style);
-            return SkSafeRef(typeface.get());
+    };
+
+    for (auto& func : funcs) {
+        auto set = fFontConfig->matchFallbackByBCP47(func);
+        for (auto& index : set) {
+            auto res = fFontConfig->matchFallback(index, character, style);
+            if (res != nullptr) {
+                return res;
+            }
         }
     }
-    for (int i = totalCount - 1; i >= bcp47Count; i--) {
-        if (tps[i] == -1) {
-            continue;
-        }
-        const auto& tpSet = fallbackSet[tps[i]].typefaces;
-        if (!tpSet.empty() && tpSet[0]->unicharToGlyph(character) != 0) {
-            sk_sp<SkTypeface> typeface = FontConfig_OHOS::matchFontStyle(tpSet, style);
-            return SkSafeRef(typeface.get());
-        }
-    }
+
     return nullptr;
 }
 
@@ -241,12 +219,10 @@ SkTypeface* SkFontMgr_OHOS::findTypeface(const SkFontStyle& style,
  * \param langs the supported languages by an typeface
  * \param bcp47 the array of bcp47 language to be matching
  * \param bcp47Count the array size of bcp47
- * \param tps an array of the index of typeface which is matching one value of bcp47
  * \return The index of language in bcp47, if matching happens
  * \n      Return -1, if no language matching happens
  */
-int SkFontMgr_OHOS::compareLangs(const std::string& langs, const char* bcp47[],
-    int bcp47Count, const int tps[]) const
+int SkFontMgr_OHOS::compareLangs(const std::string& langs, const char* bcp47[], int bcp47Count)
 {
     /*
      * zh-Hans : ('zh' : iso639 code, 'Hans' : iso15924 code)
@@ -255,9 +231,6 @@ int SkFontMgr_OHOS::compareLangs(const std::string& langs, const char* bcp47[],
         return -1;
     }
     for (int i = bcp47Count - 1; i >= 0; i--) {
-        if (tps[i] != -1) {
-            continue;
-        }
         if (langs.find(bcp47[i]) != -1) {
             return i;
         } else {

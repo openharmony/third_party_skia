@@ -80,11 +80,67 @@ int FontConfig_OHOS::getFamilyCount() const
     return fFontCollection.fGeneric.size();
 }
 
-const std::vector<FontConfig_OHOS::Font>& FontConfig_OHOS::getFallbackSet() const
+/*! To match the fallback typeface by the given style and character
+ *  this function will traverse all the fallback typefaces
+ *  \param character the character to be matched
+ *  \param style the style to be matched
+ *  \return the matched typeface
+*/
+SkTypeface* FontConfig_OHOS::matchFallback(SkUnichar character, const SkFontStyle& style) const
 {
-    return fFontCollection.fFallback;
+    for (auto& f : fFontCollection.fFallback) {
+        const auto& typefaces = f.typefaces;
+        if (!typefaces.empty() && typefaces[0]->unicharToGlyph(character)) {
+            auto typeface = matchFontStyle(typefaces, style);
+            return SkSafeRef(typeface.get());
+        }
+    }
+    return nullptr;
 }
 
+
+/*! To match the fallback typeface by the given index style and character
+ *  this function only traverse the fallback typefaces in the given index
+ *  \param index the index of fallback typefaces
+ *  \param character the character to be matched
+ *  \param style the style to be matched
+ *  \return the matched typeface
+*/
+SkTypeface* FontConfig_OHOS::matchFallback(size_t index, SkUnichar character, const SkFontStyle& style) const
+{
+    if (index >= fFontCollection.fFallback.size()) {
+        return nullptr;
+    }
+    const auto& typefaces = fFontCollection.fFallback[index].typefaces;
+    if (!typefaces.empty() && typefaces[0]->unicharToGlyph(character)) {
+        auto typeface = matchFontStyle(typefaces, style);
+        return SkSafeRef(typeface.get());
+    }
+    return nullptr;
+}
+
+/*! To match the fallback typeface by the given function
+ *  this function will traverse all the fallback typefaces
+ *  \param func the judge func, if the func return -1, it means the language tag is not matched
+ *  \return the matched fallback typefaces' index set
+*/
+std::vector<size_t> FontConfig_OHOS::matchFallbackByBCP47(std::function<int(const std::string&)> func) const
+{
+    std::vector<size_t> res;
+    for (size_t i = 0; i < fFontCollection.fFallback.size(); i += 1) {
+        if (func(fFontCollection.fFallback[i].lang) != -1) {
+            res.push_back(i);
+        }
+    }
+    return res;
+}
+
+/*! To get a typeface by the given family name and style
+ *  this function will traverse both the fallback and general typefaces
+ *  \param familyName the family name of the fallback typeface
+ *  \param style the style of the fallback typeface
+ *  \return the matched typeface
+*/
 sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getFallbackTypeface(const SkString& familyName, const SkFontStyle& style) const
 {
     std::pair<size_t, FontType> res;
@@ -430,7 +486,7 @@ int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypefac
     int count = 1;
     FontInfo font(fname, info.index);
     if (!fFontScanner.recognizedFont(stream.get(), &count) ||
-        !fFontScanner.scanFont(stream.get(), 0, &font.familyName, &font.style, &font.isFixedWidth, nullptr)) {
+        !fFontScanner.scanFont(stream.get(), info.index, &font.familyName, &font.style, &font.isFixedWidth, nullptr)) {
         return ERROR_FONT_INVALID_STREAM;
     }
 
