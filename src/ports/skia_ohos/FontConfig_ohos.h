@@ -73,10 +73,13 @@ public:
         std::string family;
         // only valid for the fallback font
         std::string lang;
+        // all the typefaces of this font
         std::vector<sk_sp<SkTypeface_OHOS>> typefaces;
 
+        // may be redundant move
         explicit Font(FontJson&& info)
-            : slant(info.slant), weight(info.weight), alias(info.alias), family(info.family), lang(info.lang)
+            : slant(info.slant), weight(info.weight), alias(std::move(info.alias)),
+              family(std::move(info.family)), lang(std::move(info.lang))
         {
             this->type = info.type >= FontType::NumOfFontType ? FontType::Generic : static_cast<FontType>(info.type);
         }
