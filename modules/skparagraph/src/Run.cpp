@@ -132,7 +132,7 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
     }
     auto fontCompressionStatus = getFontCompressionStatus(font);
     auto typeface = font.GetTypeface();
-    if (typeface == nullpt || fontCompressionStatus == FontCompressionStatus::UNDEFINED) {
+    if (typeface == nullptr || fontCompressionStatus == FontCompressionStatus::UNDEFINED) {
         return;
     }
 #ifdef USE_SKIA_TXT
@@ -143,7 +143,7 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
     if (!FontCollection::IsAdapterTextHeightEnabled()) {
         if (fontCompressionStatus == FontCompressionStatus::COMPRESSED &&
             (!SkScalarNearlyZero(findCompressionConfigWithFont(font).fontScale) ||
-             typeface->IsThemeTypeface()) {
+             typeface->IsThemeTypeface())) {
             metrics->fAscent = DEFAULT_ASCENT * fontSize;
             metrics->fDescent = DEFAULT_DESCENT * fontSize;
         }
