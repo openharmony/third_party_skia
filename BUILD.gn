@@ -556,7 +556,11 @@ optional("fontmgr_symbol_load") {
     }
   }
 
-  deps += [ ":ohos_fontconfig.json" ]
+  deps += [
+    ":ohos_font_file_map.json",
+    ":ohos_fontconfig.json",
+    ":ohos_fontconfig_old.json",
+  ]
   public = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.h" ]
   sources = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
 }
@@ -792,7 +796,20 @@ optional("fontmgr_win") {
 
 if (use_oh_skia && !is_arkui_x) {
   ohos_prebuilt_etc("ohos_fontconfig.json") {
+    source =
+        "//third_party/skia/src/ports/skia_ohos/config/fontconfig_ohos.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_fontconfig_old.json") {
     source = "//third_party/skia/src/ports/skia_ohos/config/fontconfig.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_font_file_map.json") {
+    source = "//third_party/skia/src/ports/skia_ohos/config/font_file_map.json"
     part_name = "skia"
     subsystem_name = "thirdparty"
   }
@@ -835,7 +852,11 @@ if (use_oh_skia && !is_arkui_x) {
       external_deps += [ "bounds_checking_function:libsec_static" ]
     }
 
-    deps += [ ":ohos_fontconfig.json" ]
+    deps += [
+      ":ohos_font_file_map.json",
+      ":ohos_fontconfig.json",
+      ":ohos_fontconfig_old.json",
+    ]
 
     if (skia_feature_wuji_enable) {
       deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
