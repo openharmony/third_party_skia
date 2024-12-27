@@ -178,7 +178,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 fBrokeLineWithHyphen = true;
                 break;
             // let hyphenator try before this if it is enabled
-            } else if ((attemptedHyphenate) && (cluster->isWhitespaceBreak() || cluster->isSoftBreak())) {
+            } else if ((wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate) || cluster->isWhitespaceBreak()) {
                 // It's the end of the word
                 isFirstWord = false;
                 fClusters.extend(cluster);
@@ -189,8 +189,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 } else {
                     tabAlignRet = textTabAlign.processEndofWord(fWords, fClusters, cluster, totalFakeSpacing);
                 }
-                if (tabAlignRet || cluster->isSoftBreak()) {
-                    fTooLongWord = true;
+                if (tabAlignRet) {
                     break;
                 }
                 fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, this->getClustersTrimmedWidth());
