@@ -67,7 +67,7 @@ public:
         // the ttc font index, only valid for ttc font
         uint32_t index = 0;
         // only valid for the font with alias
-        uint32_t weight = 400;
+        uint32_t weight = 0;
         std::string alias;
         // essential for the every font
         std::string family;
