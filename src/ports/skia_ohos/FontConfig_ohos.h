@@ -120,8 +120,8 @@ private:
                 return;
             }
             Font f(std::move(fj));
-            auto& targetVec = f.type == FontType::Generic ? fGeneric : fFallback;
-            auto& targetName = f.type == FontType::Generic ? f.alias : f.family;
+            auto& targetVec = (f.type == FontType::Generic) ? fGeneric : fFallback;
+            auto& targetName = (f.type == FontType::Generic) ? f.alias : f.family;
             // generic must have alias
             auto exist = fIndexMap.find(targetName);
             // if not found, insert directly
@@ -130,7 +130,7 @@ private:
                 targetVec.emplace_back(f);
                 targetVec.back().typefaces.emplace_back(typeface);
             } else {
-                // if exist, check the style
+                // if exist, add the typeface to the font
                 targetVec[exist->second.first].typefaces.emplace_back(typeface);
             }
         }

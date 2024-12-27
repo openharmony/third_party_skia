@@ -191,7 +191,7 @@ int FontConfig_OHOS::getFamilyName(size_t index, SkString& familyName) const
 size_t FontConfig_OHOS::getTypefaceCount(size_t styleIndex, bool isFallback) const
 {
     auto& set = fFontCollection.getSet(isFallback);
-    return styleIndex < set.size() ? set[styleIndex].typefaces.size() : 0;
+    return (styleIndex < set.size()) ? set[styleIndex].typefaces.size() : 0;
 }
 
 /*! To get a typeface
@@ -210,10 +210,10 @@ SkTypeface_OHOS* FontConfig_OHOS::getTypeface(size_t styleIndex, size_t index, b
 
 sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getTypefaceSP(size_t styleIndex, size_t index, bool isFallback) const
 {
-    auto& set = fFontCollection.getSet(isFallback);
-    if (styleIndex <= set.size()) {
+    auto& fontSet = fFontCollection.getSet(isFallback);
+    if (styleIndex <= fontSet.size()) {
         // if index less than typefaces' size, return the ptr
-        return index < set[styleIndex].typefaces.size() ? set[styleIndex].typefaces[index] : nullptr;
+        return (index < fontSet[styleIndex].typefaces.size()) ? fontSet[styleIndex].typefaces[index] : nullptr;
     }
     return nullptr;
 }
@@ -228,12 +228,12 @@ sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getTypefaceSP(size_t styleIndex, size_t 
  */
 SkTypeface_OHOS* FontConfig_OHOS::getTypeface(size_t styleIndex, const SkFontStyle& style, bool isFallback) const
 {
-    auto& set = fFontCollection.getSet(isFallback);
-    if (styleIndex >= set.size()) {
+    auto& fontSet = fFontCollection.getSet(isFallback);
+    if (styleIndex >= fontSet.size()) {
         return nullptr;
     }
 
-    const std::vector<sk_sp<SkTypeface_OHOS>>& pSet = set[styleIndex].typefaces;
+    const std::vector<sk_sp<SkTypeface_OHOS>>& pSet = fontSet[styleIndex].typefaces;
     sk_sp<SkTypeface_OHOS> tp = matchFontStyle(pSet, style);
     return tp.get();
 }
@@ -244,8 +244,9 @@ SkTypeface_OHOS* FontConfig_OHOS::getTypeface(size_t styleIndex, const SkFontSty
  *  \param[out] isFallback to tell if the family is from generic or fallback to the caller.
  *  \n          isFallback is false, if the font style is from generic family list
  *  \n          isFallback is true, if the font style is from fallback family list
+ *  \param[out] index the index of the font set
  *  \return The index of the font style set
- *  \n      Return -1, if 'familyName' is not found in the system
+ *  \n      Return false, if 'familyName' is not found in the system
  */
 bool FontConfig_OHOS::getStyleIndex(const char* familyName, bool& isFallback, size_t& index) const
 {
@@ -446,7 +447,6 @@ int FontConfig_OHOS::checkConfigFile(const char* fname, Json::Value& root)
 /*! To parse 'fontdir' attribute
  * \param root the root node of 'fontdir'
  * \return NO_ERROR successful
- * \return ERROR_CONFIG_INVALID_VALUE_TYPE invalid value type
  */
 int FontConfig_OHOS::parseFontDir(const char* fname, const Json::Value& root)
 {
@@ -490,7 +490,7 @@ int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypefac
         return ERROR_FONT_INVALID_STREAM;
     }
 
-    const char* temp = info.type == FontType::Generic ? info.alias.c_str() : "";
+    const char* temp = (info.type == FontType::Generic) ? info.alias.c_str() : "";
     SkString family(temp);
     typeface = sk_make_sp<SkTypeface_OHOS>(family, font);
     return NO_ERROR;
@@ -499,12 +499,13 @@ int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypefac
 
 void FontConfig_OHOS::loadHMSymbol()
 {
+    if (!G_IS_HMSYMBOL_ENABLE) {
+        return;
+    }
     for (auto& dir : fFontDir) {
-        if (G_IS_HMSYMBOL_ENABLE &&
-            HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol(
-                "hm_symbol_config_next.json", SkString(dir.c_str())) ==
-                NO_ERROR) {
-            break;
+        if (HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol(
+                    "hm_symbol_config_next.json", SkString(dir.c_str())) == NO_ERROR) {
+            return;
         }
     }
 }
@@ -547,10 +548,11 @@ bool FontConfig_OHOS::judgeFileExist()
             const char* fileName = node->d_name;
             int len = strlen(fileName);
             int suffixLen = strlen(".ttf");
-            if (len < suffixLen || (strncmp(fileName + len - suffixLen, ".ttf", suffixLen) != 0 &&
-                                       strncmp(fileName + len - suffixLen, ".otf", suffixLen) != 0 &&
-                                       strncmp(fileName + len - suffixLen, ".ttc", suffixLen) != 0 &&
-                                       strncmp(fileName + len - suffixLen, ".otc", suffixLen) != 0)) {
+            if (len < suffixLen ||
+                (strncmp(fileName + len - suffixLen, ".ttf", suffixLen) != 0 &&
+                strncmp(fileName + len - suffixLen, ".otf", suffixLen) != 0 &&
+                strncmp(fileName + len - suffixLen, ".ttc", suffixLen) != 0 &&
+                strncmp(fileName + len - suffixLen, ".otc", suffixLen) != 0)) {
                 continue;
             }
             haveFile = true;
