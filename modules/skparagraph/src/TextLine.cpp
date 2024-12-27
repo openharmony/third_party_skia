@@ -838,8 +838,9 @@ void TextLine::justify(SkScalar maxWidth) {
         return;
     }
 #ifdef OHOS_SUPPORT
-    SkScalar step =
-            (maxWidth - textLen - (fEllipsis ? fEllipsis->fAdvance.fX : 0)) / whitespacePatches;
+    SkScalar step = (maxWidth - textLen - (fEllipsis ? fEllipsis->fAdvance.fX : 0)) / whitespacePatches;
+#else
+    SkScalar step = (maxWidth - textLen) / whitespacePatches;
 #endif
     SkScalar shift = 0.0f;
     SkScalar prevShift = 0.0f;
@@ -981,6 +982,7 @@ void TextLine::ellipsisNotFitProcess(EllipsisModal ellipsisModal) {
     }
 }
 
+#ifdef OHOS_SUPPORT
 void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType) {
     // Replace some clusters with the ellipsis
     // Go through the clusters in the reverse logical order
@@ -1042,13 +1044,9 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         // Let's update the line
         fClusterRange.end = clusterIndex;
         fGhostClusterRange.end = fClusterRange.end;
-#ifdef OHOS_SUPPORT
         fEllipsis->fTextRange =
                 TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
         fEllipsis->fClusterStart = cluster.textRange().end;
-#else
-        fEllipsis->fClusterStart = cluster.textRange().start;
-#endif
         fText.end = cluster.textRange().end;
         fTextIncludingNewlines.end = cluster.textRange().end;
         fTextExcludingSpaces.end = cluster.textRange().end;
@@ -1064,6 +1062,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
+#endif
 
 #ifdef OHOS_SUPPORT
 void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool) {
