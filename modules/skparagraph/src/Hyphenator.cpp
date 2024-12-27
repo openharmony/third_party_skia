@@ -126,8 +126,8 @@ struct HyphenSubTable {
 struct HyphenFindBreakParam {
     const HyphenatorHeader* header{nullptr};
     HyphenSubTable hyphenSubTable;
-    uint16_t code;
-    uint16_t offset;
+    uint16_t code{0};
+    uint16_t offset{0};
 };
 
 void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
@@ -173,6 +173,11 @@ const std::vector<uint8_t>& Hyphenator::GetHyphenatorData(const std::string& loc
         hyphenMap.emplace(locale, std::move(fileBuffer));
     }
     return hyphenMap[locale];
+}
+
+bool LoadHyphenatorData(const std::string& locale)
+{
+
 }
 
 void formatTarget(std::vector<uint16_t>& target)

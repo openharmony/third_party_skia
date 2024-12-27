@@ -18,7 +18,6 @@
 
 namespace skia {
 namespace textlayout {
-namespace {
 constexpr size_t HYPHEN_WORD_SHIFT = 4;
 constexpr size_t HYPHEN_BASE_CODE_SHIFT = 2;
 constexpr size_t HYPHEN_SHIFT_BITS_14 = 14;
@@ -51,10 +50,10 @@ struct HyphenatorHeader {
     uint32_t mappings{0};
     uint32_t version{0};
 
-    inline uint16_t codeOffset(uint16_t code, const ArrayOf16bits* maps = 0) const
+    inline uint16_t codeOffset(uint16_t code, const ArrayOf16bits* maps = nullptr) const
     {
         // need still reconsider what we want to do with a nodes in the middle of graph
-        if (maps && (code < minCp || code > maxCp)) {
+        if (maps != nullptr && (code < minCp || code > maxCp)) {
             // we could assert that count is even
             for (size_t i = maps->count; i != 0;) {
                 i -= HYPHEN_BASE_CODE_SHIFT;
@@ -89,7 +88,6 @@ struct HyphenatorHeader {
         return (maxCp - minCp) * HYPHEN_BASE_CODE_SHIFT + maps->count;
     }
 };
-} // namespace
 
 class Hyphenator {
 public:
@@ -99,6 +97,7 @@ public:
         return instance;
     }
     const std::vector<uint8_t>& GetHyphenatorData(const std::string& locale);
+    bool LoadHyphenatorData(const std::string& locale);
     std::vector<uint8_t> FindBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
                                             size_t startPos, size_t endPos);
 
