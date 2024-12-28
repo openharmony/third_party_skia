@@ -310,6 +310,18 @@ void SkTypeface::setIsCustomTypeface(bool isCustom) {
     fIsCustom = isCustom;
 }
 
+#ifdef OHOS_SUPPORT
+bool SkTypeface::isThemeTypeface() const
+{
+    return fIsTheme;
+}
+
+void SkTypeface::setIsThemeTypeface(bool isTheme)
+{
+    fIsTheme = isTheme;
+}
+#endif
+
 std::unique_ptr<SkStreamAsset> SkTypeface::openExistingStream(int* ttcIndex) const {
     int ttcIndexStorage;
     if (nullptr == ttcIndex) {

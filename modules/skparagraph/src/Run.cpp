@@ -42,9 +42,9 @@ const std::unordered_map<std::string, ScaleParam> FONT_FAMILY_COMPRESSION_WITH_H
 };
 const ScaleParam DEFAULT_SCALE_PARAM = ScaleParam{ .fontScale = 0, .baselineShiftScale = 0 };
 enum FontCompressionStatus {
-    UNDEFINED, // undefined font, the typeface is null.
-    SYSTEM,    // system font, need to be compressed.
-    CUSTOM,    // custom font, doesn't need to be compressed.
+    UNDEFINED,
+    COMPRESSED,
+    UNCOMPRESSED,
 };
 // the font padding does not take effect for these font families.
 const std::unordered_set<std::string> FONT_PADDING_NOT_EFFECT_FAMILY = {
@@ -68,7 +68,9 @@ FontCompressionStatus getFontCompressionStatus(const RSFont& font)
     if (typeface == nullptr) {
         return FontCompressionStatus::UNDEFINED;
     }
-    return typeface->IsCustomTypeface() ? FontCompressionStatus::CUSTOM : FontCompressionStatus::SYSTEM;
+    return (typeface->IsCustomTypeface() && !typeface->IsThemeTypeface())
+                   ? FontCompressionStatus::UNCOMPRESSED
+                   : FontCompressionStatus::COMPRESSED;
 }
 std::string getFamilyNameFromFont(const RSFont& font)
 {
@@ -82,7 +84,9 @@ FontCompressionStatus getFontCompressionStatus(const SkFont& font)
     if (typeface == nullptr) {
         return FontCompressionStatus::UNDEFINED;
     }
-    return typeface->isCustomTypeface() ? FontCompressionStatus::CUSTOM : FontCompressionStatus::SYSTEM;
+    return (typeface->isCustomTypeface() && !typeface->isThemeTypeface())
+                   ? FontCompressionStatus::UNCOMPRESSED
+                   : FontCompressionStatus::COMPRESSED;
 }
 std::string getFamilyNameFromFont(const SkFont& font)
 {
@@ -103,7 +107,7 @@ const ScaleParam& findCompressionConfigWithFont(const SkFont& font)
 #endif
 {
     auto fontCompressionStatus = getFontCompressionStatus(font);
-    if (fontCompressionStatus != FontCompressionStatus::SYSTEM) {
+    if (fontCompressionStatus != FontCompressionStatus::COMPRESSED) {
         return DEFAULT_SCALE_PARAM;
     }
 
@@ -127,7 +131,8 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
         return;
     }
     auto fontCompressionStatus = getFontCompressionStatus(font);
-    if (fontCompressionStatus == FontCompressionStatus::UNDEFINED) {
+    auto typeface = font.GetTypeface();
+    if (typeface == nullptr || fontCompressionStatus == FontCompressionStatus::UNDEFINED) {
         return;
     }
 #ifdef USE_SKIA_TXT
@@ -136,8 +141,9 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
     SkScalar fontSize = font.getSize();
 #endif
     if (!FontCollection::IsAdapterTextHeightEnabled()) {
-        if (fontCompressionStatus == FontCompressionStatus::SYSTEM &&
-            !SkScalarNearlyZero(findCompressionConfigWithFont(font).fontScale)) {
+        if (fontCompressionStatus == FontCompressionStatus::COMPRESSED &&
+            (!SkScalarNearlyZero(findCompressionConfigWithFont(font).fontScale) ||
+             typeface->IsThemeTypeface())) {
             metrics->fAscent = DEFAULT_ASCENT * fontSize;
             metrics->fDescent = DEFAULT_DESCENT * fontSize;
         }
@@ -147,7 +153,7 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
     std::string curFamilyName = getFamilyNameFromFont(font);
     auto setIter = FONT_PADDING_NOT_EFFECT_FAMILY.find(curFamilyName);
     if (setIter == FONT_PADDING_NOT_EFFECT_FAMILY.end()) {
-        if (fontCompressionStatus == FontCompressionStatus::SYSTEM) {
+        if (fontCompressionStatus == FontCompressionStatus::COMPRESSED) {
             metrics->fAscent = DEFAULT_TOP * fontSize;
             metrics->fDescent = DEFAULT_BOTTOM * fontSize;
             return;
