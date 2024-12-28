@@ -161,23 +161,30 @@ const std::string& ResolveHpbFile(const std::string& locale)
 
 const std::vector<uint8_t>& Hyphenator::GetHyphenatorData(const std::string& locale)
 {
-    std::shared_lock<std::shared_mutex> readLock(mutex_);
-    auto search = hyphenMap.find(locale);
-    if (search != hyphenMap.end()) {
-        return search->second;
+    {
+        std::shared_lock<std::shared_mutex> readLock(mutex_);
+        auto search = hyphenMap.find(locale);
+        if (search != hyphenMap.end()) {
+            return search->second;
+        }
     }
+
+    LoadHyphenatorData(locale);
+   
+    return hyphenMap[locale];
+}
+
+bool Hyphenator::LoadHyphenatorData(const std::string& locale)
+{
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     std::string filename = "/system/usr/ohos_hyphen_data/" + ResolveHpbFile(locale);
     std::vector<uint8_t> fileBuffer;
     ReadBinaryFile(filename, fileBuffer);
     if (!fileBuffer.empty()) {
         hyphenMap.emplace(locale, std::move(fileBuffer));
+        return true;
     }
-    return hyphenMap[locale];
-}
-
-bool LoadHyphenatorData(const std::string& locale)
-{
-
+    return false;
 }
 
 void formatTarget(std::vector<uint16_t>& target)
