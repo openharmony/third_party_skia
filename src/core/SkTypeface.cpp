@@ -318,11 +318,13 @@ void SkTypeface::setIsCustomTypeface(bool isCustom) {
 }
 
 #ifdef OHOS_SUPPORT
-bool SkTypeface::isThemeTypeface() const {
+bool SkTypeface::isThemeTypeface() const
+{
     return fIsTheme;
 }
 
-void SkTypeface::setIsThemeTypeface(bool isTheme) {
+void SkTypeface::setIsThemeTypeface(bool isTheme)
+{
     fIsTheme = isTheme;
 }
 #endif
