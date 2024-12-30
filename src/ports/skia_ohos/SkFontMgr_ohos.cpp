@@ -4,10 +4,9 @@
 
 #include "SkFontMgr_ohos.h"
 
-#include <string>
-
-#include "SkTypeface_ohos.h"
 #include "include/core/SkData.h"
+#include "SkTypeface_ohos.h"
+#include <string>
 
 using namespace ErrorCode;
 
@@ -16,8 +15,8 @@ using namespace ErrorCode;
  */
 SkFontMgr_OHOS::SkFontMgr_OHOS(const char* path)
 {
-    fFontConfig = std::make_shared<FontConfig_OHOS>(fFontScanner, path);
-    fFamilyCount = fFontConfig->getFamilyCount();
+    fontConfig = std::make_shared<FontConfig_OHOS>(fontScanner, path);
+    familyCount = fontConfig->getFamilyCount();
 }
 
 /*! To get the count of families
@@ -25,7 +24,7 @@ SkFontMgr_OHOS::SkFontMgr_OHOS(const char* path)
  */
 int SkFontMgr_OHOS::onCountFamilies() const
 {
-    return fFamilyCount;
+    return familyCount;
 }
 
 /*! To get the family name for a font style set
@@ -35,10 +34,10 @@ int SkFontMgr_OHOS::onCountFamilies() const
  */
 void SkFontMgr_OHOS::onGetFamilyName(int index, SkString* familyName) const
 {
-    if (fFontConfig == nullptr || familyName == nullptr) {
+    if (fontConfig == nullptr || familyName == nullptr) {
         return;
     }
-    fFontConfig->getFamilyName(static_cast<size_t>(index), *familyName);
+    fontConfig->getFamilyName(index, familyName);
 }
 
 /*! To create an object of SkFontStyleSet
@@ -49,13 +48,13 @@ void SkFontMgr_OHOS::onGetFamilyName(int index, SkString* familyName) const
  */
 SkFontStyleSet* SkFontMgr_OHOS::onCreateStyleSet(int index) const
 {
-    if (fFontConfig == nullptr) {
+    if (fontConfig == nullptr) {
         return nullptr;
     }
     if (index < 0 || index >= this->countFamilies()) {
         return nullptr;
     }
-    return new SkFontStyleSet_OHOS(fFontConfig, index);
+    return new SkFontStyleSet_OHOS(fontConfig, index);
 }
 
 /*! To get a matched object of SkFontStyleSet
@@ -67,20 +66,20 @@ SkFontStyleSet* SkFontMgr_OHOS::onCreateStyleSet(int index) const
  */
 SkFontStyleSet* SkFontMgr_OHOS::onMatchFamily(const char familyName[]) const
 {
-    if (fFontConfig == nullptr) {
+    if (fontConfig == nullptr) {
         return nullptr;
     }
     // return default system font when familyName is null
     if (familyName == nullptr) {
-        return new SkFontStyleSet_OHOS(fFontConfig, 0);
+        return new SkFontStyleSet_OHOS(fontConfig, 0);
     }
 
     bool isFallback = false;
-    size_t index = 0;
-    if (!fFontConfig->getStyleIndex(familyName, isFallback, index)) {
+    int index = fontConfig->getStyleIndex(familyName, isFallback);
+    if (index == -1) {
         return nullptr;
     }
-    return new SkFontStyleSet_OHOS(fFontConfig, index, isFallback);
+    return new SkFontStyleSet_OHOS(fontConfig, index, isFallback);
 }
 
 /*! To get a matched typeface
@@ -93,15 +92,15 @@ SkFontStyleSet* SkFontMgr_OHOS::onMatchFamily(const char familyName[]) const
  */
 SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyle(const char familyName[], const SkFontStyle& style) const
 {
-    if (fFontConfig == nullptr) {
+    if (fontConfig == nullptr) {
         return nullptr;
     }
     bool isFallback = false;
-    size_t styleIndex = 0;
-    if (!fFontConfig->getStyleIndex(familyName, isFallback, styleIndex)) {
-        return nullptr;
+    int styleIndex = 0;
+    if (familyName) {
+        styleIndex = fontConfig->getStyleIndex(familyName, isFallback);
     }
-    return SkSafeRef(fFontConfig->getTypeface(styleIndex, style, isFallback));
+    return SkSafeRef(fontConfig->getTypeface(styleIndex, style, isFallback));
 }
 
 struct SpecialUnicodeFamilyName {
@@ -124,7 +123,7 @@ SkTypeface* SkFontMgr_OHOS::findSpecialTypeface(SkUnichar character, const SkFon
     if (character >= 0x4E00 && character <= 0x9FA5) {
         name.assign("HarmonyOS Sans SC");
     }
-
+    
     for (int i = 0; i < specialLists.size() && name.empty(); i++) {
         if (character == specialLists[i].unicode) {
             name.assign(specialLists[i].familyName);
@@ -137,7 +136,7 @@ SkTypeface* SkFontMgr_OHOS::findSpecialTypeface(SkUnichar character, const SkFon
     }
 
     SkString fname(name.c_str());
-    sk_sp<SkTypeface_OHOS> typeface = fFontConfig->getFallbackTypeface(fname, style);
+    sk_sp<SkTypeface_OHOS> typeface = fontConfig->getFallbackTypeface(fname, style);
     return SkSafeRef(typeface.get());
 }
 
@@ -156,19 +155,61 @@ SkTypeface* SkFontMgr_OHOS::findSpecialTypeface(SkUnichar character, const SkFon
 SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[], const SkFontStyle& style,
     const char* bcp47[], int bcp47Count, SkUnichar character) const
 {
-    if (fFontConfig == nullptr) {
+    if (fontConfig == nullptr) {
         return nullptr;
     }
-
-    auto res = findTypeface(style, bcp47, bcp47Count, character);
-    if (res != nullptr) {
-        return res;
+    const FallbackForMap& fallbackForMap = fontConfig->getFallbackForMap();
+    const FallbackSet& fallbackSet = fontConfig->getFallbackSet();
+    SkString defaultFamily("");
+    SkString key = defaultFamily;
+    FallbackSetPos* item = nullptr;
+    if (familyName == nullptr) {
+        item = fallbackForMap.find(defaultFamily);
+    } else {
+        item = fallbackForMap.find(SkString(familyName));
+        if (item) {
+            key = SkString(familyName);
+        } else {
+            item = fallbackForMap.find(defaultFamily);
+        }
     }
-    res = findSpecialTypeface(character, style);
-    if (res != nullptr) {
-        return res;
+    if (item == nullptr) {
+        LOGE("%s : '%s' must be a fallback key in the config file\n",
+            FontConfig_OHOS::errToString(ERROR_FAMILY_NOT_FOUND), defaultFamily.c_str());
+        return nullptr;
     }
-    return fFontConfig->matchFallback(character, style);
+    while (true) {
+        if (bcp47Count > 0) {
+            SkTypeface* retTp = findTypeface(*item, style, bcp47, bcp47Count, character);
+            if (retTp) {
+                return retTp;
+            }
+            if (key == defaultFamily) {
+                bcp47Count = 0;
+                continue;
+            }
+            item = fallbackForMap.find(defaultFamily);
+            key = defaultFamily;
+        } else {
+            SkTypeface* retTp = findSpecialTypeface(character, style);
+            if (retTp != nullptr) {
+                return retTp;
+            }
+            for (unsigned int i = item->index; i < item->index + item->count && i < fallbackSet.size(); i++) {
+                const TypefaceSet& tpSet = *(fallbackSet[i]->typefaceSet.get());
+                if (tpSet.size() > 0 && tpSet[0]->unicharToGlyph(character) != 0) {
+                    sk_sp<SkTypeface> typeface = FontConfig_OHOS::matchFontStyle(tpSet, style);
+                    return SkSafeRef(typeface.get());
+                }
+            }
+            if (key == defaultFamily) {
+                break;
+            }
+            item = fallbackForMap.find(defaultFamily);
+            key = defaultFamily;
+        }
+    }
+    return nullptr;
 }
 
 /*! To find the matched typeface for the given parameters
@@ -181,37 +222,52 @@ SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[],
  * \return An object of typeface which is for the given character
  * \return Return null, if the typeface is not found for the given character
  */
-SkTypeface* SkFontMgr_OHOS::findTypeface(const SkFontStyle& style,
+SkTypeface* SkFontMgr_OHOS::findTypeface(const FallbackSetPos& fallbackItem, const SkFontStyle& style,
     const char* bcp47[], int bcp47Count, SkUnichar character) const
 {
-    if (bcp47Count == 0 || fFontConfig == nullptr) {
+    if (bcp47Count == 0) {
         return nullptr;
     }
 
-    std::vector<std::function<int(const std::string& langs)>> funcs = {
-        [&bcp47, &bcp47Count](const std::string& langs) -> int {
-            for (int i = 0; i < bcp47Count; i++) {
-                if (langs == bcp47[i]) {
-                    return i;
-                }
-            }
-            return -1;
-        },
-        [&bcp47, &bcp47Count](const std::string& langs) -> int {
-            return SkFontMgr_OHOS::compareLangs(langs, bcp47, bcp47Count);
+    const FallbackSet& fallbackSet = fontConfig->getFallbackSet();
+    // example bcp47 code : 'zh-Hans' : ('zh' : iso639 code, 'Hans' : iso15924 code)
+    // iso639 code will be taken from bcp47 code, so that we can try to match
+    // bcp47 or only iso639. Therefore totalCount need to be 'bcp47Count * 2'
+    int totalCount = bcp47Count * 2;
+    int tps[totalCount];
+    for (int i = 0; i < totalCount; i++) {
+        tps[i] = -1;
+    }
+    // find the families matching the bcp47 list
+    for (unsigned int i = fallbackItem.index; i < fallbackItem.index + fallbackItem.count
+        && i < fallbackSet.size(); i++) {
+        int ret = compareLangs(fallbackSet[i]->langs, bcp47, bcp47Count, tps);
+        if (ret == -1) {
+            continue;
         }
-    };
-
-    for (auto& func : funcs) {
-        auto set = fFontConfig->matchFallbackByBCP47(func);
-        for (auto& index : set) {
-            auto res = fFontConfig->matchFallback(index, character, style);
-            if (res != nullptr) {
-                return res;
-            }
+        tps[ret] = i;
+    }
+    // match typeface in families
+    for (int i = bcp47Count - 1; i >= 0; i--) {
+        if (tps[i] == -1) {
+            continue;
+        }
+        const TypefaceSet& tpSet = *(fallbackSet[tps[i]]->typefaceSet.get());
+        if (tpSet.size() > 0 && tpSet[0]->unicharToGlyph(character) != 0) {
+            sk_sp<SkTypeface> typeface = FontConfig_OHOS::matchFontStyle(tpSet, style);
+            return SkSafeRef(typeface.get());
         }
     }
-
+    for (int i = totalCount - 1; i >= bcp47Count; i--) {
+        if (tps[i] == -1) {
+            continue;
+        }
+        const TypefaceSet& tpSet = *(fallbackSet[tps[i]]->typefaceSet.get());
+        if (tpSet.size() > 0 && tpSet[0]->unicharToGlyph(character) != 0) {
+            sk_sp<SkTypeface> typeface = FontConfig_OHOS::matchFontStyle(tpSet, style);
+            return SkSafeRef(typeface.get());
+        }
+    }
     return nullptr;
 }
 
@@ -219,10 +275,12 @@ SkTypeface* SkFontMgr_OHOS::findTypeface(const SkFontStyle& style,
  * \param langs the supported languages by an typeface
  * \param bcp47 the array of bcp47 language to be matching
  * \param bcp47Count the array size of bcp47
+ * \param tps an array of the index of typeface which is matching one value of bcp47
  * \return The index of language in bcp47, if matching happens
  * \n      Return -1, if no language matching happens
  */
-int SkFontMgr_OHOS::compareLangs(const std::string& langs, const char* bcp47[], int bcp47Count)
+int SkFontMgr_OHOS::compareLangs(const SkString& langs, const char* bcp47[],
+    int bcp47Count, const int tps[]) const
 {
     /*
      * zh-Hans : ('zh' : iso639 code, 'Hans' : iso15924 code)
@@ -231,6 +289,9 @@ int SkFontMgr_OHOS::compareLangs(const std::string& langs, const char* bcp47[], 
         return -1;
     }
     for (int i = bcp47Count - 1; i >= 0; i--) {
+        if (tps[i] != -1) {
+            continue;
+        }
         if (langs.find(bcp47[i]) != -1) {
             return i;
         } else {
@@ -241,8 +302,8 @@ int SkFontMgr_OHOS::compareLangs(const std::string& langs, const char* bcp47[], 
             iso15924++;
             int len = iso15924 - 1 - bcp47[i];
             SkString country(bcp47[i], len);
-            if (langs.find(iso15924) != std::string::npos ||
-                (strncmp(bcp47[i], "und", strlen("und")) != 0 && langs.find(country.c_str()) != -1)) {
+            if (langs.find(iso15924) != -1 ||
+                (strncmp(bcp47[i], "und", strlen("und")) && langs.find(country.c_str()) != -1)) {
                 return i + bcp47Count;
             }
         }
@@ -329,12 +390,13 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::onMakeFromStreamArgs(std::unique_ptr<SkStreamA
  */
 sk_sp<SkTypeface> SkFontMgr_OHOS::onMakeFromFile(const char path[], int ttcIndex) const
 {
-    if (fFontConfig == nullptr) {
+    if (fontConfig == nullptr) {
         return nullptr;
     }
 
     std::unique_ptr<SkStreamAsset> stream = SkStreamAsset::MakeFromFile(path);
     if (stream == nullptr) {
+        LOGE("%s : %s\n", FontConfig_OHOS::errToString(ERROR_FONT_NOT_EXIST), path);
         return nullptr;
     }
     SkFontArguments args;
@@ -361,23 +423,37 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::onLegacyMakeTypeface(const char familyName[], 
     if (typeface) {
         return sk_sp<SkTypeface>(typeface);
     }
+    LOGE("%s\n", FontConfig_OHOS::errToString(ERROR_NO_AVAILABLE_FAMILY));
     return nullptr;
 }
 
 #ifdef OHOS_SUPPORT
 std::vector<sk_sp<SkTypeface>> SkFontMgr_OHOS::onGetSystemFonts() const
 {
-    if (fFontConfig == nullptr) {
-        return {};
+    if (fontConfig == nullptr) {
+        return;
     }
     std::vector<sk_sp<SkTypeface>> skTypefaces;
-    fFontConfig->forAll([&skTypefaces](const auto& f) {
-        for (auto& iter : f.typefaces) {
-            skTypefaces.emplace_back(iter);
+    int familyCount = fontConfig->getFamilyCount();
+    for (int i = 0; i < familyCount; ++i) {
+        int typefaceCount = fontConfig->getTypefaceCount(i);
+        for (int j = 0; j < typefaceCount; ++j) {
+            sk_sp<SkTypeface_OHOS> typeface = fontConfig->getTypefaceSP(i, j);
+            if (typeface == nullptr) {
+                continue;
+            }
+            skTypefaces.emplace_back(typeface);
         }
-    });
+    }
 
-    return skTypefaces;
+    for (auto& item : fontConfig->getFallbackSet()) {
+        if (item->typefaceSet != nullptr) {
+            for (auto& iter : *(item->typefaceSet)) {
+                skTypefaces.emplace_back(iter);
+            }
+        }
+    }
+    return std::move(skTypefaces);
 }
 #endif
 
@@ -399,20 +475,22 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::makeTypeface(std::unique_ptr<SkStreamAsset> st
         fontInfo.fname.set(path);
     }
     if (axisCount == 0) {
-        if (!fFontScanner.scanFont(stream.get(), ttcIndex, &fontInfo.familyName,
-                                   &fontInfo.style, &fontInfo.isFixedWidth, nullptr)) {
+        if (!fontScanner.scanFont(stream.get(), ttcIndex, &fontInfo.familyName, &fontInfo.style,
+            &fontInfo.isFixedWidth, nullptr)) {
+            LOGE("%s\n", FontConfig_OHOS::errToString(ERROR_FONT_INVALID_STREAM));
             return nullptr;
         }
     } else {
-        SkTypeface_FreeType::Scanner::AxisDefinitions axisDef;
-        if (!fFontScanner.scanFont(stream.get(), ttcIndex, &fontInfo.familyName,
-                                   &fontInfo.style, &fontInfo.isFixedWidth, &axisDef)) {
+        AxisDefinitions axisDef;
+        if (!fontScanner.scanFont(stream.get(), ttcIndex, &fontInfo.familyName, &fontInfo.style,
+            &fontInfo.isFixedWidth, &axisDef)) {
+            LOGE("%s\n", FontConfig_OHOS::errToString(ERROR_FONT_INVALID_STREAM));
             return nullptr;
         }
         if (axisDef.count() > 0) {
             SkFixed axis[axisDef.count()];
-            SkTypeface_FreeType::Scanner::computeAxisValues(
-                axisDef, args.getVariationDesignPosition(), axis, fontInfo.familyName);
+            fontScanner.computeAxisValues(axisDef, args.getVariationDesignPosition(),
+                axis, fontInfo.familyName);
             fontInfo.setAxisSet(axisCount, axis, axisDef.data());
             fontInfo.style = fontInfo.computeFontStyle();
         }
@@ -433,25 +511,29 @@ int SkFontMgr_OHOS::GetFontFullName(int fontFd, std::vector<SkByteArray> &fullna
     std::unique_ptr<SkMemoryStream> stream = std::make_unique<SkMemoryStream>(SkData::MakeFromFD(fontFd));
     int errorCode = SUCCESSED;
     int numFaces = 0;
-    if (!fFontScanner.recognizedFont(stream.get(), &numFaces)) {
+    if (!fontScanner.recognizedFont(stream.get(), &numFaces)) {
+        SkDebugf("Failed to recognizedFont");
         return ERROR_TYPE_OTHER;
     }
     for (int faceIndex = 0; faceIndex < numFaces; ++faceIndex) {
         bool isFixedPitch = false;
         SkString realname;
         SkFontStyle style = SkFontStyle(); // avoid uninitialized warning
-        if (!fFontScanner.scanFont(stream.get(), faceIndex, &realname, &style, &isFixedPitch, nullptr)) {
+        if (!fontScanner.scanFont(stream.get(), faceIndex, &realname, &style, &isFixedPitch, nullptr)) {
+            SkDebugf("Failed to scanFont, faceIndex:%d", faceIndex);
             errorCode = ERROR_TYPE_OTHER;
             break;
         }
         SkByteArray skFullName = {nullptr, 0};
-        if (!fFontScanner.GetTypefaceFullname(stream.get(), faceIndex, skFullName)) {
+        if (!fontScanner.GetTypefaceFullname(stream.get(), faceIndex, skFullName)) {
+            SkDebugf("Failed to get fullname, faceIndex:%d", faceIndex);
             errorCode = ERROR_TYPE_OTHER;
             break;
         } else {
             fullnameVec.push_back(std::move(skFullName));
         }
     }
+    SkDebugf("GetFontFullName end, errorCode:%d, numFaces:%d, size:%zu", errorCode, numFaces, fullnameVec.size());
     return errorCode;
 }
 
