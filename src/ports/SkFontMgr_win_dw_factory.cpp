@@ -14,7 +14,7 @@
 
 std::string SkFontMgr::runtimeOS = "OHOS";
 std::string containerFontPath = "";
-std::string fileName = "fontconfig.json";
+std::string fileName = "fontconfig_ohos.json";
 SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS(const char *path);
 
 sk_sp<SkFontMgr> SkFontMgr::Factory() {
