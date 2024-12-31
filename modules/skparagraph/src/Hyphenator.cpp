@@ -267,7 +267,7 @@ void processLinear(uint16_t* data, size_t i, uint32_t& ix, std::vector<uint16_t>
 bool processDirect(uint16_t* data, HyphenFindBreakParam& param, uint32_t& nextOffset, PathType& type)
 {
     param.offset = param.header->codeOffset(param.code);
-    if (param.offset > param.header->maxCp) {
+    if (param.header->minCp != param.header->maxCp && param.offset > param.header->maxCp) {
         return false;
     }
     uint16_t nextValue = *(data + nextOffset + param.offset);
@@ -285,7 +285,7 @@ bool processOtherType(const ArrayOf16bits* data, HyphenFindBreakParam& param, ui
         if (data->codes[j] == subWord) {
             param.code = subWord;
             param.offset = param.header->codeOffset(subWord);
-            if (param.offset > param.header->maxCp) {
+            if (param.header->minCp != param.header->maxCp && param.offset > param.header->maxCp) {
                 break;
             }
             nextOffset = data->codes[j + 1] & 0x3fff;
