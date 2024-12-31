@@ -30,7 +30,6 @@
 
 using namespace ErrorCode;
 static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
-static const char* DEFAULT_CONFIG = "/system/etc/fontconfig_ohos.json";
 
 #ifdef SK_BUILD_FONT_MGR_FOR_OHOS
 static const bool G_IS_HMSYMBOL_ENABLE =
@@ -44,7 +43,7 @@ static const char* OHOS_DEFAULT_CONFIG = "fontconfig_ohos.json";
 /*! Constructor
  * \param fontScanner the scanner to get the font information from a font file
  * \param fname the full name of system font configuration document.
- *     \n The default value is '/system/etc/fontconfig.json', if fname is given null
+ *     \n The default value is '/system/etc/fontconfig_ohos.json', if fname is given null
  */
 FontConfig_OHOS::FontConfig_OHOS(const SkTypeface_FreeType::Scanner& fontScanner, const char* fname)
     : fFontScanner(fontScanner)
@@ -56,10 +55,11 @@ FontConfig_OHOS::FontConfig_OHOS(const SkTypeface_FreeType::Scanner& fontScanner
     loadHMSymbol();
 }
 #else
+static const char* OHOS_DEFAULT_CONFIG = "/system/etc/fontconfig_ohos.json";
 /*! Constructor
  * \param fontScanner the scanner to get the font information from a font file
  * \param fname the full name of system font configuration document.
- *     \n The default value is '/system/etc/fontconfig.json', if fname is given null
+ *     \n The default value is '/system/etc/fontconfig_ohos.json', if fname is given null
  */
 FontConfig_OHOS::FontConfig_OHOS(const SkTypeface_FreeType::Scanner& fontScanner, const char* fname)
     : fFontScanner(fontScanner)
@@ -355,6 +355,9 @@ uint32_t FontConfig_OHOS::getFontStyleDifference(const SkFontStyle& dstStyle,
 
 int FontConfig_OHOS::parseConfig(const char* fname)
 {
+    if (fname == nullptr) {
+        fname = OHOS_DEFAULT_CONFIG;
+    }
     Json::Value root;
     int err = checkConfigFile(fname, root);
     if (err != NO_ERROR) {
@@ -457,9 +460,10 @@ int FontConfig_OHOS::parseFontDir(const char* fname, const Json::Value& root)
         std::string dir;
 #ifdef SK_BUILD_FONT_MGR_FOR_PREVIEW
         if (strcmp(fname, OHOS_DEFAULT_CONFIG) == 0) {
-            dir = path.asString() != "/system/fonts/" ? path.asString() : "fonts";
+            dir = (path.asString() != "/system/fonts/") ? path.asString() : "fonts/";
         } else {
-            dir = path.asString() != "/system/fonts/" ? path.asString() : "../../../../hms/previewer/resources/fonts";
+            dir = (path.asString() != "/system/fonts/")
+                ? path.asString() : "../../../../hms/previewer/resources/fonts/";
         }
 #else
         dir = path.asString();
@@ -571,7 +575,7 @@ int FontConfig_OHOS::checkProductFile(const char* fname)
     std::lock_guard<std::mutex> lock(fFontMutex);
     int err = parseConfig(PRODUCT_DEFAULT_CONFIG);
     if (err != NO_ERROR || !judgeFileExist()) {
-        err = parseConfig(DEFAULT_CONFIG);
+        err = parseConfig(OHOS_DEFAULT_CONFIG);
     }
     return err;
 }
