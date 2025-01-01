@@ -33,6 +33,9 @@ enum class WordBreakType {
     NORMAL,     // to be done.
     BREAK_ALL,  // break occur after any characters.
     BREAK_WORD, // break only occur after word.
+#ifdef OHOS_SUPPORT
+    BREAK_HYPHEN,
+#endif
 };
 
 enum class LineBreakStrategy {

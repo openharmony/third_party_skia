@@ -837,8 +837,11 @@ void TextLine::justify(SkScalar maxWidth) {
         }
         return;
     }
-
+#ifdef OHOS_SUPPORT
+    SkScalar step = (maxWidth - textLen - (fEllipsis ? fEllipsis->fAdvance.fX : 0)) / whitespacePatches;
+#else
     SkScalar step = (maxWidth - textLen) / whitespacePatches;
+#endif
     SkScalar shift = 0.0f;
     SkScalar prevShift = 0.0f;
 
@@ -979,6 +982,7 @@ void TextLine::ellipsisNotFitProcess(EllipsisModal ellipsisModal) {
     }
 }
 
+#ifdef OHOS_SUPPORT
 void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType) {
     // Replace some clusters with the ellipsis
     // Go through the clusters in the reverse logical order
@@ -1009,7 +1013,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             inWord = false;
         }
         // See if it fits
-        if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
+        if (fOwner->getEllipsis() == fEllipsisString && ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
             if (!cluster.isHardBreak()) {
                 width -= cluster.width();
             }
@@ -1040,13 +1044,9 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         // Let's update the line
         fClusterRange.end = clusterIndex;
         fGhostClusterRange.end = fClusterRange.end;
-#ifdef OHOS_SUPPORT
         fEllipsis->fTextRange =
                 TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
         fEllipsis->fClusterStart = cluster.textRange().end;
-#else
-        fEllipsis->fClusterStart = cluster.textRange().start;
-#endif
         fText.end = cluster.textRange().end;
         fTextIncludingNewlines.end = cluster.textRange().end;
         fTextExcludingSpaces.end = cluster.textRange().end;
@@ -1062,6 +1062,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
+#endif
 
 #ifdef OHOS_SUPPORT
 void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool) {
@@ -1118,7 +1119,9 @@ static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
 }
 
 std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Cluster* cluster) {
-
+#ifdef OHOS_SUPPORT
+    fEllipsisString = ellipsis;
+#endif
     class ShapeHandler final : public SkShaper::RunHandler {
     public:
         ShapeHandler(SkScalar lineHeight, bool useHalfLeading, SkScalar baselineShift, const SkString& ellipsis)
@@ -1842,9 +1845,15 @@ bool TextLine::isLastLine() const {
 bool TextLine::endsWithHardLineBreak() const {
     // TODO: For some reason Flutter imagines a hard line break at the end of the last line.
     //  To be removed...
+#ifdef OHOS_SUPPORT
+    return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak()) ||
+           (fEllipsis != nullptr && fOwner->getEllipsis() == fEllipsisString) ||
+           fGhostClusterRange.end == fOwner->clusters().size() - 1;
+#else
     return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak()) ||
            fEllipsis != nullptr ||
            fGhostClusterRange.end == fOwner->clusters().size() - 1;
+#endif
 }
 
 void TextLine::getRectsForRange(TextRange textRange0,
