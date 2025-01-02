@@ -61,7 +61,7 @@ struct HyphenatorHeader {
     uint32_t mappings{0};
     uint32_t version{0};
 
-    inline uint16_t codeOffset(uint16_t code, const ArrayOf16bits* maps = nullptr) const
+    uint16_t codeOffset(uint16_t code, const ArrayOf16bits* maps = nullptr) const
     {
         // need still reconsider what we want to do with a nodes in the middle of graph
         if (maps != nullptr && (code < minCp || code > maxCp)) {

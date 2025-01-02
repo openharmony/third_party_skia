@@ -178,7 +178,8 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 fBrokeLineWithHyphen = true;
                 break;
             // let hyphenator try before this if it is enabled
-            } else if ((wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate) || cluster->isWhitespaceBreak()) {
+            } else if ((wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate)
+                       || cluster->isWhitespaceBreak()) {
                 // It's the end of the word
                 isFirstWord = false;
                 fClusters.extend(cluster);
@@ -486,7 +487,6 @@ struct TextWrapScorer {
             cumulativeLen += len;
             currentWidth += len;
             currentCount++;
-
             if (cluster.isWhitespaceBreak()) {
                 breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
                 prevWasWhitespace = true;

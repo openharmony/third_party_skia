@@ -380,8 +380,8 @@ std::vector<uint8_t> findBreaks(const std::vector<uint8_t>& hyphenatorData, std:
     return result;
 }
 
-std::vector<uint8_t> Hyphenator::FindBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString &text,
-                                        size_t startPos, size_t endPos)
+std::vector<uint8_t> Hyphenator::FindBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
+                                                    size_t startPos, size_t endPos)
 {
     const auto lastword = std::string(text.c_str() + startPos, text.c_str() + endPos);
     std::vector<uint8_t> result;
