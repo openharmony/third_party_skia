@@ -529,9 +529,11 @@ struct TextWrapScorer {
         auto startCluster = &parent.cluster(0);
         auto endCluster = &parent.cluster(0);
         for (size_t clusterIx = 0; clusterIx < parent.clusters().size(); clusterIx++) {
-            auto& cluster = parent.cluster(clusterIx);
-            auto len = cluster.width();
-            cumulativeLen_ += len;
+            if (parent.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
+                auto& cluster = parent.cluster(clusterIx);
+                auto len = cluster.width();
+                cumulativeLen_ += len;
+            }
             CalculateHyphenPos(clusterIx, startCluster, endCluster, parent);
         }
     }
