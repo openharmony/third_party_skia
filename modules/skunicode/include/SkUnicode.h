@@ -89,6 +89,8 @@ class SKUNICODE_API SkUnicode {
             kIdeographic = 0x100,
 #ifdef OHOS_SUPPORT
             kCombine = 0x200,
+            kPunctuation = 0X400,
+            kEllipsis = 0X800,
 #endif
         };
         enum class TextDirection {
@@ -142,6 +144,10 @@ class SKUNICODE_API SkUnicode {
         static bool isControl(SkUnicode::CodeUnitFlags flags);
         static bool isPartOfWhiteSpaceBreak(SkUnicode::CodeUnitFlags flags);
         static bool isIdeographic(SkUnichar utf8);
+#ifdef OHOS_SUPPORT
+        static bool isPunctuation(SkUnichar utf8);
+        static bool isEllipsis(SkUnichar utf8);
+#endif
         static bool extractBidi(const char utf8[],
                                 int utf8Units,
                                 TextDirection dir,

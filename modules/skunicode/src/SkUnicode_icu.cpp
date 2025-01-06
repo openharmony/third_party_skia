@@ -312,8 +312,35 @@ class SkUnicode_icu : public SkUnicode {
     static bool isIdeographic(SkUnichar unichar) {
         return sk_u_hasBinaryProperty(unichar, UCHAR_IDEOGRAPHIC);
     }
-
 #ifdef OHOS_SUPPORT
+    static bool isPunctuation(SkUnichar unichar)
+    {
+        if (sk_u_ispunct(unichar)) {
+            return true;
+        }
+        static constexpr std::array<std::pair<SkUnichar, SkUnichar>, 13> ranges{{
+                {0x0020, 0x002F},  // ASCII punctuation (e.g., ! " # $ % & ' ( ) * + , - . /)
+                {0x003A, 0x0040},  // ASCII punctuation (e.g., : ; < = > ? @)
+                {0x005B, 0x0060},  // ASCII punctuation (e.g., [ \ ] ^ _ `)
+                {0x007B, 0x007E},  // ASCII punctuation (e.g., { | } ~)
+                {0x2000, 0x206F},  // Common punctuation (Chinese & English)
+                {0x3000, 0x303F},  // CJK punctuation (full-width)
+                {0xFF00, 0xFFEF},  // Full-width characters and symbols
+                {0x2E00, 0x2E7F},  // Supplemental punctuation (e.g., ancient)
+                {0x3001, 0x3003},  // CJK punctuation (e.g., Chinese comma)
+                {0xFF01, 0xFF0F},  // Full-width ASCII punctuation (0x21-0x2F)
+                {0xFF1A, 0xFF20},  // Full-width ASCII punctuation (0x3A-0x40)
+                {0xFF3B, 0xFF40},  // Full-width ASCII punctuation (0x5B-0x60)
+                {0xFF5B, 0xFF65},  // Other full-width punctuation (e.g., quotes)
+        }};
+        for (auto range : ranges) {
+            if (range.first <= unichar && range.second > unichar) {
+                return true;
+            }
+        }
+        return false;
+    }
+    static bool isEllipsis(SkUnichar unichar) { return (unichar == 0x2026 || unichar == 0x002E); }
     static bool isGraphemeExtend(SkUnichar unichar) {
         return sk_u_hasBinaryProperty(unichar, UCHAR_GRAPHEME_EXTEND);
     }
@@ -430,6 +457,14 @@ public:
                 if (SkUnicode_icu::isIdeographic(unichar)) {
                     results->at(i) |= SkUnicode::kIdeographic;
                 }
+#ifdef OHOS_SUPPORT
+                if (SkUnicode_icu::isPunctuation(unichar)) {
+                    results->at(i) |= SkUnicode::kPunctuation;
+                }
+                if (SkUnicode_icu::isEllipsis(unichar)) {
+                    results->at(i) |= SkUnicode::kEllipsis;
+                }
+#endif
             }
 
 #ifdef OHOS_SUPPORT

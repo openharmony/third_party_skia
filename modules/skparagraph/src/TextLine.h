@@ -36,7 +36,6 @@ struct DecorationContext {
 };
 class TextLine {
 public:
-
     struct ClipContext {
       const Run* run;
       size_t pos;
@@ -65,6 +64,29 @@ public:
         DEFAULT = 0,            // default
         READ_REPLACED_WORD = 1,  // read replaced word
         READ_ELLIPSIS_WORD = 2, // read ellipsis word
+    };
+    struct IndexOneData {
+        ClusterIndex clusterIndex = SIZE_MAX;
+        bool isClusterPunct = false;
+        SkScalar punctWidths = 0;
+        SkScalar LevelOneOffset = 0.0f;
+    };
+    struct IndexTwoData {
+        ClusterIndex clusterIndex = SIZE_MAX;
+        bool isPrevClusterSpace = true;
+    };
+    struct ClusterLevelsIndices {
+        std::vector<IndexOneData> levelOneIndices = {};
+        std::vector<IndexTwoData> levelTwoIndices = {};
+        std::vector<ClusterIndex> levelThreeIndices = {};
+        SkScalar levelTwoOffset = 0.0f;
+        SkScalar levelThreeOffset = 0.0f;
+    };
+    enum class shiftLevel {
+        Unified,
+        LevelOne, // Level 1 Label: Punctuation
+        LevelTwo, // Level-2 label: WhitespaceBreak, between ideographic and non-ideographic characters
+        LevelThree, // Level-3 label: Between ideographic characters
     };
 #endif
 
@@ -223,9 +245,37 @@ private:
         RectStyle roundRectStyle;
         SkRect rect;
     };
-
+#ifdef OHOS_SUPPORT
+    void allocateLevelOneOffsets(ClusterLevelsIndices clusterLevels,
+                                 SkScalar& allocatedWidth,
+                                 SkScalar ideographicMaxLen);
+    void allocateLevelTwoOffsets(ClusterLevelsIndices clusterLevels,
+                                 SkScalar& allocatedWidth,
+                                 SkScalar ideographicMaxLen,
+                                 size_t prevClusterNotSpaceCount);
+    void allocateLevelThreeOffsets(ClusterLevelsIndices clusterLevels,
+                                   SkScalar& allocatedWidth,
+                                   SkScalar ideographicMaxLen);
+    void distributeRemainingSpace(ClusterLevelsIndices clusterLevels,
+                                  SkScalar& levelTwoOffset,
+                                  SkScalar& levelThreeOffset,
+                                  SkScalar& allocatedWidth);
+    SkScalar UsingAutoSpaceWidth(const Cluster* cluster);
+    ShiftLevel DetermineShiftLevelForIdeographic(const Cluster* prevCluster,
+                                                 IndexTwoData& indexTwoData);
+    ShiftLevel DetermineShiftLevelForPunctuation(const Cluster* cluster,
+                                                 const Cluster* prevCluster,
+                                                 IndexOneData& indexOneData);
+    ShiftLevel DetermineShiftLevelForWhitespaceBreak(const Cluster* prevCluster);
+    ShiftLevel DetermineShiftLevelForOtherCases(const Cluster* prevCluster,
+                                                IndexTwoData& indexTwoData);
+    SkScalar calculateClusterShift(const Cluster* cluster,
+                                   ClusterIndex index,
+                                   const ClusterLevelsIndices& clusterLevels);
+    void justifyUpdate(SkScalar maxWidth);
+#else
     void justify(SkScalar maxWidth);
-
+#endif
     void buildTextBlob(TextRange textRange, const TextStyle& style, const ClipContext& context);
     void paintBackground(ParagraphPainter* painter,
                          SkScalar x,
