@@ -879,8 +879,8 @@ void TextLine::allocateLevelThreeOffsets(ClusterLevelsIndices& clusterLevels,
     }
 }
 void TextLine::allocateRemainingWidth(ClusterLevelsIndices& clusterLevels,
-                            SkScalar& allocatedWidth,
-                            size_t prevClusterNotSpaceCount)
+                                      SkScalar& allocatedWidth,
+                                      size_t prevClusterNotSpaceCount)
 {
     // Bottom-up allocation: If the upper limit is reached, the remaining width is evenly allocated.
     if (allocatedWidth <= 0) {
