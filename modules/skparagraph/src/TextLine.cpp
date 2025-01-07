@@ -846,7 +846,7 @@ void TextLine::allocateLevelTwoOffsets(ClusterLevelsIndices& clusterLevels,
     if (allocatedWidth <= 0) {
         return;
     }
-    constexpr size_t scaleFactor2 = 12; // Defines the maximum width of 1 / 12 ideographs.
+    constexpr size_t scaleFactor2 = 12;  // Defines the maximum width of 1 / 12 ideographs.
     size_t N2 = prevClusterNotSpaceCount + clusterLevels.levelTwoIndices.size();
 
     SkScalar maxLevel2Width = N2 * 1.0f * ideographicMaxLen / scaleFactor2;
@@ -856,7 +856,7 @@ void TextLine::allocateLevelTwoOffsets(ClusterLevelsIndices& clusterLevels,
     } else {
         clusterLevels.levelTwoOffset = 1.0f * ideographicMaxLen / scaleFactor2;
         allocatedWidth -= maxLevel2Width;
-    }   
+    }
 }
 void TextLine::allocateLevelThreeOffsets(ClusterLevelsIndices& clusterLevels,
                                          SkScalar& allocatedWidth,
@@ -866,7 +866,7 @@ void TextLine::allocateLevelThreeOffsets(ClusterLevelsIndices& clusterLevels,
     if (allocatedWidth <= 0) {
         return;
     }
-    constexpr size_t scaleFactor3 = 6; // Defines the maximum width of 1 / 6 ideographs.
+    constexpr size_t scaleFactor3 = 6;  // Defines the maximum width of 1 / 6 ideographs.
 
     SkScalar maxLevel3Width =
             clusterLevels.levelThreeIndices.size() * 1.5f * ideographicMaxLen / scaleFactor3;
@@ -956,7 +956,7 @@ TextLine::ShiftLevel TextLine::determineShiftLevelForOtherCases(const Cluster* p
     return ShiftLevel::Undefined;
 }
 TextLine::ShiftLevel TextLine::determineShiftLevel(const Cluster* cluster,
-                                                   const Cluster* prevCluster, 
+                                                   const Cluster* prevCluster,
                                                    IndexOneData& indexOneData,
                                                    IndexTwoData& indexTwoData,
                                                    SkScalar& ideographicMaxLen)
@@ -991,10 +991,10 @@ SkScalar TextLine::calculateClusterShift(const Cluster* cluster,
     if (it != clusterLevels.levelOneIndices.end()) {
         size_t idx = std::distance(clusterLevels.levelOneIndices.begin(), it);
         step = clusterLevels.levelOneIndices[idx].LevelOneOffset;
-    } else if (it2 != clusterLevels.LevelTwoIndices.end()) {
+    } else if (it2 != clusterLevels.levelTwoIndices.end()) {
         // Because both sides of the WhitespaceBreak are equally widened, the
         // ideographic and non-ideographic characters are only widened once.
-        // So the front is not WhitespaceBreak, and the count increases by 1. 
+        // So the front is not WhitespaceBreak, and the count increases by 1.
         step = it2->isPrevClusterSpace ? clusterLevels.levelTwoOffset
                                        : clusterLevels.levelTwoOffset * (1 + 1);
     } else if (std::find(clusterLevels.levelThreeIndices.begin(),
@@ -1028,6 +1028,7 @@ void TextLine::justifyUpdate(SkScalar maxWidth)
                 IndexTwoData indexTwoData;
                 ShiftLevel shiftLevel = determineShiftLevel(
                         cluster, prevCluster, indexOneData, indexTwoData, ideographicMaxLen);
+
                 switch (shiftLevel) {
                     case ShiftLevel::LevelOne:
                         indexOneData.clusterIndex = index;

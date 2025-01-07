@@ -82,7 +82,7 @@ public:
         SkScalar levelTwoOffset = 0.0f;
         SkScalar levelThreeOffset = 0.0f;
     };
-    enum class shiftLevel {
+    enum class ShiftLevel {
         Undefined,
         LevelOne, // Level 1 Label: Punctuation
         LevelTwo, // Level-2 label: WhitespaceBreak, between ideographic and non-ideographic characters
@@ -273,7 +273,7 @@ private:
     ShiftLevel determineShiftLevelForOtherCases(const Cluster* prevCluster,
                                                 IndexTwoData& indexTwoData);
     ShiftLevel determineShiftLevel(const Cluster* cluster,
-                                   const Cluster* prevCluster, 
+                                   const Cluster* prevCluster,
                                    IndexOneData& indexOneData,
                                    IndexTwoData& indexTwoData,
                                    SkScalar& ideographicMaxLen);
