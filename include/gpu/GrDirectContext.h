@@ -12,6 +12,8 @@
 
 #include <array>
 
+#include <unordered_map>
+
 #include "include/gpu/GrRecordingContext.h"
 
 #include "include/gpu/GrBackendSurface.h"
