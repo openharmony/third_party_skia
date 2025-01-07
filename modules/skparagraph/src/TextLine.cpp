@@ -869,7 +869,7 @@ void TextLine::allocateLevelThreeOffsets(ClusterLevelsIndices& clusterLevels,
     constexpr size_t scaleFactor3 = 6;  // Defines the maximum width of 1 / 6 ideographs.
 
     SkScalar maxLevel3Width =
-            clusterLevels.levelThreeIndices.size() * 1.5f * ideographicMaxLen / scaleFactor3;
+            clusterLevels.levelThreeIndices.size() * 1.0f * ideographicMaxLen / scaleFactor3;
     if (maxLevel3Width >= allocatedWidth) {
         clusterLevels.levelThreeOffset = allocatedWidth / clusterLevels.levelThreeIndices.size();
         allocatedWidth = 0;
