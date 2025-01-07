@@ -89,8 +89,8 @@ class SKUNICODE_API SkUnicode {
             kIdeographic = 0x100,
 #ifdef OHOS_SUPPORT
             kCombine = 0x200,
-            kPunctuation = 0X400,
-            kEllipsis = 0X800,
+            kPunctuation = 0x400,
+            kEllipsis = 0x800,
 #endif
         };
         enum class TextDirection {

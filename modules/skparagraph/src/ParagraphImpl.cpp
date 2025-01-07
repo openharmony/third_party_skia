@@ -912,7 +912,7 @@ Cluster::Cluster(ParagraphImpl* owner,
 #ifdef OHOS_SUPPORT
         fIsPunctuation = fOwner->codeUnitHasProperty(fTextRange.start,
                                                      SkUnicode::CodeUnitFlags::kPunctuation);
-        fIsEllipsis = 
+        fIsEllipsis =
                 fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kEllipsis);
 #endif
     } else {

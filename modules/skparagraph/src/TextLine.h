@@ -83,10 +83,10 @@ public:
         SkScalar levelThreeOffset = 0.0f;
     };
     enum class shiftLevel {
-        Unified,
+        Undefined,
         LevelOne, // Level 1 Label: Punctuation
         LevelTwo, // Level-2 label: WhitespaceBreak, between ideographic and non-ideographic characters
-        LevelThree, // Level-3 label: Between ideographic characters
+        LevelThree // Level-3 label: Between ideographic characters
     };
 #endif
 
@@ -246,29 +246,37 @@ private:
         SkRect rect;
     };
 #ifdef OHOS_SUPPORT
-    void allocateLevelOneOffsets(ClusterLevelsIndices clusterLevels,
+    void allocateLevelOneOffsets(ClusterLevelsIndices& clusterLevels,
                                  SkScalar& allocatedWidth,
                                  SkScalar ideographicMaxLen);
-    void allocateLevelTwoOffsets(ClusterLevelsIndices clusterLevels,
+    void allocateLevelTwoOffsets(ClusterLevelsIndices& clusterLevels,
                                  SkScalar& allocatedWidth,
                                  SkScalar ideographicMaxLen,
                                  size_t prevClusterNotSpaceCount);
-    void allocateLevelThreeOffsets(ClusterLevelsIndices clusterLevels,
+    void allocateLevelThreeOffsets(ClusterLevelsIndices& clusterLevels,
                                    SkScalar& allocatedWidth,
                                    SkScalar ideographicMaxLen);
-    void distributeRemainingSpace(ClusterLevelsIndices clusterLevels,
+    void allocateRemainingWidth(ClusterLevelsIndices& clusterLevels,
+                                      SkScalar& allocatedWidth,
+                                      size_t prevClusterNotSpaceCount);
+    void distributeRemainingSpace(ClusterLevelsIndices& clusterLevels,
                                   SkScalar& levelTwoOffset,
                                   SkScalar& levelThreeOffset,
                                   SkScalar& allocatedWidth);
-    SkScalar UsingAutoSpaceWidth(const Cluster* cluster);
-    ShiftLevel DetermineShiftLevelForIdeographic(const Cluster* prevCluster,
+    SkScalar usingAutoSpaceWidth(const Cluster* cluster);
+    ShiftLevel determineShiftLevelForIdeographic(const Cluster* prevCluster,
                                                  IndexTwoData& indexTwoData);
-    ShiftLevel DetermineShiftLevelForPunctuation(const Cluster* cluster,
+    ShiftLevel determineShiftLevelForPunctuation(const Cluster* cluster,
                                                  const Cluster* prevCluster,
                                                  IndexOneData& indexOneData);
-    ShiftLevel DetermineShiftLevelForWhitespaceBreak(const Cluster* prevCluster);
-    ShiftLevel DetermineShiftLevelForOtherCases(const Cluster* prevCluster,
+    ShiftLevel determineShiftLevelForWhitespaceBreak(const Cluster* prevCluster);
+    ShiftLevel determineShiftLevelForOtherCases(const Cluster* prevCluster,
                                                 IndexTwoData& indexTwoData);
+    ShiftLevel determineShiftLevel(const Cluster* cluster,
+                                   const Cluster* prevCluster, 
+                                   IndexOneData& indexOneData,
+                                   IndexTwoData& indexTwoData,
+                                   SkScalar& ideographicMaxLen);
     SkScalar calculateClusterShift(const Cluster* cluster,
                                    ClusterIndex index,
                                    const ClusterLevelsIndices& clusterLevels);

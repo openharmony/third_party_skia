@@ -319,7 +319,7 @@ class SkUnicode_icu : public SkUnicode {
             return true;
         }
         static constexpr std::array<std::pair<SkUnichar, SkUnichar>, 13> ranges{{
-                {0x0020, 0x002F},  // ASCII punctuation (e.g., ! " # $ % & ' ( ) * + , - . /)
+                {0x0021, 0x002F},  // ASCII punctuation (e.g., ! " # $ % & ' ( ) * + , - . /)
                 {0x003A, 0x0040},  // ASCII punctuation (e.g., : ; < = > ? @)
                 {0x005B, 0x0060},  // ASCII punctuation (e.g., [ \ ] ^ _ `)
                 {0x007B, 0x007E},  // ASCII punctuation (e.g., { | } ~)
