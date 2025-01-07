@@ -65,16 +65,19 @@ public:
         READ_REPLACED_WORD = 1,  // read replaced word
         READ_ELLIPSIS_WORD = 2, // read ellipsis word
     };
+
     struct IndexOneData {
         ClusterIndex clusterIndex = SIZE_MAX;
         bool isClusterPunct = false;
         SkScalar punctWidths = 0;
         SkScalar LevelOneOffset = 0.0f;
     };
+
     struct IndexTwoData {
         ClusterIndex clusterIndex = SIZE_MAX;
         bool isPrevClusterSpace = true;
     };
+
     struct ClusterLevelsIndices {
         std::vector<IndexOneData> levelOneIndices = {};
         std::vector<IndexTwoData> levelTwoIndices = {};
@@ -82,6 +85,7 @@ public:
         SkScalar levelTwoOffset = 0.0f;
         SkScalar levelThreeOffset = 0.0f;
     };
+    
     enum class ShiftLevel {
         Undefined,
         LevelOne, // Level 1 Label: Punctuation

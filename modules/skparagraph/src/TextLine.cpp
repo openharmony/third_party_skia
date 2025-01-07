@@ -837,6 +837,7 @@ void TextLine::allocateLevelOneOffsets(ClusterLevelsIndices& clusterLevels,
         allocatedWidth -= maxLevel1Width;
     }
 }
+
 void TextLine::allocateLevelTwoOffsets(ClusterLevelsIndices& clusterLevels,
                                        SkScalar& allocatedWidth,
                                        SkScalar ideographicMaxLen,
@@ -858,6 +859,7 @@ void TextLine::allocateLevelTwoOffsets(ClusterLevelsIndices& clusterLevels,
         allocatedWidth -= maxLevel2Width;
     }
 }
+
 void TextLine::allocateLevelThreeOffsets(ClusterLevelsIndices& clusterLevels,
                                          SkScalar& allocatedWidth,
                                          SkScalar ideographicMaxLen)
@@ -878,6 +880,7 @@ void TextLine::allocateLevelThreeOffsets(ClusterLevelsIndices& clusterLevels,
         allocatedWidth -= maxLevel3Width;
     }
 }
+
 void TextLine::allocateRemainingWidth(ClusterLevelsIndices& clusterLevels,
                                       SkScalar& allocatedWidth,
                                       size_t prevClusterNotSpaceCount)
@@ -896,6 +899,7 @@ void TextLine::allocateRemainingWidth(ClusterLevelsIndices& clusterLevels,
     clusterLevels.levelTwoOffset += remainingOffset;
     clusterLevels.levelThreeOffset += remainingOffset;
 }
+
 SkScalar TextLine::usingAutoSpaceWidth(const Cluster* cluster)
 {
     auto& run = cluster->run();
@@ -907,6 +911,7 @@ SkScalar TextLine::usingAutoSpaceWidth(const Cluster* cluster)
     }
     return cluster->width() + correction;
 }
+
 TextLine::ShiftLevel TextLine::determineShiftLevelForIdeographic(const Cluster* prevCluster,
                                                                  IndexTwoData& indexTwoData)
 {
@@ -921,6 +926,7 @@ TextLine::ShiftLevel TextLine::determineShiftLevelForIdeographic(const Cluster* 
         return ShiftLevel::LevelTwo;
     }
 }
+
 TextLine::ShiftLevel TextLine::determineShiftLevelForPunctuation(const Cluster* cluster,
                                                                  const Cluster* prevCluster,
                                                                  IndexOneData& indexOneData)
@@ -955,6 +961,7 @@ TextLine::ShiftLevel TextLine::determineShiftLevelForOtherCases(const Cluster* p
     }
     return ShiftLevel::Undefined;
 }
+
 TextLine::ShiftLevel TextLine::determineShiftLevel(const Cluster* cluster,
                                                    const Cluster* prevCluster,
                                                    IndexOneData& indexOneData,
@@ -1004,6 +1011,7 @@ SkScalar TextLine::calculateClusterShift(const Cluster* cluster,
     }
     return step;
 }
+
 void TextLine::justifyUpdate(SkScalar maxWidth)
 {
     SkScalar textLen = 0;
@@ -1062,7 +1070,7 @@ void TextLine::justifyUpdate(SkScalar maxWidth)
         }
         return;
     }
-    SkScalar allocatedWidth = maxWidth - textLen;
+    SkScalar allocatedWidth = maxWidth - textLen - (fEllipsis ? fEllipsis->fAdvance.fX : 0);
     // Allocate offsets for each level
     this->allocateLevelOneOffsets(clusterLevels, allocatedWidth, ideographicMaxLen);
     this->allocateLevelTwoOffsets(clusterLevels,
@@ -1096,6 +1104,7 @@ void TextLine::justifyUpdate(SkScalar maxWidth)
     this->fWidthWithSpaces += ghostShift;
     this->fAdvance.fX = maxWidth;
 }
+
 #else
 void TextLine::justify(SkScalar maxWidth) {
     int whitespacePatches = 0;
