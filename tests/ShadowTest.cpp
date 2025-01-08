@@ -19,6 +19,7 @@ enum ExpectVerts {
     kDo_ExpectVerts
 };
 
+// skia commit SHA: 56cd45ba0744d378745d3a3a0a0f9e695cf5cfda
 void check_result(skiatest::Reporter* reporter, sk_sp<SkVertices> verts, ExpectVerts expectVerts) {
     const bool expectSuccess = expectVerts == kDo_ExpectVerts;
     if (expectSuccess != SkToBool(verts)) {

@@ -165,6 +165,7 @@ DEF_TEST(Vertices_clipping, reporter) {
     }
 }
 
+// skia commit SHA: 56cd45ba0744d378745d3a3a0a0f9e695cf5cfda
 DEF_TEST(Vertices_invalid, reporter) {
     auto surf = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
 

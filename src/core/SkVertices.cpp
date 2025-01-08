@@ -86,6 +86,7 @@ struct SkVertices::Sizes {
         }
     }
 
+    // skia commit SHA: 56cd45ba0744d378745d3a3a0a0f9e695cf5cfda
     bool isValid() const {
         SkASSERT(fTotal >= fVSize);
         return fVSize > 0;
@@ -220,6 +221,7 @@ sk_sp<SkVertices> SkVertices::MakeCopy(VertexMode mode, int vertexCount,
     sk_careful_memcpy(builder.texCoords(), texs, sizes.fTSize);
     sk_careful_memcpy(builder.colors(), colors, sizes.fCSize);
     
+    // skia commit SHA: 56cd45ba0744d378745d3a3a0a0f9e695cf5cfda
     // The builder can update the number of indices.
     const size_t isize = ((mode == kTriangleFan_VertexMode) ? sizes.fBuilderTriFanISize
                                                             : sizes.fISize),
