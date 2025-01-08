@@ -218,7 +218,7 @@ VkResult GrVkAMDMemoryAllocator::allocateImageMemory(VkImage image, AllocationPr
     VkResult result = vmaAllocateMemoryForImage(fAllocator, image, &info, &allocation, nullptr);
     if (VK_SUCCESS != result) {
         return result;
-    } 
+    }
     *backendMemory = (GrVkBackendMemory)allocation;
 
     // OH ISSUE: VMA preAlloc
@@ -230,6 +230,9 @@ VkResult GrVkAMDMemoryAllocator::allocateImageMemory(VkImage image, AllocationPr
         std::lock_guard<std::mutex> lock(mPreAllocMutex);
         // After swap, allocation belongs to vma reserved block.
         VkResult result2 = vmaSwapReservedBlock(fAllocator, image, &info, &allocation, nullptr);
+        if (result2 == VK_INCOMPLETE) {
+            return result;
+        }
         if (result2 == VK_NOT_READY) {
             GetThreadPool().add([=] {
                 std::lock_guard<std::mutex> lock(mPreAllocMutex);
