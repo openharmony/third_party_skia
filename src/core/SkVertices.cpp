@@ -18,7 +18,6 @@
 #include "src/core/SkVerticesPriv.h"
 #include "src/core/SkWriteBuffer.h"
 
-
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
