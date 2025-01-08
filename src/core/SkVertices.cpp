@@ -253,7 +253,9 @@ sk_sp<SkVertices> SkVertices::MakeCopy(VertexMode mode, int vertexCount,
         builder.indices()[i] = std::min(indices[i], max_index);
         SkDEBUGCODE(i += 1);
     }
-    SkASSERT(i == icount);    return builder.detach();
+    SkASSERT(i == icount);
+    
+    return builder.detach();
 }
 
 size_t SkVertices::approximateSize() const {
