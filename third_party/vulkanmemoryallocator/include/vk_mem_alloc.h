@@ -6805,8 +6805,8 @@ public:
     // Always call before destruction.
     void Destroy(VmaAllocator allocator);
     
-    void SetBindCompleteFlag(bool flag) { m_BindComplete = flag; }
-    bool GetBindCompleteFlag() const { return m_BindComplete; }
+    void SetBindCompleteFlag(bool flag) { m_bindComplete = flag; }
+    bool GetBindCompleteFlag() const { return m_bindComplete; }
     
     VmaPool GetParentPool() const { return m_hParentPool; }
     VkDeviceMemory GetDeviceMemory() const { return m_hMemory; }
@@ -6853,7 +6853,7 @@ private:
     VMA_MUTEX m_Mutex;
     uint32_t m_MapCount;
     void* m_pMappedData;
-    bool m_BindComplete;
+    bool m_bindComplete;
 };
 
 struct VmaPointerLess
@@ -12222,7 +12222,7 @@ VmaDeviceMemoryBlock::VmaDeviceMemoryBlock(VmaAllocator hAllocator) :
     m_hMemory(VK_NULL_HANDLE),
     m_MapCount(0),
     m_pMappedData(VMA_NULL),
-    m_BindComplete(false)
+    m_bindComplete(false)
 {
 }
 
