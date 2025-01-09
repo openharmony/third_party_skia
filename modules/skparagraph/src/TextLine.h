@@ -84,8 +84,13 @@ public:
         std::vector<ClusterIndex> levelThreeIndices = {};
         SkScalar levelTwoOffset = 0.0f;
         SkScalar levelThreeOffset = 0.0f;
+
+        bool empty()
+        {
+            return levelOneIndices.empty() && levelTwoIndices.empty() && levelThreeIndices.empty();
+        }
     };
-    
+
     enum class ShiftLevel {
         Undefined,
         LevelOne, // Level 1 Label: Punctuation
@@ -284,7 +289,12 @@ private:
     SkScalar calculateClusterShift(const Cluster* cluster,
                                    ClusterIndex index,
                                    const ClusterLevelsIndices& clusterLevels);
-    void justifyUpdate(SkScalar maxWidth);
+    void justifyShiftCluster(const SkScalar maxWidth,
+                                         SkScalar textLen,
+                                         ClusterLevelsIndices& clusterLevels,
+                                         SkScalar ideographicMaxLen,
+                                         size_t prevClusterNotSpaceCount);
+    void justify(SkScalar maxWidth);
 #else
     void justify(SkScalar maxWidth);
 #endif

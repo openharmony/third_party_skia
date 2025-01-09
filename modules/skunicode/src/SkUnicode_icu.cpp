@@ -418,15 +418,13 @@ public:
         results->reset();
         results->push_back_n(utf8Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
 
-        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kLines, [&](int pos,
-                                                                       int status) {
+        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kLines, [&](int pos, int status) {
             (*results)[pos] |= status == UBRK_LINE_HARD
                                     ? CodeUnitFlags::kHardLineBreakBefore
                                     : CodeUnitFlags::kSoftLineBreakBefore;
         });
 
-        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kGraphemes, [&](int pos,
-                                                                       int status) {
+        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kGraphemes, [&](int pos, int status) {
             (*results)[pos] |= CodeUnitFlags::kGraphemeStart;
         });
 
@@ -458,12 +456,8 @@ public:
                     results->at(i) |= SkUnicode::kIdeographic;
                 }
 #ifdef OHOS_SUPPORT
-                if (SkUnicode_icu::isPunctuation(unichar)) {
-                    results->at(i) |= SkUnicode::kPunctuation;
-                }
-                if (SkUnicode_icu::isEllipsis(unichar)) {
-                    results->at(i) |= SkUnicode::kEllipsis;
-                }
+                if (SkUnicode_icu::isPunctuation(unichar)) results->at(i) |= SkUnicode::kPunctuation;
+                if (SkUnicode_icu::isEllipsis(unichar)) results->at(i) |= SkUnicode::kEllipsis;
 #endif
             }
 

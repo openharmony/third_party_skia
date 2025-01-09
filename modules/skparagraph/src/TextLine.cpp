@@ -516,11 +516,9 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
     // We do nothing for left align
     if (align == TextAlign::kJustify) {
         if (!this->endsWithHardLineBreak()) {
-#ifdef OHOS_SUPPORT
-            this->justifyUpdate(maxWidth);
-            this->fOwner->setLongestLine(maxWidth);
-#else
             this->justify(maxWidth);
+#ifdef OHOS_SUPPORT
+            this->fOwner->setLongestLine(maxWidth);
 #endif
         } else if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
             // Justify -> Right align
@@ -1012,7 +1010,44 @@ SkScalar TextLine::calculateClusterShift(const Cluster* cluster,
     return step;
 }
 
-void TextLine::justifyUpdate(SkScalar maxWidth)
+void TextLine::justifyShiftCluster(const SkScalar maxWidth,
+                                               SkScalar textLen,
+                                               ClusterLevelsIndices& clusterLevels,
+                                               SkScalar ideographicMaxLen,
+                                               size_t prevClusterNotSpaceCount)
+{
+    SkScalar allocatedWidth = maxWidth - textLen - (fEllipsis ? fEllipsis->fAdvance.fX : 0);
+    // Allocate offsets for each level
+    this->allocateLevelOneOffsets(clusterLevels, allocatedWidth, ideographicMaxLen);
+    this->allocateLevelTwoOffsets(clusterLevels, allocatedWidth, ideographicMaxLen, prevClusterNotSpaceCount);
+    this->allocateLevelThreeOffsets(clusterLevels, allocatedWidth, ideographicMaxLen);
+    this->allocateRemainingWidth(clusterLevels, allocatedWidth, prevClusterNotSpaceCount);
+    // Deal with the ghost spaces
+    auto ghostShift = maxWidth - this->fAdvance.fX;
+    // Reallocate the width of each cluster: Clusters of different levels use different offsets.
+    SkScalar shift = 0.0f;
+    SkScalar prevShift = 0.0f;
+    this->iterateThroughClustersInGlyphsOrder(
+        false, true, [&](const Cluster* cluster, ClusterIndex index, bool ghost) {
+            if (ghost) {
+                if (cluster->run().leftToRight()) {
+                    this->shiftCluster(cluster, ghostShift, ghostShift);
+                }
+                return true;
+            }
+            SkScalar step = calculateClusterShift(cluster, index, clusterLevels);
+            shift += step;
+            this->shiftCluster(cluster, shift, prevShift);
+            prevShift = shift;
+            return true;
+        });
+    SkAssertResult(nearlyEqual(shift, maxWidth - textLen));
+
+    this->fWidthWithSpaces += ghostShift;
+    this->fAdvance.fX = maxWidth;
+}
+
+void TextLine::justify(SkScalar maxWidth)
 {
     SkScalar textLen = 0;
     SkScalar ideographicMaxLen = 0.0f;
@@ -1022,87 +1057,51 @@ void TextLine::justifyUpdate(SkScalar maxWidth)
     bool isFirstCluster = true;
     // Calculate text length and define three types of labels to trace cluster stretch level.
     this->iterateThroughClustersInGlyphsOrder(
-            false, false, [&](const Cluster* cluster, ClusterIndex index, bool ghost) {
-                if (isFirstCluster) {
-                    isFirstCluster = false;
-                    prevCluster = cluster;
-                    textLen += usingAutoSpaceWidth(cluster);
-                    ideographicMaxLen = (cluster->isIdeographic())
-                                                ? std::max(ideographicMaxLen, cluster->width())
-                                                : ideographicMaxLen;
-                    return true;
-                }
-                IndexOneData indexOneData;
-                IndexTwoData indexTwoData;
-                ShiftLevel shiftLevel = determineShiftLevel(
-                        cluster, prevCluster, indexOneData, indexTwoData, ideographicMaxLen);
-
-                switch (shiftLevel) {
-                    case ShiftLevel::LevelOne:
-                        indexOneData.clusterIndex = index;
-                        clusterLevels.levelOneIndices.push_back(indexOneData);
-                        break;
-                    case ShiftLevel::LevelTwo:
-                        // Because both sides of the WhitespaceBreak are equally widened, the
-                        // ideographic and non-ideographic characters are only widened once.
-                        // So the front is not WhitespaceBreak, and the count increases by 1.
-                        prevClusterNotSpaceCount += indexTwoData.isPrevClusterSpace ? 0 : 1;
-                        indexTwoData.clusterIndex = index;
-                        clusterLevels.levelTwoIndices.push_back(indexTwoData);
-                        break;
-                    case ShiftLevel::LevelThree:
-                        clusterLevels.levelThreeIndices.push_back(index);
-                        break;
-                    default:
-                        break;
-                }
-                textLen += usingAutoSpaceWidth(cluster);
+        false, false, [&](const Cluster* cluster, ClusterIndex index, bool ghost) {
+            if (isFirstCluster) {
+                isFirstCluster = false;
                 prevCluster = cluster;
+                textLen += usingAutoSpaceWidth(cluster);
+                ideographicMaxLen =
+                    (cluster->isIdeographic()) ? std::max(ideographicMaxLen, cluster->width()) : ideographicMaxLen;
                 return true;
-            });
-    const size_t totalPatches = clusterLevels.levelOneIndices.size() +
-                                clusterLevels.levelTwoIndices.size() +
-                                clusterLevels.levelThreeIndices.size();
-    if (totalPatches == 0) {
+            }
+            IndexOneData indexOneData;
+            IndexTwoData indexTwoData;
+            ShiftLevel shiftLevel =
+                determineShiftLevel(cluster, prevCluster, indexOneData, indexTwoData, ideographicMaxLen);
+
+            switch (shiftLevel) {
+                case ShiftLevel::LevelOne:
+                    indexOneData.clusterIndex = index;
+                    clusterLevels.levelOneIndices.push_back(indexOneData);
+                    break;
+                case ShiftLevel::LevelTwo:
+                    // Because both sides of the WhitespaceBreak are equally widened, the
+                    // ideographic and non-ideographic characters are only widened once.
+                    // So the front is not WhitespaceBreak, and the count increases by 1.
+                    prevClusterNotSpaceCount += indexTwoData.isPrevClusterSpace ? 0 : 1;
+                    indexTwoData.clusterIndex = index;
+                    clusterLevels.levelTwoIndices.push_back(indexTwoData);
+                    break;
+                case ShiftLevel::LevelThree:
+                    clusterLevels.levelThreeIndices.push_back(index);
+                    break;
+                default:
+                    break;
+            }
+            textLen += usingAutoSpaceWidth(cluster);
+            prevCluster = cluster;
+            return true;
+        });
+    if (clusterLevels.empty()) {
         if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
             // Justify -> Right align
             fShift = maxWidth - textLen;
         }
         return;
     }
-    SkScalar allocatedWidth = maxWidth - textLen - (fEllipsis ? fEllipsis->fAdvance.fX : 0);
-    // Allocate offsets for each level
-    this->allocateLevelOneOffsets(clusterLevels, allocatedWidth, ideographicMaxLen);
-    this->allocateLevelTwoOffsets(clusterLevels,
-                                  allocatedWidth,
-                                  ideographicMaxLen,
-                                  prevClusterNotSpaceCount);
-    this->allocateLevelThreeOffsets(clusterLevels, allocatedWidth, ideographicMaxLen);
-    this->allocateRemainingWidth(clusterLevels, allocatedWidth, prevClusterNotSpaceCount);
-    // Deal with the ghost spaces
-    auto ghostShift = maxWidth - this->fAdvance.fX;
-    // Reallocate the width of each cluster: Clusters of different levels use different offsets.
-    SkScalar shift = 0.0f;
-    SkScalar prevShift = 0.0f;
-    this->iterateThroughClustersInGlyphsOrder(
-            false, true, [&](const Cluster* cluster, ClusterIndex index, bool ghost) {
-                if (ghost) {
-                    if (cluster->run().leftToRight()) {
-                        this->shiftCluster(cluster, ghostShift, ghostShift);
-                    }
-                    return true;
-                }
-                SkScalar step = calculateClusterShift(cluster, index, clusterLevels);
-                shift += step;
-                this->shiftCluster(cluster, shift, prevShift);
-                prevShift = shift;
-                prevCluster = cluster;
-                return true;
-            });
-    SkAssertResult(nearlyEqual(shift, maxWidth - textLen));
-
-    this->fWidthWithSpaces += ghostShift;
-    this->fAdvance.fX = maxWidth;
+    this->justifyShiftCluster(maxWidth, textLen, clusterLevels, ideographicMaxLen, prevClusterNotSpaceCount);
 }
 
 #else

@@ -861,27 +861,6 @@ static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(SkUnichar unicod
     return Cluster::AutoSpacingFlag::NoFlag;
 }
 #endif
-#ifdef OHOS_SUPPORT
-Cluster::Cluster(ParagraphImpl* owner,
-                 RunIndex runIndex,
-                 size_t start,
-                 size_t end,
-                 SkSpan<const char> text,
-                 SkScalar width,
-                 SkScalar height)
-        : fOwner(owner)
-        , fRunIndex(runIndex)
-        , fTextRange(text.begin() - fOwner->text().begin(), text.end() - fOwner->text().begin())
-        , fGraphemeRange(EMPTY_RANGE)
-        , fStart(start)
-        , fEnd(end)
-        , fWidth(width)
-        , fHeight(height)
-        , fHalfLetterSpacing(0.0)
-        , fIsIdeographic(false)
-        , fIsPunctuation(false)
-        , fIsEllipsis(false) {
-#else
 Cluster::Cluster(ParagraphImpl* owner,
                  RunIndex runIndex,
                  size_t start,
@@ -899,7 +878,6 @@ Cluster::Cluster(ParagraphImpl* owner,
         , fHeight(height)
         , fHalfLetterSpacing(0.0)
         , fIsIdeographic(false) {
-#endif
     size_t whiteSpacesBreakLen = 0;
     size_t intraWordBreakLen = 0;
 
@@ -910,10 +888,8 @@ Cluster::Cluster(ParagraphImpl* owner,
             ++whiteSpacesBreakLen;
         }
 #ifdef OHOS_SUPPORT
-        fIsPunctuation = fOwner->codeUnitHasProperty(fTextRange.start,
-                                                     SkUnicode::CodeUnitFlags::kPunctuation);
-        fIsEllipsis =
-                fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kEllipsis);
+        fIsPunctuation = fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kPunctuation);
+        fIsEllipsis = fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kEllipsis);
 #endif
     } else {
         for (auto i = fTextRange.start; i < fTextRange.end; ++i) {
@@ -927,12 +903,8 @@ Cluster::Cluster(ParagraphImpl* owner,
                 fIsIdeographic = true;
             }
 #ifdef OHOS_SUPPORT
-            if (fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kPunctuation)) {
-                fIsPunctuation = true;
-            }
-            if (fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kEllipsis)) {
-                fIsEllipsis = true;
-            }
+            fIsPunctuation = fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kPunctuation) | fIsPunctuation;
+            fIsEllipsis = fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kEllipsis) | fIsEllipsis;
 #endif
         }
     }
