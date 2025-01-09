@@ -66,36 +66,36 @@ public:
         READ_ELLIPSIS_WORD = 2, // read ellipsis word
     };
 
-    struct IndexOneData {
-        ClusterIndex clusterIndex = SIZE_MAX;
-        bool isClusterPunct = false;
-        SkScalar punctWidths = 0;
-        SkScalar LevelOneOffset = 0.0f;
+    struct HighLevelInfo {
+        ClusterIndex clusterIndex{SIZE_MAX};
+        bool isClusterPunct{false};
+        SkScalar punctWidths{0.0f};
+        SkScalar highLevelOffset{0.0f};
     };
 
-    struct IndexTwoData {
-        ClusterIndex clusterIndex = SIZE_MAX;
-        bool isPrevClusterSpace = true;
+    struct MiddleLevelInfo {
+        ClusterIndex clusterIndex{SIZE_MAX};
+        bool isPrevClusterSpace{true};
     };
 
     struct ClusterLevelsIndices {
-        std::vector<IndexOneData> levelOneIndices = {};
-        std::vector<IndexTwoData> levelTwoIndices = {};
-        std::vector<ClusterIndex> levelThreeIndices = {};
-        SkScalar levelTwoOffset = 0.0f;
-        SkScalar levelThreeOffset = 0.0f;
+        std::vector<HighLevelInfo> highLevelIndices = {};
+        std::vector<MiddleLevelInfo> middleLevelIndices = {};
+        std::vector<ClusterIndex> LowLevelIndices = {};
+        SkScalar middleLevelOffset{0.0f};
+        SkScalar lowLevelOffset{0.0f};
 
         bool empty()
         {
-            return levelOneIndices.empty() && levelTwoIndices.empty() && levelThreeIndices.empty();
+            return highLevelIndices.empty() && middleLevelIndices.empty() && LowLevelIndices.empty();
         }
     };
 
     enum class ShiftLevel {
         Undefined,
-        LevelOne, // Level 1 Label: Punctuation
-        LevelTwo, // Level-2 label: WhitespaceBreak, between ideographic and non-ideographic characters
-        LevelThree // Level-3 label: Between ideographic characters
+        HighLevel, // Level 1 Label: Punctuation
+        MiddleLevel, // Level-2 label: WhitespaceBreak, between ideographic and non-ideographic characters
+        LowLevel // Level-3 label: Between ideographic characters
     };
 #endif
 
@@ -255,36 +255,36 @@ private:
         SkRect rect;
     };
 #ifdef OHOS_SUPPORT
-    void allocateLevelOneOffsets(ClusterLevelsIndices& clusterLevels,
+    void allocateHighLevelOffsets(ClusterLevelsIndices& clusterLevels,
                                  SkScalar& allocatedWidth,
                                  SkScalar ideographicMaxLen);
-    void allocateLevelTwoOffsets(ClusterLevelsIndices& clusterLevels,
+    void allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLevels,
                                  SkScalar& allocatedWidth,
                                  SkScalar ideographicMaxLen,
                                  size_t prevClusterNotSpaceCount);
-    void allocateLevelThreeOffsets(ClusterLevelsIndices& clusterLevels,
+    void allocateLowLevelOffsets(ClusterLevelsIndices& clusterLevels,
                                    SkScalar& allocatedWidth,
                                    SkScalar ideographicMaxLen);
     void allocateRemainingWidth(ClusterLevelsIndices& clusterLevels,
                                       SkScalar& allocatedWidth,
                                       size_t prevClusterNotSpaceCount);
     void distributeRemainingSpace(ClusterLevelsIndices& clusterLevels,
-                                  SkScalar& levelTwoOffset,
-                                  SkScalar& levelThreeOffset,
+                                  SkScalar& middleLevelOffset,
+                                  SkScalar& lowLevelOffset,
                                   SkScalar& allocatedWidth);
     SkScalar usingAutoSpaceWidth(const Cluster* cluster);
     ShiftLevel determineShiftLevelForIdeographic(const Cluster* prevCluster,
-                                                 IndexTwoData& indexTwoData);
+                                                 MiddleLevelInfo& middleLevelInfo);
     ShiftLevel determineShiftLevelForPunctuation(const Cluster* cluster,
                                                  const Cluster* prevCluster,
-                                                 IndexOneData& indexOneData);
+                                                 HighLevelInfo& highLevelInfo);
     ShiftLevel determineShiftLevelForWhitespaceBreak(const Cluster* prevCluster);
     ShiftLevel determineShiftLevelForOtherCases(const Cluster* prevCluster,
-                                                IndexTwoData& indexTwoData);
+                                                MiddleLevelInfo& middleLevelInfo);
     ShiftLevel determineShiftLevel(const Cluster* cluster,
                                    const Cluster* prevCluster,
-                                   IndexOneData& indexOneData,
-                                   IndexTwoData& indexTwoData,
+                                   HighLevelInfo& highLevelInfo,
+                                   MiddleLevelInfo& middleLevelInfo,
                                    SkScalar& ideographicMaxLen);
     SkScalar calculateClusterShift(const Cluster* cluster,
                                    ClusterIndex index,

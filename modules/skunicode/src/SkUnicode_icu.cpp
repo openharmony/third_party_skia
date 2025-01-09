@@ -324,7 +324,6 @@ class SkUnicode_icu : public SkUnicode {
                 {0x005B, 0x0060},  // ASCII punctuation (e.g., [ \ ] ^ _ `)
                 {0x007B, 0x007E},  // ASCII punctuation (e.g., { | } ~)
                 {0x2000, 0x206F},  // Common punctuation (Chinese & English)
-                {0x3000, 0x303F},  // CJK punctuation (full-width)
                 {0xFF00, 0xFFEF},  // Full-width characters and symbols
                 {0x2E00, 0x2E7F},  // Supplemental punctuation (e.g., ancient)
                 {0x3001, 0x3003},  // CJK punctuation (e.g., Chinese comma)
@@ -334,7 +333,7 @@ class SkUnicode_icu : public SkUnicode {
                 {0xFF5B, 0xFF65},  // Other full-width punctuation (e.g., quotes)
         }};
         for (auto range : ranges) {
-            if (range.first <= unichar && range.second > unichar) {
+            if (range.first <= unichar && unichar <= range.second) {
                 return true;
             }
         }
@@ -413,6 +412,18 @@ public:
         return SkUnicode_icu::extractWords((uint16_t*)utf16.c_str(), utf16.size(), locale, results);
     }
 
+#ifdef OHOS_SUPPORT
+    void processPunctuationAndEllipsis(SkTArray<SkUnicode::CodeUnitFlags, true>* results, int i, SkUnichar unichar)
+    {
+        if (SkUnicode_icu::isPunctuation(unichar)) {
+            results->at(i) |= SkUnicode::kPunctuation;
+        }
+        if (SkUnicode_icu::isEllipsis(unichar)) {
+            results->at(i) |= SkUnicode::kEllipsis;
+        }
+    }
+#endif
+
     bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs,
                           SkTArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->reset();
@@ -456,8 +467,7 @@ public:
                     results->at(i) |= SkUnicode::kIdeographic;
                 }
 #ifdef OHOS_SUPPORT
-                if (SkUnicode_icu::isPunctuation(unichar)) results->at(i) |= SkUnicode::kPunctuation;
-                if (SkUnicode_icu::isEllipsis(unichar)) results->at(i) |= SkUnicode::kEllipsis;
+                processPunctuationAndEllipsis(results, i, unichar);
 #endif
             }
 
