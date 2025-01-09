@@ -517,8 +517,8 @@ private:
     bool fIsIdeographic;
 #ifdef OHOS_SUPPORT
     bool fIsTabulation;
-    bool fIsPunctuation;
-    bool fIsEllipsis;
+    bool fIsPunctuation{false};
+    bool fIsEllipsis{false};
     bool fNeedAutoSpacing; // depend on last cluster flag
     bool fHyphenBreak{false};
 #endif

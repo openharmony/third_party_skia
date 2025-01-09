@@ -808,16 +808,16 @@ void TextLine::allocateLevelOneOffsets(ClusterLevelsIndices& clusterLevels,
     // Level-1 allocation: punctuation
     // Pre-calculate the punctuation width to obtain the maximum width increment of each punctuation character.
     SkScalar lastPunctStretch = 0.0f;   // Extrusion width to the left of the previous punctuation.
-    constexpr size_t scaleFactor1 = 6;  // Defines the maximum width of 1 / 6 ideographs.
-    for (auto& index1 : clusterLevels.levelOneIndices) {
-        if (index1.isClusterPunct) {
-            SkScalar curPunctWidth = index1.punctWidths;
+    constexpr size_t scaleFactor = 6;  // Defines the maximum width of 1 / 6 ideographs.
+    for (auto& index : clusterLevels.levelOneIndices) {
+        if (index.isClusterPunct) {
+            SkScalar curPunctWidth = index.punctWidths;
             SkScalar stretchWidth =
-                    std::max(0.0f, (1.0f * ideographicMaxLen - curPunctWidth) / scaleFactor1);
-            index1.LevelOneOffset = stretchWidth + lastPunctStretch;
+                    std::max(0.0f, (1.0f * ideographicMaxLen - curPunctWidth) / scaleFactor);
+            index.LevelOneOffset = stretchWidth + lastPunctStretch;
             lastPunctStretch = stretchWidth;
         } else {
-            index1.LevelOneOffset = lastPunctStretch;
+            index.LevelOneOffset = lastPunctStretch;
             lastPunctStretch = 0.0f;
         }
     }
@@ -847,15 +847,15 @@ void TextLine::allocateLevelTwoOffsets(ClusterLevelsIndices& clusterLevels,
     if (allocatedWidth <= 0) {
         return;
     }
-    constexpr size_t scaleFactor2 = 12;  // Defines the maximum width of 1 / 12 ideographs.
+    constexpr size_t scaleFactor = 12;  // Defines the maximum width of 1 / 12 ideographs.
     size_t N2 = prevClusterNotSpaceCount + clusterLevels.levelTwoIndices.size();
 
-    SkScalar maxLevel2Width = N2 * 1.0f * ideographicMaxLen / scaleFactor2;
+    SkScalar maxLevel2Width = N2 * ideographicMaxLen / scaleFactor;
     if (maxLevel2Width >= allocatedWidth) {
         clusterLevels.levelTwoOffset = allocatedWidth / N2;
         allocatedWidth = 0;
     } else {
-        clusterLevels.levelTwoOffset = 1.0f * ideographicMaxLen / scaleFactor2;
+        clusterLevels.levelTwoOffset = ideographicMaxLen / scaleFactor;
         allocatedWidth -= maxLevel2Width;
     }
 }
@@ -868,15 +868,15 @@ void TextLine::allocateLevelThreeOffsets(ClusterLevelsIndices& clusterLevels,
     if (allocatedWidth <= 0) {
         return;
     }
-    constexpr size_t scaleFactor3 = 6;  // Defines the maximum width of 1 / 6 ideographs.
+    constexpr size_t scaleFactor = 6;  // Defines the maximum width of 1 / 6 ideographs.
 
     SkScalar maxLevel3Width =
-            clusterLevels.levelThreeIndices.size() * 1.0f * ideographicMaxLen / scaleFactor3;
+            clusterLevels.levelThreeIndices.size() * ideographicMaxLen / scaleFactor;
     if (maxLevel3Width >= allocatedWidth) {
         clusterLevels.levelThreeOffset = allocatedWidth / clusterLevels.levelThreeIndices.size();
         allocatedWidth = 0;
     } else {
-        clusterLevels.levelThreeOffset = 1.0f * ideographicMaxLen / scaleFactor3;
+        clusterLevels.levelThreeOffset = ideographicMaxLen / scaleFactor;
         allocatedWidth -= maxLevel3Width;
     }
 }
