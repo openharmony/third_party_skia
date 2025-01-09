@@ -159,7 +159,9 @@ std::tuple<bool, SkVector> check_integer_translate(
     // blob, but only for integer translations.
     // Calculate the translation in source space to a translation in device space by mapping
     // (0, 0) through both the initial matrix and the draw matrix; take the difference.
-    return {true, {0, 0}};
+    SkVector translation = drawMatrix.mapOrigin() - initialMatrix.mapOrigin();
+
+    return {SkScalarIsInt(translation.x()) && SkScalarIsInt(translation.y()), translation};
 }
 
 // -- PathSubRun -----------------------------------------------------------------------------------
