@@ -25,7 +25,7 @@ class SkGlyph;
 class SkTextBlob;
 class SkTextBlobRunIterator;
 
-class SkGlyphRun {
+class SK_API SkGlyphRun {
 public:
     SkGlyphRun() = default;
     SkGlyphRun(const SkFont& font,
@@ -60,7 +60,7 @@ private:
     SkFont fFont;
 };
 
-class SkGlyphRunList {
+class SK_API SkGlyphRunList {
     SkSpan<const SkGlyphRun> fGlyphRuns;
 
 public:
@@ -119,7 +119,7 @@ private:
     const SkPoint fOrigin = {0, 0};
 };
 
-class SkGlyphRunBuilder {
+class SK_API SkGlyphRunBuilder {
 public:
     const SkGlyphRunList& textToGlyphRunList(const SkFont& font,
                                              const SkPaint& paint,
