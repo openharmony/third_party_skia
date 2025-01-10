@@ -79,9 +79,9 @@ public:
     };
 
     struct ClusterLevelsIndices {
-        std::vector<HighLevelInfo> highLevelIndices = {};
-        std::vector<MiddleLevelInfo> middleLevelIndices = {};
-        std::vector<ClusterIndex> LowLevelIndices = {};
+        std::vector<HighLevelInfo> highLevelIndices;
+        std::vector<MiddleLevelInfo> middleLevelIndices;
+        std::vector<ClusterIndex> LowLevelIndices;
         SkScalar middleLevelOffset{0.0f};
         SkScalar lowLevelOffset{0.0f};
 

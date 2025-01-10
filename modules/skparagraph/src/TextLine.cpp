@@ -804,6 +804,9 @@ void TextLine::allocateHighLevelOffsets(ClusterLevelsIndices& clusterLevels,
                                        SkScalar ideographicMaxLen)
 {
     // Level-1 allocation: punctuation
+    if (allocatedWidth <= 0) {
+        return;
+    }
     // Pre-calculate the punctuation width to obtain the maximum width increment of each punctuation character.
     SkScalar lastPunctStretch = 0.0f;   // Extrusion width to the left of the previous punctuation.
     constexpr size_t scaleFactor = 6;  // Defines the maximum width of 1 / 6 ideographs.
