@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #ifdef OHOS_SUPPORT
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <unicode/utf.h>
@@ -31,17 +32,22 @@ const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
     {"cs", "hyph-cs.hpb"},
     {"cy", "hyph-cy.hpb"},
     {"da", "hyph-da.hpb"},
+    {"de", "hyph-de-1901.hpb"},
     {"de-1901", "hyph-de-1901.hpb"},
     {"de-1996", "hyph-de-1996.hpb"},
     {"de-ch-1901", "hyph-de-ch-1901.hpb"},
+    {"el", "hyph-el-monoton.hpb"},
     {"el-monoton", "hyph-el-monoton.hpb"},
     {"el-polyton", "hyph-el-polyton.hpb"},
+    {"en", "hyph-en-gb.hpb"},
     {"en-gb", "hyph-en-gb.hpb"},
+    {"en-us", "hyph-en-us.hpb"},
     {"es", "hyph-es.hpb"},
     {"et", "hyph-et.hpb"},
     {"fr", "hyph-fr.hpb"},
     {"ga", "hyph-ga.hpb"},
     {"gl", "hyph-gl.hpb"},
+    {"grc", "hyph-grc-x-ibycus.hpb"},
     {"grc-x-ibycus", "hyph-grc-x-ibycus.hpb"},
     {"gu", "hyph-gu.hpb"},
     {"hi", "hyph-hi.hpb"},
@@ -58,8 +64,10 @@ const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
     {"lv", "hyph-lv.hpb"},
     {"mk", "hyph-mk.hpb"},
     {"ml", "hyph-ml.hpb"},
+    {"mn", "hyph-mn-cyrl.hpb"},
     {"mn-cyrl", "hyph-mn-cyrl.hpb"},
     {"mr", "hyph-mr.hpb"},
+    {"mul", "hyph-mul-ethi.hpb"},
     {"mul-ethi", "hyph-mul-ethi.hpb"},
     {"nl", "hyph-nl.hpb"},
     {"or", "hyph-or.hpb"},
@@ -68,10 +76,12 @@ const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
     {"pt", "hyph-pt.hpb"},
     {"rm", "hyph-rm.hpb"},
     {"ru", "hyph-ru.hpb"},
+    {"sh", "hyph-sh-cyrl.hpb"},
     {"sh-cyrl", "hyph-sh-cyrl.hpb"},
     {"sh-latn", "hyph-sh-latn.hpb"},
     {"sk", "hyph-sk.hpb"},
     {"sl", "hyph-sl.hpb"},
+    {"sr", "hyph-sr-cyrl.hpb"},
     {"sr-cyrl", "hyph-sr-cyrl.hpb"},
     {"sv", "hyph-sv.hpb"},
     {"ta", "hyph-ta.hpb"},
@@ -80,7 +90,7 @@ const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
     {"tk", "hyph-tk.hpb"},
     {"tr", "hyph-tr.hpb"},
     {"uk", "hyph-uk.hpb"},
-    {"zh-py", "hyph-zh-latn-pinyin.hpb"},
+    {"zh-pinyin", "hyph-zh-latn-pinyin.hpb"},
 };
 
 struct HyphenTableInfo {
@@ -161,39 +171,82 @@ void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
     file.close();
 }
 
-const std::string& ResolveHpbFile(const std::string& locale)
+const std::string& ResolveHpbFile(const std::string& langCode)
 {
-    auto it = HPB_FILE_NAMES.find(locale);
+    auto it = HPB_FILE_NAMES.find(langCode);
     if (it != HPB_FILE_NAMES.end()) {
         return it->second;
     }
-    return HPB_FILE_NAMES.at("en-gb");
+    static const std::string emptyString = "";
+    return emptyString;
+}
+
+std::string getLanguageCode(std::string locale, int hyphenPos)
+{
+    // to lower case
+    std::transform(locale.begin(), locale.end(), locale.begin(), ::tolower);
+
+    // find '-',substring the locale
+    size_t pos = std::string::npos;
+    int count = 0;
+    for (size_t i = 0; i < locale.size(); ++i) {
+        if (locale[i] == '-') {
+            ++count;
+            if (count == hyphenPos) {
+                pos = i;
+                break;
+            }
+        }
+    }
+
+    if (pos != std::string::npos) {
+        return locale.substr(0, pos);
+    } else {
+        return locale;
+    }
 }
 
 const std::vector<uint8_t>& Hyphenator::GetHyphenatorData(const std::string& locale)
 {
+    const std::vector<uint8_t>& firstResult =
+        findHyphenatorData(getLanguageCode(locale, 2)); //num 2:sub string locale to the second '-'
+    if (!firstResult.empty()) {
+        return firstResult;
+    } else {
+        return findHyphenatorData(getLanguageCode(locale, 1));
+    }
+}
+
+const std::vector<uint8_t>& Hyphenator::findHyphenatorData(const std::string& langCode)
+{
     {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
-        auto search = hyphenMap.find(locale);
+        auto search = hyphenMap.find(langCode);
         if (search != hyphenMap.end()) {
             return search->second;
         }
     }
 
-    LoadHyphenatorData(locale);
-   
-    return hyphenMap[locale];
+    if (LoadHyphenatorData(langCode)) {
+        return hyphenMap[langCode];
+    } else {
+        static const std::vector<uint8_t> emptyArr;
+        return emptyArr;
+    }
 }
 
-bool Hyphenator::LoadHyphenatorData(const std::string& locale)
+bool Hyphenator::LoadHyphenatorData(const std::string& langCode)
 {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
-    std::string filename = "/system/usr/ohos_hyphen_data/" + ResolveHpbFile(locale);
-    std::vector<uint8_t> fileBuffer;
-    ReadBinaryFile(filename, fileBuffer);
-    if (!fileBuffer.empty()) {
-        hyphenMap.emplace(locale, std::move(fileBuffer));
-        return true;
+    const std::string& hpbFileName = ResolveHpbFile(langCode);
+    if (!hpbFileName.empty()) {
+        std::string filename = "/system/usr/ohos_hyphen_data/" + hpbFileName;
+        std::vector<uint8_t> fileBuffer;
+        ReadBinaryFile(filename, fileBuffer);
+        if (!fileBuffer.empty()) {
+            hyphenMap.emplace(langCode, std::move(fileBuffer));
+            return true;
+        }
     }
     return false;
 }

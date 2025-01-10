@@ -108,7 +108,8 @@ public:
         return instance;
     }
     const std::vector<uint8_t>& GetHyphenatorData(const std::string& locale);
-    bool LoadHyphenatorData(const std::string& locale);
+    const std::vector<uint8_t>& findHyphenatorData(const std::string& langCode);
+    bool LoadHyphenatorData(const std::string& langCode);
     std::vector<uint8_t> FindBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
                                             size_t startPos, size_t endPos);
 
