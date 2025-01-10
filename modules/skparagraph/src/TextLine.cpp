@@ -897,6 +897,9 @@ void TextLine::allocateRemainingWidth(ClusterLevelsIndices& clusterLevels,
 
 SkScalar TextLine::usingAutoSpaceWidth(const Cluster* cluster)
 {
+    if (cluster == nullptr) {
+        return 0.0f;
+    }
     auto& run = cluster->run();
     auto start = cluster->startPos();
     auto end = cluster->endPos();
@@ -910,6 +913,9 @@ SkScalar TextLine::usingAutoSpaceWidth(const Cluster* cluster)
 TextLine::ShiftLevel TextLine::determineShiftLevelForIdeographic(const Cluster* prevCluster,
                                                                  MiddleLevelInfo& middleLevelInfo)
 {
+    if (prevCluster == nullptr) {
+        return ShiftLevel::Undefined;
+    }
     if (prevCluster->isIdeographic()) {
         return ShiftLevel::LowLevel;
     } else if (prevCluster->isPunctuation()) {
@@ -926,6 +932,9 @@ TextLine::ShiftLevel TextLine::determineShiftLevelForPunctuation(const Cluster* 
                                                                  const Cluster* prevCluster,
                                                                  HighLevelInfo& highLevelInfo)
 {
+    if (cluster == nullptr || prevCluster == nullptr) {
+        return ShiftLevel::Undefined;
+    }
     // Prevents stretching between ellipsis unicode
     if (cluster->isEllipsis() && prevCluster->isEllipsis()) {
         return ShiftLevel::Undefined;
@@ -937,6 +946,9 @@ TextLine::ShiftLevel TextLine::determineShiftLevelForPunctuation(const Cluster* 
 
 TextLine::ShiftLevel TextLine::determineShiftLevelForWhitespaceBreak(const Cluster* prevCluster)
 {
+    if (prevCluster == nullptr) {
+        return ShiftLevel::Undefined;
+    }
     if (prevCluster->isPunctuation()) {
         return ShiftLevel::HighLevel;
     }
@@ -946,6 +958,9 @@ TextLine::ShiftLevel TextLine::determineShiftLevelForWhitespaceBreak(const Clust
 TextLine::ShiftLevel TextLine::determineShiftLevelForOtherCases(const Cluster* prevCluster,
                                                                 MiddleLevelInfo& middleLevelInfo)
 {
+    if (prevCluster == nullptr) {
+        return ShiftLevel::Undefined;
+    }
     if (prevCluster->isIdeographic()) {
         middleLevelInfo.isPrevClusterSpace = false;
         return ShiftLevel::MiddleLevel;
@@ -963,6 +978,9 @@ TextLine::ShiftLevel TextLine::determineShiftLevel(const Cluster* cluster,
                                                    MiddleLevelInfo& middleLevelInfo,
                                                    SkScalar& ideographicMaxLen)
 {
+    if (cluster == nullptr || prevCluster == nullptr) {
+        return ShiftLevel::Undefined;
+    }
     ShiftLevel shiftLevel = ShiftLevel::Undefined;
     if (cluster->isIdeographic()) {
         ideographicMaxLen = std::max(ideographicMaxLen, cluster->width());
@@ -981,6 +999,9 @@ SkScalar TextLine::calculateClusterShift(const Cluster* cluster,
                                          ClusterIndex index,
                                          const ClusterLevelsIndices& clusterLevels)
 {
+    if (cluster == nullptr) {
+        return 0.0f;
+    }
     SkScalar step = 0.0f;
     auto it = std::find_if(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(),
         [index](const HighLevelInfo& data) { return data.clusterIndex == index; });
@@ -1022,6 +1043,9 @@ void TextLine::justifyShiftCluster(const SkScalar maxWidth,
     SkScalar prevShift = 0.0f;
     this->iterateThroughClustersInGlyphsOrder(
         false, true, [&](const Cluster* cluster, ClusterIndex index, bool ghost) {
+            if (cluster == nullptr) {
+                return true;
+            }
             if (ghost) {
                 if (cluster->run().leftToRight()) {
                     this->shiftCluster(cluster, ghostShift, ghostShift);
@@ -1051,7 +1075,7 @@ void TextLine::justify(SkScalar maxWidth)
     // Calculate text length and define three types of labels to trace cluster stretch level.
     this->iterateThroughClustersInGlyphsOrder(
         false, false, [&](const Cluster* cluster, ClusterIndex index, bool ghost) {
-            if (isFirstCluster) {
+            if (cluster && isFirstCluster) {
                 isFirstCluster = false;
                 prevCluster = cluster;
                 textLen += usingAutoSpaceWidth(cluster);
@@ -1059,11 +1083,13 @@ void TextLine::justify(SkScalar maxWidth)
                     (cluster->isIdeographic()) ? std::max(ideographicMaxLen, cluster->width()) : ideographicMaxLen;
                 return true;
             }
+            if (prevCluster == nullptr) {
+                return true;
+            }
             HighLevelInfo highLevelInfo;
             MiddleLevelInfo middleLevelInfo;
             ShiftLevel shiftLevel =
                 determineShiftLevel(cluster, prevCluster, highLevelInfo, middleLevelInfo, ideographicMaxLen);
-
             switch (shiftLevel) {
                 case ShiftLevel::HighLevel:
                     highLevelInfo.clusterIndex = index;
