@@ -36,7 +36,6 @@ struct DecorationContext {
 };
 class TextLine {
 public:
-
     struct ClipContext {
       const Run* run;
       size_t pos;
@@ -65,6 +64,38 @@ public:
         DEFAULT = 0,            // default
         READ_REPLACED_WORD = 1,  // read replaced word
         READ_ELLIPSIS_WORD = 2, // read ellipsis word
+    };
+
+    struct HighLevelInfo {
+        ClusterIndex clusterIndex{SIZE_MAX};
+        bool isClusterPunct{false};
+        SkScalar punctWidths{0.0f};
+        SkScalar highLevelOffset{0.0f};
+    };
+
+    struct MiddleLevelInfo {
+        ClusterIndex clusterIndex{SIZE_MAX};
+        bool isPrevClusterSpace{true};
+    };
+
+    struct ClusterLevelsIndices {
+        std::vector<HighLevelInfo> highLevelIndices;
+        std::vector<MiddleLevelInfo> middleLevelIndices;
+        std::vector<ClusterIndex> LowLevelIndices;
+        SkScalar middleLevelOffset{0.0f};
+        SkScalar lowLevelOffset{0.0f};
+
+        bool empty()
+        {
+            return highLevelIndices.empty() && middleLevelIndices.empty() && LowLevelIndices.empty();
+        }
+    };
+
+    enum class ShiftLevel {
+        Undefined,
+        HighLevel, // Level 1 Label: Punctuation
+        MiddleLevel, // Level-2 label: WhitespaceBreak, between ideographic and non-ideographic characters
+        LowLevel // Level-3 label: Between ideographic characters
     };
 #endif
 
@@ -223,9 +254,50 @@ private:
         RectStyle roundRectStyle;
         SkRect rect;
     };
-
+#ifdef OHOS_SUPPORT
+    void allocateHighLevelOffsets(ClusterLevelsIndices& clusterLevels,
+                                 SkScalar& allocatedWidth,
+                                 SkScalar ideographicMaxLen);
+    void allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLevels,
+                                 SkScalar& allocatedWidth,
+                                 SkScalar ideographicMaxLen,
+                                 size_t prevClusterNotSpaceCount);
+    void allocateLowLevelOffsets(ClusterLevelsIndices& clusterLevels,
+                                   SkScalar& allocatedWidth,
+                                   SkScalar ideographicMaxLen);
+    void allocateRemainingWidth(ClusterLevelsIndices& clusterLevels,
+                                      SkScalar& allocatedWidth,
+                                      size_t prevClusterNotSpaceCount);
+    void distributeRemainingSpace(ClusterLevelsIndices& clusterLevels,
+                                  SkScalar& middleLevelOffset,
+                                  SkScalar& lowLevelOffset,
+                                  SkScalar& allocatedWidth);
+    SkScalar usingAutoSpaceWidth(const Cluster* cluster);
+    ShiftLevel determineShiftLevelForIdeographic(const Cluster* prevCluster,
+                                                 MiddleLevelInfo& middleLevelInfo);
+    ShiftLevel determineShiftLevelForPunctuation(const Cluster* cluster,
+                                                 const Cluster* prevCluster,
+                                                 HighLevelInfo& highLevelInfo);
+    ShiftLevel determineShiftLevelForWhitespaceBreak(const Cluster* prevCluster);
+    ShiftLevel determineShiftLevelForOtherCases(const Cluster* prevCluster,
+                                                MiddleLevelInfo& middleLevelInfo);
+    ShiftLevel determineShiftLevel(const Cluster* cluster,
+                                   const Cluster* prevCluster,
+                                   HighLevelInfo& highLevelInfo,
+                                   MiddleLevelInfo& middleLevelInfo,
+                                   SkScalar& ideographicMaxLen);
+    SkScalar calculateClusterShift(const Cluster* cluster,
+                                   ClusterIndex index,
+                                   const ClusterLevelsIndices& clusterLevels);
+    void justifyShiftCluster(const SkScalar maxWidth,
+                                         SkScalar textLen,
+                                         ClusterLevelsIndices& clusterLevels,
+                                         SkScalar ideographicMaxLen,
+                                         size_t prevClusterNotSpaceCount);
     void justify(SkScalar maxWidth);
-
+#else
+    void justify(SkScalar maxWidth);
+#endif
     void buildTextBlob(TextRange textRange, const TextStyle& style, const ClipContext& context);
     void paintBackground(ParagraphPainter* painter,
                          SkScalar x,

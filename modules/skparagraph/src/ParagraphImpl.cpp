@@ -861,7 +861,6 @@ static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(SkUnichar unicod
     return Cluster::AutoSpacingFlag::NoFlag;
 }
 #endif
-
 Cluster::Cluster(ParagraphImpl* owner,
                  RunIndex runIndex,
                  size_t start,
@@ -888,6 +887,10 @@ Cluster::Cluster(ParagraphImpl* owner,
         if (is_ascii_7bit_space(*ch)) {
             ++whiteSpacesBreakLen;
         }
+#ifdef OHOS_SUPPORT
+        fIsPunctuation = fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kPunctuation);
+        fIsEllipsis = fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kEllipsis);
+#endif
     } else {
         for (auto i = fTextRange.start; i < fTextRange.end; ++i) {
             if (fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kPartOfWhiteSpaceBreak)) {
@@ -899,6 +902,10 @@ Cluster::Cluster(ParagraphImpl* owner,
             if (fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kIdeographic)) {
                 fIsIdeographic = true;
             }
+#ifdef OHOS_SUPPORT
+            fIsPunctuation = fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kPunctuation) | fIsPunctuation;
+            fIsEllipsis = fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kEllipsis) | fIsEllipsis;
+#endif
         }
     }
 
@@ -1381,6 +1388,11 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
         }
         line.format(effectiveAlign, noIndentWidth, this->paragraphStyle().getEllipsisMod());
     }
+#ifdef OHOS_SUPPORT
+    if (this->paragraphStyle().getTextAlign() == TextAlign::kJustify) {
+        this->setLongestLineWithIndent(maxWidth);
+    }
+#endif
 }
 
 void ParagraphImpl::resolveStrut() {

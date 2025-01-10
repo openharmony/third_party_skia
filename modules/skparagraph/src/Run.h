@@ -448,6 +448,8 @@ public:
     bool isWordBreak() const { return isWhitespaceBreak() || isHardBreak() || isSoftBreak() || run().isPlaceholder(); }
 #ifdef OHOS_SUPPORT
     bool isTabulation() const { return fIsTabulation; }
+    bool isPunctuation() const { return fIsPunctuation; }
+    bool isEllipsis() const { return fIsEllipsis; }
     bool needAutoSpacing() const { return fNeedAutoSpacing; }
     void enableHyphenBreak() { fHyphenBreak = true; }
     bool isHyphenBreak() const { return fHyphenBreak; }
@@ -515,6 +517,8 @@ private:
     bool fIsIdeographic;
 #ifdef OHOS_SUPPORT
     bool fIsTabulation;
+    bool fIsPunctuation{false};
+    bool fIsEllipsis{false};
     bool fNeedAutoSpacing; // depend on last cluster flag
     bool fHyphenBreak{false};
 #endif
