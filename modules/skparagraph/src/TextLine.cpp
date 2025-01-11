@@ -1039,7 +1039,9 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         fAdvance.fX = width;
         fEllipsis = std::move(ellipsisRun);
         fEllipsis->setOwner(fOwner);
-        fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
+        if (wordBreakType != WordBreakType::BREAK_HYPHEN) {
+            fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
+        }
 
         // Let's update the line
         fClusterRange.end = clusterIndex;
@@ -1876,7 +1878,7 @@ void TextLine::getRectsForRange(TextRange textRange0,
         (TextRange textRange, const TextStyle& style, const TextLine::ClipContext& lineContext) {
 
             auto intersect = textRange * textRange0;
-            if (intersect.empty()) {
+            if (intersect.empty() && !this->fBreakWithHyphen) {
                 return true;
             }
 
@@ -2711,6 +2713,8 @@ TextLine TextLine::CloneSelf()
 #ifdef OHOS_SUPPORT
     textLine.fOwner = this->fOwner;
     textLine.fIsTextLineEllipsisHeadModal = this->fIsTextLineEllipsisHeadModal;
+    textLine.fEllipsisString = this->fEllipsisString;
+    textLine.fBreakWithHyphen = this->fBreakWithHyphen;
 #endif
 
     textLine.roundRectAttrs = this->roundRectAttrs;

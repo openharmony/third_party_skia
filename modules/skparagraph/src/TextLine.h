@@ -215,6 +215,8 @@ public:
     std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const;
     double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const;
     SkRect generatePaintRegion(SkScalar x, SkScalar y);
+    void setBreakWithHyphen(bool breakWithHyphen) { this->fBreakWithHyphen = breakWithHyphen; }
+    bool getBreakWithHyphen() { return this->fBreakWithHyphen; }
 #endif
 
 private:
@@ -319,6 +321,7 @@ public:
     std::vector<TextBlobRecord> fTextBlobCache;
 #ifdef OHOS_SUPPORT
     SkString fEllipsisString;
+    bool fBreakWithHyphen{false};
 #endif
 };
 }  // namespace textlayout
