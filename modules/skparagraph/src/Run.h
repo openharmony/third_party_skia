@@ -187,6 +187,9 @@ public:
 #ifdef OHOS_SUPPORT
     template<typename Visitor>
     void iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor visitor);
+    const SkSTArray<PARAM_64, SkPoint, true>& GetAutoSpacings() const {
+        return fAutoSpacings;
+    }
 #endif
 
     using ClusterVisitor = std::function<void(Cluster* cluster)>;
