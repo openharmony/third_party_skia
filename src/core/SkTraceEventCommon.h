@@ -209,7 +209,7 @@ public:
     HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, ##__VA_ARGS__)
 
 inline static bool enabledSkiaTrace =
-    std::atoi((OHOS::system::GetParameter("persist.sys.graphic.skia.openDebugTrace","0")).c_str()) != 0;
+    std::atoi((OHOS::system::GetParameter("persist.sys.graphic.skia.openDebugTrace", "0")).c_str()) != 0;
 
 class SkOHOSTraceUtil
 {
@@ -232,7 +232,7 @@ public:
             FinishTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL);
         }
     }
-}
+};
 
 // print ohos trace without SKIA_OHOS_DEBUG macro
 #define SKIA_OHOS_TRACE_PRIV(category_group, name) \
@@ -254,14 +254,11 @@ public:
 
 // Records a single event called "name" immediately, with 0, 1 or 2 associated arguments. If the
 // category is not enabled, then this does nothing.
-#define TRACE_EVENT_INSTANT0(category_group, name, scope) \
-    SkOHOSTraceUtil _ohosTrace(name)
+#define TRACE_EVENT_INSTANT0(category_group, name, scope) TRACE_EMPTY
 
-#define TRACE_EVENT_INSTANT1(category_group, name, scope, arg1_name, arg1_val) \
-    SkOHOSTraceUtil _ohosTrace(name)
+#define TRACE_EVENT_INSTANT1(category_group, name, scope, arg1_name, arg1_val) TRACE_EMPTY
 
-#define TRACE_EVENT_INSTANT2(category_group, name, scope, arg1_name, arg1_val, arg2_name, arg2_val) \
-    SkOHOSTraceUtil _ohosTrace(name)
+#define TRACE_EVENT_INSTANT2(category_group, name, scope, arg1_name, arg1_val, arg2_name, arg2_val) TRACE_EMPTY
 
 // Records the value of a counter called "name" immediately. Value
 // must be representable as a 32 bit integer.

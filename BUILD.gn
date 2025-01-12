@@ -1465,7 +1465,7 @@ optional("pdf") {
   if (is_ohos && !build_ohos_sdk) {
     external_deps += [
       "hitrace:hitrace_meter",
-      "init:libbegetutil"
+      "init:libbegetutil",
     ]
   }
   if (skia_use_libjpeg_turbo_decode) {
