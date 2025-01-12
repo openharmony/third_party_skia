@@ -223,7 +223,7 @@ public:
     template<typename... Args>
     SkOHOSTraceUtil(const char* fmt, Args... args) {
         if (UNLIKELY(enabledSkiaTrace)) {
-            StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name);
+            StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, args...);
         }
     }
 
