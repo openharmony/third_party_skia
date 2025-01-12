@@ -241,27 +241,27 @@ public:
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this does nothing.
 #define TRACE_EVENT0(category_group, name) \
-    SkOHOSTraceUtil _ohosTrace(HITRACE_TAG_GRAPHIC_AGP, name)
+    SkOHOSTraceUtil _ohosTrace(name)
 
 #define TRACE_EVENT0_ALWAYS(category_group, name) \
     HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name)
 
 #define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
-    SkOHOSTraceUtil _ohosTrace(HITRACE_TAG_GRAPHIC_AGP, name)
+    SkOHOSTraceUtil _ohosTrace(name)
 
 #define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
-    SkOHOSTraceUtil _ohosTrace(HITRACE_TAG_GRAPHIC_AGP, name)
+    SkOHOSTraceUtil _ohosTrace(name)
 
 // Records a single event called "name" immediately, with 0, 1 or 2 associated arguments. If the
 // category is not enabled, then this does nothing.
 #define TRACE_EVENT_INSTANT0(category_group, name, scope) \
-    SkOHOSTraceUtil _ohosTrace(HITRACE_TAG_GRAPHIC_AGP, name)
+    SkOHOSTraceUtil _ohosTrace(name)
 
 #define TRACE_EVENT_INSTANT1(category_group, name, scope, arg1_name, arg1_val) \
-    SkOHOSTraceUtil _ohosTrace(HITRACE_TAG_GRAPHIC_AGP, name)
+    SkOHOSTraceUtil _ohosTrace(name)
 
 #define TRACE_EVENT_INSTANT2(category_group, name, scope, arg1_name, arg1_val, arg2_name, arg2_val) \
-    SkOHOSTraceUtil _ohosTrace(HITRACE_TAG_GRAPHIC_AGP, name)
+    SkOHOSTraceUtil _ohosTrace(name)
 
 // Records the value of a counter called "name" immediately. Value
 // must be representable as a 32 bit integer.
