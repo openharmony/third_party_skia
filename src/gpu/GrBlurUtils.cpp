@@ -30,7 +30,9 @@
 #include "src/core/SkDraw.h"
 #include "src/core/SkMaskFilterBase.h"
 #include "src/core/SkMatrixProvider.h"
+#ifdef SKIA_OHOS
 #include "src/core/SkSDFFilter.h"
+#endif
 #include "src/core/SkTLazy.h"
 #include "src/gpu/SkGr.h"
 
@@ -533,7 +535,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
 
     SkIRect unclippedDevShapeBounds, devClipBounds;
     if (!get_shape_and_clip_bounds(sdc, clip, *shape, viewMatrix,
-                                    &unclippedDevShapeBounds, &devClipBounds)) {
+                                   &unclippedDevShapeBounds, &devClipBounds)) {
         // TODO: just cons up an opaque mask here
         if (!inverseFilled) {
             return;
