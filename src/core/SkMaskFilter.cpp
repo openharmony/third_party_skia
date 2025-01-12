@@ -331,8 +331,7 @@ bool SkMaskFilterBase::canFilterMaskGPU(const GrStyledShape& shape,
                                         const SkIRect& devSpaceShapeBounds,
                                         const SkIRect& clipBounds,
                                         const SkMatrix& ctm,
-                                        SkIRect* maskRect,
-                                        const bool canUseSDFBlur) const {
+                                        SkIRect* maskRect) const {
     return false;
 }
 
@@ -345,24 +344,30 @@ bool SkMaskFilterBase::directFilterMaskGPU(GrRecordingContext*,
     return false;
 }
 
+#ifdef SKIA_OHOS
+bool SkMaskFilterBase::directFilterRRectMaskGPU(GrRecordingContext* context,
+                                                skgpu::v1::SurfaceDrawContext* sdc,
+                                                GrPaint&& paint,
+                                                const GrClip* clip,
+                                                const SkMatrix& viewMatrix,
+                                                const GrStyledShape& shape,
+                                                const SkRRect& srcRRect) const
+{
+    return false;
+}
+
+bool SkMaskFilterBase::quick_check_gpu_draw(const SkMatrix& viewMatrix,
+                                            SkIRect& devSpaceShapeBounds) const {
+    return false;
+}
+#endif // SKIA_OHOS
+
 GrSurfaceProxyView SkMaskFilterBase::filterMaskGPU(GrRecordingContext*,
                                                    GrSurfaceProxyView view,
                                                    GrColorType srcColorType,
                                                    SkAlphaType srcAlphaType,
                                                    const SkMatrix& ctm,
                                                    const SkIRect& maskRect) const {
-    return {};
-}
-
-float SkMaskFilterBase::getNoxFormedSigma3() const
-{
-    return 0.f;
-}
-
-GrSurfaceProxyView SkMaskFilterBase::filterMaskGPUNoxFormed(GrRecordingContext*, GrSurfaceProxyView view,
-    GrColorType srcColorType, SkAlphaType srcAlphaType, const SkMatrix& viewMatrix, const SkIRect& maskRect,
-    const SkRRect& srcRRect) const
-{
     return {};
 }
 #endif
