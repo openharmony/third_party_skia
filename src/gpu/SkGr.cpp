@@ -349,11 +349,19 @@ static SkBitmap make_dither_lut() {
     return bmp;
 }
 
+#ifdef SKIA_OHOS
 std::unique_ptr<GrFragmentProcessor> make_dither_effect(
     GrRecordingContext* rContext,
     std::unique_ptr<GrFragmentProcessor> inputFP,
     float range,
     const GrCaps* caps) {
+#else
+static std::unique_ptr<GrFragmentProcessor> make_dither_effect(
+        GrRecordingContext* rContext,
+        std::unique_ptr<GrFragmentProcessor> inputFP,
+        float range,
+        const GrCaps* caps) {
+#endif // SKIA_OHOS
     if (range == 0 || inputFP == nullptr) {
         return inputFP;
     }
