@@ -215,20 +215,20 @@ class SkOHOSTraceUtil
 {
 public:
     SkOHOSTraceUtil(const char* name) {
-        if (UNLIKELY(enableSkiaTrace)) {
+        if (UNLIKELY(enabledSkiaTrace)) {
             StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name);
         }
     }
 
     template<typename... Args>
     SkOHOSTraceUtil(const char* fmt, Args... args) {
-        if (UNLIKELY(enableSkiaTrace)) {
+        if (UNLIKELY(enabledSkiaTrace)) {
             StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name);
         }
     }
 
     ~SkOHOSTraceUtil() {
-        if (UNLIKELY(enableSkiaTrace)) {
+        if (UNLIKELY(enabledSkiaTrace)) {
             FinishTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL);
         }
     }
