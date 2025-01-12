@@ -357,7 +357,8 @@ bool SkMaskFilterBase::directFilterRRectMaskGPU(GrRecordingContext* context,
 }
 
 bool SkMaskFilterBase::quick_check_gpu_draw(const SkMatrix& viewMatrix,
-                                            SkIRect& devSpaceShapeBounds) const {
+                                            SkIRect& devSpaceShapeBounds) const
+{
     return false;
 }
 #endif // SKIA_OHOS
