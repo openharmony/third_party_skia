@@ -255,9 +255,7 @@ public:
 // Records a single event called "name" immediately, with 0, 1 or 2 associated arguments. If the
 // category is not enabled, then this does nothing.
 #define TRACE_EVENT_INSTANT0(category_group, name, scope) TRACE_EMPTY
-
 #define TRACE_EVENT_INSTANT1(category_group, name, scope, arg1_name, arg1_val) TRACE_EMPTY
-
 #define TRACE_EVENT_INSTANT2(category_group, name, scope, arg1_name, arg1_val, arg2_name, arg2_val) TRACE_EMPTY
 
 // Records the value of a counter called "name" immediately. Value
