@@ -25,7 +25,7 @@ void TextLineJustify::allocateHighLevelOffsets(ClusterLevelsIndices& clusterLeve
                                        SkScalar& allocatedWidth,
                                        SkScalar ideographicMaxLen)
 {
-    // Level-1 allocation: punctuation
+    // High level allocation: punctuation
     if (allocatedWidth <= 0) {
         return;
     }
@@ -45,7 +45,7 @@ void TextLineJustify::allocateHighLevelOffsets(ClusterLevelsIndices& clusterLeve
     }
     SkScalar highLevelMaxWidth =
         std::accumulate(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(), 0.0f,
-            [&](const SkScalar& a, const HighLevelInfo& b) { return a + b.highLevelOffset; });
+            [](const SkScalar& a, const HighLevelInfo& b) { return a + b.highLevelOffset; });
     if (highLevelMaxWidth >= allocatedWidth) {
         std::for_each(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(),
             [highLevelMaxWidth, allocatedWidth](HighLevelInfo& val) {
@@ -62,16 +62,16 @@ void TextLineJustify::allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLe
                                        SkScalar ideographicMaxLen,
                                        size_t prevClusterNotSpaceCount)
 {
-    // Level-2 allocation: WhitespaceBreak, between ideographic and non-ideographic characters
+    // Middle level allocation: WhitespaceBreak, between ideographic and non-ideographic characters
     if (allocatedWidth <= 0) {
         return;
     }
     constexpr size_t scaleFactor = 12;  // Defines the maximum width of 1 / 12 ideographs.
-    size_t N2 = prevClusterNotSpaceCount + clusterLevels.middleLevelIndices.size();
+    size_t totalPartitions = prevClusterNotSpaceCount + clusterLevels.middleLevelIndices.size();
 
-    SkScalar middleLevelMaxWidth = N2 * ideographicMaxLen / scaleFactor;
+    SkScalar middleLevelMaxWidth = totalPartitions * ideographicMaxLen / scaleFactor;
     if (middleLevelMaxWidth >= allocatedWidth) {
-        clusterLevels.middleLevelOffset = allocatedWidth / N2;
+        clusterLevels.middleLevelOffset = allocatedWidth / totalPartitions;
         allocatedWidth = 0;
     } else {
         clusterLevels.middleLevelOffset = ideographicMaxLen / scaleFactor;
@@ -83,7 +83,7 @@ void TextLineJustify::allocateLowLevelOffsets(ClusterLevelsIndices& clusterLevel
                                          SkScalar& allocatedWidth,
                                          SkScalar ideographicMaxLen)
 {
-    // Level-3 allocation: Between ideographic characters
+    // Low level allocation: Between ideographic characters
     if (allocatedWidth <= 0) {
         return;
     }
@@ -225,19 +225,19 @@ SkScalar TextLineJustify::calculateClusterShift(const Cluster* cluster,
         return 0.0f;
     }
     SkScalar step = 0.0f;
-    auto it = std::find_if(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(),
+    auto highLevelIterator = std::find_if(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(),
         [index](const HighLevelInfo& data) { return data.clusterIndex == index; });
-    auto it2 = std::find_if(clusterLevels.middleLevelIndices.begin(), clusterLevels.middleLevelIndices.end(),
+    auto lowLevelIterator = std::find_if(clusterLevels.middleLevelIndices.begin(), clusterLevels.middleLevelIndices.end(),
         [index](const MiddleLevelInfo& data) { return data.clusterIndex == index; });
-    if (it != clusterLevels.highLevelIndices.end()) {
-        size_t idx = std::distance(clusterLevels.highLevelIndices.begin(), it);
+    if (highLevelIterator != clusterLevels.highLevelIndices.end()) {
+        size_t idx = std::distance(clusterLevels.highLevelIndices.begin(), highLevelIterator);
         step = clusterLevels.highLevelIndices[idx].highLevelOffset;
-    } else if (it2 != clusterLevels.middleLevelIndices.end()) {
+    } else if (lowLevelIterator != clusterLevels.middleLevelIndices.end()) {
         // Because both sides of the WhitespaceBreak are equally widened, the
         // ideographic and non-ideographic characters are only widened once.
         // So the front is not WhitespaceBreak, and the count increases by 1.
         step =
-            it2->isPrevClusterSpace ? clusterLevels.middleLevelOffset : clusterLevels.middleLevelOffset * (1 + 1);
+            lowLevelIterator->isPrevClusterSpace ? clusterLevels.middleLevelOffset : clusterLevels.middleLevelOffset * (1 + 1);
     } else if (std::find(clusterLevels.LowLevelIndices.begin(), clusterLevels.LowLevelIndices.end(), index) !=
                clusterLevels.LowLevelIndices.end()) {
         step = clusterLevels.lowLevelOffset;
@@ -303,9 +303,6 @@ void TextLineJustify::justify(SkScalar maxWidth)
                 textLen += usingAutoSpaceWidth(cluster);
                 ideographicMaxLen =
                     (cluster->isIdeographic()) ? std::max(ideographicMaxLen, cluster->width()) : ideographicMaxLen;
-                return true;
-            }
-            if (prevCluster == nullptr) {
                 return true;
             }
             HighLevelInfo highLevelInfo;

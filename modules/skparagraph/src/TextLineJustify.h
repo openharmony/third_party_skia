@@ -24,6 +24,10 @@ namespace skia {
 namespace textlayout {
 
 class TextLineJustify {
+public:
+    TextLineJustify(TextLine& textLine) : textLineRef(textLine) {}
+    void justify(SkScalar maxWidth);
+
 private:
     TextLine& textLineRef;
 
@@ -54,12 +58,11 @@ private:
 
     enum class ShiftLevel {
         Undefined,
-        HighLevel,    // Level 1 Label: Punctuation
-        MiddleLevel,  // Level-2 label: WhitespaceBreak, between ideographic and non-ideographic
-                      // characters
-        LowLevel      // Level-3 label: Between ideographic characters
+        HighLevel,    // include: Punctuation
+        MiddleLevel,  // include: WhitespaceBreak, between ideographic and non-ideographic characters
+        LowLevel      // include: Between ideographic characters
     };
-    
+
     void allocateHighLevelOffsets(ClusterLevelsIndices& clusterLevels,
                                   SkScalar& allocatedWidth,
                                   SkScalar ideographicMaxLen);
@@ -100,9 +103,6 @@ private:
                              SkScalar ideographicMaxLen,
                              size_t prevClusterNotSpaceCount);
 
-public:
-    TextLineJustify(TextLine& textLine) : textLineRef(textLine) {}
-    void justify(SkScalar maxWidth);
 };
 }  // namespace textlayout
 }  // namespace skia

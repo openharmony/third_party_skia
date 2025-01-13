@@ -22,7 +22,6 @@
 #include "modules/skparagraph/src/ParagraphPainterImpl.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skshaper/include/SkShaper.h"
-#include "src/TextLineJustify.h"
 
 #include <algorithm>
 #include <iterator>
@@ -40,6 +39,7 @@
 #include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
 #include "TextParameter.h"
+#include "TextLineJustify.h"
 #endif
 
 namespace skia {
@@ -517,12 +517,12 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
     // We do nothing for left align
     if (align == TextAlign::kJustify) {
         if (!this->endsWithHardLineBreak()) {
-            
 #ifdef OHOS_SUPPORT
             TextLineJustify textlineJustify(*this);
             textlineJustify.justify(maxWidth);
+
             this->fOwner->setLongestLine(maxWidth);
-#else
+#else 
             this->justify(maxWidth);
 #endif
         } else if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
@@ -803,11 +803,6 @@ void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar 
     decorations.paint(painter, style, context, correctedBaseline);
 }
 
-#ifdef OHOS_SUPPORT
-
-
-
-#else
 void TextLine::justify(SkScalar maxWidth) {
     int whitespacePatches = 0;
     SkScalar textLen = 0;
@@ -916,7 +911,7 @@ void TextLine::justify(SkScalar maxWidth) {
     this->fWidthWithSpaces += ghostShift;
     this->fAdvance.fX = maxWidth;
 }
-#endif
+
 void TextLine::shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift) {
 
     auto& run = cluster->run();
