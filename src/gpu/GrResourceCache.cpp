@@ -27,6 +27,9 @@
 #include "src/gpu/GrDirectContextPriv.h"
 #include "src/gpu/GrGpuResourceCacheAccess.h"
 #include "src/gpu/GrProxyProvider.h"
+#ifdef SKIA_OHOS
+#include "src/gpu/GrPerfMonitorReporter.h"
+#endif
 #include "src/gpu/GrTexture.h"
 #include "src/gpu/GrTextureProxyCacheAccess.h"
 #include "src/gpu/GrThreadSafeCache.h"
@@ -1146,6 +1149,9 @@ void GrResourceCache::didChangeBudgetStatus(GrGpuResource* resource) {
         this->purgeAsNeeded();
     } else {
         SkASSERT(resource->resourcePriv().budgetedType() != GrBudgetedType::kUnbudgetedCacheable);
+#ifdef SKIA_OHOS
+        GrPerfMonitorReporter::GetInstance().recordTextureCache(resource->getResourceTag().fName);
+#endif
         --fBudgetedCount;
         fBudgetedBytes -= size;
         if (!resource->resourcePriv().isPurgeable() &&
