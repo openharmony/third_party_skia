@@ -165,14 +165,14 @@ public:
         static Hyphenator instance;
         static bool isInitialized = false;
         if (!isInitialized) {
-            instance.InitTrieTree();
+            instance.initTrieTree();
             isInitialized = true;
         }
         return instance;
     }
-    const std::vector<uint8_t>& GetHyphenatorData(const std::string& locale);
+    const std::vector<uint8_t>& getHyphenatorData(const std::string& locale);
     const std::vector<uint8_t>& findHyphenatorData(const std::string& langCode);
-    bool LoadHyphenatorData(const std::string& langCode);
+    const std::vector<uint8_t>& loadPatternFile(const std::string& langCode);
     std::vector<uint8_t> FindBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
                                             size_t startPos, size_t endPos);
 
@@ -182,7 +182,7 @@ private:
     Hyphenator(const Hyphenator&) = delete;
     Hyphenator& operator=(const Hyphenator&) = delete;
 
-    void InitTrieTree();
+    void initTrieTree();
 
     mutable std::shared_mutex mutex_;
     std::unordered_map<std::string, std::vector<uint8_t>> fHyphenMap;

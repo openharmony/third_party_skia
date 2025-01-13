@@ -25,65 +25,64 @@
 namespace skia {
 namespace textlayout {
 const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
-    {"as", "hyph-as.hpb"},
-    {"be", "hyph-be.hpb"},
-    {"bg", "hyph-bg.hpb"},
-    {"bn", "hyph-bn.hpb"},
-    {"cs", "hyph-cs.hpb"},
-    {"cy", "hyph-cy.hpb"},
-    {"da", "hyph-da.hpb"},
-    {"de-1901", "hyph-de-1901.hpb"},
-    {"de-1996", "hyph-de-1996.hpb"},
-    {"de-ch-1901", "hyph-de-ch-1901.hpb"},
-    {"el-monoton", "hyph-el-monoton.hpb"},
-    {"el-polyton", "hyph-el-polyton.hpb"},
-    {"en-latn", "hyph-en-gb.hpb"},
-    {"en-gb", "hyph-en-gb.hpb"},
-    {"en-us", "hyph-en-gb.hpb"},
-    {"es", "hyph-es.hpb"},
-    {"et", "hyph-et.hpb"},
-    {"fr", "hyph-fr.hpb"},
-    {"ga", "hyph-ga.hpb"},
-    {"gl", "hyph-gl.hpb"},
-    {"grc-x-ibycus", "hyph-grc-x-ibycus.hpb"},
-    {"gu", "hyph-gu.hpb"},
-    {"hi", "hyph-hi.hpb"},
-    {"hr", "hyph-hr.hpb"},
-    {"hu", "hyph-hu.hpb"},
-    {"hy", "hyph-hy.hpb"},
-    {"id", "hyph-id.hpb"},
-    {"is", "hyph-is.hpb"},
-    {"it", "hyph-it.hpb"},
-    {"ka", "hyph-ka.hpb"},
-    {"kn", "hyph-kn.hpb"},
-    {"la", "hyph-la.hpb"},
-    {"lt", "hyph-lt.hpb"},
-    {"lv", "hyph-lv.hpb"},
-    {"mk", "hyph-mk.hpb"},
-    {"ml", "hyph-ml.hpb"},
-    {"mn-cyrl", "hyph-mn-cyrl.hpb"},
-    {"mr", "hyph-mr.hpb"},
-    {"mul-ethi", "hyph-mul-ethi.hpb"},
-    {"nl", "hyph-nl.hpb"},
-    {"or", "hyph-or.hpb"},
-    {"pa", "hyph-pa.hpb"},
-    {"pl", "hyph-pl.hpb"},
-    {"pt", "hyph-pt.hpb"},
-    {"rm", "hyph-rm.hpb"},
-    {"ru", "hyph-ru.hpb"},
-    {"sh-cyrl", "hyph-sh-cyrl.hpb"},
-    {"sh-latn", "hyph-sh-latn.hpb"},
-    {"sk", "hyph-sk.hpb"},
-    {"sl", "hyph-sl.hpb"},
-    {"sr-cyrl", "hyph-sr-cyrl.hpb"},
-    {"sv", "hyph-sv.hpb"},
-    {"ta", "hyph-ta.hpb"},
-    {"te", "hyph-te.hpb"},
-    {"th", "hyph-th.hpb"},
-    {"tk", "hyph-tk.hpb"},
-    {"tr", "hyph-tr.hpb"},
-    {"uk", "hyph-uk.hpb"},
-    {"pinyin", "hyph-zh-latn-pinyin.hpb"},
+    {"as", "hyph-as.hpb"},                 // Assamese
+    {"be", "hyph-be.hpb"},                 // Belarusian
+    {"bg", "hyph-bg.hpb"},                 // Bulgarian
+    {"bn", "hyph-bn.hpb"},                 // Bengali
+    {"cs", "hyph-cs.hpb"},                 // Czech
+    {"cy", "hyph-cy.hpb"},                 // Welsh
+    {"da", "hyph-da.hpb"},                 // Danish
+    {"de-1996", "hyph-de-1996.hpb"},       // German,1996orthography
+    {"de-1901", "hyph-de-1901.hpb"},       // German,1901orthography
+    {"de-ch-1901", "hyph-de-ch-1901.hpb"}, // SwissGerman,1901orthography
+    {"el-monoton", "hyph-el-monoton.hpb"}, // ModernGreek,monotonic
+    {"el-polyton", "hyph-el-polyton.hpb"}, // ModernGreek,polytonic
+    {"en-latn", "hyph-en-gb.hpb"},         // Latin English
+    {"en-gb", "hyph-en-gb.hpb"},           // British English
+    {"en-us", "hyph-en-gb.hpb"},           // American English
+    {"es", "hyph-es.hpb"},                 // Spanish
+    {"et", "hyph-et.hpb"},                 // Estonian
+    {"fr", "hyph-fr.hpb"},                 // French
+    {"ga", "hyph-ga.hpb"},                 // Irish
+    {"gl", "hyph-gl.hpb"},                 // Galician
+    {"gu", "hyph-gu.hpb"},                 // Gujarati
+    {"hi", "hyph-hi.hpb"},                 // Hindi
+    {"hr", "hyph-hr.hpb"},                 // Croatian
+    {"hu", "hyph-hu.hpb"},                 // Hungarian
+    {"hy", "hyph-hy.hpb"},                 // Armenian
+    {"id", "hyph-id.hpb"},                 // Indonesian
+    {"is", "hyph-is.hpb"},                 // Icelandic
+    {"it", "hyph-it.hpb"},                 // Italian
+    {"ka", "hyph-ka.hpb"},                 // Georgian
+    {"kn", "hyph-kn.hpb"},                 // Kannada
+    {"la", "hyph-la.hpb"},                 // Latin
+    {"lt", "hyph-lt.hpb"},                 // Lithuanian
+    {"lv", "hyph-lv.hpb"},                 // Latvian
+    {"mk", "hyph-mk.hpb"},                 // Macedonian
+    {"ml", "hyph-ml.hpb"},                 // Malayalam
+    {"mn-cyrl", "hyph-mn-cyrl.hpb"},       // Mongolian,Cyrillicscript
+    {"mr", "hyph-mr.hpb"},                 // Marathi
+    {"mul-ethi", "hyph-mul-ethi.hpb"},     // Ethiopic
+    {"nl", "hyph-nl.hpb"},                 // Dutch
+    {"or", "hyph-or.hpb"},                 // Oriya
+    {"pa", "hyph-pa.hpb"},                 // Punjabi
+    {"pl", "hyph-pl.hpb"},                 // Polish
+    {"pt", "hyph-pt.hpb"},                 // Portuguese
+    {"rm", "hyph-rm.hpb"},                 // Romansh
+    {"ru", "hyph-ru.hpb"},                 // Russian
+    {"sh-cyrl", "hyph-sh-cyrl.hpb"},       // Serbo-Croatian,Cyrillicscript
+    {"sh-latn", "hyph-sh-latn.hpb"},       // Serbo-Croatian,Latinscript
+    {"sk", "hyph-sk.hpb"},                 // Slovak
+    {"sl", "hyph-sl.hpb"},                 // Slovenian
+    {"sr-cyrl", "hyph-sr-cyrl.hpb"},       // Serbian,Cyrillicscript
+    {"sv", "hyph-sv.hpb"},                 // Swedish
+    {"ta", "hyph-ta.hpb"},                 // Tamil
+    {"te", "hyph-te.hpb"},                 // Telugu
+    {"th", "hyph-th.hpb"},                 // Thai
+    {"tk", "hyph-tk.hpb"},                 // Turkmen
+    {"tr", "hyph-tr.hpb"},                 // Turkish
+    {"uk", "hyph-uk.hpb"},                 // Ukrainian
+    {"pinyin", "hyph-zh-latn-pinyin.hpb"}, // Chinese,Pinyin. language code ‘pinyin’ is not right,will be repair later
 };
 
 struct HyphenTableInfo {
@@ -189,14 +188,14 @@ std::string getLanguageCode(std::string locale, int hyphenPos)
     }
 }
 
-void Hyphenator::InitTrieTree()
+void Hyphenator::initTrieTree()
 {
     for (const auto& item : HPB_FILE_NAMES) {
         fTrieTree.insert(item.first, item.second);
     }
 }
 
-const std::vector<uint8_t>& Hyphenator::GetHyphenatorData(const std::string& locale)
+const std::vector<uint8_t>& Hyphenator::getHyphenatorData(const std::string& locale)
 {
     const std::vector<uint8_t>& firstResult =
         findHyphenatorData(getLanguageCode(locale, 2)); //num 2:sub string locale to the second '-'
@@ -217,16 +216,16 @@ const std::vector<uint8_t>& Hyphenator::findHyphenatorData(const std::string& la
         }
     }
 
-    if (LoadHyphenatorData(langCode)) {
-        return fHyphenMap[langCode];
-    } else {
-        return fEmptyResult;
-    }
+    return loadPatternFile(langCode);
 }
 
-bool Hyphenator::LoadHyphenatorData(const std::string& langCode)
+const std::vector<uint8_t>& Hyphenator::loadPatternFile(const std::string& langCode)
 {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    auto search = fHyphenMap.find(langCode);
+    if (search != fHyphenMap.end()) {
+        return search->second;
+    }
     std::string hpbFileName = fTrieTree.findPartialMatch(langCode);
     if (!hpbFileName.empty()) {
         std::string filename = "/system/usr/ohos_hyphen_data/" + hpbFileName;
@@ -234,10 +233,10 @@ bool Hyphenator::LoadHyphenatorData(const std::string& langCode)
         ReadBinaryFile(filename, fileBuffer);
         if (!fileBuffer.empty()) {
             fHyphenMap.emplace(langCode, std::move(fileBuffer));
-            return true;
+            return fHyphenMap[langCode];
         }
     }
-    return false;
+    return fEmptyResult;
 }
 
 void formatTarget(std::vector<uint16_t>& target)
