@@ -100,11 +100,74 @@ struct HyphenatorHeader {
     }
 };
 
+class TrieNode {
+public:
+    std::unordered_map<char, TrieNode*> children;
+    std::string value;
+
+    TrieNode() : value("") {}
+};
+
+class Trie {
+public:
+    Trie() : root(new TrieNode) {}
+
+    void insert(const std::string& key, const std::string& value)
+    {
+        TrieNode* node = root;
+        for (char c : key) {
+            if (node->children.find(c) == node->children.end()) {
+                node->children[c] = new TrieNode();
+            }
+            node = node->children[c];
+        }
+        node->value = value;
+    }
+
+    std::string findPartialMatch(const std::string& keyPart)
+    {
+        TrieNode* node = root;
+        for (char c : keyPart) {
+            if (node->children.find(c) == node->children.end()) {
+                return "";
+            }
+            node = node->children[c];
+        }
+
+        return collectValues(node);
+    }
+
+private:
+    TrieNode* root;
+
+    std::string collectValues(TrieNode* node)
+    {
+        if (!node) {
+            return "";
+        }
+        if (!node->value.empty()) {
+            return node->value;
+        }
+        for (auto& child : node->children) {
+            std::string value = collectValues(child.second);
+            if (!value.empty()) {
+                return value;
+            }
+        }
+        return "";
+    }
+};
+
 class Hyphenator {
 public:
     static Hyphenator& GetInstance()
     {
         static Hyphenator instance;
+        static bool isInitialized = false;
+        if (!isInitialized) {
+            instance.InitTrieTree();
+            isInitialized = true;
+        }
         return instance;
     }
     const std::vector<uint8_t>& GetHyphenatorData(const std::string& locale);
@@ -119,8 +182,12 @@ private:
     Hyphenator(const Hyphenator&) = delete;
     Hyphenator& operator=(const Hyphenator&) = delete;
 
+    void InitTrieTree();
+
     mutable std::shared_mutex mutex_;
-    std::unordered_map<std::string, std::vector<uint8_t>> hyphenMap;
+    std::unordered_map<std::string, std::vector<uint8_t>> fHyphenMap;
+    Trie fTrieTree;
+    const std::vector<uint8_t> fEmptyResult;
 };
 } // namespace textlayout
 } // namespace skia

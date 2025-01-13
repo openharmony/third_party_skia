@@ -32,22 +32,19 @@ const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
     {"cs", "hyph-cs.hpb"},
     {"cy", "hyph-cy.hpb"},
     {"da", "hyph-da.hpb"},
-    {"de", "hyph-de-1901.hpb"},
     {"de-1901", "hyph-de-1901.hpb"},
     {"de-1996", "hyph-de-1996.hpb"},
     {"de-ch-1901", "hyph-de-ch-1901.hpb"},
-    {"el", "hyph-el-monoton.hpb"},
     {"el-monoton", "hyph-el-monoton.hpb"},
     {"el-polyton", "hyph-el-polyton.hpb"},
-    {"en", "hyph-en-gb.hpb"},
+    {"en-latn", "hyph-en-gb.hpb"},
     {"en-gb", "hyph-en-gb.hpb"},
-    {"en-us", "hyph-en-us.hpb"},
+    {"en-us", "hyph-en-gb.hpb"},
     {"es", "hyph-es.hpb"},
     {"et", "hyph-et.hpb"},
     {"fr", "hyph-fr.hpb"},
     {"ga", "hyph-ga.hpb"},
     {"gl", "hyph-gl.hpb"},
-    {"grc", "hyph-grc-x-ibycus.hpb"},
     {"grc-x-ibycus", "hyph-grc-x-ibycus.hpb"},
     {"gu", "hyph-gu.hpb"},
     {"hi", "hyph-hi.hpb"},
@@ -64,10 +61,8 @@ const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
     {"lv", "hyph-lv.hpb"},
     {"mk", "hyph-mk.hpb"},
     {"ml", "hyph-ml.hpb"},
-    {"mn", "hyph-mn-cyrl.hpb"},
     {"mn-cyrl", "hyph-mn-cyrl.hpb"},
     {"mr", "hyph-mr.hpb"},
-    {"mul", "hyph-mul-ethi.hpb"},
     {"mul-ethi", "hyph-mul-ethi.hpb"},
     {"nl", "hyph-nl.hpb"},
     {"or", "hyph-or.hpb"},
@@ -76,12 +71,10 @@ const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
     {"pt", "hyph-pt.hpb"},
     {"rm", "hyph-rm.hpb"},
     {"ru", "hyph-ru.hpb"},
-    {"sh", "hyph-sh-cyrl.hpb"},
     {"sh-cyrl", "hyph-sh-cyrl.hpb"},
     {"sh-latn", "hyph-sh-latn.hpb"},
     {"sk", "hyph-sk.hpb"},
     {"sl", "hyph-sl.hpb"},
-    {"sr", "hyph-sr-cyrl.hpb"},
     {"sr-cyrl", "hyph-sr-cyrl.hpb"},
     {"sv", "hyph-sv.hpb"},
     {"ta", "hyph-ta.hpb"},
@@ -90,7 +83,7 @@ const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
     {"tk", "hyph-tk.hpb"},
     {"tr", "hyph-tr.hpb"},
     {"uk", "hyph-uk.hpb"},
-    {"zh-pinyin", "hyph-zh-latn-pinyin.hpb"},
+    {"pinyin", "hyph-zh-latn-pinyin.hpb"},
 };
 
 struct HyphenTableInfo {
@@ -171,16 +164,6 @@ void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
     file.close();
 }
 
-const std::string& ResolveHpbFile(const std::string& langCode)
-{
-    auto it = HPB_FILE_NAMES.find(langCode);
-    if (it != HPB_FILE_NAMES.end()) {
-        return it->second;
-    }
-    static const std::string emptyString = "";
-    return emptyString;
-}
-
 std::string getLanguageCode(std::string locale, int hyphenPos)
 {
     // to lower case
@@ -206,6 +189,13 @@ std::string getLanguageCode(std::string locale, int hyphenPos)
     }
 }
 
+void Hyphenator::InitTrieTree()
+{
+    for (const auto& item : HPB_FILE_NAMES) {
+        fTrieTree.insert(item.first, item.second);
+    }
+}
+
 const std::vector<uint8_t>& Hyphenator::GetHyphenatorData(const std::string& locale)
 {
     const std::vector<uint8_t>& firstResult =
@@ -221,30 +211,29 @@ const std::vector<uint8_t>& Hyphenator::findHyphenatorData(const std::string& la
 {
     {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
-        auto search = hyphenMap.find(langCode);
-        if (search != hyphenMap.end()) {
+        auto search = fHyphenMap.find(langCode);
+        if (search != fHyphenMap.end()) {
             return search->second;
         }
     }
 
     if (LoadHyphenatorData(langCode)) {
-        return hyphenMap[langCode];
+        return fHyphenMap[langCode];
     } else {
-        static const std::vector<uint8_t> emptyArr;
-        return emptyArr;
+        return fEmptyResult;
     }
 }
 
 bool Hyphenator::LoadHyphenatorData(const std::string& langCode)
 {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
-    const std::string& hpbFileName = ResolveHpbFile(langCode);
+    std::string hpbFileName = fTrieTree.findPartialMatch(langCode);
     if (!hpbFileName.empty()) {
         std::string filename = "/system/usr/ohos_hyphen_data/" + hpbFileName;
         std::vector<uint8_t> fileBuffer;
         ReadBinaryFile(filename, fileBuffer);
         if (!fileBuffer.empty()) {
-            hyphenMap.emplace(langCode, std::move(fileBuffer));
+            fHyphenMap.emplace(langCode, std::move(fileBuffer));
             return true;
         }
     }
