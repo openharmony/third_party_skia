@@ -196,9 +196,10 @@ public:
 #define TRACE_EVENT_CATEGORY_GROUP_ENABLED(category_group, ret)             \
   do { *ret = false; } while (0)
 
-#elif defined(SKIA_OHOS_FOR_OHOS_TRACE)
+#elif defined(SKIA_OHOS)
 
 #include "hitrace_meter.h"
+#include "parameters.h"
 
 #define UNLIKELY(exp) (__builtin_expect((exp) != 0, false))
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
@@ -207,30 +208,49 @@ public:
 #define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) \
     HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, ##__VA_ARGS__)
 
+inline static bool enabledSkiaTrace =
+    std::atoi((OHOS::system::GetParameter("persist.sys.graphic.skia.openDebugTrace", "0")).c_str()) != 0;
+
+class SkOHOSTraceUtil
+{
+public:
+    SkOHOSTraceUtil(const char* name) {
+        if (UNLIKELY(enabledSkiaTrace)) {
+            StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name);
+        }
+    }
+
+    template<typename... Args>
+    SkOHOSTraceUtil(const char* fmt, Args... args) {
+        if (UNLIKELY(enabledSkiaTrace)) {
+            StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, args...);
+        }
+    }
+
+    ~SkOHOSTraceUtil() {
+        if (UNLIKELY(enabledSkiaTrace)) {
+            FinishTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL);
+        }
+    }
+};
+
 // print ohos trace without SKIA_OHOS_DEBUG macro
 #define SKIA_OHOS_TRACE_PRIV(category_group, name) \
     HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
 
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this does nothing.
-#ifdef SKIA_OHOS_DEBUG
 #define TRACE_EVENT0(category_group, name) \
-    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
+    SkOHOSTraceUtil _ohosTrace(name)
 
 #define TRACE_EVENT0_ALWAYS(category_group, name) \
-    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
+    HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name)
 
 #define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
-    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
+    SkOHOSTraceUtil _ohosTrace(name)
 
 #define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
-    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
-#else
-#define TRACE_EVENT0(category_group, name) TRACE_EMPTY
-#define TRACE_EVENT0_ALWAYS(category_group, name) TRACE_EMPTY
-#define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) TRACE_EMPTY
-#define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) TRACE_EMPTY
-#endif
+    SkOHOSTraceUtil _ohosTrace(name)
 
 // Records a single event called "name" immediately, with 0, 1 or 2 associated arguments. If the
 // category is not enabled, then this does nothing.
@@ -243,10 +263,9 @@ public:
 #define TRACE_COUNTER1(category_group, name, value) TRACE_EMPTY
 
 // Records the values of a multi-parted counter called "name" immediately.
-#ifdef SKIA_OHOS_DEBUG
 #define TRACE_COUNTER2(category_group, name, value1_name, value1_val, value2_name, value2_val) \
     do { \
-        if (UNLIKELY(IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP))) { \
+        if (UNLIKELY(enabledSkiaTrace)) { \
             std::string tid = std::to_string(gettid()); \
             std::string threadValue1Name = tid + "-" + name + "-" + value1_name; \
             std::string threadValue2Name = tid + "-" + name + "-" + value2_name; \
@@ -254,9 +273,6 @@ public:
             CountTrace(HITRACE_TAG_GRAPHIC_AGP, threadValue2Name, value2_val); \
         } \
     } while (0)
-#else
-#define TRACE_COUNTER2(category_group, name, value1_name, value1_val, value2_name, value2_val) TRACE_EMPTY
-#endif
 
 #define TRACE_EVENT_ASYNC_BEGIN0(category, name, id) TRACE_EMPTY
 #define TRACE_EVENT_ASYNC_BEGIN1(category, name, id, arg1_name, arg1_val) TRACE_EMPTY
