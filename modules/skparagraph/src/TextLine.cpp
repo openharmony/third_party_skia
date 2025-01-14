@@ -1881,7 +1881,11 @@ void TextLine::getRectsForRange(TextRange textRange0,
         (TextRange textRange, const TextStyle& style, const TextLine::ClipContext& lineContext) {
 
             auto intersect = textRange * textRange0;
+#ifdef OHOS_SUPPORT
             if (intersect.empty() && !this->fBreakWithHyphen) {
+#else
+            if (intersect.empty()) {
+#endif
                 return true;
             }
 
