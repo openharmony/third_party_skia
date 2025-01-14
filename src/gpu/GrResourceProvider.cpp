@@ -34,7 +34,7 @@ const int GrResourceProvider::kMinScratchTextureSize = 16;
 GrResourceProvider::GrResourceProvider(GrGpu* gpu, GrResourceCache* cache, GrSingleOwner* owner)
         : fCache(cache)
         , fGpu(gpu)
-#ifdef SK_DEBUG
+#if defined(SK_DEBUG) || defined(SKIA_OHOS_SINGLE_OWNER)
         , fSingleOwner(owner)
 #endif
 {
