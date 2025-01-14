@@ -58,9 +58,10 @@ class ParallelShaderCompileTest : public ANGLETest
         Task(int id) : mID(id) {}
         virtual ~Task() {}
 
-        virtual bool compile()                                     = 0;
-        virtual bool isCompileCompleted()                          = 0;
-        virtual bool link()                                        = 0;
+        virtual bool compile()            = 0;
+        virtual bool isCompileCompleted() = 0;
+        virtual bool link()               = 0;
+        virtual void postLink() {}
         virtual void runAndVerify(ParallelShaderCompileTest *test) = 0;
 
         bool isLinkCompleted()
@@ -71,7 +72,7 @@ class ParallelShaderCompileTest : public ANGLETest
         }
 
       protected:
-        std::string insertRandomString(const std::string &source)
+        static std::string InsertRandomString(const std::string &source)
         {
             RNG rng;
             std::ostringstream ostream;
@@ -80,7 +81,7 @@ class ParallelShaderCompileTest : public ANGLETest
             return ostream.str();
         }
 
-        GLuint CompileShader(GLenum type, const std::string &source)
+        static GLuint CompileShader(GLenum type, const std::string &source)
         {
             GLuint shader = glCreateShader(type);
 
@@ -90,7 +91,15 @@ class ParallelShaderCompileTest : public ANGLETest
             return shader;
         }
 
-        bool checkShader(GLuint shader)
+        //CVE-2022-2008
+        static void RecompileShader(GLuint shader, const std::string &source)
+        {
+            const char *sourceArray[1] = {source.c_str()};
+            glShaderSource(shader, 1, sourceArray, nullptr);
+            glCompileShader(shader);
+        }
+
+        static bool CheckShader(GLuint shader)
         {
             GLint compileResult;
             glGetShaderiv(shader, GL_COMPILE_STATUS, &compileResult);
@@ -128,8 +137,9 @@ class ParallelShaderCompileTest : public ANGLETest
       public:
         TaskRunner() {}
         ~TaskRunner() {}
-
-        void run(ParallelShaderCompileTest *test)
+        
+        //CVE-2022-2008
+        void run(ParallelShaderCompileTest *test, unsigned int pollInterval)
         {
 
             std::vector<std::unique_ptr<T>> compileTasks;
@@ -151,6 +161,7 @@ class ParallelShaderCompileTest : public ANGLETest
                     if (task->isCompileCompleted())
                     {
                         bool isLinking = task->link();
+                        task->postLink();
                         ASSERT_TRUE(isLinking);
                         linkTasks.push_back(std::move(task));
                         compileTasks.erase(compileTasks.begin() + i);
@@ -158,7 +169,10 @@ class ParallelShaderCompileTest : public ANGLETest
                     }
                     ++i;
                 }
-                angle::Sleep(kPollInterval);
+                if (pollInterval != 0)
+                {
+                    angle::Sleep(pollInterval);
+                }
             }
 
             while (!linkTasks.empty())
@@ -173,9 +187,16 @@ class ParallelShaderCompileTest : public ANGLETest
                         linkTasks.erase(linkTasks.begin() + i);
                         continue;
                     }
+                    else
+                    {
+                        task->postLink();
+                    }
                     ++i;
                 }
-                angle::Sleep(kPollInterval);
+                if (pollInterval != 0)
+                {
+                    angle::Sleep(pollInterval);
+                }
             }
         }
     };
@@ -192,9 +213,9 @@ class ParallelShaderCompileTest : public ANGLETest
         bool compile() override
         {
             mVertexShader =
-                CompileShader(GL_VERTEX_SHADER, insertRandomString(essl1_shaders::vs::Simple()));
+                CompileShader(GL_VERTEX_SHADER, InsertRandomString(essl1_shaders::vs::Simple()));
             mFragmentShader = CompileShader(GL_FRAGMENT_SHADER,
-                                            insertRandomString(essl1_shaders::fs::UniformColor()));
+                                            InsertRandomString(essl1_shaders::fs::UniformColor()));
             return (mVertexShader != 0 && mFragmentShader != 0);
         }
 
@@ -213,7 +234,7 @@ class ParallelShaderCompileTest : public ANGLETest
         bool link() override
         {
             mProgram = 0;
-            if (checkShader(mVertexShader) && checkShader(mFragmentShader))
+            if (CheckShader(mVertexShader) && CheckShader(mFragmentShader))
             {
                 mProgram = glCreateProgram();
                 glAttachShader(mProgram, mVertexShader);
@@ -244,10 +265,27 @@ class ParallelShaderCompileTest : public ANGLETest
             ASSERT_GL_NO_ERROR();
         }
 
+       protected:
+        //CVE-2022-2008
+        void recompile()
+        {
+            RecompileShader(mVertexShader, essl1_shaders::vs::Simple());
+            RecompileShader(mFragmentShader, essl1_shaders::fs::UniformColor());
+        }
+
       private:
         GLColor mColor;
         GLuint mVertexShader;
         GLuint mFragmentShader;
+    };
+
+    //CVE-2022-2008
+    class ClearColorWithDrawRecompile : public ClearColorWithDraw
+    {
+      public:
+        ClearColorWithDrawRecompile(int taskID) : ClearColorWithDraw(taskID) {}
+
+        void postLink() override { recompile(); }
     };
 
     class ImageLoadStore : public Task
@@ -268,7 +306,7 @@ void main()
     imageStore(uImage_2, ivec2(gl_LocalInvocationID.xy), value);
 })";
 
-            mShader = CompileShader(GL_COMPUTE_SHADER, insertRandomString(kCSSource));
+            mShader = CompileShader(GL_COMPUTE_SHADER, InsertRandomString(kCSSource));
             return mShader != 0;
         }
 
@@ -282,7 +320,7 @@ void main()
         bool link() override
         {
             mProgram = 0;
-            if (checkShader(mShader))
+            if (CheckShader(mShader))
             {
                 mProgram = glCreateProgram();
                 glAttachShader(mProgram, mShader);
@@ -370,7 +408,19 @@ TEST_P(ParallelShaderCompileTest, LinkAndDrawManyPrograms)
     ANGLE_SKIP_TEST_IF(!ensureParallelShaderCompileExtensionAvailable());
 
     TaskRunner<ClearColorWithDraw> runner;
-    runner.run(this);
+     runner.run(this, kPollInterval);
+}
+
+//CVE-2022-2008
+// Tests no crash in case that the Shader starts another compile while the Program being attached
+// to is still linking.
+// crbug.com/1317673
+TEST_P(ParallelShaderCompileTest, LinkProgramAndRecompileShader)
+{
+    ANGLE_SKIP_TEST_IF(!ensureParallelShaderCompileExtensionAvailable());
+
+    TaskRunner<ClearColorWithDrawRecompile> runner;
+    runner.run(this, 0);
 }
 
 class ParallelShaderCompileTestES31 : public ParallelShaderCompileTest
@@ -389,7 +439,7 @@ TEST_P(ParallelShaderCompileTestES31, LinkAndDispatchManyPrograms)
     ANGLE_SKIP_TEST_IF(!ensureParallelShaderCompileExtensionAvailable());
 
     TaskRunner<ImageLoadStore> runner;
-    runner.run(this);
+    runner.run(this, kPollInterval);
 }
 
 ANGLE_INSTANTIATE_TEST_ES2(ParallelShaderCompileTest);
