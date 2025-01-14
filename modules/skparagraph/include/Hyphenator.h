@@ -111,6 +111,7 @@ public:
 class Trie {
 public:
     Trie() : root(new TrieNode) {}
+    ~Trie() { destroy(root); }
 
     void insert(const std::string& key, const std::string& value)
     {
@@ -140,6 +141,16 @@ public:
 private:
     TrieNode* root;
 
+    void destroy(TrieNode* node)
+    {
+        if (!node) {
+            return;
+        }
+        for (auto& child : node->children) {
+            destroy(child.second);
+        }
+        delete node;
+    }
     std::string collectValues(TrieNode* node)
     {
         if (!node) {

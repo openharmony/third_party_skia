@@ -87,7 +87,7 @@ size_t TextWrapper::tryBreakWord(Cluster *startCluster, Cluster *endOfClusters,
     }
 
     auto locale = owner->paragraphStyle().getTextStyle().getLocale();
-    auto hyphenatorData = Hyphenator::GetInstance().GetHyphenatorData(locale.c_str());
+    auto hyphenatorData = Hyphenator::GetInstance().getHyphenatorData(locale.c_str());
     auto result = Hyphenator::GetInstance().FindBreakPositions(hyphenatorData, owner->fText, startPos, endPos);
 
     endPos = startPos;
@@ -547,7 +547,7 @@ struct TextWrapScorer {
         bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak());
         if (hyphenEnabled && !prevWasWhitespace && isWhitespace && endCluster != startCluster) {
             prevWasWhitespace = true;
-            auto hyphenatorData = Hyphenator::GetInstance().GetHyphenatorData(locale.c_str());
+            auto hyphenatorData = Hyphenator::GetInstance().getHyphenatorData(locale.c_str());
             auto results = Hyphenator::GetInstance().FindBreakPositions(
                 hyphenatorData, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
             CheckHyphenBreak(results, parent, startCluster);
