@@ -31,6 +31,14 @@ SkTypeface_OHOS::SkTypeface_OHOS(FontInfo& info)
     fontInfo = std::make_unique<FontInfo>(std::move(info));
 }
 
+void SkTypeface_OHOS::readStreamFromFile(const std::unique_ptr<FontInfo>& fontInfo) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (fontInfo->stream == nullptr) {
+        fontInfo->stream = SkStream::MakeFromFile(fontInfo->fname.c_str());
+    }
+}
+
 /*! To get stream of the typeface
  * \param[out] ttcIndex the index of the typeface in a ttc file returned to the caller
  * \return The stream object of the typeface
@@ -41,9 +49,7 @@ std::unique_ptr<SkStreamAsset> SkTypeface_OHOS::onOpenStream(int* ttcIndex) cons
         if (ttcIndex) {
             *ttcIndex = fontInfo->index;
         }
-        if (fontInfo->stream == nullptr) {
-            fontInfo->stream = SkStream::MakeFromFile(fontInfo->fname.c_str());
-        }
+        readStreamFromFile(fontInfo);
         if (fontInfo->stream) {
             return fontInfo->stream->duplicate();
         }
@@ -59,11 +65,8 @@ std::unique_ptr<SkFontData> SkTypeface_OHOS::onMakeFontData() const
     if (fontInfo == nullptr) {
         return nullptr;
     }
-
-    if (fontInfo->stream.get() == nullptr) {
-        fontInfo->stream = SkStream::MakeFromFile(fontInfo->fname.c_str());
-    }
-    if (fontInfo->stream.get() == nullptr) {
+    readStreamFromFile(fontInfo);
+    if (fontInfo->stream == nullptr) {
         return nullptr;
     }
     return std::make_unique<SkFontData>(fontInfo->stream->duplicate(), fontInfo->index,
