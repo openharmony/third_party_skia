@@ -1306,6 +1306,8 @@ void Context::bindTransformFeedback(GLenum target, TransformFeedbackID transform
     TransformFeedback *transformFeedback =
         checkTransformFeedbackAllocation(transformFeedbackHandle);
     mState.setTransformFeedbackBinding(this, transformFeedback);
+    // CVE-2022-2011
+    mStateCache.onActiveTransformFeedbackChange(this);
 }
 
 void Context::bindProgramPipeline(ProgramPipelineID pipelineHandle)
