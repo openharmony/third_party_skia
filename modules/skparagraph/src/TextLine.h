@@ -246,12 +246,11 @@ public:
     std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const;
     double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const;
     SkRect generatePaintRegion(SkScalar x, SkScalar y);
+    void updateClusterOffsets(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
+    void justifyUpdateRtlWidth(const SkScalar maxWidth, const SkScalar textLen);
 #endif
 
 private:
-#ifdef OHOS_SUPPORT
-    friend class TextLineJustify;
-#endif
     struct RoundRectAttr {
         int styleId;
         RectStyle roundRectStyle;

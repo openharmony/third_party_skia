@@ -58,9 +58,9 @@ void TextLineJustify::allocateHighLevelOffsets(ClusterLevelsIndices& clusterLeve
 }
 
 void TextLineJustify::allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLevels,
-                                       SkScalar& allocatedWidth,
-                                       SkScalar ideographicMaxLen,
-                                       size_t prevClusterNotSpaceCount)
+                                                 SkScalar& allocatedWidth,
+                                                 SkScalar ideographicMaxLen,
+                                                 size_t prevClusterNotSpaceCount)
 {
     // Middle level allocation: WhitespaceBreak, between ideographic and non-ideographic characters
     if (allocatedWidth <= 0) {
@@ -80,8 +80,8 @@ void TextLineJustify::allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLe
 }
 
 void TextLineJustify::allocateLowLevelOffsets(ClusterLevelsIndices& clusterLevels,
-                                         SkScalar& allocatedWidth,
-                                         SkScalar ideographicMaxLen)
+                                              SkScalar& allocatedWidth,
+                                              SkScalar ideographicMaxLen)
 {
     // Low level allocation: Between ideographic characters
     if (allocatedWidth <= 0) {
@@ -101,8 +101,8 @@ void TextLineJustify::allocateLowLevelOffsets(ClusterLevelsIndices& clusterLevel
 }
 
 void TextLineJustify::allocateRemainingWidth(ClusterLevelsIndices& clusterLevels,
-                                      SkScalar& allocatedWidth,
-                                      size_t prevClusterNotSpaceCount)
+                                             SkScalar& allocatedWidth,
+                                             size_t prevClusterNotSpaceCount)
 {
     // Bottom-up allocation: If the upper limit is reached, the remaining width is evenly allocated.
     if (allocatedWidth <= 0) {
@@ -129,11 +129,12 @@ SkScalar TextLineJustify::usingAutoSpaceWidth(const Cluster* cluster)
     if (end > start && !run.GetAutoSpacings().empty()) {
         correction = run.GetAutoSpacings()[end - 1].fX - run.GetAutoSpacings()[start].fY;
     }
-    return cluster->width() + correction;
+    
+    return cluster->width() + std::max(0.0f, correction);
 }
 
 TextLineJustify::ShiftLevel TextLineJustify::determineShiftLevelForIdeographic(const Cluster* prevCluster,
-                                                                 MiddleLevelInfo& middleLevelInfo)
+                                                                               MiddleLevelInfo& middleLevelInfo)
 {
     if (prevCluster == nullptr) {
         return ShiftLevel::Undefined;
@@ -151,8 +152,8 @@ TextLineJustify::ShiftLevel TextLineJustify::determineShiftLevelForIdeographic(c
 }
 
 TextLineJustify::ShiftLevel TextLineJustify::determineShiftLevelForPunctuation(const Cluster* cluster,
-                                                                 const Cluster* prevCluster,
-                                                                 HighLevelInfo& highLevelInfo)
+                                                                               const Cluster* prevCluster,
+                                                                               HighLevelInfo& highLevelInfo)
 {
     if (cluster == nullptr || prevCluster == nullptr) {
         return ShiftLevel::Undefined;
@@ -178,7 +179,7 @@ TextLineJustify::ShiftLevel TextLineJustify::determineShiftLevelForWhitespaceBre
 }
 
 TextLineJustify::ShiftLevel TextLineJustify::determineShiftLevelForOtherCases(const Cluster* prevCluster,
-                                                                MiddleLevelInfo& middleLevelInfo)
+                                                                              MiddleLevelInfo& middleLevelInfo)
 {
     if (prevCluster == nullptr) {
         return ShiftLevel::Undefined;
@@ -195,10 +196,10 @@ TextLineJustify::ShiftLevel TextLineJustify::determineShiftLevelForOtherCases(co
 }
 
 TextLineJustify::ShiftLevel TextLineJustify::determineShiftLevel(const Cluster* cluster,
-                                                   const Cluster* prevCluster,
-                                                   HighLevelInfo& highLevelInfo,
-                                                   MiddleLevelInfo& middleLevelInfo,
-                                                   SkScalar& ideographicMaxLen)
+                                                                 const Cluster* prevCluster,
+                                                                 HighLevelInfo& highLevelInfo,
+                                                                 MiddleLevelInfo& middleLevelInfo,
+                                                                 SkScalar& ideographicMaxLen)
 {
     if (cluster == nullptr || prevCluster == nullptr) {
         return ShiftLevel::Undefined;
@@ -218,17 +219,19 @@ TextLineJustify::ShiftLevel TextLineJustify::determineShiftLevel(const Cluster* 
 }
 
 SkScalar TextLineJustify::calculateClusterShift(const Cluster* cluster,
-                                         ClusterIndex index,
-                                         const ClusterLevelsIndices& clusterLevels)
+                                                ClusterIndex index,
+                                                const ClusterLevelsIndices& clusterLevels)
 {
     if (cluster == nullptr) {
         return 0.0f;
     }
     SkScalar step = 0.0f;
-    auto highLevelIterator = std::find_if(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(),
-        [index](const HighLevelInfo& data) { return data.clusterIndex == index; });
-    auto lowLevelIterator = std::find_if(clusterLevels.middleLevelIndices.begin(), clusterLevels.middleLevelIndices.end(),
-        [index](const MiddleLevelInfo& data) { return data.clusterIndex == index; });
+    auto highLevelIterator =
+        std::find_if(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(),
+            [index](const HighLevelInfo& data) { return data.clusterIndex == index; });
+    auto lowLevelIterator =
+        std::find_if(clusterLevels.middleLevelIndices.begin(), clusterLevels.middleLevelIndices.end(),
+            [index](const MiddleLevelInfo& data) { return data.clusterIndex == index; });
     if (highLevelIterator != clusterLevels.highLevelIndices.end()) {
         size_t idx = std::distance(clusterLevels.highLevelIndices.begin(), highLevelIterator);
         step = clusterLevels.highLevelIndices[idx].highLevelOffset;
@@ -236,8 +239,8 @@ SkScalar TextLineJustify::calculateClusterShift(const Cluster* cluster,
         // Because both sides of the WhitespaceBreak are equally widened, the
         // ideographic and non-ideographic characters are only widened once.
         // So the front is not WhitespaceBreak, and the count increases by 1.
-        step =
-            lowLevelIterator->isPrevClusterSpace ? clusterLevels.middleLevelOffset : clusterLevels.middleLevelOffset * (1 + 1);
+        step = lowLevelIterator->isPrevClusterSpace ? clusterLevels.middleLevelOffset
+                                                    : clusterLevels.middleLevelOffset * (1 + 1);
     } else if (std::find(clusterLevels.LowLevelIndices.begin(), clusterLevels.LowLevelIndices.end(), index) !=
                clusterLevels.LowLevelIndices.end()) {
         step = clusterLevels.lowLevelOffset;
@@ -246,12 +249,12 @@ SkScalar TextLineJustify::calculateClusterShift(const Cluster* cluster,
 }
 
 void TextLineJustify::justifyShiftCluster(const SkScalar maxWidth,
-                                   SkScalar textLen,
-                                   ClusterLevelsIndices& clusterLevels,
-                                   SkScalar ideographicMaxLen,
-                                   size_t prevClusterNotSpaceCount)
+                                          SkScalar textLen,
+                                          ClusterLevelsIndices& clusterLevels,
+                                          SkScalar ideographicMaxLen,
+                                          size_t prevClusterNotSpaceCount)
 {
-    SkScalar allocatedWidth = maxWidth - textLen - (textLineRef.fEllipsis ? textLineRef.fEllipsis->fAdvanceX() : 0);
+    SkScalar allocatedWidth = maxWidth - textLen - (textLineRef.ellipsis() ? textLineRef.ellipsis()->fAdvanceX() : 0);
     const SkScalar verifyShift = allocatedWidth;
     // Allocate offsets for each level
     this->allocateHighLevelOffsets(clusterLevels, allocatedWidth, ideographicMaxLen);
@@ -259,7 +262,7 @@ void TextLineJustify::justifyShiftCluster(const SkScalar maxWidth,
     this->allocateLowLevelOffsets(clusterLevels, allocatedWidth, ideographicMaxLen);
     this->allocateRemainingWidth(clusterLevels, allocatedWidth, prevClusterNotSpaceCount);
     // Deal with the ghost spaces
-    auto ghostShift = maxWidth - textLineRef.fAdvance.fX;
+    auto ghostShift = maxWidth - textLineRef.widthWithoutEllipsis();
     // Reallocate the width of each cluster: Clusters of different levels use different offsets.
     SkScalar shift = 0.0f;
     SkScalar prevShift = 0.0f;
@@ -270,23 +273,20 @@ void TextLineJustify::justifyShiftCluster(const SkScalar maxWidth,
             }
             if (ghost) {
                 if (cluster->run().leftToRight()) {
-                    textLineRef.shiftCluster(cluster, ghostShift, ghostShift);
+                    textLineRef.updateClusterOffsets(cluster, ghostShift, ghostShift);
                 }
                 return true;
             }
             SkScalar step = calculateClusterShift(cluster, index, clusterLevels);
             shift += step;
-            textLineRef.shiftCluster(cluster, shift, prevShift);
+            textLineRef.updateClusterOffsets(cluster, shift, prevShift);
             prevShift = shift;
             return true;
         });
     SkAssertResult(nearlyEqual(shift, verifyShift));
-
-    textLineRef.fWidthWithSpaces += ghostShift;
-    textLineRef.fAdvance.fX = maxWidth;
 }
 
-void TextLineJustify::justify(SkScalar maxWidth)
+bool TextLineJustify::justify(SkScalar maxWidth)
 {
     SkScalar textLen = 0.0f;
     SkScalar ideographicMaxLen = 0.0f;
@@ -333,13 +333,11 @@ void TextLineJustify::justify(SkScalar maxWidth)
             return true;
         });
     if (clusterLevels.empty()) {
-        if (textLineRef.fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
-            // Justify -> Right align
-            textLineRef.fShift = maxWidth - textLen;
-        }
-        return;
+        textLineRef.justifyUpdateRtlWidth(maxWidth, textLen);
+        return false;
     }
     this->justifyShiftCluster(maxWidth, textLen, clusterLevels, ideographicMaxLen, prevClusterNotSpaceCount);
+    return true;
 }
 
 }  // namespace textlayout

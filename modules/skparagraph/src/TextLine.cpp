@@ -517,13 +517,9 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
     // We do nothing for left align
     if (align == TextAlign::kJustify) {
         if (!this->endsWithHardLineBreak()) {
-#ifdef OHOS_SUPPORT
-            TextLineJustify textlineJustify(*this);
-            textlineJustify.justify(maxWidth);
-
-            this->fOwner->setLongestLine(maxWidth);
-#else 
             this->justify(maxWidth);
+#ifdef OHOS_SUPPORT
+            this->fOwner->setLongestLine(maxWidth);
 #endif
         } else if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
             // Justify -> Right align
@@ -803,6 +799,29 @@ void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar 
     decorations.paint(painter, style, context, correctedBaseline);
 }
 
+#ifdef OHOS_SUPPORT
+void TextLine::justify(SkScalar maxWidth)
+{
+    TextLineJustify textlineJustify(*this);
+    if (textlineJustify.justify(maxWidth)) {
+        this->fWidthWithSpaces += (maxWidth - this->widthWithoutEllipsis());
+        this->fAdvance.fX = maxWidth;
+    }
+}
+
+void TextLine::updateClusterOffsets(const Cluster* cluster, SkScalar shift, SkScalar prevShift)
+{
+    this->shiftCluster(cluster, shift, prevShift);
+}
+
+void TextLine::justifyUpdateRtlWidth(const SkScalar maxWidth, const SkScalar textLen)
+{
+    if (this->fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
+        // Justify -> Right align
+        this->fShift = maxWidth - textLen;
+    }
+}
+#else
 void TextLine::justify(SkScalar maxWidth) {
     int whitespacePatches = 0;
     SkScalar textLen = 0;
@@ -847,11 +866,7 @@ void TextLine::justify(SkScalar maxWidth) {
         }
         return;
     }
-#ifdef OHOS_SUPPORT
-    SkScalar step = (maxWidth - textLen - (fEllipsis ? fEllipsis->fAdvance.fX : 0)) / whitespacePatches;
-#else
     SkScalar step = (maxWidth - textLen) / whitespacePatches;
-#endif
     SkScalar shift = 0.0f;
     SkScalar prevShift = 0.0f;
 
@@ -911,6 +926,7 @@ void TextLine::justify(SkScalar maxWidth) {
     this->fWidthWithSpaces += ghostShift;
     this->fAdvance.fX = maxWidth;
 }
+#endif
 
 void TextLine::shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift) {
 

@@ -26,7 +26,7 @@ namespace textlayout {
 class TextLineJustify {
 public:
     TextLineJustify(TextLine& textLine) : textLineRef(textLine) {}
-    void justify(SkScalar maxWidth);
+    bool justify(SkScalar maxWidth);
 
 private:
     TextLine& textLineRef;
@@ -50,7 +50,8 @@ private:
         SkScalar middleLevelOffset{0.0f};
         SkScalar lowLevelOffset{0.0f};
 
-        bool empty() {
+        bool empty()
+        {
             return highLevelIndices.empty() && middleLevelIndices.empty() &&
                    LowLevelIndices.empty();
         }
@@ -102,7 +103,6 @@ private:
                              ClusterLevelsIndices& clusterLevels,
                              SkScalar ideographicMaxLen,
                              size_t prevClusterNotSpaceCount);
-
 };
 }  // namespace textlayout
 }  // namespace skia
