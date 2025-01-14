@@ -401,7 +401,7 @@ std::vector<uint8_t> findBreaks(const std::vector<uint8_t>& hyphenatorData, std:
     if (!hyphenInfo.initHyphenTableInfo(hyphenatorData)) {
         return result;
     }
-    
+
     if (target.size() > 0) {
         for (size_t i = target.size() - 1; i >= 1; --i) {
             HyphenSubTable hyphenSubTable;
@@ -421,11 +421,15 @@ std::vector<uint8_t> findBreaks(const std::vector<uint8_t>& hyphenatorData, std:
     return result;
 }
 
-std::vector<uint8_t> Hyphenator::FindBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
+std::vector<uint8_t> Hyphenator::findBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
                                                     size_t startPos, size_t endPos)
 {
-    const auto lastword = std::string(text.c_str() + startPos, text.c_str() + endPos);
     std::vector<uint8_t> result;
+    if (startPos > text.size() || endPos > text.size() || startPos > endPos) {
+        TEXT_LOGE("hyphen error pos %{public}zu %{public}zu %{public}zu", text.size(), startPos, endPos);
+        return result;
+    }
+    const auto lastword = std::string(text.c_str() + startPos, text.c_str() + endPos);
     // resolve potential break positions
     if (!hyphenatorData.empty() && startPos + HYPHEN_WORD_SHIFT < endPos) {
         // need to have at least 4 characters for hyphenator to process

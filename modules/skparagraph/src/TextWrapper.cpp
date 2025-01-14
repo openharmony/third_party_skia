@@ -87,8 +87,8 @@ size_t TextWrapper::tryBreakWord(Cluster *startCluster, Cluster *endOfClusters,
     }
 
     auto locale = owner->paragraphStyle().getTextStyle().getLocale();
-    auto hyphenatorData = Hyphenator::GetInstance().getHyphenatorData(locale.c_str());
-    auto result = Hyphenator::GetInstance().FindBreakPositions(hyphenatorData, owner->fText, startPos, endPos);
+    auto hyphenatorData = Hyphenator::getInstance().getHyphenatorData(locale.c_str());
+    auto result = Hyphenator::getInstance().findBreakPositions(hyphenatorData, owner->fText, startPos, endPos);
 
     endPos = startPos;
     size_t ix = 0;
@@ -174,10 +174,12 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                     fTooLongCluster = true;
                     break;
                 }
-                fWords.extend(fClusters);
-                fBrokeLineWithHyphen = true;
-                break;
-            // let hyphenator try before this if it is enabled
+                if (!fClusters.empty()) {
+                    fWords.extend(fClusters);
+                    fBrokeLineWithHyphen = true;
+                    break;
+                }
+                // let hyphenator try before this if it is enabled
             } else if ((wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate) ||
                        cluster->isWhitespaceBreak()) {
                 // It's the end of the word
@@ -547,8 +549,8 @@ struct TextWrapScorer {
         bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak());
         if (hyphenEnabled && !prevWasWhitespace && isWhitespace && endCluster != startCluster) {
             prevWasWhitespace = true;
-            auto hyphenatorData = Hyphenator::GetInstance().getHyphenatorData(locale.c_str());
-            auto results = Hyphenator::GetInstance().FindBreakPositions(
+            auto hyphenatorData = Hyphenator::getInstance().getHyphenatorData(locale.c_str());
+            auto results = Hyphenator::getInstance().findBreakPositions(
                 hyphenatorData, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
             CheckHyphenBreak(results, parent, startCluster);
             if (clusterIx + 1 < parent.clusters().size()) {

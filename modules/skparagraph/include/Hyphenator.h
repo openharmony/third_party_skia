@@ -17,9 +17,11 @@
 #define THIRD_PARTY_SKIA_HYPHENATOR_H
 
 #ifdef OHOS_SUPPORT
+#include <atomic>
 #include <cctype>
 #include <cstring>
 #include <memory>
+#include <mutex>
 #include <shared_mutex>
 #include <ucase.h>
 #include <unordered_map>
@@ -105,20 +107,23 @@ public:
     std::unordered_map<char, TrieNode*> children;
     std::string value;
 
-    TrieNode() : value("") {}
+    ~TrieNode()
+    {
+        for (auto& child : children) {
+            delete child.second;
+            child.second = nullptr;
+        }
+    }
 };
 
 class Trie {
 public:
-    Trie() : root(new TrieNode) {}
-    ~Trie() { destroy(root); }
-
     void insert(const std::string& key, const std::string& value)
     {
-        TrieNode* node = root;
+        TrieNode* node = &root;
         for (char c : key) {
-            if (node->children.find(c) == node->children.end()) {
-                node->children[c] = new TrieNode();
+            if (node->children.count(c) == 0) {
+                node->children[c] = new TrieNode;
             }
             node = node->children[c];
         }
@@ -127,7 +132,7 @@ public:
 
     std::string findPartialMatch(const std::string& keyPart)
     {
-        TrieNode* node = root;
+        TrieNode* node = &root;
         for (char c : keyPart) {
             if (node->children.find(c) == node->children.end()) {
                 return "";
@@ -139,27 +144,17 @@ public:
     }
 
 private:
-    TrieNode* root;
+    TrieNode root;
 
-    void destroy(TrieNode* node)
+    std::string collectValues(const TrieNode* node)
     {
-        if (!node) {
-            return;
-        }
-        for (auto& child : node->children) {
-            destroy(child.second);
-        }
-        delete node;
-    }
-    std::string collectValues(TrieNode* node)
-    {
-        if (!node) {
+        if (node == nullptr) {
             return "";
         }
         if (!node->value.empty()) {
             return node->value;
         }
-        for (auto& child : node->children) {
+        for (const auto& child : node->children) {
             std::string value = collectValues(child.second);
             if (!value.empty()) {
                 return value;
@@ -171,20 +166,20 @@ private:
 
 class Hyphenator {
 public:
-    static Hyphenator& GetInstance()
+    static Hyphenator& getInstance()
     {
         static Hyphenator instance;
-        static bool isInitialized = false;
+        static std::atomic<bool> isInitialized{false};
         if (!isInitialized) {
+            isInitialized.store(true);
             instance.initTrieTree();
-            isInitialized = true;
         }
         return instance;
     }
     const std::vector<uint8_t>& getHyphenatorData(const std::string& locale);
     const std::vector<uint8_t>& findHyphenatorData(const std::string& langCode);
     const std::vector<uint8_t>& loadPatternFile(const std::string& langCode);
-    std::vector<uint8_t> FindBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
+    std::vector<uint8_t> findBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
                                             size_t startPos, size_t endPos);
 
 private:
@@ -203,4 +198,4 @@ private:
 } // namespace textlayout
 } // namespace skia
 #endif
-#endif  // THIRD_PARTY_SKIA_HYPHENATOR_H
+#endif // THIRD_PARTY_SKIA_HYPHENATOR_H

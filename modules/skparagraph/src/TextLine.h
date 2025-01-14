@@ -161,7 +161,7 @@ public:
     void ellipsisNotFitProcess(EllipsisModal ellipsisModal);
 #ifdef OHOS_SUPPORT
     void createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
-    void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType& wordBreakType);
+    void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
 #endif
     // For testing internal structures

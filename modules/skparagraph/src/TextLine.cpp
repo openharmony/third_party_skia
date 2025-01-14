@@ -1043,7 +1043,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
 
-void TextLine::TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType& wordBreakType)
+void TextLine::TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType)
 {
     // We found enough room for the ellipsis
     fAdvance.fX = width;
