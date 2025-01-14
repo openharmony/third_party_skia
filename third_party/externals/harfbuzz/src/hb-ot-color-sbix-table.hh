@@ -297,7 +297,14 @@ struct sbix
       hb_blob_t *blob = reference_png (font, glyph, &x_offset, &y_offset, &strike_ppem);
 
       const PNGHeader &png = *blob->as<PNGHeader>();
-
+      
+      // CVE-2022-33068
+      if (png.IHDR.height >= 65536 | png.IHDR.width >= 65536)
+      {
+        hb_blob_destroy (blob);
+        return false;
+      }
+      
       extents->x_bearing = x_offset;
       extents->y_bearing = png.IHDR.height + y_offset;
       extents->width     = png.IHDR.width;
