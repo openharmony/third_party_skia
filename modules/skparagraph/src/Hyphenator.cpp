@@ -24,7 +24,7 @@
 
 namespace skia {
 namespace textlayout {
-const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
+const std::map<std::string, std::string> HPB_FILE_NAMES = {
     {"as", "hyph-as.hpb"},                 // Assamese
     {"be", "hyph-be.hpb"},                 // Belarusian
     {"bg", "hyph-bg.hpb"},                 // Bulgarian
@@ -39,7 +39,7 @@ const std::unordered_map<std::string, std::string> HPB_FILE_NAMES = {
     {"el-polyton", "hyph-el-polyton.hpb"}, // ModernGreek,polytonic
     {"en-latn", "hyph-en-gb.hpb"},         // Latin English
     {"en-gb", "hyph-en-gb.hpb"},           // British English
-    {"en-us", "hyph-en-gb.hpb"},           // American English
+    {"en-us", "hyph-en-us.hpb"},           // American English
     {"es", "hyph-es.hpb"},                 // Spanish
     {"et", "hyph-et.hpb"},                 // Estonian
     {"fr", "hyph-fr.hpb"},                 // French

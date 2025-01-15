@@ -24,10 +24,11 @@
 #include <mutex>
 #include <shared_mutex>
 #include <ucase.h>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 #include "include/core/SkString.h"
+#include "include/HyphenTrie.h"
 
 namespace skia {
 namespace textlayout {
@@ -101,69 +102,6 @@ struct HyphenatorHeader {
         return (maxCp - minCp) * HYPHEN_BASE_CODE_SHIFT + maps->count;
     }
 };
-
-class TrieNode {
-public:
-    std::unordered_map<char, TrieNode*> children;
-    std::string value;
-
-    ~TrieNode()
-    {
-        for (auto& child : children) {
-            delete child.second;
-            child.second = nullptr;
-        }
-    }
-};
-
-class Trie {
-public:
-    void insert(const std::string& key, const std::string& value)
-    {
-        TrieNode* node = &root;
-        for (char c : key) {
-            if (node->children.count(c) == 0) {
-                node->children[c] = new TrieNode;
-            }
-            node = node->children[c];
-        }
-        node->value = value;
-    }
-
-    std::string findPartialMatch(const std::string& keyPart)
-    {
-        TrieNode* node = &root;
-        for (char c : keyPart) {
-            if (node->children.find(c) == node->children.end()) {
-                return "";
-            }
-            node = node->children[c];
-        }
-
-        return collectValues(node);
-    }
-
-private:
-    TrieNode root;
-
-    std::string collectValues(const TrieNode* node)
-    {
-        if (node == nullptr) {
-            return "";
-        }
-        if (!node->value.empty()) {
-            return node->value;
-        }
-        for (const auto& child : node->children) {
-            std::string value = collectValues(child.second);
-            if (!value.empty()) {
-                return value;
-            }
-        }
-        return "";
-    }
-};
-
 class Hyphenator {
 public:
     static Hyphenator& getInstance()
@@ -177,8 +115,6 @@ public:
         return instance;
     }
     const std::vector<uint8_t>& getHyphenatorData(const std::string& locale);
-    const std::vector<uint8_t>& findHyphenatorData(const std::string& langCode);
-    const std::vector<uint8_t>& loadPatternFile(const std::string& langCode);
     std::vector<uint8_t> findBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
                                             size_t startPos, size_t endPos);
 
@@ -189,10 +125,12 @@ private:
     Hyphenator& operator=(const Hyphenator&) = delete;
 
     void initTrieTree();
+    const std::vector<uint8_t>& findHyphenatorData(const std::string& langCode);
+    const std::vector<uint8_t>& loadPatternFile(const std::string& langCode);
 
     mutable std::shared_mutex mutex_;
     std::unordered_map<std::string, std::vector<uint8_t>> fHyphenMap;
-    Trie fTrieTree;
+    HyphenTrie fTrieTree;
     const std::vector<uint8_t> fEmptyResult;
 };
 } // namespace textlayout

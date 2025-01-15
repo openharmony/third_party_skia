@@ -546,8 +546,9 @@ struct TextWrapScorer {
         auto& cluster = parent.cluster(clusterIx);
         const bool hyphenEnabled = parent.getWordBreakType() == WordBreakType::BREAK_HYPHEN;
         auto locale = parent.paragraphStyle().getTextStyle().getLocale();
-        bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak());
-        if (hyphenEnabled && !prevWasWhitespace && isWhitespace && endCluster != startCluster) {
+        bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak() || cluster.isTabulation());
+        if (hyphenEnabled && !prevWasWhitespace && isWhitespace && endCluster != startCluster &&
+            endCluster > startCluster) {
             prevWasWhitespace = true;
             auto hyphenatorData = Hyphenator::getInstance().getHyphenatorData(locale.c_str());
             auto results = Hyphenator::getInstance().findBreakPositions(
