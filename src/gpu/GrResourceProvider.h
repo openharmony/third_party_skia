@@ -332,6 +332,12 @@ public:
     const GrCaps* caps() const { return fCaps.get(); }
     bool overBudget() const { return fCache->overBudget(); }
 
+#ifdef SKIA_OHOS
+    size_t getMaxResourceBytes() const { return fCache->getMaxResourceBytes(); }
+    
+    size_t getBudgetedResourceBytes() const { return fCache->getBudgetedResourceBytes(); }
+#endif
+
     static SkISize MakeApprox(SkISize);
 
     inline GrResourceProviderPriv priv();

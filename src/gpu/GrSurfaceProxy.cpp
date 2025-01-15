@@ -23,6 +23,9 @@
 #include "src/gpu/GrTexture.h"
 #include "src/gpu/GrTextureRenderTargetProxy.h"
 #include "src/gpu/SurfaceFillContext.h"
+#ifdef SKIA_OHOS
+#include "src/gpu/GrPerfMonitorReporter.h"
+#endif
 
 #ifdef SK_DEBUG
 #include "include/gpu/GrDirectContext.h"
@@ -148,7 +151,9 @@ sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceP
     SkASSERT(mipMapped == GrMipmapped::kNo || fFit == SkBackingFit::kExact);
     SkASSERT(!this->isLazy());
     SkASSERT(!fTarget);
-
+#ifdef SKIA_OHOS
+    int64_t currentTime = GrPerfMonitorReporter::getCurrentTime();
+#endif
     sk_sp<GrSurface> surface;
     if (SkBackingFit::kApprox == fFit) {
         surface = resourceProvider->createApproxTexture(fDimensions,
@@ -173,6 +178,13 @@ sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceP
 
     if (fGrProxyTag.isGrTagValid()) {
         surface->setResourceTag(fGrProxyTag);
+#ifdef SKIA_OHOS
+        int64_t allocTime = GrPerfMonitorReporter::getCurrentTime() - currentTime;
+        GrPerfMonitorReporter::GetInstance().recordTextureNode(fGrProxyTag.fName, allocTime);
+        GrPerfMonitorReporter::GetInstance().recordTexturePerfEvent(fGrProxyTag.fName,
+            fGrProxyTag.fPid, static_cast<int32_t>(resourceProvider->getMaxResourceBytes()),
+            static_cast<int32_t>(resourceProvider->getBudgetedResourceBytes()), allocTime);
+#endif
     }
     return surface;
 }
