@@ -759,7 +759,7 @@ struct TextWrapScorer {
             // recursively calculate best score for children
             overallScore += CalculateRecursive(RecursiveParam{
                 param.targetLines - 1,
-                param.maxLines - param.lineNumber,
+                param.maxLines > param.lineNumber ? param.maxLines - param.lineNumber : 0,
                 param.lineNumber + 1,
                 param.begin + currentWidth,
                 param.remainingTextWidth - currentWidth
