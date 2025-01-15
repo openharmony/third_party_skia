@@ -27,8 +27,12 @@ public:
         return GrImageContext::MakeForPromiseImage(std::move(tsp));
     }
 
+#ifdef SKIA_OHOS_SINGLE_OWNER
+    GrSingleOwner* singleOwner() const { return this->context()->singleOwner(); }
+#else
     /** This is only useful for debug purposes */
     SkDEBUGCODE(GrSingleOwner* singleOwner() const { return this->context()->singleOwner(); } )
+#endif
 
 protected:
     explicit GrImageContextPriv(GrImageContext* iContext) : GrBaseContextPriv(iContext) {}
