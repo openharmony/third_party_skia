@@ -15,10 +15,10 @@
 
 #ifndef SK_SDF_FILTER_DEFINED
 #define SK_SDF_FILTER_DEFINED
+#ifdef SKIA_OHOS
 
 #include "src/core/SkMaskFilterBase.h"
 
-#include "src/gpu/effects/GrSDFBlurEffect.h"
 #include "src/gpu/effects/GrTextureEffect.h"
 #include "src/gpu/geometry/GrStyledShape.h"
 #include "src/gpu/v1/SurfaceDrawContext_v1.h"
@@ -36,18 +36,15 @@ struct DrawRectData {
     SkISize   fSize;
 };
 
-bool isSDFBlur(const GrStyledShape& shape);
+bool GetSDFBlurEnabled();
+
+bool isSimpleRRectSDF(const SkRRect& srcRRect);
+
+bool isComplexRRectSDF(const SkRRect& srcRRect);
 
 bool GetSDFBlurDebugTraceEnabled();
 
-bool drawMaskSDFBlur(GrRecordingContext* rContext, skgpu::v1::SurfaceDrawContext* sdc, const GrClip* clip,
-    const SkMatrix& viewMatrix, const SkIRect& maskBounds, GrPaint&& paint, GrSurfaceProxyView mask,
-    const SkMaskFilterBase* maskFilter, const GrStyledShape& shape);
-
-std::unique_ptr<skgpu::v1::SurfaceDrawContext> SDFBlur(GrRecordingContext* rContext,
-    GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType,
-    sk_sp<SkColorSpace> colorSpace, SkIRect dstBounds, SkIRect srcBounds, float noxFormedSigma,
-    SkTileMode mode, const SkMatrix& viewMatrix, const SkRRect& srcRRect, SkBackingFit fit = SkBackingFit::kApprox);
 
 } // SDFBlur
+#endif // SKIA_OHOS
 #endif

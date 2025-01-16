@@ -89,12 +89,11 @@ config("skia_public") {
   if (is_ohos && (target_cpu == "arm" || target_cpu == "arm64")) {
     defines += [
       "SKIA_OHOS",
-      "SKIA_OHOS_FOR_OHOS_TRACE",
-      "SKIA_OHOS_FOR_OHOS_LOG",
       "SKIA_OHOS_SHADER_REDUCE",
       "SKIA_OHOS_TEXTURE_MEM_MGMT",
       "SKIA_DFX_FOR_OHOS",
       "SKIA_DFX_FOR_RECORD_VKIMAGE",
+      "SKIA_OHOS_SINGLE_OWNER",
     ]
   }
   defines += [ "OHOS_SUPPORT" ]
@@ -561,6 +560,9 @@ optional("fontmgr_symbol_load") {
     ":ohos_fontconfig.json",
     ":ohos_fontconfig_old.json",
   ]
+  if (skia_feature_product == "wearable") {
+    deps += [ ":ohos_fontconfig_wearable.json" ]
+  }
   public = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.h" ]
   sources = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
 }
@@ -814,6 +816,13 @@ if (use_oh_skia && !is_arkui_x) {
     subsystem_name = "thirdparty"
   }
 
+  ohos_prebuilt_etc("ohos_fontconfig_wearable.json") {
+    source = "//third_party/skia/src/ports/skia_ohos/config/fontconfig_ohos_wearable.json"
+    output = "fontconfig_ohos.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
   optional("fontmgr_ohos") {
     enabled = skia_enable_fontmgr_ohos
 
@@ -857,6 +866,9 @@ if (use_oh_skia && !is_arkui_x) {
       ":ohos_fontconfig.json",
       ":ohos_fontconfig_old.json",
     ]
+    if (skia_feature_product == "wearable") {
+      deps += [ ":ohos_fontconfig_wearable.json" ]
+    }
 
     if (skia_feature_wuji_enable) {
       deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
@@ -1463,7 +1475,10 @@ optional("pdf") {
     }
   }
   if (is_ohos && !build_ohos_sdk) {
-    external_deps += [ "hitrace:hitrace_meter" ]
+    external_deps += [
+      "hitrace:hitrace_meter",
+      "init:libbegetutil",
+    ]
   }
   if (skia_use_libjpeg_turbo_decode) {
     deps += [ ":jpeg_decode" ]
@@ -2091,6 +2106,7 @@ if (use_oh_skia) {
       sources += [ "//third_party/skia/src/ports/SkDebug_ohos.cpp" ]
       external_deps = [
         "bounds_checking_function:libsec_shared",
+        "faultloggerd:libbacktrace_local",
         "hilog:libhilog",
         "hitrace:hitrace_meter",
         "init:libbegetutil",

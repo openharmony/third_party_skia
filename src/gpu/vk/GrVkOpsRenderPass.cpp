@@ -15,6 +15,9 @@
 #include "src/gpu/GrBackendUtils.h"
 #include "src/gpu/GrDirectContextPriv.h"
 #include "src/gpu/GrOpFlushState.h"
+#ifdef SKIA_OHOS
+#include "src/gpu/GrPerfMonitorReporter.h"
+#endif
 #include "src/gpu/GrPipeline.h"
 #include "src/gpu/GrRenderTarget.h"
 #include "src/gpu/effects/GrTextureEffect.h"
@@ -895,6 +898,10 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxyView& proxyView, con
     if (!image) {
         return;
     }
+#ifdef SKIA_OHOS
+    // observer drawBlurImage start
+    int64_t startTime = GrPerfMonitorReporter::getCurrentTime();
+#endif
 
     HITRACE_OHOS_NAME_ALWAYS("DrawBlurImage");
     // reference textureop, resource's refcount should add.
@@ -907,5 +914,18 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxyView& proxyView, con
     originInfo.rtOrigin = fOrigin;
     fGpu->currentCommandBuffer()->drawBlurImage(fGpu, image, fFramebuffer->colorAttachment()->dimensions(),
                                                 originInfo, blurArg);
+#ifdef SKIA_OHOS
+    // observer drawBlurImage end
+    int64_t blurTime = GrPerfMonitorReporter::getCurrentTime() - startTime;
+    GrGpuResourceTag tag = proxyView.proxy()->getGrProxyTag();
+    if (tag.isGrTagValid()) {
+        // observer material type
+        const uint16_t filterType = 2;
+        GrPerfMonitorReporter::GetInstance().recordBlurNode(tag.fName, blurTime);
+        GrPerfMonitorReporter::GetInstance().recordBlurPerfEvent(tag.fName, tag.fPid, filterType,
+            static_cast<float>(blurArg.sigma), static_cast<int32_t>(proxyView.width()),
+            static_cast<int32_t>(proxyView.height()), blurTime);
+    }
+#endif
     return;
 }

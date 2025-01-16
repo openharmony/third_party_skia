@@ -107,8 +107,7 @@ public:
                                   const SkIRect& devSpaceShapeBounds,
                                   const SkIRect& clipBounds,
                                   const SkMatrix& ctm,
-                                  SkIRect* maskRect,
-                                  const bool canUseSDFBlur = false) const;
+                                  SkIRect* maskRect) const;
 
     /**
      *  Try to directly render the mask filter into the target. Returns true if drawing was
@@ -120,6 +119,25 @@ public:
                                      const GrClip*,
                                      const SkMatrix& viewMatrix,
                                      const GrStyledShape& shape) const;
+
+#ifdef SKIA_OHOS
+    /**
+     *  Try to directly render a rounded rect SDFshadow into the target.  Returns
+     *  true if drawing was successful.  If false is returned then paint is unmodified.
+     */
+    virtual bool directFilterRRectMaskGPU(GrRecordingContext* context,
+                                          skgpu::v1::SurfaceDrawContext* sdc,
+                                          GrPaint&& paint,
+                                          const GrClip* clip,
+                                          const SkMatrix& viewMatrix,
+                                          const GrStyledShape& shape,
+                                          const SkRRect& srcRRect) const;
+    /**
+     *  According to the advice in skia, We prefer to blur paths with small blur radii on the CPU.
+     */
+    virtual bool quick_check_gpu_draw(const SkMatrix& viewMatrix,
+                                      SkIRect& devSpaceShapeBounds) const;
+#endif // SKIA_OHOS
 
     /**
      * This function is used to implement filters that require an explicit src mask. It should only
@@ -134,12 +152,6 @@ public:
                                              SkAlphaType srcAlphaType,
                                              const SkMatrix& ctm,
                                              const SkIRect& maskRect) const;
-
-    virtual float getNoxFormedSigma3() const;
-
-    virtual GrSurfaceProxyView filterMaskGPUNoxFormed(GrRecordingContext*,
-        GrSurfaceProxyView srcView, GrColorType srcColorType, SkAlphaType srcAlphaType, const SkMatrix& viewMatrix,
-        const SkIRect& maskRect, const SkRRect& srcRRect) const;
 #endif
 
     /**

@@ -13,7 +13,7 @@
 #include "include/core/SkShader.h"
 #include "src/core/SkMask.h"
 
-class SkBlurMask {
+class SK_API SkBlurMask {
 public:
     static bool SK_WARN_UNUSED_RESULT BlurRect(SkScalar sigma, SkMask *dst, const SkRect &src,
                                                SkBlurStyle, SkIPoint *margin = nullptr,

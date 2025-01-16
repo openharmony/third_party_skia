@@ -34,7 +34,8 @@
                 "zlib",
                 "jsoncpp",
                 "egl",
-                "opengles"
+                "opengles",
+                "faultloggerd"
             ],
             "third_party": [
                 "vulkan-headers"

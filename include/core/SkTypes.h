@@ -463,6 +463,12 @@
     extern SK_API void SkDebugf(const char format[], ...) SK_PRINTF_LIKE(1, 2);
 #endif
 
+#ifdef SKIA_OHOS_SINGLE_OWNER
+    extern SK_API bool GetEnableSkiaSingleOwner();
+
+    extern SK_API void PrintBackTrace(uint32_t tid);
+#endif
+
 // SkASSERT, SkASSERTF and SkASSERT_RELEASE can be used as stand alone assertion expressions, e.g.
 //    uint32_t foo(int x) {
 //        SkASSERT(x > 4);

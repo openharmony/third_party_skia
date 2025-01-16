@@ -27,6 +27,9 @@
 #include "src/gpu/GrDirectContextPriv.h"
 #include "src/gpu/GrGpuResourceCacheAccess.h"
 #include "src/gpu/GrProxyProvider.h"
+#ifdef SKIA_OHOS
+#include "src/gpu/GrPerfMonitorReporter.h"
+#endif
 #include "src/gpu/GrTexture.h"
 #include "src/gpu/GrTextureProxyCacheAccess.h"
 #include "src/gpu/GrThreadSafeCache.h"
@@ -153,7 +156,7 @@ void GrResourceCache::setLimit(size_t bytes) {
 #ifdef SKIA_DFX_FOR_OHOS
 static constexpr int MB = 1024 * 1024;
 
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
 bool GrResourceCache::purgeUnlocakedResTraceEnabled_ =
     std::atoi((OHOS::system::GetParameter("sys.graphic.skia.cache.debug", "0").c_str())) == 1;
 #endif
@@ -204,7 +207,7 @@ std::string GrResourceCache::cacheInfo()
     return cacheInfoStream.str();
 }
 
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
 void GrResourceCache::traceBeforePurgeUnlockRes(const std::string& method, SimpleCacheInfo& simpleCacheInfo)
 {
     if (purgeUnlocakedResTraceEnabled_) {
@@ -245,7 +248,7 @@ std::string GrResourceCache::cacheInfoComparison(const SimpleCacheInfo& simpleCa
         << "; AllocBufferBytes : " << simpleCacheInfo.fAllocBufferBytes << " / " << fAllocBufferBytes;
     return cacheInfoComparison.str();
 }
-#endif // SKIA_OHOS_FOR_OHOS_TRACE
+#endif // SKIA_OHOS
 
 std::string GrResourceCache::cacheInfoPurgeableQueue()
 {
@@ -650,7 +653,7 @@ void GrResourceCache::insertResource(GrGpuResource* resource)
             fMemoryOverflowCallback_(pid, pidSize, true);
             fExitedPid_.insert(pid);
             SkDebugf("OHOS resource overflow! pid[%{public}d], size[%{public}zu]", pid, pidSize);
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
             HITRACE_OHOS_NAME_FMT_ALWAYS("OHOS gpu resource overflow: pid(%u), size:(%u)", pid, pidSize);
 #endif
         }
@@ -671,7 +674,7 @@ void GrResourceCache::insertResource(GrGpuResource* resource)
 #endif
     }
     SkASSERT(!resource->cacheAccess().isUsableAsScratch());
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
     if (fBudgetedBytes >= fMaxBytes) {
         HITRACE_OHOS_NAME_FMT_ALWAYS("cache over fBudgetedBytes:(%u), fMaxBytes:(%u)", fBudgetedBytes, fMaxBytes);
 #ifdef SKIA_DFX_FOR_OHOS
@@ -1146,6 +1149,9 @@ void GrResourceCache::didChangeBudgetStatus(GrGpuResource* resource) {
         this->purgeAsNeeded();
     } else {
         SkASSERT(resource->resourcePriv().budgetedType() != GrBudgetedType::kUnbudgetedCacheable);
+#ifdef SKIA_OHOS
+        GrPerfMonitorReporter::GetInstance().recordTextureCache(resource->getResourceTag().fName);
+#endif
         --fBudgetedCount;
         fBudgetedBytes -= size;
         if (!resource->resourcePriv().isPurgeable() &&
@@ -1243,7 +1249,7 @@ void GrResourceCache::purgeAsNeeded(const std::function<bool(void)>& nextFrameHa
 
 void GrResourceCache::purgeUnlockedResources(const GrStdSteadyClock::time_point* purgeTime,
                                              bool scratchResourcesOnly) {
-#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+#if defined (SKIA_OHOS) && defined (SKIA_DFX_FOR_OHOS)
     SimpleCacheInfo simpleCacheInfo;
     traceBeforePurgeUnlockRes("purgeUnlockedResources", simpleCacheInfo);
 #endif
@@ -1278,7 +1284,7 @@ void GrResourceCache::purgeUnlockedResources(const GrStdSteadyClock::time_point*
         // nothing will be deleted.
         if (purgeTime && fPurgeableQueue.count() &&
             fPurgeableQueue.peek()->cacheAccess().timeWhenResourceBecamePurgeable() >= *purgeTime) {
-#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+#if defined (SKIA_OHOS) && defined (SKIA_DFX_FOR_OHOS)
             traceAfterPurgeUnlockRes("purgeUnlockedResources", simpleCacheInfo);
 #endif
             return;
@@ -1312,13 +1318,13 @@ void GrResourceCache::purgeUnlockedResources(const GrStdSteadyClock::time_point*
     }
 
     this->validate();
-#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+#if defined (SKIA_OHOS) && defined (SKIA_DFX_FOR_OHOS)
     traceAfterPurgeUnlockRes("purgeUnlockedResources", simpleCacheInfo);
 #endif
 }
 
 void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
-#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+#if defined (SKIA_OHOS) && defined (SKIA_DFX_FOR_OHOS)
     SimpleCacheInfo simpleCacheInfo;
     traceBeforePurgeUnlockRes("purgeUnlockAndSafeCacheGpuResources", simpleCacheInfo);
 #endif
@@ -1346,7 +1352,7 @@ void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
     }
 
     this->validate();
-#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+#if defined (SKIA_OHOS) && defined (SKIA_DFX_FOR_OHOS)
     traceAfterPurgeUnlockRes("purgeUnlockAndSafeCacheGpuResources", simpleCacheInfo);
 #endif
 }
@@ -1397,7 +1403,7 @@ void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly, const s
 }
 
 void GrResourceCache::purgeUnlockedResourcesByPid(bool scratchResourceOnly, const std::set<int>& exitedPidSet) {
-#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+#if defined (SKIA_OHOS) && defined (SKIA_DFX_FOR_OHOS)
     SimpleCacheInfo simpleCacheInfo;
     traceBeforePurgeUnlockRes("purgeUnlockedResourcesByPid", simpleCacheInfo);
 #endif
@@ -1435,7 +1441,7 @@ void GrResourceCache::purgeUnlockedResourcesByPid(bool scratchResourceOnly, cons
     }
 
     this->validate();
-#if defined (SKIA_OHOS_FOR_OHOS_TRACE) && defined (SKIA_DFX_FOR_OHOS)
+#if defined (SKIA_OHOS) && defined (SKIA_DFX_FOR_OHOS)
     traceAfterPurgeUnlockRes("purgeUnlockedResourcesByPid", simpleCacheInfo);
 #endif
 }

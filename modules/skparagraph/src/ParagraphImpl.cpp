@@ -1253,6 +1253,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                              && (this->fUnicodeText[clusters.end - 1] == 0xad))) { // 0xad represents a soft hyphen
                     const SkString dash("-");
                     line.createTailEllipsis(noIndentWidth, dash, true, this->getWordBreakType());
+                    line.setBreakWithHyphen(true);
                 }
 #endif
                 auto spacing = line.autoSpacing();

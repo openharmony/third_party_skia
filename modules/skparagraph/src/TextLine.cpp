@@ -1057,29 +1057,9 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             }
         }
 
-        // Get the last run directions after clipping
-        fEllipsisIndex = cluster.runIndex();
-        fLastClipRunLtr = fOwner->run(fEllipsisIndex).leftToRight();
-
-        // We found enough room for the ellipsis
-        fAdvance.fX = width;
         fEllipsis = std::move(ellipsisRun);
-        fEllipsis->setOwner(fOwner);
-        fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
-
-        // Let's update the line
-        fClusterRange.end = clusterIndex;
-        fGhostClusterRange.end = fClusterRange.end;
-        fEllipsis->fTextRange =
-                TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
-        fEllipsis->fClusterStart = cluster.textRange().end;
-        fText.end = cluster.textRange().end;
-        fTextIncludingNewlines.end = cluster.textRange().end;
-        fTextExcludingSpaces.end = cluster.textRange().end;
-
-        if (SkScalarNearlyZero(width)) {
-            fRunsInVisualOrder.reset();
-        }
+        fEllipsis->fTextRange = TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
+        TailEllipsisUpdateLine(cluster, width, clusterIndex, wordBreakType);
 
         break;
     }
@@ -1087,6 +1067,31 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     fWidthWithSpaces = width;
 
     ellipsisNotFitProcess(EllipsisModal::TAIL);
+}
+
+void TextLine::TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType)
+{
+    // We found enough room for the ellipsis
+    fAdvance.fX = width;
+    fEllipsis->setOwner(fOwner);
+    fEllipsis->fClusterStart = cluster.textRange().end;
+
+    // Let's update the line
+    if (wordBreakType != WordBreakType::BREAK_HYPHEN) {
+        fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
+    }
+    fClusterRange.end = clusterIndex;
+    fGhostClusterRange.end = fClusterRange.end;
+    // Get the last run directions after clipping
+    fEllipsisIndex = cluster.runIndex();
+    fLastClipRunLtr = fOwner->run(fEllipsisIndex).leftToRight();
+    fText.end = cluster.textRange().end;
+    fTextIncludingNewlines.end = cluster.textRange().end;
+    fTextExcludingSpaces.end = cluster.textRange().end;
+
+    if (SkScalarNearlyZero(width)) {
+        fRunsInVisualOrder.reset();
+    }
 }
 #endif
 
@@ -1902,7 +1907,11 @@ void TextLine::getRectsForRange(TextRange textRange0,
         (TextRange textRange, const TextStyle& style, const TextLine::ClipContext& lineContext) {
 
             auto intersect = textRange * textRange0;
+#ifdef OHOS_SUPPORT
+            if (intersect.empty() && !this->fBreakWithHyphen) {
+#else
             if (intersect.empty()) {
+#endif
                 return true;
             }
 
@@ -2737,6 +2746,8 @@ TextLine TextLine::CloneSelf()
 #ifdef OHOS_SUPPORT
     textLine.fOwner = this->fOwner;
     textLine.fIsTextLineEllipsisHeadModal = this->fIsTextLineEllipsisHeadModal;
+    textLine.fEllipsisString = this->fEllipsisString;
+    textLine.fBreakWithHyphen = this->fBreakWithHyphen;
 #endif
 
     textLine.roundRectAttrs = this->roundRectAttrs;
