@@ -17,15 +17,18 @@
 #define THIRD_PARTY_SKIA_HYPHENATOR_H
 
 #ifdef OHOS_SUPPORT
+#include <atomic>
 #include <cctype>
 #include <cstring>
 #include <memory>
+#include <mutex>
 #include <shared_mutex>
 #include <ucase.h>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 #include "include/core/SkString.h"
+#include "include/HyphenTrie.h"
 
 namespace skia {
 namespace textlayout {
@@ -61,7 +64,7 @@ struct HyphenatorHeader {
     uint32_t mappings{0};
     uint32_t version{0};
 
-    inline uint16_t codeOffset(uint16_t code, const ArrayOf16bits* maps = nullptr) const
+    uint16_t codeOffset(uint16_t code, const ArrayOf16bits* maps = nullptr) const
     {
         // need still reconsider what we want to do with a nodes in the middle of graph
         if (maps != nullptr && (code < minCp || code > maxCp)) {
@@ -99,29 +102,35 @@ struct HyphenatorHeader {
         return (maxCp - minCp) * HYPHEN_BASE_CODE_SHIFT + maps->count;
     }
 };
-
 class Hyphenator {
 public:
-    static Hyphenator& GetInstance()
+    static Hyphenator& getInstance()
     {
         static Hyphenator instance;
+        std::call_once(initFlag, []() { instance.initTrieTree(); });
         return instance;
     }
-    const std::vector<uint8_t>& GetHyphenatorData(const std::string& locale);
-    bool LoadHyphenatorData(const std::string& locale);
-    std::vector<uint8_t> FindBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
+    const std::vector<uint8_t>& getHyphenatorData(const std::string& locale);
+    std::vector<uint8_t> findBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
                                             size_t startPos, size_t endPos);
 
 private:
+    static std::once_flag initFlag;
     Hyphenator() = default;
     ~Hyphenator() = default;
     Hyphenator(const Hyphenator&) = delete;
     Hyphenator& operator=(const Hyphenator&) = delete;
 
+    void initTrieTree();
+    const std::vector<uint8_t>& findHyphenatorData(const std::string& langCode);
+    const std::vector<uint8_t>& loadPatternFile(const std::string& langCode);
+
     mutable std::shared_mutex mutex_;
-    std::unordered_map<std::string, std::vector<uint8_t>> hyphenMap;
+    std::map<std::string, std::vector<uint8_t>> fHyphenMap;
+    HyphenTrie fTrieTree;
+    const std::vector<uint8_t> fEmptyResult;
 };
 } // namespace textlayout
 } // namespace skia
 #endif
-#endif  // THIRD_PARTY_SKIA_HYPHENATOR_H
+#endif // THIRD_PARTY_SKIA_HYPHENATOR_H

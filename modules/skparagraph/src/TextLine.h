@@ -190,8 +190,11 @@ public:
     void setBlockRange(const BlockRange& blockRange) { fBlockRange = blockRange; }
     void countWord(int& wordCount, bool& inWord);
     void ellipsisNotFitProcess(EllipsisModal ellipsisModal);
+#ifdef OHOS_SUPPORT
     void createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
+    void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
+#endif
     // For testing internal structures
     void scanStyles(StyleType style, const RunStyleVisitor& visitor);
 
@@ -246,6 +249,8 @@ public:
     std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const;
     double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const;
     SkRect generatePaintRegion(SkScalar x, SkScalar y);
+    void setBreakWithHyphen(bool breakWithHyphen) { this->fBreakWithHyphen = breakWithHyphen; }
+    bool getBreakWithHyphen() { return this->fBreakWithHyphen; }
 #endif
 
 private:
@@ -391,6 +396,7 @@ public:
     std::vector<TextBlobRecord> fTextBlobCache;
 #ifdef OHOS_SUPPORT
     SkString fEllipsisString;
+    bool fBreakWithHyphen{false};
 #endif
 };
 }  // namespace textlayout

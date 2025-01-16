@@ -87,8 +87,8 @@ size_t TextWrapper::tryBreakWord(Cluster *startCluster, Cluster *endOfClusters,
     }
 
     auto locale = owner->paragraphStyle().getTextStyle().getLocale();
-    auto hyphenatorData = Hyphenator::GetInstance().GetHyphenatorData(locale.c_str());
-    auto result = Hyphenator::GetInstance().FindBreakPositions(hyphenatorData, owner->fText, startPos, endPos);
+    auto hyphenatorData = Hyphenator::getInstance().getHyphenatorData(locale.c_str());
+    auto result = Hyphenator::getInstance().findBreakPositions(hyphenatorData, owner->fText, startPos, endPos);
 
     endPos = startPos;
     size_t ix = 0;
@@ -174,11 +174,14 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                     fTooLongCluster = true;
                     break;
                 }
-                fWords.extend(fClusters);
-                fBrokeLineWithHyphen = true;
-                break;
-            // let hyphenator try before this if it is enabled
-            } else if ((wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate) || cluster->isWhitespaceBreak()) {
+                if (!fClusters.empty()) {
+                    fWords.extend(fClusters);
+                    fBrokeLineWithHyphen = true;
+                    break;
+                }
+                // let hyphenator try before this if it is enabled
+            } else if ((wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate) ||
+                       cluster->isWhitespaceBreak()) {
                 // It's the end of the word
                 isFirstWord = false;
                 fClusters.extend(cluster);
@@ -486,7 +489,6 @@ struct TextWrapScorer {
             cumulativeLen += len;
             currentWidth += len;
             currentCount++;
-
             if (cluster.isWhitespaceBreak()) {
                 breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
                 prevWasWhitespace = true;
@@ -529,9 +531,11 @@ struct TextWrapScorer {
         auto startCluster = &parent.cluster(0);
         auto endCluster = &parent.cluster(0);
         for (size_t clusterIx = 0; clusterIx < parent.clusters().size(); clusterIx++) {
-            auto& cluster = parent.cluster(clusterIx);
-            auto len = cluster.width();
-            cumulativeLen_ += len;
+            if (parent.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
+                auto& cluster = parent.cluster(clusterIx);
+                auto len = cluster.width();
+                cumulativeLen_ += len;
+            }
             CalculateHyphenPos(clusterIx, startCluster, endCluster, parent);
         }
     }
@@ -542,11 +546,12 @@ struct TextWrapScorer {
         auto& cluster = parent.cluster(clusterIx);
         const bool hyphenEnabled = parent.getWordBreakType() == WordBreakType::BREAK_HYPHEN;
         auto locale = parent.paragraphStyle().getTextStyle().getLocale();
-        bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak());
-        if (hyphenEnabled && !prevWasWhitespace && isWhitespace && endCluster != startCluster) {
+        bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak() || cluster.isTabulation());
+        if (hyphenEnabled && !prevWasWhitespace && isWhitespace && endCluster != startCluster &&
+            endCluster > startCluster) {
             prevWasWhitespace = true;
-            auto hyphenatorData = Hyphenator::GetInstance().GetHyphenatorData(locale.c_str());
-            auto results = Hyphenator::GetInstance().FindBreakPositions(
+            auto hyphenatorData = Hyphenator::getInstance().getHyphenatorData(locale.c_str());
+            auto results = Hyphenator::getInstance().findBreakPositions(
                 hyphenatorData, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
             CheckHyphenBreak(results, parent, startCluster);
             if (clusterIx + 1 < parent.clusters().size()) {
@@ -755,7 +760,7 @@ struct TextWrapScorer {
             // recursively calculate best score for children
             overallScore += CalculateRecursive(RecursiveParam{
                 param.targetLines - 1,
-                param.maxLines - param.lineNumber,
+                param.maxLines > param.lineNumber ? param.maxLines - param.lineNumber : 0,
                 param.lineNumber + 1,
                 param.begin + currentWidth,
                 param.remainingTextWidth - currentWidth
