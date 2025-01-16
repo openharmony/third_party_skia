@@ -33,6 +33,9 @@ SkTypeface_OHOS::SkTypeface_OHOS(FontInfo& info)
 
 void SkTypeface_OHOS::readStreamFromFile(const std::unique_ptr<FontInfo>& fontInfo) const
 {
+    if (fontInfo->stream != nullptr) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     if (fontInfo->stream == nullptr) {
         fontInfo->stream = SkStream::MakeFromFile(fontInfo->fname.c_str());
