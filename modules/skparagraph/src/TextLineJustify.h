@@ -64,45 +64,28 @@ private:
         LowLevel      // include: Between ideographic characters
     };
 
-    void allocateHighLevelOffsets(ClusterLevelsIndices& clusterLevels,
-                                  SkScalar& allocatedWidth,
-                                  SkScalar ideographicMaxLen);
-    void allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLevels,
-                                    SkScalar& allocatedWidth,
-                                    SkScalar ideographicMaxLen,
-                                    size_t prevClusterNotSpaceCount);
-    void allocateLowLevelOffsets(ClusterLevelsIndices& clusterLevels,
-                                 SkScalar& allocatedWidth,
-                                 SkScalar ideographicMaxLen);
-    void allocateRemainingWidth(ClusterLevelsIndices& clusterLevels,
-                                SkScalar& allocatedWidth,
-                                size_t prevClusterNotSpaceCount);
-    void distributeRemainingSpace(ClusterLevelsIndices& clusterLevels,
-                                  SkScalar& middleLevelOffset,
-                                  SkScalar& lowLevelOffset,
-                                  SkScalar& allocatedWidth);
+    void allocateHighLevelOffsets(
+        ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, SkScalar ideographicMaxLen);
+    void allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth,
+        SkScalar ideographicMaxLen, size_t prevClusterNotSpaceCount);
+    void allocateLowLevelOffsets(
+        ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, SkScalar ideographicMaxLen);
+    void allocateRemainingWidth(
+        ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, size_t prevClusterNotSpaceCount);
+    void distributeRemainingSpace(ClusterLevelsIndices& clusterLevels, SkScalar& middleLevelOffset,
+        SkScalar& lowLevelOffset, SkScalar& allocatedWidth);
     SkScalar usingAutoSpaceWidth(const Cluster* cluster);
-    ShiftLevel determineShiftLevelForIdeographic(const Cluster* prevCluster,
-                                                 MiddleLevelInfo& middleLevelInfo);
-    ShiftLevel determineShiftLevelForPunctuation(const Cluster* cluster,
-                                                 const Cluster* prevCluster,
-                                                 HighLevelInfo& highLevelInfo);
+    ShiftLevel determineShiftLevelForIdeographic(const Cluster* prevCluster, MiddleLevelInfo& middleLevelInfo);
+    ShiftLevel determineShiftLevelForPunctuation(
+        const Cluster* cluster, const Cluster* prevCluster, HighLevelInfo& highLevelInfo);
     ShiftLevel determineShiftLevelForWhitespaceBreak(const Cluster* prevCluster);
-    ShiftLevel determineShiftLevelForOtherCases(const Cluster* prevCluster,
-                                                MiddleLevelInfo& middleLevelInfo);
-    ShiftLevel determineShiftLevel(const Cluster* cluster,
-                                   const Cluster* prevCluster,
-                                   HighLevelInfo& highLevelInfo,
-                                   MiddleLevelInfo& middleLevelInfo,
-                                   SkScalar& ideographicMaxLen);
-    SkScalar calculateClusterShift(const Cluster* cluster,
-                                   ClusterIndex index,
-                                   const ClusterLevelsIndices& clusterLevels);
-    void justifyShiftCluster(const SkScalar maxWidth,
-                             SkScalar textLen,
-                             ClusterLevelsIndices& clusterLevels,
-                             SkScalar ideographicMaxLen,
-                             size_t prevClusterNotSpaceCount);
+    ShiftLevel determineShiftLevelForOtherCases(const Cluster* prevCluster, MiddleLevelInfo& middleLevelInfo);
+    ShiftLevel determineShiftLevel(const Cluster* cluster, const Cluster* prevCluster, HighLevelInfo& highLevelInfo,
+        MiddleLevelInfo& middleLevelInfo, SkScalar& ideographicMaxLen);
+    SkScalar calculateClusterShift(
+        const Cluster* cluster, ClusterIndex index, const ClusterLevelsIndices& clusterLevels);
+    void justifyShiftCluster(const SkScalar maxWidth, SkScalar textLen, ClusterLevelsIndices& clusterLevels,
+        SkScalar ideographicMaxLen, size_t prevClusterNotSpaceCount);
 };
 }  // namespace textlayout
 }  // namespace skia

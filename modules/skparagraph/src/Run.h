@@ -150,7 +150,9 @@ public:
     SkRect clip() const {
         return SkRect::MakeXYWH(fOffset.fX, fOffset.fY, fAdvance.fX, fAdvance.fY);
     }
-
+    const SkSTArray<PARAM_64, SkPoint, true>& getAutoSpacings() const {
+        return fAutoSpacings;
+    }
     void addSpacesAtTheEnd(SkScalar space, Cluster* cluster);
     SkScalar addSpacesEvenly(SkScalar space, Cluster* cluster);
     SkScalar addSpacesEvenly(SkScalar space);
@@ -187,9 +189,6 @@ public:
 #ifdef OHOS_SUPPORT
     template<typename Visitor>
     void iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor visitor);
-    const SkSTArray<PARAM_64, SkPoint, true>& GetAutoSpacings() const {
-        return fAutoSpacings;
-    }
 #endif
 
     using ClusterVisitor = std::function<void(Cluster* cluster)>;

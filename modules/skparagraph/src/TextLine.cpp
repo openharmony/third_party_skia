@@ -802,8 +802,8 @@ void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar 
 #ifdef OHOS_SUPPORT
 void TextLine::justify(SkScalar maxWidth)
 {
-    TextLineJustify textlineJustify(*this);
-    if (textlineJustify.justify(maxWidth)) {
+    TextLineJustify textLineJustify(*this);
+    if (textLineJustify.justify(maxWidth)) {
         this->fWidthWithSpaces += (maxWidth - this->widthWithoutEllipsis());
         this->fAdvance.fX = maxWidth;
     }
