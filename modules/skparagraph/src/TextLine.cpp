@@ -507,10 +507,13 @@ void TextLine::ensureTextBlobCachePopulated() {
 
 void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal) {
     SkScalar delta = maxWidth - this->widthWithEllipsisSpaces();
+#ifdef OHOS_SUPPORT
+    delta = (delta < 0) ? 0 : delta;
+#else
     if (delta <= 0) {
         return;
     }
-
+#endif
     // We do nothing for left align
     if (align == TextAlign::kJustify) {
         if (!this->endsWithHardLineBreak()) {
