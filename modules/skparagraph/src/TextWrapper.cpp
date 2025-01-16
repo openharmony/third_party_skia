@@ -423,13 +423,6 @@ std::tuple<Cluster*, size_t, SkScalar> TextWrapper::trimStartSpaces(Cluster* end
         ++cluster;
     }
 
-    if (fEndLine.breakCluster()->isWhitespaceBreak() && fEndLine.breakCluster() < endOfClusters) {
-        // In case of a soft line break by the whitespace
-        // fBreak should point to the beginning of the next line
-        // (it only matters when there are trailing spaces)
-        fEndLine.shiftBreak();
-    }
-
     return std::make_tuple(cluster, 0, width);
 }
 
