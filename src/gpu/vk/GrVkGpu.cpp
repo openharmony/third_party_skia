@@ -1001,7 +1001,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
             // copy data into the buffer, skipping the trailing bytes
             char* dst = buffer + individualMipOffsets[currentMipLevel];
             const char* src = (const char*)texelsShallowCopy[currentMipLevel].fPixels;
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
             int memStartTimestamp = 0;
             int memEndTimestamp = 0;
             if (UNLIKELY(isTagEnabled)) {
@@ -1009,7 +1009,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
             }
 #endif
             SkRectMemcpy(dst, trimRowBytes, src, rowBytes, trimRowBytes, currentHeight);
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
             if (UNLIKELY(isTagEnabled)) {
                 memEndTimestamp = get_current_time();
                 int duration = memEndTimestamp - memStartTimestamp;
@@ -1048,7 +1048,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
     // command buffer has a ref on the buffer. This avoids having to add and remove a ref for ever
     // upload in the frame.
     GrVkBuffer* vkBuffer = static_cast<GrVkBuffer*>(slice.fBuffer);
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
     int copyStartTimestamp = 0;
     int copyEndTimestamp = 0;
     if (UNLIKELY(isTagEnabled)) {
@@ -1061,7 +1061,7 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
                                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                                     regions.count(),
                                                     regions.begin());
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
     if (UNLIKELY(isTagEnabled)) {
         copyEndTimestamp = get_current_time();
         int duration = copyEndTimestamp - copyStartTimestamp;

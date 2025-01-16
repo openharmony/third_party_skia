@@ -323,7 +323,7 @@ public:
     void dumpInfo(SkString* out);
     std::string cacheInfo();
 
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
     static bool purgeUnlocakedResTraceEnabled_;
     struct SimpleCacheInfo {
         int fPurgeableQueueCount;
@@ -392,7 +392,7 @@ private:
 #endif
 
 #ifdef SKIA_DFX_FOR_OHOS
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
     void traceBeforePurgeUnlockRes(const std::string& method, SimpleCacheInfo& simpleCacheInfo);
     void traceAfterPurgeUnlockRes(const std::string& method, const SimpleCacheInfo& simpleCacheInfo);
     std::string cacheInfoComparison(const SimpleCacheInfo& simpleCacheInfo);

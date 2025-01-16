@@ -218,8 +218,7 @@ inline static bool enabledSkiaTrace =
 inline static bool enabledSkiaTrace = false;
 #endif
 
-class SkOHOSTraceUtil
-{
+class SkOHOSTraceUtil {
 public:
     SkOHOSTraceUtil(const char* name) {
         if (UNLIKELY(enabledSkiaTrace)) {
