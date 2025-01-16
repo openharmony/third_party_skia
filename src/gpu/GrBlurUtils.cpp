@@ -515,11 +515,9 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
             return;
         }
     }
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
     if (SDFBlur::GetSDFBlurDebugTraceEnabled()) {
         HITRACE_OHOS_NAME_ALWAYS("directFilterRRectMaskGPU doSDF fail!");
     }
-#endif // SKIA_OHOS_FOR_OHOS_TRACE
 #endif // SKIA_OHOS
 
     if (maskFilter->directFilterMaskGPU(rContext, sdc, std::move(paint), clip, viewMatrix, *shape)) {

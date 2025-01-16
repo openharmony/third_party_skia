@@ -211,8 +211,7 @@ public:
 inline static bool enabledSkiaTrace =
     std::atoi((OHOS::system::GetParameter("persist.sys.graphic.skia.openDebugTrace", "0")).c_str()) != 0;
 
-class SkOHOSTraceUtil
-{
+class SkOHOSTraceUtil {
 public:
     SkOHOSTraceUtil(const char* name) {
         if (UNLIKELY(enabledSkiaTrace)) {
