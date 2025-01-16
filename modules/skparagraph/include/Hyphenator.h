@@ -107,11 +107,7 @@ public:
     static Hyphenator& getInstance()
     {
         static Hyphenator instance;
-        static std::atomic<bool> isInitialized{false};
-        if (!isInitialized) {
-            isInitialized.store(true);
-            instance.initTrieTree();
-        }
+        std::call_once(initFlag, []() { instance.initTrieTree(); });
         return instance;
     }
     const std::vector<uint8_t>& getHyphenatorData(const std::string& locale);
@@ -119,6 +115,7 @@ public:
                                             size_t startPos, size_t endPos);
 
 private:
+    static std::once_flag initFlag;
     Hyphenator() = default;
     ~Hyphenator() = default;
     Hyphenator(const Hyphenator&) = delete;
@@ -129,7 +126,7 @@ private:
     const std::vector<uint8_t>& loadPatternFile(const std::string& langCode);
 
     mutable std::shared_mutex mutex_;
-    std::unordered_map<std::string, std::vector<uint8_t>> fHyphenMap;
+    std::map<std::string, std::vector<uint8_t>> fHyphenMap;
     HyphenTrie fTrieTree;
     const std::vector<uint8_t> fEmptyResult;
 };

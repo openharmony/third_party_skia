@@ -24,6 +24,7 @@
 
 namespace skia {
 namespace textlayout {
+std::once_flag Hyphenator::initFlag;
 const std::map<std::string, std::string> HPB_FILE_NAMES = {
     {"as", "hyph-as.hpb"},                 // Assamese
     {"be", "hyph-be.hpb"},                 // Belarusian

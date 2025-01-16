@@ -19,10 +19,10 @@ namespace skia {
 namespace textlayout {
 void HyphenTrie::insert(const std::string& key, const std::string& value)
 {
-    TrieNode* node = &root;
+    std::shared_ptr<TrieNode> node = root;
     for (char c : key) {
         if (node->children.count(c) == 0) {
-            node->children.emplace(c, new TrieNode);
+            node->children.emplace(c, std::make_shared<TrieNode>());
         }
         node = node->children[c];
     }
@@ -31,7 +31,7 @@ void HyphenTrie::insert(const std::string& key, const std::string& value)
 
 std::string HyphenTrie::findPartialMatch(const std::string& keyPart)
 {
-    TrieNode* node = &root;
+    std::shared_ptr<TrieNode> node = root;
     for (char c : keyPart) {
         if (node->children.find(c) == node->children.end()) {
             return "";
@@ -41,7 +41,7 @@ std::string HyphenTrie::findPartialMatch(const std::string& keyPart)
     return collectValues(node);
 }
 
-std::string HyphenTrie::collectValues(const TrieNode* node)
+std::string HyphenTrie::collectValues(const std::shared_ptr<TrieNode>& node)
 {
     if (node == nullptr) {
         return "";
@@ -56,17 +56,6 @@ std::string HyphenTrie::collectValues(const TrieNode* node)
         }
     }
     return "";
-}
-
-void HyphenTrie::destroyTrieNode(TrieNode* node)
-{
-    for (auto& child : node->children) {
-        if (child.second != nullptr) {
-            destroyTrieNode(child.second);
-            delete child.second;
-            child.second = nullptr;
-        }
-    }
 }
 } // namespace textlayout
 } // namespace skia

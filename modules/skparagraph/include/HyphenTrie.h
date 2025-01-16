@@ -19,20 +19,21 @@
 #ifdef OHOS_SUPPORT
 #include <iostream>
 #include <map>
+#include <memory>
 #include <string>
 
 namespace skia {
 namespace textlayout {
 class TrieNode {
 public:
-    std::map<char, TrieNode*> children;
+    std::map<char, std::shared_ptr<TrieNode>> children;
     std::string value;
 };
 
 class HyphenTrie {
 public:
-    HyphenTrie()= default;
-    ~HyphenTrie() { destroyTrieNode(&root); }
+    HyphenTrie() { root = std::make_shared<TrieNode>(); };
+    ~HyphenTrie() = default;
     HyphenTrie(HyphenTrie&&) = delete;
     HyphenTrie& operator=(HyphenTrie&&) = delete;
     HyphenTrie(const HyphenTrie&) = delete;
@@ -42,10 +43,9 @@ public:
     std::string findPartialMatch(const std::string& keyPart);
 
 private:
-    TrieNode root;
+    std::shared_ptr<TrieNode> root = nullptr;
 
-    void destroyTrieNode(TrieNode* root);
-    std::string collectValues(const TrieNode* node);
+    std::string collectValues(const std::shared_ptr<TrieNode>& node);
 };
 } // namespace textlayout
 } // namespace skia
