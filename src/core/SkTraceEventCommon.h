@@ -199,7 +199,10 @@ public:
 #elif defined(SKIA_OHOS)
 
 #include "hitrace_meter.h"
+
+#ifdef NOT_BUILD_FOR_OHOS_SDK
 #include "parameters.h"
+#endif
 
 #define UNLIKELY(exp) (__builtin_expect((exp) != 0, false))
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
@@ -208,8 +211,12 @@ public:
 #define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) \
     HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, ##__VA_ARGS__)
 
+#ifdef NOT_BUILD_FOR_OHOS_SDK
 inline static bool enabledSkiaTrace =
     std::atoi((OHOS::system::GetParameter("persist.sys.graphic.skia.openDebugTrace", "0")).c_str()) != 0;
+#else
+inline static bool enabledSkiaTrace = false;
+#endif
 
 class SkOHOSTraceUtil
 {
