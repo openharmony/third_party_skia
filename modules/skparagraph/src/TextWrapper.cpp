@@ -627,7 +627,7 @@ struct TextWrapScorer {
                 breaks_.emplace_back(param.begin + param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false);
             } else {
                 breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax,
-                Break::BreakType::BREAKTYPE_FORCED, false));
+                    Break::BreakType::BREAKTYPE_FORCED, false));
             }
             param.breakPos += BREAK_NUM_TWO;
         }
