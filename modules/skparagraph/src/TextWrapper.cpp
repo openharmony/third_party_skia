@@ -625,7 +625,7 @@ struct TextWrapScorer {
             // This may happen if there is a long word and per line indent for this particular line
             if (param.breakPos + 1 > breaks_.size()) {
                 breaks_.emplace_back(param.begin + param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false);
-            }else {
+            } else {
                 breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax,
                 Break::BreakType::BREAKTYPE_FORCED, false));
             }
