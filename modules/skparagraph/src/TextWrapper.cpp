@@ -628,8 +628,12 @@ struct TextWrapScorer {
         if (param.breakPos == lastBreakPos_ && param.remainingTextWidth > param.currentMax) {
             // If we were unable to find a break that matches the criteria, insert new one
             // This may happen if there is a long word and per line indent for this particular line
-            breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax,
-                Break::BreakType::BREAKTYPE_FORCED, false));
+            if (param.breakPos + 1 > breaks_.size()) {
+                breaks_.emplace_back(param.begin + param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false);
+            } else {
+                breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax,
+                    Break::BreakType::BREAKTYPE_FORCED, false));
+            }
             param.breakPos += BREAK_NUM_TWO;
         }
 
