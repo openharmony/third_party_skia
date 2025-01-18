@@ -25,7 +25,7 @@ void TextLineJustify::allocateHighLevelOffsets(
     ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, SkScalar ideographicMaxLen)
 {
     // High level allocation: punctuation
-    if (allocatedWidth < 0) {
+    if (allocatedWidth < 0 || nearlyZero(allocatedWidth)) {
         return;
     }
     // Pre-calculate the punctuation width to obtain the maximum width increment of each punctuation character.
@@ -60,7 +60,7 @@ void TextLineJustify::allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLe
     SkScalar ideographicMaxLen, size_t prevClusterNotSpaceCount)
 {
     // Middle level allocation: WhitespaceBreak, between ideographic and non-ideographic characters
-    if (allocatedWidth < 0) {
+    if (allocatedWidth < 0 || nearlyZero(allocatedWidth)) {
         return;
     }
     constexpr size_t scaleFactor = 12;  // Defines the maximum width of 1 / 12 ideographs.
@@ -80,7 +80,7 @@ void TextLineJustify::allocateLowLevelOffsets(
     ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, SkScalar ideographicMaxLen)
 {
     // Low level allocation: Between ideographic characters
-    if (allocatedWidth < 0) {
+    if (allocatedWidth < 0 || nearlyZero(allocatedWidth)) {
         return;
     }
     constexpr size_t scaleFactor = 6;  // Defines the maximum width of 1 / 6 ideographs.
@@ -100,11 +100,11 @@ void TextLineJustify::allocateRemainingWidth(
     ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, size_t prevClusterNotSpaceCount)
 {
     // Bottom-up allocation: If the upper limit is reached, the remaining width is evenly allocated.
-    if (allocatedWidth < 0) {
+    if (allocatedWidth < 0 || nearlyZero(allocatedWidth)) {
         return;
     }
     const size_t totalPatches = clusterLevels.highLevelIndices.size() + clusterLevels.middleLevelIndices.size() +
-                                clusterLevels.LowLevelIndices.size();  
+                                clusterLevels.LowLevelIndices.size();
     const SkScalar remainingOffset = allocatedWidth / (totalPatches + prevClusterNotSpaceCount);
     std::for_each(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(),
         [remainingOffset](HighLevelInfo& val) { val.highLevelOffset += remainingOffset; });
