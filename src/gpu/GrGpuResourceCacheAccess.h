@@ -37,7 +37,7 @@ private:
     /** The cache is allowed to go from no refs to 1 ref. */
     void ref()
     {
-        if(IsValidAddress(fResource)) fResource->addInitialRef();
+        if (IsValidAddress(fResource)) fResource->addInitialRef();
     }
 
     /**
@@ -107,7 +107,7 @@ private:
     uint32_t timestamp() const { return IsValidAddress(fResource) ? fResource->fTimestamp : 0; }
     void setTimestamp(uint32_t ts)
     {
-        if(IsValidAddress(fResource)) fResource->fTimestamp = ts;
+        if (IsValidAddress(fResource)) fResource->fTimestamp = ts;
     }
 
     void setTimeWhenResourceBecomePurgeable() {

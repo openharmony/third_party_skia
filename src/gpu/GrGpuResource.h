@@ -198,7 +198,7 @@ struct GrGpuResourceTag {
  */
 class SK_API GrGpuResource : public GrIORef<GrGpuResource> {
 public:
-    inline biil checkMagic() {
+    inline bool checkMagic() {
         return fMagicNum == MAGIC_INIT;
     }
     /**
