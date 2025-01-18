@@ -35,7 +35,10 @@ static inline bool IsValidAddress(GrGpuResource* ptr)
 class GrGpuResource::CacheAccess {
 private:
     /** The cache is allowed to go from no refs to 1 ref. */
-    void ref() { if(IsValidAddress(fResource)) fResource->addInitialRef(); }
+    void ref()
+    {
+        if(IsValidAddress(fResource)) fResource->addInitialRef();
+    }
 
     /**
      * Is the resource currently cached as scratch? This means it is cached, has a valid scratch
@@ -84,7 +87,10 @@ private:
     }
 
     /** Called by the cache to assign a new unique key. */
-    void setUniqueKey(const GrUniqueKey& key) { if (IsValidAddress(fResource)) fResource->fUniqueKey = key; }
+    void setUniqueKey(const GrUniqueKey& key)
+    {
+        if (IsValidAddress(fResource)) fResource->fUniqueKey = key;
+    }
 
     /** Is the resource ref'ed */
     bool hasRef() const { return IsValidAddress(fResource) && fResource->hasRef(); }
@@ -93,10 +99,16 @@ private:
     }
 
     /** Called by the cache to make the unique key invalid. */
-    void removeUniqueKey() {if (IsValidAddress(fResource)) fResource->fUniqueKey.reset(); }
+    void removeUniqueKey()
+    {
+        if (IsValidAddress(fResource)) fResource->fUniqueKey.reset();
+    }
 
     uint32_t timestamp() const { return IsValidAddress(fResource) ? fResource->fTimestamp : 0; }
-    void setTimestamp(uint32_t ts) { if(IsValidAddress(fResource)) fResource->fTimestamp = ts; }
+    void setTimestamp(uint32_t ts)
+    {
+        if(IsValidAddress(fResource)) fResource->fTimestamp = ts;
+    }
 
     void setTimeWhenResourceBecomePurgeable() {
         SkASSERT(fResource->isPurgeable());
@@ -113,7 +125,8 @@ private:
         return IsValidAddress(fResource) ? fResource->fTimeWhenBecamePurgeable : GrStdSteadyClock::now();
     }
 
-    int* accessCacheIndex() const {
+    int* accessCacheIndex() const
+    {
         thread_local int IN_VALID_INDEX = 0;
         return IsValidAddress(fResource) ? &fResource->fCacheArrayIndex : &IN_VALID_INDEX;
     }

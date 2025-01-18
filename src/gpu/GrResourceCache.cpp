@@ -1422,8 +1422,9 @@ void GrResourceCache::purgeCacheBetweenFrames(bool scratchResourcesOnly, const s
         for (int i=0; i < fPurgeableQueue.count(); i++) {
             GrGpuResource* resource = fPurgeableQueue.at(i);
             SkASSERT(resource->resourcePriv().isPurgeable());
-            if (IsValidAddress(resource) && protectedPidSet.find(resource->getResourceTag().fPid) == protectedPidSet.end()
-                && (!scratchResourcesOnly || !resource->getUniqueKey().isValid())) {
+            if (IsValidAddress(resource) &&
+                protectedPidSet.find(resource->getResourceTag().fPid) == protectedPidSet.end() &&
+                (!scratchResourcesOnly || !resource->getUniqueKey().isValid())) {
                 resource->cacheAccess().release();
                 this->validate();
                 return;
@@ -1485,7 +1486,8 @@ void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, con
     for (int i = 0; i < fPurgeableQueue.count(); i++) {
         GrGpuResource* resource = fPurgeableQueue.at(i);
         SkASSERT(resource->resourcePriv().isPurgeable());
-        if (IsValidAddress(resource) && tag.filter(resource->getResourceTag()) && (!scratchResourcesOnly || !resource->getUniqueKey().isValid())) {
+        if (IsValidAddress(resource) && tag.filter(resource->getResourceTag()) &&
+            (!scratchResourcesOnly || !resource->getUniqueKey().isValid())) {
             *scratchResources.append() = resource;
         }
     }
@@ -1746,7 +1748,7 @@ void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump, c
         }
     }
     for (int i = 0; i < fPurgeableQueue.count(); ++i) {
-        if (IsValidAddress(fPurgeableQueue.at(i) && tag.filter(fPurgeableQueue.at(i)->getResourceTag())) {
+        if (IsValidAddress(fPurgeableQueue.at(i)) && tag.filter(fPurgeableQueue.at(i)->getResourceTag())) {
             fPurgeableQueue.at(i)->dumpMemoryStatistics(traceMemoryDump);
         }
     }
