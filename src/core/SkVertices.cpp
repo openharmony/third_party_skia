@@ -9,6 +9,7 @@
 
 #include "include/core/SkData.h"
 #include "include/private/SkTo.h"
+#include "include/private/SkVx.h"
 #include "src/core/SkCanvasPriv.h"
 #include "src/core/SkOpts.h"
 #include "src/core/SkReadBuffer.h"
@@ -16,7 +17,10 @@
 #include "src/core/SkSafeRange.h"
 #include "src/core/SkVerticesPriv.h"
 #include "src/core/SkWriteBuffer.h"
+
+#include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <new>
 
 static int32_t next_id() {
@@ -81,8 +85,11 @@ struct SkVertices::Sizes {
         }
     }
 
-    bool isValid() const { return fTotal != 0; }
-
+    // skia comit change number: 926863
+    bool isValid() const {
+        SkASSERT(fTotal >= fVSize);
+        return fVSize > 0;
+    }
     size_t fTotal = 0;  // size of entire SkVertices allocation (obj + arrays)
     size_t fArrays; // size of all the data arrays (V + D + T + C + I)
     size_t fVSize;
@@ -211,8 +218,42 @@ sk_sp<SkVertices> SkVertices::MakeCopy(VertexMode mode, int vertexCount,
     sk_careful_memcpy(builder.positions(), pos, sizes.fVSize);
     sk_careful_memcpy(builder.texCoords(), texs, sizes.fTSize);
     sk_careful_memcpy(builder.colors(), colors, sizes.fCSize);
-    size_t isize = (mode == kTriangleFan_VertexMode) ? sizes.fBuilderTriFanISize : sizes.fISize;
-    sk_careful_memcpy(builder.indices(), indices, isize);
+
+    // skia comit change number: 926863
+    // The builder can update the number of indices.
+    const size_t isize = ((mode == kTriangleFan_VertexMode) ? sizes.fBuilderTriFanISize
+                                                            : sizes.fISize),
+                icount = isize / sizeof(uint16_t);
+
+    // Ensure that indices are valid for the given vertex count.
+    SkASSERT(vertexCount > 0);
+    const uint16_t max_index = SkToU16(vertexCount - 1);
+
+    size_t i = 0;
+    for (; i + 8 <= icount; i += 8) {
+        const skvx::ushort8 ind8 = skvx::ushort8::Load(indices + i),
+                    clamped_ind8 = skvx::min(ind8, max_index);
+        clamped_ind8.store(builder.indices() + i);
+    }
+    if (i + 4 <= icount) {
+        const skvx::ushort4 ind4 = skvx::ushort4::Load(indices + i),
+                    clamped_ind4 = skvx::min(ind4, max_index);
+        clamped_ind4.store(builder.indices() + i);
+
+        i += 4;
+    }
+    if (i + 2 <= icount) {
+        const skvx::ushort2 ind2 = skvx::ushort2::Load(indices + i),
+                    clamped_ind2 = skvx::min(ind2, max_index);
+        clamped_ind2.store(builder.indices() + i);
+
+        i += 2;
+    }
+    if (i < icount) {
+        builder.indices()[i] = std::min(indices[i], max_index);
+        SkDEBUGCODE(i += 1);
+    }
+    SkASSERT(i == icount);
 
     return builder.detach();
 }

@@ -918,6 +918,10 @@ IMPL_LOAD2_TRANSPOSED(4, float, vld2q_f32);
 #endif
 #endif
 
+using ushort2 = Vec< 2, uint16_t>;
+using ushort4 = Vec< 4, uint16_t>;
+using ushort8 = Vec< 8, uint16_t>;
+
 }  // namespace skvx
 
 #undef SINTU
