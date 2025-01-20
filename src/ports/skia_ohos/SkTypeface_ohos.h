@@ -4,6 +4,7 @@
 
 #ifndef SKTYPEFACE_OHOS_H
 #define SKTYPEFACE_OHOS_H
+#include <mutex>
 
 #include "SkFontHost_FreeType_common.h"
 #include "SkFontStyle.h"
@@ -32,6 +33,8 @@ protected:
 
     virtual sk_sp<SkTypeface> onMakeClone(const SkFontArguments& args) const override;
 private:
+    mutable std::mutex mutex_;
+    void readStreamFromFile(const std::unique_ptr<FontInfo>& fontInfo) const;
     SkString specifiedName; // specified family name which is defined in the configuration file
     std::unique_ptr<FontInfo> fontInfo; // the font information of this typeface
 };
