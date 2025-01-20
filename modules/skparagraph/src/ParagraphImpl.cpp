@@ -1390,7 +1390,7 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
         line.format(effectiveAlign, noIndentWidth, this->paragraphStyle().getEllipsisMod());
     }
 #ifdef OHOS_SUPPORT
-    if (this->paragraphStyle().getTextAlign() == TextAlign::kJustify) {
+    if (this->lines().size() > 1 && this->paragraphStyle().getTextAlign() == TextAlign::kJustify) {
         this->setLongestLineWithIndent(maxWidth);
     }
 #endif

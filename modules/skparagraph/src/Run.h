@@ -150,7 +150,9 @@ public:
     SkRect clip() const {
         return SkRect::MakeXYWH(fOffset.fX, fOffset.fY, fAdvance.fX, fAdvance.fY);
     }
-
+    const SkSTArray<PARAM_64, SkPoint, true>& getAutoSpacings() const {
+        return fAutoSpacings;
+    }
     void addSpacesAtTheEnd(SkScalar space, Cluster* cluster);
     SkScalar addSpacesEvenly(SkScalar space, Cluster* cluster);
     SkScalar addSpacesEvenly(SkScalar space);
