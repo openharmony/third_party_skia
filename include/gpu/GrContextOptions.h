@@ -16,6 +16,9 @@
 #include "include/private/GrTypesPriv.h"
 
 #include <vector>
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+#include <parameters.h>
+#endif
 
 class SkExecutor;
 
@@ -220,7 +223,11 @@ struct SK_API GrContextOptions {
     /**
      * Maximum number of GPU programs or pipelines to keep active in the runtime cache.
      */
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+    int fRuntimeProgramCacheSize = OHOS::system::GetIntParameter("persist.sys.graphics.skiapipelinelimit", 512);
+#else
     int fRuntimeProgramCacheSize = 512;
+#endif
 
     /**
      * Cache in which to store compiled shader binaries between runs.
