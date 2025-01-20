@@ -64,8 +64,7 @@ DEF_TEST(ShadowUtils, reporter) {
     path.cubicTo(100, 50, 20, 100, 0, 0);
     tessellate_shadow(reporter, path, canvas.getTotalMatrix(), {0, 0, 4}, kDo_ExpectVerts);
     // super high path
-    tessellate_shadow(reporter, path, canvas.getTotalMatrix(), {0, 0, 4.0e+37f},
-                      kDo_ExpectVerts, true);
+    tessellate_shadow(reporter, path, canvas.getTotalMatrix(), {0, 0, 4.0e+37f}, kDo_ExpectVerts);
 
     // This line segment has no area and no shadow.
     path.reset();
