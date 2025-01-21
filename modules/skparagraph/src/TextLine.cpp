@@ -2172,14 +2172,14 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                     // All the other runs are placed right of this one
                     auto utf16Index = fOwner->getUTF16Index(context.run->globalClusterIndex(context.pos));
                     if (run->leftToRight()) {
-                        result = { SkToS32(utf16Index), kDownstream};
+                        result = {SkToS32(utf16Index), kDownstream};
                         keepLooking = false;
                     } else {
 #ifdef OHOS_SUPPORT
-                        result = { SkToS32(utf16Index + context.run->clusterRange().end), kUpstream};
+                        result = {SkToS32(utf16Index + 1), kUpstream};
                         size_t glyphCnt = context.run->glyphs().size();
                         if ((glyphCnt != 0) && ((context.run->fUtf8Range.size() / glyphCnt) == EMOJI_WIDTH)) {
-                            result = { SkToS32(utf16Index + 2), kUpstream};
+                            result = {SkToS32(utf16Index + 2), kUpstream};
                         }
 #else
                         result = { SkToS32(utf16Index + 1), kUpstream};
