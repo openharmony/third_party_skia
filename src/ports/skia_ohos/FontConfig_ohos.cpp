@@ -88,11 +88,32 @@ int FontConfig_OHOS::getFamilyCount() const
 */
 SkTypeface* FontConfig_OHOS::matchFallback(SkUnichar character, const SkFontStyle& style) const
 {
+    // find the fallback typeface at emoji first
+    const auto& emoji = getFallbackTypeface(SkString("HMOS Color Emoji"), style);
+    if (emoji->unicharToGlyph(character)) {
+        return SkSafeRef(emoji.get());
+    }
+
+    for (auto& f : fFontCollection.fFallback) {
+        const auto& typefaces = f.typefaces;
+        if (!typefaces.empty() && f.containChar(character)) {
+            if (!typefaces[0]->unicharToGlyph(character)) {
+                continue;
+            }
+            return SkSafeRef(matchFontStyle(typefaces, style).get());
+        }
+    }
+
+    // find the fallback typeface at emoji flags third
+    const auto& flags = getFallbackTypeface(SkString("HMOS Color Emoji Flags"), style);
+    if (flags->unicharToGlyph(character)) {
+        return SkSafeRef(flags.get());
+    }
+
     for (auto& f : fFontCollection.fFallback) {
         const auto& typefaces = f.typefaces;
         if (!typefaces.empty() && typefaces[0]->unicharToGlyph(character)) {
-            auto typeface = matchFontStyle(typefaces, style);
-            return SkSafeRef(typeface.get());
+            return SkSafeRef(matchFontStyle(typefaces, style).get());
         }
     }
     return nullptr;
@@ -415,8 +436,9 @@ int FontConfig_OHOS::parseFonts(const Json::Value& array)
         sk_sp<SkTypeface_OHOS> typeface = nullptr;
         for (auto& dir : fFontDir) {
             std::string path = dir + f.file;
-            if (loadFont(path.c_str(), f, typeface) == 0) {
-                fFontCollection.emplaceFont(std::move(f), std::move(typeface));
+            uint32_t range[4];
+            if (loadFont(path.c_str(), f, typeface, range) == 0) {
+                fFontCollection.emplaceFont(std::move(f), std::move(typeface), range);
                 break;
             }
         }
@@ -481,16 +503,15 @@ int FontConfig_OHOS::parseFontDir(const char* fname, const Json::Value& root)
  * \return ERROR_FONT_NOT_EXIST font file is not exist
  * \return ERROR_FONT_INVALID_STREAM the stream is not recognized
  */
-int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypeface_OHOS>& typeface)
+int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypeface_OHOS>& typeface, uint32_t range[4])
 {
     std::unique_ptr<SkStreamAsset> stream = SkStream::MakeFromFile(fname);
     if (stream == nullptr) {
         return ERROR_FONT_NOT_EXIST;
     }
-    int count = 1;
     FontInfo font(fname, info.index);
-    if (!fFontScanner.recognizedFont(stream.get(), &count) ||
-        !fFontScanner.scanFont(stream.get(), info.index, &font.familyName, &font.style, &font.isFixedWidth, nullptr)) {
+    SkTypeface_FreeType::Scanner::FontInfo fontInfo{ info.index, font.familyName, font.style, font.isFixedWidth };
+    if (!fFontScanner.scanFont(stream.get(), fontInfo, range)) {
         return ERROR_FONT_INVALID_STREAM;
     }
 
