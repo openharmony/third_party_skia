@@ -436,7 +436,7 @@ int FontConfig_OHOS::parseFonts(const Json::Value& array)
         sk_sp<SkTypeface_OHOS> typeface = nullptr;
         for (auto& dir : fFontDir) {
             std::string path = dir + f.file;
-            uint32_t range[4];
+            uint32_t range[4] = { 0 };
             if (loadFont(path.c_str(), f, typeface, range) == 0) {
                 fFontCollection.emplaceFont(std::move(f), std::move(typeface), range);
                 break;

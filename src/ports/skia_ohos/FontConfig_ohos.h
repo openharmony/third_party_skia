@@ -249,7 +249,7 @@ public:
         // all the typefaces of this font
         std::vector<sk_sp<SkTypeface_OHOS>> typefaces;
         // the unicode range of this font
-        uint32_t range[4];
+        uint32_t range[4] = { 0 };
 
         // may be redundant move
         explicit Font(FontJson&& info)
