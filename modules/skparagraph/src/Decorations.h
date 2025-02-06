@@ -25,6 +25,9 @@ class Decorations {
     }
 
     private:
+    constexpr static float UNDER_LINE_THICKNESS_RATIO = (1.0f / 18.0f);
+    constexpr static float LINE_THROUGH_OFFSET = (-6.0f / 21.0f);
+    constexpr static float LINE_THROUGH_TOP = LINE_THROUGH_OFFSET - 0.5f * UNDER_LINE_THICKNESS_RATIO;
 
 #ifndef USE_SKIA_TXT
     void calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface);
@@ -32,12 +35,14 @@ class Decorations {
     void calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface);
 #endif
     void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle,
-        SkScalar textBaselineShift);
+                           const SkScalar& fontSize);
     void calculatePaint(const TextStyle& textStyle);
     void calculateWaves(const TextStyle& textStyle, SkRect clip);
     void calculateAvoidanceWaves(const TextStyle& textStyle, SkRect clip);
     void calculateGaps(const TextLine::ClipContext& context, const SkRect& rect, SkScalar baseline,
         SkScalar halo, const TextStyle& textStyle);
+    SkScalar calculatePaintY(const TextDecoration& decoration, const TextLine::ClipContext& context,
+        const SkScalar baseline);
 
     SkScalar fThickness;
     SkScalar fPosition;

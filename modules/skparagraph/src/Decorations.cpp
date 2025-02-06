@@ -50,14 +50,13 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
                           : context.run->correctAscent(), textStyle.getDecorationStyle(),
-                          textStyle.getBaselineShift());
+                          textStyle.getFontSize());
 
         calculatePaint(textStyle);
 
         auto width = context.clip.width();
         SkScalar x = context.clip.left();
-        SkScalar y = (TextDecoration::kUnderline == decoration) ?
-            fPosition : (context.clip.top() + fPosition);
+        SkScalar y = calculatePaintY(decoration, context, baseline);
 
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
                         textStyle.getDecorationType() == TextDecoration::kUnderline;
@@ -229,6 +228,24 @@ void Decorations::calculateAvoidanceWaves(const TextStyle& textStyle, SkRect cli
     }
 }
 
+SkScalar Decorations::calculatePaintY(const TextDecoration& decoration, const TextLine::ClipContext& context,
+    const SkScalar baseline) {
+    SkScalar y = fPosition;
+        switch (decoration) {
+            case TextDecoration::kUnderline:
+                break;
+            case TextDecoration::kOverline:
+                y = context.clip.top() + fPosition;
+                break;
+            case TextDecoration::kLineThrough:
+                y += baseline;
+                break;
+            default:
+                break;
+        }
+    return y;
+}
+
 // This is how flutter calculates the thickness
 #ifndef USE_SKIA_TXT
 void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface) {
@@ -243,33 +260,25 @@ void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSType
         return;
     }
 
-    fThickness = textStyle.getFontSize() / 14.0f;
-
+    fThickness = textStyle.getFontSize() * UNDER_LINE_THICKNESS_RATIO;
 #ifndef USE_SKIA_TXT
     if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kUnderlineThicknessIsValid_Flag) &&
-#else
-    if ((fFontMetrics.fFlags & RSFontMetrics::FontMetricsFlags::UNDERLINE_THICKNESS_IS_VALID_FLAG) &&
-#endif
-         fFontMetrics.fUnderlineThickness > 0) {
-        fThickness = fFontMetrics.fUnderlineThickness;
+        fFontMetrics.fUnderlineThickness > 0) {
+            fThickness = fFontMetrics.fUnderlineThickness;
     }
-
     if (textStyle.getDecorationType() == TextDecoration::kLineThrough) {
-#ifndef USE_SKIA_TXT
         if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutThicknessIsValid_Flag) &&
-#else
-        if ((fFontMetrics.fFlags & RSFontMetrics::FontMetricsFlags::STRIKEOUT_THICKNESS_IS_VALID_FLAG) &&
-#endif
-             fFontMetrics.fStrikeoutThickness > 0) {
-            fThickness = fFontMetrics.fStrikeoutThickness;
+            fFontMetrics.fStrikeoutThickness > 0) {
+                fThickness = fFontMetrics.fStrikeoutThickness;
         }
     }
+#endif
     fThickness *= textStyle.getDecorationThicknessMultiplier();
 }
 
 // This is how flutter calculates the positioning
 void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
-    const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift) {
+    const TextDecorationStyle textDecorationStyle, const SkScalar& fontSize) {
     switch (decoration) {
       case TextDecoration::kUnderline:
           fPosition = fDecorationContext.underlinePosition;
@@ -278,15 +287,14 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
           fPosition = (textDecorationStyle == TextDecorationStyle::kWavy ? fThickness : fThickness / 2.0f) - ascent;
           break;
       case TextDecoration::kLineThrough: {
+          fPosition = LINE_THROUGH_TOP * fontSize;
 #ifndef USE_SKIA_TXT
           fPosition = (fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutPositionIsValid_Flag)
-#else
-          fPosition = (fFontMetrics.fFlags & RSFontMetrics::FontMetricsFlags::STRIKEOUT_POSITION_IS_VALID_FLAG)
-#endif
-                     ? fFontMetrics.fStrikeoutPosition
-                     : fFontMetrics.fXHeight / -2;
+                    ? fFontMetrics.fStrikeoutPosition
+                    : fFontMetrics.fXHeight / -2;
           fPosition -= ascent;
           fPosition += textBaselineShift;
+#endif
           break;
       }
       default:SkASSERT(false);
