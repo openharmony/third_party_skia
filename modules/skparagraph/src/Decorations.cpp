@@ -46,13 +46,17 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
             continue;
         }
 
+#ifdef OHOS_SUPPORT
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
                           : context.run->correctAscent(), textStyle.getDecorationStyle(),
-#ifdef OHOS_SUPPORT
-                          textStyle.getFontSize());
+                          textStyle.getBaselineShift(), textStyle.getFontSize());
 #else
+        calculatePosition(decoration,
+                          decoration == TextDecoration::kOverline
+                          ? context.run->correctAscent() - context.run->ascent()
+                          : context.run->correctAscent(), textStyle.getDecorationStyle(),
                           textStyle.getBaselineShift());
 #endif
 
@@ -60,12 +64,8 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
 
         auto width = context.clip.width();
         SkScalar x = context.clip.left();
-#ifdef OHOS_SUPPORT
-        SkScalar y = calculatePaintY(decoration, context, baseline);
-#else
         SkScalar y = (TextDecoration::kUnderline == decoration) ?
             fPosition : (context.clip.top() + fPosition);
-#endif
 
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
                         textStyle.getDecorationType() == TextDecoration::kUnderline;
@@ -237,26 +237,6 @@ void Decorations::calculateAvoidanceWaves(const TextStyle& textStyle, SkRect cli
     }
 }
 
-#ifdef OHOS_SUPPORT
-SkScalar Decorations::calculatePaintY(const TextDecoration& decoration, const TextLine::ClipContext& context,
-    const SkScalar baseline) {
-    SkScalar y = fPosition;
-    switch (decoration) {
-        case TextDecoration::kUnderline:
-            break;
-        case TextDecoration::kOverline:
-            y += context.clip.top();
-            break;
-        case TextDecoration::kLineThrough:
-            y += baseline;
-            break;
-        default:
-            break;
-    }
-    return y;
-}
-#endif
-
 // This is how flutter calculates the thickness
 #ifndef USE_SKIA_TXT
 void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface) {
@@ -291,12 +271,12 @@ void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSType
 }
 
 // This is how flutter calculates the positioning
-void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
-    const TextDecorationStyle textDecorationStyle,
 #ifdef OHOS_SUPPORT
-    const SkScalar& fontSize) {
+void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
+    const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift, const SkScalar& fontSize) {
 #else
-    SkScalar textBaselineShift) {
+void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
+    const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift) {
 #endif
     switch (decoration) {
       case TextDecoration::kUnderline:
@@ -312,8 +292,9 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
           fPosition = (fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutPositionIsValid_Flag)
                     ? fFontMetrics.fStrikeoutPosition
                     : fFontMetrics.fXHeight / -2;
-          fPosition -= ascent;
 #endif
+          fPosition -= ascent;
+          fPosition += textBaselineShift;
           break;
       }
       default:SkASSERT(false);

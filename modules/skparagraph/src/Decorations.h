@@ -36,12 +36,11 @@ class Decorations {
 #else
     void calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface);
 #endif
-    void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle,
 #ifdef OHOS_SUPPORT
-        const SkScalar& fontSize);
-    SkScalar calculatePaintY(const TextDecoration& decoration, const TextLine::ClipContext& context,
-        const SkScalar baseline);
+    void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle,
+        SkScalar textBaselineShift, const SkScalar& fontSize);
 #else
+    void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle,
         SkScalar textBaselineShift);
 #endif
     void calculatePaint(const TextStyle& textStyle);
