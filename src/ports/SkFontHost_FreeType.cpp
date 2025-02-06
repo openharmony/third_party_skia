@@ -1842,6 +1842,38 @@ bool SkTypeface_FreeType::Scanner::recognizedFont(SkStreamAsset* stream, int* nu
     return true;
 }
 
+static const struct {
+    const char* const name;
+    int const weight;
+} commonWeights[] = {
+    // There are probably more common names, but these are known to exist.
+    {"all", SkFontStyle::kNormal_Weight},  // Multiple Masters usually default to normal.
+    {"black", SkFontStyle::kBlack_Weight},
+    {"bold", SkFontStyle::kBold_Weight},
+    {"book", (SkFontStyle::kNormal_Weight + SkFontStyle::kLight_Weight) / 2},
+    {"demi", SkFontStyle::kSemiBold_Weight},
+    {"demibold", SkFontStyle::kSemiBold_Weight},
+    {"extra", SkFontStyle::kExtraBold_Weight},
+    {"extrabold", SkFontStyle::kExtraBold_Weight},
+    {"extralight", SkFontStyle::kExtraLight_Weight},
+    {"hairline", SkFontStyle::kThin_Weight},
+    {"heavy", SkFontStyle::kBlack_Weight},
+    {"light", SkFontStyle::kLight_Weight},
+    {"medium", SkFontStyle::kMedium_Weight},
+    {"normal", SkFontStyle::kNormal_Weight},
+    {"plain", SkFontStyle::kNormal_Weight},
+    {"regular", SkFontStyle::kNormal_Weight},
+    {"roman", SkFontStyle::kNormal_Weight},
+    {"semibold", SkFontStyle::kSemiBold_Weight},
+    {"standard", SkFontStyle::kNormal_Weight},
+    {"thin", SkFontStyle::kThin_Weight},
+    {"ultra", SkFontStyle::kExtraBold_Weight},
+    {"ultrablack", SkFontStyle::kExtraBlack_Weight},
+    {"ultrabold", SkFontStyle::kExtraBold_Weight},
+    {"ultraheavy", SkFontStyle::kExtraBlack_Weight},
+    {"ultralight", SkFontStyle::kExtraLight_Weight},
+};
+
 bool SkTypeface_FreeType::Scanner::scanFont(
     SkStreamAsset* stream, int ttcIndex,
     SkString* name, SkFontStyle* style, bool* isFixedPitch, AxisDefinitions* axes) const
@@ -1875,37 +1907,6 @@ bool SkTypeface_FreeType::Scanner::scanFont(
             slant = SkFontStyle::kOblique_Slant;
         }
     } else if (0 == FT_Get_PS_Font_Info(face.get(), &psFontInfo) && psFontInfo.weight) {
-        static const struct {
-            char const * const name;
-            int const weight;
-        } commonWeights [] = {
-            // There are probably more common names, but these are known to exist.
-            { "all", SkFontStyle::kNormal_Weight }, // Multiple Masters usually default to normal.
-            { "black", SkFontStyle::kBlack_Weight },
-            { "bold", SkFontStyle::kBold_Weight },
-            { "book", (SkFontStyle::kNormal_Weight + SkFontStyle::kLight_Weight)/2 },
-            { "demi", SkFontStyle::kSemiBold_Weight },
-            { "demibold", SkFontStyle::kSemiBold_Weight },
-            { "extra", SkFontStyle::kExtraBold_Weight },
-            { "extrabold", SkFontStyle::kExtraBold_Weight },
-            { "extralight", SkFontStyle::kExtraLight_Weight },
-            { "hairline", SkFontStyle::kThin_Weight },
-            { "heavy", SkFontStyle::kBlack_Weight },
-            { "light", SkFontStyle::kLight_Weight },
-            { "medium", SkFontStyle::kMedium_Weight },
-            { "normal", SkFontStyle::kNormal_Weight },
-            { "plain", SkFontStyle::kNormal_Weight },
-            { "regular", SkFontStyle::kNormal_Weight },
-            { "roman", SkFontStyle::kNormal_Weight },
-            { "semibold", SkFontStyle::kSemiBold_Weight },
-            { "standard", SkFontStyle::kNormal_Weight },
-            { "thin", SkFontStyle::kThin_Weight },
-            { "ultra", SkFontStyle::kExtraBold_Weight },
-            { "ultrablack", SkFontStyle::kExtraBlack_Weight },
-            { "ultrabold", SkFontStyle::kExtraBold_Weight },
-            { "ultraheavy", SkFontStyle::kExtraBlack_Weight },
-            { "ultralight", SkFontStyle::kExtraLight_Weight },
-        };
         int const index = SkStrLCSearch(&commonWeights[0].name, SK_ARRAY_COUNT(commonWeights),
                                         psFontInfo.weight, sizeof(commonWeights[0]));
         if (index >= 0) {
@@ -1928,6 +1929,51 @@ bool SkTypeface_FreeType::Scanner::scanFont(
     if (axes != nullptr && !GetAxes(face.get(), axes)) {
         return false;
     }
+    return true;
+}
+
+bool SkTypeface_FreeType::Scanner::scanFont(SkStreamAsset* stream, FontInfo& info, uint32_t range[4]) const
+{
+    SkAutoMutexExclusive libraryLock(fLibraryMutex);
+
+    FT_StreamRec streamRec;
+    SkUniqueFTFace face(this->openFace(stream, info.index, &streamRec));
+    if (!face) {
+        return false;
+    }
+
+    int weight = face->style_flags & FT_STYLE_FLAG_BOLD ? SkFontStyle::kBold_Weight : SkFontStyle::kNormal_Weight;
+    int width = SkFontStyle::kNormal_Width;
+    SkFontStyle::Slant slant = face->style_flags & FT_STYLE_FLAG_ITALIC
+                                       ? SkFontStyle::kItalic_Slant
+                                       : SkFontStyle::kUpright_Slant;
+    PS_FontInfoRec psFontInfo;
+    TT_OS2* os2 = static_cast<TT_OS2*>(FT_Get_Sfnt_Table(face.get(), ft_sfnt_os2));
+    if (os2 && os2->version != 0xffff) {
+        weight = os2->usWeightClass;
+        width = os2->usWidthClass;
+        // OS/2::ulUnicodeRange is bigendian, so we need to swap it
+        range[0] = os2->ulUnicodeRange1;
+        range[1] = os2->ulUnicodeRange2;
+        range[2] = os2->ulUnicodeRange3;  // the 3st range at 3st position
+        range[3] = os2->ulUnicodeRange4;  // the 4th range at 4th position
+
+        // OS/2::fsSelection bit 9 indicates oblique.
+        if (SkToBool(os2->fsSelection & (1u << 9))) {
+            slant = SkFontStyle::kOblique_Slant;
+        }
+    } else if (0 == FT_Get_PS_Font_Info(face.get(), &psFontInfo) && psFontInfo.weight) {
+        int const index = SkStrLCSearch(&commonWeights[0].name, SK_ARRAY_COUNT(commonWeights),
+                                        psFontInfo.weight, sizeof(commonWeights[0]));
+        if (index >= 0) {
+            weight = commonWeights[index].weight;
+        } else {
+            LOG_INFO("Do not know weight for: %s (%s) \n", face->family_name, psFontInfo.weight);
+        }
+    }
+    info.familyName.set(face->family_name);
+    info.style = SkFontStyle(weight, width, slant);
+    info.isFixedWidth = FT_IS_FIXED_WIDTH(face);
     return true;
 }
 
