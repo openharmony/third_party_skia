@@ -41,7 +41,7 @@ enum {
 };
 } /* namespace ErrorCode */
 
-static const inline std::map<std::pair<uint32_t, uint32_t>, int32_t> rangeMap {
+static const inline std::map<std::pair<uint32_t, uint32_t>, int8_t> rangeMap {
     { { 0x0000, 0x007F }, 0 },
     { { 0x0080, 0x00FF }, 1 },
     { { 0x0100, 0x017F }, 2 },
@@ -202,7 +202,7 @@ static const inline std::map<std::pair<uint32_t, uint32_t>, int32_t> rangeMap {
     { { 0x1F000, 0x1F02F }, 122 },
 };
 
-inline int32_t charRangeIndex(SkUnichar unicode)
+inline int8_t charRangeIndex(SkUnichar unicode)
 {
     auto it = rangeMap.lower_bound({ unicode, unicode });
     if (it != rangeMap.begin()) {
@@ -261,14 +261,14 @@ public:
 
         bool containChar(SkUnichar unicode) const
         {
-            int32_t r = charRangeIndex(unicode);
+            int8_t r = charRangeIndex(unicode);
             if (r < 0) {
                 return false;
             }
-            // because the range is 128-bit, so we need to split it into 4 32-bit
-            int index = r / 32;
-            // get the bit position by mod 32
-            int bit = r % 32;
+            // because the range is 128-bit, so we need to split it into 4 32-bit, / 32 means >> 5
+            int8_t index = r >> 5;
+            // get the bit position by mod 32 which means & 31
+            int8_t bit = r & 31;
             return ((range[index] >> bit) & 1) != 0;
         }
     };
