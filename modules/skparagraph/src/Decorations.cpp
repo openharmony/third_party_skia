@@ -313,7 +313,6 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
                     ? fFontMetrics.fStrikeoutPosition
                     : fFontMetrics.fXHeight / -2;
           fPosition -= ascent;
-          fPosition += textBaselineShift;
 #endif
           break;
       }
