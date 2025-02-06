@@ -236,6 +236,7 @@ void Decorations::calculateAvoidanceWaves(const TextStyle& textStyle, SkRect cli
         fPath.RQuadTo(x1, y1, x2, y2);
     }
 }
+
 #ifdef OHOS_SUPPORT
 SkScalar Decorations::calculatePaintY(const TextDecoration& decoration, const TextLine::ClipContext& context,
     const SkScalar baseline) {
@@ -255,6 +256,7 @@ SkScalar Decorations::calculatePaintY(const TextDecoration& decoration, const Te
     return y;
 }
 #endif
+
 // This is how flutter calculates the thickness
 #ifndef USE_SKIA_TXT
 void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface) {
@@ -277,18 +279,13 @@ void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSType
     if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kUnderlineThicknessIsValid_Flag) &&
         fFontMetrics.fUnderlineThickness > 0) {
             fThickness = fFontMetrics.fUnderlineThickness;
-        fFontMetrics.fUnderlineThickness > 0) {
-            fThickness = fFontMetrics.fUnderlineThickness;
     }
     if (textStyle.getDecorationType() == TextDecoration::kLineThrough) {
         if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutThicknessIsValid_Flag) &&
             fFontMetrics.fStrikeoutThickness > 0) {
                 fThickness = fFontMetrics.fStrikeoutThickness;
-            fFontMetrics.fStrikeoutThickness > 0) {
-                fThickness = fFontMetrics.fStrikeoutThickness;
         }
     }
-#endif
 #endif
     fThickness *= textStyle.getDecorationThicknessMultiplier();
 }
@@ -315,11 +312,8 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
           fPosition = (fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutPositionIsValid_Flag)
                     ? fFontMetrics.fStrikeoutPosition
                     : fFontMetrics.fXHeight / -2;
-                    ? fFontMetrics.fStrikeoutPosition
-                    : fFontMetrics.fXHeight / -2;
           fPosition -= ascent;
           fPosition += textBaselineShift;
-#endif
 #endif
           break;
       }
