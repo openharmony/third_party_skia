@@ -1953,10 +1953,10 @@ bool SkTypeface_FreeType::Scanner::scanFont(SkStreamAsset* stream, FontInfo& inf
         weight = os2->usWeightClass;
         width = os2->usWidthClass;
         // OS/2::ulUnicodeRange is bigendian, so we need to swap it
-        range[0] = os2->ulUnicodeRange4;
-        range[1] = os2->ulUnicodeRange3;
-        range[2] = os2->ulUnicodeRange2;  // the 2nd range at 2nd position
-        range[3] = os2->ulUnicodeRange1;  // the 1st range at 3rd position
+        range[0] = os2->ulUnicodeRange1;
+        range[1] = os2->ulUnicodeRange2;
+        range[2] = os2->ulUnicodeRange3;  // the 3st range at 3st position
+        range[3] = os2->ulUnicodeRange4;  // the 4th range at 4th position
 
         // OS/2::fsSelection bit 9 indicates oblique.
         if (SkToBool(os2->fsSelection & (1u << 9))) {

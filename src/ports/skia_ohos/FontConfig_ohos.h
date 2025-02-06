@@ -269,7 +269,7 @@ public:
             int index = r / 32;
             // get the bit position by mod 32
             int bit = r % 32;
-            return (range[index] & (1u << bit)) != 0;
+            return ((range[index] >> bit) & 1) != 0;
         }
     };
 
