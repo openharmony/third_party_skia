@@ -529,7 +529,7 @@ void FontConfig_OHOS::loadHMSymbol()
     }
     for (auto& dir : fFontDir) {
         if (HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol(
-                    "hm_symbol_config_next.json", SkString(dir.c_str())) == NO_ERROR) {
+            "hm_symbol_config_next.json", SkString(dir.c_str())) == NO_ERROR) {
             return;
         }
     }
@@ -781,8 +781,8 @@ bool FontConfig_OHOS::Font::containChar(SkUnichar unicode) const
         return false;
     }
     // because the range is 128-bit, so we need to split it into 4 32-bit, / 32 means >> 5
-    int8_t index = r >> 5;
+    int8_t i = r >> 5;
     // get the bit position by mod 32 which means & 31
     int8_t bit = r & 31;
-    return ((range[index] >> bit) & 1) != 0;
+    return ((range[i] >> bit) & 1) != 0;
 }

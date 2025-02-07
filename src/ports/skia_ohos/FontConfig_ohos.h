@@ -41,6 +41,7 @@ enum {
 };
 } /* namespace ErrorCode */
 
+
 /*!
  * \brief To parse the font configuration document and manage the system fonts
  */
