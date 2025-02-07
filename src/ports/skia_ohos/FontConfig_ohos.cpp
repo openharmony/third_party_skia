@@ -96,7 +96,8 @@ SkTypeface* FontConfig_OHOS::matchFallback(SkUnichar character, const SkFontStyl
 
     for (auto& f : fFontCollection.fFallback) {
         const auto& typefaces = f.typefaces;
-        if (!typefaces.empty() && f.containChar(character)) {
+        // for the compatibility to the old version
+        if (!typefaces.empty() && (f.containChar(character) || f.family.find("JP") != std::string::npos)) {
             if (!typefaces[0]->unicharToGlyph(character)) {
                 continue;
             }
@@ -601,7 +602,7 @@ int FontConfig_OHOS::checkProductFile(const char* fname)
     return err;
 }
 
-static const std::map<std::pair<uint32_t, uint32_t>, int8_t> rangeMap {
+static const std::map<std::pair<uint32_t, uint32_t>, int8_t> gRangeMap {
     { { 0x0000, 0x007F }, 0 },
     { { 0x0080, 0x00FF }, 1 },
     { { 0x0100, 0x017F }, 2 },
@@ -764,11 +765,11 @@ static const std::map<std::pair<uint32_t, uint32_t>, int8_t> rangeMap {
 
 static int8_t charRangeIndex(SkUnichar unicode)
 {
-    auto it = rangeMap.lower_bound({ unicode, unicode });
-    if (it != rangeMap.begin()) {
+    auto it = gRangeMap.upper_bound({ unicode, INT32_MAX });
+    if (it != gRangeMap.begin()) {
         --it;
     }
-    if (unicode > it->first.first && unicode <= it->first.second) {
+    if (unicode >= it->first.first && unicode <= it->first.second) {
         return it->second;
     }
     return -1;
