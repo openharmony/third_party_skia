@@ -356,7 +356,10 @@ public:
 
     bool isCustomTypeface() const;
     void setIsCustomTypeface(bool isCustom);
-
+#ifdef OHOS_SUPPORT
+    bool isThemeTypeface() const;
+    void setIsThemeTypeface(bool isTheme);
+#endif
     // PRIVATE / EXPERIMENTAL -- do not call
     void filterRec(SkScalerContextRec* rec) const {
         this->onFilterRec(rec);
@@ -369,6 +372,11 @@ public:
     void* internal_private_getCTFontRef() const {
         return this->onGetCTFontRef();
     }
+
+#ifdef OHOS_SUPPORT
+    uint32_t GetHash() const;
+    void SetHash(uint32_t hash);
+#endif
 
 protected:
     explicit SkTypeface(const SkFontStyle& style, bool isFixedPitch = false);
@@ -473,6 +481,10 @@ private:
     friend class SkPaintPriv;        // GetDefaultTypeface
     friend class SkFont;             // getGlyphToUnicodeMap
 
+#ifdef OHOS_SUPPORT
+    mutable uint32_t hash_{0};
+#endif
+
 private:
     SkFontID            fUniqueID;
     SkFontStyle         fStyle;
@@ -480,7 +492,9 @@ private:
     mutable SkOnce      fBoundsOnce;
     bool                fIsFixedPitch;
     bool                fIsCustom = false;
-
+#ifdef OHOS_SUPPORT
+    bool                fIsTheme = false;
+#endif
     using INHERITED = SkWeakRefCnt;
 };
 #endif

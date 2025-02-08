@@ -51,7 +51,7 @@ size_t TypefaceFontProvider::registerTypeface(sk_sp<SkTypeface> typeface, const 
     } else if (found != nullptr) {
         (*found)->clearTypefaces();
         fRegisteredFamilies.remove(familyName);
-        for (int i = 0; i < fFamilyNames.size(); i++) {
+        for (size_t i = 0; i < fFamilyNames.size(); i++) {
             if (fFamilyNames[i] == familyName) {
                 fFamilyNames.removeShuffle(i);
                 break;

@@ -3234,9 +3234,9 @@ VMA_CALL_PRE void VMA_CALL_POST vmaFreeReservedMemory(
     VmaAllocator VMA_NOT_NULL allocator,
     const VmaAllocation VMA_NULLABLE allocation);
 
-VMA_CALL_PRE VkResult VMA_CALL_POST vmaGetPreAllocFlag(
+VMA_CALL_PRE VkResult VMA_CALL_POST vmaGetPreAllocBlockSize(
     VmaAllocator VMA_NOT_NULL allocator,
-    bool* VMA_NULLABLE pStats);
+    uint32_t* VMA_NULLABLE pStats);
 
 /** \brief Deprecated.
 
@@ -6804,6 +6804,9 @@ public:
         uint32_t algorithm);
     // Always call before destruction.
     void Destroy(VmaAllocator allocator);
+
+    void SetBindCompleteFlag(bool flag) { m_BindComplete = flag; }
+    bool GetBindCompleteFlag() const { return m_BindComplete; }
     
     VmaPool GetParentPool() const { return m_hParentPool; }
     VkDeviceMemory GetDeviceMemory() const { return m_hMemory; }
@@ -6850,6 +6853,7 @@ private:
     VMA_MUTEX m_Mutex;
     uint32_t m_MapCount;
     void* m_pMappedData;
+    bool m_BindComplete;
 };
 
 struct VmaPointerLess
@@ -6911,6 +6915,7 @@ public:
     void GetPoolStats(VmaPoolStats* pStats);
 
     bool IsEmpty();
+    bool IsLastBlockBindComplete();
     bool IsCorruptionDetectionEnabled() const;
 
     VkResult Allocate(
@@ -7872,7 +7877,7 @@ public:
         VmaAllocation* pAllocation,
         VmaAllocationInfo* pAllocationInfo);
 
-    bool GetPreAllocFlag();
+    uint32_t GetPreAllocBlockSize();
 
     VkResult ResizeAllocation(
         const VmaAllocation alloc,
@@ -12216,7 +12221,8 @@ VmaDeviceMemoryBlock::VmaDeviceMemoryBlock(VmaAllocator hAllocator) :
     m_Id(0),
     m_hMemory(VK_NULL_HANDLE),
     m_MapCount(0),
-    m_pMappedData(VMA_NULL)
+    m_pMappedData(VMA_NULL),
+    m_BindComplete(false)
 {
 }
 
@@ -12580,6 +12586,19 @@ bool VmaBlockVector::IsEmpty()
 {
     VmaMutexLockRead lock(m_Mutex, m_hAllocator->m_UseMutex);
     return m_Blocks.empty();
+}
+
+bool VmaBlockVector::IsLastBlockBindComplete()
+{
+    VmaMutexLockRead lock(m_Mutex, m_hAllocator->m_UseMutex);
+    if (m_Blocks.empty()) {
+        return false;
+    }
+    VmaDeviceMemoryBlock* lastBlock = m_Blocks.back();
+    if (!lastBlock) {
+        return false;
+    }
+    return lastBlock->GetBindCompleteFlag();
 }
 
 bool VmaBlockVector::IsCorruptionDetectionEnabled() const
@@ -16710,9 +16729,10 @@ VkResult VmaAllocator_T::AllocateReservedMemory(
         return res;
     }
     VkDeviceSize alignmentForMemType = VMA_MAX(
-    vkMemReq.alignment,
-    GetMemoryTypeMinAlignment(memTypeIndex));
+        vkMemReq.alignment,
+        GetMemoryTypeMinAlignment(memTypeIndex));
     VmaBlockVector* reservedBlockVector = m_pReservedBlockVectors[memTypeIndex];
+    VMA_ASSERT(reservedBlockVector);
 
     res = reservedBlockVector->AllocateReserved(
         m_CurrentFrameIndex.load(),
@@ -16758,6 +16778,7 @@ void VmaAllocator_T::FreeReservedMemory(
                             const uint32_t memTypeIndex = allocation->GetMemoryTypeIndex();
                             pBlockVector = m_pReservedBlockVectors[memTypeIndex];
                         }
+                        VMA_ASSERT(pBlockVector);
                         pBlockVector->FreeReserved(allocation);
                     }
                     break;
@@ -16765,6 +16786,7 @@ void VmaAllocator_T::FreeReservedMemory(
                     VMA_ASSERT(0);
                 }
             }
+            m_Budget.RemoveAllocation(MemoryTypeIndexToHeapIndex(allocation->GetMemoryTypeIndex()), allocation->GetSize());
         }
     }
 }
@@ -16779,7 +16801,6 @@ VkResult VmaAllocator_T::SwapReservedBlock(
     if (oldAllocation->GetType() != VmaAllocation_T::ALLOCATION_TYPE_BLOCK) {
         return VK_ERROR_UNKNOWN;
     }
-    VmaBlockVector* pBlockVector = VMA_NULL;
     VmaPool hPool = oldAllocation->GetBlock()->GetParentPool();
     if(hPool != VK_NULL_HANDLE) {
         return VK_ERROR_UNKNOWN;
@@ -16789,15 +16810,20 @@ VkResult VmaAllocator_T::SwapReservedBlock(
     if (reservedBlockVector->IsEmpty()) {
         return VK_NOT_READY;
     }
+    if (!reservedBlockVector->IsLastBlockBindComplete()) {
+        return VK_INCOMPLETE;
+    }
+
     VmaBlockVector* blockVector = m_pBlockVectors[memTypeIndex];
     SwapLastBlock(blockVector, reservedBlockVector);
     return VK_SUCCESS;
 }
 
-bool VmaAllocator_T::GetPreAllocFlag()
+uint32_t VmaAllocator_T::GetPreAllocBlockSize()
 {
     VmaBlockVector* reservedBlockVector = m_pReservedBlockVectors[0];
-    return reservedBlockVector->IsEmpty();
+    VMA_ASSERT(reservedBlockVector);
+    return reservedBlockVector->GetBlockCount();
 }
 
 VkResult VmaAllocator_T::ResizeAllocation(
@@ -17467,6 +17493,9 @@ VkResult VmaAllocator_T::BindImageMemory(
         VmaDeviceMemoryBlock* pBlock = hAllocation->GetBlock();
         VMA_ASSERT(pBlock && "Binding image to allocation that doesn't belong to any block. Is the allocation lost?");
         res = pBlock->BindImageMemory(this, hAllocation, allocationLocalOffset, hImage, pNext);
+        if (res == VK_SUCCESS) {
+            pBlock->SetBindCompleteFlag(true);
+        }
         break;
     }
     default:
@@ -18743,13 +18772,13 @@ VMA_CALL_PRE void VMA_CALL_POST vmaFreeReservedMemory(
         &allocation);
 }
 
-VMA_CALL_PRE VkResult VMA_CALL_POST vmaGetPreAllocFlag(VmaAllocator allocator, bool* pStats)
+VMA_CALL_PRE VkResult VMA_CALL_POST vmaGetPreAllocBlockSize(VmaAllocator allocator, uint32_t* pStats)
 {
     VMA_ASSERT(allocator);
-    VMA_DEBUG_LOG("vmaGetPreAllocFlag");
+    VMA_DEBUG_LOG("vmaGetPreAllocBlockSize");
 
     if (pStats != NULL) {
-        *pStats = allocator->GetPreAllocFlag();
+        *pStats = allocator->GetPreAllocBlockSize();
     }
     return VK_SUCCESS;
 }

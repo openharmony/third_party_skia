@@ -4,6 +4,7 @@
 
 #ifdef OHOS_SUPPORT
 #include "log.h"
+#include "modules/skparagraph/include/Hyphenator.h"
 #include "modules/skparagraph/src/TextTabAlign.h"
 #include "TextParameter.h"
 #endif
@@ -53,33 +54,88 @@ struct LineBreakerWithLittleRounding {
     const SkScalar fLower, fMaxWidth, fUpper;
     const bool fApplyRoundingHack;
 };
-}  // namespace
+} // namespace
 
 #ifdef OHOS_SUPPORT
-SkScalar TextWrapper::calculateFakeSpacing(Cluster* cluster, bool autoSpacingEnable)
+size_t TextWrapper::tryBreakWord(Cluster *startCluster, Cluster *endOfClusters,
+                                 SkScalar widthBeforeCluster, SkScalar maxWidth)
 {
-    if (!autoSpacingEnable || cluster == fEndLine.endCluster()) {
-        return 0;
+    auto startPos = startCluster->textRange().start;
+    auto endPos = startPos;
+    auto owner = startCluster->getOwner();
+    for (auto next = startCluster + 1; next != endOfClusters; next++) {
+        // find the end boundary of current word (hard/soft/whitespace break)
+        if (next->isWhitespaceBreak() || next->isHardBreak()) {
+            break;
+        } else {
+            endPos = next->textRange().end;
+        }
     }
-    if ((cluster - 1)->isWhitespaceBreak() || cluster->isWhitespaceBreak()) {
-        return 0;
+
+    // Using end position cluster height as an estimate for reserved hyphen width
+    // hyphen may not be shaped at this point. End pos may be non-drawable, so prefer
+    // previous glyph before break
+    auto mappedEnd = owner->fClustersIndexFromCodeUnit[endPos];
+    auto len = widthBeforeCluster + owner->cluster(mappedEnd > 0 ? mappedEnd - 1 : 0).height();
+    if (std::isnan(len)) {
+        len = 0.f;
     }
-    if ((cluster - 1)->isHardBreak() || cluster->isHardBreak()) {
-        return 0;
+    // ToDo: We can stop here based on hyhpenation frequency setting
+    // but there is no need to proceed with hyphenation if we don't have space for even hyphen
+    if (len >= maxWidth) {
+        return startCluster->textRange().start;
     }
-    if ((cluster - 1)->isCopyright() || cluster->isCopyright()) {
-        return (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO;
+
+    auto locale = owner->paragraphStyle().getTextStyle().getLocale();
+    auto hyphenatorData = Hyphenator::getInstance().getHyphenatorData(locale.c_str());
+    auto result = Hyphenator::getInstance().findBreakPositions(hyphenatorData, owner->fText, startPos, endPos);
+
+    endPos = startPos;
+    size_t ix = 0;
+    // cumulatively iterate
+    for (auto breakPos : result) {
+        len += (startCluster + ix)->width();
+        auto shouldBreak = (len > maxWidth);
+        if ((breakPos & 0x1) && !shouldBreak) {
+            // we need to break after previous char, but the result needs to be mapped
+            endPos = startPos + ix;
+        }
+        ++ix;
+        if (shouldBreak) {
+            break;
+        }
     }
-    if ((cluster->isCJK() && (cluster - 1)->isWestern()) || (cluster->isWestern() && (cluster - 1)->isCJK())) {
-        return (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO;
+    return endPos;
+}
+
+bool TextWrapper::lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBeforeCluster, SkScalar maxWidth)
+{
+    auto startCluster = fClusters.startCluster();
+    while (startCluster != endOfClusters && startCluster->isWhitespaceBreak()) {
+        ++startCluster;
     }
-    return 0;
+    if (startCluster == endOfClusters) {
+        return false;
+    }
+    auto endPos = tryBreakWord(startCluster, endOfClusters, widthBeforeCluster - fClusters.width(), maxWidth);
+    // if break position found, set fClusters and fWords accrodingly and break
+    if (endPos > startCluster->textRange().start) {
+        // need to break before the mapped end cluster
+        auto owner = startCluster->getOwner();
+        fClusters = TextStretch(startCluster, &owner->cluster(owner->fClustersIndexFromCodeUnit[endPos]) - 1,
+                                fClusters.metrics().getForceStrut());
+        fWords.extend(fClusters);
+        fBrokeLineWithHyphen = true;
+        return false;
+    }
+    // else let the existing implementation do its best efforts
+    return true;
 }
 
 // Since we allow cluster clipping when they don't fit
 // we have to work with stretches - parts of clusters
 void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack,
-    WordBreakType wordBreakType, bool autoSpacingEnable) {
+    WordBreakType wordBreakType) {
 
     reset();
     fEndLine.metrics().clean();
@@ -94,19 +150,38 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     LineBreakerWithLittleRounding breaker(maxWidth, applyRoundingHack);
     Cluster* nextNonBreakingSpace = nullptr;
     SkScalar totalFakeSpacing = 0.0;
+    bool attemptedHyphenate = false;
+
     for (auto cluster = fEndLine.endCluster(); cluster < endOfClusters; ++cluster) {
-        auto fakeSpacing = calculateFakeSpacing(cluster, autoSpacingEnable);
-        totalFakeSpacing += fakeSpacing;
+        totalFakeSpacing += (cluster->needAutoSpacing() && cluster != fEndLine.endCluster()) ?
+            (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
+        SkScalar widthBeforeCluster = fWords.width() + fClusters.width() + totalFakeSpacing;
         if (cluster->isHardBreak()) {
             if (cluster != fEndLine.endCluster()) {
                 isFirstWord = false;
             }
         } else if (
                 // TODO: Trying to deal with flutter rounding problem. Must be removed...
-                SkScalar width = fWords.width() + fClusters.width() + cluster->width() + totalFakeSpacing;
+                SkScalar width = cluster->width() + widthBeforeCluster;
                 (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
                 breaker.breakLine(width)) {
-            if (cluster->isWhitespaceBreak()) {
+            // if the hyphenator has already run as balancing algorithm, use the cluster information
+            if (cluster->isHyphenBreak()) {
+                // we dont want to add the current cluster as the hyphenation algorithm marks breaks before a cluster
+                // however, if we cannot fit anything to a line, we need to break out here
+                if (fWords.empty() && fClusters.empty()) {
+                    fClusters.extend(cluster);
+                    fTooLongCluster = true;
+                    break;
+                }
+                if (!fClusters.empty()) {
+                    fWords.extend(fClusters);
+                    fBrokeLineWithHyphen = true;
+                    break;
+                }
+                // let hyphenator try before this if it is enabled
+            } else if ((wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate) ||
+                       cluster->isWhitespaceBreak()) {
                 // It's the end of the word
                 isFirstWord = false;
                 fClusters.extend(cluster);
@@ -141,6 +216,14 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                     // Placeholder does not fit the line; it will be considered again on the next line
                 }
                 break;
+            }
+
+            // should do this only if hyphenation is enabled
+            if (wordBreakType == WordBreakType::BREAK_HYPHEN && !attemptedHyphenate && !fClusters.empty()) {
+                attemptedHyphenate = true;
+                if (!lookAheadByHyphen(endOfClusters, widthBeforeCluster, breaker.fUpper)) {
+                    break;
+                }
             }
 
             textTabAlign.processEndofLine(fWords, fClusters, cluster, totalFakeSpacing);
@@ -343,13 +426,6 @@ std::tuple<Cluster*, size_t, SkScalar> TextWrapper::trimStartSpaces(Cluster* end
         ++cluster;
     }
 
-    if (fEndLine.breakCluster()->isWhitespaceBreak() && fEndLine.breakCluster() < endOfClusters) {
-        // In case of a soft line break by the whitespace
-        // fBreak should point to the beginning of the next line
-        // (it only matters when there are trailing spaces)
-        fEndLine.shiftBreak();
-    }
-
     return std::make_tuple(cluster, 0, width);
 }
 
@@ -382,46 +458,114 @@ struct TextWrapScorer {
     TextWrapScorer(SkScalar maxWidth, ParagraphImpl& parent, size_t maxLines)
         : maxWidth_(maxWidth), currentTarget_(maxWidth), maxLines_(maxLines), parent_(parent)
     {
+        CalculateCumulativeLen(parent);
+
         if (parent_.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
-            // calculate cumulative length  & target width before breakes
-            for (auto& cluster : parent.clusters()) {
-                auto len = cluster.width();
-                cumulativeLen_ += len;
-            }
+            // calculate target width before breaks
             int64_t targetLines = 1 + cumulativeLen_ / maxWidth_;
             currentTarget_ = cumulativeLen_ / targetLines;
         }
 
+        GenerateBreaks(parent);
+    }
+
+    void GenerateBreaks(ParagraphImpl& parent)
+    {
         // we trust that clusters are sorted on parent
         bool prevWasWhitespace = false;
         SkScalar currentWidth = 0;
-        SkScalar cumulativeLen_ = 0;
+        size_t currentCount = 0; // in principle currentWidth != 0 should provide same result
+        SkScalar cumulativeLen = 0;
         for (size_t ix = 0; ix < parent.clusters().size(); ix++) {
             auto& cluster = parent.clusters()[ix];
             auto len = cluster.width();
-            cumulativeLen_ += len;
+            cumulativeLen += len;
             currentWidth += len;
-
+            currentCount++;
             if (cluster.isWhitespaceBreak()) {
-                breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
+                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
                 prevWasWhitespace = true;
                 currentWidth = 0;
+                currentCount = 0;
             } else if (cluster.isHardBreak()) {
-                breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_HARD, false);
+                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_HARD, false);
                 prevWasWhitespace = true;
                 currentWidth = 0;
+                currentCount = 0;
+            } else if (cluster.isHyphenBreak()) {
+                breaks_.emplace_back(cumulativeLen - cluster.width() + cluster.height(),
+                                     Break::BreakType::BREAKTYPE_HYPHEN, false);
+                breaks_.back().reservedSpace = cluster.height();
+                prevWasWhitespace = true;
+                currentWidth = 0;
+                currentCount = 0;
             } else if (cluster.isIntraWordBreak()) {
-                breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_INTRA, false);
+                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_INTRA, false);
                 prevWasWhitespace = true;
                 currentWidth = 0;
+                currentCount = 0;
             } else if (currentWidth > currentTarget_) {
-                cumulativeLen_ -= cluster.width();
-                ix--;
-                breaks_.emplace_back(cumulativeLen_, Break::BreakType::BREAKTYPE_FORCED, false);
+                if (currentCount > 1) {
+                    cumulativeLen -= cluster.width();
+                    ix--;
+                }
+                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_FORCED, false);
                 prevWasWhitespace = false;
                 currentWidth = 0;
+                currentCount = 0;
             } else {
                 prevWasWhitespace = false;
+            }
+        }
+    }
+
+    void CalculateCumulativeLen(ParagraphImpl& parent)
+    {
+        auto startCluster = &parent.cluster(0);
+        auto endCluster = &parent.cluster(0);
+        for (size_t clusterIx = 0; clusterIx < parent.clusters().size(); clusterIx++) {
+            if (parent.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
+                auto& cluster = parent.cluster(clusterIx);
+                auto len = cluster.width();
+                cumulativeLen_ += len;
+            }
+            CalculateHyphenPos(clusterIx, startCluster, endCluster, parent);
+        }
+    }
+
+    void CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster, Cluster*& endCluster, ParagraphImpl& parent)
+    {
+        bool prevWasWhitespace = false;
+        auto& cluster = parent.cluster(clusterIx);
+        const bool hyphenEnabled = parent.getWordBreakType() == WordBreakType::BREAK_HYPHEN;
+        auto locale = parent.paragraphStyle().getTextStyle().getLocale();
+        bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak() || cluster.isTabulation());
+        if (hyphenEnabled && !prevWasWhitespace && isWhitespace && endCluster != startCluster &&
+            endCluster > startCluster) {
+            prevWasWhitespace = true;
+            auto hyphenatorData = Hyphenator::getInstance().getHyphenatorData(locale.c_str());
+            auto results = Hyphenator::getInstance().findBreakPositions(
+                hyphenatorData, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
+            CheckHyphenBreak(results, parent, startCluster);
+            if (clusterIx + 1 < parent.clusters().size()) {
+                startCluster = &cluster + 1;
+            }
+        } else if (!isWhitespace) {
+            prevWasWhitespace = false;
+            endCluster = &cluster;
+        }
+    }
+
+    void CheckHyphenBreak(std::vector<uint8_t> results, ParagraphImpl& parent, Cluster*& startCluster)
+    {
+        size_t prevClusterIx = 0;
+        for (size_t resultIx = 0; resultIx < results.size(); resultIx++) {
+            if (results[resultIx] & 0x1) {
+                auto clusterPos = parent.clusterIndex(startCluster->textRange().start + resultIx);
+                if (clusterPos != prevClusterIx) {
+                    parent.cluster(clusterPos).enableHyphenBreak();
+                    prevClusterIx = clusterPos;
+                }
             }
         }
     }
@@ -484,8 +628,12 @@ struct TextWrapScorer {
         if (param.breakPos == lastBreakPos_ && param.remainingTextWidth > param.currentMax) {
             // If we were unable to find a break that matches the criteria, insert new one
             // This may happen if there is a long word and per line indent for this particular line
-            breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax,
-                Break::BreakType::BREAKTYPE_FORCED, false));
+            if (param.breakPos + 1 > breaks_.size()) {
+                breaks_.emplace_back(param.begin + param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false);
+            } else {
+                breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax,
+                    Break::BreakType::BREAKTYPE_FORCED, false));
+            }
             param.breakPos += BREAK_NUM_TWO;
         }
 
@@ -501,6 +649,28 @@ struct TextWrapScorer {
         return current_;
     }
 
+    SkScalar calculateCurrentWidth(RecursiveParam& param, bool looped)
+    {
+        SkScalar newWidth = param.currentMax;
+
+        if (param.breakPos > 0 && param.begin < breaks_[param.breakPos - 1].width) {
+            newWidth = std::min(breaks_[--param.breakPos].width - param.begin, param.currentMax);
+        }
+
+        if (looped
+            && ((lastBreakPos_ == param.breakPos)
+                || (newWidth / param.currentMax * UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
+            LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
+                 static_cast<unsigned long>(param.lineNumber), param.begin, static_cast<unsigned long>(param.breakPos),
+                 newWidth, maxWidth_);
+            return 0;
+        }
+
+        lastBreakPos_ = param.breakPos;
+
+        return std::min(newWidth, param.remainingTextWidth);
+    }
+
     int64_t FindOptimalSolutionForCurrentLine(RecursiveParam& param)
     {
         // have this in reversed order to avoid extra insertions
@@ -512,23 +682,10 @@ struct TextWrapScorer {
         do {
             // until the given threshold is crossed (minimum line fill rate)
             // re-break this line, if a result is different, calculate score
-            SkScalar newWidth = param.currentMax;
-
-            if (param.breakPos > 0 && param.begin < breaks_[param.breakPos - 1].width) {
-                newWidth = std::min(breaks_[--param.breakPos].width - param.begin, param.currentMax);
-            }
-
-            if (looped && ((lastBreakPos_ == param.breakPos) ||
-                (newWidth/param.currentMax*UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
-                LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
-                    static_cast<unsigned long>(param.lineNumber), param.begin,
-                        static_cast<unsigned long>(param.breakPos), newWidth, maxWidth_);
+            SkScalar currentWidth = calculateCurrentWidth(param, looped);
+            if (currentWidth == 0) {
                 break;
             }
-
-            lastBreakPos_ = param.breakPos;
-
-            SkScalar currentWidth = std::min(newWidth, param.remainingTextWidth);
             Index index { param.lineNumber, param.begin, currentWidth };
 
             // check cache
@@ -549,10 +706,18 @@ struct TextWrapScorer {
             overallScore = score;
 
             // Handle last line
-            if (!HandleLastLine(param, overallScore, currentWidth, score)) {
-                break;
+            if (breaks_[param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN) {
+                auto copy = currentWidth - breaks_[param.breakPos].reservedSpace;
+                // name is bit confusing as the method enters also recursion
+                // with hyphen break this never is the last line
+                if (!HandleLastLine(param, overallScore, copy, score)) {
+                    break;
+                }
+            } else { // real last line may update currentWidth
+                if (!HandleLastLine(param, overallScore, currentWidth, score)) {
+                    break;
+                }
             }
-
             // we have exceeded target number of lines, add some penalty
             if (param.targetLines < 0) {
                 overallScore += param.targetLines * PARAM_10000; // MINIMUM_FILL_RATIO;
@@ -592,7 +757,7 @@ struct TextWrapScorer {
             // recursively calculate best score for children
             overallScore += CalculateRecursive(RecursiveParam{
                 param.targetLines - 1,
-                param.maxLines - param.lineNumber,
+                param.maxLines > param.lineNumber ? param.maxLines - param.lineNumber : 0,
                 param.lineNumber + 1,
                 param.begin + currentWidth,
                 param.remainingTextWidth - currentWidth
@@ -654,13 +819,15 @@ private:
             BREAKTYPE_HARD,
             BREAKTYPE_WHITE_SPACE,
             BREAKTYPE_INTRA,
-            BREAKTYPE_FORCED
+            BREAKTYPE_FORCED,
+            BREAKTYPE_HYPHEN
         };
         Break(SkScalar w, BreakType t, bool ssws) : width(w), type(t), subsequentWhitespace(ssws) {}
 
         SkScalar width { 0.f };
         BreakType type { BreakType::BREAKTYPE_NONE };
         bool subsequentWhitespace { false };
+        SkScalar reservedSpace { 0.f };
     };
 
     std::vector<Break> breaks_;
@@ -746,7 +913,6 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     auto disableLastDescent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
     bool firstLine = true; // We only interested in fist line if we have to disable the first ascent
 
-    bool autoSpacingEnableFlag = TextParameter::GetAutoSpacingEnable();
     // Resolve balanced line widths
     std::vector<SkScalar> balancedWidths;
 
@@ -778,8 +944,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         } else {
             newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         }
-        this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType(),
-            autoSpacingEnableFlag);
+        this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType());
 
         auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
         needEllipsis = hasEllipsis && !endlessLine && lastLine;
@@ -802,6 +967,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
             // This is what we need to do to preserve a space before the ellipsis
             fEndLine.restoreBreak();
             widthWithSpaces = fEndLine.widthWithGhostSpaces();
+        } else if (fBrokeLineWithHyphen) {
+            fEndLine.shiftWidth(fEndLine.endCluster()->width());
         }
 
         // If the line is empty with the hard line break, let's take the paragraph font (flutter???)

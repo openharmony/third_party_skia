@@ -209,7 +209,7 @@ public:
     void dumpVmaStats(SkString *out) override;
 
     // OH ISSUE: asyn memory reclaimer
-    void setGpuMemoryAsyncReclaimerSwitch(bool enabled) override;
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled, const std::function<void()>& setThreadPriority) override;
     void flushGpuMemoryInWaitQueue() override;
     GrVkMemoryReclaimer* memoryReclaimer() const { return fMemoryReclaimer.get(); }
 
@@ -451,6 +451,10 @@ private:
     std::unique_ptr<GrVkMemoryReclaimer>                    fMemoryReclaimer;
 
     using INHERITED = GrGpu;
+
+#ifdef SKIA_OHOS
+    const int TRACE_LIMIT_TIME = 500;
+#endif
 };
 
 #endif

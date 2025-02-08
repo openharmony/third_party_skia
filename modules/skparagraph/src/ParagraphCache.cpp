@@ -4,7 +4,12 @@
 #include "modules/skparagraph/include/FontArguments.h"
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
+
+#ifdef OHOS_SUPPORT
 #include "log.h"
+#include "src/TextParameter.h"
+#include "utils/text_trace.h"
+#endif
 
 namespace skia {
 namespace textlayout {
@@ -358,6 +363,7 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
     if (paragraph.fRuns.size() == value->fRuns.size()) {
         // update PlaceholderRun metrics cache value for placeholder alignment
         for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
+            value->fRuns[idx].fAutoSpacings = paragraph.fRuns[idx].fAutoSpacings;
             if (!value->fRuns[idx].isPlaceholder()) {
                 continue;
             }
@@ -389,6 +395,9 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
 }
 
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     SkAutoMutexExclusive lock(fParagraphMutex);
     auto key = ParagraphCacheKey(&paragraph);
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
@@ -412,6 +421,7 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
     if (paragraph.fRuns.size() == value->fRuns.size()) {
         // get PlaceholderRun metrics for placeholder alignment
         for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
+            paragraph.fRuns[idx].fAutoSpacings = value->fRuns[idx].fAutoSpacings;
             if (!value->fRuns[idx].isPlaceholder()) {
                 continue;
             }
@@ -435,6 +445,9 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
 #endif
 
 bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     if (!fCacheIsOn) {
         return false;
     }
@@ -446,8 +459,8 @@ bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
 
     if (!entry) {
-#ifdef USE_SKIA_TXT
-        LOGD("ParagraphCache: cache miss, hash-%{public}d", key.hash());
+#ifdef OHOS_SUPPORT
+        TEXT_LOGD("ParagraphCache: cache miss, hash-%{public}d", key.hash());
 #endif
         // We have a cache miss
 #ifdef PARAGRAPH_CACHE_STATS
@@ -456,14 +469,9 @@ bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
         fChecker(paragraph, "missingParagraph", true);
         return false;
     }
-#ifdef USE_SKIA_TXT
-    LOGD("ParagraphCache: cache hit, hash-%{public}d", key.hash());
-#endif
     updateTo(paragraph, entry->get());
 #ifdef OHOS_SUPPORT
-#ifdef USE_UNSAFE_CACHED_VALUE
-    fLastCachedValue = entry->get()->fValue.get();
-#endif
+    TEXT_LOGD("ParagraphCache: cache hit, hash-%{public}d", key.hash());
     paragraph->hash() = key.hash();
 #endif
     fChecker(paragraph, "foundParagraph", true);
@@ -474,6 +482,13 @@ bool ParagraphCache::updateParagraph(ParagraphImpl* paragraph) {
     if (!fCacheIsOn) {
         return false;
     }
+
+#ifdef OHOS_SUPPORT
+    if (!canBeCached(paragraph)) {
+        return false;
+    }
+#endif
+
 #ifdef PARAGRAPH_CACHE_STATS
     ++fTotalRequests;
 #endif
@@ -513,6 +528,10 @@ ParagraphCacheValue* ParagraphCache::cacheLayout(ParagraphImpl* paragraph) {
     if (!fCacheIsOn) {
         return nullptr;
     }
+
+    if (!canBeCached(paragraph)) {
+        return nullptr;
+    }
 #ifdef PARAGRAPH_CACHE_STATS
     ++fTotalRequests;
 #endif
@@ -537,6 +556,21 @@ ParagraphCacheValue* ParagraphCache::cacheLayout(ParagraphImpl* paragraph) {
         // Paragraph&layout already cached
         return nullptr;
     }
+}
+
+bool ParagraphCache::canBeCached(ParagraphImpl* paragraph) const
+{
+    if (paragraph == nullptr) {
+        return false;
+    }
+
+    if (paragraph->unicodeText().size() > TextParameter::GetUnicodeSizeLimitForParagraphCache()) {
+        TEXT_LOGD("Paragraph unicode size is out of limit, unicode size: %{public}zu",
+            paragraph->unicodeText().size());
+        return false;
+    }
+
+    return true;
 }
 #endif
 

@@ -142,9 +142,6 @@ void GrDirectContext::abandonContext() {
 
     fGpu->disconnect(GrGpu::DisconnectType::kAbandon);
 
-    // Must be after GrResourceCache::abandonAll().
-    fMappedBufferManager.reset();
-
     if (fSmallPathAtlasMgr) {
         fSmallPathAtlasMgr->reset();
     }
@@ -516,6 +513,11 @@ bool GrDirectContext::supportsDistanceFieldText() const {
 }
 
 //////////////////////////////////////////////////////////////////////////////
+void GrDirectContext::dumpAllResource(std::stringstream &dump) const {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    fResourceCache->dumpAllResource(dump);
+#endif
+}
 
 void GrDirectContext::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
     ASSERT_SINGLE_OWNER
@@ -578,6 +580,15 @@ void GrDirectContext::initGpuMemoryLimit(MemoryOverflowCalllback callback, uint6
     }
 }
 
+// OH ISSUE: check whether the PID is abnormal.
+bool GrDirectContext::isPidAbnormal() const
+{
+    if (fResourceCache) {
+        return fResourceCache->isPidAbnormal();
+    }
+    return false;
+}
+
 void GrDirectContext::vmaDefragment()
 {
     if (fGpu) {
@@ -616,11 +627,11 @@ void GrDirectContext::endFrame()
 }
 
 // OH ISSUE: asyn memory reclaimer
-void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled)
+void GrDirectContext::setGpuMemoryAsyncReclaimerSwitch(bool enabled, const std::function<void()>& setThreadPriority)
 {
 #ifdef SK_VULKAN
     if (fGpu) {
-        fGpu->setGpuMemoryAsyncReclaimerSwitch(enabled);
+        fGpu->setGpuMemoryAsyncReclaimerSwitch(enabled, setThreadPriority);
     }
 #endif
 }

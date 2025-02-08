@@ -97,7 +97,7 @@ class ParagraphImpl final : public Paragraph {
 
 public:
 
-    ParagraphImpl();
+    ParagraphImpl() = default;
 
     ParagraphImpl(const SkString& text,
                   ParagraphStyle style,
@@ -249,6 +249,7 @@ public:
     void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) override;
 #ifdef OHOS_SUPPORT
     std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) override;
+    SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
 #endif
 
     void visit(const Visitor&) override;
@@ -322,6 +323,9 @@ public:
 
 #ifdef OHOS_SUPPORT
     size_t GetMaxLines() const override { return fParagraphStyle.getMaxLines(); }
+    void setLastAutoSpacingFlag(Cluster::AutoSpacingFlag flag) { fLastAutoSpacingFlag = flag; }
+    const Cluster::AutoSpacingFlag& getLastAutoSpacingFlag() const { return fLastAutoSpacingFlag; }
+    void setLongestLine(SkScalar longestLine) { fLongestLine = longestLine; }
 #endif
 
 private:
@@ -329,7 +333,9 @@ private:
     friend class ParagraphCacheKey;
     friend class ParagraphCacheValue;
     friend class ParagraphCache;
-
+#ifdef OHOS_SUPPORT
+    friend struct TextWrapScorer;
+#endif
     friend class TextWrapper;
     friend class OneLineShaper;
 #ifdef OHOS_SUPPORT
@@ -442,6 +448,9 @@ private:
 
 #ifdef OHOS_SUPPORT
     TextRange fEllipsisRange{EMPTY_RANGE};
+    std::optional<SkRect> fPaintRegion;
+    // just for building cluster table, record the last built unicode autospacing flag;
+    Cluster::AutoSpacingFlag fLastAutoSpacingFlag;
 #endif
 };
 }  // namespace textlayout

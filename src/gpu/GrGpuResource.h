@@ -11,7 +11,9 @@
 #include "include/private/GrResourceKey.h"
 #include "include/private/GrTypesPriv.h"
 #include "include/private/SkNoncopyable.h"
-#include <mutex>
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include <sstream>
+#endif
 
 class GrGpu;
 class GrResourceCache;
@@ -196,6 +198,9 @@ struct GrGpuResourceTag {
  */
 class SK_API GrGpuResource : public GrIORef<GrGpuResource> {
 public:
+    inline bool checkMagic() {
+        return fMagicNum == MAGIC_INIT;
+    }
     /**
      * Tests whether a object has been abandoned or released. All objects will
      * be in this state after their creating GrContext is destroyed or has
@@ -315,6 +320,11 @@ public:
      * @return all GrGpuResourceTags.
      */
     GrGpuResourceTag getResourceTag() const { return fGrResourceTag; }
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    virtual void dumpVkImageInfo(std::stringstream& dump) const {
+        dump << "\n";
+    }
+#endif
 
 protected:
     // This must be called by every non-wrapped GrGpuObject. It should be called once the object is
@@ -395,10 +405,11 @@ private:
 #ifdef SK_DEBUG
     friend class GrGpu;  // for assert in GrGpu to access getGpu
 #endif
-
+    static constexpr uint32_t MAGIC_INIT = 0xDEADBEEF;
+    uint32_t fMagicNum = MAGIC_INIT;
     // An index into a heap when this resource is purgeable or an array when not. This is maintained
     // by the cache.
-    int fCacheArrayIndex = -1;
+    int fCacheArrayIndex;
     // This value reflects how recently this resource was accessed in the cache. This is maintained
     // by the cache.
     uint32_t fTimestamp;
@@ -421,7 +432,6 @@ private:
     using INHERITED = GrIORef<GrGpuResource>;
     friend class GrIORef<GrGpuResource>; // to access notifyRefCntWillBeZero and
                                          // notifyARefCntIsZero.
-    std::mutex mutex_; // The gpu cache is released abnormally due to multi threads.
 
     bool fRealAlloc = false; // OH ISSUE: real alloc flag
     size_t fRealAllocSize = 0; // OH ISSUE: real alloc size

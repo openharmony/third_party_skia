@@ -358,8 +358,13 @@ public:
 
     bool isPromiseProxy() { return fIsPromiseProxy; }
 
-    // Get the proxy tag.
+    // Set the proxy tag.
     void setGrProxyTag(const GrGpuResourceTag& tag) { fGrProxyTag = tag; }
+
+#ifdef SKIA_OHOS
+    // Get the proxy tag.
+    GrGpuResourceTag& getGrProxyTag() { return fGrProxyTag; }
+#endif
 
 protected:
     // Deferred version - takes a new UniqueID from the shared resource/proxy pool.
@@ -458,6 +463,10 @@ private:
     bool                   fIgnoredByResourceAllocator = false;
     bool                   fIsDDLTarget = false;
     bool                   fIsPromiseProxy = false;
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    uint64_t fNodeId;
+#endif
+
     GrProtected            fIsProtected;
 
     int                     fTaskTargetCount = 0;

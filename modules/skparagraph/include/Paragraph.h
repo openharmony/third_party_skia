@@ -20,7 +20,7 @@ class ParagraphPainter;
 class Paragraph {
 
 public:
-    Paragraph();
+    Paragraph() = default;
 
     Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts);
 
@@ -237,6 +237,7 @@ public:
             size_t startIndex, size_t count = std::numeric_limits<size_t>::max()) = 0;
     virtual void initUnicodeText() = 0;
     virtual size_t GetMaxLines() const = 0;
+    virtual SkIRect generatePaintRegion(SkScalar x, SkScalar y) = 0;
 #endif
 
 protected:

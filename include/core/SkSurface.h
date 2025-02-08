@@ -627,7 +627,7 @@ public:
 
         example: https://fiddle.skia.org/c/@Surface_makeImageSnapshot_2
      */
-    sk_sp<SkImage> makeImageSnapshot(const SkIRect& bounds);
+    sk_sp<SkImage> makeImageSnapshot(const SkIRect& srcBounds, bool allowRefCache = true);
 
     /** Draws SkSurface contents to canvas, with its top-left corner at (x, y).
 

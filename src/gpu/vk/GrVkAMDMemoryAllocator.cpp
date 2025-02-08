@@ -8,8 +8,10 @@
 #include "src/gpu/vk/GrVkAMDMemoryAllocator.h"
 
 #include <semaphore>
+#include <thread>
 
 #include "include/core/SkExecutor.h"
+#include "include/core/SkLog.h"
 #include "include/gpu/vk/GrVkExtensions.h"
 #include "src/core/SkTraceEvent.h"
 #include "src/gpu/vk/GrVkInterface.h"
@@ -17,7 +19,6 @@
 #include "src/gpu/vk/GrVkUtil.h"
 #include "src/core/SkUtils.h"
 
-static std::binary_semaphore reversedBlockSem(1);
 static SkExecutor& GetThreadPool() {
     static std::unique_ptr<SkExecutor> executor = SkExecutor::MakeFIFOThreadPool(1, false);
     return *executor;
@@ -88,7 +89,7 @@ sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
     // many small allocations. The AMD allocator will start making blocks at 1/8 the max size and
     // builds up block size as needed before capping at the max set here.
     if (cacheFlag) {
-        info.preferredLargeHeapBlockSize = SkGetVmaBlockSizeMB() * 1024 * 1024;
+        info.preferredLargeHeapBlockSize = SkGetVmaBlockSizeMB() * 1024 * 1024; // 1024 = 1K
     } else {
         info.preferredLargeHeapBlockSize = 4 * 1024 * 1024;
     }
@@ -135,6 +136,60 @@ GrVkAMDMemoryAllocator::~GrVkAMDMemoryAllocator() {
     fAllocator = VK_NULL_HANDLE;
 }
 
+// OH ISSUE: VMA preAlloc
+static void FirstPreAllocMemory(VmaAllocator allocator, VmaAllocationCreateInfo info) {
+    VkImage fakeImage;
+    VmaAllocation reservedAllocation;
+    if (allocator == nullptr) {
+        return;
+    }
+    VkResult result = vmaCreateFakeImage(allocator, &fakeImage);
+    if (result != VK_SUCCESS) {
+        SK_LOGE("FirstPreAllocMemory: CreateFakeImage Failed!! VkResult %d", result);
+        return;
+    }
+    {
+        HITRACE_OHOS_NAME_FMT_ALWAYS("vmaAllocateReservedMemoryForImage");
+        result = vmaAllocateReservedMemoryForImage(allocator, fakeImage, &info, &reservedAllocation, nullptr);
+    }
+    if (result != VK_SUCCESS) {
+        SK_LOGE("FirstPreAllocMemory: AllocateReservedMemory Failed!! VkResult %d", result);
+        vmaDestroyFakeImage(allocator, fakeImage);
+        return;
+    }
+    {
+        HITRACE_OHOS_NAME_FMT_ALWAYS("vmaBindImageMemory");
+        result = vmaBindImageMemory(allocator, reservedAllocation, fakeImage);
+    }
+    if (result != VK_SUCCESS) {
+        SK_LOGE("FirstPreAllocMemory: BindImageMemory Failed!! VkResult %d", result);
+    }
+    vmaDestroyFakeImage(allocator, fakeImage);
+    vmaFreeReservedMemory(allocator, reservedAllocation);
+}
+
+// OH ISSUE: VMA preAlloc
+static void PreAllocMemory(VmaAllocator allocator, VmaAllocation reservedAllocation) {
+    VkImage fakeImage;
+    if (allocator == nullptr) {
+        return;
+    }
+    VkResult result = vmaCreateFakeImage(allocator, &fakeImage);
+    if (result != VK_SUCCESS) {
+        SK_LOGE("PreAllocMemory: CreateFakeImage Failed!! VkResult %d", result);
+        return;
+    }
+    {
+        HITRACE_OHOS_NAME_FMT_ALWAYS("vmaBindImageMemory");
+        result = vmaBindImageMemory(allocator, reservedAllocation, fakeImage);
+    }
+    if (result != VK_SUCCESS) {
+        SK_LOGE("PreAllocMemory: BindImageMemory Failed!! VkResult %d", result);
+    }
+    vmaDestroyFakeImage(allocator, fakeImage);
+    vmaFreeReservedMemory(allocator, reservedAllocation);
+}
+
 VkResult GrVkAMDMemoryAllocator::allocateImageMemory(VkImage image, AllocationPropertyFlags flags,
                                                      GrVkBackendMemory* backendMemory) {
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
@@ -161,50 +216,45 @@ VkResult GrVkAMDMemoryAllocator::allocateImageMemory(VkImage image, AllocationPr
 
     VmaAllocation allocation;
     VkResult result = vmaAllocateMemoryForImage(fAllocator, image, &info, &allocation, nullptr);
-    if (VK_SUCCESS == result) {
-        *backendMemory = (GrVkBackendMemory)allocation;
-    }
+    if (VK_SUCCESS != result) {
+        return result;
+    } 
+    *backendMemory = (GrVkBackendMemory)allocation;
 
+    // OH ISSUE: VMA preAlloc
     bool newBlockflag = false;
     vmaGetNewBlockStats(allocation, &newBlockflag);
     if (newBlockflag && fCacheFlag && SkGetPreAllocFlag()) {
+        HITRACE_OHOS_NAME_FMT_ALWAYS("GrVkAMDMemoryAllocator trigger preAlloc");
         vmaClearNewBlockStats(allocation);
-        reversedBlockSem.acquire();
+        std::lock_guard<std::mutex> lock(mPreAllocMutex);
+        // After swap, allocation belongs to vma reserved block.
         VkResult result2 = vmaSwapReservedBlock(fAllocator, image, &info, &allocation, nullptr);
+        if (result2 == VK_INCOMPLETE) {
+            return result;
+        }
         if (result2 == VK_NOT_READY) {
             GetThreadPool().add([=] {
-                VmaAllocation ReservedAllocation;
-                VkImage fakeImage;
-                reversedBlockSem.acquire();
-                vmaCreateFakeImage(fAllocator, &fakeImage);
-                vmaAllocateReservedMemoryForImage(fAllocator, fakeImage, &info, &ReservedAllocation, nullptr);
-                vmaBindImageMemory(fAllocator, ReservedAllocation, fakeImage);
-                vmaDestroyFakeImage(fAllocator, fakeImage);
-                vmaFreeReservedMemory(fAllocator, ReservedAllocation);
-                reversedBlockSem.release();
+                std::lock_guard<std::mutex> lock(mPreAllocMutex);
+                HITRACE_OHOS_NAME_FMT_ALWAYS("FirstPreAllocMemory");
+                FirstPreAllocMemory(fAllocator, info);
             });
-            reversedBlockSem.release();
             return result;
         }
         if (result2 == VK_SUCCESS) {
             GetThreadPool().add([=] {
-                VkImage fakeImage;
-                reversedBlockSem.acquire();
-                vmaCreateFakeImage(fAllocator, &fakeImage);
-                vmaBindImageMemory(fAllocator, allocation, fakeImage);
-                vmaDestroyFakeImage(fAllocator, fakeImage);
-                vmaFreeReservedMemory(fAllocator, allocation);
-                reversedBlockSem.release();
+                std::this_thread::sleep_for(std::chrono::microseconds(SkGetPreAllocDelay()));
+                std::lock_guard<std::mutex> lock(mPreAllocMutex);
+                HITRACE_OHOS_NAME_FMT_ALWAYS("PreAllocMemory");
+                PreAllocMemory(fAllocator, allocation);
             });
             VmaAllocation newAllocation;
             VkResult result3 = vmaAllocateMemoryForImage(fAllocator, image, &info, &newAllocation, nullptr);
             if (result3 == VK_SUCCESS) {
                 *backendMemory = (GrVkBackendMemory)newAllocation;
             }
-            reversedBlockSem.release();
             return result3;
         }
-        reversedBlockSem.release();
     }
     return result;
 }
@@ -382,6 +432,9 @@ void GrVkAMDMemoryAllocator::dumpVmaStats(SkString *out, const char *sep) const
         stats.total.allocationSizeMin, stats.total.allocationSizeAvg, stats.total.allocationSizeMax, sep);
     out->appendf("vma_unusedRangeSize: %llu / %llu / %llu%s",
         stats.total.unusedRangeSizeMin, stats.total.unusedRangeSizeAvg, stats.total.unusedRangeSizeMax, sep);
+    uint32_t blockSize = 0;
+    vmaGetPreAllocBlockSize(fAllocator, &blockSize);
+    out->appendf("vma_preAllocBlockSize: %d / 1%s", blockSize, sep);
 }
 
 void GrVkAMDMemoryAllocator::vmaDefragment()
@@ -395,6 +448,7 @@ void GrVkAMDMemoryAllocator::vmaDefragment()
     }
     bool debugFlag = SkGetVmaDebugFlag();
     if (!debugFlag) {
+        std::lock_guard<std::mutex> lock(mPreAllocMutex);
         vmaFreeEmptyBlock(fAllocator);
         return;
     }
@@ -406,7 +460,10 @@ void GrVkAMDMemoryAllocator::vmaDefragment()
         debugInfo.c_str());
     HITRACE_OHOS_NAME_FMT_ALWAYS("GrVkAMDMemoryAllocator::vmaDefragment() before: %s", debugInfo.c_str());
 
-    vmaFreeEmptyBlock(fAllocator);
+    {
+        std::lock_guard<std::mutex> lock(mPreAllocMutex);
+        vmaFreeEmptyBlock(fAllocator);
+    }
 
     // dfx
     debugInfo = "";

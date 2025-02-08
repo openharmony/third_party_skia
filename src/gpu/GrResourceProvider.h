@@ -332,6 +332,12 @@ public:
     const GrCaps* caps() const { return fCaps.get(); }
     bool overBudget() const { return fCache->overBudget(); }
 
+#ifdef SKIA_OHOS
+    size_t getMaxResourceBytes() const { return fCache->getMaxResourceBytes(); }
+    
+    size_t getBudgetedResourceBytes() const { return fCache->getBudgetedResourceBytes(); }
+#endif
+
     static SkISize MakeApprox(SkISize);
 
     inline GrResourceProviderPriv priv();
@@ -413,8 +419,12 @@ private:
     sk_sp<const GrGpuBuffer> fNonAAQuadIndexBuffer;
     sk_sp<const GrGpuBuffer> fAAQuadIndexBuffer;
 
+#ifdef SKIA_OHOS_SINGLE_OWNER
+    mutable GrSingleOwner* fSingleOwner;
+#else
     // In debug builds we guard against improper thread handling
     SkDEBUGCODE(mutable GrSingleOwner* fSingleOwner;)
+#endif
 };
 
 #endif

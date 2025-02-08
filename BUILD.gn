@@ -4,12 +4,14 @@
 # found in the LICENSE file.
 
 import("//build/ohos.gni")
-import("//foundation/arkui/ace_engine/ace_config.gni")
-import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("gn/flutter_defines.gni")
 import("gn/fuchsia_defines.gni")
 import("gn/shared_sources.gni")
 import("gn/skia.gni")
+
+if (is_arkui_x) {
+  import("//foundation/arkui/ace_engine/ace_config.gni")
+}
 
 if (defined(is_mingw) && is_mingw == true) {
   is_win = true
@@ -87,10 +89,11 @@ config("skia_public") {
   if (is_ohos && (target_cpu == "arm" || target_cpu == "arm64")) {
     defines += [
       "SKIA_OHOS",
-      "SKIA_OHOS_FOR_OHOS_TRACE",
-      "SKIA_OHOS_FOR_OHOS_LOG",
       "SKIA_OHOS_SHADER_REDUCE",
+      "SKIA_OHOS_TEXTURE_MEM_MGMT",
       "SKIA_DFX_FOR_OHOS",
+      "SKIA_DFX_FOR_RECORD_VKIMAGE",
+      "SKIA_OHOS_SINGLE_OWNER",
     ]
   }
   defines += [ "OHOS_SUPPORT" ]
@@ -388,7 +391,6 @@ template("optional") {
       if (defined(invoker.configs)) {
         configs += invoker.configs
       }
-      all_dependent_configs = [ ":" + target_name + "_public" ]
       public_configs = [ ":" + target_name + "_public" ]
     }
     if (defined(invoker.sources_for_tests) && skia_enable_tools) {
@@ -422,7 +424,6 @@ template("optional") {
           deps = []
         }
         deps += [ ":test" ]
-        all_dependent_configs = [ ":" + target_name + "_public" ]
         public_configs = [ ":" + target_name + "_public" ]
       }
     }
@@ -546,7 +547,7 @@ optional("fontmgr_symbol_load") {
       "//third_party/jsoncpp:jsoncpp_static",
     ]
   } else {
-    external_deps = [ "jsoncpp:jsoncpp_static" ]
+    external_deps = [ "jsoncpp:jsoncpp" ]
     if (is_component_build) {
       external_deps += [ "bounds_checking_function:libsec_shared" ]
     } else {
@@ -554,7 +555,14 @@ optional("fontmgr_symbol_load") {
     }
   }
 
-  deps += [ ":ohos_fontconfig.json" ]
+  deps += [
+    ":ohos_font_file_map.json",
+    ":ohos_fontconfig.json",
+    ":ohos_fontconfig_old.json",
+  ]
+  if (skia_feature_product == "wearable") {
+    deps += [ ":ohos_fontconfig_wearable.json" ]
+  }
   public = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.h" ]
   sources = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
 }
@@ -710,7 +718,7 @@ optional("fontmgr_mac_ct") {
       "//third_party/skia/src/ports/skia_ohos",
     ]
     defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
-    external_deps = [ "jsoncpp:jsoncpp_static" ]
+    external_deps = [ "jsoncpp:jsoncpp" ]
     deps = [
       ":fontmgr_symbol_load",
       "${skia_third_party_dir}/expat",
@@ -783,14 +791,34 @@ optional("fontmgr_win") {
     if (is_arkui_x) {
       deps += [ "//third_party/jsoncpp:jsoncpp_static" ]
     } else {
-      external_deps = [ "jsoncpp:jsoncpp_static" ]
+      external_deps = [ "jsoncpp:jsoncpp" ]
     }
   }
 }
 
 if (use_oh_skia && !is_arkui_x) {
   ohos_prebuilt_etc("ohos_fontconfig.json") {
+    source =
+        "//third_party/skia/src/ports/skia_ohos/config/fontconfig_ohos.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_fontconfig_old.json") {
     source = "//third_party/skia/src/ports/skia_ohos/config/fontconfig.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_font_file_map.json") {
+    source = "//third_party/skia/src/ports/skia_ohos/config/font_file_map.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_fontconfig_wearable.json") {
+    source = "//third_party/skia/src/ports/skia_ohos/config/fontconfig_ohos_wearable.json"
+    output = "fontconfig_ohos.json"
     part_name = "skia"
     subsystem_name = "thirdparty"
   }
@@ -826,23 +854,26 @@ if (use_oh_skia && !is_arkui_x) {
       ":typeface_freetype",
       "${skia_third_party_dir}/expat",
     ]
-    external_deps = [ "jsoncpp:jsoncpp_static" ]
+    external_deps = [ "jsoncpp:jsoncpp" ]
     if (is_component_build) {
       external_deps += [ "bounds_checking_function:libsec_shared" ]
     } else {
       external_deps += [ "bounds_checking_function:libsec_static" ]
     }
 
-    deps += [ ":ohos_fontconfig.json" ]
+    deps += [
+      ":ohos_font_file_map.json",
+      ":ohos_fontconfig.json",
+      ":ohos_fontconfig_old.json",
+    ]
+    if (skia_feature_product == "wearable") {
+      deps += [ ":ohos_fontconfig_wearable.json" ]
+    }
 
-    if (graphic_2d_feature_wuji_enable) {
+    if (skia_feature_wuji_enable) {
       deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
     } else if (skia_enable_standard_fonts) {
-      deps += [
-        "//base/global/system_resources:ohos_fonts",
-        "//third_party/noto-cjk:fonts_notocjk",
-        "//third_party/notofonts:fonts_notofonts",
-      ]
+      deps += []
     }
 
     if (use_mingw_win) {
@@ -1444,7 +1475,10 @@ optional("pdf") {
     }
   }
   if (is_ohos && !build_ohos_sdk) {
-    external_deps += [ "hitrace:hitrace_meter" ]
+    external_deps += [
+      "hitrace:hitrace_meter",
+      "init:libbegetutil",
+    ]
   }
   if (skia_use_libjpeg_turbo_decode) {
     deps += [ ":jpeg_decode" ]
@@ -1655,6 +1689,7 @@ if (use_oh_skia) {
   template("make_skia_deps") {
     forward_variables_from(invoker, "*")
     ohos_source_set("skia_$platform") {
+      branch_protector_ret = "pac_ret"
       part_name = "skia"
       subsystem_name = "thirdparty"
       license_file = "//third_party/skia/LICENSE"
@@ -1736,7 +1771,13 @@ if (use_oh_skia) {
     if (is_arkui_x) {
       deps += [ "//third_party/bounds_checking_function:libsec_static" ]
     }
-
+    if (is_ohos) {
+      external_deps = [
+        "bounds_checking_function:libsec_shared",
+        "hilog:libhilog",
+        "hitrace:hitrace_meter",
+      ]
+    }
     public = skia_core_public
     public += skia_utils_public
     public += skia_effects_public
@@ -1780,6 +1821,9 @@ if (use_oh_skia) {
     ]
 
     defines = skia_common_defines
+    if (is_arkui_x) {
+      defines += [ "ARKUI_X_ENABLE" ]
+    }
     cflags = skia_common_cflags
     if (!defined(ace_enable_gpu) || !ace_enable_gpu) {
       defines += [
@@ -1866,6 +1910,7 @@ if (use_oh_skia) {
   }
 
   ohos_shared_library("skia_canvaskit") {
+    branch_protector_ret = "pac_ret"
     part_name = "skia"
     innerapi_tags = [ "platformsdk" ]
     subsystem_name = "thirdparty"
@@ -2061,6 +2106,7 @@ if (use_oh_skia) {
       sources += [ "//third_party/skia/src/ports/SkDebug_ohos.cpp" ]
       external_deps = [
         "bounds_checking_function:libsec_shared",
+        "faultloggerd:libbacktrace_local",
         "hilog:libhilog",
         "hitrace:hitrace_meter",
         "init:libbegetutil",
@@ -2162,15 +2208,16 @@ if (use_oh_skia) {
       }
     }
   }
+  if (is_arkui_x) {
+    foreach(item, ace_platforms) {
+      make_skia_deps(item.name) {
+        platform = item.name
+        config = {
+        }
 
-  foreach(item, ace_platforms) {
-    make_skia_deps(item.name) {
-      platform = item.name
-      config = {
-      }
-
-      if (defined(item.config)) {
-        config = item.config
+        if (defined(item.config)) {
+          config = item.config
+        }
       }
     }
   }
@@ -2489,7 +2536,6 @@ if (skia_enable_tools) {
 
     # Bots and even devs may not have Vulkan headers, so put
     # include/third_party/vulkan on our path so they're always available.
-    all_dependent_configs = [ ":our_vulkan_headers" ]
     public_configs = [ ":our_vulkan_headers" ]
     defines = []
     if (skia_enable_discrete_gpu) {
@@ -3286,6 +3332,7 @@ if (skia_enable_tools) {
 
   if (!is_win) {
     source_set("skqp_lib") {  # Not a skia_source_set
+      branch_protector_ret = "pac_ret"
       check_includes = false
       testonly = true
       public_configs = [ ":skia_private" ]

@@ -775,7 +775,7 @@ struct ShapedRunGlyphIterator {
         if (fGlyphIndex == runs[fRunIndex].fNumGlyphs) {
             fGlyphIndex = 0;
             ++fRunIndex;
-            if (fRunIndex >= runs.size()) {
+            if (static_cast<size_t>(fRunIndex) >= runs.size()) {
                 return nullptr;
             }
         }
@@ -784,7 +784,7 @@ struct ShapedRunGlyphIterator {
 
     ShapedGlyph* current() {
         const SkTArray<ShapedRun>& runs = *fRuns;
-        if (fRunIndex >= runs.size()) {
+        if (static_cast<size_t>(fRunIndex) >= runs.size()) {
             return nullptr;
         }
         return &runs[fRunIndex].fGlyphs[fGlyphIndex];

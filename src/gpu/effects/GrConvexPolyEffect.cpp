@@ -109,12 +109,12 @@ std::unique_ptr<GrFragmentProcessor::ProgramImpl> GrConvexPolyEffect::onMakeProg
             GlobalVar edgeArray(kUniform_Modifier, Array(kHalf3_Type, cpe.fEdgeCount), "edgeArray");
             Declare(edgeArray);
             fEdgeUniform = VarUniformHandle(edgeArray);
-            Var alpha(kHalf_Type, "alpha", 1);
+            Var alpha(kFloat_Type, "alpha", 1);
             Declare(alpha);
-            Var edge(kHalf_Type, "edge");
+            Var edge(kFloat_Type, "edge");
             Declare(edge);
             for (int i = 0; i < cpe.fEdgeCount; ++i) {
-                edge = Dot(edgeArray[i], Half3(Swizzle(sk_FragCoord(), X, Y, ONE)));
+                edge = Dot(edgeArray[i], Float3(Swizzle(sk_FragCoord(), X, Y, ONE)));
                 if (GrClipEdgeTypeIsAA(cpe.fEdgeType)) {
                     edge = Saturate(edge);
                 } else {
@@ -127,7 +127,7 @@ std::unique_ptr<GrFragmentProcessor::ProgramImpl> GrConvexPolyEffect::onMakeProg
                 alpha = 1.0 - alpha;
             }
 
-            Return(SampleChild(0) * alpha);
+            Return(SampleChild(0) * Half(alpha));
             EndFragmentProcessor();
         }
 

@@ -36,7 +36,6 @@ struct DecorationContext {
 };
 class TextLine {
 public:
-
     struct ClipContext {
       const Run* run;
       size_t pos;
@@ -65,6 +64,38 @@ public:
         DEFAULT = 0,            // default
         READ_REPLACED_WORD = 1,  // read replaced word
         READ_ELLIPSIS_WORD = 2, // read ellipsis word
+    };
+
+    struct HighLevelInfo {
+        ClusterIndex clusterIndex{SIZE_MAX};
+        bool isClusterPunct{false};
+        SkScalar punctWidths{0.0f};
+        SkScalar highLevelOffset{0.0f};
+    };
+
+    struct MiddleLevelInfo {
+        ClusterIndex clusterIndex{SIZE_MAX};
+        bool isPrevClusterSpace{true};
+    };
+
+    struct ClusterLevelsIndices {
+        std::vector<HighLevelInfo> highLevelIndices;
+        std::vector<MiddleLevelInfo> middleLevelIndices;
+        std::vector<ClusterIndex> LowLevelIndices;
+        SkScalar middleLevelOffset{0.0f};
+        SkScalar lowLevelOffset{0.0f};
+
+        bool empty()
+        {
+            return highLevelIndices.empty() && middleLevelIndices.empty() && LowLevelIndices.empty();
+        }
+    };
+
+    enum class ShiftLevel {
+        Undefined,
+        HighLevel, // Level 1 Label: Punctuation
+        MiddleLevel, // Level-2 label: WhitespaceBreak, between ideographic and non-ideographic characters
+        LowLevel // Level-3 label: Between ideographic characters
     };
 #endif
 
@@ -113,6 +144,9 @@ public:
     SkScalar alphabeticBaseline() const { return fSizes.alphabeticBaseline(); }
     SkScalar ideographicBaseline() const { return fSizes.ideographicBaseline(); }
     SkScalar baseline() const { return fSizes.baseline(); }
+#ifdef OHOS_SUPPORT
+    void extendCoordinateRange(PositionWithAffinity& positionWithAffinity);
+#endif
 
     using RunVisitor = std::function<bool(
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;
@@ -147,7 +181,6 @@ public:
                                              const ClustersVisitor& visitor) const;
 
     void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
-    SkScalar calculateSpacing(const Cluster prevCluster, const Cluster curCluster);
     SkScalar autoSpacing();
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
     void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
@@ -157,8 +190,11 @@ public:
     void setBlockRange(const BlockRange& blockRange) { fBlockRange = blockRange; }
     void countWord(int& wordCount, bool& inWord);
     void ellipsisNotFitProcess(EllipsisModal ellipsisModal);
+#ifdef OHOS_SUPPORT
     void createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
+    void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
+#endif
     // For testing internal structures
     void scanStyles(StyleType style, const RunStyleVisitor& visitor);
 
@@ -212,6 +248,11 @@ public:
     double getOffsetForStringIndex(int32_t index) const;
     std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const;
     double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const;
+    SkRect generatePaintRegion(SkScalar x, SkScalar y);
+    void updateClusterOffsets(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
+    void justifyUpdateRtlWidth(const SkScalar maxWidth, const SkScalar textLen);
+    void setBreakWithHyphen(bool breakWithHyphen) { this->fBreakWithHyphen = breakWithHyphen; }
+    bool getBreakWithHyphen() { return this->fBreakWithHyphen; }
 #endif
 
 private:
@@ -220,9 +261,7 @@ private:
         RectStyle roundRectStyle;
         SkRect rect;
     };
-
     void justify(SkScalar maxWidth);
-
     void buildTextBlob(TextRange textRange, const TextStyle& style, const ClipContext& context);
     void paintBackground(ParagraphPainter* painter,
                          SkScalar x,
@@ -253,6 +292,8 @@ private:
 #ifdef OHOS_SUPPORT
     void measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const;
     void computeNextPaintGlyphRange(ClipContext& context, const TextRange& lastGlyphRange, StyleType styleType) const;
+    SkRect computeShadowRect(SkScalar x, SkScalar y, const TextStyle& style, const ClipContext& context) const;
+    SkRect getAllShadowsRect(SkScalar x, SkScalar y) const;
 #endif
 
     ParagraphImpl* fOwner;
@@ -312,6 +353,10 @@ private:
 #endif
 public:
     std::vector<TextBlobRecord> fTextBlobCache;
+#ifdef OHOS_SUPPORT
+    SkString fEllipsisString;
+    bool fBreakWithHyphen{false};
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia

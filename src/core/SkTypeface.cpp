@@ -114,6 +114,10 @@ public:
 
         size_t hash = 0;
         hash ^= std::hash<uint32_t>()(typeface->uniqueID());
+#ifdef OHOS_SUPPORT
+        uint32_t typefaceHash = typeface->GetHash();
+        hash ^= std::hash<uint32_t>()(typefaceHash);
+#endif
         hash ^= std::hash<int>()(args.getCollectionIndex());
         const auto& positions = args.getVariationDesignPosition();
         for (int i = 0; i < positions.coordinateCount; i++) {
@@ -235,6 +239,12 @@ void SkTypeface::serialize(SkWStream* wstream, SerializeBehavior behavior) const
     this->onGetFontDescriptor(&desc, &isLocalData);
 
     bool shouldSerializeData = false;
+
+#ifdef ARKUI_X_ENABLE
+    // Prohibiting serializes typeface when arkui-x use custom's font
+    isLocalData = false;
+#endif
+
     switch (behavior) {
         case SerializeBehavior::kDoIncludeData:      shouldSerializeData = true;        break;
         case SerializeBehavior::kDontIncludeData:    shouldSerializeData = false;       break;
@@ -306,6 +316,18 @@ bool SkTypeface::isCustomTypeface() const {
 void SkTypeface::setIsCustomTypeface(bool isCustom) {
     fIsCustom = isCustom;
 }
+
+#ifdef OHOS_SUPPORT
+bool SkTypeface::isThemeTypeface() const
+{
+    return fIsTheme;
+}
+
+void SkTypeface::setIsThemeTypeface(bool isTheme)
+{
+    fIsTheme = isTheme;
+}
+#endif
 
 std::unique_ptr<SkStreamAsset> SkTypeface::openExistingStream(int* ttcIndex) const {
     int ttcIndexStorage;
@@ -584,3 +606,25 @@ std::unique_ptr<SkAdvancedTypefaceMetrics> SkTypeface::onGetAdvancedMetrics() co
     SkDEBUGFAIL("Typefaces that need to work with PDF backend must override this.");
     return nullptr;
 }
+
+#ifdef OHOS_SUPPORT
+uint32_t SkTypeface::GetHash() const
+{
+    if (hash_ != 0) {
+        return hash_;
+    }
+    auto skData = serialize(SkTypeface::SerializeBehavior::kDontIncludeData);
+    if (skData == nullptr) {
+        return hash_;
+    }
+    std::unique_ptr<SkStreamAsset> ttfStream = openExistingStream(0);
+    uint32_t seed = ttfStream.get() != nullptr ? ttfStream->getLength() : 0;
+    hash_ = SkOpts::hash_fn(skData->data(), skData->size(), seed);
+    return hash_;
+}
+
+void SkTypeface::SetHash(uint32_t hash)
+{
+    hash_ = hash;
+}
+#endif

@@ -133,6 +133,8 @@ skia_gpu_sources = [
   "$_src/gpu/GrOpsTypes.h",
   "$_src/gpu/GrPaint.cpp",
   "$_src/gpu/GrPaint.h",
+  "$_src/gpu/GrPerfMonitorReporter.cpp",
+  "$_src/gpu/GrPerfMonitorReporter.h",
   "$_src/gpu/GrPersistentCacheUtils.cpp",
   "$_src/gpu/GrPersistentCacheUtils.h",
   "$_src/gpu/GrPipeline.cpp",
@@ -290,8 +292,6 @@ skia_gpu_sources = [
   "$_src/gpu/effects/GrPorterDuffXferProcessor.h",
   "$_src/gpu/effects/GrRRectEffect.cpp",
   "$_src/gpu/effects/GrRRectEffect.h",
-  "$_src/gpu/effects/GrSDFBlurEffect.cpp",
-  "$_src/gpu/effects/GrSDFBlurEffect.h",
   "$_src/gpu/effects/GrShadowGeoProc.cpp",
   "$_src/gpu/effects/GrShadowGeoProc.h",
   "$_src/gpu/effects/GrSkSLFP.cpp",
@@ -599,6 +599,7 @@ skia_vk_sources = [
   "$_include/gpu/vk/GrVkMemoryAllocator.h",
   "$_include/gpu/vk/GrVkTypes.h",
   "$_include/gpu/vk/GrVkVulkan.h",
+  "$_include/gpu/vk/GrVulkanTracker.h",
   "$_include/private/GrVkTypesPriv.h",
   "$_src/gpu/vk/GrVkAMDMemoryAllocator.cpp",
   "$_src/gpu/vk/GrVkAMDMemoryAllocator.h",
@@ -671,6 +672,7 @@ skia_vk_sources = [
   "$_src/gpu/vk/GrVkUtil.h",
   "$_src/gpu/vk/GrVkVaryingHandler.cpp",
   "$_src/gpu/vk/GrVkVaryingHandler.h",
+  "$_src/gpu/vk/GrVulkanTracker.cpp",
 ]
 
 if (skia_vk_enable_partialrender) {

@@ -13,6 +13,7 @@
 #include "src/gpu/GrGpuResourcePriv.h"
 #include "src/gpu/GrResourceCache.h"
 #include <atomic>
+#include "include/core/SkLog.h"
 
 static inline GrResourceCache* get_resource_cache(GrGpu* gpu) {
     SkASSERT(gpu);
@@ -48,20 +49,17 @@ void GrGpuResource::registerWithCacheWrapped(GrWrapCacheable wrapType) {
 
 GrGpuResource::~GrGpuResource() {
     // The cache should have released or destroyed this resource.
+    fMagicNum = 0;
     SkASSERT(this->wasDestroyed());
 }
 
 void GrGpuResource::release() {
     SkASSERT(fGpu);
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (!fGpu) {
-        SkDebugf("OHOS GrGpuResource::release(), fGpu == nullptr");
-        return;
-    }
     this->onRelease();
     get_resource_cache(fGpu)->resourceAccess().removeResource(this);
     fGpu = nullptr;
     fGpuMemorySize = 0;
+    fMagicNum = 0;
 }
 
 void GrGpuResource::abandon() {
@@ -241,7 +239,7 @@ void GrGpuResource::setResourceTag(const GrGpuResourceTag tag)
         return;
     }
     size_t size = this->gpuMemorySize();
-    get_resource_cache(fGpu)->resourceAccess().changeByteOfPid(pid, tag.fPid, fRealAllocSize);
+    get_resource_cache(fGpu)->resourceAccess().changeByteOfPid(pid, tag.fPid, size);
 }
 
 //////////////////////////////////////////////////////////////////////////////

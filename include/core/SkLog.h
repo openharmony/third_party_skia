@@ -16,7 +16,7 @@
 #ifndef SKLOG_DEFINED
 #define SKLOG_DEFINED
 
-#ifdef SKIA_OHOS_FOR_OHOS_LOG
+#ifdef SKIA_OHOS
 #include <hilog/log.h>
 
 #undef LOG_DOMAIN

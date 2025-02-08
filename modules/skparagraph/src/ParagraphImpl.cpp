@@ -19,6 +19,9 @@
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skparagraph/src/TextWrapper.h"
+#ifdef OHOS_SUPPORT
+#include "utils/text_trace.h"
+#endif
 #include "src/utils/SkUTF.h"
 #include <math.h>
 #include <algorithm>
@@ -83,9 +86,6 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
     return result;
 }
 
-Paragraph::Paragraph()
-{ }
-
 Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             : fFontCollection(std::move(fonts))
             , fParagraphStyle(std::move(style))
@@ -100,9 +100,6 @@ Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             , fLongestLineWithIndent(0)
 #endif
             , fExceededMaxLines(0)
-{ }
-
-ParagraphImpl::ParagraphImpl()
 { }
 
 ParagraphImpl::ParagraphImpl(const SkString& text,
@@ -308,7 +305,7 @@ void ParagraphImpl::middleEllipsisLtrDeal(size_t& end,
     const SkString& ell = this->getEllipsis();
     const char *ellStr = ell.c_str();
     size_t start = 0;
-    if (ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
+    if (ltrTextSize.empty() || ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
         fText.reset();
         fText.set(ellStr);
         end = 1;
@@ -484,6 +481,9 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 }
 
 void ParagraphImpl::layout(SkScalar rawWidth) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     fLineNumber = 1;
     allTextWidth = 0;
     fLayoutRawWidth = rawWidth;
@@ -500,16 +500,15 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     }
 
 #ifdef OHOS_SUPPORT
+    fPaintRegion.reset();
     bool isMaxLinesZero = false;
-#endif
     if (fParagraphStyle.getMaxLines() == 0) {
-#ifdef OHOS_SUPPORT
         if (fText.size() != 0) {
             isMaxLinesZero = true;
         }
-#endif
         fText.reset();
     }
+#endif
 
     if ((!SkScalarIsFinite(rawWidth) || fLongestLine <= floorWidth) &&
         fState >= kLineBroken &&
@@ -714,7 +713,9 @@ void ParagraphImpl::resetContext() {
 
 // shapeTextIntoEndlessLine is the thing that calls this method
 bool ParagraphImpl::computeCodeUnitProperties() {
-
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     if (nullptr == fUnicode) {
         return false;
     }
@@ -733,7 +734,7 @@ bool ParagraphImpl::computeCodeUnitProperties() {
                                         fText.size(),
 #ifdef OHOS_SUPPORT
                                         this->paragraphStyle().getReplaceTabCharacters() ||
-                                        (this->paragraphStyle().getTextTab().location != 0),
+                                        (!(this->paragraphStyle().getTextTab().location < 1.0)),
 #else
                                         this->paragraphStyle().getReplaceTabCharacters(),
 #endif
@@ -744,7 +745,7 @@ bool ParagraphImpl::computeCodeUnitProperties() {
     // Get some information about trailing spaces / hard line breaks
     fTrailingSpaces = fText.size();
     TextIndex firstWhitespace = EMPTY_INDEX;
-    for (int i = 0; i < fCodeUnitProperties.size(); ++i) {
+    for (size_t i = 0; i < fCodeUnitProperties.size(); ++i) {
         auto flags = fCodeUnitProperties[i];
         if (SkUnicode::isPartOfWhiteSpaceBreak(flags)) {
             if (fTrailingSpaces  == fText.size()) {
@@ -789,56 +790,77 @@ static bool is_ascii_7bit_space(int c) {
 }
 
 #ifdef OHOS_SUPPORT
-static std::vector<SkRange<SkUnichar>> CJK_UNICODE_SET = {
-    SkRange<SkUnichar>(0x4E00, 0x9FFF),
-    SkRange<SkUnichar>(0x3400, 0x4DBF),
-    SkRange<SkUnichar>(0x20000, 0x2A6DF),
-    SkRange<SkUnichar>(0x2A700, 0x2B73F),
-    SkRange<SkUnichar>(0x2B740, 0x2B81F),
-    SkRange<SkUnichar>(0x2B820, 0x2CEAF),
-    SkRange<SkUnichar>(0x2CEB0, 0x2EBEF),
-    SkRange<SkUnichar>(0x30000, 0x3134F),
-    SkRange<SkUnichar>(0xF900, 0xFAFF),
-    SkRange<SkUnichar>(0x3040, 0x309F),
-    SkRange<SkUnichar>(0x30A0, 0x30FF),
-    SkRange<SkUnichar>(0x31F0, 0x31FF),
+static const std::vector<SkRange<SkUnichar>> CJK_UNICODE_SET = {
     SkRange<SkUnichar>(0x1100, 0x11FF),
-    SkRange<SkUnichar>(0x3130, 0x318F),
-    SkRange<SkUnichar>(0xAC00, 0xD7AF),
-    SkRange<SkUnichar>(0x31C0, 0x31EF),
     SkRange<SkUnichar>(0x2E80, 0x2EFF),
+    // [0x3040, 0x309F](Hiragana) + [0x30A0, 0x30FF](Katakana)
+    SkRange<SkUnichar>(0x3040, 0x30FF),
+    SkRange<SkUnichar>(0x3130, 0x318F),
+    // [0x31C0, 0x31EF](CJK Strokes) + [0x31F0, 0x31FF](Katakana Phonetic Extensions)
+    SkRange<SkUnichar>(0x31C0, 0x31FF),
+    SkRange<SkUnichar>(0x3400, 0x4DBF),
+    SkRange<SkUnichar>(0x4E00, 0x9FFF),
+    SkRange<SkUnichar>(0xAC00, 0xD7AF),
+    SkRange<SkUnichar>(0xF900, 0xFAFF),
+    SkRange<SkUnichar>(0x20000, 0x2A6DF),
+/*
+    [0x2A700, 0x2B73F](CJK Unified Ideographs Extension C) +
+    [0x2B740, 0x2B81F](CJK Unified Ideographs Extension D) +
+    [0x2B820, 0x2CEAF](CJK Unified Ideographs Extension E) +
+    [0x2CEB0, 0x2EBEF](CJK Unified Ideographs Extension F)
+*/
+    SkRange<SkUnichar>(0x2A700, 0x2EBEF),
     SkRange<SkUnichar>(0x2F800, 0x2FA1F),
+    SkRange<SkUnichar>(0x30000, 0x3134F),
 };
 
-static std::vector<SkRange<SkUnichar>> WESTERN_UNICODE_SET = {
+static const std::vector<SkRange<SkUnichar>> WESTERN_UNICODE_SET = {
+    SkRange<SkUnichar>(0x0030, 0x0039),
     SkRange<SkUnichar>(0x0041, 0x005A),
     SkRange<SkUnichar>(0x0061, 0x007A),
-    SkRange<SkUnichar>(0x0030, 0x0039),
 };
 
 constexpr SkUnichar COPYRIGHT_UNICODE = 0x00A9;
 
-struct UnicodeSet {
-    std::unordered_set<SkUnichar> set_;
-    explicit UnicodeSet(const std::vector<SkRange<SkUnichar>>& unicodeSet) {
-        if (!TextParameter::GetAutoSpacingEnable()) {
-            return;
-        }
-        for (auto unicodeSetRange : unicodeSet) {
-            for (auto i = unicodeSetRange.start; i <= unicodeSetRange.end; ++i) {
-                set_.insert(i);
-            }
-        }
+struct UnicodeIdentifier {
+    static bool cmp(SkRange<SkUnichar> a, SkRange<SkUnichar> b) {
+        return a.start < b.start;
     }
+    const std::vector<SkRange<SkUnichar>>& fUnicodeSet;
+    explicit UnicodeIdentifier(const std::vector<SkRange<SkUnichar>>& unicodeSet) : fUnicodeSet(unicodeSet) {}
     bool exist(SkUnichar c) const {
-        return set_.find(c) != set_.end();
+        if (!TextParameter::GetAutoSpacingEnable()) {
+            return false;
+        }
+        auto pos = std::upper_bound(fUnicodeSet.begin(), fUnicodeSet.end(), SkRange<SkUnichar>(c, c), cmp);
+        if (pos == fUnicodeSet.begin()) {
+            return false;
+        }
+        --pos;
+        return pos->end >= c;
     }
 };
 
-static const UnicodeSet CJK_SET(CJK_UNICODE_SET);
-static const UnicodeSet WESTERN_SET(WESTERN_UNICODE_SET);
-#endif
+static const UnicodeIdentifier CJK_IDENTIFIER(CJK_UNICODE_SET);
+static const UnicodeIdentifier WESTERN_IDENTIFIER(WESTERN_UNICODE_SET);
 
+static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(SkUnichar unicode)
+{
+    if (WESTERN_IDENTIFIER.exist(unicode)) {
+        return Cluster::AutoSpacingFlag::Western;
+    }
+
+    if (CJK_IDENTIFIER.exist(unicode)) {
+        return Cluster::AutoSpacingFlag::CJK;
+    }
+
+    if (unicode == COPYRIGHT_UNICODE) {
+        return Cluster::AutoSpacingFlag::Copyright;
+    }
+
+    return Cluster::AutoSpacingFlag::NoFlag;
+}
+#endif
 Cluster::Cluster(ParagraphImpl* owner,
                  RunIndex runIndex,
                  size_t start,
@@ -865,6 +887,10 @@ Cluster::Cluster(ParagraphImpl* owner,
         if (is_ascii_7bit_space(*ch)) {
             ++whiteSpacesBreakLen;
         }
+#ifdef OHOS_SUPPORT
+        fIsPunctuation = fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kPunctuation);
+        fIsEllipsis = fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kEllipsis);
+#endif
     } else {
         for (auto i = fTextRange.start; i < fTextRange.end; ++i) {
             if (fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kPartOfWhiteSpaceBreak)) {
@@ -876,6 +902,10 @@ Cluster::Cluster(ParagraphImpl* owner,
             if (fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kIdeographic)) {
                 fIsIdeographic = true;
             }
+#ifdef OHOS_SUPPORT
+            fIsPunctuation = fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kPunctuation) | fIsPunctuation;
+            fIsEllipsis = fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kEllipsis) | fIsEllipsis;
+#endif
         }
     }
 
@@ -886,16 +916,19 @@ Cluster::Cluster(ParagraphImpl* owner,
 #ifdef OHOS_SUPPORT
     fIsTabulation = fOwner->codeUnitHasProperty(fTextRange.start,
                                                 SkUnicode::CodeUnitFlags::kTabulation);
-#endif
     auto unicodeStart = fOwner->getUnicodeIndex(fTextRange.start);
     auto unicodeEnd = fOwner->getUnicodeIndex(fTextRange.end);
     SkUnichar unicode = 0;
     if (unicodeEnd - unicodeStart == 1 && unicodeStart < fOwner->unicodeText().size()) {
         unicode = fOwner->unicodeText()[unicodeStart];
     }
-    fIsCopyright = unicode == COPYRIGHT_UNICODE;
-    fIsCJK = CJK_SET.exist(unicode);
-    fIsWestern = WESTERN_SET.exist(unicode);
+
+    auto curAutoSpacingFlag = recognizeUnicodeAutoSpacingFlag(unicode);
+    auto lastAutoSpacingFlag = fOwner->getLastAutoSpacingFlag();
+    fNeedAutoSpacing = curAutoSpacingFlag != Cluster::AutoSpacingFlag::NoFlag &&
+        curAutoSpacingFlag != lastAutoSpacingFlag && lastAutoSpacingFlag != Cluster::AutoSpacingFlag::NoFlag;
+    fOwner->setLastAutoSpacingFlag(curAutoSpacingFlag);
+#endif
 }
 
 SkScalar Run::calculateWidth(size_t start, size_t end, bool clip) const {
@@ -1031,7 +1064,7 @@ void ParagraphImpl::buildClusterTable() {
     // It's possible that one grapheme includes few runs; we cannot handle it
     // so we break graphemes by the runs instead
     // It's not the ideal solution and has to be revisited later
-    int cluster_count = 1;
+    size_t cluster_count = 1;
     for (auto& run : fRuns) {
         cluster_count += run.isPlaceholder() ? 1 : run.size();
         fCodeUnitProperties[run.fTextRange.start] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
@@ -1086,7 +1119,9 @@ void ParagraphImpl::buildClusterTable() {
 }
 
 bool ParagraphImpl::shapeTextIntoEndlessLine() {
-
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     if (fText.size() == 0) {
         return false;
     }
@@ -1181,6 +1216,9 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
 }
 
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     resetAutoSpacing();
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
@@ -1201,12 +1239,23 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 SkScalar indent,
                 SkScalar noIndentWidth) {
                 // TODO: Take in account clipped edges
-                auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines, clusters, clustersWithGhosts, widthWithSpaces, metrics);
+                auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines,
+                    clusters, clustersWithGhosts, widthWithSpaces, metrics);
                 if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
                     line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
                 } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
+#ifdef OHOS_SUPPORT
+                else if (textWrapper.brokeLineWithHyphen()
+                         || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
+                             && (clusters.end < this->fUnicodeText.size())
+                             && (this->fUnicodeText[clusters.end - 1] == 0xad))) { // 0xad represents a soft hyphen
+                    const SkString dash("-");
+                    line.createTailEllipsis(noIndentWidth, dash, true, this->getWordBreakType());
+                    line.setBreakWithHyphen(true);
+                }
+#endif
                 auto spacing = line.autoSpacing();
                 auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces()) + spacing;
                 fLongestLine = std::max(fLongestLine, longestLine);
@@ -1318,6 +1367,9 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
 #endif
 
 void ParagraphImpl::formatLines(SkScalar maxWidth) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     auto effectiveAlign = fParagraphStyle.effective_align();
     const bool isLeftAligned = effectiveAlign == TextAlign::kLeft
         || (effectiveAlign == TextAlign::kJustify && fParagraphStyle.getTextDirection() == TextDirection::kLtr);
@@ -1337,6 +1389,11 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
         }
         line.format(effectiveAlign, noIndentWidth, this->paragraphStyle().getEllipsisMod());
     }
+#ifdef OHOS_SUPPORT
+    if (this->lines().size() > 1 && this->paragraphStyle().getTextAlign() == TextAlign::kJustify) {
+        this->setLongestLineWithIndent(maxWidth);
+    }
+#endif
 }
 
 void ParagraphImpl::resolveStrut() {
@@ -1395,7 +1452,7 @@ void ParagraphImpl::resolveStrut() {
 BlockRange ParagraphImpl::findAllBlocks(TextRange textRange) {
     BlockIndex begin = EMPTY_BLOCK;
     BlockIndex end = EMPTY_BLOCK;
-    for (int index = 0; index < fTextStyles.size(); ++index) {
+    for (BlockIndex index = 0; index < fTextStyles.size(); ++index) {
         auto& block = fTextStyles[index];
         if (block.fRange.end <= textRange.start) {
             continue;
@@ -2004,7 +2061,7 @@ void ParagraphImpl::visit(const Visitor& visitor) {
 }
 
 int ParagraphImpl::getLineNumberAt(TextIndex codeUnitIndex) const {
-    for (auto i = 0; i < fLines.size(); ++i) {
+    for (size_t i = 0; i < fLines.size(); ++i) {
         auto& line = fLines[i];
         if (line.text().contains({codeUnitIndex, codeUnitIndex + 1})) {
             return i;
@@ -2014,7 +2071,7 @@ int ParagraphImpl::getLineNumberAt(TextIndex codeUnitIndex) const {
 }
 
 bool ParagraphImpl::getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) const {
-    if (lineNumber < 0 || lineNumber >= fLines.size()) {
+    if (lineNumber < 0 || static_cast<size_t>(lineNumber) >= fLines.size()) {
         return false;
     }
     auto& line = fLines[lineNumber];
@@ -2025,7 +2082,7 @@ bool ParagraphImpl::getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) c
 }
 
 TextRange ParagraphImpl::getActualTextRange(int lineNumber, bool includeSpaces) const {
-    if (lineNumber < 0 || lineNumber >= fLines.size()) {
+    if (lineNumber < 0 || static_cast<size_t>(lineNumber) >= fLines.size()) {
         return EMPTY_TEXT;
     }
     auto& line = fLines[lineNumber];
@@ -2033,7 +2090,7 @@ TextRange ParagraphImpl::getActualTextRange(int lineNumber, bool includeSpaces) 
 }
 
 bool ParagraphImpl::getGlyphClusterAt(TextIndex codeUnitIndex, GlyphClusterInfo* glyphInfo) {
-    for (auto i = 0; i < fLines.size(); ++i) {
+    for (size_t i = 0; i < fLines.size(); ++i) {
         auto& line = fLines[i];
         if (!line.text().contains({codeUnitIndex, codeUnitIndex})) {
             continue;
@@ -2265,6 +2322,26 @@ std::unique_ptr<Paragraph> ParagraphImpl::createCroppedCopy(size_t startIndex, s
 
 void ParagraphImpl::initUnicodeText() {
     this->fUnicodeText = convertUtf8ToUnicode(fText);
+}
+
+// Currently, only support to generate text and text shadow paint regions.
+// Can't accurately calculate the paint region of italic fonts(including fake italic).
+SkIRect ParagraphImpl::generatePaintRegion(SkScalar x, SkScalar y) {
+    if (fState < kFormatted) {
+        TEXT_LOGW("Call generatePaintRegion when paragraph is not formatted");
+        return SkIRect::MakeXYWH(x, y, 0, 0);
+    }
+
+    if (fPaintRegion.has_value()) {
+        return fPaintRegion.value().makeOffset(x, y).roundOut();
+    }
+
+    fPaintRegion = SkRect::MakeEmpty();
+    for (auto& line : fLines) {
+        SkRect linePaintRegion = line.generatePaintRegion(0, 0);
+        fPaintRegion->join(linePaintRegion);
+    }
+    return fPaintRegion.value().makeOffset(x, y).roundOut();
 }
 #endif
 

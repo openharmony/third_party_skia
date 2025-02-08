@@ -877,18 +877,21 @@ public:
 
     void vmaDefragment();
     void dumpVmaStats(SkString *out);
+    void dumpAllResource(std::stringstream& dump) const;
 
     // OH ISSUE: get the memory information of the updated pid.
     void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
     // OH ISSUE: init gpu memory limit.
     void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
+    // OH ISSUE: check whether the PID is abnormal.
+    bool isPidAbnormal() const override;
 
     // OH ISSUE: intra frame and inter frame identification
     void beginFrame();
     void endFrame();
     
     // OH ISSUE: asyn memory reclaimer
-    void setGpuMemoryAsyncReclaimerSwitch(bool enabled);
+    void setGpuMemoryAsyncReclaimerSwitch(bool enabled, const std::function<void()>& setThreadPriority);
     void flushGpuMemoryInWaitQueue();
 
     // OH ISSUE: suppress release window

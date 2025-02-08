@@ -189,7 +189,11 @@ protected:
 
     SkDEBUGCODE(void validate() const;)
 
+#ifdef SKIA_OHOS_SINGLE_OWNER
+    GrSingleOwner* singleOwner() const;
+#else
     SkDEBUGCODE(GrSingleOwner* singleOwner() const;)
+#endif
 
     GrRecordingContext* fContext;
 

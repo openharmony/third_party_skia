@@ -34,6 +34,17 @@ public:
         return false;
 #endif
     }
+    static uint32_t GetUnicodeSizeLimitForParagraphCache()
+    {
+        const uint32_t unicodeSizeDefaultLimit = 16000;
+#ifdef OHOS_TEXT_ENABLE
+        static uint32_t unicodeSizeLimit = OHOS::system::GetUintParameter(
+            "persist.sys.text.paragraph_cache.unicode_size_limit", unicodeSizeDefaultLimit);
+        return unicodeSizeLimit;
+#else
+        return unicodeSizeDefaultLimit;
+#endif
+    }
 };
 }  // namespace textlayout
 }  // namespace skia

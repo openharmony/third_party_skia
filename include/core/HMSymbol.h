@@ -19,7 +19,7 @@
 #include <string>
 #include <map>
 
-#include "third_party/skia/include/core/SkPath.h"
+#include "SkPath.h"
 
 enum AnimationType {
     INVALID_ANIMATION_TYPE = 0,

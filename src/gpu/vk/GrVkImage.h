@@ -11,6 +11,9 @@
 #include "include/core/SkTypes.h"
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/vk/GrVkTypes.h"
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
+#endif
 #include "include/private/GrTypesPriv.h"
 #include "include/private/GrVkTypesPriv.h"
 #include "src/gpu/GrAttachment.h"
@@ -209,6 +212,10 @@ public:
     static VkAccessFlags LayoutToSrcAccessMask(const VkImageLayout layout);
 
     size_t onGpuMemorySize() const override;
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    void dumpVkImageInfo(std::stringstream& dump) const override;
+    const char* getResourceType() const override { return "VkImage"; }
+#endif
 #if GR_TEST_UTILS
     void setCurrentQueueFamilyToGraphicsQueue(GrVkGpu* gpu);
 #endif
@@ -290,7 +297,7 @@ private:
             , fImage(image)
             , fAlloc(alloc) {}
 
-        ~Resource() override {}
+        ~Resource() override;
 
 #ifdef SK_TRACE_MANAGED_RESOURCES
         void dumpInfo() const override {
@@ -298,6 +305,11 @@ private:
         }
 #endif
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    ParallelDebug::VkImageInvokeRecord* fCaller = ParallelDebug::GenerateVkImageInvokeRecord();
+    void dumpVkImageResource(std::stringstream& dump);
+    void RecordFreeVkImage(bool isBorrowed) const;
+#endif
 #ifdef SK_DEBUG
         const GrManagedResource* asVkImageResource() const override { return this; }
 #endif

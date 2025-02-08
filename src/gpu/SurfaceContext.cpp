@@ -53,7 +53,7 @@ const GrDrawingManager* SurfaceContext::drawingManager() const {
     return fContext->priv().drawingManager();
 }
 
-#ifdef SK_DEBUG
+#if defined(SK_DEBUG) || defined(SKIA_OHOS_SINGLE_OWNER)
 GrSingleOwner* SurfaceContext::singleOwner() const { return fContext->priv().singleOwner(); }
 #endif
 

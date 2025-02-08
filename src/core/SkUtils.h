@@ -61,5 +61,6 @@ bool SkGetVmaDefragmentOn();
 size_t SkGetVmaBlockCountMax();
 bool SkGetVmaDebugFlag();
 bool SkGetPreAllocFlag();
+size_t SkGetPreAllocDelay();
 
 #endif

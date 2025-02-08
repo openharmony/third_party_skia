@@ -9,6 +9,9 @@
 #include "src/gpu/GrSurfaceProxyPriv.h"
 
 #include "include/gpu/GrRecordingContext.h"
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
+#endif
 #include "src/core/SkMathPriv.h"
 #include "src/gpu/GrAttachment.h"
 #include "src/gpu/GrCaps.h"
@@ -20,6 +23,9 @@
 #include "src/gpu/GrTexture.h"
 #include "src/gpu/GrTextureRenderTargetProxy.h"
 #include "src/gpu/SurfaceFillContext.h"
+#ifdef SKIA_OHOS
+#include "src/gpu/GrPerfMonitorReporter.h"
+#endif
 
 #ifdef SK_DEBUG
 #include "include/gpu/GrDirectContext.h"
@@ -40,6 +46,16 @@ static bool is_valid_non_lazy(SkISize dimensions) {
 }
 #endif
 
+// emulator mock
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#ifndef SK_VULKAN
+namespace ParallelDebug {
+void RecordNodeId(uint64_t nodeId) {}
+uint64_t GetNodeId() {return 0;}
+};
+#endif
+#endif
+
 // Deferred version
 GrSurfaceProxy::GrSurfaceProxy(const GrBackendFormat& format,
                                SkISize dimensions,
@@ -54,6 +70,9 @@ GrSurfaceProxy::GrSurfaceProxy(const GrBackendFormat& format,
         , fFit(fit)
         , fBudgeted(budgeted)
         , fUseAllocator(useAllocator)
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        , fNodeId(ParallelDebug::GetNodeId())
+#endif
         , fIsProtected(isProtected) {
     SkASSERT(fFormat.isValid());
     SkASSERT(is_valid_non_lazy(dimensions));
@@ -75,6 +94,9 @@ GrSurfaceProxy::GrSurfaceProxy(LazyInstantiateCallback&& callback,
         , fBudgeted(budgeted)
         , fUseAllocator(useAllocator)
         , fLazyInstantiateCallback(std::move(callback))
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        , fNodeId(ParallelDebug::GetNodeId())
+#endif
         , fIsProtected(isProtected) {
     SkASSERT(fFormat.isValid());
     SkASSERT(fLazyInstantiateCallback);
@@ -95,6 +117,9 @@ GrSurfaceProxy::GrSurfaceProxy(sk_sp<GrSurface> surface,
                             : SkBudgeted::kNo)
         , fUseAllocator(useAllocator)
         , fUniqueID(fTarget->uniqueID())  // Note: converting from unique resource ID to a proxy ID!
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        , fNodeId(ParallelDebug::GetNodeId())
+#endif
         , fIsProtected(fTarget->isProtected() ? GrProtected::kYes : GrProtected::kNo) {
     SkASSERT(fFormat.isValid());
 }
@@ -102,14 +127,33 @@ GrSurfaceProxy::GrSurfaceProxy(sk_sp<GrSurface> surface,
 GrSurfaceProxy::~GrSurfaceProxy() {
 }
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+struct NodeIdHelper {
+    explicit inline NodeIdHelper(uint64_t nodeId): initNodeId_(ParallelDebug::GetNodeId())
+    {
+        ParallelDebug::RecordNodeId(nodeId);
+    }
+    inline ~NodeIdHelper()
+    {
+        ParallelDebug::RecordNodeId(initNodeId_);
+    }
+    uint64_t initNodeId_;
+};
+#endif
+
 sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceProvider,
                                                    int sampleCnt,
                                                    GrRenderable renderable,
                                                    GrMipmapped mipMapped) const {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    NodeIdHelper helper(fNodeId);
+#endif
     SkASSERT(mipMapped == GrMipmapped::kNo || fFit == SkBackingFit::kExact);
     SkASSERT(!this->isLazy());
     SkASSERT(!fTarget);
-
+#ifdef SKIA_OHOS
+    int64_t currentTime = GrPerfMonitorReporter::getCurrentTime();
+#endif
     sk_sp<GrSurface> surface;
     if (SkBackingFit::kApprox == fFit) {
         surface = resourceProvider->createApproxTexture(fDimensions,
@@ -134,6 +178,13 @@ sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceP
 
     if (fGrProxyTag.isGrTagValid()) {
         surface->setResourceTag(fGrProxyTag);
+#ifdef SKIA_OHOS
+        int64_t allocTime = GrPerfMonitorReporter::getCurrentTime() - currentTime;
+        GrPerfMonitorReporter::GetInstance().recordTextureNode(fGrProxyTag.fName, allocTime);
+        GrPerfMonitorReporter::GetInstance().recordTexturePerfEvent(fGrProxyTag.fName,
+            fGrProxyTag.fPid, static_cast<int32_t>(resourceProvider->getMaxResourceBytes()),
+            static_cast<int32_t>(resourceProvider->getBudgetedResourceBytes()), allocTime);
+#endif
     }
     return surface;
 }
@@ -426,6 +477,9 @@ bool GrSurfaceProxyPriv::doLazyInstantiation(GrResourceProvider* resourceProvide
     bool syncKey = true;
     bool releaseCallback = false;
     if (!surface) {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        NodeIdHelper helper(nodeId);
+#endif
         auto result = fProxy->fLazyInstantiateCallback(resourceProvider, fProxy->callbackDesc());
         surface = std::move(result.fSurface);
         syncKey = result.fKeyMode == GrSurfaceProxy::LazyInstantiationKeyMode::kSynced;

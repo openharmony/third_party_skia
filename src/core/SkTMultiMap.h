@@ -9,7 +9,10 @@
 #define SkTMultiMap_DEFINED
 
 #include "src/core/SkTDynamicHash.h"
+#include "include/core/SkLog.h"
+#include "signal.h"
 
+constexpr static uint32_t RAISE_FATAL_ERROR = 42;
 /** A set that contains pointers to instances of T. Instances can be looked up with key Key.
  * Multiple (possibly same) values can have the same key.
  */
@@ -79,9 +82,15 @@ public:
         this->internalRemove(prev, list, key);
 #else
         ValueList* prev = nullptr;
-        while (list && list->fValue != value) {
+        int count = fCount + 1;
+        while (list && list->fValue != value && --count != 0) {
             prev = list;
             list = list->fNext;
+        }
+        if (count == 0) {
+            SK_LOGE("SkTMultiMap remove fatal error");
+            raise(RAISE_FATAL_ERROR); // Report to bigdata
+            return;
         }
         // Crash in Debug since it'd be great to detect a repro of 877915.
         SkASSERT(list);
@@ -102,11 +111,17 @@ public:
     template<class FindPredicate>
     T* find(const Key& key, const FindPredicate f) {
         ValueList* list = fHash.find(key);
-        while (list) {
+        int count = fCount + 1;
+        while (list && --count != 0) {
             if (f(list->fValue)){
                 return list->fValue;
             }
             list = list->fNext;
+        }
+        if (count == 0) {
+            SK_LOGE("SkTMultiMap find fatal error");
+            raise(RAISE_FATAL_ERROR); // Report to bigdata
+            return nullptr;
         }
         return nullptr;
     }
@@ -116,7 +131,8 @@ public:
         ValueList* list = fHash.find(key);
 
         ValueList* prev = nullptr;
-        while (list) {
+        int count = fCount + 1;
+        while (list && --count != 0) {
             if (f(list->fValue)){
                 T* value = list->fValue;
                 this->internalRemove(prev, list, key);
@@ -124,6 +140,11 @@ public:
             }
             prev = list;
             list = list->fNext;
+        }
+        if (count == 0) {
+            SK_LOGE("SkTMultiMap findAndRemove fatal error");
+            raise(RAISE_FATAL_ERROR); // Report to bigdata
+            return nullptr;
         }
         return nullptr;
     }

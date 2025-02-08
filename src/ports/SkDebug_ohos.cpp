@@ -9,6 +9,7 @@
 
 #include "include/core/SkTypes.h"
 #include <stdio.h>
+#include <string>
 
 #ifdef SKIA_OHOS_SHADER_REDUCE
 #include <parameters.h>
@@ -16,6 +17,14 @@
 
 #define LOG_TAG "skia"
 #include "hilog/log.h"
+
+#ifdef SKIA_OHOS_SINGLE_OWNER
+#include "backtrace_local.h"
+#include "include/core/SkLog.h"
+#include <sstream>
+#include <thread>
+#include <fstream>
+#endif
 
 extern "C" {
     int HiLogPrintArgs(LogType type, LogLevel level, unsigned int domain, const char* tag, const char* fmt, va_list ap);
@@ -45,5 +54,52 @@ bool SkShaderReduceProperty()
 {
     static bool debugProp = std::atoi(OHOS::system::GetParameter("persist.sys.skia.shader.reduce", "1").c_str()) != 0;
     return debugProp;
+}
+#endif
+
+#ifdef SKIA_OHOS_SINGLE_OWNER
+static bool IsRenderService()
+{
+    std::ifstream procfile("/proc/self/cmdline");
+    if (!procfile.is_open()) {
+        SK_LOGE("IsRenderService open failed");
+        return false;
+    }
+    std::string processName;
+    std::getline(procfile, processName);
+    procfile.close();
+    static const std::string target = "/system/bin/render_service";
+    bool result = processName.compare(0, target.size(), target) == 0;
+    return result;
+}
+
+static bool IsBeta()
+{
+    static const bool isBeta = OHOS::system::GetParameter("const.logsystem.versiontype", "unknown") == "beta";
+    return isBeta;
+}
+
+bool GetEnableSkiaSingleOwner()
+{
+    static const bool gIsEnableSingleOwner = IsRenderService() && IsBeta();
+    return gIsEnableSingleOwner;
+}
+
+void PrintBackTrace(uint32_t tid)
+{
+    std::string msg = "";
+    OHOS::HiviewDFX::GetBacktraceStringByTid(msg, tid, 0, false);
+    if (!msg.empty()) {
+        std::vector<std::string> out;
+        std::stringstream ss(msg);
+        std::string s;
+        while (std::getline(ss, s , '\n')) {
+            out.push_back(s);
+        }
+        SK_LOGE(" ======== tid:%{public}d", tid);
+        for (auto const& line: out) {
+            SK_LOGE(" callstack %{public}s", line.c_str());
+        }
+    }
 }
 #endif

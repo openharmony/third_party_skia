@@ -45,7 +45,8 @@ void TextTabAlign::init(SkScalar maxWidth, Cluster* endOfClusters)
 {
     fMaxWidth = maxWidth;
     fEndOfClusters = endOfClusters;
-    if (fTabPosition <= 0.0 || endOfClusters == nullptr) {
+    if (fTabPosition < 1.0 || fTabAlignMode < TextAlign::kLeft || TextAlign::kCenter < fTabAlignMode ||
+        endOfClusters == nullptr) {
         return;
     }
     fMaxTabIndex = fMaxWidth / fTabPosition;
@@ -62,17 +63,15 @@ void TextTabAlign::init(SkScalar maxWidth, Cluster* endOfClusters)
         return;
     }
 
-    if (fTabAlignMode <= TextAlign::kCenter) {
-        TextAlign tabAlignMode = fTabAlignMode;
-        if (endOfClusters->getOwner()->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
-            if (tabAlignMode == TextAlign::kLeft) {
-                tabAlignMode = TextAlign::kRight;
-            } else if (tabAlignMode == TextAlign::kRight) {
-                tabAlignMode = TextAlign::kLeft;
-            }
+    TextAlign tabAlignMode = fTabAlignMode;
+    if (endOfClusters->getOwner()->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
+        if (tabAlignMode == TextAlign::kLeft) {
+            tabAlignMode = TextAlign::kRight;
+        } else if (tabAlignMode == TextAlign::kRight) {
+            tabAlignMode = TextAlign::kLeft;
         }
-        fTextTabFuncs = &(fTextTabFuncsTable[static_cast<size_t>(tabAlignMode)]);
     }
+    fTextTabFuncs = &(fTextTabFuncsTable[static_cast<size_t>(tabAlignMode)]);
 }
 
 void TextTabAlign::expendTabCluster(SkScalar width)

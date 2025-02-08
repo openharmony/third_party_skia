@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <set>
 #include <stack>
+#include <unordered_set>
 
 #include "include/core/SkLog.h"
 #include "include/core/SkRefCnt.h"
@@ -114,6 +115,10 @@ public:
      */
     size_t getResourceBytes() const { return fBytes; }
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    void dumpAllResource(std::stringstream& dump) const;
+#endif
+
 #ifdef SKIA_DFX_FOR_OHOS
     void addAllocImageBytes(size_t bytes) { fAllocImageBytes += bytes; }
     void removeAllocImageBytes(size_t bytes) { fAllocImageBytes -= bytes; }
@@ -174,12 +179,10 @@ public:
      */
     GrGpuResource* findAndRefUniqueResource(const GrUniqueKey& key) {
         GrGpuResource* resource = fUniqueHash.find(key);
-        if (resource && this->isInCache(resource)) {
+        if (resource) {
             this->refAndMakeResourceMRU(resource);
-            return resource;
         }
-        SK_LOGD("OHOS resource is not in cache, return nullptr!");
-        return nullptr;
+        return resource;
     }
 
     /**
@@ -311,6 +314,8 @@ public:
     // OH ISSUE: init gpu memory limit.
     void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
 
+    // OH ISSUE: check whether the PID is abnormal.
+    bool isPidAbnormal() const;
     // OH ISSUE: change the fbyte when the resource tag changes.
     void changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes);
 
@@ -318,7 +323,7 @@ public:
     void dumpInfo(SkString* out);
     std::string cacheInfo();
 
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
     static bool purgeUnlocakedResTraceEnabled_;
     struct SimpleCacheInfo {
         int fPurgeableQueueCount;
@@ -379,17 +384,15 @@ private:
 
     void purgeUnlockedResources(const GrStdSteadyClock::time_point* purgeTime,
                                 bool scratchResourcesOnly);
-    bool isInCache(const GrGpuResource* r) const;
-    bool isInPurgeableCache(const GrGpuResource* r) const;
-    bool isInNonpurgeableCache(const GrGpuResource* r) const;
 #ifdef SK_DEBUG
+    bool isInCache(const GrGpuResource* r) const;
     void validate() const;
 #else
     void validate() const {}
 #endif
 
 #ifdef SKIA_DFX_FOR_OHOS
-#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+#ifdef SKIA_OHOS
     void traceBeforePurgeUnlockRes(const std::string& method, SimpleCacheInfo& simpleCacheInfo);
     void traceAfterPurgeUnlockRes(const std::string& method, const SimpleCacheInfo& simpleCacheInfo);
     std::string cacheInfoComparison(const SimpleCacheInfo& simpleCacheInfo);
@@ -573,6 +576,7 @@ private:
     uint64_t fMemoryControl_ = UINT64_MAX;
     // OH ISSUE: memory overflow callback.
     MemoryOverflowCalllback fMemoryOverflowCallback_ = nullptr;
+    std::unordered_set<int32_t> fExitedPid_;
 };
 
 class GrResourceCache::ResourceAccess {
