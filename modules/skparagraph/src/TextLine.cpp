@@ -2117,12 +2117,12 @@ void TextLine::extendCoordinateRange(PositionWithAffinity& positionWithAffinity)
     if (ellipsisModal == EllipsisModal::TAIL) {
         if (static_cast<size_t>(positionWithAffinity.position) > fOwner->getEllipsisTextRange().start &&
             static_cast<size_t>(positionWithAffinity.position) <= fOwner->getEllipsisTextRange().end) {
-            positionWithAffinity.position = fOwner->getEllipsisTextRange().end;
+            positionWithAffinity.position = static_cast<int32_t>(fOwner->getEllipsisTextRange().end);
         }
     } else if (ellipsisModal == EllipsisModal::HEAD) {
         if (static_cast<size_t>(positionWithAffinity.position) >= fOwner->getEllipsisTextRange().start &&
             static_cast<size_t>(positionWithAffinity.position) < fOwner->getEllipsisTextRange().end) {
-            positionWithAffinity.position = fOwner->getEllipsisTextRange().start;
+            positionWithAffinity.position = static_cast<int32_t>(fOwner->getEllipsisTextRange().start);
         }
     }
 }
@@ -2523,7 +2523,7 @@ RSRect TextLine::getImageBounds() const
 
     // The first space width of the line needs to be added to the x value.
     SkScalar startWhitespaceAdvance = 0.0;
-    int startWhitespaceCount = 0;
+    size_t startWhitespaceCount = 0;
     for (auto clusterIndex = fGhostClusterRange.start; clusterIndex < fGhostClusterRange.end; clusterIndex++) {
         if (fOwner->cluster(clusterIndex).isWhitespaceBreak()) {
             startWhitespaceAdvance += fOwner->cluster(clusterIndex).width();
