@@ -56,6 +56,16 @@ uint64_t GetNodeId() {return 0;}
 #endif
 #endif
 
+// OH ISSUE: emulator mock
+#ifdef SKIA_DFX_FOR_OHOS
+#ifndef SK_VULKAN
+namespace RealAllocConfig {
+bool GetRealAllocStatus() { return false; }
+void SetRealAllocStatus(bool ret) { static_cast<void>(ret); }
+};
+#endif
+#endif
+
 // Deferred version
 GrSurfaceProxy::GrSurfaceProxy(const GrBackendFormat& format,
                                SkISize dimensions,
@@ -72,6 +82,9 @@ GrSurfaceProxy::GrSurfaceProxy(const GrBackendFormat& format,
         , fUseAllocator(useAllocator)
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         , fNodeId(ParallelDebug::GetNodeId())
+#endif
+#ifdef SKIA_DFX_FOR_OHOS
+        , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
 #endif
         , fIsProtected(isProtected) {
     SkASSERT(fFormat.isValid());
@@ -97,6 +110,9 @@ GrSurfaceProxy::GrSurfaceProxy(LazyInstantiateCallback&& callback,
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         , fNodeId(ParallelDebug::GetNodeId())
 #endif
+#ifdef SKIA_DFX_FOR_OHOS
+        , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
+#endif
         , fIsProtected(isProtected) {
     SkASSERT(fFormat.isValid());
     SkASSERT(fLazyInstantiateCallback);
@@ -119,6 +135,9 @@ GrSurfaceProxy::GrSurfaceProxy(sk_sp<GrSurface> surface,
         , fUniqueID(fTarget->uniqueID())  // Note: converting from unique resource ID to a proxy ID!
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         , fNodeId(ParallelDebug::GetNodeId())
+#endif
+#ifdef SKIA_DFX_FOR_OHOS
+        , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
 #endif
         , fIsProtected(fTarget->isProtected() ? GrProtected::kYes : GrProtected::kNo) {
     SkASSERT(fFormat.isValid());
@@ -177,7 +196,11 @@ sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceP
     }
 
     if (fGrProxyTag.isGrTagValid()) {
+#ifdef SKIA_DFX_FOR_OHOS
+        surface->setResourceTag(fGrProxyTag, fRealAllocProxy);
+#else
         surface->setResourceTag(fGrProxyTag);
+#endif
 #ifdef SKIA_OHOS
         int64_t allocTime = GrPerfMonitorReporter::getCurrentTime() - currentTime;
         GrPerfMonitorReporter::GetInstance().recordTextureNode(fGrProxyTag.fName, allocTime);

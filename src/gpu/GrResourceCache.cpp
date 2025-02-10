@@ -911,9 +911,10 @@ bool GrResourceCache::isPidAbnormal() const
 }
 
 // OH ISSUE: change the fbyte when the resource tag changes.
-void GrResourceCache::changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes)
+void GrResourceCache::changeByteOfPid(int32_t beforePid, int32_t afterPid,
+    size_t bytes, bool beforeRealAlloc, bool afterRealAlloc)
 {
-    if (beforePid) {
+    if (beforePid && beforeRealAlloc) {
         auto& pidSize = fBytesOfPid[beforePid];
         pidSize -= bytes;
         fUpdatedBytesOfPid[beforePid] = pidSize;
@@ -921,7 +922,7 @@ void GrResourceCache::changeByteOfPid(int32_t beforePid, int32_t afterPid, size_
             fBytesOfPid.erase(beforePid);
         }
     }
-    if (afterPid) {
+    if (afterPid && afterRealAlloc) {
         auto& size = fBytesOfPid[afterPid];
         size += bytes;
         fUpdatedBytesOfPid[afterPid] = size;
