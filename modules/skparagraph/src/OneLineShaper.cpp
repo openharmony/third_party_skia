@@ -1000,8 +1000,6 @@ TextRange OneLineShaper::clusteredText(GlyphRange& glyphs) {
         }
     }
 #endif
-
-
     return { textRange.start, textRange.end };
 }
 
