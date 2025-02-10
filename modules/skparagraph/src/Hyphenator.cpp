@@ -20,6 +20,7 @@
 #include <fstream>
 #include <unicode/utf.h>
 #include <unicode/utf8.h>
+#include <unistd.h>
 
 #include "include/Hyphenator.h"
 #include "log.h"
