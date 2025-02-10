@@ -529,7 +529,15 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
             fShift = delta;
         }
     } else if (align == TextAlign::kRight) {
+#if OHOS_SUPPORT
+        if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
+            fShift = maxWidth - this->width();
+        } else {
+            fShift = delta;
+        }
+#else
         fShift = delta;
+#endif     
     } else if (align == TextAlign::kCenter) {
         fShift = delta / 2;
     }
