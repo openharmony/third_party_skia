@@ -14,13 +14,10 @@
  */
 #ifdef OHOS_SUPPORT
 #include <algorithm>
-#include <climits>
-#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <unicode/utf.h>
 #include <unicode/utf8.h>
-#include <unistd.h>
 
 #include "include/Hyphenator.h"
 #include "log.h"
@@ -149,15 +146,9 @@ struct HyphenFindBreakParam {
 
 void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
 {
-    char resolvedPath[PATH_MAX] = {0};
-    if (realpath(filePath.c_str(), resolvedPath) == nullptr) {
-        TEXT_LOGE("Invalid file name %{public}s", filePath.c_str());
-        return;
-    }
-    std::ifstream file(resolvedPath, std::ifstream::binary);
-    if (!file) {
+    std::ifstream file(filePath, std::ifstream::binary);
+    if (!file.is_open()) {
         TEXT_LOGE("Failed to open %{public}s", filePath.c_str());
-        file.close();
         return;
     }
 
