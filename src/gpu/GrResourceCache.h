@@ -317,7 +317,8 @@ public:
     // OH ISSUE: check whether the PID is abnormal.
     bool isPidAbnormal() const;
     // OH ISSUE: change the fbyte when the resource tag changes.
-    void changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes);
+    void changeByteOfPid(int32_t beforePid, int32_t afterPid,
+        size_t bytes, bool beforeRealAlloc, bool afterRealAlloc);
 
 #ifdef SKIA_DFX_FOR_OHOS
     void dumpInfo(SkString* out);
@@ -650,9 +651,10 @@ private:
     void didChangeBudgetStatus(GrGpuResource* resource) { fCache->didChangeBudgetStatus(resource); }
 
     // OH ISSUE: change the fbyte when the resource tag changes.
-    void changeByteOfPid(int32_t beforePid, int32_t afterPid, size_t bytes)
+    void changeByteOfPid(int32_t beforePid, int32_t afterPid,
+        size_t bytes, bool beforeRealAlloc, bool afterRealAlloc)
     {
-        fCache->changeByteOfPid(beforePid, afterPid, bytes);
+        fCache->changeByteOfPid(beforePid, afterPid, bytes, beforeRealAlloc, afterRealAlloc);
     }
 
     // No taking addresses of this type.
