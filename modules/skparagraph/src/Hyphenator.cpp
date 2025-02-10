@@ -15,6 +15,7 @@
 #ifdef OHOS_SUPPORT
 #include <algorithm>
 #include <climits>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <unicode/utf.h>
