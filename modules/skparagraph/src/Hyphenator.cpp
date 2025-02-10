@@ -449,8 +449,9 @@ std::vector<uint8_t> Hyphenator::findBreakPositions(const std::vector<uint8_t>& 
         int32_t i = 0;
         const int32_t textLength = static_cast<int32_t>(endPos - startPos);
         uint32_t c = 0;
+        const uint8_t* utf8StrPtr = reinterpret_cast<const uint8_t*>(textLength.c_str());
         while (i < textLength) {
-            U8_NEXT(lastword.c_str(), i, textLength, c);
+            U8_NEXT(utf8StrPtr, i, textLength, c);
             if (U16_LENGTH(c) == 1) {
                 word.push_back(c);
             } else {
