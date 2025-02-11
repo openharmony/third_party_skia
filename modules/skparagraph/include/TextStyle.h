@@ -341,6 +341,11 @@ public:
     int getStyleId() const { return fStyleId; }
     void setStyleId(int styleId) { fStyleId = static_cast<SkColor>(styleId); }
 
+#ifdef OHOS_SUPPORT
+    size_t getTextStyleUid() const { return fTextStyleUid; }
+    void setTextStyleUid(size_t textStyleUid) { fTextStyleUid = textStyleUid; }
+#endif
+
     RectStyle getBackgroundRect() const { return fBackgroundRect; }
     void setBackgroundRect(RectStyle rect) { fBackgroundRect = rect; }
 
@@ -380,6 +385,9 @@ private:
     SkString fLocale = {};
     RectStyle fBackgroundRect = {0, 0.0f, 0.0f, 0.0f, 0.0f};
     SkColor fStyleId = 0;
+#ifdef OHOS_SUPPORT
+    size_t fTextStyleUid = { 0 };
+#endif
     SkScalar fLetterSpacing = 0.0;
     SkScalar fWordSpacing = 0.0;
 
