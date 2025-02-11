@@ -107,6 +107,9 @@ private:
 
     void commitRunBuffer(const RunInfo&) override;
 
+#ifdef OHOS_SUPPORT
+    void adjustRange(GlyphRange& glyphs, TextRange& textRange);
+#endif
     TextRange clusteredText(GlyphRange& glyphs);
     ClusterIndex clusterIndex(GlyphIndex glyph) {
         return fCurrentText.start + fCurrentRun->fClusterIndexes[glyph];

@@ -417,7 +417,6 @@ void OneLineShaper::addUnresolvedWithRun(GlyphRange glyphRange) {
 // Glue whitespaces to the next/prev unresolved blocks
 // (so we don't have chinese text with english whitespaces broken into millions of tiny runs)
 void OneLineShaper::sortOutGlyphs(std::function<void(GlyphRange)>&& sortOutUnresolvedBLock) {
-
     GlyphRange block = EMPTY_RANGE;
     bool graphemeResolved = false;
     TextIndex graphemeStart = EMPTY_INDEX;
@@ -894,6 +893,45 @@ bool OneLineShaper::shape() {
     return result;
 }
 
+#ifdef OHOS_SUPPORT
+void OneLineShaper::adjustRange(GlyphRange& glyphs, TextRange& textRange) {
+    if (fCurrentRun->leftToRight()) {
+        while (glyphs.start > 0 && clusterIndex(glyphs.start) > textRange.start) {
+            glyphs.start--;
+            ClusterIndex currentIndex = clusterIndex(glyphs.start);
+            if (currentIndex < textRange.start) {
+                textRange.start = currentIndex;
+            }
+        }
+        while (glyphs.end < fCurrentRun->size() && clusterIndex(glyphs.end) < textRange.end) {
+            glyphs.end++;
+            ClusterIndex currentIndex = clusterIndex(glyphs.end);
+            if (currentIndex > textRange.end) {
+                textRange.end = currentIndex;
+            }
+        }
+    } else {
+        while (glyphs.start > 0 && clusterIndex(glyphs.start - 1) < textRange.end) {
+            glyphs.start--;
+            if (glyphs.start == 0) {
+                break;
+            }
+            ClusterIndex currentIndex = clusterIndex(glyphs.start - 1);
+            if (currentIndex > textRange.end) {
+                textRange.end = currentIndex;
+            }
+        }
+        while (glyphs.end < fCurrentRun->size() && clusterIndex(glyphs.end) > textRange.start) {
+            glyphs.end++;
+            ClusterIndex currentIndex = clusterIndex(glyphs.end);
+            if (currentIndex < textRange.start) {
+                textRange.start = currentIndex;
+            }
+        }
+    }
+}
+#endif
+
 // When we extend TextRange to the grapheme edges, we also extend glyphs range
 TextRange OneLineShaper::clusteredText(GlyphRange& glyphs) {
 
@@ -930,21 +968,26 @@ TextRange OneLineShaper::clusteredText(GlyphRange& glyphs) {
 
     // Correct the glyphRange in case we extended the text to the grapheme edges
     // TODO: code it without if (as a part of LTR/RTL refactoring)
+#ifdef OHOS_SUPPORT
+    adjustRange(glyphs, textRange);
+#else
     if (fCurrentRun->leftToRight()) {
         while (glyphs.start > 0 && clusterIndex(glyphs.start) > textRange.start) {
-          glyphs.start--;
+            glyphs.start--;
         }
         while (glyphs.end < fCurrentRun->size() && clusterIndex(glyphs.end) < textRange.end) {
-          glyphs.end++;
+            glyphs.end++;
         }
     } else {
         while (glyphs.start > 0 && clusterIndex(glyphs.start - 1) < textRange.end) {
-          glyphs.start--;
+            glyphs.start--;
         }
         while (glyphs.end < fCurrentRun->size() && clusterIndex(glyphs.end) > textRange.start) {
-          glyphs.end++;
+            glyphs.end++;
         }
     }
+#endif
+
 
     return { textRange.start, textRange.end };
 }
