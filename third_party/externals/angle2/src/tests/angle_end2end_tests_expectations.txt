@@ -412,3 +412,7 @@
 6718 TSAN : MultithreadingTestES3.MultithreadFenceDraw/* = SKIP
 6718 TSAN : MultithreadingTestES3.MultithreadFenceTexImage/* = SKIP
 6746 TSAN : *Vulkan_AsyncQueue = SKIP
+
+// Causes incompatible error in GL back-end.
+7218 OPENGL : TransformFeedbackTest.DrawAfterDeletingPausedBuffer/* = SKIP
+7218 GLES : TransformFeedbackTest.DrawAfterDeletingPausedBuffer/* = SKIP
