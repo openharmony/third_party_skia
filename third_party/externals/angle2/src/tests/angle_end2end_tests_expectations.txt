@@ -226,6 +226,7 @@
 3841 WIN D3D11 : GLSLTest_ES31.BoolInInterfaceBlocks/* = SKIP
 // Mistranslation
 6216 WIN D3D11 : GLSLTest_ES31.StorageBufferBoolVectorPassedToFunctions/* = SKIP
+1456243 WIN D3D11 : WebGL2CompatibilityTest.DrawWithZeroSizedBuffer/* = SKIP
 
 // Android
 6095 ANDROID GLES : GLSLTest_ES3.InitGlobalComplexConstant/* = SKIP
