@@ -46,11 +46,19 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
             continue;
         }
 
+#ifdef OHOS_SUPPORT
+        calculatePosition(decoration,
+                          decoration == TextDecoration::kOverline
+                          ? context.run->correctAscent() - context.run->ascent()
+                          : context.run->correctAscent(), textStyle.getDecorationStyle(),
+                          textStyle.getBaselineShift(), textStyle.getFontSize());
+#else
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
                           : context.run->correctAscent(), textStyle.getDecorationStyle(),
                           textStyle.getBaselineShift());
+#endif
 
         calculatePaint(textStyle);
 
@@ -243,33 +251,33 @@ void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSType
         return;
     }
 
+#ifdef OHOS_SUPPORT
+    fThickness = textStyle.getFontSize() * UNDER_LINE_THICKNESS_RATIO;
+#else
     fThickness = textStyle.getFontSize() / 14.0f;
 
-#ifndef USE_SKIA_TXT
     if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kUnderlineThicknessIsValid_Flag) &&
-#else
-    if ((fFontMetrics.fFlags & RSFontMetrics::FontMetricsFlags::UNDERLINE_THICKNESS_IS_VALID_FLAG) &&
-#endif
-         fFontMetrics.fUnderlineThickness > 0) {
-        fThickness = fFontMetrics.fUnderlineThickness;
+        fFontMetrics.fUnderlineThickness > 0) {
+            fThickness = fFontMetrics.fUnderlineThickness;
     }
-
     if (textStyle.getDecorationType() == TextDecoration::kLineThrough) {
-#ifndef USE_SKIA_TXT
         if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutThicknessIsValid_Flag) &&
-#else
-        if ((fFontMetrics.fFlags & RSFontMetrics::FontMetricsFlags::STRIKEOUT_THICKNESS_IS_VALID_FLAG) &&
-#endif
-             fFontMetrics.fStrikeoutThickness > 0) {
-            fThickness = fFontMetrics.fStrikeoutThickness;
+            fFontMetrics.fStrikeoutThickness > 0) {
+                fThickness = fFontMetrics.fStrikeoutThickness;
         }
     }
+#endif
     fThickness *= textStyle.getDecorationThicknessMultiplier();
 }
 
 // This is how flutter calculates the positioning
+#ifdef OHOS_SUPPORT
+void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
+    const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift, const SkScalar& fontSize) {
+#else
 void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
     const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift) {
+#endif
     switch (decoration) {
       case TextDecoration::kUnderline:
           fPosition = fDecorationContext.underlinePosition;
@@ -278,13 +286,13 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
           fPosition = (textDecorationStyle == TextDecorationStyle::kWavy ? fThickness : fThickness / 2.0f) - ascent;
           break;
       case TextDecoration::kLineThrough: {
-#ifndef USE_SKIA_TXT
-          fPosition = (fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutPositionIsValid_Flag)
+#ifdef OHOS_SUPPORT
+          fPosition = LINE_THROUGH_TOP * fontSize;
 #else
-          fPosition = (fFontMetrics.fFlags & RSFontMetrics::FontMetricsFlags::STRIKEOUT_POSITION_IS_VALID_FLAG)
+          fPosition = (fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutPositionIsValid_Flag)
+                    ? fFontMetrics.fStrikeoutPosition
+                    : fFontMetrics.fXHeight / -2;
 #endif
-                     ? fFontMetrics.fStrikeoutPosition
-                     : fFontMetrics.fXHeight / -2;
           fPosition -= ascent;
           fPosition += textBaselineShift;
           break;
