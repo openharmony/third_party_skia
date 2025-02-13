@@ -20,6 +20,9 @@
 6347 GLES : FramebufferTestWithFormatFallback.R5G5B5A1_BlitCopyTexImage/* = SKIP
 6347 GLES : FramebufferTestWithFormatFallback.RGBA4444_BlitCopyTexImage/* = SKIP
 
+// Incorrectly handled pretty much in all backends
+8446 : CopyTexImageTestES3.RedefineSameLevel/* = SKIP
+
 6743 OPENGL : SimpleStateChangeTestES3.RespecifyBufferAfterBeginTransformFeedback/* = SKIP
 6743 GLES : SimpleStateChangeTestES3.RespecifyBufferAfterBeginTransformFeedback/* = SKIP
 
