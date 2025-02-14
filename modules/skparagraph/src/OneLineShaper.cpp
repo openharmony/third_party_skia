@@ -830,8 +830,9 @@ bool OneLineShaper::shape() {
                 font.setSkewX(fakeItalic ? -SK_Scalar1 / 4 : 0);
 #else
                 int wantedWeight = block.fStyle.getFontStyle().GetWeight();
+                bool isCustomSymbol = block.fStyle.isCustomSymbol();
                 bool fakeBold =
-                    wantedWeight >= RSFontStyle::SEMI_BOLD_WEIGHT &&
+                    wantedWeight >= RSFontStyle::SEMI_BOLD_WEIGHT && !isCustomSymbol &&
                     wantedWeight - font.GetTypeface()->GetFontStyle().GetWeight() >= 200;
                 bool fakeItalic =
                     block.fStyle.getFontStyle().GetSlant() == RSFontStyle::ITALIC_SLANT &&
