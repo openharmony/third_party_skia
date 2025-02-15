@@ -1845,7 +1845,7 @@ bool SkTypeface_FreeType::Scanner::recognizedFont(SkStreamAsset* stream, int* nu
 static const struct {
     const char* const name;
     int const weight;
-} commonWeights[] = {
+} gCommonWeights[] = {
     // There are probably more common names, but these are known to exist.
     {"all", SkFontStyle::kNormal_Weight},  // Multiple Masters usually default to normal.
     {"black", SkFontStyle::kBlack_Weight},
@@ -1907,10 +1907,10 @@ bool SkTypeface_FreeType::Scanner::scanFont(
             slant = SkFontStyle::kOblique_Slant;
         }
     } else if (0 == FT_Get_PS_Font_Info(face.get(), &psFontInfo) && psFontInfo.weight) {
-        int const index = SkStrLCSearch(&commonWeights[0].name, SK_ARRAY_COUNT(commonWeights),
-                                        psFontInfo.weight, sizeof(commonWeights[0]));
+        int const index = SkStrLCSearch(&gCommonWeights[0].name, SK_ARRAY_COUNT(gCommonWeights),
+                                        psFontInfo.weight, sizeof(gCommonWeights[0]));
         if (index >= 0) {
-            weight = commonWeights[index].weight;
+            weight = gCommonWeights[index].weight;
         } else {
             LOG_INFO("Do not know weight for: %s (%s) \n", face->family_name, psFontInfo.weight);
         }
@@ -1932,7 +1932,7 @@ bool SkTypeface_FreeType::Scanner::scanFont(
     return true;
 }
 
-bool SkTypeface_FreeType::Scanner::scanFont(SkStreamAsset* stream, FontInfo& info, uint32_t range[4]) const
+bool SkTypeface_FreeType::Scanner::scanFont(SkStreamAsset* stream, FontInfo& info, std::array<uint32_t, 4>& range) const
 {
     SkAutoMutexExclusive libraryLock(fLibraryMutex);
 
@@ -1955,18 +1955,18 @@ bool SkTypeface_FreeType::Scanner::scanFont(SkStreamAsset* stream, FontInfo& inf
         // OS/2::ulUnicodeRange is bigendian, so we need to swap it
         range[0] = os2->ulUnicodeRange1;
         range[1] = os2->ulUnicodeRange2;
-        range[2] = os2->ulUnicodeRange3;  // the 3st range at 3st position
-        range[3] = os2->ulUnicodeRange4;  // the 4th range at 4th position
+        range[2] = os2->ulUnicodeRange3;  // the 3rd range at index 2
+        range[3] = os2->ulUnicodeRange4;  // the 4th range at index 3
 
         // OS/2::fsSelection bit 9 indicates oblique.
         if (SkToBool(os2->fsSelection & (1u << 9))) {
             slant = SkFontStyle::kOblique_Slant;
         }
-    } else if (0 == FT_Get_PS_Font_Info(face.get(), &psFontInfo) && psFontInfo.weight) {
-        int const index = SkStrLCSearch(&commonWeights[0].name, SK_ARRAY_COUNT(commonWeights),
-                                        psFontInfo.weight, sizeof(commonWeights[0]));
+    } else if (FT_Get_PS_Font_Info(face.get(), &psFontInfo) == 0 && psFontInfo.weight) {
+        int const index = SkStrLCSearch(&gCommonWeights[0].name, SK_ARRAY_COUNT(gCommonWeights),
+                                        psFontInfo.weight, sizeof(gCommonWeights[0]));
         if (index >= 0) {
-            weight = commonWeights[index].weight;
+            weight = gCommonWeights[index].weight;
         } else {
             LOG_INFO("Do not know weight for: %s (%s) \n", face->family_name, psFontInfo.weight);
         }
