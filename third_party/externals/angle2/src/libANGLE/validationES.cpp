@@ -4088,7 +4088,7 @@ const char *ValidateDrawStates(const Context *context)
             }
             
             //angle CVE-2022-0975
-            if (state.isTransformFeedbackActiveUnpaused())
+            if (state.isTransformFeedbackActive())
             {
                 if (!ValidateProgramExecutableXFBBuffersPresent(context, executable))
                 {
