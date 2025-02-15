@@ -437,7 +437,7 @@ int FontConfig_OHOS::parseFonts(const Json::Value& array)
         sk_sp<SkTypeface_OHOS> typeface = nullptr;
         for (auto& dir : fFontDir) {
             std::string path = dir + f.file;
-            uint32_t range[4] = { 0 };
+            std::array<uint32_t, 4> range{};
             if (loadFont(path.c_str(), f, typeface, range) == 0) {
                 fFontCollection.emplaceFont(std::move(f), std::move(typeface), range);
                 break;
@@ -504,7 +504,8 @@ int FontConfig_OHOS::parseFontDir(const char* fname, const Json::Value& root)
  * \return ERROR_FONT_NOT_EXIST font file is not exist
  * \return ERROR_FONT_INVALID_STREAM the stream is not recognized
  */
-int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypeface_OHOS>& typeface, uint32_t range[4])
+int FontConfig_OHOS::loadFont(
+    const char* fname, FontJson& info, sk_sp<SkTypeface_OHOS>& typeface, std::array<uint32_t, 4>& range)
 {
     std::unique_ptr<SkStreamAsset> stream = SkStream::MakeFromFile(fname);
     if (stream == nullptr) {
@@ -521,7 +522,6 @@ int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypefac
     typeface = sk_make_sp<SkTypeface_OHOS>(family, font);
     return NO_ERROR;
 }
-
 
 void FontConfig_OHOS::loadHMSymbol()
 {

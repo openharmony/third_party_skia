@@ -77,7 +77,7 @@ public:
         // all the typefaces of this font
         std::vector<sk_sp<SkTypeface_OHOS>> typefaces;
         // the unicode range of this font
-        uint32_t range[4] = { 0 };
+        std::array<uint32_t, 4> range{};
 
         // may be redundant move
         explicit Font(FontJson&& info)
@@ -119,16 +119,14 @@ private:
         std::vector<Font> fGeneric;
         std::unordered_map<std::string, std::pair<size_t, FontType>> fIndexMap;
 
-        void emplaceFont(FontJson&& fj, sk_sp<SkTypeface_OHOS>&& typeface, uint32_t range[4])
+        void emplaceFont(FontJson&& fj, sk_sp<SkTypeface_OHOS>&& typeface, const std::array<uint32_t, 4>& range)
         {
             if (fj.family.empty()) {
                 return;
             }
             Font f(std::move(fj));
             // copy the range, the range is a 128bit number stored in 4 uint32_t
-            for (size_t i = 0; i < 4; i += 1) {
-                f.range[i] = range[i];
-            }
+            f.range = range;
             auto& targetVec = (f.type == FontType::Generic) ? fGeneric : fFallback;
             auto& targetName = (f.type == FontType::Generic) ? f.alias : f.family;
             // generic must have alias
@@ -178,7 +176,7 @@ private:
     int parseFontDir(const char* fname, const Json::Value& root);
     int parseFonts(const Json::Value& root);
 
-    int loadFont(const char* fname, FontJson& font, sk_sp<SkTypeface_OHOS>& typeface, uint32_t range[4]);
+    int loadFont(const char* fname, FontJson& font, sk_sp<SkTypeface_OHOS>& typeface, std::array<uint32_t, 4>& range);
     void loadHMSymbol();
     static void sortTypefaceSet(std::vector<sk_sp<SkTypeface_OHOS>>& typefaceSet);
     static uint32_t getFontStyleDifference(const SkFontStyle& style1, const SkFontStyle& style2);

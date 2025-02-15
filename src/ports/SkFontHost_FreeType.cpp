@@ -1932,7 +1932,7 @@ bool SkTypeface_FreeType::Scanner::scanFont(
     return true;
 }
 
-bool SkTypeface_FreeType::Scanner::scanFont(SkStreamAsset* stream, FontInfo& info, uint32_t range[4]) const
+bool SkTypeface_FreeType::Scanner::scanFont(SkStreamAsset* stream, FontInfo& info, std::array<uint32_t, 4>& range) const
 {
     SkAutoMutexExclusive libraryLock(fLibraryMutex);
 

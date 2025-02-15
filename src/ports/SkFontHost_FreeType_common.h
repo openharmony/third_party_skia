@@ -90,7 +90,7 @@ public:
             SkFontStyle& style;
             bool& isFixedWidth;
         };
-        bool scanFont(SkStreamAsset* stream, FontInfo& info, uint32_t range[4]) const;
+        bool scanFont(SkStreamAsset* stream, FontInfo& info, std::array<uint32_t, 4>& range) const;
 #ifdef OHOS_SUPPORT
         bool GetTypefaceFullname(SkStreamAsset* stream, int ttcIndex, SkByteArray& fullname) const;
 #endif
