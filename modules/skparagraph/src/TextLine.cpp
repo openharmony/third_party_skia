@@ -530,7 +530,9 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
         }
     } else if (align == TextAlign::kRight) {
 #if OHOS_SUPPORT
-        if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
+        auto lastCluster = fOwner->clusters()[fGhostClusterRange.end - 1];
+        bool isRTLWhiteSpace = lastCluster.isWhitespaceBreak() && !lastCluster.run().leftToRight();
+        if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl && isRTLWhiteSpace) {
             fShift = maxWidth - this->width();
         } else {
             fShift = delta;
