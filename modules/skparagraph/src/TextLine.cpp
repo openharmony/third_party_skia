@@ -537,7 +537,7 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
         }
 #else
         fShift = delta;
-#endif     
+#endif
     } else if (align == TextAlign::kCenter) {
         fShift = delta / 2;
     }
