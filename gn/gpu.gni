@@ -671,6 +671,7 @@ skia_vk_sources = [
   "$_src/gpu/vk/GrVkUtil.h",
   "$_src/gpu/vk/GrVkVaryingHandler.cpp",
   "$_src/gpu/vk/GrVkVaryingHandler.h",
+  "$_src/gpu/vk/GrVulkanTracker.cpp",
 ]
 
 if (skia_vk_enable_partialrender) {
