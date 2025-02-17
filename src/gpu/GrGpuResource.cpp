@@ -228,15 +228,16 @@ uint32_t GrGpuResource::CreateUniqueID() {
     return id;
 }
 
-void GrGpuResource::setResourceTag(const GrGpuResourceTag tag)
+void GrGpuResource::setResourceTag(const GrGpuResourceTag tag, bool curRealAlloc)
 {
     int32_t pid = fGrResourceTag.fPid;
     fGrResourceTag = tag;
-    if (pid == tag.fPid || !fRealAlloc) {
+    if ((pid == tag.fPid) && (fRealAlloc == curRealAlloc)) {
         return;
     }
     size_t size = this->gpuMemorySize();
-    get_resource_cache(fGpu)->resourceAccess().changeByteOfPid(pid, tag.fPid, size);
+    get_resource_cache(fGpu)->resourceAccess().changeByteOfPid(pid, tag.fPid, size, fRealAlloc, curRealAlloc);
+    fRealAlloc = curRealAlloc;
 }
 
 //////////////////////////////////////////////////////////////////////////////

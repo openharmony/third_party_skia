@@ -9,6 +9,9 @@
 #define GrSurfaceProxyPriv_DEFINED
 
 #include "src/gpu/GrSurfaceProxy.h"
+#ifdef SKIA_DFX_FOR_OHOS
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
+#endif
 
 class GrResourceProvider;
 
@@ -45,7 +48,13 @@ public:
     void setIsPromiseProxy() { fProxy->fIsPromiseProxy = true; }
 
 private:
+#ifdef SKIA_DFX_FOR_OHOS
+    explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) :
+    fProxy(proxy), fRealAllocProxy(RealAllocConfig::GetRealAllocStatus()) {}
+#else
     explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) : fProxy(proxy) {}
+#endif
+
     // Required until C++17 copy elision
     GrSurfaceProxyPriv(const GrSurfaceProxyPriv&) = default;
     GrSurfaceProxyPriv& operator=(const GrSurfaceProxyPriv&) = delete;
@@ -55,6 +64,10 @@ private:
     GrSurfaceProxyPriv* operator&();
 
     GrSurfaceProxy* fProxy;
+#ifdef SKIA_DFX_FOR_OHOS
+    // OH ISSUE: proxy resources real alloc status
+    bool fRealAllocProxy = false;
+#endif
 
     friend class GrSurfaceProxy; // to construct/copy this type.
 };
