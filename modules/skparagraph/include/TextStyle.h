@@ -344,6 +344,11 @@ public:
     RectStyle getBackgroundRect() const { return fBackgroundRect; }
     void setBackgroundRect(RectStyle rect) { fBackgroundRect = rect; }
 
+#ifdef OHOS_SUPPORT
+    bool isCustomSymbol() const {return fIsCustomSymbol;}
+    void setCustomSymbol(bool state) {fIsCustomSymbol = state;}
+#endif
+
 private:
     static const std::vector<SkString>* kDefaultFontFamilies;
 
@@ -387,6 +392,10 @@ private:
     ParagraphPainter::SkPaintOrID fForeground;
 
     std::vector<TextShadow> fTextShadows;
+
+#ifdef OHOS_SUPPORT
+    bool fIsCustomSymbol{false};
+#endif
 
 #ifndef USE_SKIA_TXT
     sk_sp<SkTypeface> fTypeface;
