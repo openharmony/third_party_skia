@@ -9,6 +9,9 @@
 #include "src/gpu/GrSurfaceProxyPriv.h"
 
 #include "include/gpu/GrRecordingContext.h"
+#ifdef SKIA_DFX_FOR_OHOS
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
+#endif
 #include "src/core/SkMathPriv.h"
 #include "src/gpu/GrAttachment.h"
 #include "src/gpu/GrCaps.h"
@@ -40,6 +43,16 @@ static bool is_valid_non_lazy(SkISize dimensions) {
 }
 #endif
 
+// OH ISSUE: emulator mock
+#ifdef SKIA_DFX_FOR_OHOS
+#ifndef SK_VULKAN
+namespace RealAllocConfig {
+bool GetRealAllocStatus() { return false; }
+void SetRealAllocStatus(bool ret) { static_cast<void>(ret); }
+};
+#endif
+#endif
+
 // Deferred version
 GrSurfaceProxy::GrSurfaceProxy(const GrBackendFormat& format,
                                SkISize dimensions,
@@ -54,6 +67,9 @@ GrSurfaceProxy::GrSurfaceProxy(const GrBackendFormat& format,
         , fFit(fit)
         , fBudgeted(budgeted)
         , fUseAllocator(useAllocator)
+#ifdef SKIA_DFX_FOR_OHOS
+        , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
+#endif
         , fIsProtected(isProtected) {
     SkASSERT(fFormat.isValid());
     SkASSERT(is_valid_non_lazy(dimensions));
@@ -75,6 +91,9 @@ GrSurfaceProxy::GrSurfaceProxy(LazyInstantiateCallback&& callback,
         , fBudgeted(budgeted)
         , fUseAllocator(useAllocator)
         , fLazyInstantiateCallback(std::move(callback))
+#ifdef SKIA_DFX_FOR_OHOS
+        , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
+#endif
         , fIsProtected(isProtected) {
     SkASSERT(fFormat.isValid());
     SkASSERT(fLazyInstantiateCallback);
@@ -95,6 +114,9 @@ GrSurfaceProxy::GrSurfaceProxy(sk_sp<GrSurface> surface,
                             : SkBudgeted::kNo)
         , fUseAllocator(useAllocator)
         , fUniqueID(fTarget->uniqueID())  // Note: converting from unique resource ID to a proxy ID!
+#ifdef SKIA_DFX_FOR_OHOS
+        , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
+#endif
         , fIsProtected(fTarget->isProtected() ? GrProtected::kYes : GrProtected::kNo) {
     SkASSERT(fFormat.isValid());
 }
@@ -133,7 +155,11 @@ sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceP
     }
 
     if (fGrProxyTag.isGrTagValid()) {
+#ifdef SKIA_DFX_FOR_OHOS
+        surface->setResourceTag(fGrProxyTag, fRealAllocProxy);
+#else
         surface->setResourceTag(fGrProxyTag);
+#endif
     }
     return surface;
 }
