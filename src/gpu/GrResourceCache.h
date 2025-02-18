@@ -405,45 +405,45 @@ private:
     std::string realBytesOfPid();
     void updatePurgeableWidMap(GrGpuResource* resource,
                      std::map<uint32_t, std::string>& nameInfoWid,
-                     std::map<uint32_t, int>& sizeInfoWid,
+                     std::map<uint32_t, size_t>& sizeInfoWid,
                      std::map<uint32_t, int>& pidInfoWid,
                      std::map<uint32_t, int>& countInfoWid);
     void updatePurgeablePidMap(GrGpuResource* resource,
                      std::map<uint32_t, std::string>& nameInfoPid,
-                     std::map<uint32_t, int>& sizeInfoPid,
+                     std::map<uint32_t, size_t>& sizeInfoPid,
                      std::map<uint32_t, int>& countInfoPid);
     void updatePurgeableFidMap(GrGpuResource* resource,
                      std::map<uint32_t, std::string>& nameInfoFid,
-                     std::map<uint32_t, int>& sizeInfoFid,
+                     std::map<uint32_t, size_t>& sizeInfoFid,
                      std::map<uint32_t, int>& countInfoFid);
     void updateRealAllocWidMap(GrGpuResource* resource,
                      std::map<uint32_t, std::string>& nameInfoWid,
-                     std::map<uint32_t, int>& sizeInfoWid,
+                     std::map<uint32_t, size_t>& sizeInfoWid,
                      std::map<uint32_t, int>& pidInfoWid,
                      std::map<uint32_t, int>& countInfoWid);
     void updateRealAllocPidMap(GrGpuResource* resource,
                      std::map<uint32_t, std::string>& nameInfoPid,
-                     std::map<uint32_t, int>& sizeInfoPid,
+                     std::map<uint32_t, size_t>& sizeInfoPid,
                      std::map<uint32_t, int>& countInfoPid);
     void updateRealAllocFidMap(GrGpuResource* resource,
                      std::map<uint32_t, std::string>& nameInfoFid,
-                     std::map<uint32_t, int>& sizeInfoFid,
+                     std::map<uint32_t, size_t>& sizeInfoFid,
                      std::map<uint32_t, int>& countInfoFid);
     void updatePurgeableWidInfo(std::string& infoStr,
                      std::map<uint32_t, std::string>& nameInfoWid,
-                     std::map<uint32_t, int>& sizeInfoWid,
+                     std::map<uint32_t, size_t>& sizeInfoWid,
                      std::map<uint32_t, int>& pidInfoWid,
                      std::map<uint32_t, int>& countInfoWid);
     void updatePurgeablePidInfo(std::string& infoStr,
                      std::map<uint32_t, std::string>& nameInfoPid,
-                     std::map<uint32_t, int>& sizeInfoPid,
+                     std::map<uint32_t, size_t>& sizeInfoPid,
                      std::map<uint32_t, int>& countInfoPid);
     void updatePurgeableFidInfo(std::string& infoStr,
                      std::map<uint32_t, std::string>& nameInfoFid,
-                     std::map<uint32_t, int>& sizeInfoFid,
+                     std::map<uint32_t, size_t>& sizeInfoFid,
                      std::map<uint32_t, int>& countInfoFid);
     void updatePurgeableUnknownInfo(std::string& infoStr, const std::string& unknownPrefix,
-        const int countUnknown, const int sizeUnknown);
+        const int countUnknown, const size_t sizeUnknown);
 #endif
 
     class AutoValidate;
