@@ -97,8 +97,8 @@ void ParallelDebug::VkImageDestroyRecord::Dump(std::stringstream& ss)
 
 namespace RealAllocConfig {
 // OH ISSUE: isRealAlloc indicates whether the Vulkan memory(external and proxy)
-// in the current thread context should be calculated. 
-static thread_local bool isRealAlloc = false ;
+// in the current thread context should be calculated.
+static thread_local bool isRealAlloc = false;
 
 bool GetRealAllocStatus()
 {
