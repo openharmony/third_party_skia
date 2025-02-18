@@ -83,6 +83,9 @@ struct ProgramSettings {
     // Advanced Filter: It's a flag for skia to passthrough uv coord from vert stage to frag stage
     // It's the same value with SkRuntimeEffect::fUseAF
     bool fUseAF = false;
+#ifdef SKSL_EXT
+    bool fForceNoRTFlip = true;
+#endif
 };
 
 /**

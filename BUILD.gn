@@ -4248,3 +4248,54 @@ skia_executable("skia_c_api_example") {
   include_dirs = [ "." ]
   deps = [ ":skia" ]
 }
+
+config("public_sksl_ext") {
+  include_dirs = [ "." ]
+}
+
+ohos_static_library("sksl_ext_static") {
+  part_name = "skia"
+  subsystem_name = "thirdparty"
+
+  public_configs = [ ":public_sksl_ext" ]
+  configs = [ ":skia_wno" ]
+  defines = [
+    "SKSL_STANDALONE",
+    "SK_DISABLE_TRACING",
+    "SKSL_EXT",
+  ]
+  sources = [
+    "src/core/SkArenaAlloc.cpp",
+    "src/core/SkBlockAllocator.cpp",
+    "src/core/SkCpu.cpp",
+    "src/core/SkData.cpp",
+    "src/core/SkHalf.cpp",
+    "src/core/SkMalloc.cpp",
+    "src/core/SkMath.cpp",
+    "src/core/SkMatrixInvert.cpp",
+    "src/core/SkSemaphore.cpp",
+    "src/core/SkStream.cpp",
+    "src/core/SkString.cpp",
+    "src/core/SkStringUtils.cpp",
+    "src/core/SkStringView.cpp",
+    "src/core/SkThreadID.cpp",
+    "src/core/SkUtils.cpp",
+    "src/core/SkVM.cpp",
+    "src/gpu/GrMemoryPool.cpp",
+    "src/gpu/GrShaderUtils.cpp",
+    "src/ports/SkMemory_malloc.cpp",
+    "src/ports/SkOSFile_stdio.cpp",
+    "src/utils/SkJSON.cpp",
+    "src/utils/SkJSONWriter.cpp",
+    "src/utils/SkParse.cpp",
+    "src/utils/SkUTF.cpp",
+  ]
+  if (is_win) {
+    sources += [ "src/ports/SkOSFile_win.cpp" ]
+  } else {
+    sources += [ "src/ports/SkOSFile_posix.cpp" ]
+  }
+  sources += skia_sksl_sources_ext
+  sources += skia_sksl_gpu_sources
+  include_dirs = [ "." ]
+}

@@ -73,6 +73,13 @@ public:
                               pos);
     }
 
+#ifdef SKSL_EXT
+    DSLLayout& constant_id(int constant_id, PositionInfo pos = PositionInfo::Capture()) {
+        return this->intValue(&fSkSLLayout.fConstantId, constant_id, SkSL::Layout::kConstantId_Flag,
+                              "constant_id", pos);
+    }
+#endif
+
 private:
     explicit DSLLayout(SkSL::Layout skslLayout)
         : fSkSLLayout(skslLayout) {}

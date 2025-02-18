@@ -37,6 +37,11 @@ static int parse_modifier_token(Token::Kind token) {
         case Token::Kind::TK_MEDIUMP:        return Modifiers::kMediump_Flag;
         case Token::Kind::TK_LOWP:           return Modifiers::kLowp_Flag;
         case Token::Kind::TK_ES3:            return Modifiers::kES3_Flag;
+#ifdef SKSL_EXT
+        case Token::Kind::TK_READONLY:       return Modifiers::kReadOnly_Flag;
+        case Token::Kind::TK_WRITEONLY:      return Modifiers::kWriteOnly_Flag;
+        case Token::Kind::TK_BUFFER:         return Modifiers::kBuffer_Flag;
+#endif
         default:                             return 0;
     }
 }
@@ -93,6 +98,9 @@ void DSLParser::InitLayoutMap() {
     TOKEN(BLEND_SUPPORT_ALL_EQUATIONS,  "blend_support_all_equations");
     TOKEN(PUSH_CONSTANT,                "push_constant");
     TOKEN(SRGB_UNPREMUL,                "srgb_unpremul");
+#ifdef SKSL_EXT
+    TOKEN(CONSTANT_ID,                  "constant_id");
+#endif
     #undef TOKEN
 }
 
@@ -418,7 +426,11 @@ SKSL_INT DSLParser::arraySize() {
 bool DSLParser::parseArrayDimensions(int line, DSLType* type) {
     while (this->checkNext(Token::Kind::TK_LBRACKET)) {
         if (this->checkNext(Token::Kind::TK_RBRACKET)) {
+#ifdef SKSL_EXT
+            *type = UnsizedArray(*type, this->position(line));
+#else
             this->error(line, "expected array dimension");
+#endif
         } else {
             *type = Array(*type, this->arraySize(), this->position(line));
             if (!this->expect(Token::Kind::TK_RBRACKET, "']'")) {
@@ -732,6 +744,11 @@ DSLLayout DSLParser::layout() {
                     case LayoutToken::INPUT_ATTACHMENT_INDEX:
                         result.inputAttachmentIndex(this->layoutInt(), this->position(t));
                         break;
+#ifdef SKSL_EXT
+                    case LayoutToken::CONSTANT_ID:
+                        result.constant_id(this->layoutInt(), this->position(t));
+                        break;
+#endif
                     default:
                         this->error(t, "'" + text + "' is not a valid layout qualifier");
                         break;
@@ -871,7 +888,11 @@ bool DSLParser::interfaceBlock(const dsl::DSLModifiers& modifiers) {
                     actualType = Array(std::move(actualType), this->arraySize(),
                                        this->position(typeName));
                 } else {
+#ifdef SKSL_EXT
+                    actualType = UnsizedArray(std::move(actualType), this->position(typeName));
+#else
                     this->error(sizeToken, "unsized arrays are not permitted");
+#endif
                 }
                 this->expect(Token::Kind::TK_RBRACKET, "']'");
             }

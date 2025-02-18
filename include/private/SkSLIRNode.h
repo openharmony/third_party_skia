@@ -10,7 +10,11 @@
 
 #include "include/private/SkSLString.h"
 #include "include/private/SkTArray.h"
+#ifdef SKSL_EXT
+#include "src/sksl/SkSLLexerExt.h"
+#else
 #include "src/sksl/SkSLLexer.h"
+#endif
 #include "src/sksl/SkSLModifiersPool.h"
 #include "src/sksl/SkSLPool.h"
 

@@ -128,7 +128,11 @@ public:
                        const Program* program,
                        OutputStream* out)
             : INHERITED(context, program, out)
+#ifdef SKSL_EXT
+            , fDefaultLayout(MemoryLayout::k430_Standard)
+#else
             , fDefaultLayout(MemoryLayout::k140_Standard)
+#endif
             , fCapabilities(0)
             , fIdCount(1)
             , fSetupFragPosition(false)
@@ -161,6 +165,10 @@ private:
         kStep_SpecialIntrinsic,
         kSubpassLoad_SpecialIntrinsic,
         kTexture_SpecialIntrinsic,
+#ifdef SKSL_EXT
+        kTextureSize_SpecialIntrinsic,
+        kNonuniformEXT_SpecialIntrinsic,
+#endif
     };
 
     enum class Precision {
@@ -469,6 +477,19 @@ private:
     void writeUniformBuffer(std::shared_ptr<SymbolTable> topLevelSymbolTable);
 
     void addRTFlipUniform(int line);
+
+#ifdef SKSL_EXT
+    SpvId writeOpLoad(SpvId type, Precision precision, SpvId pointer, OutputStream& out);
+    SpvId writeSpecConstBinaryExpression(const BinaryExpression& b, const Operator& op,
+                                         SpvId lhs, SpvId rhs);
+    void writeExtensions(OutputStream& out);
+
+    std::unordered_set<std::string> fExtensions;
+    std::unordered_set<uint32_t> fCapabilitiesExt;
+    std::unordered_set<SpvId> fNonUniformSpvId;
+    std::unordered_map<const Variable*, SpvId> fGlobalConstVariableValueMap;
+    bool fEmittingGlobalConstConstructor = false;
+#endif
 
     const MemoryLayout fDefaultLayout;
 

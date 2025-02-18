@@ -54,7 +54,11 @@ typedef unsigned int SpvId;
 #define SPV_REVISION 4
 
 static const unsigned int SpvMagicNumber = 0x07230203;
+#ifdef SKSL_EXT
+static const unsigned int SpvVersion = (1 << 16) | (5 << 8); // spv 1.5
+#else
 static const unsigned int SpvVersion = 0x00010000;
+#endif
 static const unsigned int SpvRevision = 4;
 static const unsigned int SpvOpCodeMask = 0xffff;
 static const unsigned int SpvWordCountShift = 16;
@@ -136,6 +140,9 @@ typedef enum SpvStorageClass_ {
     SpvStorageClassPushConstant = 9,
     SpvStorageClassAtomicCounter = 10,
     SpvStorageClassImage = 11,
+#ifdef SKSL_EXT
+    SpvStorageClassStorageBuffer = 12,
+#endif
 } SpvStorageClass;
 
 typedef enum SpvDim_ {
@@ -359,6 +366,9 @@ typedef enum SpvDecoration_ {
     SpvDecorationNoContraction = 42,
     SpvDecorationInputAttachmentIndex = 43,
     SpvDecorationAlignment = 44,
+#ifdef SKSL_EXT
+    SpvDecorationNonUniform = 5300,
+#endif
 } SpvDecoration;
 
 typedef enum SpvBuiltIn_ {
@@ -568,6 +578,10 @@ typedef enum SpvCapability_ {
     SpvCapabilityStorageImageReadWithoutFormat = 55,
     SpvCapabilityStorageImageWriteWithoutFormat = 56,
     SpvCapabilityMultiViewport = 57,
+#ifdef SKSL_EXT
+    SpvCapabilityShaderNonUniform = 5301,
+    SpvCapabilityRuntimeDescriptorArray = 5302,
+#endif
 } SpvCapability;
 
 typedef enum SpvOp_ {
@@ -865,6 +879,9 @@ typedef enum SpvOp_ {
     SpvOpAtomicFlagTestAndSet = 318,
     SpvOpAtomicFlagClear = 319,
     SpvOpImageSparseRead = 320,
+#ifdef SKSL_EXT
+    SpvOpModuleProcessed = 330,
+#endif
 } SpvOp;
 
 #endif  // #ifndef spirv_H

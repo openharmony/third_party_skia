@@ -58,6 +58,9 @@ class Type : public Symbol {
 public:
     inline static constexpr Kind kSymbolKind = Kind::kType;
     inline static constexpr int kMaxAbbrevLength = 3;
+#ifdef SKSL_EXT
+    inline static constexpr int kUnsizedArray = -1;
+#endif
 
     struct Field {
         Field(Modifiers modifiers, skstd::string_view name, const Type* type)
@@ -297,7 +300,9 @@ public:
             case TypeKind::kBlender:
             case TypeKind::kColorFilter:
             case TypeKind::kOther:
+#ifndef SKSL_EXT
             case TypeKind::kSampler:
+#endif
             case TypeKind::kSeparateSampler:
             case TypeKind::kShader:
             case TypeKind::kTexture:
@@ -445,6 +450,12 @@ public:
         return false;
     }
 
+#ifdef SKSL_EXT
+    virtual bool isUnsizedArray() const {
+        return false;
+    }
+#endif
+
     virtual bool isStruct() const {
         return false;
     }
@@ -468,7 +479,12 @@ public:
     }
 
     bool hasPrecision() const {
+#ifdef SKSL_EXT
+        return this->componentType().isNumber() ||
+               this->componentType().typeKind() == TypeKind::kSampler;
+#else
         return this->componentType().isNumber() || fTypeKind == TypeKind::kSampler;
+#endif
     }
 
     bool highPrecision() const {

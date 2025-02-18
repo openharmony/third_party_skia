@@ -141,6 +141,13 @@ public:
      */
     bool isArray() const;
 
+#ifdef SKSL_EXT
+    /**
+     * Returns true if this is an unsized array type.
+     */
+    bool isUnsizedArray() const;
+#endif
+
     /**
      * Returns true if this is a struct type.
      */
@@ -173,6 +180,9 @@ private:
     TypeConstant fTypeConstant = kPoison_Type;
 
     friend DSLType Array(const DSLType& base, int count, PositionInfo pos);
+#ifdef SKSL_EXT
+    friend DSLType UnsizedArray(const DSLType& base, PositionInfo pos);
+#endif
     friend DSLType Struct(skstd::string_view name, SkSpan<DSLField> fields, PositionInfo pos);
     friend class DSLCore;
     friend class DSLFunction;
@@ -219,6 +229,9 @@ MATRIX_TYPE(Half)
 #undef MATRIX_TYPE
 
 DSLType Array(const DSLType& base, int count, PositionInfo pos = PositionInfo::Capture());
+#ifdef SKSL_EXT
+DSLType UnsizedArray(const DSLType& base, PositionInfo pos = PositionInfo::Capture());
+#endif
 
 class DSLField {
 public:
