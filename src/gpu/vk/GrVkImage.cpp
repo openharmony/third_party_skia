@@ -264,6 +264,14 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
         , fTextureView(std::move(textureView))
         , fIsBorrowed(GrBackendObjectOwnership::kBorrowed == ownership) {
     this->init(gpu, forSecondaryCB);
+#ifdef SKIA_DFX_FOR_OHOS
+    if (RealAllocConfig::GetRealAllocStatus()) {
+        // OH ISSUE: set real alloc flag
+        this->setRealAlloc(true);
+        // OH ISSUE: set real alloc size
+        this->setRealAllocSize(dimensions.height() * dimensions.width() * 4);
+    }
+#endif
     this->registerWithCacheWrapped(cacheable);
 }
 
