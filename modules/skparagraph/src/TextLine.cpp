@@ -532,6 +532,7 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
 #if OHOS_SUPPORT
         auto lastCluster = fOwner->clusters()[fGhostClusterRange.end - 1];
         bool isRTLWhiteSpace = lastCluster.isWhitespaceBreak() && !lastCluster.run().leftToRight();
+        // Only be entered when the text alignment direction is RTL and the last character is an RTL whitespace
         if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl && isRTLWhiteSpace) {
             fShift = maxWidth - this->width();
         } else {
