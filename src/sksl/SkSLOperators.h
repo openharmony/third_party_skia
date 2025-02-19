@@ -9,7 +9,11 @@
 #define SKSL_OPERATORS
 
 #include "include/private/SkSLDefines.h"
+#ifdef SKSL_EXT
+#include "src/sksl/SkSLLexerExt.h"
+#else
 #include "src/sksl/SkSLLexer.h"
+#endif
 
 namespace SkSL {
 

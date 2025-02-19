@@ -13,7 +13,11 @@
 #include "stdlib.h"
 #include "string.h"
 #include "include/private/SkSLDefines.h"
+#ifdef SKSL_EXT
+#include "src/sksl/SkSLLexerExt.h"
+#else
 #include "src/sksl/SkSLLexer.h"
+#endif
 
 #ifndef SKSL_STANDALONE
 #include "include/core/SkTypes.h"

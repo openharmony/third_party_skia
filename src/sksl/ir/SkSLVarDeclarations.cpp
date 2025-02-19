@@ -88,6 +88,12 @@ void VarDeclaration::ErrorCheck(const Context& context, int line, const Modifier
     if (storage == Variable::Storage::kGlobal) {
         permitted |= Modifiers::kIn_Flag | Modifiers::kOut_Flag | Modifiers::kUniform_Flag |
                      Modifiers::kFlat_Flag | Modifiers::kNoPerspective_Flag;
+#ifdef SKSL_EXT
+        permitted |= Modifiers::kBuffer_Flag;
+        if (modifiers.fFlags & Modifiers::kBuffer_Flag) {
+            permitted |= Modifiers::kReadOnly_Flag | Modifiers::kWriteOnly_Flag;
+        }
+#endif
     }
     // TODO(skbug.com/11301): Migrate above checks into building a mask of permitted layout flags
     modifiers.checkPermitted(context, line, permitted, /*permittedLayoutFlags=*/~0);

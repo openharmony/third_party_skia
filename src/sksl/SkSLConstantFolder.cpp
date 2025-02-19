@@ -206,6 +206,11 @@ const Expression* ConstantFolder::GetConstantValueForVariable(const Expression& 
         if (!(var.modifiers().fFlags & Modifiers::kConst_Flag)) {
             break;
         }
+#ifdef SKSL_EXT
+        if (var.modifiers().fLayout.fFlags & Layout::Flag::kConstantId_Flag) {
+            break;
+        }
+#endif
         expr = var.initialValue();
         if (!expr) {
             // Function parameters can be const but won't have an initial value.

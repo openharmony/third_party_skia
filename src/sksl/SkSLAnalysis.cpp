@@ -531,6 +531,7 @@ void Analysis::VerifyStaticTestsAndExpressions(const Program& program) {
         TestsAndExpressions(const Context& ctx) : fContext(ctx) {}
 
         bool visitProgramElement(const ProgramElement& pe) override {
+#ifndef SKSL_EXT
             if (pe.kind() == ProgramElement::Kind::kGlobalVar) {
                 const VarDeclaration& decl =
                         pe.as<GlobalVarDeclaration>().declaration()->as<VarDeclaration>();
@@ -544,6 +545,7 @@ void Analysis::VerifyStaticTestsAndExpressions(const Program& program) {
                                                       "' exceeds the size limit");
                 }
             }
+#endif
             return INHERITED::visitProgramElement(pe);
         }
 

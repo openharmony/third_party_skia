@@ -30,8 +30,12 @@ public:
         : INHERITED(name, abbrev, kTypeKind)
         , fComponentType(componentType)
         , fCount(count) {
+#ifdef SKSL_EXT
+        SkASSERT(count > 0 || count == kUnsizedArray);
+#else
         // Only allow explicitly-sized arrays.
         SkASSERT(count > 0);
+#endif
         // Disallow multi-dimensional arrays.
         SkASSERT(!componentType.is<ArrayType>());
     }
@@ -39,6 +43,12 @@ public:
     bool isArray() const override {
         return true;
     }
+
+#ifdef SKSL_EXT
+    bool isUnsizedArray() const override {
+        return fCount == kUnsizedArray;
+    }
+#endif
 
     const Type& componentType() const override {
         return fComponentType;
@@ -490,8 +500,10 @@ CoercionCost Type::coercionCost(const Type& other) const {
     if (this->isNumber() && other.isNumber()) {
         if (this->isLiteral() && this->isInteger()) {
             return CoercionCost::Free();
+#ifndef SKSL_EXT
         } else if (this->numberKind() != other.numberKind()) {
             return CoercionCost::Impossible();
+#endif
         } else if (other.priority() >= this->priority()) {
             return CoercionCost::Normal(other.priority() - this->priority());
         } else {
@@ -861,7 +873,11 @@ SKSL_INT Type::convertArraySize(const Context& context, std::unique_ptr<Expressi
         context.fErrors->error(size->fLine, "type 'void' may not be used in an array");
         return 0;
     }
+#ifdef SKSL_EXT
+    if (this->isOpaque() && this->name() != "sampler2D") {
+#else
     if (this->isOpaque()) {
+#endif
         context.fErrors->error(size->fLine, "opaque type '" + this->name() +
                                             "' may not be used in an array");
         return 0;

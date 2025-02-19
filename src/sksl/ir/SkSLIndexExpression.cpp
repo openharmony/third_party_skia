@@ -22,6 +22,11 @@ static bool index_out_of_range(const Context& context, SKSL_INT index, const Exp
     if (index >= 0 && index < base.type().columns()) {
         return false;
     }
+#ifdef SKSL_EXT
+    if (index >= 0 && Type::kUnsizedArray == base.type().columns()) {
+        return false;
+    }
+#endif
 
     context.fErrors->error(base.fLine, "index " + to_string(index) + " out of range for '" +
                                        base.type().displayName() + "'");

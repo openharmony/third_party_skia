@@ -28,6 +28,11 @@ bool Modifiers::checkPermitted(const Context& context, int line, int permittedMo
         { Modifiers::kMediump_Flag,        "mediump" },
         { Modifiers::kLowp_Flag,           "lowp" },
         { Modifiers::kES3_Flag,            "$es3" },
+#ifdef SKSL_EXT
+        { Modifiers::kReadOnly_Flag,       "readonly" },
+        { Modifiers::kWriteOnly_Flag,      "writeonly" },
+        { Modifiers::kBuffer_Flag,         "buffer" },
+#endif
     };
 
     bool success = true;
@@ -55,6 +60,9 @@ bool Modifiers::checkPermitted(const Context& context, int line, int permittedMo
         { Layout::kSet_Flag,                      "set"},
         { Layout::kBuiltin_Flag,                  "builtin"},
         { Layout::kInputAttachmentIndex_Flag,     "input_attachment_index"},
+#ifdef SKSL_EXT
+        { Layout::kConstantId_Flag,               "constant_id"},
+#endif
     };
 
     int layoutFlags = fLayout.fFlags;

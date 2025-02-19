@@ -216,6 +216,12 @@ bool DSLType::isArray() const {
     return this->skslType().isArray();
 }
 
+#ifdef SKSL_EXT
+bool DSLType::isUnsizedArray() const {
+    return this->skslType().isUnsizedArray();
+}
+#endif
+
 bool DSLType::isStruct() const {
     return this->skslType().isStruct();
 }
@@ -258,6 +264,13 @@ DSLType Array(const DSLType& base, int count, PositionInfo pos) {
     }
     return ThreadContext::SymbolTable()->addArrayDimension(&base.skslType(), count);
 }
+
+#ifdef SKSL_EXT
+DSLType UnsizedArray(const DSLType& base, PositionInfo pos) {
+    ThreadContext::ReportErrors(pos);
+    return ThreadContext::SymbolTable()->addArrayDimension(&base.skslType(), Type::kUnsizedArray);
+}
+#endif
 
 DSLType Struct(skstd::string_view name, SkSpan<DSLField> fields, PositionInfo pos) {
     std::vector<SkSL::Type::Field> skslFields;

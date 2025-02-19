@@ -63,6 +63,10 @@
 // to the skslc executable directory. The "data" in this mode is just the filename.
 #define MODULE_DATA(name) MakeModulePath("sksl_" #name ".sksl")
 
+#ifdef SKSL_EXT
+#include "src/sksl/sksl_ext.sksl.h"
+#endif
+
 #else
 
 // At runtime, we load the dehydrated sksl data files. The data is a (pointer, size) pair.
@@ -224,9 +228,37 @@ std::shared_ptr<SymbolTable> Compiler::makePrivateSymbolTable(std::shared_ptr<Sy
     return privateSymbolTable;
 }
 
+#ifdef SKSL_EXT
+static void add_ext_type_aliases(SkSL::SymbolTable* symbols, const SkSL::BuiltinTypes& types) {
+    // Add some aliases to the runtime effect modules so that it's friendlier, and more like GLSL.
+    symbols->addAlias("vec2", types.fFloat2.get());
+    symbols->addAlias("vec3", types.fFloat3.get());
+    symbols->addAlias("vec4", types.fFloat4.get());
+
+    symbols->addAlias("ivec2", types.fInt2.get());
+    symbols->addAlias("ivec3", types.fInt3.get());
+    symbols->addAlias("ivec4", types.fInt4.get());
+
+    symbols->addAlias("uvec2", types.fUInt2.get());
+    symbols->addAlias("uvec3", types.fUInt3.get());
+    symbols->addAlias("uvec4", types.fUInt4.get());
+
+    symbols->addAlias("bvec2", types.fBool2.get());
+    symbols->addAlias("bvec3", types.fBool3.get());
+    symbols->addAlias("bvec4", types.fBool4.get());
+
+    symbols->addAlias("mat2", types.fFloat2x2.get());
+    symbols->addAlias("mat3", types.fFloat3x3.get());
+    symbols->addAlias("mat4", types.fFloat4x4.get());
+}
+#endif
+
 const ParsedModule& Compiler::loadGPUModule() {
     if (!fGPUModule.fSymbols) {
         fGPUModule = this->parseModule(ProgramKind::kFragment, MODULE_DATA(gpu), fPrivateModule);
+#ifdef SKSL_EXT
+        add_ext_type_aliases(fGPUModule.fSymbols.get(), fContext->fTypes);
+#endif
     }
     return fGPUModule;
 }
@@ -325,12 +357,16 @@ LoadedModule Compiler::loadModule(ProgramKind kind,
 #if defined(SKSL_STANDALONE)
     SkASSERT(this->errorCount() == 0);
     SkASSERT(data.fPath);
+#ifdef SKSL_EXT
+    String text{extModuleData[data.fPath]};
+#else
     std::ifstream in(data.fPath);
     String text{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
     if (in.rdstate()) {
         printf("error reading %s\n", data.fPath);
         abort();
     }
+#endif
     ParsedModule baseModule = {base, /*fIntrinsics=*/nullptr};
     LoadedModule result = DSLParser(this, settings, kind,
             std::move(text)).moduleInheritingFrom(std::move(baseModule));
@@ -611,7 +647,11 @@ bool Compiler::toSPIRV(Program& program, OutputStream& out) {
     SPIRVCodeGenerator cg(fContext.get(), &program, &buffer);
     bool result = cg.generateCode();
     if (result && program.fConfig->fSettings.fValidateSPIRV) {
+#ifdef SKSL_EXT
+        spvtools::SpirvTools tools(SPV_ENV_VULKAN_1_2);
+#else
         spvtools::SpirvTools tools(SPV_ENV_VULKAN_1_0);
+#endif
         const String& data = buffer.str();
         SkASSERT(0 == data.size() % 4);
         String errors;
@@ -640,6 +680,8 @@ bool Compiler::toSPIRV(Program& program, OutputStream& out) {
 #endif
         }
         out.write(data.c_str(), data.size());
+    } else if (result) {
+        out.write(buffer.str().c_str(), buffer.str().size());
     }
 #else
     SPIRVCodeGenerator cg(fContext.get(), &program, &out);

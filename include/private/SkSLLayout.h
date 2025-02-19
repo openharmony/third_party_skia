@@ -32,6 +32,9 @@ struct Layout {
         kSet_Flag                        = 1 <<  8,
         kBuiltin_Flag                    = 1 <<  9,
         kInputAttachmentIndex_Flag       = 1 << 10,
+#ifdef SKSL_EXT
+        kConstantId_Flag                 = 1 << 11,
+#endif
     };
 
     Layout(int flags, int location, int offset, int binding, int index, int set, int builtin,
@@ -103,6 +106,11 @@ struct Layout {
         if (fFlags & kSRGBUnpremul_Flag) {
             result += separator() + "srgb_unpremul";
         }
+#ifdef SKSL_EXT
+        if (fFlags & kConstantId_Flag) {
+            result += separator() + "constant_id";
+        }
+#endif
         if (result.size() > 0) {
             result = "layout (" + result + ")";
         }
@@ -117,6 +125,9 @@ struct Layout {
                fIndex                == other.fIndex &&
                fSet                  == other.fSet &&
                fBuiltin              == other.fBuiltin &&
+#ifdef SKSL_EXT
+               fConstantId           == other.fConstantId &&
+#endif
                fInputAttachmentIndex == other.fInputAttachmentIndex;
     }
 
@@ -136,6 +147,9 @@ struct Layout {
     // input_attachment_index comes from Vulkan/SPIR-V to connect a shader variable to the a
     // corresponding attachment on the subpass in which the shader is being used.
     int fInputAttachmentIndex;
+#ifdef SKSL_EXT
+    int fConstantId = -1;
+#endif
 };
 
 }  // namespace SkSL
