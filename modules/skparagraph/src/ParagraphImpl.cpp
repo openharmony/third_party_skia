@@ -114,6 +114,7 @@ ParagraphImpl::ParagraphImpl(const SkString& text,
         , fText(text)
         , fState(kUnknown)
         , fUnresolvedGlyphs(0)
+        , isMiddleEllipsis(false)
         , fPicture(nullptr)
         , fStrutMetrics(false)
         , fOldWidth(0)
