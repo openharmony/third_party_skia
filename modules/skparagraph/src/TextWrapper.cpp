@@ -135,7 +135,7 @@ bool TextWrapper::lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBefore
 // Since we allow cluster clipping when they don't fit
 // we have to work with stretches - parts of clusters
 void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack,
-    WordBreakType wordBreakType) {
+                            WordBreakType wordBreakType, bool needEllipsis) {
 
     reset();
     fEndLine.metrics().clean();
@@ -166,7 +166,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
                 breaker.breakLine(width)) {
             // if the hyphenator has already run as balancing algorithm, use the cluster information
-            if (cluster->isHyphenBreak()) {
+            if (cluster->isHyphenBreak() && !needEllipsis) {
                 // we dont want to add the current cluster as the hyphenation algorithm marks breaks before a cluster
                 // however, if we cannot fit anything to a line, we need to break out here
                 if (fWords.empty() && fClusters.empty()) {
@@ -180,8 +180,8 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                     break;
                 }
                 // let hyphenator try before this if it is enabled
-            } else if ((wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate) ||
-                       cluster->isWhitespaceBreak()) {
+            } else if (cluster->isWhitespaceBreak() && ((wordBreakType != WordBreakType::BREAK_HYPHEN) ||
+                       (wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate && !needEllipsis))) {
                 // It's the end of the word
                 isFirstWord = false;
                 fClusters.extend(cluster);
@@ -219,7 +219,8 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
             }
 
             // should do this only if hyphenation is enabled
-            if (wordBreakType == WordBreakType::BREAK_HYPHEN && !attemptedHyphenate && !fClusters.empty()) {
+            if (wordBreakType == WordBreakType::BREAK_HYPHEN && !attemptedHyphenate && !fClusters.empty() &&
+                !needEllipsis) {
                 attemptedHyphenate = true;
                 if (!lookAheadByHyphen(endOfClusters, widthBeforeCluster, breaker.fUpper)) {
                     break;
@@ -944,10 +945,10 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         } else {
             newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         }
-        this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType());
-
         auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
         needEllipsis = hasEllipsis && !endlessLine && lastLine;
+
+        this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType(), needEllipsis);
 
         this->moveForward(needEllipsis, parent->getWordBreakType() == WordBreakType::BREAK_ALL);
         if (fEndLine.endCluster() >= fEndLine.startCluster() || maxLines > 1) {

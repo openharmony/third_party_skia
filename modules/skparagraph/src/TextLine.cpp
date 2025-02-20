@@ -243,6 +243,9 @@ TextLine::TextLine(ParagraphImpl* owner,
 
     fTextRangeReplacedByEllipsis = EMPTY_RANGE;
     fEllipsisIndex = EMPTY_INDEX;
+#ifdef OHOS_SUPPORT
+    fHyphenIndex = EMPTY_INDEX;
+#endif
     fLastClipRunLtr = false;
 }
 
@@ -447,6 +450,9 @@ void TextLine::ensureTextBlobCachePopulated() {
     if (fBlockRange.width() == 1 &&
         fRunsInVisualOrder.size() == 1 &&
         fEllipsis == nullptr &&
+#ifdef OHOS_SUPPORT
+        fHyphenRun == nullptr &&
+#endif
         fOwner->run(fRunsInVisualOrder[0]).placeholderStyle() == nullptr) {
         if (fClusterRange.width() == 0) {
             return;
@@ -1053,7 +1059,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             inWord = false;
         }
         // See if it fits
-        if (fOwner->getEllipsis() == fEllipsisString && ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
+        if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
             if (!cluster.isHardBreak()) {
                 width -= cluster.width();
             }
@@ -1167,10 +1173,14 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
 #ifdef OHOS_SUPPORT
     fEllipsisString = ellipsis;
 #endif
+    return shapeString(ellipsis, cluster);
+}
+
+std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* cluster) {
     class ShapeHandler final : public SkShaper::RunHandler {
     public:
-        ShapeHandler(SkScalar lineHeight, bool useHalfLeading, SkScalar baselineShift, const SkString& ellipsis)
-            : fRun(nullptr), fLineHeight(lineHeight), fUseHalfLeading(useHalfLeading), fBaselineShift(baselineShift), fEllipsis(ellipsis) {}
+        ShapeHandler(SkScalar lineHeight, bool useHalfLeading, SkScalar baselineShift, const SkString& str)
+            : fRun(nullptr), fLineHeight(lineHeight), fUseHalfLeading(useHalfLeading), fBaselineShift(baselineShift), fStr(str) {}
         std::unique_ptr<Run> run() & { return std::move(fRun); }
 
     private:
@@ -1190,6 +1200,7 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
             fRun->fAdvance.fX = info.fAdvance.fX;
             fRun->fAdvance.fY = fRun->advance().fY;
             fRun->fPlaceholderIndex = std::numeric_limits<size_t>::max();
+            // this may not be fully accurate, but limiting the changes to the text line
             fRun->fEllipsis = true;
         }
 
@@ -1199,7 +1210,7 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
         SkScalar fLineHeight;
         bool fUseHalfLeading;
         SkScalar fBaselineShift;
-        SkString fEllipsis;
+        SkString fStr;
     };
 
     const Run& run = cluster->run();
@@ -1220,7 +1231,7 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
 #else
     auto shaped = [&](std::shared_ptr<RSTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
 #endif
-        ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), ellipsis);
+        ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), str);
 #ifndef USE_SKIA_TXT
         SkFont font(typeface, textStyle.getFontSize());
         font.setEdging(SkFont::Edging::kAntiAlias);
@@ -1242,32 +1253,32 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
                             fOwner->getUnicode()->copy(),
                             fallback ? RSFontMgr::CreateDefaultFontMgr() : RSFontMgr::CreateDefaultFontMgr());
 #endif
-        shaper->shape(ellipsis.c_str(),
-                      ellipsis.size(),
+        shaper->shape(str.c_str(),
+                      str.size(),
                       font,
                       true,
                       std::numeric_limits<SkScalar>::max(),
                       &handler);
-        auto ellipsisRun = handler.run();
-        ellipsisRun->fTextRange = TextRange(0, ellipsis.size());
-        ellipsisRun->fOwner = fOwner;
-        return ellipsisRun;
+        auto run = handler.run();
+        run->fTextRange = TextRange(0, str.size());
+        run->fOwner = fOwner;
+        return run;
     };
 
     // Check all allowed fonts
     auto typefaces = fOwner->fontCollection()->findTypefaces(
             textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
     for (const auto& typeface : typefaces) {
-        auto ellipsisRun = shaped(typeface, false);
-        if (ellipsisRun->isResolved()) {
-            return ellipsisRun;
+        auto run = shaped(typeface, false);
+        if (run->isResolved()) {
+            return run;
         }
     }
 
     // Try the fallback
     if (fOwner->fontCollection()->fontFallbackEnabled()) {
-        const char* ch = ellipsis.c_str();
-        SkUnichar unicode = nextUtf8Unit(&ch, ellipsis.c_str() + ellipsis.size());
+        const char* ch = str.c_str();
+        SkUnichar unicode = nextUtf8Unit(&ch, str.c_str() + str.size());
 
         auto typeface = fOwner->fontCollection()->defaultFallback(
             unicode, textStyle.getFontStyle(), textStyle.getLocale());
@@ -1275,23 +1286,23 @@ std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Clu
             if (textStyle.getFontArguments()) {
                 typeface = fOwner->fontCollection()->CloneTypeface(typeface, textStyle.getFontArguments());
             }
-            auto ellipsisRun = shaped(typeface, true);
-            if (ellipsisRun->isResolved()) {
-                return ellipsisRun;
+            auto run = shaped(typeface, true);
+            if (run->isResolved()) {
+                return run;
             }
         }
     }
 
     // Check the current font
 #ifndef USE_SKIA_TXT
-    auto ellipsisRun = shaped(run.fFont.refTypeface(), false);
+    auto finalRun = shaped(run.fFont.refTypeface(), false);
 #else
-    auto ellipsisRun = shaped(const_cast<RSFont&>(run.fFont).GetTypeface(), false);
+    auto finalRun = shaped(const_cast<RSFont&>(run.fFont).GetTypeface(), false);
 #endif
-    if (ellipsisRun->isResolved()) {
-        return ellipsisRun;
+    if (finalRun->isResolved()) {
+        return finalRun;
     }
-    return ellipsisRun;
+    return finalRun;
 }
 
 #ifdef OHOS_SUPPORT
@@ -1542,7 +1553,7 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
             auto block = fOwner->styles().begin() + index;
 #ifdef OHOS_SUPPORT
             TextRange intersect = intersected(block->fRange,
-                TextRange(fEllipsis->textRange().start - 1, fEllipsis->textRange().end));
+                TextRange(run->textRange().start - 1, run->textRange().end));
             if (intersect.width() > 0) {
                 visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
                 return run->advance().fX;
@@ -1665,19 +1676,28 @@ bool TextLine::processEllipsisRun(bool& isAlreadyUseEllipsis,
                                   const RunVisitor& visitor,
                                   SkScalar& runWidthInLine) const {
     isAlreadyUseEllipsis = true;
-    runOffset += this->ellipsis()->offset().fX;
+    return processInsertedRun(fEllipsis.get(), runOffset, ellipsisReadStrategy,
+                              visitor, runWidthInLine);
+}
+
+bool TextLine::processInsertedRun(const Run* extra,
+                                  SkScalar& runOffset,
+                                  EllipsisReadStrategy ellipsisReadStrategy,
+                                  const RunVisitor& visitor,
+                                  SkScalar& runWidthInLine) const {
+    runOffset += extra->offset().fX;
     if (ellipsisReadStrategy == EllipsisReadStrategy::READ_REPLACED_WORD) {
-        if (!visitor(ellipsis(), runOffset, fTextRangeReplacedByEllipsis, &runWidthInLine)) {
+        if (!visitor(extra, runOffset, fTextRangeReplacedByEllipsis, &runWidthInLine)) {
             LOGE("Visitor process ellipsis replace word error!");
             return false;
         }
     } else if (ellipsisReadStrategy == EllipsisReadStrategy::READ_ELLIPSIS_WORD) {
-        if (!visitor(ellipsis(), runOffset, ellipsis()->textRange(), &runWidthInLine)) {
+        if (!visitor(extra, runOffset, extra->textRange(), &runWidthInLine)) {
             LOGE("Visitor process ellipsis word error!");
             return false;
         }
     } else {
-        runWidthInLine = this->ellipsis()->advance().fX;
+        runWidthInLine = extra->advance().fX;
     }
     return true;
 }
@@ -1700,11 +1720,19 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
     bool isAlreadyUseEllipsis = false;
     auto textRange = includingGhostSpaces ? this->textWithNewlines() : this->trimmedText();
 
-    if (fRunsInVisualOrder.size() == 0 && fEllipsis != nullptr) {
-        if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
-            return;
+    if (fRunsInVisualOrder.size() == 0) {
+        if (fEllipsis != nullptr) {
+            if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
+                return;
+            }
+            totalWidth += width;
         }
-        totalWidth += width;
+        if (fHyphenRun != nullptr) { // not sure if this is basically valid in real life
+            if (!processInsertedRun(fHyphenRun.get(), runOffset, ellipsisReadStrategy, visitor, width)) {
+                return;
+            }
+            totalWidth += width;
+        }
     }
 
     for (auto& runIndex : fRunsInVisualOrder) {
@@ -1747,6 +1775,13 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
         // add the lastClipRun's right ellipsis if necessary
         if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex) {
             if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
+                return;
+            }
+            runOffset += width;
+            totalWidth += width;
+        }
+        if (runIndex == fHyphenIndex) {
+            if (!processInsertedRun(fHyphenRun.get(), runOffset, ellipsisReadStrategy, visitor, width)) {
                 return;
             }
             runOffset += width;
@@ -1798,8 +1833,8 @@ void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisi
     runOffset += width;
     totalWidth += width;
 
-    if (this->ellipsis() != nullptr) {
-        if (visitor(ellipsis(), runOffset, ellipsis()->textRange(), &width)) {
+    if (fEllipsis != nullptr) {
+        if (visitor(fEllipsis.get(), runOffset, fEllipsis->textRange(), &width)) {
             totalWidth += width;
         }
     }
@@ -1892,7 +1927,7 @@ bool TextLine::endsWithHardLineBreak() const {
     //  To be removed...
 #ifdef OHOS_SUPPORT
     return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak()) ||
-           (fEllipsis != nullptr && fOwner->getEllipsis() == fEllipsisString) ||
+           (fEllipsis != nullptr) ||
            fGhostClusterRange.end == fOwner->clusters().size() - 1;
 #else
     return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak()) ||
@@ -2157,6 +2192,9 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
         [this, dx, &result]
         (const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             bool keepLooking = true;
+            if (fHyphenRun.get() == run) {
+                return keepLooking;
+            }
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
             TextAdjustment::GraphemeGluster, run, runOffsetInLine, textRange, StyleType::kNone,
             [this, run, dx, &result, &keepLooking]
@@ -2302,7 +2340,7 @@ void TextLine::getRectsForPlaceholders(std::vector<TextBox>& boxes) {
 #ifdef OHOS_SUPPORT
     this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, true,
 #else
-    this->iterateThroughVisualRuns( true,
+    this->iterateThroughVisualRuns(true,
 #endif
         [&boxes, this](const Run* run, SkScalar runOffset, TextRange textRange,
                         SkScalar* width) {
@@ -2762,6 +2800,10 @@ TextLine TextLine::CloneSelf()
     textLine.fIsTextLineEllipsisHeadModal = this->fIsTextLineEllipsisHeadModal;
     textLine.fEllipsisString = this->fEllipsisString;
     textLine.fBreakWithHyphen = this->fBreakWithHyphen;
+    if (this->fHyphenRun) {
+        textLine.fHyphenRun = std::make_unique<Run>(*this->fHyphenRun);
+    }
+    textLine.fHyphenIndex = this->fHyphenIndex;
 #endif
 
     textLine.roundRectAttrs = this->roundRectAttrs;
@@ -2771,5 +2813,45 @@ TextLine TextLine::CloneSelf()
     textLine.fLastClipRunLtr = this->fLastClipRunLtr;
     return textLine;
 }
+
+#ifdef OHOS_SUPPORT
+void TextLine::setBreakWithHyphen(bool breakWithHyphen)
+{
+    fBreakWithHyphen = breakWithHyphen;
+    if (!breakWithHyphen) {
+        if (fHyphenRun != nullptr) {
+            fWidthWithSpaces -= fHyphenRun->fAdvance.fX;
+        }
+        fHyphenRun.reset();
+        fHyphenIndex = EMPTY_INDEX;
+    } else {
+        auto endIx = fClusterRange.end - 1;
+        // if we don't have hyphen run, shape it
+        auto& cluster = fOwner->cluster(endIx);
+        SkString dash("-");
+        if (fHyphenRun == nullptr) {
+            fHyphenRun = shapeString(dash, &cluster);
+            fHyphenRun->setOwner(fOwner);
+        }
+
+        fHyphenRun->fTextRange = TextRange(cluster.textRange().end, cluster.textRange().end + 1);
+        fHyphenRun->fClusterStart = cluster.textRange().end;
+
+        fAdvance.fX += fHyphenRun->fAdvance.fX;
+        fWidthWithSpaces = fAdvance.fX;
+        fGhostClusterRange.end = fClusterRange.end;
+        fHyphenIndex = cluster.runIndex();
+        fText.end = cluster.textRange().end;
+        fTextIncludingNewlines.end = cluster.textRange().end;
+        fTextExcludingSpaces.end = cluster.textRange().end;
+    }
+}
+
+bool TextLine::getBreakWithHyphen() const
+{
+    return fBreakWithHyphen;
+}
+#endif
+
 }  // namespace textlayout
 }  // namespace skia

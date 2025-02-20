@@ -157,6 +157,11 @@ public:
                             EllipsisReadStrategy ellipsisReadStrategy,
                             const RunVisitor& visitor,
                             SkScalar& runWidthInLine) const;
+    bool processInsertedRun(const Run* run,
+                            SkScalar& runOffset,
+                            EllipsisReadStrategy ellipsisReadStrategy,
+                            const RunVisitor& visitor,
+                            SkScalar& runWidthInLine) const;
 #endif
 
 #ifdef OHOS_SUPPORT
@@ -227,6 +232,7 @@ public:
     void setDescentStyle(LineMetricStyle style) { fDescentStyle = style; }
 
     bool endsWithHardLineBreak() const;
+    std::unique_ptr<Run> shapeString(const SkString& string, const Cluster* cluster);
     std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
     SkSTArray<1, size_t, true> getLineAllRuns() const { return fRunsInVisualOrder; };
 
@@ -251,8 +257,8 @@ public:
     SkRect generatePaintRegion(SkScalar x, SkScalar y);
     void updateClusterOffsets(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
     void justifyUpdateRtlWidth(const SkScalar maxWidth, const SkScalar textLen);
-    void setBreakWithHyphen(bool breakWithHyphen) { this->fBreakWithHyphen = breakWithHyphen; }
-    bool getBreakWithHyphen() { return this->fBreakWithHyphen; }
+    void setBreakWithHyphen(bool breakWithHyphen);
+    bool getBreakWithHyphen() const;
 #endif
 
 private:
@@ -356,6 +362,8 @@ public:
 #ifdef OHOS_SUPPORT
     SkString fEllipsisString;
     bool fBreakWithHyphen{false};
+    std::unique_ptr<Run> fHyphenRun;
+    size_t fHyphenIndex = EMPTY_INDEX;
 #endif
 };
 }  // namespace textlayout
