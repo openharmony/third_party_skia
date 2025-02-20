@@ -235,7 +235,8 @@ private:
     }
 
 #ifdef OHOS_SUPPORT
-    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType);
+    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType,
+                   bool needEllipsis);
     void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
     bool lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBeforeCluster, SkScalar maxWidth);
     uint64_t CalculateBestScore(std::vector<SkScalar>& widthOut,
