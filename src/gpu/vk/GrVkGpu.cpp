@@ -2732,6 +2732,18 @@ bool GrVkGpu::checkVkResult(VkResult result) {
             }
 #endif
             fDeviceIsLost = true;
+            {
+                auto context = getContext();
+                if (context) {
+                    if (context->vulkanErrorCallback_) {
+                        context->vulkanErrorCallback_();
+                    } else {
+                        SK_LOGE("checkVkResult vulkanErrorCallback_ nullptr");
+                    }
+                } else {
+                    SK_LOGE("checkVkResult context nullptr");
+                }
+            }
             abort();
             return false;
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:
