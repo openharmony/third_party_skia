@@ -48,6 +48,8 @@ void GrThreadSafePipelineBuilder::Stats::dump(SkString* out) {
     out->appendf("Total number of partial compilation successes %d\n",
                  fNumPartialCompilationSuccesses.load());
     out->appendf("Total number of compilation successes %d\n", fNumCompilationSuccesses.load());
+    
+    out->appendf("Pipeline State Cache: %d/%d\n", fPipelineCount.load(), fPipelineCountMax.load());
 }
 
 void GrThreadSafePipelineBuilder::Stats::dumpKeyValuePairs(SkTArray<SkString>* keys,
