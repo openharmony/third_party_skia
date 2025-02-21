@@ -42,6 +42,7 @@ struct GrVkResourceProvider::PipelineStateCache::Entry {
 GrVkResourceProvider::PipelineStateCache::PipelineStateCache(GrVkGpu* gpu)
     : fMap(gpu->getContext()->priv().options().fRuntimeProgramCacheSize)
     , fGpu(gpu) {
+    fStats.setPipelineCountMax(gpu->getContext()->priv().options().fRuntimeProgramCacheSize);
 }
 
 GrVkResourceProvider::PipelineStateCache::~PipelineStateCache() {
@@ -101,7 +102,7 @@ GrVkPipelineState* GrVkResourceProvider::PipelineStateCache::findOrCreatePipelin
     } else {
         fStats.incNumInlineProgramCacheResult(stat);
     }
-
+    fStats.updatePipelineCount(fMap.count());
     return tmp;
 }
 

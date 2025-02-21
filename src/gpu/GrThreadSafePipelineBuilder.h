@@ -43,6 +43,9 @@ public:
         int numInlineCompilationFailures() const { return fNumInlineCompilationFailures; }
         void incNumInlineCompilationFailures() { ++fNumInlineCompilationFailures; }
 
+        void updatePipelineCount(int count) { fPipelineCount = count; }
+        void setPipelineCountMax(int max) { fPipelineCountMax = max; }
+
         int numInlineProgramCacheResult(ProgramCacheResult stat) const {
             return fInlineProgramCacheStats[(int) stat];
         }
@@ -76,7 +79,8 @@ public:
 
     private:
         std::atomic<int> fShaderCompilations{0};
-
+        std::atomic<int> fPipelineCount{0};
+        std::atomic<int> fPipelineCountMax{0};
         std::atomic<int> fNumInlineCompilationFailures{0};
         std::array<std::atomic<int>, kNumProgramCacheResults> fInlineProgramCacheStats = {};
 
