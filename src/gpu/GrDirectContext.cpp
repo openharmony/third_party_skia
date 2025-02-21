@@ -372,6 +372,11 @@ void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, con
     fStrikeCache->freeAll();
 }
 
+void GrDirectContext::registerVulkanErrorCallback(const std::function<void()>& vulkanErrorCallback)
+{
+    vulkanErrorCallback_ = vulkanErrorCallback;
+}
+
 void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
         const std::set<int>& protectedPidSet)
 {

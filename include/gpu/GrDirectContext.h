@@ -300,6 +300,7 @@ public:
     void purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
         const std::set<int>& protectedPidSet);
     void purgeUnlockAndSafeCacheGpuResources();
+    void registerVulkanErrorCallback(const std::function<void()>& vulkanErrorCallback);
 
     std::array<int, 2> CalcHpsBluredImageDimension(const SkBlurArg& blurArg);
     /**
@@ -897,6 +898,7 @@ public:
     // OH ISSUE: suppress release window
     void setGpuCacheSuppressWindowSwitch(bool enabled);
     void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
+    std::function<void()> vulkanErrorCallback_;
 
 protected:
     GrDirectContext(GrBackendApi backend, const GrContextOptions& options);
