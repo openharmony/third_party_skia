@@ -1889,6 +1889,12 @@ bool TextLine::endsWithHardLineBreak() const {
            fGhostClusterRange.end == fOwner->clusters().size() - 1;
 #endif
 }
+#ifdef OHOS_SUPPORT
+bool TextLine::endsWithOnlyHardBreak() const
+{
+    return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak());
+}
+#endif
 
 void TextLine::getRectsForRange(TextRange textRange0,
                                 RectHeightStyle rectHeightStyle,
@@ -1930,7 +1936,15 @@ void TextLine::getRectsForRange(TextRange textRange0,
                 case RectHeightStyle::kMax:
                     // TODO: Change it once flutter rolls into google3
                     //  (probably will break things if changed before)
+#ifdef OHOS_SUPPORT
+                    if (endsWithOnlyHardBreak() && fOwner->paragraphStyle().getParagraphStyleSpacing() > 0) {
+                        clip.fBottom = this->height() - fOwner->paragraphStyle().getParagraphStyleSpacing();
+                    } else {
+                        clip.fBottom = this->height();
+                    }
+#else
                     clip.fBottom = this->height();
+#endif
                     clip.fTop = this->sizes().delta();
                     break;
                 case RectHeightStyle::kIncludeLineSpacingTop: {
