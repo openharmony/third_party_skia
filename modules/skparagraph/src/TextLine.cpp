@@ -1042,7 +1042,10 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     countWord(wordCount, inWord);
 
     bool iterForWord = false;
-
+    if (fClusterRange.width() == 0 && fGhostClusterRange.width() > 0) {
+        // Only be entered when there is an empty line.
+        fClusterRange = fGhostClusterRange;
+    }
     for (auto clusterIndex = fClusterRange.end; clusterIndex > fClusterRange.start; --clusterIndex) {
         auto& cluster = fOwner->cluster(clusterIndex - 1);
         // Shape the ellipsis if the run has changed
