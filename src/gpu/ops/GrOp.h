@@ -193,6 +193,12 @@ public:
         this->onExecute(state, chainBounds);
     }
 
+    virtual bool isStencilCullingOp() {
+        return false;
+    }
+
+    bool shouldDisableStencilCulling = false;
+
     /** Used for spewing information about ops when debugging. */
 #if GR_TEST_UTILS
     virtual SkString dumpInfo() const final {

@@ -75,7 +75,7 @@ public:
 #endif
 
     const GrUserStencilSettings* stencilSettings() const { return fStencilSettings; }
-
+    void resetStencilSettings() { fStencilSettings = &GrUserStencilSettings::kUnused; }
 private:
     const GrUserStencilSettings* fStencilSettings;
     using INHERITED = GrSimpleMeshDrawOpHelper;

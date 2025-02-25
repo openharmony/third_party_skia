@@ -627,6 +627,11 @@ public:
 #endif
 
     bool drawBlurImage(GrSurfaceProxyView proxyView, const SkBlurArg& blurArg);
+    void clearStencil(const SkIRect& stencilRect, uint32_t stencilVal);
+
+    // Stencil Culling use
+    void setStencilRef(uint32_t stencilRef) { fStencilRef = stencilRef; };
+    void resetStencilRef() { fStencilRef = UINT32_MAX; };
 
 private:
     enum class QuadOptimization;
@@ -705,6 +710,8 @@ private:
     const bool fCanUseDynamicMSAA;
 
     bool fNeedsStencil = false;
+
+    uint32_t fStencilRef = UINT32_MAX;
 
 #if GR_TEST_UTILS
     bool fPreserveOpsOnFullClear_TestingOnly = false;

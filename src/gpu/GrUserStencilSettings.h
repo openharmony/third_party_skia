@@ -32,6 +32,8 @@
  *   clip).
  */
 
+ // Stencil Culling use
+static const int kStencilLayersMax = 6;
 enum GrStencilFlags : int {
     kDisabled_StencilFlag         = (1 << 0),
     kTestAlwaysPasses_StencilFlag = (1 << 1),
@@ -206,6 +208,7 @@ struct GrUserStencilSettings {
     const Face       fCCWFace;
 
     static const GrUserStencilSettings& kUnused;
+    static const GrUserStencilSettings *kGE[kStencilLayersMax];    
 
     bool isUnused() const { return this == &kUnused; }
 };

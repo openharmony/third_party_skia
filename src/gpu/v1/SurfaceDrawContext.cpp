@@ -721,10 +721,17 @@ void SurfaceDrawContext::drawTexturedQuad(const GrClip* clip,
                                                           : TextureOp::Saturate::kNo;
         // Use the provided subset, although hypothetically we could detect that the cropped local
         // quad is sufficiently inside the subset and the constraint could be dropped.
-        this->addDrawOp(finalClip,
-                        TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
-                                        std::move(textureXform), filter, mm, color, saturate,
-                                        blendMode, aaType, quad, subset));
+        if (fStencilRef != UINT32_MAX) {
+            this->addDrawOp(finalClip,
+                TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
+                                std::move(textureXform), filter, mm, color, saturate,
+                                blendMode, aaType, quad, subset, fStencilRef));   
+        } else {
+            this->addDrawOp(finalClip,
+                TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
+                               std::move(textureXform), filter, mm, color, saturate,
+                               blendMode, aaType, quad, subset));
+        }
     }
 }
 
@@ -834,7 +841,14 @@ void SurfaceDrawContext::fillRectToRect(const GrClip* clip,
     }
 
     assert_alive(paint);
-    this->drawFilledQuad(clip, std::move(paint), aa, &quad);
+    if (fStencilRef != UINT32_MAX) {
+        GR_CREATE_TRACE_MARKER_CONTEXT("SurfaceDrawContext", "fillRectToRect with stencil", fContext);
+        const GrUserStencilSettings* st = GrUserStencilSettings::kGE[fStencilRef];
+        this->drawFilledQuad(clip, std::move(paint), aa, &quad, st);
+    } else {
+        this->drawFilledQuad(clip, std::move(paint), aa, &quad);        
+    }
+
 }
 
 void SurfaceDrawContext::drawQuadSet(const GrClip* clip,
@@ -884,6 +898,12 @@ void SurfaceDrawContext::setNeedsStencil() {
                     OpsTask::StencilContent::kUserBitsCleared);
         }
     }
+}
+
+void SurfaceDrawContext::clearStencil(const SkIRect& stencilRect, uint32_t stencilVal) {
+    this->setNeedsStencil();
+    GrScissorState scissorState(this->asSurfaceProxy()->backingStoreDimensions(), stencilRect);
+    this->addOp(ClearOp::MakeStencil(fContext, scissorState, stencilVal));
 }
 
 void SurfaceDrawContext::internalStencilClear(const SkIRect* scissor, bool insideStencilMask) {
@@ -1995,6 +2015,11 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
     // needed.
     if (opUsesStencil) {
         this->setNeedsStencil();
+        if(op->isStencilCullingOp()) {
+            this->drawingManager()->hasStencilCullingOp();
+        } else {
+            this->drawingManager()->disableStencilCulling();
+        }
     }
 
 #if GR_GPU_STATS && GR_TEST_UTILS

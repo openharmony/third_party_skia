@@ -40,6 +40,16 @@ GrOp::Owner ClearOp::MakeStencilClip(GrRecordingContext* context,
                                insideMask);
 }
 
+GrOp::Owner ClearOp::MakeStencil(GrRecordingContext* context,
+                                 const GrScissorState& scissor,
+                                 uint32_t stencilVal) {
+    return GrOp::Make<ClearOp>(context,
+                               Buffer::kStencil,
+                               scissor,
+                               stencilVal,
+                               true);
+}
+
 ClearOp::ClearOp(Buffer buffer,
                  const GrScissorState& scissor,
                  std::array<float, 4> color,
@@ -52,9 +62,23 @@ ClearOp::ClearOp(Buffer buffer,
     this->setBounds(SkRect::Make(scissor.rect()), HasAABloat::kNo, IsHairline::kNo);
 }
 
+ClearOp::ClearOp(Buffer buffer,
+                 const GrScissorState& scissor,
+                 uint32_t stencilVal,
+                 bool insideMask)
+        : GrOp(ClassID())
+        , fScissor(scissor)
+        , fStencilVal(stencilVal)
+        , fStencilInsideMask(insideMask)
+        , fBuffer(buffer) {
+    this->setBounds(SkRect::Make(scissor.rect()), HasAABloat::kNo, IsHairline::kNo);
+}
+
 GrOp::CombineResult ClearOp::onCombineIfPossible(GrOp* t, SkArenaAlloc*, const GrCaps& caps) {
     auto other = t->cast<ClearOp>();
-
+    if (fBuffer == Buffer::kStencil || other->fBuffer == Buffer::kStencil) { 
+        return CombineResult::kCannotCombine;
+    }    
     if (other->fBuffer == fBuffer) {
         // This could be much more complicated. Currently we look at cases where the new clear
         // contains the old clear, or when the new clear is a subset of the old clear and they clear
@@ -91,6 +115,10 @@ void ClearOp::onExecute(GrOpFlushState* state, const SkRect& chainBounds) {
 
     if (fBuffer & Buffer::kStencilClip) {
         state->opsRenderPass()->clearStencilClip(fScissor, fStencilInsideMask);
+    }
+    if (fBuffer == Buffer::kStencil && !shouldDisableStencilCulling) {
+        TRACE_EVENT0("skia", "StencilCullingOpt ClearOp::onExecute with stencil");
+        state->opsRenderPass()->clearStencil(fScissor, fStencilVal);
     }
 }
 

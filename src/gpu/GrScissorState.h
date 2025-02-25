@@ -25,6 +25,12 @@ public:
             : fRTSize(rtDims)
             , fRect(SkIRect::MakeSize(rtDims)) {}
 
+    explicit GrScissorState(const SkISize& rtDims, const SkIRect& stencilRect)
+            : fRTSize(rtDims)
+            , fRect(SkIRect::MakeSize(rtDims))
+            , fStencilRect(stencilRect) {}
+
+
     void setDisabled() { fRect = SkIRect::MakeSize(fRTSize); }
     bool set(const SkIRect& rect) {
         this->setDisabled();
@@ -75,10 +81,15 @@ public:
         return fRect;
     }
 
+    const SkIRect& stencilRect() const {
+        return fStencilRect;
+    }
+
 private:
     // The scissor is considered enabled if the rectangle does not cover the render target
     SkISize fRTSize;
     SkIRect fRect;
+    SkIRect fStencilRect;
 };
 
 #endif

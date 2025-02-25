@@ -92,6 +92,8 @@ private:
 
     void onClear(const GrScissorState& scissor, std::array<float, 4> color) override;
 
+    void onClearStencil(const GrScissorState& scissor, uint32_t stencilVal) override;   
+
     void onClearStencilClip(const GrScissorState& scissor, bool insideStencilMask) override;
 
     void onDrawBlurImage(const GrSurfaceProxyView& proxyView, const SkBlurArg& blurArg) override;

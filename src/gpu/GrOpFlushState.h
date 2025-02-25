@@ -261,6 +261,9 @@ public:
                                          baseVertex);
     }
 
+    bool fDisableStencilCulling = false;
+    bool fHasStencilCullingOp = false;
+
 private:
     struct InlineUpload {
         InlineUpload(GrDeferredTextureUploadFn&& upload, GrDeferredUploadToken token)

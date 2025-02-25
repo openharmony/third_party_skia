@@ -1456,6 +1456,14 @@ public:
     */
     void drawPath(const SkPath& path, const SkPaint& paint);
 
+    // Stencil Culling API
+    void drawPathWithStencil(const SkPath& path, const SkPaint& paint, uint32_t stencilRef);
+    void drawImageWithStencil(const sk_sp<SkImage>& image, SkScalar left, SkScalar top,
+                              const SkSamplingOptions& sampling, const SkPaint* paint, uint32_t stencilRef) {
+        this->onDrawImage2WithStencil(image.get(), left, top, sampling, paint, stencilRef);
+    }
+    void clearStencil(const SkIRect& rect, uint32_t stencilVal);
+    
     void drawImage(const SkImage* image, SkScalar left, SkScalar top) {
         this->drawImage(image, left, top, SkSamplingOptions(), nullptr);
     }
@@ -2281,6 +2289,7 @@ protected:
     virtual void onDrawArc(const SkRect& rect, SkScalar startAngle, SkScalar sweepAngle,
                            bool useCenter, const SkPaint& paint);
     virtual void onDrawPath(const SkPath& path, const SkPaint& paint);
+    virtual void onDrawPathWithStencil(const SkPath& path, const SkPaint& paint, uint32_t stencilRef);
     virtual void onDrawRegion(const SkRegion& region, const SkPaint& paint);
 
     virtual void onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y,
@@ -2297,6 +2306,8 @@ protected:
 
     virtual void onDrawImage2(const SkImage*, SkScalar dx, SkScalar dy, const SkSamplingOptions&,
                               const SkPaint*);
+    virtual void onDrawImage2WithStencil(const SkImage*, SkScalar dx, SkScalar dy, const SkSamplingOptions&,
+                              const SkPaint*, uint32_t stencilRef);
     virtual void onDrawImageRect2(const SkImage*, const SkRect& src, const SkRect& dst,
                                   const SkSamplingOptions&, const SkPaint*, SrcRectConstraint);
     virtual void onDrawImageLattice2(const SkImage*, const Lattice&, const SkRect& dst,
@@ -2418,6 +2429,12 @@ private:
 
         void reset(SkBaseDevice* device);
     };
+
+    void drawImageCommon(const SkImage* image, SkScalar x, SkScalar y,
+                         const SkSamplingOptions& sampling, const SkPaint* paint,
+                         bool useStencil, uint32_t stencilRef = 0);
+    
+    void onDrawPathCommon(const SkPath& path, const SkPaint& paint, bool useStencil, uint32_t stencilRef = 0);
 
     SkDeque     fMCStack;
     // points to top of stack

@@ -195,6 +195,8 @@ bool GrDrawingManager::flush(
                 }
             });
 #endif
+            flushState.fDisableStencilCulling = fDisableStencilCulling;
+            flushState.fHasStencilCullingOp = fHasStencilCullingOp;
             onFlushRenderTask->prepare(&flushState);
         }
     }
@@ -251,6 +253,9 @@ bool GrDrawingManager::flush(
     }
     fFlushingRenderTaskIDs.reset();
     fFlushing = false;
+
+    fDisableStencilCulling = false;
+    fHasStencilCullingOp = false;
 
     return true;
 }
@@ -1003,4 +1008,9 @@ void GrDrawingManager::flushIfNecessary() {
         }
         resourceCache->purgeAsNeeded();
     }
+}
+
+void GrDrawingManager::disableStencilCulling() {
+    GR_CREATE_TRACE_MARKER_CONTEXT("GrDrawingManager", "disableStencilCulling", fContext);
+    fDisableStencilCulling = true;
 }

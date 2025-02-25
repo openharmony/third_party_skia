@@ -160,6 +160,8 @@ public:
     void createDDLTask(sk_sp<const SkDeferredDisplayList>,
                        sk_sp<GrRenderTargetProxy> newDest,
                        SkIPoint offset);
+    void disableStencilCulling();
+    void hasStencilCullingOp() { fHasStencilCullingOp = true; };
 
 private:
 #if SK_GPU_V1
@@ -234,6 +236,9 @@ private:
     const bool                               fReduceOpsTaskSplitting;
 
     SkTArray<GrOnFlushCallbackObject*>       fOnFlushCBObjects;
+
+    bool                                     fDisableStencilCulling = false;
+    bool                                     fHasStencilCullingOp = false;
 
     struct SurfaceIDKeyTraits {
         static uint32_t GetInvalidKey() {

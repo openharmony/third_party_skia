@@ -128,6 +128,8 @@ public:
      */
     void clear(const GrScissorState& scissor, std::array<float, 4> color);
 
+    void clearStencil(const GrScissorState& scissor, uint32_t stencilVal);
+
     /**
      * Same as clear() but modifies the stencil; check caps.performStencilClearsAsDraws() and
      * caps.performPartialClearsAsDraws().
@@ -201,6 +203,7 @@ private:
     }
     virtual void onClear(const GrScissorState&, std::array<float, 4> color) = 0;
     virtual void onClearStencilClip(const GrScissorState&, bool insideStencilMask) = 0;
+    virtual void onClearStencil(const GrScissorState&, uint32_t stencilVal) {};
     virtual void onExecuteDrawable(std::unique_ptr<SkDrawable::GpuDrawHandler>) {}
     virtual void onDrawBlurImage(const GrSurfaceProxyView& proxyView, const SkBlurArg& blurArg) {};
 

@@ -257,6 +257,11 @@ void Device::onClipPath(const SkPath& path, SkClipOp op, bool aa) {
     fClip.clipPath(this->localToDevice(), path, GrAA(aa), op);
 }
 
+void Device::clearStencil(const SkIRect& rect, uint32_t stencilVal) {
+    GR_CREATE_TRACE_MARKER_CONTEXT("skgpu::v1::Device", "clearStencil", fContext.get());
+    fSurfaceDrawContext->clearStencil(rect, stencilVal);
+}
+
 void Device::onClipRegion(const SkRegion& globalRgn, SkClipOp op) {
     SkASSERT(op == SkClipOp::kIntersect || op == SkClipOp::kDifference);
 
@@ -643,6 +648,12 @@ void Device::drawPath(const SkPath& origSrcPath, const SkPaint& paint, bool path
                                          paint, this->asMatrixProvider(), shape);
 }
 
+void Device::drawPathWithStencil(const SkPath& origSrcPath, const SkPaint& paint, uint32_t stencilRef, bool pathIsMutable) {
+    fSurfaceDrawContext->setStencilRef(stencilRef);
+    this->drawPath(origSrcPath, paint, false);
+    fSurfaceDrawContext->resetStencilRef();
+}
+
 sk_sp<SkSpecialImage> Device::makeSpecial(const SkBitmap& bitmap) {
     ASSERT_SINGLE_OWNER
 
@@ -743,6 +754,18 @@ void Device::drawDevice(SkBaseDevice* device,
     // clear of the source device must occur before CHECK_SHOULD_DRAW
     GR_CREATE_TRACE_MARKER_CONTEXT("skgpu::v1::Device", "drawDevice", fContext.get());
     this->INHERITED::drawDevice(device, sampling, paint);
+}
+
+void Device::drawImageRectWithStencil(const SkImage* image,
+                                      const SkRect* src,
+                                      const SkRect& dst,
+                                      const SkSamplingOptions& sampling,
+                                      const SkPaint& paint,
+                                      SkCanvas::SrcRectConstraint constraint,
+                                      uint32_t stencilRef) {
+    fSurfaceDrawContext->setStencilRef(stencilRef);
+    this->drawImageRect(image, src, dst, sampling, paint, constraint);
+    fSurfaceDrawContext->resetStencilRef();
 }
 
 void Device::drawImageRect(const SkImage* image,

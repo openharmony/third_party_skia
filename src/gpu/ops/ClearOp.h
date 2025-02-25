@@ -12,7 +12,8 @@
 #include "src/gpu/GrScissorState.h"
 #include "src/gpu/ops/GrOp.h"
 
-class GrOpFlushState;
+#include "src/gpu/GrOpFlushState.h"
+
 class GrRecordingContext;
 
 namespace skgpu::v1 {
@@ -30,6 +31,10 @@ public:
                                        const GrScissorState& scissor,
                                        bool insideMask);
 
+    static GrOp::Owner MakeStencil(GrRecordingContext* context,
+                                   const GrScissorState& scissor,
+                                   uint32_t stencilVal);  
+                                 
     const char* name() const override { return "Clear"; }
 
     const std::array<float, 4>& color() const { return fColor; }
@@ -42,6 +47,8 @@ private:
         kStencilClip = 0b10,
 
         kBoth        = 0b11,
+
+        kStencil        = 0b100,  
     };
     GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(Buffer);
 
@@ -50,13 +57,20 @@ private:
             std::array<float, 4> color,
             bool stencil);
 
+    ClearOp(Buffer buffer,
+            const GrScissorState& scissor,
+            uint32_t stencilVal,
+            bool stencil);
+
     CombineResult onCombineIfPossible(GrOp* t, SkArenaAlloc*, const GrCaps& caps) override;
 
     void onPrePrepare(GrRecordingContext*, const GrSurfaceProxyView& writeView, GrAppliedClip*,
                       const GrDstProxyView&, GrXferBarrierFlags renderPassXferBarriers,
                       GrLoadOp colorLoadOp) override {}
 
-    void onPrepare(GrOpFlushState*) override {}
+    void onPrepare(GrOpFlushState* flushState) override {
+        shouldDisableStencilCulling = flushState->fDisableStencilCulling;
+    }
 
     void onExecute(GrOpFlushState* state, const SkRect& chainBounds) override;
 #if GR_TEST_UTILS
@@ -75,6 +89,7 @@ private:
 
     GrScissorState       fScissor;
     std::array<float, 4> fColor;
+    uint32_t             fStencilVal;
     bool                 fStencilInsideMask;
     Buffer               fBuffer;
 };
