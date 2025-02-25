@@ -1013,7 +1013,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         }
 
         SkScalar lineHeight = fEndLine.metrics().height();
-        if (fHardLineBreak && parent->paragraphStyle().getParagraphStyleSpacing() > 0) {
+        if (fHardLineBreak && !lastLine && parent->paragraphStyle().getParagraphStyleSpacing() > 0) {
             lineHeight += parent->paragraphStyle().getParagraphStyleSpacing();
         }
         firstLine = false;

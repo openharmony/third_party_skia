@@ -1198,6 +1198,10 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     } while (trailingSpaces != 0);
 
     advance.fY = metrics.height();
+    if (this->paragraphStyle().getIsEndAddParagraphSpacing() &&
+        this->paragraphStyle().getParagraphStyleSpacing() > 0) {
+        advance.fY += this->paragraphStyle().getParagraphStyleSpacing();
+    }
     auto clusterRange = ClusterRange(0, trailingSpaces);
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
     SkScalar offsetX = this->detectIndents(0);
