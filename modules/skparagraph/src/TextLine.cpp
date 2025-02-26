@@ -1041,8 +1041,13 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     countWord(wordCount, inWord);
 
-    bool iterForWord = false;
+    if (fClusterRange.width() == 0 && fGhostClusterRange.width() > 0) {
+        // Only be entered when line is empty.
+        handleTailEllipsisInEmptyLine(ellipsisRun, ellipsis, width, wordBreakType);
+        return;
+    }
 
+    bool iterForWord = false;
     for (auto clusterIndex = fClusterRange.end; clusterIndex > fClusterRange.start; --clusterIndex) {
         auto& cluster = fOwner->cluster(clusterIndex - 1);
         // Shape the ellipsis if the run has changed
@@ -1086,6 +1091,18 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     fWidthWithSpaces = width;
 
+    ellipsisNotFitProcess(EllipsisModal::TAIL);
+}
+
+void TextLine::handleTailEllipsisInEmptyLine(std::unique_ptr<Run>& ellipsisRun, const SkString& ellipsis,
+    SkScalar width, WordBreakType wordBreakType)
+{
+    auto& cluster = fOwner->cluster(fClusterRange.start);
+    ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
+    fEllipsis = std::move(ellipsisRun);
+    fEllipsis->fTextRange = TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
+    TailEllipsisUpdateLine(cluster, width, fGhostClusterRange.end, wordBreakType);
+    fWidthWithSpaces = width;
     ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
 
