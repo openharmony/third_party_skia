@@ -11,7 +11,7 @@
 #include "include/core/SkTypes.h"
 #include "src/codec/SkCodecPriv.h"
 
-class SkSampler : public SkNoncopyable {
+class SK_API SkSampler : public SkNoncopyable {
 public:
     /**
      *  Update the sampler to sample every sampleX'th pixel. Returns the

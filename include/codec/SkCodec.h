@@ -737,6 +737,26 @@ public:
             bool                     (*peek)(const void*, size_t),
             std::unique_ptr<SkCodec> (*make)(std::unique_ptr<SkStream>, SkCodec::Result*));
 
+    const SkEncodedInfo& callGetEncodedInfo() const { return fEncodedInfo; }
+
+    using GetPixelsCallback = std::function<Result(const SkImageInfo&, void* pixels,
+                                                    size_t rowBytes, const Options& opts,
+                                                    int frameIndex)>;
+
+    Result CallhandleFrameIndex(const SkImageInfo& info, void* pixels, size_t rowBytes, 
+                                          const Options& handleOptions, GetPixelsCallback = nullptr);
+
+    bool CallDimensionsSupported(const SkISize& dim) {
+        return dim == this->dimensions() || this->onDimensionsSupported(dim);
+    }
+
+    void callFillIncompleteImage(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
+        ZeroInitialized zeroInit, int linesRequested, int linesDecoded) {
+            this->fillIncompleteImage(dstInfo, dst, rowBytes, zeroInit, linesRequested, linesDecoded);
+        }
+    
+    virtual SkSampler* callGetSampler(bool /*createIfNecessary*/) { return nullptr; }
+
 protected:
     const SkEncodedInfo& getEncodedInfo() const { return fEncodedInfo; }
 
