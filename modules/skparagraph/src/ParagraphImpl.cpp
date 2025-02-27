@@ -1198,9 +1198,10 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     } while (trailingSpaces != 0);
 
     advance.fY = metrics.height();
+    SkScalar heightWithParagraphSpacing = advance.fY;
     if (this->paragraphStyle().getIsEndAddParagraphSpacing() &&
         this->paragraphStyle().getParagraphStyleSpacing() > 0) {
-        advance.fY += this->paragraphStyle().getParagraphStyleSpacing();
+        heightWithParagraphSpacing += this->paragraphStyle().getParagraphStyleSpacing();
     }
     auto clusterRange = ClusterRange(0, trailingSpaces);
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
@@ -1211,7 +1212,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
         metrics);
     auto spacing = line.autoSpacing();
     auto longestLine = std::max(run.advance().fX, advance.fX) + spacing;
-    setSize(advance.fY, maxWidth, longestLine);
+    setSize(heightWithParagraphSpacing, maxWidth, longestLine);
     setLongestLineWithIndent(longestLine + offsetX);
     setIntrinsicSize(run.advance().fX, advance.fX,
         fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
