@@ -23,6 +23,9 @@
 #include "include/private/SkTemplates.h"
 
 #include <vector>
+#ifdef SK_ENABLE_OHOS_CODEC
+#include <functional>
+#endif
 
 class SkAndroidCodec;
 class SkColorSpace;
@@ -737,25 +740,35 @@ public:
             bool                     (*peek)(const void*, size_t),
             std::unique_ptr<SkCodec> (*make)(std::unique_ptr<SkStream>, SkCodec::Result*));
 
+#ifdef SK_ENABLE_OHOS_CODEC
     const SkEncodedInfo& callGetEncodedInfo() const { return fEncodedInfo; }
 
     using GetPixelsCallback = std::function<Result(const SkImageInfo&, void* pixels,
-                                                    size_t rowBytes, const Options& opts,
-                                                    int frameIndex)>;
+                                                   size_t rowBytes, const Options& opts,
+                                                   int frameIndex)>;
 
-    Result CallhandleFrameIndex(const SkImageInfo& info, void* pixels, size_t rowBytes, 
+    /**
+     *  Check for a valid Options.fFrameIndex, and decode prior frames if necessary.
+     */
+    Result callHandleFrameIndex(const SkImageInfo& info, void* pixels, size_t rowBytes,
                                           const Options& handleOptions, GetPixelsCallback = nullptr);
 
-    bool CallDimensionsSupported(const SkISize& dim) {
+    /**
+     *  Return whether these dimensions are supported as a scale.
+     */
+    bool callDimensionsSupported(const SkISize& dim) {
         return dim == this->dimensions() || this->onDimensionsSupported(dim);
     }
-
+    /**
+     * this function is used to fill any uinitialized memory.
+     */
     void callFillIncompleteImage(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
         ZeroInitialized zeroInit, int linesRequested, int linesDecoded) {
             this->fillIncompleteImage(dstInfo, dst, rowBytes, zeroInit, linesRequested, linesDecoded);
         }
-    
+
     virtual SkSampler* callGetSampler(bool /*createIfNecessary*/) { return nullptr; }
+#endif
 
 protected:
     const SkEncodedInfo& getEncodedInfo() const { return fEncodedInfo; }
