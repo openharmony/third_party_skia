@@ -42,7 +42,9 @@ struct GrVkResourceProvider::PipelineStateCache::Entry {
 GrVkResourceProvider::PipelineStateCache::PipelineStateCache(GrVkGpu* gpu)
     : fMap(gpu->getContext()->priv().options().fRuntimeProgramCacheSize)
     , fGpu(gpu) {
+#ifdef SKIA_DFX_FOR_OHOS
     fStats.setPipelineCountMax(gpu->getContext()->priv().options().fRuntimeProgramCacheSize);
+#endif
 }
 
 GrVkResourceProvider::PipelineStateCache::~PipelineStateCache() {
@@ -102,7 +104,9 @@ GrVkPipelineState* GrVkResourceProvider::PipelineStateCache::findOrCreatePipelin
     } else {
         fStats.incNumInlineProgramCacheResult(stat);
     }
+#ifdef SKIA_DFX_FOR_OHOS
     fStats.updatePipelineCount(fMap.count());
+#endif
     return tmp;
 }
 
