@@ -768,6 +768,9 @@ public:
             this->fillIncompleteImage(dstInfo, dst, rowBytes, zeroInit, linesRequested, linesDecoded);
         }
 
+    /**
+     *  Return an object which can used to force scanline decodes to sample in X.
+     */
     virtual SkSampler* callGetSampler(bool /*createIfNecessary*/) { return nullptr; }
 #endif
 
