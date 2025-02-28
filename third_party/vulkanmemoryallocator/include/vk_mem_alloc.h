@@ -6936,7 +6936,7 @@ public:
         VmaSuballocationType suballocType,
         VmaAllocation* pAllocation);
     
-    friend void SwapLastBlock(VmaBlockVector* blockVector1, VmaBlockVector* blockVector2);
+    bool SwapLastBlock(VmaBlockVector* blockVector);
 
     void Free(const VmaAllocation hAllocation);
 
@@ -12719,15 +12719,21 @@ VkResult VmaBlockVector::AllocateReserved(
     return res;
 }
 
-void SwapLastBlock(VmaBlockVector* blockVector1, VmaBlockVector* blockVector2)
+bool VmaBlockVector::SwapLastBlock(VmaBlockVector* blockVector)
 {
-    VmaDeviceMemoryBlock* lastBlock1 = blockVector1->m_Blocks.back();
-    blockVector1->m_Blocks.pop_back();
-    VmaDeviceMemoryBlock* lastBlock2 = blockVector2->m_Blocks.back();
-    blockVector2->m_Blocks.pop_back();
+    VmaMutexLockWrite lock(m_Mutex, m_hAllocator->m_UseMutex);
 
-    blockVector1->m_Blocks.push_back(lastBlock2);
-    blockVector2->m_Blocks.push_back(lastBlock1);
+    VmaDeviceMemoryBlock* lastBlock1 = m_Blocks.back();
+    VmaDeviceMemoryBlock* lastBlock2 = blockVector->m_Blocks.back();
+    if (lastBlock1 == nullptr || lastBlock2 == nullptr) {
+        return false;
+    }
+    m_Blocks.pop_back();
+    blockVector->m_Blocks.pop_back();
+
+    m_Blocks.push_back(lastBlock2);
+    blockVector->m_Blocks.push_back(lastBlock1);
+    return true;
 }
 
 VkResult VmaBlockVector::AllocatePage(
@@ -16807,6 +16813,7 @@ VkResult VmaAllocator_T::SwapReservedBlock(
     }
     const uint32_t memTypeIndex = oldAllocation->GetMemoryTypeIndex();
     VmaBlockVector* reservedBlockVector = m_pReservedBlockVectors[memTypeIndex];
+    VMA_ASSERT(reservedBlockVector);
     if (reservedBlockVector->IsEmpty()) {
         return VK_NOT_READY;
     }
@@ -16815,7 +16822,10 @@ VkResult VmaAllocator_T::SwapReservedBlock(
     }
 
     VmaBlockVector* blockVector = m_pBlockVectors[memTypeIndex];
-    SwapLastBlock(blockVector, reservedBlockVector);
+    VMA_ASSERT(blockVector);
+    if (!blockVector->SwapLastBlock(reservedBlockVector)) {
+        return VK_ERROR_UNKNOWN;
+    }
     return VK_SUCCESS;
 }
 
