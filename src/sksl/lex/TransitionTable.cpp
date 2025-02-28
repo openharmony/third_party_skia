@@ -8,6 +8,7 @@
 #include "src/sksl/lex/DFA.h"
 #include "src/sksl/lex/TransitionTable.h"
 
+#include <algorithm>
 #include <array>
 #include <bitset>
 #include <cassert>

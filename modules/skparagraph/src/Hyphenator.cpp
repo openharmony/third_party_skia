@@ -147,9 +147,8 @@ struct HyphenFindBreakParam {
 void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
 {
     std::ifstream file(filePath, std::ifstream::binary);
-    if (!file) {
+    if (!file.is_open()) {
         TEXT_LOGE("Failed to open %{public}s", filePath.c_str());
-        file.close();
         return;
     }
 
@@ -440,10 +439,10 @@ std::vector<uint8_t> Hyphenator::findBreakPositions(const std::vector<uint8_t>& 
         const auto lastword = std::string(text.c_str() + startPos, text.c_str() + endPos);
         std::vector<uint16_t> word;
         int32_t i = 0;
-        const int32_t textLength = endPos - startPos;
+        const int32_t textLength = static_cast<int32_t>(endPos - startPos);
         uint32_t c = 0;
         while (i < textLength) {
-            U8_NEXT(lastword.c_str(), i, textLength, c);
+            U8_NEXT(reinterpret_cast<const uint8_t*>(lastword.c_str()), i, textLength, c);
             if (U16_LENGTH(c) == 1) {
                 word.push_back(c);
             } else {

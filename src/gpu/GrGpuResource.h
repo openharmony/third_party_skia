@@ -312,7 +312,7 @@ public:
     /**
      * Set the resource tag.
      */
-    void setResourceTag(const GrGpuResourceTag tag);
+    void setResourceTag(const GrGpuResourceTag tag, bool curRealAlloc = false);
 
     /**
      * Get the resource tag.

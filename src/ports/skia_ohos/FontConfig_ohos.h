@@ -41,6 +41,7 @@ enum {
 };
 } /* namespace ErrorCode */
 
+
 /*!
  * \brief To parse the font configuration document and manage the system fonts
  */
@@ -75,6 +76,8 @@ public:
         std::string lang;
         // all the typefaces of this font
         std::vector<sk_sp<SkTypeface_OHOS>> typefaces;
+        // the unicode range of this font
+        std::array<uint32_t, 4> range{};
 
         // may be redundant move
         explicit Font(FontJson&& info)
@@ -83,6 +86,8 @@ public:
         {
             this->type = info.type >= FontType::NumOfFontType ? FontType::Generic : static_cast<FontType>(info.type);
         }
+
+        bool containChar(SkUnichar unicode) const;
     };
 
     explicit FontConfig_OHOS(const SkTypeface_FreeType::Scanner& fontScanner, const char* fname = nullptr);
@@ -114,12 +119,14 @@ private:
         std::vector<Font> fGeneric;
         std::unordered_map<std::string, std::pair<size_t, FontType>> fIndexMap;
 
-        void emplaceFont(FontJson&& fj, sk_sp<SkTypeface_OHOS>&& typeface)
+        void emplaceFont(FontJson&& fj, sk_sp<SkTypeface_OHOS>&& typeface, const std::array<uint32_t, 4>& range)
         {
             if (fj.family.empty()) {
                 return;
             }
             Font f(std::move(fj));
+            // copy the range, the range is a 128bit number stored in 4 uint32_t
+            f.range = range;
             auto& targetVec = (f.type == FontType::Generic) ? fGeneric : fFallback;
             auto& targetName = (f.type == FontType::Generic) ? f.alias : f.family;
             // generic must have alias
@@ -169,7 +176,7 @@ private:
     int parseFontDir(const char* fname, const Json::Value& root);
     int parseFonts(const Json::Value& root);
 
-    int loadFont(const char* fname, FontJson& font, sk_sp<SkTypeface_OHOS>& typeface);
+    int loadFont(const char* fname, FontJson& font, sk_sp<SkTypeface_OHOS>& typeface, std::array<uint32_t, 4>& range);
     void loadHMSymbol();
     static void sortTypefaceSet(std::vector<sk_sp<SkTypeface_OHOS>>& typefaceSet);
     static uint32_t getFontStyleDifference(const SkFontStyle& style1, const SkFontStyle& style2);

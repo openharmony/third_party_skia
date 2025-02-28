@@ -28,6 +28,11 @@ enum Modifier {
     kUniform_Modifier       = SkSL::Modifiers::kUniform_Flag,
     kFlat_Modifier          = SkSL::Modifiers::kFlat_Flag,
     kNoPerspective_Modifier = SkSL::Modifiers::kNoPerspective_Flag,
+#ifdef SKSL_EXT
+    kReadOnly_Modifier      = SkSL::Modifiers::kReadOnly_Flag,
+    kWriteOnly_Modifier     = SkSL::Modifiers::kWriteOnly_Flag,
+    kBuffer_Modifier        = SkSL::Modifiers::kBuffer_Flag,
+#endif
 };
 
 class DSLModifiers {

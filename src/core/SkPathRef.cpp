@@ -8,6 +8,7 @@
 #include "include/private/SkPathRef.h"
 
 #include "include/core/SkPath.h"
+#include "include/core/SkLog.h"
 #include "include/private/SkNx.h"
 #include "include/private/SkOnce.h"
 #include "include/private/SkTo.h"
@@ -71,13 +72,18 @@ SkPathRef::~SkPathRef() {
     SkDEBUGCODE(fEditorsAttached.store(0x7777777);)
 }
 
-static SkPathRef* gEmpty = nullptr;
+SkPathRef* sk_create_empty_pathref() {
+    SkPathRef* empty = new SkPathRef;
+    empty->computeBounds();   // Avoids races later to be the first to do this.
+    return empty;
+}
+
+static SkPathRef* gEmpty = sk_create_empty_pathref();
 
 SkPathRef* SkPathRef::CreateEmpty() {
     static SkOnce once;
     once([]{
-        gEmpty = new SkPathRef;
-        gEmpty->computeBounds();   // Avoids races later to be the first to do this.
+        SK_LOGI("SkPathRef* SkPathRef::CreateEmpty() &gEmpty = %{public}p", gEmpty);
     });
     return SkRef(gEmpty);
 }

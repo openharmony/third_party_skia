@@ -7,7 +7,7 @@
 _src = get_path_info("../src", "abspath")
 _include = get_path_info("../include", "abspath")
 
-skia_sksl_sources = [
+skia_sksl_sources_base = [
   "$_include/private/SkSLDefines.h",
   "$_include/private/SkSLIRNode.h",
   "$_include/private/SkSLLayout.h",
@@ -53,8 +53,6 @@ skia_sksl_sources = [
   "$_src/sksl/SkSLIntrinsicList.h",
   "$_src/sksl/SkSLIntrinsicMap.cpp",
   "$_src/sksl/SkSLIntrinsicMap.h",
-  "$_src/sksl/SkSLLexer.cpp",
-  "$_src/sksl/SkSLLexer.h",
   "$_src/sksl/SkSLMangler.cpp",
   "$_src/sksl/SkSLMangler.h",
   "$_src/sksl/SkSLMemoryLayout.h",
@@ -202,6 +200,16 @@ skia_sksl_sources = [
   "$_src/sksl/transform/SkSLEliminateUnreachableCode.cpp",
   "$_src/sksl/transform/SkSLTransform.h",
 ]
+
+skia_sksl_sources = skia_sksl_sources_base + [
+                      "$_src/sksl/SkSLLexer.cpp",
+                      "$_src/sksl/SkSLLexer.h",
+                    ]
+
+skia_sksl_sources_ext = skia_sksl_sources_base + [
+                          "$_src/sksl/SkSLLexerExt.cpp",
+                          "$_src/sksl/SkSLLexerExt.h",
+                        ]
 
 skia_sksl_gpu_sources = [
   "$_src/sksl/codegen/SkSLCodeGenerator.h",

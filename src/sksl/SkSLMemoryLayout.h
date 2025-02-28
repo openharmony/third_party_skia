@@ -134,6 +134,11 @@ public:
                        (0 == alignment % this->alignment(*type.fields()[0].fType)));
                 return (total + alignment - 1) & ~(alignment - 1);
             }
+#ifdef SKSL_EXT
+            case Type::TypeKind::kSampler: {
+                return 0;
+            }
+#endif
             default:
                 SK_ABORT("cannot determine size of type %s", String(type.name()).c_str());
         }
@@ -156,7 +161,11 @@ public:
                 return std::all_of(
                         type.fields().begin(), type.fields().end(),
                         [](const Type::Field& f) { return LayoutIsSupported(*f.fType); });
-
+#ifdef SKSL_EXT
+            case Type::TypeKind::kSampler: {
+                return true;
+            }
+#endif
             default:
                 return false;
         }

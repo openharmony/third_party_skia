@@ -9,7 +9,7 @@
 #define GrSurfaceProxyPriv_DEFINED
 
 #include "src/gpu/GrSurfaceProxy.h"
-#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#if defined(SKIA_DFX_FOR_RECORD_VKIMAGE) || defined(SKIA_DFX_FOR_OHOS)
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
 #endif
 
@@ -48,11 +48,20 @@ public:
     void setIsPromiseProxy() { fProxy->fIsPromiseProxy = true; }
 
 private:
+#if defined(SKIA_DFX_FOR_RECORD_VKIMAGE) || defined(SKIA_DFX_FOR_OHOS)
+    explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) :
+        fProxy(proxy)
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
-    explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) : fProxy(proxy), nodeId(ParallelDebug::GetNodeId()) {};
+        , nodeId(ParallelDebug::GetNodeId())
+#endif
+#ifdef SKIA_DFX_FOR_OHOS
+        , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
+#endif
+        {};
 #else
     explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) : fProxy(proxy) {};
 #endif
+
     // Required until C++17 copy elision
     GrSurfaceProxyPriv(const GrSurfaceProxyPriv&) = default;
     GrSurfaceProxyPriv& operator=(const GrSurfaceProxyPriv&) = delete;
@@ -64,6 +73,10 @@ private:
     GrSurfaceProxy* fProxy;
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     uint64_t nodeId;
+#endif
+#ifdef SKIA_DFX_FOR_OHOS
+    // OH ISSUE: proxy resources real alloc status
+    bool fRealAllocProxy = false;
 #endif
 
     friend class GrSurfaceProxy; // to construct/copy this type.

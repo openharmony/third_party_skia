@@ -2738,6 +2738,18 @@ bool GrVkGpu::checkVkResult(VkResult result) {
                 getContext()->dumpAllResource(dump);
             }
 #endif
+            {
+                auto context = getContext();
+                if (context) {
+                    if (context->vulkanErrorCallback_) {
+                        context->vulkanErrorCallback_();
+                    } else {
+                        SK_LOGE("checkVkResult vulkanErrorCallback_ nullptr");
+                    }
+                } else {
+                    SK_LOGE("checkVkResult context nullptr");
+                }
+            }
             return false;
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:
         case VK_ERROR_OUT_OF_HOST_MEMORY:

@@ -48,6 +48,11 @@ struct Modifiers {
         kHasSideEffects_Flag = 1 <<  10,
         kInline_Flag         = 1 <<  11,
         kNoInline_Flag       = 1 <<  12,
+#ifdef SKSL_EXT
+        kReadOnly_Flag       = 1 <<  13,
+        kWriteOnly_Flag      = 1 <<  14,
+        kBuffer_Flag         = 1 <<  15,
+#endif
     };
 
     Modifiers()
@@ -101,6 +106,17 @@ struct Modifiers {
         if (fFlags & kLowp_Flag) {
             result += "lowp ";
         }
+#ifdef SKSL_EXT
+        if (fFlags & kReadOnly_Flag) {
+            result += "readonly ";
+        }
+        if (fFlags & kWriteOnly_Flag) {
+            result += "writeonly ";
+        }
+        if (fFlags & kBuffer_Flag) {
+            result += "buffer ";
+        }
+#endif
 
         return result;
     }

@@ -84,6 +84,13 @@ public:
         bool scanFont(SkStreamAsset* stream, int ttcIndex,
                       SkString* name, SkFontStyle* style, bool* isFixedPitch,
                       AxisDefinitions* axes) const;
+        struct FontInfo {
+            int index;
+            SkString& familyName;
+            SkFontStyle& style;
+            bool& isFixedWidth;
+        };
+        bool scanFont(SkStreamAsset* stream, FontInfo& info, std::array<uint32_t, 4>& range) const;
 #ifdef OHOS_SUPPORT
         bool GetTypefaceFullname(SkStreamAsset* stream, int ttcIndex, SkByteArray& fullname) const;
 #endif

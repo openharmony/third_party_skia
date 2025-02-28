@@ -15,7 +15,11 @@
 #include "include/private/SkTOptional.h"
 #include "include/sksl/DSL.h"
 #include "include/sksl/DSLSymbols.h"
+#ifdef SKSL_EXT
+#include "src/sksl/SkSLLexerExt.h"
+#else
 #include "src/sksl/SkSLLexer.h"
+#endif
 #include "src/sksl/ir/SkSLProgram.h"
 
 namespace SkSL {
@@ -58,6 +62,9 @@ public:
         BOOL,
         INT,
         FLOAT,
+#ifdef SKSL_EXT
+        CONSTANT_ID,
+#endif
     };
 
     DSLParser(Compiler* compiler, const ProgramSettings& settings, ProgramKind kind,
