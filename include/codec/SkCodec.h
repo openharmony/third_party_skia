@@ -759,8 +759,9 @@ public:
     bool callDimensionsSupported(const SkISize& dim) {
         return dim == this->dimensions() || this->onDimensionsSupported(dim);
     }
+    
     /**
-     * this function is used to fill any uinitialized memory.
+     * This function is used to fill any uinitialized memory.
      */
     void callFillIncompleteImage(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
         ZeroInitialized zeroInit, int linesRequested, int linesDecoded) {
