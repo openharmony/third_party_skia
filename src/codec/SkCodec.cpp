@@ -389,6 +389,7 @@ SkCodec::Result SkCodec::handleFrameIndex(const SkImageInfo& info, void* pixels,
         ? kSuccess : kInvalidConversion;
 }
 
+#ifdef SK_ENABLE_OHOS_CODEC
 SkCodec::Result SkCodec::callHandleFrameIndex(const SkImageInfo& info, void* pixels, size_t rowBytes,
                                               const Options& handleOptions, GetPixelsCallback getPixelsFn)
 {
@@ -460,11 +461,10 @@ SkCodec::Result SkCodec::callHandleFrameIndex(const SkImageInfo& info, void* pix
                 break;
         }
     }
-
     return this->initializeColorXform(info, frame->reportedAlpha(), !frame->hasAlpha())
         ? kSuccess : kInvalidConversion;
 }
-
+#endif
 
 SkCodec::Result SkCodec::getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
                                    const Options* options) {
