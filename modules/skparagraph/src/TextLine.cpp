@@ -1937,8 +1937,8 @@ void TextLine::getRectsForRange(TextRange textRange0,
                     // TODO: Change it once flutter rolls into google3
                     //  (probably will break things if changed before)
 #ifdef OHOS_SUPPORT
-                    if (endsWithOnlyHardBreak() && fOwner->paragraphStyle().getParagraphStyleSpacing() > 0) {
-                        clip.fBottom = this->height() - fOwner->paragraphStyle().getParagraphStyleSpacing();
+                    if (endsWithOnlyHardBreak() && fOwner->paragraphStyle().getParagraphSpacing() > 0) {
+                        clip.fBottom = this->height() - fOwner->paragraphStyle().getParagraphSpacing();
                     } else {
                         clip.fBottom = this->height();
                     }

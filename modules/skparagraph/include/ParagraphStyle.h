@@ -186,10 +186,10 @@ struct ParagraphStyle {
 #ifdef OHOS_SUPPORT
     const TextTabs& getTextTab() const { return fTextTab; }
     void setTextTab(const TextTabs& textTab) { fTextTab = textTab; }
-    SkScalar getParagraphStyleSpacing() const { return fParagraphStyleSpacing; }
-    void setParagraphStyleSpacing(SkScalar paragraphStyleSpacing)
+    SkScalar getParagraphSpacing() const { return fParagraphSpacing; }
+    void setParagraphSpacing(SkScalar paragraphSpacing)
     {
-        fParagraphStyleSpacing = paragraphStyleSpacing;
+        fParagraphSpacing = paragraphSpacing;
     }
     bool getIsEndAddParagraphSpacing() const { return fIsEndAddParagraphSpacing; }
     void setIsEndAddParagraphSpacing(bool isEndAddParagraphSpacing)
@@ -214,7 +214,7 @@ private:
     SkScalar fTextSplitRatio = 0.5f;
 #ifdef OHOS_SUPPORT
     TextTabs fTextTab;
-    SkScalar fParagraphStyleSpacing { 0.0f };
+    SkScalar fParagraphSpacing { 0.0f };
     bool fIsEndAddParagraphSpacing { false };
 #endif
 };

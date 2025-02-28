@@ -1013,8 +1013,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         }
 
         SkScalar lineHeight = fEndLine.metrics().height();
-        if (fHardLineBreak && !lastLine && parent->paragraphStyle().getParagraphStyleSpacing() > 0) {
-            lineHeight += parent->paragraphStyle().getParagraphStyleSpacing();
+        if (fHardLineBreak && !lastLine && parent->paragraphStyle().getParagraphSpacing() > 0) {
+            lineHeight += parent->paragraphStyle().getParagraphSpacing();
         }
         firstLine = false;
 
@@ -1076,8 +1076,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         ++fLineNumber;
     }
     if (parent->paragraphStyle().getIsEndAddParagraphSpacing() &&
-        parent->paragraphStyle().getParagraphStyleSpacing() > 0) {
-        fHeight += parent->paragraphStyle().getParagraphStyleSpacing();
+        parent->paragraphStyle().getParagraphSpacing() > 0) {
+        fHeight += parent->paragraphStyle().getParagraphSpacing();
     }
 
     // We finished formatting the text but we need to scan the rest for some numbers
