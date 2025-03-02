@@ -527,9 +527,6 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
     if (align == TextAlign::kJustify) {
         if (!this->endsWithHardLineBreak()) {
             this->justify(maxWidth);
-#ifdef OHOS_SUPPORT
-            this->fOwner->setLongestLine(maxWidth);
-#endif
         } else if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
             // Justify -> Right align
             fShift = delta;
