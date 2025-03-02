@@ -10,6 +10,7 @@
 #include "include/core/SkPoint3.h"
 #include "include/core/SkSpan.h"
 #include "include/gpu/GrRecordingContext.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/core/SkMathPriv.h"
 #include "src/core/SkMatrixPriv.h"
 #include "src/core/SkMatrixProvider.h"
@@ -193,6 +194,8 @@ GrProcessorSet::Analysis AtlasTextOp::finalize(const GrCaps& caps,
 }
 
 void AtlasTextOp::onPrepareDraws(GrMeshDrawTarget* target) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_ATLASTEXTOP_ONPREPAREDRAWS);
     auto resourceProvider = target->resourceProvider();
 
     // If we need local coordinates, compute an inverse view matrix. If this is solid color, the

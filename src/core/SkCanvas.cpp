@@ -20,6 +20,7 @@
 #include "include/core/SkTextBlob.h"
 #include "include/core/SkVertices.h"
 #include "include/effects/SkRuntimeEffect.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/private/SkTOptional.h"
 #include "include/private/SkTo.h"
 #include "include/utils/SkNoDrawCanvas.h"
@@ -508,6 +509,8 @@ void SkCanvas::flush() {
 }
 
 void SkCanvas::onFlush() {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_SKCANVAS_ONFLUSH);
 #if SK_SUPPORT_GPU
     auto dContext = GrAsDirectContext(this->recordingContext());
 
@@ -1827,6 +1830,8 @@ void SkCanvas::drawVertices(const SkVertices* vertices, SkBlendMode mode, const 
 }
 
 void SkCanvas::drawPath(const SkPath& path, const SkPaint& paint) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_SKCANVAS_DRAWPATH);
     TRACE_EVENT0("skia", TRACE_FUNC);
     this->onDrawPath(path, paint);
 #ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
@@ -1853,6 +1858,8 @@ static SkPaint clean_paint_for_lattice(const SkPaint* paint) {
 
 void SkCanvas::drawImageNine(const SkImage* image, const SkIRect& center, const SkRect& dst,
                              SkFilterMode filter, const SkPaint* paint) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_SKCANVAS_DRAWIMAGENINE);
     RETURN_ON_NULL(image);
 
     const int xdivs[] = {center.fLeft, center.fRight};
@@ -1870,6 +1877,8 @@ void SkCanvas::drawImageNine(const SkImage* image, const SkIRect& center, const 
 
 void SkCanvas::drawImageLattice(const SkImage* image, const Lattice& lattice, const SkRect& dst,
                                 SkFilterMode filter, const SkPaint* paint) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_SKCANVAS_DRAWIMAGELATTICE);
     TRACE_EVENT0("skia", TRACE_FUNC);
     RETURN_ON_NULL(image);
     if (dst.isEmpty()) {
@@ -2286,6 +2295,8 @@ void SkCanvas::drawImage(const SkImage* image, SkScalar x, SkScalar y,
 void SkCanvas::drawImageRect(const SkImage* image, const SkRect& src, const SkRect& dst,
                              const SkSamplingOptions& sampling, const SkPaint* paint,
                              SrcRectConstraint constraint) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_SKCANVAS_DRAWIMAGERECT);
     RETURN_ON_NULL(image);
     if (!fillable(dst) || !fillable(src)) {
         return;

@@ -13,6 +13,7 @@
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrRecordingContext.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/core/SkImagePriv.h"
 #include "src/core/SkSurfacePriv.h"
 #include "src/gpu/BaseDevice.h"
@@ -492,6 +493,8 @@ sk_sp<SkSurface> SkSurface::MakeFromBackendTexture(GrRecordingContext* rContext,
                                                    const SkSurfaceProps* props,
                                                    SkSurface::TextureReleaseProc textureReleaseProc,
                                                    SkSurface::ReleaseContext releaseContext) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_SKSURFACE_MAKEFROMBACKENDTEXTURE);
     auto releaseHelper = GrRefCntedCallback::Make(textureReleaseProc, releaseContext);
 
     if (!rContext) {

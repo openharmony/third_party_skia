@@ -18,6 +18,7 @@
 #include "src/core/SkMipmap.h"
 
 #include "include/gpu/vk/GrVkTypes.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
 
@@ -90,6 +91,8 @@ sk_sp<GrVkTextureRenderTarget> GrVkTextureRenderTarget::MakeNewTextureRenderTarg
         int sampleCnt,
         GrMipmapStatus mipmapStatus,
         GrProtected isProtected) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKTEXTURERENDERTARGET_MAKENEWTEXTURERENDERTARGET);
     sk_sp<GrVkImage> texture = GrVkImage::MakeTexture(gpu,
                                                       dimensions,
                                                       format,
@@ -123,6 +126,8 @@ sk_sp<GrVkTextureRenderTarget> GrVkTextureRenderTarget::MakeWrappedTextureRender
         GrWrapCacheable cacheable,
         const GrVkImageInfo& info,
         sk_sp<GrBackendSurfaceMutableStateImpl> mutableState) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKTEXTURERENDERTARGET_MAKEWRAPPEDTEXTURERENDERTARGET);
     // Adopted textures require both image and allocation because we're responsible for freeing
     SkASSERT(VK_NULL_HANDLE != info.fImage &&
              (kBorrow_GrWrapOwnership == wrapOwnership || VK_NULL_HANDLE != info.fAlloc.fMemory));

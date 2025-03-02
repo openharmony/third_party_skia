@@ -16,6 +16,7 @@
 #endif
 #include "include/core/SkString.h"
 #include "include/gpu/GrDirectContext.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/private/GrSingleOwner.h"
 #include "include/private/SkTo.h"
 #include "include/utils/SkRandom.h"
@@ -1722,6 +1723,27 @@ void GrResourceCache::dumpAllResource(std::stringstream &dump) const {
     dump << "Destroy Record: " << std::endl;
     ParallelDebug::DumpAllDestroyVkImage(dump);
 #endif
+}
+#endif
+
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+void GrResourceCache::dumpAllCoreTrace(std::stringstream &dump) const {
+    if (getResourceCount() == 0) {
+        return;
+    }
+    dump << "Borrowed       ImageSize       NodeId       CoreTrace" << std::endl;
+    dump << "Purgeable: " << fPurgeableQueue.count() << std::endl;
+    for (int i = 0; i < fPurgeableQueue.count(); ++i) {
+        GrGpuResource* resource = fPurgeableQueue.at(i);
+        if (strcmp(resource->getResourceType(), "VkImage") != 0) continue;
+        resource->dumpVkImageCoreTrace(dump);
+    }
+    dump << "Non-Purgeable: " << fNonpurgeableResources.count() << std::endl;
+    for (int i = 0; i < fNonpurgeableResources.count(); ++i) {
+        GrGpuResource* resource = fNonpurgeableResources[i];
+        if (strcmp(resource->getResourceType(), "VkImage") != 0) continue;
+        resource->dumpVkImageCoreTrace(dump);
+    }
 }
 #endif
 
