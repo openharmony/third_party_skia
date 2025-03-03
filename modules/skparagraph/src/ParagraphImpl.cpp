@@ -1173,10 +1173,8 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto textExcludingSpaces = TextRange(0, fTrailingSpaces);
     InternalLineMetrics metrics(this->strutForceHeight());
     metrics.add(&run);
-    auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() &
-                              TextHeightBehavior::kDisableFirstAscent;
-    auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() &
-                              TextHeightBehavior::kDisableLastDescent;
+    auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent;
+    auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
     if (disableFirstAscent) {
         metrics.fAscent = metrics.fRawAscent;
     }
@@ -1206,10 +1204,8 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto clusterRange = ClusterRange(0, trailingSpaces);
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
     SkScalar offsetX = this->detectIndents(0);
-    auto &line = this->addLine(SkPoint::Make(offsetX, 0), advance,
-        textExcludingSpaces, textRange, textRange,
-        clusterRange, clusterRangeWithGhosts, run.advance().x(),
-        metrics);
+    auto& line = this->addLine(SkPoint::Make(offsetX, 0), advance, textExcludingSpaces, textRange, textRange,
+        clusterRange, clusterRangeWithGhosts, run.advance().x(), metrics);
     auto spacing = line.autoSpacing();
     auto longestLine = std::max(run.advance().fX, advance.fX) + spacing;
     setSize(heightWithParagraphSpacing, maxWidth, longestLine);
