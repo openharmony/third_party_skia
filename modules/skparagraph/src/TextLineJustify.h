@@ -18,7 +18,7 @@
 #ifdef OHOS_SUPPORT
 #include "include/core/SkScalar.h"
 #include "log.h"
-#include "modules/skparagraph/src/ParagraphImpl.h"
+#include "modules/skparagraph/src/TextLine.h"
 
 namespace skia {
 namespace textlayout {
@@ -65,13 +65,13 @@ private:
     };
 
     void allocateHighLevelOffsets(
-        ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, SkScalar ideographicMaxLen);
-    void allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth,
-        SkScalar ideographicMaxLen, size_t prevClusterNotSpaceCount);
+        SkScalar ideographicMaxLen, ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth);
+    void allocateMiddleLevelOffsets(SkScalar ideographicMaxLen, size_t prevClusterNotSpaceCount,
+        ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth);
     void allocateLowLevelOffsets(
-        ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, SkScalar ideographicMaxLen);
+        SkScalar ideographicMaxLen, ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth);
     void allocateRemainingWidth(
-        ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, size_t prevClusterNotSpaceCount);
+        SkScalar allocatedWidth, size_t prevClusterNotSpaceCount, ClusterLevelsIndices& clusterLevels);
     void distributeRemainingSpace(ClusterLevelsIndices& clusterLevels, SkScalar& middleLevelOffset,
         SkScalar& lowLevelOffset, SkScalar& allocatedWidth);
     SkScalar usingAutoSpaceWidth(const Cluster* cluster);
@@ -84,8 +84,8 @@ private:
         MiddleLevelInfo& middleLevelInfo, SkScalar& ideographicMaxLen);
     SkScalar calculateClusterShift(
         const Cluster* cluster, ClusterIndex index, const ClusterLevelsIndices& clusterLevels);
-    void justifyShiftCluster(const SkScalar maxWidth, SkScalar textLen, ClusterLevelsIndices& clusterLevels,
-        SkScalar ideographicMaxLen, size_t prevClusterNotSpaceCount);
+    void justifyShiftCluster(const SkScalar maxWidth, SkScalar textLen, SkScalar ideographicMaxLen,
+        size_t prevClusterNotSpaceCount, ClusterLevelsIndices& clusterLevels);
 };
 }  // namespace textlayout
 }  // namespace skia
