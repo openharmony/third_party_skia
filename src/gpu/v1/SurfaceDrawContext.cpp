@@ -721,17 +721,24 @@ void SurfaceDrawContext::drawTexturedQuad(const GrClip* clip,
                                                           : TextureOp::Saturate::kNo;
         // Use the provided subset, although hypothetically we could detect that the cropped local
         // quad is sufficiently inside the subset and the constraint could be dropped.
-        if (fStencilRef != UINT32_MAX) {
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+        if (fStencilRef != UINT32_MAX && fStencilRef < kStencilLayersMax) {
             this->addDrawOp(finalClip,
-                TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
-                                std::move(textureXform), filter, mm, color, saturate,
-                                blendMode, aaType, quad, subset, fStencilRef));   
+                            TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
+                                            std::move(textureXform), filter, mm, color, saturate,
+                                            blendMode, aaType, quad, subset, fStencilRef));
         } else {
             this->addDrawOp(finalClip,
-                TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
-                               std::move(textureXform), filter, mm, color, saturate,
-                               blendMode, aaType, quad, subset));
+                            TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
+                                            std::move(textureXform), filter, mm, color, saturate,
+                                            blendMode, aaType, quad, subset));
         }
+#else
+        this->addDrawOp(finalClip,
+                        TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
+                                        std::move(textureXform), filter, mm, color, saturate,
+                                        blendMode, aaType, quad, subset));
+#endif
     }
 }
 
@@ -841,13 +848,17 @@ void SurfaceDrawContext::fillRectToRect(const GrClip* clip,
     }
 
     assert_alive(paint);
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     if (fStencilRef != UINT32_MAX) {
         GR_CREATE_TRACE_MARKER_CONTEXT("SurfaceDrawContext", "fillRectToRect with stencil", fContext);
         const GrUserStencilSettings* st = GrUserStencilSettings::kGE[fStencilRef];
         this->drawFilledQuad(clip, std::move(paint), aa, &quad, st);
     } else {
-        this->drawFilledQuad(clip, std::move(paint), aa, &quad);        
+        this->drawFilledQuad(clip, std::move(paint), aa, &quad);
     }
+#else 
+    this->drawFilledQuad(clip, std::move(paint), aa, &quad);
+#endif
 
 }
 
@@ -900,11 +911,13 @@ void SurfaceDrawContext::setNeedsStencil() {
     }
 }
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
 void SurfaceDrawContext::clearStencil(const SkIRect& stencilRect, uint32_t stencilVal) {
     this->setNeedsStencil();
     GrScissorState scissorState(this->asSurfaceProxy()->backingStoreDimensions(), stencilRect);
     this->addOp(ClearOp::MakeStencil(fContext, scissorState, stencilVal));
 }
+#endif
 
 void SurfaceDrawContext::internalStencilClear(const SkIRect* scissor, bool insideStencilMask) {
     this->setNeedsStencil();
@@ -2015,11 +2028,13 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
     // needed.
     if (opUsesStencil) {
         this->setNeedsStencil();
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
         if(op->isStencilCullingOp()) {
             this->drawingManager()->hasStencilCullingOp();
         } else {
             this->drawingManager()->disableStencilCulling();
         }
+#endif
     }
 
 #if GR_GPU_STATS && GR_TEST_UTILS

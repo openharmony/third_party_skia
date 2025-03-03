@@ -286,9 +286,10 @@ private:
 
     SkRect fTotalBounds = SkRect::MakeEmpty();
     SkIRect fClippedContentBounds = SkIRect::MakeEmpty();
-
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     bool fDisableStencilCulling = false;
     bool fHasStencilCullingOp = false;
+#endif
 };
 
 } // namespace skgpu::v1

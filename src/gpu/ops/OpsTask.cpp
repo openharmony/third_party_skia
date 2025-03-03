@@ -502,8 +502,10 @@ void OpsTask::onPrepare(GrOpFlushState* flushState) {
         return;
     }
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     fDisableStencilCulling = flushState->fDisableStencilCulling;
     fHasStencilCullingOp = flushState->fHasStencilCullingOp;
+#endif
     flushState->setSampledProxyArray(&fSampledProxies);
     GrSurfaceProxyView dstView(sk_ref_sp(this->target(0)), fTargetOrigin, fTargetSwizzle);
     auto grGpu = flushState->gpu();
@@ -624,12 +626,13 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
     GrStoreOp stencilStoreOp = (caps.discardStencilValuesAfterRenderPass() && !fMustPreserveStencil)
             ? GrStoreOp::kDiscard
             : GrStoreOp::kStore;
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     if (!fDisableStencilCulling && fHasStencilCullingOp) {
         TRACE_EVENT0("skia.gpu", "StencilCullingOpt Load/Store opt");
         stencilLoadOp = GrLoadOp::kDiscard;
         stencilStoreOp = GrStoreOp::kDiscard;
     }
-        
+#endif  
     GrOpsRenderPass* renderPass = create_render_pass(flushState->gpu(),
                                                      proxy->peekRenderTarget(),
                                                      fUsesMSAASurface,

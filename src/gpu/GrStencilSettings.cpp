@@ -20,6 +20,7 @@ constexpr const GrUserStencilSettings gUnused(
         0x0000>()
 );
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
 #define GENERATE_STENCIL_SETTINGS(name, refValue) \
 constexpr const GrUserStencilSettings name( \
     GrUserStencilSettings::StaticInit< \
@@ -40,7 +41,7 @@ GENERATE_STENCIL_SETTINGS(gGEqual5, 0x0005);
 
 const GrUserStencilSettings *GrUserStencilSettings::kGE[kStencilLayersMax] = {&gGEqual0, &gGEqual1, &gGEqual2,
                                                                               &gGEqual3, &gGEqual4, &gGEqual5};
-                                                                              
+#endif                                                                             
 static_assert(kAll_StencilFlags == (gUnused.fCWFlags[0] & gUnused.fCCWFlags[0]));
 
 const GrUserStencilSettings& GrUserStencilSettings::kUnused = gUnused;

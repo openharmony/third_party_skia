@@ -257,10 +257,12 @@ void Device::onClipPath(const SkPath& path, SkClipOp op, bool aa) {
     fClip.clipPath(this->localToDevice(), path, GrAA(aa), op);
 }
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
 void Device::clearStencil(const SkIRect& rect, uint32_t stencilVal) {
     GR_CREATE_TRACE_MARKER_CONTEXT("skgpu::v1::Device", "clearStencil", fContext.get());
     fSurfaceDrawContext->clearStencil(rect, stencilVal);
 }
+#endif
 
 void Device::onClipRegion(const SkRegion& globalRgn, SkClipOp op) {
     SkASSERT(op == SkClipOp::kIntersect || op == SkClipOp::kDifference);
@@ -648,11 +650,13 @@ void Device::drawPath(const SkPath& origSrcPath, const SkPaint& paint, bool path
                                          paint, this->asMatrixProvider(), shape);
 }
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
 void Device::drawPathWithStencil(const SkPath& origSrcPath, const SkPaint& paint, uint32_t stencilRef, bool pathIsMutable) {
     fSurfaceDrawContext->setStencilRef(stencilRef);
     this->drawPath(origSrcPath, paint, false);
     fSurfaceDrawContext->resetStencilRef();
 }
+#endif
 
 sk_sp<SkSpecialImage> Device::makeSpecial(const SkBitmap& bitmap) {
     ASSERT_SINGLE_OWNER
@@ -756,6 +760,7 @@ void Device::drawDevice(SkBaseDevice* device,
     this->INHERITED::drawDevice(device, sampling, paint);
 }
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
 void Device::drawImageRectWithStencil(const SkImage* image,
                                       const SkRect* src,
                                       const SkRect& dst,
@@ -767,6 +772,7 @@ void Device::drawImageRectWithStencil(const SkImage* image,
     this->drawImageRect(image, src, dst, sampling, paint, constraint);
     fSurfaceDrawContext->resetStencilRef();
 }
+#endif
 
 void Device::drawImageRect(const SkImage* image,
                            const SkRect* src,

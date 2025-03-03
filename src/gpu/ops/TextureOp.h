@@ -58,8 +58,12 @@ public:
                             SkBlendMode,
                             GrAAType,
                             DrawQuad*,
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
                             const SkRect* subset = nullptr,
                             uint32_t stencilRef = UINT32_MAX);
+#else
+                            const SkRect* subset = nullptr);
+#endif
 
 #if SK_GPU_V1
     // Automatically falls back to using one FillRectOp per entry if dynamic states are not

@@ -1834,6 +1834,7 @@ void SkCanvas::drawPath(const SkPath& path, const SkPaint& paint) {
 #endif
 }
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
 void SkCanvas::clearStencil(const SkIRect& rect, uint32_t stencilVal) {
     TRACE_EVENT0("skia", TRACE_FUNC);
 }
@@ -1844,6 +1845,7 @@ void SkCanvas::drawPathWithStencil(const SkPath& path, const SkPaint& paint, uin
     SkPathComplexityDfx::ShowPathComplexityDfx(this, path);
 #endif
 }
+#endif
 
 // Returns true if the rect can be "filled" : non-empty and finite
 static bool fillable(const SkRect& r) {
@@ -2143,6 +2145,7 @@ void SkCanvas::onDrawDRRect(const SkRRect& outer, const SkRRect& inner, const Sk
 }
 
 void SkCanvas::onDrawPath(const SkPath& path, const SkPaint& paint) {
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     onDrawPathCommon(path, paint, false);
 }
 
@@ -2151,6 +2154,7 @@ void SkCanvas::onDrawPathWithStencil(const SkPath& path, const SkPaint& paint, u
 }
 
 void SkCanvas::onDrawPathCommon(const SkPath& path, const SkPaint& paint, bool useStencil, uint32_t stencilRef) {
+#endif
     if (!path.isFinite()) {
         return;
     }
@@ -2166,11 +2170,15 @@ void SkCanvas::onDrawPathCommon(const SkPath& path, const SkPaint& paint, bool u
 
     auto layer = this->aboutToDraw(this, paint, &pathBounds);
     if (layer) {
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
         if (useStencil) {
             this->topDevice()->drawPathWithStencil(path, layer->paint(), stencilRef);
         } else {
             this->topDevice()->drawPath(path, layer->paint());
-        } 
+        }
+#else
+        this->topDevice()->drawPath(path, layer->paint());
+#endif       
     }
 }
 
@@ -2226,15 +2234,17 @@ static SkPaint clean_paint_for_drawVertices(SkPaint paint) {
 
 void SkCanvas::onDrawImage2(const SkImage* image, SkScalar x, SkScalar y,
                             const SkSamplingOptions& sampling, const SkPaint* paint) {
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     drawImageCommon(image, x, y, sampling, paint, false);
 }
 void SkCanvas::onDrawImage2WithStencil(const SkImage* image, SkScalar x, SkScalar y,
-                            const SkSamplingOptions& sampling, const SkPaint* paint, uint32_t stencilRef) {
+                                       const SkSamplingOptions& sampling, const SkPaint* paint, uint32_t stencilRef) {
     TRACE_EVENT0("skia", TRACE_FUNC);
 }
 void SkCanvas::drawImageCommon(const SkImage* image, SkScalar x, SkScalar y,
                                const SkSamplingOptions& sampling, const SkPaint* paint, bool useStencil,
                                uint32_t stencilRef) {
+#endif
     SkPaint realPaint = clean_paint_for_drawImage(paint);
 
     SkRect bounds = SkRect::MakeXYWH(x, y, image->width(), image->height());
@@ -2272,6 +2282,7 @@ void SkCanvas::drawImageCommon(const SkImage* image, SkScalar x, SkScalar y,
 
     auto layer = this->aboutToDraw(this, realPaint, &bounds);
     if (layer) {
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
         if (useStencil) {
             this->topDevice()->drawImageRectWithStencil(image, nullptr, bounds, sampling,
                                                         layer->paint(), kStrict_SrcRectConstraint, stencilRef); 
@@ -2279,6 +2290,10 @@ void SkCanvas::drawImageCommon(const SkImage* image, SkScalar x, SkScalar y,
             this->topDevice()->drawImageRect(image, nullptr, bounds, sampling,
                                              layer->paint(), kStrict_SrcRectConstraint); 
         }
+#else
+        this->topDevice()->drawImageRect(image, nullptr, bounds, sampling,
+                                         layer->paint(), kStrict_SrcRectConstraint);
+#endif
     }
 }
 

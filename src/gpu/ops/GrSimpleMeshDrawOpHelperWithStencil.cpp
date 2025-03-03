@@ -19,12 +19,14 @@ GrDrawOp::FixedFunctionFlags GrSimpleMeshDrawOpHelperWithStencil::fixedFunctionF
     GrDrawOp::FixedFunctionFlags flags = INHERITED::fixedFunctionFlags();
     if (fStencilSettings != &GrUserStencilSettings::kUnused) {
         flags |= GrDrawOp::FixedFunctionFlags::kUsesStencil;
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
         for (int i = 0; i < kStencilLayersMax; i++) {
             if (fStencilSettings == GrUserStencilSettings::kGE[i]) {
                 flags = GrDrawOp::FixedFunctionFlags::kUsesStencil;
                 break;
             }
         }
+#endif
     }
     return flags;
 }

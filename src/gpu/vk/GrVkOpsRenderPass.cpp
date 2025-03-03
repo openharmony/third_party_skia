@@ -479,6 +479,7 @@ void GrVkOpsRenderPass::onClearStencilClip(const GrScissorState& scissor, bool i
     fCurrentCBIsEmpty = false;
 }
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
 void GrVkOpsRenderPass::onClearStencil(const GrScissorState& scissor, uint32_t stencilVal) {
     if (!fCurrentRenderPass) {
         SkASSERT(fGpu->isDeviceLost());
@@ -519,6 +520,7 @@ void GrVkOpsRenderPass::onClearStencil(const GrScissorState& scissor, uint32_t s
     this->currentCommandBuffer()->clearAttachments(fGpu, 1, &attachment, 1, &clearRect);
     fCurrentCBIsEmpty = false;
 }
+#endif
 
 void GrVkOpsRenderPass::onClear(const GrScissorState& scissor, std::array<float, 4> color) {
     if (!fCurrentRenderPass) {

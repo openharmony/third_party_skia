@@ -407,6 +407,7 @@ protected:
     // SkCanvas uses NoPixelsDevice when onCreateDevice fails; but then it needs to be able to
     // inspect a layer's device to know if calling drawDevice() later is allowed.
     virtual bool isNoPixelsDevice() const { return false; }
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     // stencil Culling API
     virtual void clearStencil(const SkIRect& rect, uint32_t stencilVal) {};
     virtual void drawPathWithStencil(const SkPath& path,
@@ -420,7 +421,7 @@ protected:
                                           const SkPaint&,
                                           SkCanvas::SrcRectConstraint,
                                           uint32_t stencilRef) {};
-
+#endif
 private:
     friend class SkAndroidFrameworkUtils;
     friend class SkCanvas;

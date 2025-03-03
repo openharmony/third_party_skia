@@ -147,6 +147,7 @@ public:
 
     bool drawBlurImage(const SkImage* image, const SkBlurArg& blurArg) override;
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     // Stencil Culling API
     void clearStencil(const SkIRect& rect, uint32_t stencilVal) override;
     void drawImageRectWithStencil(const SkImage*, const SkRect* src, const SkRect& dst,
@@ -154,6 +155,7 @@ public:
                                   uint32_t stencilRef) override;
     void drawPathWithStencil(const SkPath& path, const SkPaint& paint, uint32_t stencilRef, 
                              bool pathIsMutable) override;
+#endif
 
 protected:
     bool onReadPixels(const SkPixmap&, int, int) override;

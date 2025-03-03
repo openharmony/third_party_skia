@@ -40,6 +40,7 @@ GrOp::Owner ClearOp::MakeStencilClip(GrRecordingContext* context,
                                insideMask);
 }
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
 GrOp::Owner ClearOp::MakeStencil(GrRecordingContext* context,
                                  const GrScissorState& scissor,
                                  uint32_t stencilVal) {
@@ -48,18 +49,6 @@ GrOp::Owner ClearOp::MakeStencil(GrRecordingContext* context,
                                scissor,
                                stencilVal,
                                true);
-}
-
-ClearOp::ClearOp(Buffer buffer,
-                 const GrScissorState& scissor,
-                 std::array<float, 4> color,
-                 bool insideMask)
-        : GrOp(ClassID())
-        , fScissor(scissor)
-        , fColor(color)
-        , fStencilInsideMask(insideMask)
-        , fBuffer(buffer) {
-    this->setBounds(SkRect::Make(scissor.rect()), HasAABloat::kNo, IsHairline::kNo);
 }
 
 ClearOp::ClearOp(Buffer buffer,
@@ -73,12 +62,27 @@ ClearOp::ClearOp(Buffer buffer,
         , fBuffer(buffer) {
     this->setBounds(SkRect::Make(scissor.rect()), HasAABloat::kNo, IsHairline::kNo);
 }
+#endif
+
+ClearOp::ClearOp(Buffer buffer,
+                 const GrScissorState& scissor,
+                 std::array<float, 4> color,
+                 bool insideMask)
+        : GrOp(ClassID())
+        , fScissor(scissor)
+        , fColor(color)
+        , fStencilInsideMask(insideMask)
+        , fBuffer(buffer) {
+    this->setBounds(SkRect::Make(scissor.rect()), HasAABloat::kNo, IsHairline::kNo);
+}
 
 GrOp::CombineResult ClearOp::onCombineIfPossible(GrOp* t, SkArenaAlloc*, const GrCaps& caps) {
     auto other = t->cast<ClearOp>();
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     if (fBuffer == Buffer::kStencil || other->fBuffer == Buffer::kStencil) { 
         return CombineResult::kCannotCombine;
     }    
+#endif
     if (other->fBuffer == fBuffer) {
         // This could be much more complicated. Currently we look at cases where the new clear
         // contains the old clear, or when the new clear is a subset of the old clear and they clear
@@ -116,10 +120,12 @@ void ClearOp::onExecute(GrOpFlushState* state, const SkRect& chainBounds) {
     if (fBuffer & Buffer::kStencilClip) {
         state->opsRenderPass()->clearStencilClip(fScissor, fStencilInsideMask);
     }
-    if (fBuffer == Buffer::kStencil && !shouldDisableStencilCulling) {
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+    if (fBuffer == Buffer::kStencil && !fShouldDisableStencilCulling) {
         TRACE_EVENT0("skia", "StencilCullingOpt ClearOp::onExecute with stencil");
         state->opsRenderPass()->clearStencil(fScissor, fStencilVal);
     }
+#endif
 }
 
 } // namespace skgpu::v1

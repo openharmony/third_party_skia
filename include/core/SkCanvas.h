@@ -1456,6 +1456,7 @@ public:
     */
     void drawPath(const SkPath& path, const SkPaint& paint);
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     /** Stencil Culling API, Similar to DrawPath but with Stencil test, which will attempt
         to enable Stencil Test using CompareOp GREATER_OR_EQUAL.
         it will degenerate into DrawPath if Non-StencilCullingOp use stencil.
@@ -1475,6 +1476,7 @@ public:
         it will do nothing if Non-StencilCullingOp use stencil.
     */ 
     void clearStencil(const SkIRect& rect, uint32_t stencilVal);
+#endif
     
     void drawImage(const SkImage* image, SkScalar left, SkScalar top) {
         this->drawImage(image, left, top, SkSamplingOptions(), nullptr);
@@ -2301,7 +2303,11 @@ protected:
     virtual void onDrawArc(const SkRect& rect, SkScalar startAngle, SkScalar sweepAngle,
                            bool useCenter, const SkPaint& paint);
     virtual void onDrawPath(const SkPath& path, const SkPaint& paint);
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     virtual void onDrawPathWithStencil(const SkPath& path, const SkPaint& paint, uint32_t stencilRef);
+    virtual void onDrawImage2WithStencil(const SkImage*, SkScalar dx, SkScalar dy, const SkSamplingOptions&,
+        const SkPaint*, uint32_t stencilRef);
+#endif        
     virtual void onDrawRegion(const SkRegion& region, const SkPaint& paint);
 
     virtual void onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y,
@@ -2318,8 +2324,6 @@ protected:
 
     virtual void onDrawImage2(const SkImage*, SkScalar dx, SkScalar dy, const SkSamplingOptions&,
                               const SkPaint*);
-    virtual void onDrawImage2WithStencil(const SkImage*, SkScalar dx, SkScalar dy, const SkSamplingOptions&,
-                              const SkPaint*, uint32_t stencilRef);
     virtual void onDrawImageRect2(const SkImage*, const SkRect& src, const SkRect& dst,
                                   const SkSamplingOptions&, const SkPaint*, SrcRectConstraint);
     virtual void onDrawImageLattice2(const SkImage*, const Lattice&, const SkRect& dst,
@@ -2441,13 +2445,13 @@ private:
 
         void reset(SkBaseDevice* device);
     };
-
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     void drawImageCommon(const SkImage* image, SkScalar x, SkScalar y,
                          const SkSamplingOptions& sampling, const SkPaint* paint,
                          bool useStencil, uint32_t stencilRef = 0);
     
     void onDrawPathCommon(const SkPath& path, const SkPaint& paint, bool useStencil, uint32_t stencilRef = 0);
-
+#endif
     SkDeque     fMCStack;
     // points to top of stack
     MCRec*      fMCRec;

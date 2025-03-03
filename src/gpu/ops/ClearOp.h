@@ -12,7 +12,11 @@
 #include "src/gpu/GrScissorState.h"
 #include "src/gpu/ops/GrOp.h"
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
 #include "src/gpu/GrOpFlushState.h"
+#else
+class GrOpFlushState;
+#endif
 
 class GrRecordingContext;
 
@@ -30,11 +34,11 @@ public:
     static GrOp::Owner MakeStencilClip(GrRecordingContext* context,
                                        const GrScissorState& scissor,
                                        bool insideMask);
-
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     static GrOp::Owner MakeStencil(GrRecordingContext* context,
                                    const GrScissorState& scissor,
                                    uint32_t stencilVal);  
-                                 
+#endif                                 
     const char* name() const override { return "Clear"; }
 
     const std::array<float, 4>& color() const { return fColor; }
@@ -47,8 +51,9 @@ private:
         kStencilClip = 0b10,
 
         kBoth        = 0b11,
-
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
         kStencil        = 0b100,  
+#endif
     };
     GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(Buffer);
 
@@ -56,11 +61,12 @@ private:
             const GrScissorState& scissor,
             std::array<float, 4> color,
             bool stencil);
-
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     ClearOp(Buffer buffer,
             const GrScissorState& scissor,
             uint32_t stencilVal,
             bool stencil);
+#endif
 
     CombineResult onCombineIfPossible(GrOp* t, SkArenaAlloc*, const GrCaps& caps) override;
 
@@ -69,7 +75,9 @@ private:
                       GrLoadOp colorLoadOp) override {}
 
     void onPrepare(GrOpFlushState* flushState) override {
-        shouldDisableStencilCulling = flushState->fDisableStencilCulling;
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+        fShouldDisableStencilCulling = flushState->fDisableStencilCulling;
+#endif
     }
 
     void onExecute(GrOpFlushState* state, const SkRect& chainBounds) override;
@@ -89,7 +97,9 @@ private:
 
     GrScissorState       fScissor;
     std::array<float, 4> fColor;
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     uint32_t             fStencilVal;
+#endif
     bool                 fStencilInsideMask;
     Buffer               fBuffer;
 };
