@@ -186,6 +186,16 @@ struct ParagraphStyle {
 #ifdef OHOS_SUPPORT
     const TextTabs& getTextTab() const { return fTextTab; }
     void setTextTab(const TextTabs& textTab) { fTextTab = textTab; }
+    SkScalar getParagraphSpacing() const { return fParagraphSpacing; }
+    void setParagraphSpacing(SkScalar paragraphSpacing)
+    {
+        fParagraphSpacing = paragraphSpacing;
+    }
+    bool getIsEndAddParagraphSpacing() const { return fIsEndAddParagraphSpacing; }
+    void setIsEndAddParagraphSpacing(bool isEndAddParagraphSpacing)
+    {
+        fIsEndAddParagraphSpacing = isEndAddParagraphSpacing;
+    }
 #endif
 private:
     StrutStyle fStrutStyle;
@@ -204,6 +214,8 @@ private:
     SkScalar fTextSplitRatio = 0.5f;
 #ifdef OHOS_SUPPORT
     TextTabs fTextTab;
+    SkScalar fParagraphSpacing { 0.0f };
+    bool fIsEndAddParagraphSpacing { false };
 #endif
 };
 }  // namespace textlayout

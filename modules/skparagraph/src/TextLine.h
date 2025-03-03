@@ -234,6 +234,9 @@ public:
     void setDescentStyle(LineMetricStyle style) { fDescentStyle = style; }
 
     bool endsWithHardLineBreak() const;
+#ifdef OHOS_SUPPORT
+    bool endsWithOnlyHardBreak() const;
+#endif
     std::unique_ptr<Run> shapeString(const SkString& string, const Cluster* cluster);
     std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
     SkSTArray<1, size_t, true> getLineAllRuns() const { return fRunsInVisualOrder; };
