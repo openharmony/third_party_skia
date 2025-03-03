@@ -31,6 +31,7 @@
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/GrContextThreadSafeProxy.h"
 #include "include/gpu/GrDirectContext.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/gpu/GrDirectContextPriv.h"
 #include "src/gpu/GrFragmentProcessor.h"
 #include "src/gpu/GrImageContextPriv.h"
@@ -316,6 +317,8 @@ std::unique_ptr<GrFragmentProcessor> SkImage_Base::asFragmentProcessor(
         const SkMatrix& m,
         const SkRect* subset,
         const SkRect* domain) const {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_SKIMAGE_BASE_ASFRAGMENTPROCESSOR);
     if (!rContext) {
         return {};
     }

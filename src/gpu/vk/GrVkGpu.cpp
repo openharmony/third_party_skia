@@ -50,6 +50,7 @@
 
 #include "include/gpu/vk/GrVkExtensions.h"
 #include "include/gpu/vk/GrVkTypes.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 
 #include <utility>
 
@@ -1200,6 +1201,8 @@ sk_sp<GrTexture> GrVkGpu::onCreateTexture(SkISize dimensions,
                                           GrProtected isProtected,
                                           int mipLevelCount,
                                           uint32_t levelClearMask) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKGPU_ONCREATETEXTURE);
     VkFormat pixelFormat;
     SkAssertResult(format.asVkFormat(&pixelFormat));
     SkASSERT(!GrVkFormatIsCompressed(pixelFormat));
@@ -1264,6 +1267,8 @@ sk_sp<GrTexture> GrVkGpu::onCreateCompressedTexture(SkISize dimensions,
                                                     GrMipmapped mipMapped,
                                                     GrProtected isProtected,
                                                     const void* data, size_t dataSize) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKGPU_ONCREATECOMPRESSEDTEXTURE_1);
     VkFormat pixelFormat;
     SkAssertResult(format.asVkFormat(&pixelFormat));
     SkASSERT(GrVkFormatIsCompressed(pixelFormat));
@@ -1298,6 +1303,8 @@ sk_sp<GrTexture> GrVkGpu::onCreateCompressedTexture(SkISize dimensions,
                                                     GrProtected isProtected,
                                                     OH_NativeBuffer* nativeBuffer,
                                                     size_t bufferSize) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKGPU_ONCREATECOMPRESSEDTEXTURE_2);
     VkFormat pixelFormat;
     SkAssertResult(format.asVkFormat(&pixelFormat));
     SkASSERT(GrVkFormatIsCompressed(pixelFormat));
@@ -1457,6 +1464,8 @@ sk_sp<GrTexture> GrVkGpu::onWrapBackendTexture(const GrBackendTexture& backendTe
                                                GrWrapOwnership ownership,
                                                GrWrapCacheable cacheable,
                                                GrIOType ioType) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKGPU_ONWRAPBACKENDTEXTURE);
     GrVkImageInfo imageInfo;
     if (!backendTex.getVkImageInfo(&imageInfo)) {
         return nullptr;
@@ -1491,6 +1500,8 @@ sk_sp<GrTexture> GrVkGpu::onWrapRenderableBackendTexture(const GrBackendTexture&
                                                          int sampleCnt,
                                                          GrWrapOwnership ownership,
                                                          GrWrapCacheable cacheable) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKGPU_ONWRAPRENDERABLEBACKENDTEXTURE);
     GrVkImageInfo imageInfo;
     if (!backendTex.getVkImageInfo(&imageInfo)) {
         return nullptr;
@@ -2736,6 +2747,16 @@ bool GrVkGpu::checkVkResult(VkResult result) {
             {
                 std::stringstream dump;
                 getContext()->dumpAllResource(dump);
+            }
+#endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+            {
+                std::stringstream dump;
+                getContext()->dumpAllCoreTrace(dump);
+                std::string s;
+                while (std::getline(dump, s, '\n')) {
+                    SK_LOGE("%{public}s", s.c_str());
+                }
             }
 #endif
             {

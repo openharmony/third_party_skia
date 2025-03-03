@@ -5,6 +5,7 @@
  * found in the LICENSE file.
  */
 
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/gpu/text/GrAtlasManager.h"
 
 #include "src/codec/SkMasks.h"
@@ -192,6 +193,8 @@ GrDrawOpAtlas::ErrorCode GrAtlasManager::addToAtlas(GrResourceProvider* resource
                                                     GrMaskFormat format,
                                                     int width, int height, const void* image,
                                                     GrDrawOpAtlas::AtlasLocator* atlasLocator) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRATLASMANAGER_ADDTOATLAS);
     return this->getAtlas(format)->addToAtlas(resourceProvider, target, width, height, image,
                                               atlasLocator);
 }

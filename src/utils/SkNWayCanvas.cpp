@@ -6,6 +6,7 @@
  */
 
 #include "include/core/SkShader.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/utils/SkNWayCanvas.h"
 #include "src/core/SkCanvasPriv.h"
 
@@ -260,6 +261,8 @@ void SkNWayCanvas::onDrawImage2(const SkImage* image, SkScalar left, SkScalar to
 void SkNWayCanvas::onDrawImageRect2(const SkImage* image, const SkRect& src, const SkRect& dst,
                                     const SkSamplingOptions& sampling, const SkPaint* paint,
                                     SrcRectConstraint constraint) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_SKNWAYCANVAS_ONDRAWIMAGERECT2);
     Iter iter(fList);
     while (iter.next()) {
         iter->drawImageRect(image, src, dst, sampling, paint, constraint);

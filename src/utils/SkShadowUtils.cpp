@@ -16,6 +16,7 @@
 #include "include/private/SkColorData.h"
 #include "include/private/SkIDChangeListener.h"
 #include "include/private/SkTPin.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/utils/SkRandom.h"
 #include "src/core/SkBlurMask.h"
 #include "src/core/SkColorFilterBase.h"
@@ -613,6 +614,8 @@ void SkShadowUtils::DrawShadowStyle(SkCanvas* canvas, const SkPath& path, const 
                                     const SkPoint3& lightPos, SkScalar lightRadius,
                                     SkColor ambientColor, SkColor spotColor,
                                     uint32_t flags, bool isLimitElevation) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_SKSHADOWUTILS_DRAWSHADOWSTYLE);
     SkDrawShadowRec rec;
     rec.isLimitElevation = isLimitElevation;
     if (!fill_shadow_rec(path, zPlaneParams, lightPos, lightRadius, ambientColor, spotColor,

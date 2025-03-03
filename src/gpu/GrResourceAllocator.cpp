@@ -5,6 +5,7 @@
  * found in the LICENSE file.
  */
 
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/gpu/GrResourceAllocator.h"
 
 #include "src/gpu/GrDirectContextPriv.h"
@@ -412,6 +413,8 @@ void GrResourceAllocator::reset() {
 }
 
 bool GrResourceAllocator::assign() {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRRESOURCEALLOCATOR_ASSIGN);
     if (fFailedInstantiation) {
         return false;
     }

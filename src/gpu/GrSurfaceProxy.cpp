@@ -9,6 +9,7 @@
 #include "src/gpu/GrSurfaceProxyPriv.h"
 
 #include "include/gpu/GrRecordingContext.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
 #endif
@@ -56,6 +57,17 @@ uint64_t GetNodeId() {return 0;}
 #endif
 #endif
 
+// emulator mock
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+#ifndef SK_VULKAN
+namespace GraphicCoreTrace {
+void RecordEntireCoreTrace(CoreTrace coretrace, uint64_t nodeId) {}
+CoreTrace GetCoreTrace() {return CoreTrace();}
+uint64_t GetNodeId() {return 0;}
+};
+#endif
+#endif
+
 // OH ISSUE: emulator mock
 #ifdef SKIA_DFX_FOR_OHOS
 #ifndef SK_VULKAN
@@ -82,6 +94,10 @@ GrSurfaceProxy::GrSurfaceProxy(const GrBackendFormat& format,
         , fUseAllocator(useAllocator)
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         , fNodeId(ParallelDebug::GetNodeId())
+#endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+        , fCoreTrace(GraphicCoreTrace::GetCoreTrace())
+        , fNodeIdCheck(GraphicCoreTrace::GetNodeId())
 #endif
 #ifdef SKIA_DFX_FOR_OHOS
         , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
@@ -110,6 +126,10 @@ GrSurfaceProxy::GrSurfaceProxy(LazyInstantiateCallback&& callback,
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         , fNodeId(ParallelDebug::GetNodeId())
 #endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+        , fCoreTrace(GraphicCoreTrace::GetCoreTrace())
+        , fNodeIdCheck(GraphicCoreTrace::GetNodeId())
+#endif
 #ifdef SKIA_DFX_FOR_OHOS
         , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
 #endif
@@ -136,6 +156,10 @@ GrSurfaceProxy::GrSurfaceProxy(sk_sp<GrSurface> surface,
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         , fNodeId(ParallelDebug::GetNodeId())
 #endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+        , fCoreTrace(GraphicCoreTrace::GetCoreTrace())
+        , fNodeIdCheck(GraphicCoreTrace::GetNodeId())
+#endif
 #ifdef SKIA_DFX_FOR_OHOS
         , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
 #endif
@@ -160,12 +184,34 @@ struct NodeIdHelper {
 };
 #endif
 
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+struct CoreTraceHelper {
+    inline CoreTraceHelper(GraphicCoreTrace::CoreTrace coreTrace, uint64_t nodeId)
+        : initCoreTrace_(GraphicCoreTrace::GetCoreTrace())
+        , initNodeId_(GraphicCoreTrace::GetNodeId())
+    {
+        GraphicCoreTrace::RecordEntireCoreTrace(coreTrace, nodeId);
+    }
+    inline ~CoreTraceHelper()
+    {
+        GraphicCoreTrace::RecordEntireCoreTrace(initCoreTrace_, initNodeId_);
+    }
+    GraphicCoreTrace::CoreTrace initCoreTrace_;
+    uint64_t initNodeId_;
+};
+#endif
+
 sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceProvider,
                                                    int sampleCnt,
                                                    GrRenderable renderable,
                                                    GrMipmapped mipMapped) const {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRSURFACEPROXY_CREATESURFACEIMPL);
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     NodeIdHelper helper(fNodeId);
+#endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+    CoreTraceHelper traceHelper(fCoreTrace, fNodeIdCheck);
 #endif
     SkASSERT(mipMapped == GrMipmapped::kNo || fFit == SkBackingFit::kExact);
     SkASSERT(!this->isLazy());
@@ -252,6 +298,8 @@ void GrSurfaceProxy::assign(sk_sp<GrSurface> surface) {
 bool GrSurfaceProxy::instantiateImpl(GrResourceProvider* resourceProvider, int sampleCnt,
                                      GrRenderable renderable, GrMipmapped mipMapped,
                                      const GrUniqueKey* uniqueKey) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRSURFACEPROXY_INSTANTIATEIMPL);
     SkASSERT(!this->isLazy());
     if (fTarget) {
         if (uniqueKey && uniqueKey->isValid()) {
@@ -489,6 +537,8 @@ void GrSurfaceProxyPriv::exactify(bool allocatedCaseOnly) {
 }
 
 bool GrSurfaceProxyPriv::doLazyInstantiation(GrResourceProvider* resourceProvider) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRSURFACEPROXYPRIV_DOLAZYINSTANTIATION);
     SkASSERT(fProxy->isLazy());
 
     sk_sp<GrSurface> surface;
@@ -502,6 +552,9 @@ bool GrSurfaceProxyPriv::doLazyInstantiation(GrResourceProvider* resourceProvide
     if (!surface) {
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         NodeIdHelper helper(nodeId);
+#endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+        CoreTraceHelper traceHelper(coreTrace, nodeIdCheck);
 #endif
         auto result = fProxy->fLazyInstantiateCallback(resourceProvider, fProxy->callbackDesc());
         surface = std::move(result.fSurface);

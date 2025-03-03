@@ -12,6 +12,9 @@
 #if defined(SKIA_DFX_FOR_RECORD_VKIMAGE) || defined(SKIA_DFX_FOR_OHOS)
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
 #endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+#include "include/gpu/vk/GrVkGraphicCoreTrace.h"
+#endif
 
 class GrResourceProvider;
 
@@ -54,6 +57,10 @@ private:
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         , nodeId(ParallelDebug::GetNodeId())
 #endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+        , coreTrace(GraphicCoreTrace::GetCoreTrace())
+        , nodeIdCheck(GraphicCoreTrace::GetNodeId())
+#endif
 #ifdef SKIA_DFX_FOR_OHOS
         , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
 #endif
@@ -73,6 +80,10 @@ private:
     GrSurfaceProxy* fProxy;
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     uint64_t nodeId;
+#endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+    GraphicCoreTrace::CoreTrace coreTrace;
+    uint64_t nodeIdCheck;
 #endif
 #ifdef SKIA_DFX_FOR_OHOS
     // OH ISSUE: proxy resources real alloc status

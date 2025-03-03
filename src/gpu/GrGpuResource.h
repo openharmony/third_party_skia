@@ -14,6 +14,9 @@
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
 #include <sstream>
 #endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+#include <sstream>
+#endif
 
 class GrGpu;
 class GrResourceCache;
@@ -322,6 +325,12 @@ public:
     GrGpuResourceTag getResourceTag() const { return fGrResourceTag; }
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     virtual void dumpVkImageInfo(std::stringstream& dump) const {
+        dump << "\n";
+    }
+#endif
+
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+    virtual void dumpVkImageCoreTrace(std::stringstream& dump) const {
         dump << "\n";
     }
 #endif
