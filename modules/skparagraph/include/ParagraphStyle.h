@@ -134,6 +134,8 @@ struct ParagraphStyle {
                this->fReplaceTabCharacters == rhs.fReplaceTabCharacters &&
 #ifdef OHOS_SUPPORT
                this->fTextTab == rhs.fTextTab &&
+               this->fParagraphSpacing == rhs.fParagraphSpacing &&
+               this->fIsEndAddParagraphSpacing == rhs.fIsEndAddParagraphSpacing &&
 #endif
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
     }
