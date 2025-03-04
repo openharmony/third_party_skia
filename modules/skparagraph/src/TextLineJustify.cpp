@@ -231,7 +231,7 @@ SkScalar TextLineJustify::calculateClusterShift(
         step = lowLevelIterator->isPrevClusterSpace ? clusterLevels.middleLevelOffset
                                                     : clusterLevels.middleLevelOffset * (1 + 1);
     } else if (std::find(clusterLevels.LowLevelIndices.begin(), clusterLevels.LowLevelIndices.end(), index) !=
-               clusterLevels.LowLevelIndices.end()) {
+            clusterLevels.LowLevelIndices.end()) {
         step = clusterLevels.lowLevelOffset;
     }
     return step;
@@ -323,7 +323,7 @@ bool TextLineJustify::justify(SkScalar maxWidth)
         textLineRef.justifyUpdateRtlWidth(maxWidth, textLen);
         return false;
     }
-    justifyShiftCluster(maxWidth, textLen, clusterLevels, ideographicMaxLen, prevClusterNotSpaceCount);
+    justifyShiftCluster(maxWidth, textLen, ideographicMaxLen, prevClusterNotSpaceCount, clusterLevels);
     return true;
 }
 

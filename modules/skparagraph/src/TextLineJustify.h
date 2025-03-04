@@ -17,7 +17,6 @@
 
 #ifdef OHOS_SUPPORT
 #include "include/core/SkScalar.h"
-#include "log.h"
 #include "modules/skparagraph/src/TextLine.h"
 
 namespace skia {
