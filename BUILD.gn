@@ -94,8 +94,10 @@ config("skia_public") {
       "SKIA_DFX_FOR_OHOS",
       "SKIA_DFX_FOR_RECORD_VKIMAGE",
       "SKIA_DFX_FOR_GPURESOURCE_CORETRACE",
-      "SKIA_OHOS_SINGLE_OWNER",
     ]
+    if (skia_feature_product != "wearable") {
+      defines += [ "SKIA_OHOS_SINGLE_OWNER" ]
+    }
   }
   defines += [ "OHOS_SUPPORT" ]
   defines += [ "SKIA_OPTION_UNCLAMPED_COLOR_MATRIX_FILTER" ]
