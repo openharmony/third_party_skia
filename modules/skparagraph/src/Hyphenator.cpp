@@ -440,9 +440,10 @@ std::vector<uint8_t> Hyphenator::findBreakPositions(const std::vector<uint8_t>& 
         std::vector<uint16_t> word;
         int32_t i = 0;
         const int32_t textLength = static_cast<int32_t>(endPos - startPos);
-        uint32_t c = 0;
+        UChar32 c = 0;
         while (i < textLength) {
-            U8_NEXT(reinterpret_cast<const uint8_t*>(lastword.c_str()), i, textLength, c);
+            const uint8_t* s = reinterpret_cast<const uint8_t*>(lastword.c_str());
+            U8_NEXT(s, i, textLength, c);
             if (U16_LENGTH(c) == 1) {
                 word.push_back(c);
             } else {
