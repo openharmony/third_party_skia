@@ -163,7 +163,7 @@ void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
     auto ret = realpath(filePath.c_str(), tmpPath);
 #endif
     if (ret == nullptr) {
-        TEXT_LOGE("Invalid file");
+        TEXT_LOGE("Invalid file %{public}s", filePath.c_str());
         return;
     }
     std::ifstream file(filePath, std::ifstream::binary);
@@ -459,11 +459,10 @@ std::vector<uint8_t> Hyphenator::findBreakPositions(const std::vector<uint8_t>& 
         const auto lastword = std::string(text.c_str() + startPos, text.c_str() + endPos);
         std::vector<uint16_t> word;
         int32_t i = 0;
-        const uint8_t* s = reinterpret_cast<const uint8_t*>(lastword.c_str());
         const int32_t textLength = static_cast<int32_t>(endPos - startPos);
         UChar32 c = 0;
         while (i < textLength) {
-            U8_NEXT(s, i, textLength, c);
+            U8_NEXT(reinterpret_cast<const uint8_t*>(lastword.c_str()), i, textLength, c);
             if (U16_LENGTH(c) == 1) {
                 word.push_back(c);
             } else {
