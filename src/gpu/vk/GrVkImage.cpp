@@ -654,7 +654,10 @@ void GrVkImage::Resource::dumpVkImageResource(std::stringstream& dump) {
 }
 
 void GrVkimage::Resource::RecordFreeVkImage(bool isBorrowed) const {
-    ParallelDebug::VkImageDestroyRecord::Record(fImage, isBorrowed, fCaller, fAlloc.fMemory);
+    static const bool isInRenderSevice = IsRenderService();
+    if (isInRenderSevice) {
+        ParallelDebug::VkImageDestroyRecord::Record(fImage, isBorrowed, fCaller, fAlloc.fMemory);
+    }
 }
 #endif
 
