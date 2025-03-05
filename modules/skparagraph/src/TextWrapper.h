@@ -247,6 +247,8 @@ private:
                                SkScalar maxWidth);
 
     bool fBrokeLineWithHyphen{false};
+    static void matchHyphenResult(const std::vector<uint8_t>& result, ParagraphImpl* owner, size_t& pos,
+                                  SkScalar maxWidth, SkScalar length);
 #else
     void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack);
     void moveForward(bool hasEllipsis);

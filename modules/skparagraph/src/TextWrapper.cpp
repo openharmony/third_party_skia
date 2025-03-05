@@ -57,6 +57,37 @@ struct LineBreakerWithLittleRounding {
 } // namespace
 
 #ifdef OHOS_SUPPORT
+void TextWrapper::matchHyphenResult(const std::vector<uint8_t>& result, ParagraphImpl* owner, size_t& pos,
+                                    SkScalar maxWidth, SkScalar len)
+{
+    auto startPos = pos;
+    size_t ix = 0;
+
+    // Result array may have more code points than we have visible clusters
+    int32_t prevIx = -1;
+    // cumulatively iterate width vs breaks
+    for (const auto& breakPos : result) {
+        int32_t clusterIx = owner->fClustersIndexFromCodeUnit[startPos + ix];
+        if (clusterIx == prevIx) {
+            ++ix;
+            continue;
+        }
+        prevIx = clusterIx;
+        TEXT_LOGD("hyphen break width:%{public}f / %{public}f : %{public}f", len, maxWidth,
+                  owner->cluster(clusterIx).width());
+        len += owner->cluster(clusterIx).width();
+        auto shouldBreak = (len > maxWidth);
+        if (breakPos & 0x1) {
+            // we need to break after previous char, but the result needs to be mapped
+            pos = startPos + ix;
+        }
+        ++ix;
+        if (shouldBreak) {
+            break;
+        }
+    }
+}
+
 size_t TextWrapper::tryBreakWord(Cluster *startCluster, Cluster *endOfClusters,
                                  SkScalar widthBeforeCluster, SkScalar maxWidth)
 {
@@ -77,34 +108,17 @@ size_t TextWrapper::tryBreakWord(Cluster *startCluster, Cluster *endOfClusters,
     // previous glyph before break
     auto mappedEnd = owner->fClustersIndexFromCodeUnit[endPos];
     auto len = widthBeforeCluster + owner->cluster(mappedEnd > 0 ? mappedEnd - 1 : 0).height();
-    if (std::isnan(len)) {
-        len = 0.f;
-    }
     // ToDo: We can stop here based on hyhpenation frequency setting
     // but there is no need to proceed with hyphenation if we don't have space for even hyphen
-    if (len >= maxWidth) {
+    if (std::isnan(len) || len >= maxWidth) {
         return startCluster->textRange().start;
     }
 
     auto locale = owner->paragraphStyle().getTextStyle().getLocale();
-    auto hyphenatorData = Hyphenator::getInstance().getHyphenatorData(locale.c_str());
-    auto result = Hyphenator::getInstance().findBreakPositions(hyphenatorData, owner->fText, startPos, endPos);
-
+    auto result = Hyphenator::getInstance().findBreakPositions(locale, owner->fText, startPos, endPos);
     endPos = startPos;
-    size_t ix = 0;
-    // cumulatively iterate
-    for (auto breakPos : result) {
-        len += (startCluster + ix)->width();
-        auto shouldBreak = (len > maxWidth);
-        if ((breakPos & 0x1) && !shouldBreak) {
-            // we need to break after previous char, but the result needs to be mapped
-            endPos = startPos + ix;
-        }
-        ++ix;
-        if (shouldBreak) {
-            break;
-        }
-    }
+    matchHyphenResult(result, owner, endPos, maxWidth, len);
+
     return endPos;
 }
 
@@ -524,36 +538,44 @@ struct TextWrapScorer {
     {
         auto startCluster = &parent.cluster(0);
         auto endCluster = &parent.cluster(0);
+        auto locale = parent.paragraphStyle().getTextStyle().getLocale();
         for (size_t clusterIx = 0; clusterIx < parent.clusters().size(); clusterIx++) {
             if (parent.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
                 auto& cluster = parent.cluster(clusterIx);
                 auto len = cluster.width();
                 cumulativeLen_ += len;
             }
-            CalculateHyphenPos(clusterIx, startCluster, endCluster, parent);
+            CalculateHyphenPos(clusterIx, startCluster, endCluster, parent, locale);
         }
     }
 
-    void CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster, Cluster*& endCluster, ParagraphImpl& parent)
+    void CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster, Cluster*& endCluster, ParagraphImpl& parent,
+                            const SkString& locale)
     {
-        bool prevWasWhitespace = false;
         auto& cluster = parent.cluster(clusterIx);
         const bool hyphenEnabled = parent.getWordBreakType() == WordBreakType::BREAK_HYPHEN;
-        auto locale = parent.paragraphStyle().getTextStyle().getLocale();
         bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak() || cluster.isTabulation());
-        if (hyphenEnabled && !prevWasWhitespace && isWhitespace && endCluster != startCluster &&
-            endCluster > startCluster) {
-            prevWasWhitespace = true;
-            auto hyphenatorData = Hyphenator::getInstance().getHyphenatorData(locale.c_str());
+        if (hyphenEnabled && !fPrevWasWhitespace && isWhitespace && endCluster > startCluster) {
+            fPrevWasWhitespace = true;
             auto results = Hyphenator::getInstance().findBreakPositions(
-                hyphenatorData, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
+                locale, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
             CheckHyphenBreak(results, parent, startCluster);
             if (clusterIx + 1 < parent.clusters().size()) {
                 startCluster = &cluster + 1;
             }
         } else if (!isWhitespace) {
-            prevWasWhitespace = false;
+            fPrevWasWhitespace = false;
             endCluster = &cluster;
+        } else { //  fix "one character + space and then the actual target"
+            int i = 1;
+            while (clusterIx + i < parent.clusters().size()) {
+                if (!parent.cluster(clusterIx + i).isWordBreak()) {
+                    startCluster = &cluster + i;
+                    break;
+                } else {
+                    i++;
+                }
+            }
         }
     }
 
@@ -835,6 +857,7 @@ private:
     size_t lastBreakPos_ { 0 };
 
     uint64_t cacheHits_ { 0 };
+	bool fPrevWasWhitespace{false};
 };
 
 uint64_t TextWrapper::CalculateBestScore(std::vector<SkScalar>& widthOut, SkScalar maxWidth,
