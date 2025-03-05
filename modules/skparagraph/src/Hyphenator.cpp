@@ -14,6 +14,12 @@
  */
 #ifdef OHOS_SUPPORT
 #include <algorithm>
+#ifdef _WIN32
+#include <cstdlib>
+#else
+#include <cstddef>
+#include <climits>
+#endif
 #include <iostream>
 #include <fstream>
 #include <unicode/utf.h>
@@ -146,6 +152,20 @@ struct HyphenFindBreakParam {
 
 void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
 {
+    char tmpPath[PATH_MAX] = {0};
+    if (filePath.size() > PATH_MAX) {
+        TEXT_LOGE("File name is too long");
+        return;
+    }
+#ifdef _WIN32
+    auto ret = _fullpath(tmpPath, filePath.c_str(), sizeof(tmpPath));
+#else
+    auto ret = realpath(filePath.c_str(), tmpPath);
+#endif
+    if (ret == nullptr) {
+        TEXT_LOGE("Invalid file");
+        return;
+    }
     std::ifstream file(filePath, std::ifstream::binary);
     if (!file.is_open()) {
         TEXT_LOGE("Failed to open %{public}s", filePath.c_str());
@@ -439,10 +459,10 @@ std::vector<uint8_t> Hyphenator::findBreakPositions(const std::vector<uint8_t>& 
         const auto lastword = std::string(text.c_str() + startPos, text.c_str() + endPos);
         std::vector<uint16_t> word;
         int32_t i = 0;
+        const uint8_t* s = reinterpret_cast<const uint8_t*>(lastword.c_str());
         const int32_t textLength = static_cast<int32_t>(endPos - startPos);
         UChar32 c = 0;
         while (i < textLength) {
-            const uint8_t* s = reinterpret_cast<const uint8_t*>(lastword.c_str());
             U8_NEXT(s, i, textLength, c);
             if (U16_LENGTH(c) == 1) {
                 word.push_back(c);
