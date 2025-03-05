@@ -467,6 +467,8 @@
     extern SK_API bool GetEnableSkiaSingleOwner();
 
     extern SK_API void PrintBackTrace(uint32_t tid);
+
+    extern bool IsRenderService();
 #endif
 
 // SkASSERT, SkASSERTF and SkASSERT_RELEASE can be used as stand alone assertion expressions, e.g.
