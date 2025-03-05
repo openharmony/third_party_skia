@@ -741,7 +741,7 @@ public:
             std::unique_ptr<SkCodec> (*make)(std::unique_ptr<SkStream>, SkCodec::Result*));
 
 #ifdef SK_ENABLE_OHOS_CODEC
-    const SkEncodedInfo& callGetEncodedInfo() const { return fEncodedInfo; }
+    const SkEncodedInfo& callGetEncodedInfo() const { return this->getEncodedInfo(); }
 
     using GetPixelsCallback = std::function<Result(const SkImageInfo&, void* pixels,
                                                    size_t rowBytes, const Options& opts,
@@ -757,9 +757,9 @@ public:
      *  Return whether these dimensions are supported as a scale.
      */
     bool callDimensionsSupported(const SkISize& dim) {
-        return dim == this->dimensions() || this->onDimensionsSupported(dim);
+        return this->dimensionsSupported(dim);
     }
-    
+
     /**
      * This function is used to fill any uinitialized memory.
      */
@@ -771,7 +771,7 @@ public:
     /**
      *  Return an object which can used to force scanline decodes to sample in X.
      */
-    virtual SkSampler* callGetSampler(bool /*createIfNecessary*/) { return nullptr; }
+    SkSampler* callGetSampler(bool flag) { return this->getSampler(flag); }
 #endif
 
 protected:
