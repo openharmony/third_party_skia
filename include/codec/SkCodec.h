@@ -765,7 +765,7 @@ public:
      */
     void callFillIncompleteImage(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
                                  ZeroInitialized zeroInit, int linesRequested, int linesDecoded) {
-            this->fillIncompleteImage(dstInfo, dst, rowBytes, zeroInit, linesRequested, linesDecoded);
+        this->fillIncompleteImage(dstInfo, dst, rowBytes, zeroInit, linesRequested, linesDecoded);
     }
 
     /**
