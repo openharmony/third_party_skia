@@ -23,6 +23,9 @@
 #include "include/private/SkTemplates.h"
 
 #include <vector>
+#ifdef SK_ENABLE_OHOS_CODEC
+#include <functional>
+#endif
 
 class SkAndroidCodec;
 class SkColorSpace;
@@ -736,6 +739,40 @@ public:
     static void Register(
             bool                     (*peek)(const void*, size_t),
             std::unique_ptr<SkCodec> (*make)(std::unique_ptr<SkStream>, SkCodec::Result*));
+
+#ifdef SK_ENABLE_OHOS_CODEC
+    const SkEncodedInfo& callGetEncodedInfo() const { return this->getEncodedInfo(); }
+
+    using GetPixelsCallback = std::function<Result(const SkImageInfo&, void* pixels,
+                                                   size_t rowBytes, const Options& opts,
+                                                   int frameIndex)>;
+
+    /**
+     *  Check for a valid Options.fFrameIndex, and decode prior frames if necessary.
+     */
+    Result callHandleFrameIndex(const SkImageInfo& info, void* pixels, size_t rowBytes,
+                                const Options& handleOptions, GetPixelsCallback = nullptr);
+
+    /**
+     *  Return whether these dimensions are supported as a scale.
+     */
+    bool callDimensionsSupported(const SkISize& dim) {
+        return this->dimensionsSupported(dim);
+    }
+
+    /**
+     * This function is used to fill any uinitialized memory.
+     */
+    void callFillIncompleteImage(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
+                                 ZeroInitialized zeroInit, int linesRequested, int linesDecoded) {
+        this->fillIncompleteImage(dstInfo, dst, rowBytes, zeroInit, linesRequested, linesDecoded);
+    }
+
+    /**
+     *  Return an object which can used to force scanline decodes to sample in X.
+     */
+    SkSampler* callGetSampler(bool flag) { return this->getSampler(flag); }
+#endif
 
 protected:
     const SkEncodedInfo& getEncodedInfo() const { return fEncodedInfo; }

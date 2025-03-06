@@ -11,7 +11,11 @@
 #include "include/core/SkTypes.h"
 #include "src/codec/SkCodecPriv.h"
 
+#ifdef SK_ENABLE_OHOS_CODEC
+class SK_API SkSampler : public SkNoncopyable {
+#else
 class SkSampler : public SkNoncopyable {
+#endif
 public:
     /**
      *  Update the sampler to sample every sampleX'th pixel. Returns the

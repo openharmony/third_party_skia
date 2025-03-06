@@ -2116,6 +2116,7 @@ if (use_oh_skia) {
       ]
       defines += [ "SK_ENABLE_SDF_BLUR_SWITCH" ]
       defines += [ "SK_ENABLE_PATH_COMPLEXITY_DFX" ]
+      defines += [ "SK_ENABLE_OHOS_CODEC" ]
     }
 
     if (is_android) {
