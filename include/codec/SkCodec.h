@@ -766,7 +766,7 @@ public:
     void callFillIncompleteImage(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
                                  ZeroInitialized zeroInit, int linesRequested, int linesDecoded) {
             this->fillIncompleteImage(dstInfo, dst, rowBytes, zeroInit, linesRequested, linesDecoded);
-        }
+    }
 
     /**
      *  Return an object which can used to force scanline decodes to sample in X.
