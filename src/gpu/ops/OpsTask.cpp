@@ -8,6 +8,7 @@
 #include "src/gpu/ops/OpsTask.h"
 
 #include "include/gpu/GrRecordingContext.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/core/SkRectPriv.h"
 #include "src/core/SkScopeExit.h"
 #include "src/core/SkTraceEvent.h"
@@ -550,6 +551,8 @@ void OpsTask::onPrepare(GrOpFlushState* flushState) {
 // is at flush time). However, we need to store the RenderTargetProxy in the
 // Ops and instantiate them here.
 bool OpsTask::onExecute(GrOpFlushState* flushState) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_OPSTASK_ONEXECUTE);
     SkASSERT(this->numTargets() == 1);
     GrRenderTargetProxy* proxy = this->target(0)->asRenderTargetProxy();
     SkASSERT(proxy);

@@ -8,6 +8,7 @@
 #include "src/gpu/ops/ShadowRRectOp.h"
 
 #include "include/gpu/GrRecordingContext.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/core/SkRRectPriv.h"
 #include "src/gpu/GrMemoryPool.h"
 #include "src/gpu/GrOpFlushState.h"
@@ -709,6 +710,8 @@ GrOp::Owner Make(GrRecordingContext* context,
                  const SkRRect& rrect,
                  SkScalar blurWidth,
                  SkScalar insetWidth) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_SHADOWRRECTOP_MAKE);
     // Shadow rrect ops only handle simple circular rrects.
     SkASSERT(viewMatrix.isSimilarity() && SkRRectPriv::EqualRadii(rrect));
 

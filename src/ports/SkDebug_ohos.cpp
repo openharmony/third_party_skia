@@ -58,7 +58,7 @@ bool SkShaderReduceProperty()
 #endif
 
 #ifdef SKIA_OHOS_SINGLE_OWNER
-static bool IsRenderService()
+bool IsRenderService()
 {
     std::ifstream procfile("/proc/self/cmdline");
     if (!procfile.is_open()) {

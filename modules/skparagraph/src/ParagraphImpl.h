@@ -325,7 +325,6 @@ public:
     size_t GetMaxLines() const override { return fParagraphStyle.getMaxLines(); }
     void setLastAutoSpacingFlag(Cluster::AutoSpacingFlag flag) { fLastAutoSpacingFlag = flag; }
     const Cluster::AutoSpacingFlag& getLastAutoSpacingFlag() const { return fLastAutoSpacingFlag; }
-    void setLongestLine(SkScalar longestLine) { fLongestLine = longestLine; }
 #endif
 
 private:

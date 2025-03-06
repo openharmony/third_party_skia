@@ -43,8 +43,10 @@ public:
         int numInlineCompilationFailures() const { return fNumInlineCompilationFailures; }
         void incNumInlineCompilationFailures() { ++fNumInlineCompilationFailures; }
 
+#ifdef SKIA_DFX_FOR_OHOS
         void updatePipelineCount(int count) { fPipelineCount = count; }
         void setPipelineCountMax(int max) { fPipelineCountMax = max; }
+#endif
 
         int numInlineProgramCacheResult(ProgramCacheResult stat) const {
             return fInlineProgramCacheStats[(int) stat];
@@ -79,8 +81,10 @@ public:
 
     private:
         std::atomic<int> fShaderCompilations{0};
+#ifdef SKIA_DFX_FOR_OHOS
         std::atomic<int> fPipelineCount{0};
         std::atomic<int> fPipelineCountMax{0};
+#endif
         std::atomic<int> fNumInlineCompilationFailures{0};
         std::array<std::atomic<int>, kNumProgramCacheResults> fInlineProgramCacheStats = {};
 

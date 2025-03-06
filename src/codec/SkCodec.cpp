@@ -389,6 +389,83 @@ SkCodec::Result SkCodec::handleFrameIndex(const SkImageInfo& info, void* pixels,
         ? kSuccess : kInvalidConversion;
 }
 
+#ifdef SK_ENABLE_OHOS_CODEC
+SkCodec::Result SkCodec::callHandleFrameIndex(const SkImageInfo& info, void* pixels, size_t rowBytes,
+                                              const Options& handleOptions, GetPixelsCallback getPixelsFn)
+{
+    if (getPixelsFn) {
+        fAndroidCodecHandlesFrameIndex = true;
+    } else if (fAndroidCodecHandlesFrameIndex) {
+        return kSuccess;
+    }
+    if (!this->rewindIfNeeded()) {
+        return kCouldNotRewind;
+    }
+    const int handleIndex = handleOptions.fFrameIndex;
+    if (0 == handleIndex) {
+        return this->initializeColorXform(info, fEncodedInfo.alpha(), fEncodedInfo.opaque())
+            ? kSuccess : kInvalidConversion;
+    }
+    if (handleIndex < 0) {
+        return kInvalidParameters;
+    }
+    if (handleOptions.fSubset) {
+        return kInvalidParameters;
+    }
+    if (handleIndex >= this->onGetFrameCount()) {
+        return kIncompleteInput;
+    }
+    const auto* frameHolder = this->getFrameHolder();
+    SkASSERT(frameHolder);
+    const auto* frame = frameHolder->getFrame(handleIndex);
+    SkASSERT(frame);
+    const int requiredFrame = frame->getRequiredFrame();
+    if (requiredFrame != kNoFrame) {
+        const SkFrame* preparedFrame = nullptr;
+        if (handleOptions.fPriorFrame == kNoFrame) {
+            Result result = kInternalError;
+            if (getPixelsFn) {
+#ifdef SK_HAS_ANDROID_CODEC
+                result = getPixelsFn(info, pixels, rowBytes, handleOptions, requiredFrame);
+#endif
+            } else {
+                Options prevHandledFrameOptions(handleOptions);
+                prevHandledFrameOptions.fFrameIndex = requiredFrame;
+                result = this->getPixels(info, pixels, rowBytes, &prevHandledFrameOptions);
+            }
+            if (result != kSuccess) {
+                return result;
+            }
+            preparedFrame = frameHolder->getFrame(requiredFrame);
+        } else {
+            if (handleOptions.fPriorFrame < requiredFrame || handleOptions.fPriorFrame >= handleIndex) {
+                return kInvalidParameters;
+            }
+            preparedFrame = frameHolder->getFrame(handleOptions.fPriorFrame);
+        }
+
+        SkASSERT(preparedFrame);
+        switch (preparedFrame->getDisposalMethod()) {
+            case SkCodecAnimation::DisposalMethod::kRestorePrevious:
+                SkASSERT(handleOptions.fPriorFrame != kNoFrame);
+                return kInvalidParameters;
+            case SkCodecAnimation::DisposalMethod::kRestoreBGColor:
+                if (preparedFrame->frameId() == requiredFrame) {
+                    SkIRect preparedRect = preparedFrame->frameRect();
+                    if (!zero_rect(info, pixels, rowBytes, this->dimensions(), preparedRect)) {
+                        return kInternalError;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    return this->initializeColorXform(info, frame->reportedAlpha(), !frame->hasAlpha())
+        ? kSuccess : kInvalidConversion;
+}
+#endif
+
 SkCodec::Result SkCodec::getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
                                    const Options* options) {
     if (kUnknown_SkColorType == info.colorType()) {

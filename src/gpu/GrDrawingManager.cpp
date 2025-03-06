@@ -14,6 +14,7 @@
 #include "include/gpu/GrBackendSemaphore.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrRecordingContext.h"
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/core/SkDeferredDisplayListPriv.h"
 #include "src/core/SkTInternalLList.h"
 #include "src/gpu/GrClientMappedBufferManager.h"
@@ -99,6 +100,8 @@ bool GrDrawingManager::flush(
         SkSurface::BackendSurfaceAccess access,
         const GrFlushInfo& info,
         const GrBackendSurfaceMutableState* newState) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRDRAWINGMANAGER_FLUSH);
     GR_CREATE_TRACE_MARKER_CONTEXT("GrDrawingManager", "flush", fContext);
 
     if (fFlushing || this->wasAbandoned()) {
@@ -277,6 +280,8 @@ bool GrDrawingManager::submitToGpu(bool syncToCpu) {
 }
 
 bool GrDrawingManager::executeRenderTasks(GrOpFlushState* flushState) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRDRAWINGMANAGER_EXECUTERENDERTASKS);
 #if GR_FLUSH_TIME_OP_SPEW
     SkDebugf("Flushing %d opsTasks\n", fDAG.count());
     for (int i = 0; i < fDAG.count(); ++i) {
@@ -518,6 +523,8 @@ GrSemaphoresSubmitted GrDrawingManager::flushSurfaces(
         SkSurface::BackendSurfaceAccess access,
         const GrFlushInfo& info,
         const GrBackendSurfaceMutableState* newState) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRDRAWINGMANAGER_FLUSHSURFACES);
     if (this->wasAbandoned()) {
         if (info.fSubmittedProc) {
             info.fSubmittedProc(info.fSubmittedContext, false);

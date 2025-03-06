@@ -8,6 +8,9 @@
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
 #include "include/gpu/vk/GrVulkanTracker.h"
 #endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
+#endif
 #include "src/gpu/vk/GrVkImage.h"
 
 #include "src/gpu/vk/GrVkGpu.h"
@@ -23,6 +26,8 @@ sk_sp<GrVkImage> GrVkImage::MakeStencil(GrVkGpu* gpu,
                                         SkISize dimensions,
                                         int sampleCnt,
                                         VkFormat format) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKIMAGE_MAKESTENCIL);
     VkImageUsageFlags vkUsageFlags =
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     return GrVkImage::Make(gpu,
@@ -71,6 +76,8 @@ sk_sp<GrVkImage> GrVkImage::MakeTexture(GrVkGpu* gpu,
                                         int numSamples,
                                         SkBudgeted budgeted,
                                         GrProtected isProtected) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKIMAGE_MAKETEXTURE);
     UsageFlags usageFlags = UsageFlags::kTexture;
     VkImageUsageFlags vkUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                                      VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -141,6 +148,8 @@ sk_sp<GrVkImage> GrVkImage::Make(GrVkGpu* gpu,
                                  GrProtected isProtected,
                                  GrMemoryless memoryless,
                                  SkBudgeted budgeted) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKIMAGE_MAKE);
     GrVkImage::ImageDesc imageDesc;
     imageDesc.fImageType = VK_IMAGE_TYPE_2D;
     imageDesc.fFormat = format;
@@ -184,6 +193,8 @@ sk_sp<GrVkImage> GrVkImage::MakeWrapped(GrVkGpu* gpu,
                                         GrWrapOwnership ownership,
                                         GrWrapCacheable cacheable,
                                         bool forSecondaryCB) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKIMAGE_MAKEWRAPPED);
     sk_sp<const GrVkImageView> framebufferView;
     sk_sp<const GrVkImageView> textureView;
     if (!forSecondaryCB) {
@@ -240,6 +251,8 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
         , fBudgeted(budgeted)
 #endif
         , fIsBorrowed(false) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKIMAGE_GRVKIMAGE_1);
     this->init(gpu, false);
     this->setRealAlloc(true); // OH ISSUE: set real alloc flag
     this->setRealAllocSize(dimensions.height() * dimensions.width() * 4); // OH ISSUE: set real alloc size
@@ -268,6 +281,8 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
         , fFramebufferView(std::move(framebufferView))
         , fTextureView(std::move(textureView))
         , fIsBorrowed(GrBackendObjectOwnership::kBorrowed == ownership) {
+    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
+        SKIA_GRVKIMAGE_GRVKIMAGE_2);
     this->init(gpu, forSecondaryCB);
 #ifdef SKIA_DFX_FOR_OHOS
     if (RealAllocConfig::GetRealAllocStatus()) {
@@ -639,11 +654,27 @@ void GrVkImage::Resource::dumpVkImageResource(std::stringstream& dump) {
 }
 
 void GrVkimage::Resource::RecordFreeVkImage(bool isBorrowed) const {
-    ParallelDebug::VkImageDestroyRecord::Record(fImage, isBorrowed, fCaller, fAlloc.fMemory);
+    static const bool isInRenderSevice = IsRenderService();
+    if (isInRenderSevice) {
+        ParallelDebug::VkImageDestroyRecord::Record(fImage, isBorrowed, fCaller, fAlloc.fMemory);
+    }
+}
+#endif
+
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+void GrVkImage::dumpVkImageCoreTrace(std::stringstream& dump) const {
+    VkMemoryRequirements memRequirements;
+    VK_CALL(getVkGpu(), GetImageMemoryRequirements(getVkGpu()->device(), image(), &memRequirements));
+    VkDeviceSize imageSize = memRequirements.size;
+
+    dump << isBorrowed() << " "<< imageSize << " " << fResource->vCaller->nodeId_;
+    fResource->vCaller->Dump(dump);
+    dump << "\n";
 }
 #endif
 
 GrVkImage::Resource::~Resource() {
+    GraphicCoreTrace::DestroyGpuResourceDfx(vCaller);
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     ParallelDebug::DestroyVkImageInvokeRecord(fCaller);
 #endif

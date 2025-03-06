@@ -197,6 +197,8 @@ public:
     void ellipsisNotFitProcess(EllipsisModal ellipsisModal);
 #ifdef OHOS_SUPPORT
     void createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
+    void handleTailEllipsisInEmptyLine(std::unique_ptr<Run>& ellipsisRun, const SkString& ellipsis,
+        SkScalar width, WordBreakType wordBreakType);
     void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
 #endif
@@ -232,6 +234,9 @@ public:
     void setDescentStyle(LineMetricStyle style) { fDescentStyle = style; }
 
     bool endsWithHardLineBreak() const;
+#ifdef OHOS_SUPPORT
+    bool endsWithOnlyHardBreak() const;
+#endif
     std::unique_ptr<Run> shapeString(const SkString& string, const Cluster* cluster);
     std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
     SkSTArray<1, size_t, true> getLineAllRuns() const { return fRunsInVisualOrder; };

@@ -527,9 +527,6 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
     if (align == TextAlign::kJustify) {
         if (!this->endsWithHardLineBreak()) {
             this->justify(maxWidth);
-#ifdef OHOS_SUPPORT
-            this->fOwner->setLongestLine(maxWidth);
-#endif
         } else if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kRtl) {
             // Justify -> Right align
             fShift = delta;
@@ -1041,8 +1038,13 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     countWord(wordCount, inWord);
 
-    bool iterForWord = false;
+    if (fClusterRange.width() == 0 && fGhostClusterRange.width() > 0) {
+        // Only be entered when line is empty.
+        handleTailEllipsisInEmptyLine(ellipsisRun, ellipsis, width, wordBreakType);
+        return;
+    }
 
+    bool iterForWord = false;
     for (auto clusterIndex = fClusterRange.end; clusterIndex > fClusterRange.start; --clusterIndex) {
         auto& cluster = fOwner->cluster(clusterIndex - 1);
         // Shape the ellipsis if the run has changed
@@ -1086,6 +1088,18 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     fWidthWithSpaces = width;
 
+    ellipsisNotFitProcess(EllipsisModal::TAIL);
+}
+
+void TextLine::handleTailEllipsisInEmptyLine(std::unique_ptr<Run>& ellipsisRun, const SkString& ellipsis,
+    SkScalar width, WordBreakType wordBreakType)
+{
+    auto& cluster = fOwner->cluster(fClusterRange.start);
+    ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
+    fEllipsis = std::move(ellipsisRun);
+    fEllipsis->fTextRange = TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
+    TailEllipsisUpdateLine(cluster, width, fGhostClusterRange.end, wordBreakType);
+    fWidthWithSpaces = width;
     ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
 
@@ -1935,6 +1949,12 @@ bool TextLine::endsWithHardLineBreak() const {
            fGhostClusterRange.end == fOwner->clusters().size() - 1;
 #endif
 }
+#ifdef OHOS_SUPPORT
+bool TextLine::endsWithOnlyHardBreak() const
+{
+    return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak());
+}
+#endif
 
 void TextLine::getRectsForRange(TextRange textRange0,
                                 RectHeightStyle rectHeightStyle,
@@ -1976,7 +1996,15 @@ void TextLine::getRectsForRange(TextRange textRange0,
                 case RectHeightStyle::kMax:
                     // TODO: Change it once flutter rolls into google3
                     //  (probably will break things if changed before)
+#ifdef OHOS_SUPPORT
+                    if (endsWithOnlyHardBreak() && fOwner->paragraphStyle().getParagraphSpacing() > 0) {
+                        clip.fBottom = this->height() - fOwner->paragraphStyle().getParagraphSpacing();
+                    } else {
+                        clip.fBottom = this->height();
+                    }
+#else
                     clip.fBottom = this->height();
+#endif
                     clip.fTop = this->sizes().delta();
                     break;
                 case RectHeightStyle::kIncludeLineSpacingTop: {

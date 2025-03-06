@@ -1173,10 +1173,8 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto textExcludingSpaces = TextRange(0, fTrailingSpaces);
     InternalLineMetrics metrics(this->strutForceHeight());
     metrics.add(&run);
-    auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() &
-                              TextHeightBehavior::kDisableFirstAscent;
-    auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() &
-                              TextHeightBehavior::kDisableLastDescent;
+    auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent;
+    auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
     if (disableFirstAscent) {
         metrics.fAscent = metrics.fRawAscent;
     }
@@ -1198,16 +1196,19 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     } while (trailingSpaces != 0);
 
     advance.fY = metrics.height();
+    SkScalar heightWithParagraphSpacing = advance.fY;
+    if (this->paragraphStyle().getIsEndAddParagraphSpacing() &&
+        this->paragraphStyle().getParagraphSpacing() > 0) {
+        heightWithParagraphSpacing += this->paragraphStyle().getParagraphSpacing();
+    }
     auto clusterRange = ClusterRange(0, trailingSpaces);
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
     SkScalar offsetX = this->detectIndents(0);
-    auto &line = this->addLine(SkPoint::Make(offsetX, 0), advance,
-        textExcludingSpaces, textRange, textRange,
-        clusterRange, clusterRangeWithGhosts, run.advance().x(),
-        metrics);
+    auto& line = this->addLine(SkPoint::Make(offsetX, 0), advance, textExcludingSpaces, textRange, textRange,
+        clusterRange, clusterRangeWithGhosts, run.advance().x(), metrics);
     auto spacing = line.autoSpacing();
     auto longestLine = std::max(run.advance().fX, advance.fX) + spacing;
-    setSize(advance.fY, maxWidth, longestLine);
+    setSize(heightWithParagraphSpacing, maxWidth, longestLine);
     setLongestLineWithIndent(longestLine + offsetX);
     setIntrinsicSize(run.advance().fX, advance.fX,
         fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
@@ -1387,11 +1388,6 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
         }
         line.format(effectiveAlign, noIndentWidth, this->paragraphStyle().getEllipsisMod());
     }
-#ifdef OHOS_SUPPORT
-    if (this->lines().size() > 1 && this->paragraphStyle().getTextAlign() == TextAlign::kJustify) {
-        this->setLongestLineWithIndent(maxWidth);
-    }
-#endif
 }
 
 void ParagraphImpl::resolveStrut() {

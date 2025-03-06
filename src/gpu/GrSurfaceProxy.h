@@ -14,6 +14,9 @@
 #include "src/gpu/GrGpuResource.h"
 #include "src/gpu/GrSurface.h"
 #include "src/gpu/GrTexture.h"
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+#include "include/gpu/vk/GrVkGraphicCoreTrace.h"
+#endif
 
 class GrCaps;
 class GrContext_Base;
@@ -465,6 +468,10 @@ private:
     bool                   fIsPromiseProxy = false;
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     uint64_t fNodeId;
+#endif
+#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
+    GraphicCoreTrace::CoreTrace fCoreTrace;
+    uint64_t fNodeIdCheck;
 #endif
 #ifdef SKIA_DFX_FOR_OHOS
     // OH ISSUE: proxy resources real alloc status
