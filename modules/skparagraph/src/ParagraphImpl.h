@@ -76,6 +76,7 @@ struct ResolvedFontDescriptor {
     TextIndex fTextStart;
 };
 
+#ifndef OHOS_SUPPORT
 enum InternalState {
   kUnknown = 0,
   kIndexed = 1,     // Text is indexed
@@ -84,6 +85,7 @@ enum InternalState {
   kFormatted = 6,
   kDrawn = 7
 };
+#endif
 
 /*
 struct BidiRegion {
@@ -227,7 +229,13 @@ public:
     std::unordered_set<SkUnichar> unresolvedCodepoints() override;
     void addUnresolvedCodepoints(TextRange textRange);
 
+#ifdef OHOS_SUPPORT
+    void setState(InternalState state) override;
+    InternalState getState() const override { return state(); }
+#else
     void setState(InternalState state);
+#endif
+
     sk_sp<SkPicture> getPicture() { return fPicture; }
 
     SkScalar widthWithTrailingSpaces() { return fMaxWidthWithTrailingSpaces; }
@@ -250,6 +258,7 @@ public:
 #ifdef OHOS_SUPPORT
     std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) override;
     SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
+    SkTArray<Block, true>& exportTextStyles() override { return fTextStyles; }
 #endif
 
     void visit(const Visitor&) override;

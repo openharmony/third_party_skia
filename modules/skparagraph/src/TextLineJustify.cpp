@@ -17,12 +17,11 @@
 #include <algorithm>
 #include <cstddef>
 #include <numeric>
-#include "log.h"
 
 namespace skia {
 namespace textlayout {
 void TextLineJustify::allocateHighLevelOffsets(
-    ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, SkScalar ideographicMaxLen)
+    SkScalar ideographicMaxLen, ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth)
 {
     // High level allocation: punctuation
     if (allocatedWidth < 0 || nearlyZero(allocatedWidth)) {
@@ -56,8 +55,8 @@ void TextLineJustify::allocateHighLevelOffsets(
     }
 }
 
-void TextLineJustify::allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth,
-    SkScalar ideographicMaxLen, size_t prevClusterNotSpaceCount)
+void TextLineJustify::allocateMiddleLevelOffsets(SkScalar ideographicMaxLen, size_t prevClusterNotSpaceCount,
+    ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth)
 {
     // Middle level allocation: WhitespaceBreak, between ideographic and non-ideographic characters
     if (allocatedWidth < 0 || nearlyZero(allocatedWidth)) {
@@ -77,7 +76,7 @@ void TextLineJustify::allocateMiddleLevelOffsets(ClusterLevelsIndices& clusterLe
 }
 
 void TextLineJustify::allocateLowLevelOffsets(
-    ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, SkScalar ideographicMaxLen)
+    SkScalar ideographicMaxLen, ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth)
 {
     // Low level allocation: Between ideographic characters
     if (allocatedWidth < 0 || nearlyZero(allocatedWidth)) {
@@ -97,7 +96,7 @@ void TextLineJustify::allocateLowLevelOffsets(
 }
 
 void TextLineJustify::allocateRemainingWidth(
-    ClusterLevelsIndices& clusterLevels, SkScalar& allocatedWidth, size_t prevClusterNotSpaceCount)
+    SkScalar allocatedWidth, size_t prevClusterNotSpaceCount, ClusterLevelsIndices& clusterLevels)
 {
     // Bottom-up allocation: If the upper limit is reached, the remaining width is evenly allocated.
     if (allocatedWidth < 0 || nearlyZero(allocatedWidth)) {
@@ -232,22 +231,22 @@ SkScalar TextLineJustify::calculateClusterShift(
         step = lowLevelIterator->isPrevClusterSpace ? clusterLevels.middleLevelOffset
                                                     : clusterLevels.middleLevelOffset * (1 + 1);
     } else if (std::find(clusterLevels.LowLevelIndices.begin(), clusterLevels.LowLevelIndices.end(), index) !=
-               clusterLevels.LowLevelIndices.end()) {
+            clusterLevels.LowLevelIndices.end()) {
         step = clusterLevels.lowLevelOffset;
     }
     return step;
 }
 
-void TextLineJustify::justifyShiftCluster(const SkScalar maxWidth, SkScalar textLen,
-    ClusterLevelsIndices& clusterLevels, SkScalar ideographicMaxLen, size_t prevClusterNotSpaceCount)
+void TextLineJustify::justifyShiftCluster(const SkScalar maxWidth, SkScalar textLen, SkScalar ideographicMaxLen,
+    size_t prevClusterNotSpaceCount, ClusterLevelsIndices& clusterLevels)
 {
     SkScalar allocatedWidth = maxWidth - textLen - (textLineRef.ellipsis() ? textLineRef.ellipsis()->fAdvanceX() : 0);
     const SkScalar verifyShift = allocatedWidth;
     // Allocate offsets for each level
-    this->allocateHighLevelOffsets(clusterLevels, allocatedWidth, ideographicMaxLen);
-    this->allocateMiddleLevelOffsets(clusterLevels, allocatedWidth, ideographicMaxLen, prevClusterNotSpaceCount);
-    this->allocateLowLevelOffsets(clusterLevels, allocatedWidth, ideographicMaxLen);
-    this->allocateRemainingWidth(clusterLevels, allocatedWidth, prevClusterNotSpaceCount);
+    allocateHighLevelOffsets(ideographicMaxLen, clusterLevels, allocatedWidth);
+    allocateMiddleLevelOffsets(ideographicMaxLen, prevClusterNotSpaceCount, clusterLevels, allocatedWidth);
+    allocateLowLevelOffsets(ideographicMaxLen, clusterLevels, allocatedWidth);
+    allocateRemainingWidth(allocatedWidth, prevClusterNotSpaceCount, clusterLevels);
     // Deal with the ghost spaces
     auto ghostShift = maxWidth - textLineRef.widthWithoutEllipsis();
     // Reallocate the width of each cluster: Clusters of different levels use different offsets.
@@ -324,7 +323,7 @@ bool TextLineJustify::justify(SkScalar maxWidth)
         textLineRef.justifyUpdateRtlWidth(maxWidth, textLen);
         return false;
     }
-    this->justifyShiftCluster(maxWidth, textLen, clusterLevels, ideographicMaxLen, prevClusterNotSpaceCount);
+    justifyShiftCluster(maxWidth, textLen, ideographicMaxLen, prevClusterNotSpaceCount, clusterLevels);
     return true;
 }
 

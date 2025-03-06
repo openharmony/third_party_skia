@@ -45,9 +45,7 @@ enum class PathType : uint8_t {
 };
 
 struct Pattern {
-    uint16_t code;
-    uint16_t count;
-    uint8_t patterns[4]; // dynamic
+    uint8_t patterns[8]; // dynamic
 };
 
 struct ArrayOf16bits {
@@ -92,10 +90,18 @@ struct HyphenatorHeader {
 
     inline static void toLower(uint16_t& code)
     {
-        // Open Harmony seems to have this even before C++20
-        code = ucase_tolower(code);
+        if (code == '.') {
+            code = '`';
+        } else if (code == '\'') {
+            code = '^';
+        } else if (code == '-') {
+            code = '_';
+        } else {
+            // Open Harmony seems to have this even before C++20
+            code = ucase_tolower(code);
+        }
     }
-    
+
     inline uint16_t maxCount(const ArrayOf16bits* maps) const
     {
         // need to write this in binary provider !!
@@ -111,7 +117,7 @@ public:
         return instance;
     }
     const std::vector<uint8_t>& getHyphenatorData(const std::string& locale);
-    std::vector<uint8_t> findBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
+    std::vector<uint8_t> findBreakPositions(const SkString& locale, const SkString& text,
                                             size_t startPos, size_t endPos);
 
 private:

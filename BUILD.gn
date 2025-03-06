@@ -94,8 +94,10 @@ config("skia_public") {
       "SKIA_DFX_FOR_OHOS",
       "SKIA_DFX_FOR_RECORD_VKIMAGE",
       "SKIA_DFX_FOR_GPURESOURCE_CORETRACE",
-      "SKIA_OHOS_SINGLE_OWNER",
     ]
+    if (skia_feature_product != "wearable") {
+      defines += [ "SKIA_OHOS_SINGLE_OWNER" ]
+    }
   }
   defines += [ "OHOS_SUPPORT" ]
   defines += [ "SKIA_OPTION_UNCLAMPED_COLOR_MATRIX_FILTER" ]
@@ -2114,6 +2116,7 @@ if (use_oh_skia) {
       ]
       defines += [ "SK_ENABLE_SDF_BLUR_SWITCH" ]
       defines += [ "SK_ENABLE_PATH_COMPLEXITY_DFX" ]
+      defines += [ "SK_ENABLE_OHOS_CODEC" ]
     }
 
     if (is_android) {

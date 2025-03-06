@@ -134,9 +134,16 @@ struct ParagraphStyle {
                this->fReplaceTabCharacters == rhs.fReplaceTabCharacters &&
 #ifdef OHOS_SUPPORT
                this->fTextTab == rhs.fTextTab &&
+               this->fParagraphSpacing == rhs.fParagraphSpacing &&
+               this->fIsEndAddParagraphSpacing == rhs.fIsEndAddParagraphSpacing &&
 #endif
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
     }
+
+#ifdef OHOS_SUPPORT
+    StrutStyle& exportStrutStyle() { return fStrutStyle; }
+    TextStyle& exportTextStyle() { return fDefaultTextStyle; }
+#endif
 
     const StrutStyle& getStrutStyle() const { return fStrutStyle; }
     void setStrutStyle(StrutStyle strutStyle) { fStrutStyle = std::move(strutStyle); }

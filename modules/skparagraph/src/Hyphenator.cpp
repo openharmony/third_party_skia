@@ -24,6 +24,7 @@
 #include <fstream>
 #include <unicode/utf.h>
 #include <unicode/utf8.h>
+#include <unordered_set>
 
 #include "include/Hyphenator.h"
 #include "log.h"
@@ -92,6 +93,31 @@ const std::map<std::string, std::string> HPB_FILE_NAMES = {
     {"pinyin", "hyph-zh-latn-pinyin.hpb"}, // Chinese,Pinyin. language code ‘pinyin’ is not right,will be repair later
 };
 
+// in hyphenation, when a word ends with below chars, the char(s) is stripped during hyphenation.
+const std::unordered_set<uint16_t> EXCLUDED_WORD_ENDING_CHARS = {
+    0x21, // !
+    0x22, // "
+    0x23, // #
+    0x24, // $
+    0x25, // %
+    0x26, // &
+    0x27, // '
+    0x28, // (
+    0x29, // )
+    0x2A, // *
+    0x2B, // +
+    0x2C, // ,
+    0x2D, // -
+    0x2e, // .
+    0x2f, // /
+    0x3A, // :
+    0x3b, // ;
+    0x3C, // <
+    0x3D, // =
+    0x3E, // >
+    0x3F  // ?
+};
+
 struct HyphenTableInfo {
     const HyphenatorHeader* header{nullptr};
     const uint32_t* maindict{nullptr};
@@ -127,8 +153,9 @@ struct HyphenSubTable {
 
         uint32_t baseOffset = *(hyphenInfo.maindict + offset - 1); // previous entry end
         uint32_t initialValue = *(hyphenInfo.maindict + offset);
-        if (initialValue == 0) {
-            // 0 is never valid offset from maindict
+        this->type = (PathType)(initialValue >> HYPHEN_SHIFT_BITS_30);
+        // direct and pairs need to have offset different from zero
+        if (initialValue == 0 && (type == PathType::DIRECT || type == PathType::PAIRS)) {
             return false;
         }
         // base offset is 16 bit
@@ -138,7 +165,6 @@ struct HyphenSubTable {
         // get a subtable according character
         // once: read as 32bit, the rest of the access will be 16bit (13bit for offsets)
         this->nextOffset = (initialValue & 0x3fffffff);
-        this->type = (PathType)(initialValue >> HYPHEN_SHIFT_BITS_30);
         return true;
     }
 };
@@ -261,72 +287,72 @@ const std::vector<uint8_t>& Hyphenator::loadPatternFile(const std::string& langC
 
 void formatTarget(std::vector<uint16_t>& target)
 {
+    while (EXCLUDED_WORD_ENDING_CHARS.find(target.back()) != EXCLUDED_WORD_ENDING_CHARS.end()) {
+        target.pop_back();
+    }
+    target.insert(target.cbegin(), '.');
+    target.push_back('.');
+
     for (auto& code : target) {
         HyphenatorHeader::toLower(code);
     }
-
-    target.insert(target.cbegin(), '.');
-    target.push_back('.');
 }
 
-void processPattern(const Pattern* p, size_t i, uint32_t& ix, std::vector<uint16_t>& word, std::vector<uint8_t>& res)
+void processPattern(const Pattern* p, size_t count, uint32_t index, std::vector<uint16_t>& word, std::vector<uint8_t>& res)
 {
-    uint16_t code = p->code;
-    // if the code point is defined, the sub index refers to code next to this node
-    if (code) {
-        if (code != word[i - ix]) {
-            return;
+    TEXT_LOGD("Index:%{public}u", index);
+    if (count > 0) {
+        count *= 0x4; // patterns are padded to 4 byte arrays
+        // when we reach pattern node (leaf), we need to increase index by one because of our
+        // own code offset
+        for (size_t currentIndex = 0; index < res.size() && currentIndex < count; index++) {
+            TEXT_LOGD("Pattern info:%{public}zu, %{public}u, 0x%{public}x", count, index,
+                      p->patterns[currentIndex]);
+            res[index] = std::max(res[index], (p->patterns[currentIndex]));
+            currentIndex++;
         }
-    } else {
-        // so qe need to substract if this is the direct ref
-        ix--;
-    }
-    uint16_t count = p->count;
-    size_t currentIndex{0};
-    // when we reach pattern node (leaf), we need to increase ix by one because of our
-    // own code offset
-    for (size_t j = i - ix; j <= i && currentIndex < count; j++) {
-        res[j] = std::max(res[j], (p->patterns[currentIndex]));
-        currentIndex++;
     }
 }
 
-void processLinear(uint16_t* data, size_t i, uint32_t& ix, std::vector<uint16_t>& word, std::vector<uint8_t>& res)
+void processLinear(uint16_t* data, size_t index, HyphenFindBreakParam& param, std::vector<uint16_t>& word,
+                   std::vector<uint8_t>& res)
 {
+    TEXT_LOGD("Index:%{public}zu", index);
     const ArrayOf16bits* p = reinterpret_cast<const ArrayOf16bits*>(data);
     uint16_t count = p->count;
-    uint32_t origPos = ix;
-    ix++;
-    if (count > i - ix + 1) {
+    if (count > index + 1) {
         // the pattern is longer than the remaining word
         return;
     }
+    index--;
 
-    bool match = true;
     // check the rest of the string
     for (auto j = 0; j < count; j++) {
-        if (p->codes[j] != word[i - ix]) {
-            match = false;
-            break;
+        if (p->codes[j] != word[index]) {
+            return;
         } else {
-            ix++;
+            index--;
         }
     }
-    // if we reach the end, apply pattern
-    if (!match) {
+    uint32_t offset = 1 + count; // array size, code points, no padding for 16 bit
+    uint16_t pOffset = *(data + offset);
+    offset++; // move forward, after pattern
+    if (!pOffset) {
         return;
     }
-    uint32_t offset = count + (count & 0x1);
-    const Pattern* matchPattern = reinterpret_cast<const Pattern*>(data + offset);
-    size_t index{0};
-    for (size_t j = i - origPos - count; j <= i && index < matchPattern->count; j++) {
-        res[j] = std::max(res[j], matchPattern->patterns[index]);
-        index++;
+
+    const Pattern* matchPattern =
+        reinterpret_cast<const Pattern*>(reinterpret_cast<const uint8_t*>(param.header) + (pOffset & 0xfff));
+    index++; // matching peeks ahead
+    processPattern(matchPattern, (pOffset >> 0xc), index, word, res);
+    if (*(data + offset) != 0) { // peek if there is more to come
+        return processLinear(data + offset, index, param, word, res);
     }
 }
 
 bool processDirect(uint16_t* data, HyphenFindBreakParam& param, uint32_t& nextOffset, PathType& type)
 {
+    TEXT_LOGD("");
     param.offset = param.header->codeOffset(param.code);
     if (param.header->minCp != param.header->maxCp && param.offset > param.header->maxCp) {
         return false;
@@ -337,89 +363,82 @@ bool processDirect(uint16_t* data, HyphenFindBreakParam& param, uint32_t& nextOf
     return true;
 }
 
-bool processOtherType(const ArrayOf16bits* data, HyphenFindBreakParam& param, uint16_t subWord, uint32_t& nextOffset,
-                      PathType& type)
+bool processPairs(const ArrayOf16bits* data, HyphenFindBreakParam& param, uint16_t code, uint32_t& nextOffset,
+                  PathType& type)
 {
+    TEXT_LOGD("Code:0x%{public}x", code);
     uint16_t count = data->count;
     bool match = false;
     for (size_t j = 0; j < count; j += HYPHEN_BASE_CODE_SHIFT) {
-        if (data->codes[j] == subWord) {
-            param.code = subWord;
-            param.offset = param.header->codeOffset(subWord);
-            if (param.header->minCp != param.header->maxCp && param.offset > param.header->maxCp) {
-                break;
-            }
+        if (data->codes[j] == code) {
             nextOffset = data->codes[j + 1] & 0x3fff;
             type = (PathType)(data->codes[j + 1] >> HYPHEN_SHIFT_BITS_14);
             match = true;
             break;
-        } else if (data->codes[j] > subWord) {
+        } else if (data->codes[j] > code) {
             break;
         }
     }
     return match;
 }
 
-void findBreakByType(HyphenFindBreakParam& param, const size_t& index, std::vector<uint16_t>& target,
+void findBreakByType(HyphenFindBreakParam& param, const size_t& targetIndex, std::vector<uint16_t>& target,
                      std::vector<uint8_t>& result)
 {
+    TEXT_LOGD("TopLevel:%{public}zu", targetIndex);
     auto [staticOffset, nextOffset, type] = param.hyphenSubTable;
-    uint32_t ix = 0;
-    // enter cycle, we break when we find something that either matches or conflicts with a code
-    // point
+    uint32_t index = 0; // used in inner loop to traverse path further (backwards)
     while (true) {
-        //   read access type (header) or null (break)
-        //   move (remove mask bits and add static offset)
-        if (type == PathType::PATTERN) {
+        TEXT_LOGD("Loop:%{public}zu %{public}u", targetIndex, index);
+        // there is always at 16bit of pattern address before next node data
+        uint16_t pOffset = *(staticOffset + nextOffset);
+        // from binary version 2 onwards, we have common nodes with 16bit offset (not bound to code points)
+        if (type == PathType::PATTERN && (param.header->version >> 0x18) > 1) {
+            pOffset =
+                *(reinterpret_cast<const uint16_t*>(param.header) + nextOffset + (param.header->version & 0xffff));
+        }
+        nextOffset++;
+        if (pOffset) {
             // if we have reached pattern, apply it to result
-            auto p = reinterpret_cast<const Pattern*>(staticOffset + nextOffset);
-            processPattern(p, index, ix, target, result);
-            // loop breaks
+            uint16_t count = (pOffset >> 0xc);
+            pOffset = 0xfff & pOffset;
+            auto p = reinterpret_cast<const Pattern*>(reinterpret_cast<const uint8_t*>(param.header) + pOffset);
+            processPattern(p, count, targetIndex - index, target, result);
+        }
+        if (type == PathType::PATTERN) {
+            // just break the loop
             break;
-            // else if we can directly point to next entry
         } else if (type == PathType::DIRECT) {
-            // resolve new code point
-            if (ix == index) {
+            if (index == targetIndex) {
                 break;
             }
-            ix++;
-            param.code = target[index - ix];
+            index++; // resolve new code point (on the left)
+            param.code = target[targetIndex - index];
             if (!processDirect(staticOffset, param, nextOffset, type)) {
                 break;
             }
         } else if (type == PathType::LINEAR) {
-            processLinear((staticOffset + nextOffset), index, ix, target, result);
-            // either way, break
+            processLinear((staticOffset + nextOffset), targetIndex - index, param, target, result);
+            // when a linear element has been processed, we always break and move to next top level index
             break;
         } else {
-            // resolve new code point
-            if (ix == index) {
+            if (index == targetIndex) {
                 break;
             }
-            ix++;
+            index++;
             auto p = reinterpret_cast<const ArrayOf16bits*>(staticOffset + nextOffset);
-            if (!processOtherType(p, param, target[index - ix], nextOffset, type)) {
+            if (!processPairs(p, param, target[targetIndex - index], nextOffset, type)) {
                 break;
             }
         }
     }
 }
 
-std::vector<uint8_t> findBreaks(const std::vector<uint8_t>& hyphenatorData, std::vector<uint16_t>& target)
+void findBreaks(const std::vector<uint8_t>& hyphenatorData, std::vector<uint16_t>& target, std::vector<uint8_t>& result)
 {
-    std::vector<uint8_t> result;
-    result.resize(target.size());
-
-    if (hyphenatorData.empty()) {
-        return result;
-    }
-
-    formatTarget(target);
-    result.resize(target.size(), 0);
-
     HyphenTableInfo hyphenInfo;
     if (!hyphenInfo.initHyphenTableInfo(hyphenatorData)) {
-        return result;
+        return;
     }
 
     if (target.size() > 0) {
@@ -435,43 +454,100 @@ std::vector<uint8_t> findBreaks(const std::vector<uint8_t>& hyphenatorData, std:
             findBreakByType(param, i, target, result);
         }
     }
-
-    result.erase(result.cbegin());
-    result.pop_back();
-    return result;
 }
 
-std::vector<uint8_t> Hyphenator::findBreakPositions(const std::vector<uint8_t>& hyphenatorData, const SkString& text,
-                                                    size_t startPos, size_t endPos)
+size_t getLanguagespecificLeadingBounds(const std::string& locale)
 {
+    static const std::unordered_set<std::string> specialLocales = {"ka", "hy", "pinyin", "el-monoton", "el-polyton"};
+    size_t lead = 2; // hardcoded for the most of the language pattern files
+    if (specialLocales.count(locale)) {
+        lead = 1;
+    }
+    return lead + 1; // we pad the target with surrounding marks ('.'), thus +1
+}
+
+size_t getLanguagespecificTrailingBounds(const std::string& locale)
+{
+    static const std::unordered_set<std::string> threeCharLocales = {"en-gb", "et", "th", "pt", "ga",
+                                                                     "cs", "cy", "sk", "en-us"};
+    static const std::unordered_set<std::string> oneCharLocales = {"el-monoton", "el-polyton"};
+
+    size_t trail = 2; // hardcoded for the most of the language pattern files
+    if (threeCharLocales.count(locale)) {
+        trail = 3; // 3: At least three characters
+    } else if (oneCharLocales.count(locale)) {
+        trail = 1;
+    }
+    return trail; // we break before, so we don't add extra for end marker
+}
+
+inline void formatResult(std::vector<uint8_t>& result, const size_t& leadingHyphmins, const size_t& trailingHyphmins,
+                         std::vector<uint8_t>& offsets)
+{
+    for (size_t i = 0; i < leadingHyphmins; i++) {
+        result[i] = 0;
+    }
+
+    // remove front marker
+    result.erase(result.cbegin());
+
+    // move indices to match input multi chars
+    size_t pad = 0;
+    for (size_t i = 0; i < offsets.size(); i++) {
+        while (offsets[i] != 0) {
+            result.insert(result.begin() + i + pad, result[i + pad]);
+            TEXT_LOGD("Padding %{public}zu", i + pad);
+            offsets[i]--;
+            pad++;
+        }
+    }
+    // remove end marker and uncertain results
+    result.erase(result.cbegin() + result.size() - trailingHyphmins, result.cend());
+}
+
+std::vector<uint8_t> Hyphenator::findBreakPositions(const SkString& locale, const SkString& text, size_t startPos,
+                                                    size_t endPos)
+{
+    TEXT_LOGD("Find break pos:%{public}zu %{public}zu %{public}zu", text.size(), startPos, endPos);
+    const std::string dummy(locale.c_str());
+    auto hyphenatorData = getHyphenatorData(dummy);
     std::vector<uint8_t> result;
+
     if (startPos > text.size() || endPos > text.size() || startPos > endPos) {
-        TEXT_LOGE("hyphen error pos %{public}zu %{public}zu %{public}zu", text.size(), startPos, endPos);
+        TEXT_LOGE("Hyphen error pos %{public}zu %{public}zu %{public}zu", text.size(), startPos, endPos);
         return result;
     }
-    const auto lastword = std::string(text.c_str() + startPos, text.c_str() + endPos);
+    const auto leadingHyphmins = getLanguagespecificLeadingBounds(dummy);
+    const auto trailingHyphmins = getLanguagespecificTrailingBounds(dummy);
     // resolve potential break positions
-    if (!hyphenatorData.empty() && startPos + HYPHEN_WORD_SHIFT < endPos) {
-        // need to have at least 4 characters for hyphenator to process
-        // This a tricky bit, hyphenator expetcs an array of utf16, we have utf8 in fText and
-        // unicode in fUnicodeText Best match currently is obtained running a conversion from utf8
-        // toutf16 but it wastes a bit of memory & cpu clean this up once the dust settles a bit
+    if (!hyphenatorData.empty() && startPos + std::max(leadingHyphmins, trailingHyphmins) <= endPos) {
+        // typically need to have at least 4 characters for hyphenator to process
         const auto lastword = std::string(text.c_str() + startPos, text.c_str() + endPos);
         std::vector<uint16_t> word;
+        std::vector<uint8_t> offsets;
         int32_t i = 0;
         const int32_t textLength = static_cast<int32_t>(endPos - startPos);
         UChar32 c = 0;
+        int32_t prev = i;
         while (i < textLength) {
             U8_NEXT(reinterpret_cast<const uint8_t*>(lastword.c_str()), i, textLength, c);
+            offsets.push_back(i - prev - U16_LENGTH(c));
             if (U16_LENGTH(c) == 1) {
                 word.push_back(c);
             } else {
                 word.push_back(U16_LEAD(c));
                 word.push_back(U16_TRAIL(c));
             }
+            prev = i;
         }
 
-        result = findBreaks(hyphenatorData, word);
+        formatTarget(word);
+        // Bulgarian pattern file tells only the positions where
+        // breaking is not allowed, we need to initialize defaults to allow breaking
+        const uint8_t defaultValue = (dummy == "bg") ? 1 : 0; // 0: break is not allowed, 1: break level 1
+        result.resize(word.size(), defaultValue);
+        findBreaks(hyphenatorData, word, result);
+        formatResult(result, leadingHyphmins, trailingHyphmins, offsets);
     }
     return result;
 }

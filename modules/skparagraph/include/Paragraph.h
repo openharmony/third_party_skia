@@ -15,6 +15,17 @@ class SkCanvas;
 namespace skia {
 namespace textlayout {
 
+#ifdef OHOS_SUPPORT
+enum InternalState {
+  kUnknown = 0,
+  kIndexed = 1,     // Text is indexed
+  kShaped = 2,      // Text is shaped
+  kLineBroken = 5,
+  kFormatted = 6,
+  kDrawn = 7
+};
+#endif
+
 class ParagraphPainter;
 
 class Paragraph {
@@ -56,6 +67,16 @@ public:
     SkScalar getGlyphsBoundsRight() { return fGlyphsBoundsRight; }
 
     bool didExceedMaxLines() { return fExceededMaxLines; }
+
+#ifdef OHOS_SUPPORT
+    ParagraphStyle& getParagraphStyle() { return fParagraphStyle; }
+
+    virtual SkTArray<Block, true>& exportTextStyles() = 0;
+
+    virtual void setState(InternalState state) = 0;
+
+    virtual InternalState getState() const = 0;
+#endif
 
     virtual void layout(SkScalar width) = 0;
 
