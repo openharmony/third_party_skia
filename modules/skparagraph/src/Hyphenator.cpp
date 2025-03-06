@@ -14,6 +14,12 @@
  */
 #ifdef OHOS_SUPPORT
 #include <algorithm>
+#ifdef _WIN32
+#include <cstdlib>
+#else
+#include <cstddef>
+#include <climits>
+#endif
 #include <iostream>
 #include <fstream>
 #include <unicode/utf.h>
@@ -172,6 +178,20 @@ struct HyphenFindBreakParam {
 
 void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
 {
+    char tmpPath[PATH_MAX] = {0};
+    if (filePath.size() > PATH_MAX) {
+        TEXT_LOGE("File name is too long");
+        return;
+    }
+#ifdef _WIN32
+    auto ret = _fullpath(tmpPath, filePath.c_str(), sizeof(tmpPath));
+#else
+    auto ret = realpath(filePath.c_str(), tmpPath);
+#endif
+    if (ret == nullptr) {
+        TEXT_LOGE("Invalid file %{public}s", filePath.c_str());
+        return;
+    }
     std::ifstream file(filePath, std::ifstream::binary);
     if (!file.is_open()) {
         TEXT_LOGE("Failed to open %{public}s", filePath.c_str());
@@ -278,7 +298,8 @@ void formatTarget(std::vector<uint16_t>& target)
     }
 }
 
-void processPattern(const Pattern* p, size_t count, uint32_t index, std::vector<uint16_t>& word, std::vector<uint8_t>& res)
+void processPattern(const Pattern* p, size_t count, uint32_t index, std::vector<uint16_t>& word,
+                    std::vector<uint8_t>& res)
 {
     TEXT_LOGD("Index:%{public}u", index);
     if (count > 0) {
@@ -286,8 +307,7 @@ void processPattern(const Pattern* p, size_t count, uint32_t index, std::vector<
         // when we reach pattern node (leaf), we need to increase index by one because of our
         // own code offset
         for (size_t currentIndex = 0; index < res.size() && currentIndex < count; index++) {
-            TEXT_LOGD("Pattern info:%{public}zu, %{public}u, 0x%{public}x", count, index,
-                      p->patterns[currentIndex]);
+            TEXT_LOGD("Pattern info:%{public}zu, %{public}u, 0x%{public}x", count, index, p->patterns[currentIndex]);
             res[index] = std::max(res[index], (p->patterns[currentIndex]));
             currentIndex++;
         }
@@ -507,9 +527,8 @@ std::vector<uint8_t> Hyphenator::findBreakPositions(const SkString& locale, cons
         std::vector<uint8_t> offsets;
         int32_t i = 0;
         const int32_t textLength = static_cast<int32_t>(endPos - startPos);
-        uint32_t c = 0;
+        UChar32 c = 0;
         int32_t prev = i;
-
         while (i < textLength) {
             U8_NEXT(reinterpret_cast<const uint8_t*>(lastword.c_str()), i, textLength, c);
             offsets.push_back(i - prev - U16_LENGTH(c));
