@@ -751,7 +751,7 @@ public:
      *  Check for a valid Options.fFrameIndex, and decode prior frames if necessary.
      */
     Result callHandleFrameIndex(const SkImageInfo& info, void* pixels, size_t rowBytes,
-                                          const Options& handleOptions, GetPixelsCallback = nullptr);
+                                const Options& handleOptions, GetPixelsCallback = nullptr);
 
     /**
      *  Return whether these dimensions are supported as a scale.
@@ -764,7 +764,7 @@ public:
      * This function is used to fill any uinitialized memory.
      */
     void callFillIncompleteImage(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
-        ZeroInitialized zeroInit, int linesRequested, int linesDecoded) {
+                                 ZeroInitialized zeroInit, int linesRequested, int linesDecoded) {
             this->fillIncompleteImage(dstInfo, dst, rowBytes, zeroInit, linesRequested, linesDecoded);
         }
 
