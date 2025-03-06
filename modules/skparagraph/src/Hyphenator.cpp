@@ -298,7 +298,8 @@ void formatTarget(std::vector<uint16_t>& target)
     }
 }
 
-void processPattern(const Pattern* p, size_t count, uint32_t index, std::vector<uint16_t>& word, std::vector<uint8_t>& res)
+void processPattern(const Pattern* p, size_t count, uint32_t index, std::vector<uint16_t>& word,
+                    std::vector<uint8_t>& res)
 {
     TEXT_LOGD("Index:%{public}u", index);
     if (count > 0) {
@@ -306,8 +307,7 @@ void processPattern(const Pattern* p, size_t count, uint32_t index, std::vector<
         // when we reach pattern node (leaf), we need to increase index by one because of our
         // own code offset
         for (size_t currentIndex = 0; index < res.size() && currentIndex < count; index++) {
-            TEXT_LOGD("Pattern info:%{public}zu, %{public}u, 0x%{public}x", count, index,
-                      p->patterns[currentIndex]);
+            TEXT_LOGD("Pattern info:%{public}zu, %{public}u, 0x%{public}x", count, index, p->patterns[currentIndex]);
             res[index] = std::max(res[index], (p->patterns[currentIndex]));
             currentIndex++;
         }
