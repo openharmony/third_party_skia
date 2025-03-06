@@ -1939,15 +1939,9 @@ bool TextLine::isLastLine() const {
 bool TextLine::endsWithHardLineBreak() const {
     // TODO: For some reason Flutter imagines a hard line break at the end of the last line.
     //  To be removed...
-#ifdef OHOS_SUPPORT
-    return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak()) ||
-           (fEllipsis != nullptr) ||
-           fGhostClusterRange.end == fOwner->clusters().size() - 1;
-#else
     return (fGhostClusterRange.width() > 0 && fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak()) ||
            fEllipsis != nullptr ||
            fGhostClusterRange.end == fOwner->clusters().size() - 1;
-#endif
 }
 #ifdef OHOS_SUPPORT
 bool TextLine::endsWithOnlyHardBreak() const
