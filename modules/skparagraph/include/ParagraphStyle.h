@@ -140,6 +140,11 @@ struct ParagraphStyle {
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
     }
 
+#ifdef OHOS_SUPPORT
+    StrutStyle& exportStrutStyle() { return fStrutStyle; }
+    TextStyle& exportTextStyle() { return fDefaultTextStyle; }
+#endif
+
     const StrutStyle& getStrutStyle() const { return fStrutStyle; }
     void setStrutStyle(StrutStyle strutStyle) { fStrutStyle = std::move(strutStyle); }
 
