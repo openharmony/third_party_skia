@@ -1837,10 +1837,12 @@ void SkCanvas::drawPath(const SkPath& path, const SkPaint& paint) {
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
 void SkCanvas::clearStencil(const SkIRect& rect, uint32_t stencilVal) {
     TRACE_EVENT0("skia", TRACE_FUNC);
+    this->topDevice()->clearStencil(rect, stencilVal);
 }
 
 void SkCanvas::drawPathWithStencil(const SkPath& path, const SkPaint& paint, uint32_t stencilRef) {
     TRACE_EVENT0("skia", TRACE_FUNC);
+    this->onDrawPathWithStencil(path, paint, stencilRef);
 #ifdef SK_ENABLE_PATH_COMPLEXITY_DFX
     SkPathComplexityDfx::ShowPathComplexityDfx(this, path);
 #endif
@@ -2240,6 +2242,7 @@ void SkCanvas::onDrawImage2(const SkImage* image, SkScalar x, SkScalar y,
 void SkCanvas::onDrawImage2WithStencil(const SkImage* image, SkScalar x, SkScalar y,
                                        const SkSamplingOptions& sampling, const SkPaint* paint, uint32_t stencilRef) {
     TRACE_EVENT0("skia", TRACE_FUNC);
+    drawImageCommon(image, x, y, sampling, paint, true, stencilRef);
 }
 void SkCanvas::drawImageCommon(const SkImage* image, SkScalar x, SkScalar y,
                                const SkSamplingOptions& sampling, const SkPaint* paint, bool useStencil,
