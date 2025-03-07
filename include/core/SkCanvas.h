@@ -1457,13 +1457,15 @@ public:
     void drawPath(const SkPath& path, const SkPaint& paint);
 
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-    /** Stencil Culling API, Similar to DrawPath but with Stencil test, which will attempt
+    /** Only for Stencil Culling use, Please do not use in other cases.
+        Similar to DrawPath but with Stencil test, which will attempt
         to enable Stencil Test using CompareOp GREATER_OR_EQUAL.
         it will degenerate into DrawPath if Non-StencilCullingOp use stencil.
     */
     void drawPathWithStencil(const SkPath& path, const SkPaint& paint, uint32_t stencilRef);
 
-    /** Stencil Culling API, Similar to DrawImage but with Stencil test, which will attempt
+    /** Only for Stencil Culling use, Please do not use in other cases.
+        Similar to DrawImage but with Stencil test, which will attempt
         to enable Stencil Test using CompareOp GREATER_OR_EQUAL.
         it will degenerate into DrawImage if Non-StencilCullingOp use stencil.
     */ 
@@ -1472,7 +1474,8 @@ public:
         this->onDrawImage2WithStencil(image.get(), left, top, sampling, paint, stencilRef);
     }
 
-    /** Stencil Culling API, Use stecnilVal to clear the specified area in stencil Buffer.
+    /** Only for Stencil Culling use, Please do not use in other cases.
+        Use stecnilVal to clear the specified area in stencil Buffer.
         it will do nothing if Non-StencilCullingOp use stencil.
     */ 
     void clearStencil(const SkIRect& rect, uint32_t stencilVal);
