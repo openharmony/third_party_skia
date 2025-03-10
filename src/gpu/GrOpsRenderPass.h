@@ -127,7 +127,9 @@ public:
      * enabled scissor test; must check caps.performColorClearsAsDraws() before using this at all.
      */
     void clear(const GrScissorState& scissor, std::array<float, 4> color);
-
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+    void clearStencil(const GrScissorState& scissor, uint32_t stencilVal);
+#endif
     /**
      * Same as clear() but modifies the stencil; check caps.performStencilClearsAsDraws() and
      * caps.performPartialClearsAsDraws().
@@ -201,6 +203,9 @@ private:
     }
     virtual void onClear(const GrScissorState&, std::array<float, 4> color) = 0;
     virtual void onClearStencilClip(const GrScissorState&, bool insideStencilMask) = 0;
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+    virtual void onClearStencil(const GrScissorState&, uint32_t stencilVal) {}
+#endif
     virtual void onExecuteDrawable(std::unique_ptr<SkDrawable::GpuDrawHandler>) {}
     virtual void onDrawBlurImage(const GrSurfaceProxyView& proxyView, const SkBlurArg& blurArg) {};
 

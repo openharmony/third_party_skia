@@ -31,7 +31,10 @@
  *   must zero all user bits that were modifed (both inside and outside the
  *   clip).
  */
-
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+ // Stencil Culling use
+static const int kStencilLayersMax = 6;
+#endif
 enum GrStencilFlags : int {
     kDisabled_StencilFlag         = (1 << 0),
     kTestAlwaysPasses_StencilFlag = (1 << 1),
@@ -206,6 +209,9 @@ struct GrUserStencilSettings {
     const Face       fCCWFace;
 
     static const GrUserStencilSettings& kUnused;
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+    static const GrUserStencilSettings *kGE[kStencilLayersMax];  
+#endif  
 
     bool isUnused() const { return this == &kUnused; }
 };

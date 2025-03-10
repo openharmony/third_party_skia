@@ -24,6 +24,12 @@ public:
     explicit GrScissorState(const SkISize& rtDims)
             : fRTSize(rtDims)
             , fRect(SkIRect::MakeSize(rtDims)) {}
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+    GrScissorState(const SkISize& rtDims, const SkIRect& stencilRect)
+        : fRTSize(rtDims)
+        , fRect(SkIRect::MakeSize(rtDims))
+        , fStencilRect(stencilRect) {}
+#endif
 
     void setDisabled() { fRect = SkIRect::MakeSize(fRTSize); }
     bool set(const SkIRect& rect) {
@@ -74,11 +80,19 @@ public:
         SkASSERT(fRect.isEmpty() || SkIRect::MakeSize(fRTSize).contains(fRect));
         return fRect;
     }
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+    const SkIRect& stencilRect() const {
+        return fStencilRect;
+    }
+#endif
 
 private:
     // The scissor is considered enabled if the rectangle does not cover the render target
     SkISize fRTSize;
     SkIRect fRect;
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+    SkIRect fStencilRect;
+#endif
 };
 
 #endif

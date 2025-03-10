@@ -192,7 +192,13 @@ public:
         TRACE_EVENT0("skia.gpu", name());
         this->onExecute(state, chainBounds);
     }
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+    virtual bool isStencilCullingOp() {
+        return false;
+    }
 
+    bool fShouldDisableStencilCulling = false;
+#endif
     /** Used for spewing information about ops when debugging. */
 #if GR_TEST_UTILS
     virtual SkString dumpInfo() const final {

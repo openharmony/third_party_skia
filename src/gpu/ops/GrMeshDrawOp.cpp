@@ -15,7 +15,14 @@
 
 GrMeshDrawOp::GrMeshDrawOp(uint32_t classID) : INHERITED(classID) {}
 
-void GrMeshDrawOp::onPrepare(GrOpFlushState* state) { this->onPrepareDraws(state); }
+void GrMeshDrawOp::onPrepare(GrOpFlushState* state) {
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+    if(state) {
+        fShouldDisableStencilCulling = state->fDisableStencilCulling;
+    }
+#endif
+    this->onPrepareDraws(state); 
+}
 
 void GrMeshDrawOp::createProgramInfo(GrMeshDrawTarget* target) {
     this->createProgramInfo(&target->caps(),

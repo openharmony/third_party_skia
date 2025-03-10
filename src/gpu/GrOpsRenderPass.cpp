@@ -45,6 +45,13 @@ void GrOpsRenderPass::clear(const GrScissorState& scissor, std::array<float, 4> 
     fDrawPipelineStatus = DrawPipelineStatus::kNotConfigured;
     this->onClear(scissor, color);
 }
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+void GrOpsRenderPass::clearStencil(const GrScissorState& scissor, uint32_t stencilVal) {
+    SkASSERT(fRenderTarget);
+    fDrawPipelineStatus = DrawPipelineStatus::kNotConfigured;
+    this->onClearStencil(scissor, stencilVal);
+}
+#endif
 
 void GrOpsRenderPass::clearStencilClip(const GrScissorState& scissor, bool insideStencilMask) {
     // As above, make sure the stencil clear wasn't supposed to be a draw rect with stencil settings

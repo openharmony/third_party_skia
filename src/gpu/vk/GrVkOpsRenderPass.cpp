@@ -479,6 +479,49 @@ void GrVkOpsRenderPass::onClearStencilClip(const GrScissorState& scissor, bool i
     fCurrentCBIsEmpty = false;
 }
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+void GrVkOpsRenderPass::onClearStencil(const GrScissorState& scissor, uint32_t stencilVal) {
+    if (!fCurrentRenderPass) {
+        SkASSERT(fGpu->isDeviceLost());
+        return;
+    }
+
+    GrAttachment* sb = fFramebuffer->stencilAttachment();
+    // this should only be called internally when we know we have a
+    // stencil buffer.
+    SkASSERT(sb);
+    int stencilBitCount = GrBackendFormatStencilBits(sb->backendFormat());
+
+    // The contract with the callers does not guarantee that we preserve all bits in the stencil
+    // during this clear. Thus we will clear the entire stencil to the desired value.
+
+    VkClearDepthStencilValue vkStencilColor;
+    memset(&vkStencilColor, 0, sizeof(VkClearDepthStencilValue));
+
+    vkStencilColor.stencil = stencilVal;
+
+    VkClearRect clearRect;
+    
+    const SkIRect& vkRect = scissor.stencilRect(); 
+    clearRect.rect.offset = { vkRect.fLeft, vkRect.fTop };
+    clearRect.rect.extent = { (uint32_t)vkRect.width(), (uint32_t)vkRect.height() };
+
+    clearRect.baseArrayLayer = 0;
+    clearRect.layerCount = 1;
+
+    uint32_t stencilIndex;
+    SkAssertResult(fCurrentRenderPass->stencilAttachmentIndex(&stencilIndex));
+
+    VkClearAttachment attachment;
+    attachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    attachment.colorAttachment = 0; // this value shouldn't matter
+    attachment.clearValue.depthStencil = vkStencilColor;
+
+    this->currentCommandBuffer()->clearAttachments(fGpu, 1, &attachment, 1, &clearRect);
+    fCurrentCBIsEmpty = false;
+}
+#endif
+
 void GrVkOpsRenderPass::onClear(const GrScissorState& scissor, std::array<float, 4> color) {
     if (!fCurrentRenderPass) {
         SkASSERT(fGpu->isDeviceLost());
