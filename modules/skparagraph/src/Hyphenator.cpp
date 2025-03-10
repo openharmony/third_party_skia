@@ -184,15 +184,15 @@ void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
         return;
     }
 #ifdef _WIN32
-    auto ret = _fullpath(tmpPath, filePath.c_str(), sizeof(tmpPath));
+    auto canonicalFilePath = _fullpath(tmpPath, filePath.c_str(), sizeof(tmpPath));
 #else
-    auto ret = realpath(filePath.c_str(), tmpPath);
+    auto canonicalFilePath = realpath(filePath.c_str(), tmpPath);
 #endif
-    if (ret == nullptr) {
+    if (canonicalFilePath == nullptr) {
         TEXT_LOGE("Invalid file %{public}s", filePath.c_str());
         return;
     }
-    std::ifstream file(filePath, std::ifstream::binary);
+    std::ifstream file(canonicalFilePath, std::ifstream::binary);
     if (!file.is_open()) {
         TEXT_LOGE("Failed to open %{public}s", filePath.c_str());
         return;
