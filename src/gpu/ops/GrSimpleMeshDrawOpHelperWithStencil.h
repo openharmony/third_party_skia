@@ -75,9 +75,7 @@ public:
 #endif
 
     const GrUserStencilSettings* stencilSettings() const { return fStencilSettings; }
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-    void resetStencilSettings() { fStencilSettings = &GrUserStencilSettings::kUnused; }
-#endif
+
 private:
     const GrUserStencilSettings* fStencilSettings;
     using INHERITED = GrSimpleMeshDrawOpHelper;

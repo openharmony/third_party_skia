@@ -77,18 +77,6 @@ public:
                                                      stencilSettings, inputFlags);
     }
 
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-    bool isStencilCullingOp() override {
-        auto stencilSettings = fHelper.stencilSettings();
-        for (int i = 0; i < kStencilLayersMax; i++) {
-            if (stencilSettings == GrUserStencilSettings::kGE[i]) {
-                return true;
-            }
-        }
-        return false;
-    }
-#endif
-
     // aaType is passed to Helper in the initializer list, so incongruities between aaType and
     // edgeFlags must be resolved prior to calling this constructor.
     FillRectOpImpl(GrProcessorSet* processorSet, SkPMColor4f paintColor, GrAAType aaType,
@@ -274,11 +262,7 @@ private:
 
     void onPrepareDraws(GrMeshDrawTarget* target) override {
         TRACE_EVENT0("skia.gpu", TRACE_FUNC);
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-        if (fShouldDisableStencilCulling) {
-            fHelper.resetStencilSettings();
-        }
-#endif
+
         const VertexSpec vertexSpec = this->vertexSpec();
 
         // Make sure that if the op thought it was a solid color, the vertex spec does not use

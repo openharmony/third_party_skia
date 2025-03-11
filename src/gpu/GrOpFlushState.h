@@ -260,10 +260,6 @@ public:
                                          maxPatternRepetitionsInIndexBuffer, patternVertexCount,
                                          baseVertex);
     }
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-    bool fDisableStencilCulling = false;
-    bool fHasStencilCullingOp = false;
-#endif
 
 private:
     struct InlineUpload {

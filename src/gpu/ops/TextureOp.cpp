@@ -235,16 +235,10 @@ public:
                             Saturate saturate,
                             GrAAType aaType,
                             DrawQuad* quad,
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-                            const SkRect* subset,
-                            uint32_t stencilRef) {
-        return GrOp::Make<TextureOpImpl>(context, std::move(proxyView), std::move(textureXform),
-                                         filter, mm, color, saturate, aaType, quad, subset, stencilRef);                                
-#else
                             const SkRect* subset) {
+
         return GrOp::Make<TextureOpImpl>(context, std::move(proxyView), std::move(textureXform),
                                          filter, mm, color, saturate, aaType, quad, subset);
-#endif
     }
 
     static GrOp::Owner Make(GrRecordingContext* context,
@@ -315,20 +309,9 @@ public:
     }
 
     FixedFunctionFlags fixedFunctionFlags() const override {
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-        if (fStencilRef != UINT32_MAX) {
-            return FixedFunctionFlags::kUsesStencil;
-        }
-#endif
         return fMetadata.aaType() == GrAAType::kMSAA ? FixedFunctionFlags::kUsesHWAA
                                                      : FixedFunctionFlags::kNone;
     }
-
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-    bool isStencilCullingOp() override {
-        return fStencilRef != UINT32_MAX;
-    }
-#endif
 
     DEFINE_OP_CLASS_ID
 
@@ -457,23 +440,12 @@ private:
                   Saturate saturate,
                   GrAAType aaType,
                   DrawQuad* quad,
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-                  const SkRect* subsetRect,
-                  uint32_t stencilRef = UINT32_MAX)
-            : INHERITED(ClassID())
-            , fQuads(1, true /* includes locals */)
-            , fTextureColorSpaceXform(std::move(textureColorSpaceXform))
-            , fDesc(nullptr)
-            , fMetadata(proxyView.swizzle(), filter, mm, Subset(!!subsetRect), saturate)
-            , fStencilRef(stencilRef) {
-#else
                   const SkRect* subsetRect)
             : INHERITED(ClassID())
             , fQuads(1, true /* includes locals */)
             , fTextureColorSpaceXform(std::move(textureColorSpaceXform))
             , fDesc(nullptr)
             , fMetadata(proxyView.swizzle(), filter, mm, Subset(!!subsetRect), saturate) {
-#endif
         // Clean up disparities between the overall aa type and edge configuration and apply
         // optimizations based on the rect and matrix when appropriate
         GrQuadUtils::ResolveAAType(aaType, quad->fEdgeFlags, quad->fDevice,
@@ -710,22 +682,11 @@ private:
 
             SkASSERT(fDesc->fVertexSpec.vertexSize() == gp->vertexStride());
         }
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-        const GrUserStencilSettings* st = &GrUserStencilSettings::kUnused;
-        if (fStencilRef != UINT32_MAX && !fShouldDisableStencilCulling && fStencilRef < kStencilLayersMax) {
-            TRACE_EVENT0("skia.gpu", "StencilCullingOpt TextureOpImpl::onCreateProgramInfo with stencil");
-            st = GrUserStencilSettings::kGE[fStencilRef];
-        }
-        fDesc->fProgramInfo = GrSimpleMeshDrawOpHelper::CreateProgramInfo(
-                caps, arena, writeView, usesMSAASurface, std::move(appliedClip), dstProxyView, gp,
-                GrProcessorSet::MakeEmptySet(), fDesc->fVertexSpec.primitiveType(),
-                renderPassXferBarriers, colorLoadOp, GrPipeline::InputFlags::kNone, st);
-#else
+
         fDesc->fProgramInfo = GrSimpleMeshDrawOpHelper::CreateProgramInfo(
                 caps, arena, writeView, usesMSAASurface, std::move(appliedClip), dstProxyView, gp,
                 GrProcessorSet::MakeEmptySet(), fDesc->fVertexSpec.primitiveType(),
                 renderPassXferBarriers, colorLoadOp, GrPipeline::InputFlags::kNone);
-#endif
     }
 
     void onPrePrepareDraws(GrRecordingContext* context,
@@ -1153,10 +1114,6 @@ private:
     ViewCountPair fViewCountPairs[1];
 
     using INHERITED = GrMeshDrawOp;
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-    // Stencil Culling use
-    uint32_t fStencilRef = UINT32_MAX;
-#endif
 };
 
 }  // anonymous namespace
@@ -1180,12 +1137,7 @@ GrOp::Owner TextureOp::Make(GrRecordingContext* context,
                             SkBlendMode blendMode,
                             GrAAType aaType,
                             DrawQuad* quad,
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-                            const SkRect* subset,
-                            uint32_t stencilRef) {
-#else
                             const SkRect* subset) {
-#endif
     // Apply optimizations that are valid whether or not using TextureOp or FillRectOp
     if (subset && subset->contains(proxyView.proxy()->backingStoreBoundsRect())) {
         // No need for a shader-based subset if hardware clamping achieves the same effect
@@ -1204,11 +1156,7 @@ GrOp::Owner TextureOp::Make(GrRecordingContext* context,
 
     if (blendMode == SkBlendMode::kSrcOver) {
         return TextureOpImpl::Make(context, std::move(proxyView), std::move(textureXform), filter,
-#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-                                   mm, color, saturate, aaType, std::move(quad), subset, stencilRef);
-#else
                                    mm, color, saturate, aaType, std::move(quad), subset);
-#endif
     } else {
         // Emulate complex blending using FillRectOp
         GrSamplerState samplerState(GrSamplerState::WrapMode::kClamp, filter, mm);
