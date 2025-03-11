@@ -483,6 +483,7 @@ private:
     SpvId writeSpecConstBinaryExpression(const BinaryExpression& b, const Operator& op,
                                          SpvId lhs, SpvId rhs);
     void writeExtensions(OutputStream& out);
+    void writePrecisionDecoration(SpvId var, const Type& type);
 
     std::unordered_set<std::string> fExtensions;
     std::unordered_set<uint32_t> fCapabilitiesExt;
