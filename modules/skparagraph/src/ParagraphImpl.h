@@ -185,6 +185,10 @@ public:
     TextIndex findNextGlyphClusterBoundary(TextIndex utf8) const;
     TextIndex findPreviousGlyphClusterBoundary(TextIndex utf8) const;
     size_t getUTF16Index(TextIndex index) const {
+        return fUTF16IndexForUTF8Index[index];
+    }
+
+    size_t getUTF16IndexSafely(TextIndex index) const {
         if (index >= fUTF16IndexForUTF8Index.size()) {
             // This branch is entered only if the index of the ellipsis exceeds the size of the fUTF16IndexForUTF8Index
             return fUTF16IndexForUTF8Index.back();
