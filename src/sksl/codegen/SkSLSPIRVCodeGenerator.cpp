@@ -176,10 +176,17 @@ void SPIRVCodeGenerator::setupIntrinsics() {
     fIntrinsicMap[k_equal_IntrinsicKind]      = std::make_tuple(kSPIRV_IntrinsicOpcodeKind,
                                                                 SpvOpFOrdEqual, SpvOpIEqual,
                                                                 SpvOpIEqual, SpvOpLogicalEqual);
+#ifdef SKSL_EXT
+    fIntrinsicMap[k_notEqual_IntrinsicKind]   = std::make_tuple(kSPIRV_IntrinsicOpcodeKind,
+                                                                SpvOpFUnordNotEqual, SpvOpINotEqual,
+                                                                SpvOpINotEqual,
+                                                                SpvOpLogicalNotEqual);
+#else
     fIntrinsicMap[k_notEqual_IntrinsicKind]   = std::make_tuple(kSPIRV_IntrinsicOpcodeKind,
                                                                 SpvOpFOrdNotEqual, SpvOpINotEqual,
                                                                 SpvOpINotEqual,
                                                                 SpvOpLogicalNotEqual);
+#endif
     fIntrinsicMap[k_lessThan_IntrinsicKind]         = std::make_tuple(kSPIRV_IntrinsicOpcodeKind,
                                                                       SpvOpFOrdLessThan,
                                                                       SpvOpSLessThan,
@@ -464,6 +471,13 @@ SpvId SPIRVCodeGenerator::writeOpLoad(SpvId type,
 void SPIRVCodeGenerator::writeExtensions(OutputStream& out) {
     for (const auto& ext : fExtensions) {
         this->writeInstruction(SpvOpExtension, ext, out);
+    }
+}
+
+void SPIRVCodeGenerator::writePrecisionDecoration(SpvId var, const Type& type) {
+    if (type.hasPrecision() && !type.highPrecision() &&
+        !fProgram.fConfig->fSettings.fForceHighPrecision) {
+        this->writeInstruction(SpvOpDecorate, var, SpvDecorationRelaxedPrecision, fDecorationBuffer);
     }
 }
 #endif
@@ -1092,6 +1106,9 @@ SpvId SPIRVCodeGenerator::writeSpecialIntrinsic(const FunctionCall& c, SpecialIn
             break;
         }
         case kTexture_SpecialIntrinsic: {
+#ifdef SKSL_EXT
+            this->writePrecisionDecoration(result, callType);
+#endif
             SpvOp_ op = SpvOpImageSampleImplicitLod;
             const Type& arg1Type = arguments[1]->type();
             switch (arguments[0]->type().dimensions()) {
@@ -1188,6 +1205,9 @@ SpvId SPIRVCodeGenerator::writeSpecialIntrinsic(const FunctionCall& c, SpecialIn
             break;
         }
         case kClamp_SpecialIntrinsic: {
+#ifdef SKSL_EXT
+            this->writePrecisionDecoration(result, callType);
+#endif
             std::vector<SpvId> args = this->vectorize(arguments, out);
             SkASSERT(args.size() == 3);
             this->writeGLSLExtendedInstruction(callType, result, GLSLstd450FClamp, GLSLstd450SClamp,
@@ -1210,11 +1230,7 @@ SpvId SPIRVCodeGenerator::writeSpecialIntrinsic(const FunctionCall& c, SpecialIn
         }
         case kMix_SpecialIntrinsic: {
 #ifdef SKSL_EXT
-            if (callType.hasPrecision() && !callType.highPrecision() &&
-                !fProgram.fConfig->fSettings.fForceHighPrecision) {
-                this->writeInstruction(SpvOpDecorate, result, SpvDecorationRelaxedPrecision,
-                                       fDecorationBuffer);
-            }
+            this->writePrecisionDecoration(result, callType);
 #endif
             std::vector<SpvId> args = this->vectorize(arguments, out);
             SkASSERT(args.size() == 3);
@@ -2648,8 +2664,13 @@ SpvId SPIRVCodeGenerator::writeBinaryExpression(const Type& leftType, SpvId lhs,
         }
         case Token::Kind::TK_NEQ:
             if (operandType->isMatrix()) {
+#ifdef SKSL_EXT
+                return this->writeMatrixComparison(*operandType, lhs, rhs, SpvOpFUnordNotEqual,
+                                                   SpvOpINotEqual, SpvOpAny, SpvOpLogicalOr, out);
+#else
                 return this->writeMatrixComparison(*operandType, lhs, rhs, SpvOpFOrdNotEqual,
                                                    SpvOpINotEqual, SpvOpAny, SpvOpLogicalOr, out);
+#endif
             }
             if (operandType->isStruct()) {
                 return this->writeStructComparison(*operandType, lhs, op, rhs, out);
@@ -2668,11 +2689,19 @@ SpvId SPIRVCodeGenerator::writeBinaryExpression(const Type& leftType, SpvId lhs,
             } else {
                 tmpType = &resultType;
             }
+#ifdef SKSL_EXT
+            return this->foldToBool(this->writeBinaryOperation(*tmpType, *operandType, lhs, rhs,
+                                                               SpvOpFUnordNotEqual, SpvOpINotEqual,
+                                                               SpvOpINotEqual, SpvOpLogicalNotEqual,
+                                                               out),
+                                    *operandType, SpvOpAny, out);
+#else
             return this->foldToBool(this->writeBinaryOperation(*tmpType, *operandType, lhs, rhs,
                                                                SpvOpFOrdNotEqual, SpvOpINotEqual,
                                                                SpvOpINotEqual, SpvOpLogicalNotEqual,
                                                                out),
                                     *operandType, SpvOpAny, out);
+#endif
         case Token::Kind::TK_GT:
             SkASSERT(resultType.isBoolean());
             return this->writeBinaryOperation(resultType, *operandType, lhs, rhs,
