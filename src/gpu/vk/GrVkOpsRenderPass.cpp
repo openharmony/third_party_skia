@@ -501,8 +501,8 @@ void GrVkOpsRenderPass::onClearStencil(const GrScissorState& scissor, uint32_t s
     vkStencilColor.stencil = stencilVal;
 
     VkClearRect clearRect;
-    
-    const SkIRect& vkRect = scissor.stencilRect(); 
+
+    const SkIRect& vkRect = scissor.stencilRect();
     clearRect.rect.offset = { vkRect.fLeft, vkRect.fTop };
     clearRect.rect.extent = { (uint32_t)vkRect.width(), (uint32_t)vkRect.height() };
 

@@ -635,7 +635,7 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
         stencilLoadOp = GrLoadOp::kDiscard;
         stencilStoreOp = GrStoreOp::kDiscard;
     }
-#endif  
+#endif
     GrOpsRenderPass* renderPass = create_render_pass(flushState->gpu(),
                                                      proxy->peekRenderTarget(),
                                                      fUsesMSAASurface,

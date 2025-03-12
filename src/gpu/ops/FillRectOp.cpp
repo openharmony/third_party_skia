@@ -275,7 +275,7 @@ private:
     void onPrepareDraws(GrMeshDrawTarget* target) override {
         TRACE_EVENT0("skia.gpu", TRACE_FUNC);
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-        if (fShouldDisableStencilCulling) {
+        if (fShouldDisableStencilCulling && isStencilCullingOp()) {
             fHelper.resetStencilSettings();
         }
 #endif
