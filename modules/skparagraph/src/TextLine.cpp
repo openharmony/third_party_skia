@@ -2265,7 +2265,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                 if (dx >= context.clip.fRight) {
                     // We have to keep looking ; just in case keep the last one as the closest
 #if OHOS_SUPPORT
-                    auto utf16Index = fOwner->getUTF16IndexSafely(context.run->globalClusterIndex(context.pos + context.size));
+                    auto utf16Index = fOwner->getUTF16IndexWithEllipsisOverflowCheck(context.run->globalClusterIndex(context.pos + context.size));
 #else
                     auto utf16Index = fOwner->getUTF16Index(context.run->globalClusterIndex(context.pos + context.size));
 #endif
@@ -2327,7 +2327,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                     // Keep UTF16 index as is
                 } else if ((dx < center) == context.run->leftToRight()) {
 #if OHOS_SUPPORT
-                    size_t utf16Index = fOwner->getUTF16IndexSafely(clusterIndex8);
+                    size_t utf16Index = fOwner->getUTF16IndexWithEllipsisOverflowCheck(clusterIndex8);
 #else
                     size_t utf16Index = fOwner->getUTF16Index(clusterIndex8);
 #endif
@@ -2342,7 +2342,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                     } else if (!context.run->leftToRight()) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 1;
                     } else {
-                        utf16Index = fOwner->getUTF16IndexSafely(clusterEnd8);
+                        utf16Index = fOwner->getUTF16IndexWithEllipsisOverflowCheck(clusterEnd8);
                     }
 #else
                     size_t utf16Index = context.run->leftToRight()
