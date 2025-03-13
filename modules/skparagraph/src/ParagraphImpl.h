@@ -189,7 +189,7 @@ public:
     }
 
 #ifdef OHOS_SUPPORT
-    size_t getUTF16IndexWithEllipsisOverflowCheck(TextIndex index) const {
+    size_t getUTF16IndexWithOverflowCheck(TextIndex index) const {
         if (index >= fUTF16IndexForUTF8Index.size()) {
             // This branch is entered only if the index of the ellipsis exceeds the size of the fUTF16IndexForUTF8Index
             return fUTF16IndexForUTF8Index.back();
