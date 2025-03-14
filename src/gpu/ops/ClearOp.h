@@ -37,8 +37,8 @@ public:
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     static GrOp::Owner MakeStencil(GrRecordingContext* context,
                                    const GrScissorState& scissor,
-                                   uint32_t stencilVal);  
-#endif                                 
+                                   uint32_t stencilVal);
+#endif
     const char* name() const override { return "Clear"; }
 
     const std::array<float, 4>& color() const { return fColor; }
@@ -52,7 +52,7 @@ private:
 
         kBoth        = 0b11,
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-        kStencil        = 0b100,  
+        kStencil        = 0b100,
 #endif
     };
     GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(Buffer);

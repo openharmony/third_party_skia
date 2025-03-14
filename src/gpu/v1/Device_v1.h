@@ -153,7 +153,7 @@ public:
     void drawImageRectWithStencil(const SkImage*, const SkRect* src, const SkRect& dst,
                                   const SkSamplingOptions&, const SkPaint&, SkCanvas::SrcRectConstraint,
                                   uint32_t stencilRef) override;
-    void drawPathWithStencil(const SkPath& path, const SkPaint& paint, uint32_t stencilRef, 
+    void drawPathWithStencil(const SkPath& path, const SkPaint& paint, uint32_t stencilRef,
                              bool pathIsMutable) override;
 #endif
 

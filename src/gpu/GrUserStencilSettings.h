@@ -210,8 +210,8 @@ struct GrUserStencilSettings {
 
     static const GrUserStencilSettings& kUnused;
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-    static const GrUserStencilSettings *kGE[kStencilLayersMax];  
-#endif  
+    static const GrUserStencilSettings *kGE[kStencilLayersMax];
+#endif
 
     bool isUnused() const { return this == &kUnused; }
 };

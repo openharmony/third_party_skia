@@ -857,10 +857,9 @@ void SurfaceDrawContext::fillRectToRect(const GrClip* clip,
     } else {
         this->drawFilledQuad(clip, std::move(paint), aa, &quad);
     }
-#else 
+#else
     this->drawFilledQuad(clip, std::move(paint), aa, &quad);
 #endif
-
 }
 
 void SurfaceDrawContext::drawQuadSet(const GrClip* clip,
@@ -2032,7 +2031,7 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
     if (opUsesStencil) {
         this->setNeedsStencil();
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-        if(op->isStencilCullingOp()) {
+        if (op->isStencilCullingOp()) {
             this->drawingManager()->hasStencilCullingOp();
         } else {
             this->drawingManager()->disableStencilCulling();

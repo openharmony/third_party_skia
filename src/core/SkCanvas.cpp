@@ -2189,7 +2189,7 @@ void SkCanvas::onDrawPathCommon(const SkPath& path, const SkPaint& paint, bool u
         }
 #else
         this->topDevice()->drawPath(path, layer->paint());
-#endif       
+#endif
     }
 }
 
@@ -2297,10 +2297,10 @@ void SkCanvas::drawImageCommon(const SkImage* image, SkScalar x, SkScalar y,
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
         if (useStencil) {
             this->topDevice()->drawImageRectWithStencil(image, nullptr, bounds, sampling,
-                                                        layer->paint(), kStrict_SrcRectConstraint, stencilRef); 
+                                                        layer->paint(), kStrict_SrcRectConstraint, stencilRef);
         } else {
             this->topDevice()->drawImageRect(image, nullptr, bounds, sampling,
-                                             layer->paint(), kStrict_SrcRectConstraint); 
+                                             layer->paint(), kStrict_SrcRectConstraint);
         }
 #else
         this->topDevice()->drawImageRect(image, nullptr, bounds, sampling,

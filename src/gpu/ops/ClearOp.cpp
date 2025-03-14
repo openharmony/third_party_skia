@@ -79,9 +79,9 @@ ClearOp::ClearOp(Buffer buffer,
 GrOp::CombineResult ClearOp::onCombineIfPossible(GrOp* t, SkArenaAlloc*, const GrCaps& caps) {
     auto other = t->cast<ClearOp>();
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-    if (fBuffer == Buffer::kStencil || other->fBuffer == Buffer::kStencil) { 
+    if (fBuffer == Buffer::kStencil || other->fBuffer == Buffer::kStencil) {
         return CombineResult::kCannotCombine;
-    }    
+    }
 #endif
     if (other->fBuffer == fBuffer) {
         // This could be much more complicated. Currently we look at cases where the new clear

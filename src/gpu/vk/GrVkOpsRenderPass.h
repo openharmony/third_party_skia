@@ -92,7 +92,7 @@ private:
 
     void onClear(const GrScissorState& scissor, std::array<float, 4> color) override;
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-    void onClearStencil(const GrScissorState& scissor, uint32_t stencilVal) override;   
+    void onClearStencil(const GrScissorState& scissor, uint32_t stencilVal) override;
 #endif
     void onClearStencilClip(const GrScissorState& scissor, bool insideStencilMask) override;
 

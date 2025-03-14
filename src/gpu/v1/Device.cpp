@@ -654,7 +654,8 @@ void Device::drawPath(const SkPath& origSrcPath, const SkPaint& paint, bool path
 }
 
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
-void Device::drawPathWithStencil(const SkPath& origSrcPath, const SkPaint& paint, uint32_t stencilRef, bool pathIsMutable) {
+void Device::drawPathWithStencil(const SkPath& origSrcPath, const SkPaint& paint, uint32_t stencilRef,
+                                 bool pathIsMutable) {
     fSurfaceDrawContext->setStencilRef(stencilRef);
     this->drawPath(origSrcPath, paint, false);
     fSurfaceDrawContext->resetStencilRef();

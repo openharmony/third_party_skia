@@ -239,7 +239,7 @@ public:
                             const SkRect* subset,
                             uint32_t stencilRef) {
         return GrOp::Make<TextureOpImpl>(context, std::move(proxyView), std::move(textureXform),
-                                         filter, mm, color, saturate, aaType, quad, subset, stencilRef);                                
+                                         filter, mm, color, saturate, aaType, quad, subset, stencilRef);
 #else
                             const SkRect* subset) {
         return GrOp::Make<TextureOpImpl>(context, std::move(proxyView), std::move(textureXform),

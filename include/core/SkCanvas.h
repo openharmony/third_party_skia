@@ -1468,7 +1468,7 @@ public:
         Similar to DrawImage but with Stencil test, which will attempt
         to enable Stencil Test using CompareOp GREATER_OR_EQUAL.
         it will degenerate into DrawImage if Non-StencilCullingOp use stencil.
-    */ 
+    */
     void drawImageWithStencil(const sk_sp<SkImage>& image, SkScalar left, SkScalar top,
                               const SkSamplingOptions& sampling, const SkPaint* paint, uint32_t stencilRef) {
         this->onDrawImage2WithStencil(image.get(), left, top, sampling, paint, stencilRef);
@@ -1477,10 +1477,10 @@ public:
     /** Only for Stencil Culling use, Please do not use in other cases.
         Use stecnilVal to clear the specified area in stencil Buffer.
         it will do nothing if Non-StencilCullingOp use stencil.
-    */ 
+    */
     void clearStencil(const SkIRect& rect, uint32_t stencilVal);
 #endif
-    
+
     void drawImage(const SkImage* image, SkScalar left, SkScalar top) {
         this->drawImage(image, left, top, SkSamplingOptions(), nullptr);
     }
@@ -2310,7 +2310,7 @@ protected:
     virtual void onDrawPathWithStencil(const SkPath& path, const SkPaint& paint, uint32_t stencilRef);
     virtual void onDrawImage2WithStencil(const SkImage*, SkScalar dx, SkScalar dy, const SkSamplingOptions&,
         const SkPaint*, uint32_t stencilRef);
-#endif        
+#endif
     virtual void onDrawRegion(const SkRegion& region, const SkPaint& paint);
 
     virtual void onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y,
