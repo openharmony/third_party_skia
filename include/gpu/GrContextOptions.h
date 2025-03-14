@@ -118,6 +118,18 @@ struct SK_API GrContextOptions {
      */
     SkExecutor* fExecutor = nullptr;
 
+#ifdef SKIA_OHOS
+    /**
+     * At the end of the frame, cleaning up each small-sized texture can help avoid frequent memory
+     * overruns and the issue of excessive time consumption during cleanup at the end of animations.
+     * However, enabling this feature will cause small textures to be redrawn every frame. If the te
+     * xture rendering on the current device is time-consuming, it is not recommended to enable this
+     * feature, as it may lead to performance issues.
+     */
+    //OH ISSUE :cache small Texture on UnUni devices
+    bool clearSmallTexture = true;
+#endif
+
     /** Construct mipmaps manually, via repeated downsampling draw-calls. This is used when
         the driver's implementation (glGenerateMipmap) contains bugs. This requires mipmap
         level control (ie desktop or ES3). */
