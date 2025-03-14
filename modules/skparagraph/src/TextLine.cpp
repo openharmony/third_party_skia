@@ -532,7 +532,7 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
             fShift = delta;
         }
     } else if (align == TextAlign::kRight) {
-#if OHOS_SUPPORT
+#ifdef OHOS_SUPPORT
         auto lastCluster = fOwner->clusters()[fGhostClusterRange.end - 1];
         bool isRTLWhiteSpace = lastCluster.isWhitespaceBreak() && !lastCluster.run().leftToRight();
         // Only be entered when the text alignment direction is RTL and the last character is an RTL whitespace
@@ -2264,7 +2264,11 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
 
                 if (dx >= context.clip.fRight) {
                     // We have to keep looking ; just in case keep the last one as the closest
+#ifdef OHOS_SUPPORT
+                    auto utf16Index = fOwner->getUTF16IndexWithOverflowCheck(context.run->globalClusterIndex(context.pos + context.size));
+#else
                     auto utf16Index = fOwner->getUTF16Index(context.run->globalClusterIndex(context.pos + context.size));
+#endif
                     if (run->leftToRight()) {
                         result = {SkToS32(utf16Index), kUpstream};
                     } else {
@@ -2322,7 +2326,11 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                     }
                     // Keep UTF16 index as is
                 } else if ((dx < center) == context.run->leftToRight()) {
+#ifdef OHOS_SUPPORT
+                    size_t utf16Index = fOwner->getUTF16IndexWithOverflowCheck(clusterIndex8);
+#else
                     size_t utf16Index = fOwner->getUTF16Index(clusterIndex8);
+#endif
                     result = { SkToS32(utf16Index), kDownstream };
                 } else {
 #ifdef OHOS_SUPPORT
@@ -2334,7 +2342,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                     } else if (!context.run->leftToRight()) {
                         utf16Index = fOwner->getUTF16Index(clusterIndex8) + 1;
                     } else {
-                        utf16Index = fOwner->getUTF16Index(clusterEnd8);
+                        utf16Index = fOwner->getUTF16IndexWithOverflowCheck(clusterEnd8);
                     }
 #else
                     size_t utf16Index = context.run->leftToRight()

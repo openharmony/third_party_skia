@@ -188,6 +188,16 @@ public:
         return fUTF16IndexForUTF8Index[index];
     }
 
+#ifdef OHOS_SUPPORT
+    size_t getUTF16IndexWithOverflowCheck(TextIndex index) const {
+        if (index >= fUTF16IndexForUTF8Index.size()) {
+            // This branch is entered only if the index of the ellipsis exceeds the size of the fUTF16IndexForUTF8Index
+            return fUTF16IndexForUTF8Index.back();
+        }
+        return fUTF16IndexForUTF8Index[index];
+    }
+#endif
+
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }
     bool strutForceHeight() const {
         return paragraphStyle().getStrutStyle().getForceStrutHeight();
