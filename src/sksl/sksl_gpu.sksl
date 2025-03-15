@@ -415,16 +415,23 @@ half4 blend_multiply(half4 src, half4 dst) {
 
 half _blend_color_luminance(half3 color) { return dot(half3(0.3, 0.59, 0.11), color); }
 
+// A useful constant to check against when dividing a half-precision denominator.
+// Denormal half floats (values less than this) will compare not-equal to 0 but can easily cause the
+// division to overflow to infinity. Even regular values can overflow given the low maximum value.
+// For instance, any value x > ~3.998 will overflow when divided by $kMinNormalHalf. This is a
+// reasonable value even for wide gamut colors being input to these blend functions, but the
+// most correct denominator check is to treat anything with `denom < x/F16_MAX` as division by 0.
 half3 _blend_set_color_luminance(half3 hueSatColor, half alpha, half3 lumColor) {
     half lum = _blend_color_luminance(lumColor);
     half3 result = lum - _blend_color_luminance(hueSatColor) + hueSatColor;
     half minComp = min(min(result.r, result.g), result.b);
     half maxComp = max(max(result.r, result.g), result.b);
+    const half kMinNormalHalf = 1.0 / (1 << 14);
     if (minComp < 0 && lum != minComp) {
-        result = lum + (result - lum) * _guarded_divide(lum, (lum - minComp));
+        result = lum + (result - lum) * _guarded_divide(lum, (lum - minComp + kMinNormalHalf));
     }
     if (maxComp > alpha && maxComp != lum) {
-        return lum + _guarded_divide((result - lum) * (alpha - lum), (maxComp - lum));
+        return lum + _guarded_divide((result - lum) * (alpha - lum), (maxComp - lum + kMinNormalHalf));
     } else {
         return result;
     }
