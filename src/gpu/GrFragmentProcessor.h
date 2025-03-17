@@ -194,7 +194,7 @@ public:
 
     std::unique_ptr<ProgramImpl> makeProgramImpl() const;
 
-    void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
+    __attribute__((always_inline)) void addToKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
         this->onAddToKey(caps, b);
         for (const auto& child : fChildProcessors) {
             if (child) {

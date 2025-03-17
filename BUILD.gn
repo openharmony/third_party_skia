@@ -1910,6 +1910,7 @@ if (use_oh_skia) {
         ldflags += [
           "-Wl,-mllvm,-vectorization-bonus-factor=4",
           "-Wl,-mllvm,-vectorizer-min-trip-count=4",
+          "-Wl,--aarch64-inline-plt",
           "-Wl,-plugin-opt=-split-machine-functions",
           "-Wl,-mllvm",
           "-Wl,-fixup-unconditional-branch-unsafely",
