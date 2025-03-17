@@ -480,11 +480,19 @@ BlockRange OneLineShaper::generateBlockRange(const Block& block, const TextRange
 {
     size_t start = std::max(block.fRange.start, textRange.start);
     size_t end = std::min(block.fRange.end, textRange.end);
+#ifdef OHOS_SUPPORT
+    if (fParagraph->fParagraphStyle.getMaxLines() == 1 &&
+        fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
+        !fParagraph->getIsMiddleEllipsis()) {
+        end = fParagraph->fText.size();
+    }
+#else
     if (fParagraph->fParagraphStyle.getMaxLines() == 1 &&
         fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
         !fParagraph->getEllipsisState()) {
         end = fParagraph->fText.size();
     }
+#endif
     return BlockRange(start, end);
 }
 
@@ -681,11 +689,19 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
                 SkUnicode::BidiRegion& bidiRegion = fParagraph->fBidiRegions[bidiIndex];
                 auto start = std::max(bidiRegion.start, placeholder.fTextBefore.start);
                 auto end = std::min(bidiRegion.end, placeholder.fTextBefore.end);
+#ifdef OHOS_SUPPORT
+                if (fParagraph->fParagraphStyle.getMaxLines() == 1
+                    && fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE
+                    && !fParagraph->getIsMiddleEllipsis()) {
+                    end = fParagraph->fText.size();
+                }
+#else
                 if (fParagraph->fParagraphStyle.getMaxLines() == 1
                     && fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE
                     && !fParagraph->getEllipsisState()) {
                     end = fParagraph->fText.size();
                 }
+#endif
 
                 // Set up the iterators (the style iterator points to a bigger region that it could
                 TextRange textRange(start, end);

@@ -490,11 +490,18 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     // TODO: This rounding is done to match Flutter tests. Must be removed...
     auto floorWidth = rawWidth;
 
+#ifdef OHOS_SUPPORT
+    if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.ellipsized() &&
+        fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
+        isMiddleEllipsis = true;
+    }
+#else
     if (fParagraphStyle.getMaxLines() == 1 &&
         fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
         fOldMaxWidth = rawWidth;
         isMiddleEllipsis = true;
     }
+#endif
     if (getApplyRoundingHack()) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
@@ -524,7 +531,9 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         // Nothing changed case: we can reuse the data from the last layout
     }
 
+#ifndef OHOS_SUPPORT
     this->prepareForMiddleEllipsis(rawWidth);
+#endif
     this->fUnicodeText = convertUtf8ToUnicode(fText);
     auto paragraphCache = fFontCollection->getParagraphCache();
 
@@ -1248,6 +1257,9 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
 #ifdef OHOS_SUPPORT
+                else if (getIsMiddleEllipsis()) {
+                    line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
+                }
                 else if (textWrapper.brokeLineWithHyphen()
                          || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
                              && (clusters.end < this->fUnicodeText.size())

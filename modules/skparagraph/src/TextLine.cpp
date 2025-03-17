@@ -38,6 +38,7 @@
 #include "log.h"
 #include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
+#include "src/Run.h"
 #include "TextParameter.h"
 #include "TextLineJustify.h"
 #endif
@@ -60,6 +61,26 @@ TextRange intersected(const TextRange& a, const TextRange& b) {
     auto begin = std::max(a.start, b.start);
     auto end = std::min(a.end, b.end);
     return end >= begin ? TextRange(begin, end) : EMPTY_TEXT;
+}
+
+std::pair<TextRange, TextRange> intervalDiffrence(const TextRange& a, const TextRange& b)
+{
+    TextRange left = EMPTY_RANGE;
+    TextRange right = EMPTY_RANGE;
+
+    if (a.end <= b.start || b.end <= a.start) {
+        return {a, right};
+    }
+
+    if (a.start < b.start) {
+        left = {a.start, b.start};
+    }
+
+    if (a.end > b.end) {
+        right = {b.end, a.end};
+    }
+
+    return {left, right};
 }
 
 SkScalar littleRound(SkScalar a) {
@@ -1176,6 +1197,66 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     ellipsisNotFitProcess(EllipsisModal::HEAD);
 }
+
+void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis) {
+    if (fAdvance.fX <= maxWidth) {
+        return;
+    }
+
+    //initial params
+    SkScalar widthS = 0.0f;
+    SkScalar widthE = 0.0f;
+    ClusterIndex indexS = fGhostClusterRange.start;
+    ClusterIndex indexE = fGhostClusterRange.end - 1;
+    std::unique_ptr<Run> ellipsisRun;
+    RunIndex lastRun = EMPTY_RUN;
+
+    // Fill in content at both side of the ellipsis
+    while (indexS < indexE) {
+        bool addStart = false;
+        if (widthS <= widthE) {
+            addStart = true;
+            if (lastRun != fOwner->cluster(indexS).runIndex()) {
+                ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(indexS));
+                lastRun = fOwner->cluster(indexS).runIndex();
+            }
+            widthS += fOwner->cluster(indexS++).width();
+        } else {
+            widthE += fOwner->cluster(indexE--).width();
+        }
+
+        if ((widthS + widthE + ellipsisRun->advance().fX) > maxWidth) {
+            if (addStart) {
+                widthS -= fOwner->cluster(--indexS).width();
+                if (lastRun != fOwner->cluster(indexS).runIndex()) {
+                    ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(indexS));
+                }
+            } else {
+                widthE -= fOwner->cluster(++indexE).width();
+            }
+            break;
+        }
+    }
+
+    // update line params
+    if (ellipsisRun != nullptr) {
+        fEllipsis = std::move(ellipsisRun);
+        const auto& clusterS = fOwner->cluster(indexS);
+        const auto& clusterE = fOwner->cluster(indexE);
+        fEllipsis->fTextRange = TextRange(clusterS.textRange().start, clusterS.textRange().start + ellipsis.size());
+        fEllipsis->setOwner(fOwner);
+        fEllipsis->fClusterStart = clusterS.textRange().start;
+        fEllipsisIndex = clusterS.runIndex();
+
+        fTextRangeReplacedByEllipsis = TextRange(clusterS.textRange().start, clusterE.textRange().end);
+        fAdvance.fX = widthS + widthE;
+        fWidthWithSpaces = fAdvance.fX;
+
+        if (SkScalarNearlyZero(fAdvance.fX)) {
+            fRunsInVisualOrder.reset();
+        }
+    }
+}
 #endif
 
 static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
@@ -1726,8 +1807,9 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
     SkScalar runOffset = 0;
     SkScalar totalWidth = 0;
 #ifdef OHOS_SUPPORT
-    bool ellipsisModeIsHead = fIsTextLineEllipsisHeadModal ? true :
-            fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD;
+    bool ellipsisModeIsMiddle = fEllipsis != nullptr && fOwner->getIsMiddleEllipsis();
+    bool ellipsisModeIsHead =
+        fIsTextLineEllipsisHeadModal ? true : fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD;
 #else
     bool ellipsisModeIsHead = fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD;
 #endif
@@ -1751,9 +1833,16 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
 
     for (auto& runIndex : fRunsInVisualOrder) {
         // add the lastClipRun's left ellipsis if necessary
+#ifdef OHOS_SUPPORT
+        if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex
+            && ((!fLastClipRunLtr && !ellipsisModeIsHead && !ellipsisModeIsMiddle)
+                || (ellipsisModeIsHead && fLastClipRunLtr))) {
+            if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
+#else
         if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex &&
             ((!fLastClipRunLtr && !ellipsisModeIsHead) || (ellipsisModeIsHead && fLastClipRunLtr))) {
             if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
+#endif
                 return;
             }
             runOffset += width;
@@ -1778,13 +1867,50 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
                 runOffset -= whitespacesLen;
             }
         }
+#ifdef OHOS_SUPPORT
+        if (ellipsisModeIsMiddle) {
+            std::pair<TextRange, TextRange> cutRanges =
+                intervalDiffrence(lineIntersection, fTextRangeReplacedByEllipsis);
 
+            if (cutRanges.first.start != EMPTY_RANGE.start) {
+                if (!visitor(run, runOffset, cutRanges.first, &width)) {
+                    return;
+                }
+                runOffset+=width;
+                totalWidth+= width;
+            }
+
+            if ((cutRanges.first.start != EMPTY_RANGE.start || cutRanges.second.start != EMPTY_RANGE.start)
+                && !isAlreadyUseEllipsis && fEllipsisIndex == runIndex) {
+                if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
+                    return;
+                }
+                runOffset += width;
+                totalWidth += width;
+            }
+
+             if (cutRanges.second.start != EMPTY_RANGE.start) {
+                if (!visitor(run, runOffset, cutRanges.second, &width)) {
+                    return;
+                }
+                runOffset+=width;
+                totalWidth+= width;
+            }
+        } else {
+            if (!visitor(run, runOffset, lineIntersection, &width)) {
+                return;
+            }
+            runOffset += width;
+            totalWidth += width;
+        }
+#else
         if (!visitor(run, runOffset, lineIntersection, &width)) {
             return;
         }
 
         runOffset += width;
         totalWidth += width;
+#endif
 
         // add the lastClipRun's right ellipsis if necessary
         if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex) {
