@@ -268,11 +268,15 @@ public:
 #endif
 
 private:
+#ifdef OHOS_SUPPORT
     struct RoundRectAttr {
         int styleId;
         RectStyle roundRectStyle;
         SkRect rect;
+        const Run* run;
+        RoundRectType fRoundRectType = RoundRectType::NONE;
     };
+#endif
     void justify(SkScalar maxWidth);
     void buildTextBlob(TextRange textRange, const TextStyle& style, const ClipContext& context);
     void paintBackground(ParagraphPainter* painter,
@@ -281,7 +285,7 @@ private:
                          TextRange textRange,
                          const TextStyle& style,
                          const ClipContext& context) const;
-    void paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y, const Run* run) const;
+    void paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y) const;
     void paintShadow(ParagraphPainter* painter,
                      SkScalar x,
                      SkScalar y,
@@ -297,11 +301,12 @@ private:
 
     void shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
     void spacingCluster(const Cluster* cluster, SkScalar spacing, SkScalar prevSpacing);
-    bool hasBackgroundRect(const RoundRectAttr& attr);
+    
     void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
     void prepareRoundRect();
     SkScalar calculateThickness(const TextStyle& style, const ClipContext& context);
 #ifdef OHOS_SUPPORT
+    bool hasBackgroundRect(const RoundRectAttr& attr);
     void measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const;
     void computeNextPaintGlyphRange(ClipContext& context, const TextRange& lastGlyphRange, StyleType styleType) const;
     SkRect computeShadowRect(SkScalar x, SkScalar y, const TextStyle& style, const ClipContext& context) const;
@@ -359,8 +364,8 @@ private:
     };
     bool fTextBlobCachePopulated;
     DecorationContext fDecorationContext;
-    std::vector<RoundRectAttr> roundRectAttrs = {};
 #ifdef OHOS_SUPPORT
+    std::vector<RoundRectAttr> roundRectAttrs = {};
     bool fIsTextLineEllipsisHeadModal = false;
 #endif
 public:

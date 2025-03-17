@@ -35,6 +35,8 @@
 #ifdef OHOS_SUPPORT
 #include <cstddef>
 #include <numeric>
+#include <vector>
+
 #include "log.h"
 #include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
@@ -286,8 +288,13 @@ void TextLine::paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOf
 }
 
 void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
+#ifdef OHOS_SUPPORT
     prepareRoundRect();
+    paintRoundRect(painter, x, y);
+#endif
     fIsArcText = false;
+
+    if (fHasBackground) {
 #ifdef OHOS_SUPPORT
     this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, true,
 #else
@@ -298,13 +305,11 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
             TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
             [painter, x, y, run, this](TextRange textRange, const TextStyle& style, const ClipContext& context) {
-                if (fHasBackground) {
-                    this->paintBackground(painter, x, y, textRange, style, context);
-                }
-                paintRoundRect(painter, x, y, run);
+                this->paintBackground(painter, x, y, textRange, style, context);
             });
         return true;
         });
+    }
 
     if (fHasShadows) {
 #ifdef OHOS_SUPPORT
@@ -379,6 +384,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 }
 
+#ifdef OHOS_SUPPORT
 bool TextLine::hasBackgroundRect(const RoundRectAttr& attr) {
     return attr.roundRectStyle.color != 0 && attr.rect.width() > 0;
 }
@@ -408,13 +414,13 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
         groupRuns.erase(groupRuns.begin(), groupRuns.end());
     }
     if (leftRound && rightRound) {
-        run->setRoundRectType(RoundRectType::ALL);
+        roundRectAttrs[index].fRoundRectType = RoundRectType::ALL;
     } else if (leftRound) {
-        run->setRoundRectType(RoundRectType::LEFT_ONLY);
+        roundRectAttrs[index].fRoundRectType = RoundRectType::LEFT_ONLY;
     } else if (rightRound) {
-        run->setRoundRectType(RoundRectType::RIGHT_ONLY);
+        roundRectAttrs[index].fRoundRectType = RoundRectType::RIGHT_ONLY;
     } else {
-        run->setRoundRectType(RoundRectType::NONE);
+        roundRectAttrs[index].fRoundRectType = RoundRectType::NONE;
     }
 
     if (rightRound && !groupRuns.empty()) {
@@ -436,32 +442,33 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
     }
     index++;
 }
+#endif
 
+#ifdef OHOS_SUPPORT
 void TextLine::prepareRoundRect() {
     roundRectAttrs.clear();
-#ifdef OHOS_SUPPORT
-        this->iterateThroughVisualRuns(EllipsisReadStrategy::DEFAULT, true,
-#else
-        this->iterateThroughVisualRuns(true,
-#endif
-        [this](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
+    std::vector<Run*> allRuns;
+    this->iterateThroughVisualRuns(
+        EllipsisReadStrategy::DEFAULT, true,
+        [this, &allRuns](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
-            TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
-            [run, this](TextRange textRange, const TextStyle& style, const ClipContext& context) {
-                roundRectAttrs.push_back({style.getStyleId(), style.getBackgroundRect(), context.clip});
-            });
+                TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
+                [run, this, &allRuns](TextRange textRange, const TextStyle& style, const ClipContext& context) {
+                    roundRectAttrs.push_back({style.getStyleId(), style.getBackgroundRect(), context.clip, run});
+                    allRuns.push_back(const_cast<Run*>(run));
+                });
             return true;
         });
 
     std::vector<Run*> groupRuns;
     int index = 0;
     int preIndex = -1;
-    for (auto& runIndex : fRunsInVisualOrder) {
-        auto run = &this->fOwner->run(runIndex);
+    for (auto& run : allRuns) {
         run->setIndexInLine(static_cast<size_t>(index));
         computeRoundRect(index, preIndex, groupRuns, run);
     }
 }
+#endif
 
 void TextLine::ensureTextBlobCachePopulated() {
     if (fTextBlobCachePopulated && fArcTextState == fIsArcText) {
@@ -743,38 +750,38 @@ void TextLine::paintBackground(ParagraphPainter* painter,
     }
 }
 
-void TextLine::paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y, const Run* run) const {
-    size_t index = run->getIndexInLine();
-    if (index >= roundRectAttrs.size()) {
-        return;
-    }
+#ifdef OHOS_SUPPORT
+void TextLine::paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y) const {
+    for (const RoundRectAttr& attr : roundRectAttrs) {
+        if (attr.roundRectStyle.color == 0) {
+            return;
+        }
+        const Run* run = attr.run;
 
-    const RoundRectAttr& attr = roundRectAttrs[index];
-    if (attr.roundRectStyle.color == 0) {
-        return;
+        SkScalar ltRadius = 0.0f;
+        SkScalar rtRadius = 0.0f;
+        SkScalar rbRadius = 0.0f;
+        SkScalar lbRadius = 0.0f;
+        RoundRectType rType = attr.fRoundRectType;
+        if (rType == RoundRectType::ALL || rType == RoundRectType::LEFT_ONLY) {
+            ltRadius = std::fmin(attr.roundRectStyle.leftTopRadius, run->getMaxRoundRectRadius());
+            lbRadius = std::fmin(attr.roundRectStyle.leftBottomRadius, run->getMaxRoundRectRadius());
+        }
+        if (rType == RoundRectType::ALL || rType == RoundRectType::RIGHT_ONLY) {
+            rtRadius = std::fmin(attr.roundRectStyle.rightTopRadius, run->getMaxRoundRectRadius());
+            rbRadius = std::fmin(attr.roundRectStyle.rightBottomRadius, run->getMaxRoundRectRadius());
+        }
+        const SkVector radii[4] = {
+            {ltRadius, ltRadius}, {rtRadius, rtRadius}, {rbRadius, rbRadius}, {lbRadius, lbRadius}};
+        SkRect skRect(
+            SkRect::MakeLTRB(attr.rect.left(), run->getTopInGroup(), attr.rect.right(), run->getBottomInGroup()));
+        SkRRect skRRect;
+        skRRect.setRectRadii(skRect, radii);
+        skRRect.offset(x + this->offset().x(), y + this->offset().y());
+        painter->drawRRect(skRRect, attr.roundRectStyle.color);
     }
-
-    SkScalar ltRadius = 0.0f;
-    SkScalar rtRadius = 0.0f;
-    SkScalar rbRadius = 0.0f;
-    SkScalar lbRadius = 0.0f;
-    RoundRectType rType = run->getRoundRectType();
-    if (rType == RoundRectType::ALL || rType == RoundRectType::LEFT_ONLY) {
-        ltRadius = std::fmin(attr.roundRectStyle.leftTopRadius, run->getMaxRoundRectRadius());
-        lbRadius = std::fmin(attr.roundRectStyle.leftBottomRadius, run->getMaxRoundRectRadius());
-    }
-    if (rType == RoundRectType::ALL || rType == RoundRectType::RIGHT_ONLY) {
-        rtRadius = std::fmin(attr.roundRectStyle.rightTopRadius, run->getMaxRoundRectRadius());
-        rbRadius = std::fmin(attr.roundRectStyle.rightBottomRadius, run->getMaxRoundRectRadius());
-    }
-    const SkVector radii[4] = {{ltRadius, ltRadius}, {rtRadius, rtRadius}, {rbRadius, rbRadius}, {lbRadius, lbRadius}};
-    SkRect skRect(SkRect::MakeLTRB(attr.rect.left(), run->getTopInGroup(), attr.rect.right(),
-        run->getBottomInGroup()));
-    SkRRect skRRect;
-    skRRect.setRectRadii(skRect, radii);
-    skRRect.offset(x + this->offset().x(), y + this->offset().y());
-    painter->drawRRect(skRRect, attr.roundRectStyle.color);
 }
+#endif
 
 void TextLine::paintShadow(ParagraphPainter* painter,
                            SkScalar x,
