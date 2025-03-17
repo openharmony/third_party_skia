@@ -1918,9 +1918,9 @@ if (use_oh_skia) {
           "-Wl,-mfs-psi-cutoff=999500",
           "-Wl,-z",
           "-Wl,keep-text-section-prefix",
-          "-Wl,--symbol-ordering-file=" + rebase_path(
-            "${skia_feature_pgo_path}/libskia_canvaskit.txt",
-            root_build_dir),
+          "-Wl,--symbol-ordering-file=" +
+              rebase_path("${skia_feature_pgo_path}/libskia_canvaskit.txt",
+                          root_build_dir),
           "-Wl,--no-warn-symbol-ordering",
         ]
       }
