@@ -1910,6 +1910,18 @@ if (use_oh_skia) {
         ldflags += [
           "-Wl,-mllvm,-vectorization-bonus-factor=4",
           "-Wl,-mllvm,-vectorizer-min-trip-count=4",
+          "-Wl,-plugin-opt=-split-machine-functions",
+          "-Wl,-mllvm",
+          "-Wl,-fixup-unconditional-branch-unsafely",
+          "-Wl,--no-create-thunks-introduced-by-mfs",
+          "-Wl,-mllvm",
+          "-Wl,-mfs-psi-cutoff=999500",
+          "-Wl,-z",
+          "-Wl,keep-text-section-prefix",
+          "-Wl,--symbol-ordering-file=" + rebase_path(
+            "${skia_feature_pgo_path}/libskia_canvaskit.txt",
+            root_build_dir),
+          "-Wl,--no-warn-symbol-ordering",
         ]
       }
     }
