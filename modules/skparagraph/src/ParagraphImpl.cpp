@@ -286,7 +286,7 @@ bool ParagraphImpl::middleEllipsisDeal()
     size_t charbegin = 0;
     size_t charend = 0;
     if (fRuns.begin()->leftToRight()) {
-        if (ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
+        if (ltrTextSize.empty() || ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
             fText.reset();
             fText.set(ellStr);
             end = 1;
