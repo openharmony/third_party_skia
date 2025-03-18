@@ -559,6 +559,17 @@ std::set<GrGpuResourceTag> GrDirectContext::getAllGrGpuResourceTags() const {
     return {};
 }
 
+#ifdef SKIA_OHOS
+// OH ISSUE: set purgeable resource max count limit.
+void GrDirectContext::setPurgeableResourceLimit(int purgeableMaxCount)
+{
+    ASSERT_SINGLE_OWNER
+    if (fResourceCache) {
+        fResourceCache->setPurgeableResourceLimit(purgeableMaxCount);
+    }
+}
+#endif
+
 // OH ISSUE: get the memory information of the updated pid.
 void GrDirectContext::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out)
 {
