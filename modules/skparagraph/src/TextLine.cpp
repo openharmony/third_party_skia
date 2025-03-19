@@ -1139,9 +1139,7 @@ void TextLine::TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clus
     fEllipsis->fClusterStart = cluster.textRange().end;
 
     // Let's update the line
-    if (wordBreakType != WordBreakType::BREAK_HYPHEN) {
-        fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
-    }
+    fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
     fClusterRange.end = clusterIndex;
     fGhostClusterRange.end = fClusterRange.end;
     // Get the last run directions after clipping
