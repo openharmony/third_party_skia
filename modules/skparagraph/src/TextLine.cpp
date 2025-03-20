@@ -2265,7 +2265,8 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                 if (dx >= context.clip.fRight) {
                     // We have to keep looking ; just in case keep the last one as the closest
 #ifdef OHOS_SUPPORT
-                    auto utf16Index = fOwner->getUTF16IndexWithOverflowCheck(context.run->globalClusterIndex(context.pos + context.size));
+                    auto utf16Index = fOwner->getUTF16IndexWithOverflowCheck(
+                        context.run->globalClusterIndex(context.pos + context.size));
 #else
                     auto utf16Index = fOwner->getUTF16Index(context.run->globalClusterIndex(context.pos + context.size));
 #endif
