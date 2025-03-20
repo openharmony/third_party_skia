@@ -83,7 +83,7 @@ static SkPathRef* gEmpty = sk_create_empty_pathref();
 SkPathRef* SkPathRef::CreateEmpty() {
     static SkOnce once;
     once([]{
-        SK_LOGI("SkPathRef* SkPathRef::CreateEmpty() &gEmpty = %{public}p", gEmpty);
+        SK_LOGI("SkPathRef* SkPathRef::CreateEmpty() &gEmpty = %{private}p", gEmpty);
     });
     return SkRef(gEmpty);
 }
