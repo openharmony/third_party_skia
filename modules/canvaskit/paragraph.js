@@ -49,6 +49,7 @@
       }
       var familyPtr = cacheOrCopyString(family);
       this._registerFont(typeface, familyPtr);
+      typeface.delete();
     }
 
     // These helpers fill out all fields, because emscripten complains if we
