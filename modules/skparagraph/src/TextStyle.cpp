@@ -48,6 +48,7 @@ TextStyle TextStyle::cloneForPlaceholder() {
     result.fFontArguments = fFontArguments;
     result.fBackgroundRect = fBackgroundRect;
     result.fStyleId = fStyleId;
+    result.fTextStyleUid = fTextStyleUid;
     return result;
 }
 

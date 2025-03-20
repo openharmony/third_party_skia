@@ -506,7 +506,6 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         if (fText.size() != 0) {
             isMaxLinesZero = true;
         }
-        fText.reset();
     }
 #endif
 
@@ -615,6 +614,9 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 
     if (fParagraphStyle.getMaxLines() == 0) {
         fHeight = 0;
+#ifdef OHOS_SUPPORT
+        fLines.reset();
+#endif
     }
 
     this->fOldWidth = floorWidth;
