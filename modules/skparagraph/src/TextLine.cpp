@@ -1408,16 +1408,19 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
 #ifdef OHOS_SUPPORT
 void TextLine::measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const
 {
-    if (compareRound(context.clip.fRight, fAdvance.fX, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces &&
-        fAdvance.fX > 0) {
+    // Special judgment for the middle ellipsis, reason: inconsistent width behavior between
+    // the middle tail ellipsis and the head ellipsis
+    SkScalar lineWith = fOwner->getIsMiddleEllipsis() ? width() : fAdvance.fX;
+    if (compareRound(context.clip.fRight, lineWith, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces
+        && lineWith > 0) {
         // There are few cases when we need it.
         // The most important one: we measure the text with spaces at the end (or at the beginning in RTL)
         // and we should ignore these spaces
         if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kLtr) {
             // We only use this member for LTR
-            context.fExcludedTrailingSpaces = std::max(context.clip.fRight - fAdvance.fX, 0.0f);
+            context.fExcludedTrailingSpaces = std::max(context.clip.fRight - lineWith, 0.0f);
             context.clippingNeeded = true;
-            context.clip.fRight = fAdvance.fX;
+            context.clip.fRight = lineWith;
         }
     }
 }
@@ -1875,14 +1878,14 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
 #ifdef OHOS_SUPPORT
         if (ellipsisModeIsMiddle) {
             std::pair<TextRange, TextRange> cutRanges =
-                intervalDiffrence(lineIntersection, fTextRangeReplacedByEllipsis);
+                    intervalDiffrence(lineIntersection, fTextRangeReplacedByEllipsis);
 
             if (cutRanges.first.start != EMPTY_RANGE.start) {
                 if (!visitor(run, runOffset, cutRanges.first, &width)) {
                     return;
                 }
-                runOffset+=width;
-                totalWidth+= width;
+                runOffset += width;
+                totalWidth += width;
             }
 
             if ((cutRanges.first.start != EMPTY_RANGE.start || cutRanges.second.start != EMPTY_RANGE.start)
@@ -1894,12 +1897,12 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
                 totalWidth += width;
             }
 
-             if (cutRanges.second.start != EMPTY_RANGE.start) {
+            if (cutRanges.second.start != EMPTY_RANGE.start) {
                 if (!visitor(run, runOffset, cutRanges.second, &width)) {
                     return;
                 }
-                runOffset+=width;
-                totalWidth+= width;
+                runOffset += width;
+                totalWidth += width;
             }
         } else {
             if (!visitor(run, runOffset, lineIntersection, &width)) {
