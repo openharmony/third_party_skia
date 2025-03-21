@@ -220,6 +220,9 @@ GrSemaphoresSubmitted SkSurface_Gpu::onFlush(BackendSurfaceAccess access, const 
 
     auto dContext = fDevice->recordingContext()->asDirectContext();
     if (!dContext) {
+#ifdef SKIA_OHOS
+        SK_LOGE("SkSurface_Gpu::onFlush dContext is null, but not callback rs finishedProc");
+#endif
         return GrSemaphoresSubmitted::kNo;
     }
 
