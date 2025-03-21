@@ -222,7 +222,7 @@ SkScalar TextLineJustify::calculateClusterShift(
         std::find_if(clusterLevels.middleLevelIndices.begin(), clusterLevels.middleLevelIndices.end(),
             [index](const MiddleLevelInfo& data) { return data.clusterIndex == index; });
     if (highLevelIterator != clusterLevels.highLevelIndices.end()) {
-        size_t idx = std::distance(clusterLevels.highLevelIndices.begin(), highLevelIterator);
+        size_t idx = static_cast<size_t>(std::distance(clusterLevels.highLevelIndices.begin(), highLevelIterator));
         step = clusterLevels.highLevelIndices[idx].highLevelOffset;
     } else if (lowLevelIterator != clusterLevels.middleLevelIndices.end()) {
         // Because both sides of the WhitespaceBreak are equally widened, the
