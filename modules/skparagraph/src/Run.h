@@ -451,8 +451,8 @@ public:
     bool needAutoSpacing() const { return fNeedAutoSpacing; }
     void enableHyphenBreak() { fHyphenBreak = true; }
     bool isHyphenBreak() const { return fHyphenBreak; }
-    bool isPreCombineBreak() const;
-    bool isBackCombineBreak() const;
+    bool isStartCombineBreak() const;
+    bool isEndCombineBreak() const;
 #endif
 
     bool isSoftBreak() const;

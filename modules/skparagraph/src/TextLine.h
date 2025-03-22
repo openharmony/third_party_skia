@@ -286,7 +286,9 @@ private:
                          TextRange textRange,
                          const TextStyle& style,
                          const ClipContext& context) const;
+#ifdef OHOS_SUPPORT
     void paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y) const;
+#endif
     void paintShadow(ParagraphPainter* painter,
                      SkScalar x,
                      SkScalar y,
@@ -366,7 +368,7 @@ private:
     bool fTextBlobCachePopulated;
     DecorationContext fDecorationContext;
 #ifdef OHOS_SUPPORT
-    std::vector<RoundRectAttr> roundRectAttrs = {};
+    std::vector<RoundRectAttr> fRoundRectAttrs = {};
     bool fIsTextLineEllipsisHeadModal = false;
 #endif
 public:

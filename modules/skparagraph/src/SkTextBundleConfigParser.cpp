@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.. All rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,9 +16,10 @@
 
 namespace skia {
 namespace textlayout {
-bool SkTextBundleConfigParser::IsTargetApiVersion(uint32_t targetVersion) const
+uint32_t SkTextBundleConfigParser::bundleApiVersion_{0};
+bool SkTextBundleConfigParser::IsTargetApiVersion(uint32_t targetVersion)
 {
-    return initStatus_ && bundleApiVersion_ >= targetVersion;
+    return bundleApiVersion_ >= targetVersion;
 }
 } // namespace textlayout
 } // namespace skia

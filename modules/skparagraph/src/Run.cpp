@@ -674,11 +674,11 @@ bool Cluster::isGraphemeBreak() const {
 }
 
 #ifdef OHOS_SUPPORT
-bool Cluster::isPreCombineBreak() const {
+bool Cluster::isStartCombineBreak() const {
     return fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kCombine);
 }
 
-bool Cluster::isBackCombineBreak() const {
+bool Cluster::isEndCombineBreak() const {
     return fOwner->codeUnitHasProperty(fTextRange.end, SkUnicode::CodeUnitFlags::kCombine);
 }
 #endif

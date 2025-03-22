@@ -390,23 +390,23 @@ bool TextLine::hasBackgroundRect(const RoundRectAttr& attr) {
 }
 
 void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run) {
-    int runCount = roundRectAttrs.size();
+    int runCount = fRoundRectAttrs.size();
     if (index >= runCount) {
         return;
     }
 
     bool leftRound = false;
     bool rightRound = false;
-    if (hasBackgroundRect(roundRectAttrs[index])) {
-        int styleId = roundRectAttrs[index].styleId;
+    if (hasBackgroundRect(fRoundRectAttrs[index])) {
+        int styleId = fRoundRectAttrs[index].styleId;
         // index - 1 is previous index, -1 is the invalid styleId
-        int preStyleId = index == 0 ? -1 : roundRectAttrs[index - 1].styleId;
+        int preStyleId = index == 0 ? -1 : fRoundRectAttrs[index - 1].styleId;
         // runCount - 1 is the last run index, index + 1 is next run index, -1 is the invalid styleId
-        int nextStyleId = index == runCount - 1 ? -1 : roundRectAttrs[index + 1].styleId;
+        int nextStyleId = index == runCount - 1 ? -1 : fRoundRectAttrs[index + 1].styleId;
         // index - preIndex > 1 means the left run has no background rect
         leftRound = (preIndex < 0 || index - preIndex > 1 || preStyleId != styleId);
         // runCount - 1 is the last run index
-        rightRound = (index == runCount - 1 || !hasBackgroundRect(roundRectAttrs[index + 1]) ||
+        rightRound = (index == runCount - 1 || !hasBackgroundRect(fRoundRectAttrs[index + 1]) ||
             nextStyleId != styleId);
         preIndex = index;
         groupRuns.push_back(run);
@@ -414,13 +414,13 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
         groupRuns.erase(groupRuns.begin(), groupRuns.end());
     }
     if (leftRound && rightRound) {
-        roundRectAttrs[index].fRoundRectType = RoundRectType::ALL;
+        fRoundRectAttrs[index].fRoundRectType = RoundRectType::ALL;
     } else if (leftRound) {
-        roundRectAttrs[index].fRoundRectType = RoundRectType::LEFT_ONLY;
+        fRoundRectAttrs[index].fRoundRectType = RoundRectType::LEFT_ONLY;
     } else if (rightRound) {
-        roundRectAttrs[index].fRoundRectType = RoundRectType::RIGHT_ONLY;
+        fRoundRectAttrs[index].fRoundRectType = RoundRectType::RIGHT_ONLY;
     } else {
-        roundRectAttrs[index].fRoundRectType = RoundRectType::NONE;
+        fRoundRectAttrs[index].fRoundRectType = RoundRectType::NONE;
     }
 
     if (rightRound && !groupRuns.empty()) {
@@ -428,7 +428,7 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
         double minTop = MAX_INT_VALUE;
         double maxBottom = 0;
         for (auto &gRun : groupRuns) {
-            RoundRectAttr& attr = roundRectAttrs[gRun->getIndexInLine()];
+            RoundRectAttr& attr = fRoundRectAttrs[gRun->getIndexInLine()];
             maxRoundRectRadius = std::fmin(std::fmin(attr.rect.width(), attr.rect.height()), maxRoundRectRadius);
             minTop = std::fmin(minTop, attr.rect.top());
             maxBottom = std::fmax(maxBottom, attr.rect.bottom());
@@ -442,11 +442,9 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
     }
     index++;
 }
-#endif
 
-#ifdef OHOS_SUPPORT
 void TextLine::prepareRoundRect() {
-    roundRectAttrs.clear();
+    fRoundRectAttrs.clear();
     std::vector<Run*> allRuns;
     this->iterateThroughVisualRuns(
         EllipsisReadStrategy::DEFAULT, true,
@@ -454,7 +452,7 @@ void TextLine::prepareRoundRect() {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
                 TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
                 [run, this, &allRuns](TextRange textRange, const TextStyle& style, const ClipContext& context) {
-                    roundRectAttrs.push_back({style.getStyleId(), style.getBackgroundRect(), context.clip, run});
+                    fRoundRectAttrs.push_back({style.getStyleId(), style.getBackgroundRect(), context.clip, run});
                     allRuns.push_back(const_cast<Run*>(run));
                 });
             return true;
@@ -752,7 +750,7 @@ void TextLine::paintBackground(ParagraphPainter* painter,
 
 #ifdef OHOS_SUPPORT
 void TextLine::paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y) const {
-    for (const RoundRectAttr& attr : roundRectAttrs) {
+    for (const RoundRectAttr& attr : fRoundRectAttrs) {
         if (attr.roundRectStyle.color == 0) {
             return;
         }
@@ -1215,13 +1213,12 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
     ClusterIndex indexE = fGhostClusterRange.end - 1;
     std::unique_ptr<Run> ellipsisRun;
     RunIndex lastRun = EMPTY_RUN;
-
+    bool addStart = false;
     // Fill in content at both side of the ellipsis
     while (indexS < indexE) {
-        bool addStart = (widthS <= widthE);
-        Cluster& clusterS = fOwner->cluster(indexS);
-        Cluster& clusterE = fOwner->cluster(indexE);
+        addStart = (widthS <= widthE);
         if (addStart) {
+            Cluster& clusterS = fOwner->cluster(indexS);
             if (lastRun != clusterS.runIndex()) {
                 ellipsisRun = this->shapeEllipsis(ellipsis, &clusterS);
                 lastRun = clusterS.runIndex();
@@ -1229,27 +1226,26 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
             widthS += fOwner->cluster(indexS++).width();
         } else {
             widthE += fOwner->cluster(indexE--).width();
-            if (clusterE.isPreCombineBreak()) {
+            if (fOwner->cluster(indexE).isStartCombineBreak()) {
                 continue;
             }
         }
-
-        if ((widthS + widthE + ellipsisRun->advance().fX) <= maxWidth) {
-            continue;
+        if ((widthS + widthE + ellipsisRun->advance().fX) >= maxWidth) {
+            break;
         }
-        if (addStart) {
-            widthS -= fOwner->cluster(--indexS).width();
-            clusterS = fOwner->cluster(indexS);
-            if (lastRun != fOwner->cluster(indexS).runIndex()) {
-                ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(indexS));
-            }
-        } else {
-            do {
-                widthE -= fOwner->cluster(++indexE).width();
-                clusterE = fOwner->cluster(indexE);
-            } while (clusterE.isBackCombineBreak());
+    }
+    // fallback one unit
+    if (addStart) {
+        widthS -= fOwner->cluster(--indexS).width();
+        if (lastRun != fOwner->cluster(indexS).runIndex()) {
+            ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(indexS));
         }
-        break;
+    } else {
+        Cluster clusterE;
+        do {
+            widthE -= fOwner->cluster(++indexE).width();
+            clusterE = fOwner->cluster(indexE);
+        } while (clusterE.isEndCombineBreak());
     }
 
     // update line params
@@ -1424,17 +1420,17 @@ void TextLine::measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeG
 {
     // Special judgment for the middle ellipsis, reason: inconsistent width behavior between
     // the middle tail ellipsis and the head ellipsis
-    SkScalar lineWith = fOwner->getIsMiddleEllipsisUp18() ? width() : fAdvance.fX;
-    if (compareRound(context.clip.fRight, lineWith, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces
-        && lineWith > 0) {
+    SkScalar lineWidth = fOwner->getIfMiddleEllipsis() == MiddleEllipsisVersion::API_UP_18 ? width() : fAdvance.fX;
+    if (compareRound(context.clip.fRight, lineWidth, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces
+        && lineWidth > 0) {
         // There are few cases when we need it.
         // The most important one: we measure the text with spaces at the end (or at the beginning in RTL)
         // and we should ignore these spaces
         if (fOwner->paragraphStyle().getTextDirection() == TextDirection::kLtr) {
             // We only use this member for LTR
-            context.fExcludedTrailingSpaces = std::max(context.clip.fRight - lineWith, 0.0f);
+            context.fExcludedTrailingSpaces = std::max(context.clip.fRight - lineWidth, 0.0f);
             context.clippingNeeded = true;
-            context.clip.fRight = lineWith;
+            context.clip.fRight = lineWidth;
         }
     }
 }
@@ -1829,7 +1825,8 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
     SkScalar runOffset = 0;
     SkScalar totalWidth = 0;
 #ifdef OHOS_SUPPORT
-    bool ellipsisModeIsMiddle = fEllipsis != nullptr && fOwner->getIsMiddleEllipsisUp18();
+    bool ellipsisModeIsMiddle =
+        fEllipsis != nullptr && fOwner->getIfMiddleEllipsis() == MiddleEllipsisVersion::API_UP_18;
     bool ellipsisModeIsHead =
         fIsTextLineEllipsisHeadModal ? true : fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD;
 #else
@@ -2984,7 +2981,7 @@ TextLine TextLine::CloneSelf()
     textLine.fHyphenIndex = this->fHyphenIndex;
 #endif
 
-    textLine.roundRectAttrs = this->roundRectAttrs;
+    textLine.fRoundRectAttrs = this->fRoundRectAttrs;
     textLine.fTextBlobCache = this->fTextBlobCache;
     textLine.fTextRangeReplacedByEllipsis = this->fTextRangeReplacedByEllipsis;
     textLine.fEllipsisIndex = this->fEllipsisIndex;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.. All rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,32 +25,15 @@ constexpr uint32_t SINCE_API18_VERSION = 18;
 
 class SkTextBundleConfigParser {
 public:
-    static SkTextBundleConfigParser& GetInstance()
-    {
-        static SkTextBundleConfigParser instance;
-        return instance;
-    }
+    static bool IsTargetApiVersion(uint32_t targetVersion);
 
-    bool IsTargetApiVersion(uint32_t targetVersion) const;
-
-    void SetTargetVersion(uint32_t targetVersion)
+    static void SetTargetVersion(uint32_t targetVersion)
     {
         bundleApiVersion_ = targetVersion;
-        initStatus_ = true;
     };
 
 private:
-    SkTextBundleConfigParser(){};
-
-    ~SkTextBundleConfigParser(){};
-
-    SkTextBundleConfigParser(const SkTextBundleConfigParser&) = delete;
-    SkTextBundleConfigParser& operator=(const SkTextBundleConfigParser&) = delete;
-    SkTextBundleConfigParser(SkTextBundleConfigParser&&) = delete;
-    SkTextBundleConfigParser& operator=(SkTextBundleConfigParser&&) = delete;
-
-    uint32_t bundleApiVersion_{0};
-    bool initStatus_{false};
+    static uint32_t bundleApiVersion_;
 };
 } // namespace textlayout
 } // namespace skia
