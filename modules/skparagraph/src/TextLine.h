@@ -202,6 +202,7 @@ public:
     void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
     void createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis);
+    void middleEllipsisUpdateLine(ClusterIndex& indexS, ClusterIndex& indexE, SkScalar width);
 #endif
     // For testing internal structures
     void scanStyles(StyleType style, const RunStyleVisitor& visitor);

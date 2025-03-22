@@ -1218,26 +1218,34 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
 
     // Fill in content at both side of the ellipsis
     while (indexS < indexE) {
-        bool addStart = false;
-        if (widthS <= widthE) {
-            addStart = true;
-            if (lastRun != fOwner->cluster(indexS).runIndex()) {
-                ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(indexS));
-                lastRun = fOwner->cluster(indexS).runIndex();
+        bool addStart = (widthS <= widthE);
+        Cluster& clusterS = fOwner->cluster(indexS);
+        Cluster& clusterE = fOwner->cluster(indexE);
+        if (addStart) {
+            if (lastRun != clusterS.runIndex()) {
+                ellipsisRun = this->shapeEllipsis(ellipsis, &clusterS);
+                lastRun = clusterS.runIndex();
             }
             widthS += fOwner->cluster(indexS++).width();
         } else {
             widthE += fOwner->cluster(indexE--).width();
+            if (clusterE.isPreCombineBreak()) {
+                continue;
+            }
         }
 
         if ((widthS + widthE + ellipsisRun->advance().fX) > maxWidth) {
             if (addStart) {
                 widthS -= fOwner->cluster(--indexS).width();
+                clusterS = fOwner->cluster(indexS);
                 if (lastRun != fOwner->cluster(indexS).runIndex()) {
                     ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(indexS));
                 }
             } else {
-                widthE -= fOwner->cluster(++indexE).width();
+                do {
+                    widthE -= fOwner->cluster(++indexE).width();
+                    clusterE = fOwner->cluster(indexE);
+                } while (clusterE.isBackCombineBreak());
             }
             break;
         }
@@ -1246,20 +1254,25 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
     // update line params
     if (ellipsisRun != nullptr) {
         fEllipsis = std::move(ellipsisRun);
-        const auto& clusterS = fOwner->cluster(indexS);
-        const auto& clusterE = fOwner->cluster(indexE);
-        fEllipsis->fTextRange = TextRange(clusterS.textRange().start, clusterS.textRange().start + ellipsis.size());
-        fEllipsis->setOwner(fOwner);
-        fEllipsis->fClusterStart = clusterS.textRange().start;
-        fEllipsisIndex = clusterS.runIndex();
+        middleEllipsisUpdateLine(indexS, indexE, (widthS + widthE));
+    }
+}
 
-        fTextRangeReplacedByEllipsis = TextRange(clusterS.textRange().start, clusterE.textRange().end);
-        fAdvance.fX = widthS + widthE;
-        fWidthWithSpaces = fAdvance.fX;
+void TextLine::middleEllipsisUpdateLine(ClusterIndex& indexS, ClusterIndex& indexE, SkScalar width)
+{
+    const Cluster& clusterS = fOwner->cluster(indexS);
+    const Cluster& clusterE = fOwner->cluster(indexE);
+    fEllipsis->fTextRange = TextRange(clusterS.textRange().start, clusterS.textRange().start + fEllipsis->size());
+    fEllipsis->setOwner(fOwner);
+    fEllipsis->fClusterStart = clusterS.textRange().start;
+    fEllipsisIndex = clusterS.runIndex();
 
-        if (SkScalarNearlyZero(fAdvance.fX)) {
-            fRunsInVisualOrder.reset();
-        }
+    fTextRangeReplacedByEllipsis = TextRange(clusterS.textRange().start, clusterE.textRange().end);
+    fAdvance.fX = width;
+    fWidthWithSpaces = fAdvance.fX;
+
+    if (SkScalarNearlyZero(fAdvance.fX)) {
+        fRunsInVisualOrder.reset();
     }
 }
 #endif
