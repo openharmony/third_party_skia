@@ -323,11 +323,7 @@ public:
     RSFontMetrics measureText() override;
 #endif
 
-#ifdef OHOS_SUPPORT
-    bool &getIsMiddleEllipsis() { return isMiddleEllipsis; }
-#else
     bool &getEllipsisState() { return isMiddleEllipsis; }
-#endif
 
 #ifndef USE_SKIA_TXT
     bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
@@ -348,6 +344,7 @@ public:
     size_t GetMaxLines() const override { return fParagraphStyle.getMaxLines(); }
     void setLastAutoSpacingFlag(Cluster::AutoSpacingFlag flag) { fLastAutoSpacingFlag = flag; }
     const Cluster::AutoSpacingFlag& getLastAutoSpacingFlag() const { return fLastAutoSpacingFlag; }
+    bool& getIsMiddleEllipsisUp18() { return isMiddleEllipsisUp18; }
 #endif
 
 private:
@@ -443,7 +440,9 @@ private:
     SkTArray<size_t, true> fUnicodeIndexForUTF8Index;
     SkOnce fillUTF16MappingOnce;
     size_t fUnresolvedGlyphs;
+    // API Version isolation,isMiddleEllipsis: old version;isMiddleEllipsisUp18: new version
     bool isMiddleEllipsis{false};
+    bool isMiddleEllipsisUp18{false};
     std::unordered_set<SkUnichar> fUnresolvedCodepoints;
 
     SkTArray<TextLine, false> fLines;   // kFormatted   (cached: width, max lines, ellipsis, text align)

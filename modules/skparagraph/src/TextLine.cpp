@@ -1234,21 +1234,22 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
             }
         }
 
-        if ((widthS + widthE + ellipsisRun->advance().fX) > maxWidth) {
-            if (addStart) {
-                widthS -= fOwner->cluster(--indexS).width();
-                clusterS = fOwner->cluster(indexS);
-                if (lastRun != fOwner->cluster(indexS).runIndex()) {
-                    ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(indexS));
-                }
-            } else {
-                do {
-                    widthE -= fOwner->cluster(++indexE).width();
-                    clusterE = fOwner->cluster(indexE);
-                } while (clusterE.isBackCombineBreak());
-            }
-            break;
+        if ((widthS + widthE + ellipsisRun->advance().fX) <= maxWidth) {
+            continue;
         }
+        if (addStart) {
+            widthS -= fOwner->cluster(--indexS).width();
+            clusterS = fOwner->cluster(indexS);
+            if (lastRun != fOwner->cluster(indexS).runIndex()) {
+                ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(indexS));
+            }
+        } else {
+            do {
+                widthE -= fOwner->cluster(++indexE).width();
+                clusterE = fOwner->cluster(indexE);
+            } while (clusterE.isBackCombineBreak());
+        }
+        break;
     }
 
     // update line params
@@ -1423,7 +1424,7 @@ void TextLine::measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeG
 {
     // Special judgment for the middle ellipsis, reason: inconsistent width behavior between
     // the middle tail ellipsis and the head ellipsis
-    SkScalar lineWith = fOwner->getIsMiddleEllipsis() ? width() : fAdvance.fX;
+    SkScalar lineWith = fOwner->getIsMiddleEllipsisUp18() ? width() : fAdvance.fX;
     if (compareRound(context.clip.fRight, lineWith, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces
         && lineWith > 0) {
         // There are few cases when we need it.
@@ -1828,7 +1829,7 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
     SkScalar runOffset = 0;
     SkScalar totalWidth = 0;
 #ifdef OHOS_SUPPORT
-    bool ellipsisModeIsMiddle = fEllipsis != nullptr && fOwner->getIsMiddleEllipsis();
+    bool ellipsisModeIsMiddle = fEllipsis != nullptr && fOwner->getIsMiddleEllipsisUp18();
     bool ellipsisModeIsHead =
         fIsTextLineEllipsisHeadModal ? true : fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD;
 #else

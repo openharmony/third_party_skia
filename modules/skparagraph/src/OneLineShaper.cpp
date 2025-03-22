@@ -481,9 +481,9 @@ BlockRange OneLineShaper::generateBlockRange(const Block& block, const TextRange
     size_t start = std::max(block.fRange.start, textRange.start);
     size_t end = std::min(block.fRange.end, textRange.end);
 #ifdef OHOS_SUPPORT
-    if (fParagraph->fParagraphStyle.getMaxLines() == 1 &&
-        fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
-        !fParagraph->getIsMiddleEllipsis()) {
+    if (fParagraph->fParagraphStyle.getMaxLines() == 1
+        && fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE
+        && (!fParagraph->getEllipsisState() && !fParagraph->getIsMiddleEllipsisUp18())) {
         end = fParagraph->fText.size();
     }
 #else
@@ -692,7 +692,7 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
 #ifdef OHOS_SUPPORT
                 if (fParagraph->fParagraphStyle.getMaxLines() == 1
                     && fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE
-                    && !fParagraph->getIsMiddleEllipsis()) {
+                    && (!fParagraph->getEllipsisState() && !fParagraph->getIsMiddleEllipsisUp18())) {
                     end = fParagraph->fText.size();
                 }
 #else

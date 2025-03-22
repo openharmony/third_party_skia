@@ -29,6 +29,7 @@
 
 #ifdef OHOS_SUPPORT
 #include "log.h"
+#include "modules/skparagraph/include/SkTextBundleConfigParser.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
 #include "TextParameter.h"
 #endif
@@ -464,6 +465,9 @@ bool ParagraphImpl::shapeForMiddleEllipsis(SkScalar rawWidth)
 
 void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 {
+    if (!getEllipsisState()) {
+        return;
+    }
     if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE ||
         !fParagraphStyle.ellipsized()) {
         return;
@@ -491,9 +495,14 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     auto floorWidth = rawWidth;
 
 #ifdef OHOS_SUPPORT
-    if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.ellipsized() &&
-        fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
-        isMiddleEllipsis = true;
+    if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
+        if (fParagraphStyle.ellipsized()
+            && SkTextBundleConfigParser::GetInstance().IsTargetApiVersion(SINCE_API18_VERSION)) {
+            isMiddleEllipsisUp18 = true;
+        } else {
+            fOldMaxWidth = rawWidth;
+            isMiddleEllipsis = true;
+        }
     }
 #else
     if (fParagraphStyle.getMaxLines() == 1 &&
@@ -531,9 +540,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         // Nothing changed case: we can reuse the data from the last layout
     }
 
-#ifndef OHOS_SUPPORT
     this->prepareForMiddleEllipsis(rawWidth);
-#endif
     this->fUnicodeText = convertUtf8ToUnicode(fText);
     auto paragraphCache = fFontCollection->getParagraphCache();
 
@@ -1257,7 +1264,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
 #ifdef OHOS_SUPPORT
-                else if (getIsMiddleEllipsis()) {
+                else if (getIsMiddleEllipsisUp18()) {
                     line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
                 }
                 else if (textWrapper.brokeLineWithHyphen()
@@ -2399,6 +2406,7 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fUTF16IndexForUTF8Index = this->fUTF16IndexForUTF8Index;
     paragraph->fUnresolvedGlyphs = this->fUnresolvedGlyphs;
     paragraph->isMiddleEllipsis = this->isMiddleEllipsis;
+    paragraph->isMiddleEllipsisUp18 = this->isMiddleEllipsisUp18;
     paragraph->fUnresolvedCodepoints = this->fUnresolvedCodepoints;
 
     for (auto& line : this->fLines) {
