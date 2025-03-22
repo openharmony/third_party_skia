@@ -886,6 +886,12 @@
       "lang": "und-Math",
       "family": "Noto Sans Math",
       "file": "NotoSansMath-Regular.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "zh-Hans",
+      "family": "HYQiHei L3",
+      "file": "HYQiHeiL3.ttf"
     }
   ]
 }
