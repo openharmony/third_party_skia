@@ -67,7 +67,7 @@ void TextWrapper::matchHyphenResult(const std::vector<uint8_t>& result, Paragrap
     int32_t prevIx = -1;
     // cumulatively iterate width vs breaks
     for (const auto& breakPos : result) {
-        int32_t clusterIx = owner->fClustersIndexFromCodeUnit[startPos + ix];
+        int32_t clusterIx = static_cast<int32_t>(owner->fClustersIndexFromCodeUnit[startPos + ix]);
         if (clusterIx == prevIx) {
             ++ix;
             continue;
@@ -567,7 +567,7 @@ struct TextWrapScorer {
             fPrevWasWhitespace = false;
             endCluster = &cluster;
         } else { //  fix "one character + space and then the actual target"
-            int i = 1;
+            uint32_t i = 1;
             while (clusterIx + i < parent.clusters().size()) {
                 if (!parent.cluster(clusterIx + i).isWordBreak()) {
                     startCluster = &cluster + i;
