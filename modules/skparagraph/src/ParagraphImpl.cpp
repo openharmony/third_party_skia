@@ -92,7 +92,7 @@ MiddleEllipsisVersion ParagraphImpl::getIfMiddleEllipsis()
 {
     if (getEllipsisState()) {
         if (SkTextBundleConfigParser::IsTargetApiVersion(SINCE_API18_VERSION)) {
-            return MiddleEllipsisVersion::API_UP_18;
+            return fParagraphStyle.ellipsized() ? MiddleEllipsisVersion::API_UP_18 : MiddleEllipsisVersion::NONE;
         } else {
             return MiddleEllipsisVersion::API_Down_18;
         }
@@ -543,8 +543,9 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     } else {
         // Nothing changed case: we can reuse the data from the last layout
     }
-
+#ifdef OHOS_SUPPORT
     this->prepareForMiddleEllipsis(rawWidth);
+#endif
     this->fUnicodeText = convertUtf8ToUnicode(fText);
     auto paragraphCache = fFontCollection->getParagraphCache();
 
@@ -1140,7 +1141,6 @@ void ParagraphImpl::buildClusterTable() {
     fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
     fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
 }
-
 
 bool ParagraphImpl::shapeTextIntoEndlessLine() {
 #ifdef OHOS_SUPPORT

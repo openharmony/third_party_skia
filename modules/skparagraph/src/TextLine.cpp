@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "log.h"
+#include "include/SkTextBundleConfigParser.h"
 #include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
 #include "src/Run.h"
@@ -446,15 +447,17 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
 void TextLine::prepareRoundRect() {
     fRoundRectAttrs.clear();
     std::vector<Run*> allRuns;
+    EllipsisReadStrategy ellipsisReadStrategy = SkTextBundleConfigParser::IsTargetApiVersion(SINCE_API18_VERSION) ?
+        EllipsisReadStrategy::READ_REPLACED_WORD : EllipsisReadStrategy::DEFAULT;
     this->iterateThroughVisualRuns(
-        EllipsisReadStrategy::READ_REPLACED_WORD, true,
+        ellipsisReadStrategy, true,
         [this, &allRuns](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
-                TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
-                [run, this, &allRuns](TextRange textRange, const TextStyle& style, const ClipContext& context) {
-                    fRoundRectAttrs.push_back({style.getStyleId(), style.getBackgroundRect(), context.clip, run});
-                    allRuns.push_back(const_cast<Run*>(run));
-                });
+                    TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
+                    [run, this, &allRuns](TextRange textRange, const TextStyle& style, const ClipContext& context) {
+                        fRoundRectAttrs.push_back({style.getStyleId(), style.getBackgroundRect(), context.clip, run});
+                        allRuns.push_back(const_cast<Run*>(run));
+                    });
             return true;
         });
 
@@ -2979,9 +2982,8 @@ TextLine TextLine::CloneSelf()
         textLine.fHyphenRun = std::make_unique<Run>(*this->fHyphenRun);
     }
     textLine.fHyphenIndex = this->fHyphenIndex;
-#endif
-
     textLine.fRoundRectAttrs = this->fRoundRectAttrs;
+#endif
     textLine.fTextBlobCache = this->fTextBlobCache;
     textLine.fTextRangeReplacedByEllipsis = this->fTextRangeReplacedByEllipsis;
     textLine.fEllipsisIndex = this->fEllipsisIndex;
