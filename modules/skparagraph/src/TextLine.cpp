@@ -447,7 +447,7 @@ void TextLine::prepareRoundRect() {
     fRoundRectAttrs.clear();
     std::vector<Run*> allRuns;
     this->iterateThroughVisualRuns(
-        EllipsisReadStrategy::DEFAULT, true,
+        EllipsisReadStrategy::READ_REPLACED_WORD, true,
         [this, &allRuns](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
                 TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,

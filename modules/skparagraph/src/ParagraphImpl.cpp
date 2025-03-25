@@ -1272,7 +1272,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
 #ifdef OHOS_SUPPORT
-                else if (addEllipsis && getIfMiddleEllipsis() == MiddleEllipsisVersion::API_UP_18) {
+                else if (getIfMiddleEllipsis() == MiddleEllipsisVersion::API_UP_18) {
                     line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
                 } else if (textWrapper.brokeLineWithHyphen()
                            || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
