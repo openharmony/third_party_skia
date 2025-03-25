@@ -461,7 +461,7 @@ private:
     TextIndex fTrailingSpaces;
     SkScalar fLayoutRawWidth {0};
 
-    size_t fLineNumber;
+    size_t fLineNumber { 0 };
     uint32_t hash_{0u};
 
 #ifdef OHOS_SUPPORT
