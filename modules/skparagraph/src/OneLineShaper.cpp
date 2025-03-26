@@ -5,7 +5,7 @@
 #include "src/Run.h"
 #include "src/utils/SkUTF.h"
 #ifdef OHOS_SUPPORT
-#include "include/SkTextBundleConfigParser.h"
+#include "include/TextGlobalConfig.h"
 #include "utils/text_trace.h"
 #endif
 
@@ -482,10 +482,8 @@ BlockRange OneLineShaper::generateBlockRange(const Block& block, const TextRange
     size_t start = std::max(block.fRange.start, textRange.start);
     size_t end = std::min(block.fRange.end, textRange.end);
 #ifdef OHOS_SUPPORT
-    if (fParagraph->fParagraphStyle.getMaxLines() == 1 &&
-        fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
-        (!fParagraph->getEllipsisState() &&
-        !SkTextBundleConfigParser::IsTargetApiVersion(SINCE_API18_VERSION))) {
+    if (fParagraph->isSetMiddleEllipsisShaped() &&
+        fParagraph->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_LT_18) {
         end = fParagraph->fText.size();
     }
 #endif
@@ -686,10 +684,8 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
                 auto start = std::max(bidiRegion.start, placeholder.fTextBefore.start);
                 auto end = std::min(bidiRegion.end, placeholder.fTextBefore.end);
 #ifdef OHOS_SUPPORT
-                if (fParagraph->fParagraphStyle.getMaxLines() == 1 &&
-                    fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
-                    (!fParagraph->getEllipsisState() &&
-                    !SkTextBundleConfigParser::IsTargetApiVersion(SINCE_API18_VERSION))) {
+                if (fParagraph->isSetMiddleEllipsisShaped() &&
+                    fParagraph->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_LT_18) {
                     end = fParagraph->fText.size();
                 }
 #endif

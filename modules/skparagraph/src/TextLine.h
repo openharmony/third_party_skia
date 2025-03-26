@@ -34,6 +34,20 @@ struct DecorationContext {
     SkScalar underlinePosition = 0.0f;
     SkScalar textBlobTop = 0.0f;
 };
+
+#ifdef OHOS_SUPPORT
+struct IterateRunsContext {
+    size_t runIndex{0};
+    SkScalar width{0};
+    SkScalar runOffset{0};
+    SkScalar totalWidth{0};
+    bool isAlreadyUseEllipsis{false};
+    TextRange lineIntersection;
+    bool ellipsisModeIsMiddle{false};
+    bool ellipsisModeIsHead{false};
+};
+#endif
+
 class TextLine {
 public:
     struct ClipContext {
@@ -152,8 +166,7 @@ public:
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;
 
 #ifdef OHOS_SUPPORT
-    bool processEllipsisRun(bool& isAlreadyUseEllipsis,
-                            SkScalar& runOffset,
+    bool processEllipsisRun(IterateRunsContext& context,
                             EllipsisReadStrategy ellipsisReadStrategy,
                             const RunVisitor& visitor,
                             SkScalar& runWidthInLine) const;
@@ -168,6 +181,8 @@ public:
     void iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
                                   bool includingGhostSpaces,
                                   const RunVisitor& runVisitor) const;
+    void handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
+                                  EllipsisReadStrategy& ellipsisReadStrategy, const RunVisitor& runVisitor) const;
 #else
     void iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& runVisitor) const;
 #endif

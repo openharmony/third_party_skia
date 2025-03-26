@@ -963,7 +963,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         if (maxLines == 1 &&
             (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD ||
-            parent->getIfMiddleEllipsis() == MiddleEllipsisVersion::API_UP_18)) {
+            parent->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_GE_18)) {
             newWidth = FLT_MAX;
         } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
             newWidth = balancedWidths[fLineNumber - 1];

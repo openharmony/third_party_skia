@@ -12,30 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef THIRD_PARTY_SKIA_BUNDLE_MANAGER_H
-#define THIRD_PARTY_SKIA_BUNDLE_MANAGER_H
-
-#include <cstddef>
-#include <cstdint>
+#include "include/TextGlobalConfig.h"
 
 namespace skia {
 namespace textlayout {
-constexpr uint32_t SINCE_API18_VERSION = 18;
-
-class SkTextBundleConfigParser {
-public:
-    static bool IsTargetApiVersion(uint32_t targetVersion);
-
-    static void SetTargetVersion(uint32_t targetVersion)
-    {
-        bundleApiVersion_ = targetVersion;
-    };
-
-private:
-    static uint32_t bundleApiVersion_;
-};
+uint32_t TextGlobalConfig::bundleApiVersion_{0};
+bool TextGlobalConfig::IsTargetApiVersion(uint32_t targetVersion)
+{
+    return bundleApiVersion_ >= targetVersion;
+}
 } // namespace textlayout
 } // namespace skia
-
-#endif // THIRD_PARTY_SKIA_BUNDLE_MANAGER_H

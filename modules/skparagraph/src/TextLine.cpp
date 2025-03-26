@@ -38,7 +38,7 @@
 #include <vector>
 
 #include "log.h"
-#include "include/SkTextBundleConfigParser.h"
+#include "include/TextGlobalConfig.h"
 #include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
 #include "src/Run.h"
@@ -401,9 +401,9 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
     if (hasBackgroundRect(fRoundRectAttrs[index])) {
         int styleId = fRoundRectAttrs[index].styleId;
         // index - 1 is previous index, -1 is the invalid styleId
-        int preStyleId = index == 0 ? -1 : fRoundRectAttrs[index - 1].styleId;
+        int preStyleId = (index == 0 ? -1 : fRoundRectAttrs[index - 1].styleId);
         // runCount - 1 is the last run index, index + 1 is next run index, -1 is the invalid styleId
-        int nextStyleId = index == runCount - 1 ? -1 : fRoundRectAttrs[index + 1].styleId;
+        int nextStyleId = (index == (runCount - 1) ? -1 : fRoundRectAttrs[index + 1].styleId);
         // index - preIndex > 1 means the left run has no background rect
         leftRound = (preIndex < 0 || index - preIndex > 1 || preStyleId != styleId);
         // runCount - 1 is the last run index
@@ -447,7 +447,7 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
 void TextLine::prepareRoundRect() {
     fRoundRectAttrs.clear();
     std::vector<Run*> allRuns;
-    EllipsisReadStrategy ellipsisReadStrategy = SkTextBundleConfigParser::IsTargetApiVersion(SINCE_API18_VERSION) ?
+    EllipsisReadStrategy ellipsisReadStrategy = TextGlobalConfig::IsTargetApiVersion(SINCE_API18_VERSION) ?
         EllipsisReadStrategy::READ_REPLACED_WORD : EllipsisReadStrategy::DEFAULT;
     this->iterateThroughVisualRuns(
         ellipsisReadStrategy, true,
@@ -1210,64 +1210,64 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
     }
 
     //initial params
-    SkScalar widthS = 0.0f;
-    SkScalar widthE = 0.0f;
-    ClusterIndex indexS = fGhostClusterRange.start;
-    ClusterIndex indexE = fGhostClusterRange.end - 1;
+    SkScalar startWidth = 0.0f;
+    SkScalar endWidth = 0.0f;
+    ClusterIndex startIndex = fGhostClusterRange.start;
+    ClusterIndex endIndex = fGhostClusterRange.end - 1;
     std::unique_ptr<Run> ellipsisRun;
     RunIndex lastRun = EMPTY_RUN;
     bool addStart = false;
     // Fill in content at both side of the ellipsis
-    while (indexS < indexE) {
-        addStart = (widthS <= widthE);
+    while (startIndex < endIndex) {
+        addStart = (startWidth <= endWidth);
         if (addStart) {
-            Cluster& clusterS = fOwner->cluster(indexS);
-            if (lastRun != clusterS.runIndex()) {
-                ellipsisRun = this->shapeEllipsis(ellipsis, &clusterS);
-                lastRun = clusterS.runIndex();
+            Cluster& startCluster = fOwner->cluster(startIndex);
+            if (lastRun != startCluster.runIndex()) {
+                ellipsisRun = this->shapeEllipsis(ellipsis, &startCluster);
+                lastRun = startCluster.runIndex();
             }
-            widthS += fOwner->cluster(indexS++).width();
+            startWidth += fOwner->cluster(startIndex++).width();
         } else {
-            widthE += fOwner->cluster(indexE--).width();
-            if (fOwner->cluster(indexE).isStartCombineBreak()) {
+            endWidth += fOwner->cluster(endIndex--).width();
+            if (fOwner->cluster(endIndex).isStartCombineBreak()) {
                 continue;
             }
         }
-        if ((widthS + widthE + ellipsisRun->advance().fX) >= maxWidth) {
+        if ((startWidth + endWidth + ellipsisRun->advance().fX) >= maxWidth) {
             break;
         }
     }
     // fallback one unit
     if (addStart) {
-        widthS -= fOwner->cluster(--indexS).width();
-        if (lastRun != fOwner->cluster(indexS).runIndex()) {
-            ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(indexS));
+        startWidth -= fOwner->cluster(--startIndex).width();
+        if (lastRun != fOwner->cluster(startIndex).runIndex()) {
+            ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(startIndex));
         }
     } else {
-        Cluster clusterE;
+        Cluster endCluster;
         do {
-            widthE -= fOwner->cluster(++indexE).width();
-            clusterE = fOwner->cluster(indexE);
-        } while (clusterE.isEndCombineBreak());
+            endWidth -= fOwner->cluster(++endIndex).width();
+            endCluster = fOwner->cluster(endIndex);
+        } while (endCluster.isEndCombineBreak());
     }
 
     // update line params
     if (ellipsisRun != nullptr) {
         fEllipsis = std::move(ellipsisRun);
-        middleEllipsisUpdateLine(indexS, indexE, (widthS + widthE));
+        middleEllipsisUpdateLine(startIndex, endIndex, (startWidth + endWidth));
     }
 }
 
-void TextLine::middleEllipsisUpdateLine(ClusterIndex& indexS, ClusterIndex& indexE, SkScalar width)
+void TextLine::middleEllipsisUpdateLine(ClusterIndex& startIndex, ClusterIndex& endIndex, SkScalar width)
 {
-    const Cluster& clusterS = fOwner->cluster(indexS);
-    const Cluster& clusterE = fOwner->cluster(indexE);
-    fEllipsis->fTextRange = TextRange(clusterS.textRange().start, clusterS.textRange().start + fEllipsis->size());
+    const Cluster& startCluster = fOwner->cluster(startIndex);
+    const Cluster& endCluster = fOwner->cluster(endIndex);
+    fEllipsis->fTextRange = TextRange(startCluster.textRange().start, startCluster.textRange().start + fEllipsis->size());
     fEllipsis->setOwner(fOwner);
-    fEllipsis->fClusterStart = clusterS.textRange().start;
-    fEllipsisIndex = clusterS.runIndex();
+    fEllipsis->fClusterStart = startCluster.textRange().start;
+    fEllipsisIndex = startCluster.runIndex();
 
-    fTextRangeReplacedByEllipsis = TextRange(clusterS.textRange().start, clusterE.textRange().end);
+    fTextRangeReplacedByEllipsis = TextRange(startCluster.textRange().start, endCluster.textRange().end);
     fAdvance.fX = width;
     fWidthWithSpaces = fAdvance.fX;
 
@@ -1423,7 +1423,7 @@ void TextLine::measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeG
 {
     // Special judgment for the middle ellipsis, reason: inconsistent width behavior between
     // the middle tail ellipsis and the head ellipsis
-    SkScalar lineWidth = fOwner->getIfMiddleEllipsis() == MiddleEllipsisVersion::API_UP_18 ? width() : fAdvance.fX;
+    SkScalar lineWidth = fOwner->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_GE_18 ? width() : fAdvance.fX;
     if (compareRound(context.clip.fRight, lineWidth, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces
         && lineWidth > 0) {
         // There are few cases when we need it.
@@ -1786,13 +1786,12 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
 }
 
 #ifdef OHOS_SUPPORT
-bool TextLine::processEllipsisRun(bool& isAlreadyUseEllipsis,
-                                  SkScalar& runOffset,
+bool TextLine::processEllipsisRun(IterateRunsContext& context,
                                   EllipsisReadStrategy ellipsisReadStrategy,
                                   const RunVisitor& visitor,
                                   SkScalar& runWidthInLine) const {
-    isAlreadyUseEllipsis = true;
-    return processInsertedRun(fEllipsis.get(), runOffset, ellipsisReadStrategy,
+    context.isAlreadyUseEllipsis = true;
+    return processInsertedRun(fEllipsis.get(), context.runOffset, ellipsisReadStrategy,
                               visitor, runWidthInLine);
 }
 
@@ -1820,142 +1819,127 @@ bool TextLine::processInsertedRun(const Run* extra,
 #endif
 
 #ifdef OHOS_SUPPORT
-void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
-                                        bool includingGhostSpaces,
+void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy, bool includingGhostSpaces,
                                         const RunVisitor& visitor) const {
-    // Walk through all the runs that intersect with the line in visual order
-    SkScalar width = 0;
-    SkScalar runOffset = 0;
-    SkScalar totalWidth = 0;
-#ifdef OHOS_SUPPORT
-    bool ellipsisModeIsMiddle =
-        fEllipsis != nullptr && fOwner->getIfMiddleEllipsis() == MiddleEllipsisVersion::API_UP_18;
-    bool ellipsisModeIsHead =
+    IterateRunsContext context;
+    context.ellipsisModeIsMiddle =
+        fEllipsis != nullptr && fOwner->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_GE_18;
+    context.ellipsisModeIsHead =
         fIsTextLineEllipsisHeadModal ? true : fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD;
-#else
-    bool ellipsisModeIsHead = fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD;
-#endif
-    bool isAlreadyUseEllipsis = false;
     auto textRange = includingGhostSpaces ? this->textWithNewlines() : this->trimmedText();
 
     if (fRunsInVisualOrder.size() == 0) {
         if (fEllipsis != nullptr) {
-            if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
+            if (!processEllipsisRun(context, ellipsisReadStrategy, visitor, context.width)) {
                 return;
             }
-            totalWidth += width;
+            context.totalWidth += context.width;
         }
         if (fHyphenRun != nullptr) { // not sure if this is basically valid in real life
-            if (!processInsertedRun(fHyphenRun.get(), runOffset, ellipsisReadStrategy, visitor, width)) {
+            if (!processInsertedRun(fHyphenRun.get(), context.runOffset, ellipsisReadStrategy, visitor,
+                                    context.width)) {
                 return;
             }
-            totalWidth += width;
+            context.totalWidth += context.width;
         }
     }
 
     for (auto& runIndex : fRunsInVisualOrder) {
+        context.runIndex = runIndex;
         // add the lastClipRun's left ellipsis if necessary
-#ifdef OHOS_SUPPORT
-        if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex
-            && ((!fLastClipRunLtr && !ellipsisModeIsHead && !ellipsisModeIsMiddle)
-                || (ellipsisModeIsHead && fLastClipRunLtr))) {
-            if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
-#else
-        if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex &&
-            ((!fLastClipRunLtr && !ellipsisModeIsHead) || (ellipsisModeIsHead && fLastClipRunLtr))) {
-            if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
-#endif
+        if (!context.isAlreadyUseEllipsis && fEllipsisIndex == runIndex
+            && ((!fLastClipRunLtr && !context.ellipsisModeIsHead && !context.ellipsisModeIsMiddle)
+                || (context.ellipsisModeIsHead && fLastClipRunLtr))) {
+            if (!processEllipsisRun(context, ellipsisReadStrategy, visitor, context.width)) {
                 return;
             }
-            runOffset += width;
-            totalWidth += width;
+            context.runOffset += context.width;
+            context.totalWidth += context.width;
         }
 
         const auto run = &this->fOwner->run(runIndex);
-        auto lineIntersection = intersected(run->textRange(), textRange);
-        if (lineIntersection.width() == 0 && this->width() != 0) {
+        context.lineIntersection = intersected(run->textRange(), textRange);
+        if (context.lineIntersection.width() == 0 && this->width() != 0) {
             // TODO: deal with empty runs in a better way
             continue;
         }
-        if (!run->leftToRight() && runOffset == 0 && includingGhostSpaces) {
+        if (!run->leftToRight() && context.runOffset == 0 && includingGhostSpaces) {
             // runOffset does not take in account a possibility
             // that RTL run could start before the line (trailing spaces)
             // so we need to do runOffset -= "trailing whitespaces length"
-            TextRange whitespaces = intersected(
-                    TextRange(fTextExcludingSpaces.end, fTextIncludingNewlines.end), run->fTextRange);
+            TextRange whitespaces =
+                intersected(TextRange(fTextExcludingSpaces.end, fTextIncludingNewlines.end), run->fTextRange);
             if (whitespaces.width() > 0) {
-                auto whitespacesLen = measureTextInsideOneRun(whitespaces, run, runOffset, 0, true,
-                                                              TextAdjustment::GlyphCluster).clip.width();
-                runOffset -= whitespacesLen;
+                auto whitespacesLen =
+                    measureTextInsideOneRun(whitespaces, run, context.runOffset, 0, true, TextAdjustment::GlyphCluster)
+                        .clip.width();
+                context.runOffset -= whitespacesLen;
             }
         }
-#ifdef OHOS_SUPPORT
-        if (ellipsisModeIsMiddle) {
-            std::pair<TextRange, TextRange> cutRanges =
-                    intervalDiffrence(lineIntersection, fTextRangeReplacedByEllipsis);
-
-            if (cutRanges.first.start != EMPTY_RANGE.start) {
-                if (!visitor(run, runOffset, cutRanges.first, &width)) {
-                    return;
-                }
-                runOffset += width;
-                totalWidth += width;
-            }
-
-            if ((cutRanges.first.start != EMPTY_RANGE.start || cutRanges.second.start != EMPTY_RANGE.start)
-                && !isAlreadyUseEllipsis && fEllipsisIndex == runIndex) {
-                if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
-                    return;
-                }
-                runOffset += width;
-                totalWidth += width;
-            }
-
-            if (cutRanges.second.start != EMPTY_RANGE.start) {
-                if (!visitor(run, runOffset, cutRanges.second, &width)) {
-                    return;
-                }
-                runOffset += width;
-                totalWidth += width;
-            }
+        if (context.ellipsisModeIsMiddle) {
+            handleMiddleEllipsisMode(run, context, ellipsisReadStrategy, visitor);
         } else {
-            if (!visitor(run, runOffset, lineIntersection, &width)) {
+            if (!visitor(run, context.runOffset, context.lineIntersection, &context.width)) {
                 return;
             }
-            runOffset += width;
-            totalWidth += width;
+            context.runOffset += context.width;
+            context.totalWidth += context.width;
         }
-#else
-        if (!visitor(run, runOffset, lineIntersection, &width)) {
-            return;
-        }
-
-        runOffset += width;
-        totalWidth += width;
-#endif
 
         // add the lastClipRun's right ellipsis if necessary
-        if (!isAlreadyUseEllipsis && fEllipsisIndex == runIndex) {
-            if (!processEllipsisRun(isAlreadyUseEllipsis, runOffset, ellipsisReadStrategy, visitor, width)) {
+        if (!context.isAlreadyUseEllipsis && fEllipsisIndex == runIndex) {
+            if (!processEllipsisRun(context, ellipsisReadStrategy, visitor, context.width)) {
                 return;
             }
-            runOffset += width;
-            totalWidth += width;
+            context.runOffset += context.width;
+            context.totalWidth += context.width;
         }
         if (runIndex == fHyphenIndex) {
-            if (!processInsertedRun(fHyphenRun.get(), runOffset, ellipsisReadStrategy, visitor, width)) {
+            if (!processInsertedRun(fHyphenRun.get(), context.runOffset, ellipsisReadStrategy, visitor,
+                                    context.width)) {
                 return;
             }
-            runOffset += width;
-            totalWidth += width;
+            context.runOffset += context.width;
+            context.totalWidth += context.width;
         }
     }
 
-    if (!includingGhostSpaces && compareRound(totalWidth, this->width(), fOwner->getApplyRoundingHack()) != 0) {
-    // This is a very important assert!
-    // It asserts that 2 different ways of calculation come with the same results
-        SkDebugf("ASSERT: %f != %f\n", totalWidth, this->width());
+    if (!includingGhostSpaces && compareRound(context.totalWidth, this->width(), fOwner->getApplyRoundingHack()) != 0) {
+        // This is a very important assert!
+        // It asserts that 2 different ways of calculation come with the same results
+        SkDebugf("ASSERT: %f != %f\n", context.totalWidth, this->width());
         SkASSERT(false);
+    }
+}
+
+void TextLine::handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
+                                        EllipsisReadStrategy& ellipsisReadStrategy, const RunVisitor& visitor) const {
+    std::pair<TextRange, TextRange> cutRanges =
+        intervalDiffrence(context.lineIntersection, fTextRangeReplacedByEllipsis);
+
+    if (cutRanges.first.start != EMPTY_RANGE.start) {
+        if (!visitor(run, context.runOffset, cutRanges.first, &context.width)) {
+            return;
+        }
+        context.runOffset += context.width;
+        context.totalWidth += context.width;
+    }
+
+    if ((cutRanges.first.start != EMPTY_RANGE.start || cutRanges.second.start != EMPTY_RANGE.start)
+        && !context.isAlreadyUseEllipsis && fEllipsisIndex == context.runIndex) {
+        if (!processEllipsisRun(context, ellipsisReadStrategy, visitor, context.width)) {
+            return;
+        }
+        context.runOffset += context.width;
+        context.totalWidth += context.width;
+    }
+
+    if (cutRanges.second.start != EMPTY_RANGE.start) {
+        if (!visitor(run, context.runOffset, cutRanges.second, &context.width)) {
+            return;
+        }
+        context.runOffset += context.width;
+        context.totalWidth += context.width;
     }
 }
 #else

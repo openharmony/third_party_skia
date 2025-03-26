@@ -40,9 +40,9 @@ namespace textlayout {
 
 #ifdef OHOS_SUPPORT
 enum class MiddleEllipsisVersion {
-    NONE,          // Will not trigger the middle ellipsis
-    API_Down_18,   // default，API verison < 18
-    API_UP_18,     // API verison > 18
+    NONE,                  // Will not trigger the middle ellipsis
+    API_VERSION_LT_18,     // API verison < 18
+    API_VERSION_GE_18,     // API verison >= 18
 };
 #endif
 
@@ -333,10 +333,10 @@ public:
     RSFontMetrics measureText() override;
 #endif
 
-    bool &getEllipsisState() { return isMiddleEllipsis; }
+    bool isSetMiddleEllipsisShaped() { return isMiddleEllipsisShaped; }
 
 #ifdef OHOS_SUPPORT
-    MiddleEllipsisVersion getIfMiddleEllipsis();
+    MiddleEllipsisVersion getMiddleEllipsisVersionState();
 #endif
 #ifndef USE_SKIA_TXT
     bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
@@ -455,7 +455,7 @@ private:
     SkTArray<size_t, true> fUnicodeIndexForUTF8Index;
     SkOnce fillUTF16MappingOnce;
     size_t fUnresolvedGlyphs;
-    bool isMiddleEllipsis{false};
+    bool isMiddleEllipsisShaped{false};
     std::unordered_set<SkUnichar> fUnresolvedCodepoints;
 
     SkTArray<TextLine, false> fLines;   // kFormatted   (cached: width, max lines, ellipsis, text align)
