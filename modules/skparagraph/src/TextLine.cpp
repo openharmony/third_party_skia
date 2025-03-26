@@ -2503,8 +2503,8 @@ double TextLine::getTypographicBounds(double* ascent, double* descent, double* l
         return 0.0;
     }
 
-    *ascent = std::abs(fMaxRunMetrics.ascent());
-    *descent = std::abs(fMaxRunMetrics.descent());
+    *ascent = fMaxRunMetrics.ascent();
+    *descent = fMaxRunMetrics.descent();
     *leading = fMaxRunMetrics.leading();
     return widthWithEllipsisSpaces();
 }
