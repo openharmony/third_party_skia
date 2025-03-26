@@ -43,8 +43,7 @@ struct IterateRunsContext {
     SkScalar totalWidth{0};
     bool isAlreadyUseEllipsis{false};
     TextRange lineIntersection;
-    bool ellipsisModeIsMiddle{false};
-    bool ellipsisModeIsHead{false};
+    EllipsisModal ellipsisMode{EllipsisModal::NONE};
 };
 #endif
 

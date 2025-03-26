@@ -37,8 +37,8 @@
 #include <numeric>
 #include <vector>
 
-#include "log.h"
 #include "include/TextGlobalConfig.h"
+#include "log.h"
 #include "modules/skparagraph/src/RunBaseImpl.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
 #include "src/Run.h"
@@ -66,24 +66,13 @@ TextRange intersected(const TextRange& a, const TextRange& b) {
     return end >= begin ? TextRange(begin, end) : EMPTY_TEXT;
 }
 
-std::pair<TextRange, TextRange> intervalDiffrence(const TextRange& a, const TextRange& b)
-{
-    TextRange left = EMPTY_RANGE;
-    TextRange right = EMPTY_RANGE;
-
+std::pair<TextRange, TextRange> intervalDifference(bool ltr, const TextRange& a, const TextRange& b) {
     if (a.end <= b.start || b.end <= a.start) {
-        return {a, right};
+        return ltr ? std::make_pair(a, EMPTY_RANGE) : std::make_pair(EMPTY_RANGE, a);
     }
-
-    if (a.start < b.start) {
-        left = {a.start, b.start};
-    }
-
-    if (a.end > b.end) {
-        right = {b.end, a.end};
-    }
-
-    return {left, right};
+    TextRange start = (a.start < b.start) ? TextRange{a.start, b.start} : EMPTY_RANGE;
+    TextRange end = (a.end > b.end) ? TextRange{b.end, a.end} : EMPTY_RANGE;
+    return ltr ? std::make_pair(start, end) : std::make_pair(end, start);
 }
 
 SkScalar littleRound(SkScalar a) {
@@ -1233,7 +1222,7 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
                 continue;
             }
         }
-        if ((startWidth + endWidth + ellipsisRun->advance().fX) >= maxWidth) {
+        if (ellipsisRun != nullptr && (startWidth + endWidth + ellipsisRun->advance().fX) >= maxWidth) {
             break;
         }
     }
@@ -1822,10 +1811,13 @@ bool TextLine::processInsertedRun(const Run* extra,
 void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy, bool includingGhostSpaces,
                                         const RunVisitor& visitor) const {
     IterateRunsContext context;
-    context.ellipsisModeIsMiddle =
-        fEllipsis != nullptr && fOwner->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_GE_18;
-    context.ellipsisModeIsHead =
-        fIsTextLineEllipsisHeadModal ? true : fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD;
+    if (fEllipsis != nullptr) {
+        if (fOwner->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_GE_18) {
+            context.ellipsisMode = EllipsisModal::MIDDLE;
+        } else if (fIsTextLineEllipsisHeadModal || fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
+            context.ellipsisMode = EllipsisModal::HEAD;
+        }
+    }
     auto textRange = includingGhostSpaces ? this->textWithNewlines() : this->trimmedText();
 
     if (fRunsInVisualOrder.size() == 0) {
@@ -1847,9 +1839,10 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
     for (auto& runIndex : fRunsInVisualOrder) {
         context.runIndex = runIndex;
         // add the lastClipRun's left ellipsis if necessary
-        if (!context.isAlreadyUseEllipsis && fEllipsisIndex == runIndex
-            && ((!fLastClipRunLtr && !context.ellipsisModeIsHead && !context.ellipsisModeIsMiddle)
-                || (context.ellipsisModeIsHead && fLastClipRunLtr))) {
+        if (!context.isAlreadyUseEllipsis && fEllipsisIndex == runIndex &&
+            ((!fLastClipRunLtr && context.ellipsisMode != EllipsisModal::HEAD &&
+            context.ellipsisMode != EllipsisModal::MIDDLE) ||
+            (context.ellipsisMode == EllipsisModal::HEAD && fLastClipRunLtr))) {
             if (!processEllipsisRun(context, ellipsisReadStrategy, visitor, context.width)) {
                 return;
             }
@@ -1876,7 +1869,7 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
                 context.runOffset -= whitespacesLen;
             }
         }
-        if (context.ellipsisModeIsMiddle) {
+        if (context.ellipsisMode == EllipsisModal::MIDDLE) {
             handleMiddleEllipsisMode(run, context, ellipsisReadStrategy, visitor);
         } else {
             if (!visitor(run, context.runOffset, context.lineIntersection, &context.width)) {
@@ -1915,7 +1908,7 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
 void TextLine::handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
                                         EllipsisReadStrategy& ellipsisReadStrategy, const RunVisitor& visitor) const {
     std::pair<TextRange, TextRange> cutRanges =
-        intervalDiffrence(context.lineIntersection, fTextRangeReplacedByEllipsis);
+        intervalDifference(run->leftToRight(), context.lineIntersection, fTextRangeReplacedByEllipsis);
 
     if (cutRanges.first.start != EMPTY_RANGE.start) {
         if (!visitor(run, context.runOffset, cutRanges.first, &context.width)) {

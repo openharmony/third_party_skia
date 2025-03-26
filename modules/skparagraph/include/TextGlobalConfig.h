@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef TEXT_GLOBAL_CONFIG_DEFINED
-#define TEXT_GLOBAL_CONFIG_DEFINED
+#ifndef TEXT_GLOBAL_CONFIG_H
+#define TEXT_GLOBAL_CONFIG_H
 
 #include <cstddef>
 #include <cstdint>
@@ -38,4 +38,4 @@ private:
 } // namespace textlayout
 } // namespace skia
 
-#endif // TEXT_GLOBAL_CONFIG_DEFINED
+#endif // TEXT_GLOBAL_CONFIG_H
