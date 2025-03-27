@@ -384,12 +384,7 @@ bool Json::Value::is<UnicodeRange>() const
     if (!isArray() || size() != RANGE_SIZE) {
         return false;
     }
-    for (const auto& item : *this) {
-        if (!item.isUInt64()) {
-            return false;
-        }
-    }
-    return true;
+    return std::all_of(begin(), end(), [](const Value& item) { return item.isUInt64(); });
 }
 
 
