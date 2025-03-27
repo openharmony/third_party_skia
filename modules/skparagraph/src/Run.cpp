@@ -672,5 +672,15 @@ bool Cluster::isSoftBreak() const {
 bool Cluster::isGraphemeBreak() const {
     return fOwner->codeUnitHasProperty(fTextRange.end, SkUnicode::CodeUnitFlags::kGraphemeStart);
 }
+
+#ifdef OHOS_SUPPORT
+bool Cluster::isStartCombineBreak() const {
+    return fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kCombine);
+}
+
+bool Cluster::isEndCombineBreak() const {
+    return fOwner->codeUnitHasProperty(fTextRange.end, SkUnicode::CodeUnitFlags::kCombine);
+}
+#endif
 }  // namespace textlayout
 }  // namespace skia

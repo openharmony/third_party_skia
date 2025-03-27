@@ -34,6 +34,19 @@ struct DecorationContext {
     SkScalar underlinePosition = 0.0f;
     SkScalar textBlobTop = 0.0f;
 };
+
+#ifdef OHOS_SUPPORT
+struct IterateRunsContext {
+    size_t runIndex{0};
+    SkScalar width{0};
+    SkScalar runOffset{0};
+    SkScalar totalWidth{0};
+    bool isAlreadyUseEllipsis{false};
+    TextRange lineIntersection;
+    EllipsisModal ellipsisMode{EllipsisModal::NONE};
+};
+#endif
+
 class TextLine {
 public:
     struct ClipContext {
@@ -152,8 +165,7 @@ public:
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;
 
 #ifdef OHOS_SUPPORT
-    bool processEllipsisRun(bool& isAlreadyUseEllipsis,
-                            SkScalar& runOffset,
+    bool processEllipsisRun(IterateRunsContext& context,
                             EllipsisReadStrategy ellipsisReadStrategy,
                             const RunVisitor& visitor,
                             SkScalar& runWidthInLine) const;
@@ -168,6 +180,8 @@ public:
     void iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
                                   bool includingGhostSpaces,
                                   const RunVisitor& runVisitor) const;
+    void handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
+                                  EllipsisReadStrategy& ellipsisReadStrategy, const RunVisitor& runVisitor) const;
 #else
     void iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& runVisitor) const;
 #endif
@@ -201,6 +215,8 @@ public:
         SkScalar width, WordBreakType wordBreakType);
     void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
+    void createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis);
+    void middleEllipsisUpdateLine(ClusterIndex& indexS, ClusterIndex& indexE, SkScalar width);
 #endif
     // For testing internal structures
     void scanStyles(StyleType style, const RunStyleVisitor& visitor);
@@ -267,11 +283,15 @@ public:
 #endif
 
 private:
+#ifdef OHOS_SUPPORT
     struct RoundRectAttr {
         int styleId;
         RectStyle roundRectStyle;
         SkRect rect;
+        const Run* run;
+        RoundRectType fRoundRectType = RoundRectType::NONE;
     };
+#endif
     void justify(SkScalar maxWidth);
     void buildTextBlob(TextRange textRange, const TextStyle& style, const ClipContext& context);
     void paintBackground(ParagraphPainter* painter,
@@ -280,7 +300,9 @@ private:
                          TextRange textRange,
                          const TextStyle& style,
                          const ClipContext& context) const;
-    void paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y, const Run* run) const;
+#ifdef OHOS_SUPPORT
+    void paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y) const;
+#endif
     void paintShadow(ParagraphPainter* painter,
                      SkScalar x,
                      SkScalar y,
@@ -296,11 +318,12 @@ private:
 
     void shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
     void spacingCluster(const Cluster* cluster, SkScalar spacing, SkScalar prevSpacing);
-    bool hasBackgroundRect(const RoundRectAttr& attr);
+    
     void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
     void prepareRoundRect();
     SkScalar calculateThickness(const TextStyle& style, const ClipContext& context);
 #ifdef OHOS_SUPPORT
+    bool hasBackgroundRect(const RoundRectAttr& attr);
     void measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const;
     void computeNextPaintGlyphRange(ClipContext& context, const TextRange& lastGlyphRange, StyleType styleType) const;
     SkRect computeShadowRect(SkScalar x, SkScalar y, const TextStyle& style, const ClipContext& context) const;
@@ -358,8 +381,8 @@ private:
     };
     bool fTextBlobCachePopulated;
     DecorationContext fDecorationContext;
-    std::vector<RoundRectAttr> roundRectAttrs = {};
 #ifdef OHOS_SUPPORT
+    std::vector<RoundRectAttr> fRoundRectAttrs = {};
     bool fIsTextLineEllipsisHeadModal = false;
 #endif
 public:

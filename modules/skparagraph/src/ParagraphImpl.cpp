@@ -29,6 +29,7 @@
 
 #ifdef OHOS_SUPPORT
 #include "log.h"
+#include "include/TextGlobalConfig.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
 #include "TextParameter.h"
 #endif
@@ -85,6 +86,21 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
     fUnicodeIndexForUTF8Index.emplace_back(result.size());
     return result;
 }
+
+#ifdef OHOS_SUPPORT
+MiddleEllipsisVersion ParagraphImpl::getMiddleEllipsisVersionState()
+{
+    if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
+        fParagraphStyle.ellipsized()) {
+        if (TextGlobalConfig::IsTargetApiVersion(SINCE_API18_VERSION)) {
+            return MiddleEllipsisVersion::API_VERSION_GE_18;
+        } else {
+            return MiddleEllipsisVersion::API_VERSION_LT_18;
+        }
+    }
+    return MiddleEllipsisVersion::NONE;
+}
+#endif
 
 Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)
             : fFontCollection(std::move(fonts))
@@ -278,7 +294,7 @@ bool ParagraphImpl::middleEllipsisDeal()
     if (fRuns.empty()) {
         return false;
     }
-    isMiddleEllipsis = false;
+    isMiddleEllipsisShaped = true;
 
     size_t end = 0;
     size_t charbegin = 0;
@@ -345,6 +361,7 @@ void ParagraphImpl::middleEllipsisRtlDeal(size_t& end,
 }
 #endif
 
+#ifdef OHOS_SUPPORT
 SkScalar ParagraphImpl::resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex)
 {
     auto targetCluster = cluster(clusterIndex(textIndex));
@@ -444,12 +461,7 @@ void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSi
 
 bool ParagraphImpl::shapeForMiddleEllipsis(SkScalar rawWidth)
 {
-    if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE ||
-        !fParagraphStyle.ellipsized()) {
-        return true;
-    }
     fOldMaxWidth = rawWidth;
-    isMiddleEllipsis = true;
     allTextWidth = 0;
     this->computeCodeUnitProperties();
     this->fRuns.reset();
@@ -464,21 +476,20 @@ bool ParagraphImpl::shapeForMiddleEllipsis(SkScalar rawWidth)
 
 void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 {
-    if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE ||
-        !fParagraphStyle.ellipsized()) {
+    if (getMiddleEllipsisVersionState() != MiddleEllipsisVersion::API_VERSION_LT_18) {
         return;
     }
+
     std::shared_ptr<ParagraphImpl> tmpParagraph = std::make_shared<ParagraphImpl>(fText, fParagraphStyle, fTextStyles,
         fPlaceholders, fFontCollection, fUnicode);
     if (tmpParagraph->shapeForMiddleEllipsis(rawWidth)) {
         fText = tmpParagraph->fText;
         fTextStyles = tmpParagraph->fTextStyles;
         fPlaceholders = tmpParagraph->fPlaceholders;
-#ifdef OHOS_SUPPORT
         fEllipsisRange = tmpParagraph->fEllipsisRange;
-#endif
     }
 }
+#endif
 
 void ParagraphImpl::layout(SkScalar rawWidth) {
 #ifdef OHOS_SUPPORT
@@ -490,11 +501,6 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     // TODO: This rounding is done to match Flutter tests. Must be removed...
     auto floorWidth = rawWidth;
 
-    if (fParagraphStyle.getMaxLines() == 1 &&
-        fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
-        fOldMaxWidth = rawWidth;
-        isMiddleEllipsis = true;
-    }
     if (getApplyRoundingHack()) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
@@ -522,8 +528,9 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     } else {
         // Nothing changed case: we can reuse the data from the last layout
     }
-
+#ifdef OHOS_SUPPORT
     this->prepareForMiddleEllipsis(rawWidth);
+#endif
     this->fUnicodeText = convertUtf8ToUnicode(fText);
     auto paragraphCache = fFontCollection->getParagraphCache();
 
@@ -1044,12 +1051,13 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
     }
 }
 
+#ifdef OHOS_SUPPORT
 void ParagraphImpl::middleEllipsisAddText(size_t charStart,
                                           size_t charEnd,
                                           SkScalar& allTextWidth,
                                           SkScalar width,
                                           bool isLeftToRight) {
-    if (isMiddleEllipsis) {
+    if (getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_LT_18) {
         TextCutRecord textCount;
         textCount.charbegin = charStart;
         textCount.charOver = charEnd;
@@ -1062,6 +1070,7 @@ void ParagraphImpl::middleEllipsisAddText(size_t charStart,
         }
     }
 }
+#endif
 
 // Clusters in the order of the input text
 void ParagraphImpl::buildClusterTable() {
@@ -1106,8 +1115,9 @@ void ParagraphImpl::buildClusterTable() {
                 for (auto i = charStart; i < charEnd; ++i) {
                   fClustersIndexFromCodeUnit[i] = fClusters.size();
                 }
-
+#ifdef OHOS_SUPPORT
                 middleEllipsisAddText(charStart, charEnd, allTextWidth, width, run.leftToRight());
+#endif
                 SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
                 fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
                 fCodeUnitProperties[charStart] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
@@ -1252,10 +1262,12 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
 #ifdef OHOS_SUPPORT
-                else if (textWrapper.brokeLineWithHyphen()
-                         || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
-                             && (clusters.end < this->fUnicodeText.size())
-                             && (this->fUnicodeText[clusters.end - 1] == 0xad))) { // 0xad represents a soft hyphen
+                else if (getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_GE_18) {
+                    line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
+                } else if (textWrapper.brokeLineWithHyphen()
+                           || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
+                               && (clusters.end < this->fUnicodeText.size())
+                               && (this->fUnicodeText[clusters.end - 1] == 0xad))) { // 0xad represents a soft hyphen
                     line.setBreakWithHyphen(true);
                 }
 #endif
@@ -2390,7 +2402,7 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fUTF8IndexForUTF16Index = this->fUTF8IndexForUTF16Index;
     paragraph->fUTF16IndexForUTF8Index = this->fUTF16IndexForUTF8Index;
     paragraph->fUnresolvedGlyphs = this->fUnresolvedGlyphs;
-    paragraph->isMiddleEllipsis = this->isMiddleEllipsis;
+    paragraph->isMiddleEllipsisShaped = this->isMiddleEllipsisShaped;
     paragraph->fUnresolvedCodepoints = this->fUnresolvedCodepoints;
 
     for (auto& line : this->fLines) {

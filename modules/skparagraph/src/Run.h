@@ -222,9 +222,6 @@ public:
 
     bool isResolved() const;
 
-    RoundRectType getRoundRectType() const { return fRoundRectType; }
-    void setRoundRectType(RoundRectType type) { fRoundRectType = type; }
-
     SkScalar getTopInGroup() const { return fTopInGroup; }
     void setTopInGroup(SkScalar top) { fTopInGroup = top; }
 
@@ -295,7 +292,6 @@ private:
     bool fEllipsis;
     uint8_t fBidiLevel;
 
-    RoundRectType fRoundRectType = RoundRectType::NONE;
     SkScalar fTopInGroup = 0.0f;
     SkScalar fBottomInGroup = 0.0f;
     SkScalar fMaxRoundRectRadius = 0.0f;
@@ -455,6 +451,8 @@ public:
     bool needAutoSpacing() const { return fNeedAutoSpacing; }
     void enableHyphenBreak() { fHyphenBreak = true; }
     bool isHyphenBreak() const { return fHyphenBreak; }
+    bool isStartCombineBreak() const;
+    bool isEndCombineBreak() const;
 #endif
 
     bool isSoftBreak() const;
