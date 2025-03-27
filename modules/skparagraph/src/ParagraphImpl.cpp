@@ -2081,11 +2081,7 @@ bool ParagraphImpl::getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) c
 
 TextRange ParagraphImpl::getActualTextRange(int lineNumber, bool includeSpaces) const {
     if (lineNumber < 0 || static_cast<size_t>(lineNumber) >= fLines.size()) {
-#ifdef OHOS_SUPPORT
-        return {0, 0};
-#else
         return EMPTY_TEXT;
-#endif
     }
     auto& line = fLines[lineNumber];
     return includeSpaces ? line.text() : line.trimmedText();
