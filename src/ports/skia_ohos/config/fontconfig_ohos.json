@@ -91,7 +91,7 @@
       "lang": "",
       "family": "Noto Sans",
       "file": "NotoSans[wdth,wght].ttf",
-      "range": [9367487293650109439, 11529215879296333816, 288230420510736481, 0, 8589934592, 0]
+      "range": [9367487293650109439, 11529215879296368632, 288230420510736481, 0, 8589934592, 0]
     },
     {
       "type": 1,
@@ -105,7 +105,7 @@
       "lang": "und-Ethi",
       "family": "Noto Sans Ethiopic",
       "file": "NotoSansEthiopic[wdth,wght].ttf",
-      "range": [824633720943, 137443153216, 32768, 0, 2199023255552, 0]
+      "range": [824633720943, 137443185984, 32768, 0, 2199023255552, 0]
     },
     {
       "type": 1,
@@ -658,7 +658,7 @@
       "lang": "und-Lana",
       "family": "Noto Sans Tai Tham",
       "file": "NotoSansTaiTham[wght].ttf",
-      "range": [72057594037928047, 5440, 0, 0, 0, 0]
+      "range": [72057594037928047, 38208, 0, 0, 0, 0]
     },
     {
       "type": 1,
@@ -700,7 +700,7 @@
       "lang": "zh-Hans",
       "family": "HarmonyOS Sans SC",
       "file": "HarmonyOS_Sans_SC.ttf",
-      "range": [511, 104846130339739584, 24192745472, 0, 9223372036854775808, 111]
+      "range": [511, 104846130339772352, 24192745472, 0, 9223372036854775808, 111]
     },
     {
       "type": 1,
@@ -715,7 +715,7 @@
       "family": "Noto Sans CJK JP",
       "file": "NotoSansCJK-Regular.ttc",
       "index": 0,
-      "range": [137438953983, 108085844287125312, 24261427456, 0, 9226749736575303680, 111]
+      "range": [137438953983, 108085844287160128, 24261427456, 0, 9226749736575303680, 111]
     },
     {
       "type": 1,
@@ -737,14 +737,14 @@
       "lang": "und-Zsym",
       "family": "Noto Sans Symbols",
       "file": "NotoSansSymbols-Regular.ttf",
-      "range": [111, 298415424, 0, 0, 86694292826882048, 0]
+      "range": [111, 298417472, 0, 0, 86694292826882048, 0]
     },
     {
       "type": 1,
       "lang": "und-Zsym",
       "family": "Noto Sans Symbols 2",
       "file": "NotoSansSymbols2-Regular.ttf",
-      "range": [111, 36028799867376960, 21474836480000, 32768, 9138788808366489600, 0]
+      "range": [111, 36028799867409728, 21474836480000, 32768, 9138788808366489600, 0]
     },
     {
       "type": 1,
@@ -877,7 +877,7 @@
       "lang": "und-Perm",
       "family": "Noto Sans Old Permic",
       "file": "NotoSansOldPermic-Regular.ttf",
-      "range": [367, 4199744, 140737488355328, 0, 0, 0]
+      "range": [367, 4201792, 140737488355328, 0, 0, 0]
     },
     {
       "type": 1,
