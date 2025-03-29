@@ -1475,7 +1475,7 @@ public:
     }
 
     /** Only for Stencil Culling use, Please do not use in other cases.
-        Use stecnilVal to clear the specified area in stencil Buffer.
+        Use stencilVal to clear the specified area in stencil Buffer.
         it will do nothing if Non-StencilCullingOp use stencil.
     */
     void clearStencil(const SkIRect& rect, uint32_t stencilVal);
