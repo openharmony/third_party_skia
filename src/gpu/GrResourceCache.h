@@ -222,7 +222,12 @@ public:
     // OH ISSUE: adjust the value when there is an interrupt
     bool overBudget(const std::function<bool(void)>& nextFrameHasArrived = nullptr) const
     {
-        return fBudgetedBytes > (nextFrameHasArrived ? size_t(fMaxBytesRate * fMaxBytes) : fMaxBytes);
+#ifdef SKIA_OHOS
+        return (fBudgetedBytes > (nextFrameHasArrived ? size_t(fMaxBytesRate * fMaxBytes) : fMaxBytes)) ||
+            (fPurgeableQueue.count() > fPurgeableMaxCount); // OH ISSUE: purgeable resources count limit.
+#else
+        return (fBudgetedBytes > (nextFrameHasArrived ? size_t(fMaxBytesRate * fMaxBytes) : fMaxBytes));
+#endif
     }
 
     /**
@@ -304,6 +309,11 @@ public:
     }
 
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const; // Get the tag of all GPU resources
+
+#ifdef SKIA_OHOS
+    // OH ISSUE: set purgeable resource max count limit.
+    void setPurgeableResourceLimit(int purgeableMaxCount);
+#endif
 
     // OH ISSUE: get the memory information of the updated pid.
     void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
@@ -518,6 +528,11 @@ private:
     // our budget, used in purgeAsNeeded()
     size_t                              fMaxBytes = kDefaultMaxSize;
     double                              fMaxBytesRate = kDefaultMaxBytesRate;
+
+#ifdef SKIA_OHOS
+    // OH ISSUE: purgeable queue max count limit, used in purgeAsNeeded()
+    int                                 fPurgeableMaxCount = INT32_MAX;
+#endif
 
 #if GR_CACHE_STATS
     int                                 fHighWaterCount = 0;
