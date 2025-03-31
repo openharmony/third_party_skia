@@ -318,11 +318,10 @@ private:
 
     void shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
     void spacingCluster(const Cluster* cluster, SkScalar spacing, SkScalar prevSpacing);
-    
-    void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
-    void prepareRoundRect();
     SkScalar calculateThickness(const TextStyle& style, const ClipContext& context);
 #ifdef OHOS_SUPPORT
+    void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
+    void prepareRoundRect();
     bool hasBackgroundRect(const RoundRectAttr& attr);
     void measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const;
     void computeNextPaintGlyphRange(ClipContext& context, const TextRange& lastGlyphRange, StyleType styleType) const;

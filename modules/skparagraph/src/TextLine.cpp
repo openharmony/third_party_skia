@@ -263,7 +263,9 @@ TextLine::TextLine(ParagraphImpl* owner,
 }
 
 void TextLine::paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset) {
+#ifdef OHOS_SUPPORT
     prepareRoundRect();
+#endif
     fIsArcText = true;
     if (pathParameters.hOffset != hOffset || pathParameters.vOffset != vOffset) {
         fTextBlobCachePopulated = false;
@@ -744,7 +746,7 @@ void TextLine::paintBackground(ParagraphPainter* painter,
 void TextLine::paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y) const {
     for (const RoundRectAttr& attr : fRoundRectAttrs) {
         if (attr.roundRectStyle.color == 0) {
-            return;
+            continue;
         }
         const Run* run = attr.run;
 
