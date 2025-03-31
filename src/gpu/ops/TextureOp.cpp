@@ -1026,6 +1026,12 @@ private:
             return CombineResult::kCannotCombine;
         }
 
+#ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+        if (fStencilRef != that->fStencilRef) {
+            return CombineResult::kCannotCombine;
+        }
+#endif
+
         if (fMetadata.subset() != that->fMetadata.subset()) {
             // It is technically possible to combine operations across subset modes, but performance
             // testing suggests it's better to make more draw calls where some take advantage of
