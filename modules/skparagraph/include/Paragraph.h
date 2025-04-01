@@ -122,7 +122,10 @@ public:
     virtual void updateFontSize(size_t from, size_t to, SkScalar fontSize) = 0;
     virtual void updateForegroundPaint(size_t from, size_t to, SkPaint paint) = 0;
     virtual void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) = 0;
-    virtual std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) = 0;
+#ifdef OHOS_SUPPORT
+    virtual std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color,
+        bool isUtf16Index) = 0;
+#endif
 
     enum VisitorFlags {
         kWhiteSpace_VisitorFlag = 1 << 0,

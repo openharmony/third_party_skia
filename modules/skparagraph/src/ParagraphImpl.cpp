@@ -1933,14 +1933,20 @@ ParagraphPainter::PaintID ParagraphImpl::updateTextStyleColorAndForeground(TextS
     return INVALID_PAINT_ID;
 }
 
-std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, size_t to, SkColor color) {
+std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, size_t to, SkColor color,
+    bool isUtf16Index) {
     std::vector<ParagraphPainter::PaintID> unresolvedPaintID;
     if (from >= to) {
         return unresolvedPaintID;
     }
     this->ensureUTF16Mapping();
-    from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[from] : fText.size();
-    to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[to] : fText.size();
+    if (isUtf16Index) {
+        from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? from : fText.size();
+        to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? to : fText.size();
+    } else {
+        from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[from] : fText.size();
+        to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[to] : fText.size();
+    }
     if (from == 0 && to == fText.size()) {
         auto defaultStyle = fParagraphStyle.getTextStyle();
         auto paintID = updateTextStyleColorAndForeground(defaultStyle, color);
