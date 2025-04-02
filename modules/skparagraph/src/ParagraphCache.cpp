@@ -174,6 +174,7 @@ uint32_t hash = 0;
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getDecorationColor())));
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getDecorationStyle())));
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getDecorationThicknessMultiplier())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getDecorationMode())));
 #endif
     }
 
