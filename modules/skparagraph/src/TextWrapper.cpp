@@ -952,7 +952,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     }
 
     SkScalar softLineMaxIntrinsicWidth = 0;
-    fEndLine = TextStretch(span.begin(), span.begin(), parent->strutForceHeight());
+    fEndLine = TextStretch(span.begin(), span.begin(), parent->strutForceHeight() && parent->strutEnabled());
     auto end = span.end() - 1;
     auto start = span.begin();
     InternalLineMetrics maxRunMetrics;
