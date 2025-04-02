@@ -204,7 +204,7 @@ public:
         }
         return fUTF16IndexForUTF8Index[index];
     }
-    SkString getText() { return fText; }
+    const SkString& getText() const { return fText; }
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }
