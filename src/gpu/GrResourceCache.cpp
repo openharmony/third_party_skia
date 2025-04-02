@@ -253,10 +253,10 @@ std::string GrResourceCache::cacheInfoComparison(const SimpleCacheInfo& simpleCa
 
 std::string GrResourceCache::cacheInfoPurgeableQueue()
 {
-    std::map<uint32_t, size_t> purgSizeInfoWid;
-    std::map<uint32_t, int> purgCountInfoWid;
-    std::map<uint32_t, std::string> purgNameInfoWid;
-    std::map<uint32_t, int> purgPidInfoWid;
+    std::map<uint64_t, size_t> purgSizeInfoWid;
+    std::map<uint64_t, int> purgCountInfoWid;
+    std::map<uint64_t, std::string> purgNameInfoWid;
+    std::map<uint64_t, int> purgPidInfoWid;
 
     std::map<uint32_t, size_t> purgSizeInfoPid;
     std::map<uint32_t, int> purgCountInfoPid;
@@ -294,7 +294,7 @@ std::string GrResourceCache::cacheInfoPurgeableQueue()
     }
     if (purgSizeInfoPid.size() > 0) {
         infoStr += ";PurgeableInfo_Pid:[";
-        updatePurgeablePidInfo(infoStr, purgNameInfoWid, purgSizeInfoWid, purgCountInfoWid);
+        updatePurgeablePidInfo(infoStr, purgNameInfoPid, purgSizeInfoPid, purgCountInfoPid);
     }
     if (purgSizeInfoFid.size() > 0) {
         infoStr += ";PurgeableInfo_Fid:[";
@@ -306,10 +306,10 @@ std::string GrResourceCache::cacheInfoPurgeableQueue()
 
 std::string GrResourceCache::cacheInfoNoPurgeableQueue()
 {
-    std::map<uint32_t, size_t> noPurgSizeInfoWid;
-    std::map<uint32_t, int> noPurgCountInfoWid;
-    std::map<uint32_t, std::string> noPurgNameInfoWid;
-    std::map<uint32_t, int> noPurgPidInfoWid;
+    std::map<uint64_t, size_t> noPurgSizeInfoWid;
+    std::map<uint64_t, int> noPurgCountInfoWid;
+    std::map<uint64_t, std::string> noPurgNameInfoWid;
+    std::map<uint64_t, int> noPurgPidInfoWid;
 
     std::map<uint32_t, size_t> noPurgSizeInfoPid;
     std::map<uint32_t, int> noPurgCountInfoPid;
@@ -379,10 +379,10 @@ size_t GrResourceCache::cacheInfoRealAllocSize()
 
 std::string GrResourceCache::cacheInfoRealAllocQueue()
 {
-    std::map<uint32_t, std::string> realAllocNameInfoWid;
-    std::map<uint32_t, size_t> realAllocSizeInfoWid;
-    std::map<uint32_t, int> realAllocPidInfoWid;
-    std::map<uint32_t, int> realAllocCountInfoWid;
+    std::map<uint64_t, std::string> realAllocNameInfoWid;
+    std::map<uint64_t, size_t> realAllocSizeInfoWid;
+    std::map<uint64_t, int> realAllocPidInfoWid;
+    std::map<uint64_t, int> realAllocCountInfoWid;
 
     std::map<uint32_t, std::string> realAllocNameInfoPid;
     std::map<uint32_t, size_t> realAllocSizeInfoPid;
@@ -462,10 +462,10 @@ std::string GrResourceCache::realBytesOfPid()
 }
 
 void GrResourceCache::updatePurgeableWidMap(GrGpuResource* resource,
-                                            std::map<uint32_t, std::string>& nameInfoWid,
-                                            std::map<uint32_t, size_t>& sizeInfoWid,
-                                            std::map<uint32_t, int>& pidInfoWid,
-                                            std::map<uint32_t, int>& countInfoWid)
+                                            std::map<uint64_t, std::string>& nameInfoWid,
+                                            std::map<uint64_t, size_t>& sizeInfoWid,
+                                            std::map<uint64_t, int>& pidInfoWid,
+                                            std::map<uint64_t, int>& countInfoWid)
 {
     auto resourceTag = resource->getResourceTag();
     auto it = sizeInfoWid.find(resourceTag.fWid);
@@ -515,10 +515,10 @@ void GrResourceCache::updatePurgeableFidMap(GrGpuResource* resource,
 }
 
 void GrResourceCache::updateRealAllocWidMap(GrGpuResource* resource,
-                                            std::map<uint32_t, std::string>& nameInfoWid,
-                                            std::map<uint32_t, size_t>& sizeInfoWid,
-                                            std::map<uint32_t, int>& pidInfoWid,
-                                            std::map<uint32_t, int>& countInfoWid)
+                                            std::map<uint64_t, std::string>& nameInfoWid,
+                                            std::map<uint64_t, size_t>& sizeInfoWid,
+                                            std::map<uint64_t, int>& pidInfoWid,
+                                            std::map<uint64_t, int>& countInfoWid)
 {
     size_t size = resource->getRealAllocSize();
     auto resourceTag = resource->getResourceTag();
@@ -571,15 +571,15 @@ void GrResourceCache::updateRealAllocFidMap(GrGpuResource* resource,
 }
 
 void GrResourceCache::updatePurgeableWidInfo(std::string& infoStr,
-                                             std::map<uint32_t, std::string>& nameInfoWid,
-                                             std::map<uint32_t, size_t>& sizeInfoWid,
-                                             std::map<uint32_t, int>& pidInfoWid,
-                                             std::map<uint32_t, int>& countInfoWid)
+                                             std::map<uint64_t, std::string>& nameInfoWid,
+                                             std::map<uint64_t, size_t>& sizeInfoWid,
+                                             std::map<uint64_t, int>& pidInfoWid,
+                                             std::map<uint64_t, int>& countInfoWid)
 {
     for (auto it = sizeInfoWid.begin(); it != sizeInfoWid.end(); it++) {
         infoStr += "[" + nameInfoWid[it->first] +
             ",pid=" + std::to_string(pidInfoWid[it->first]) +
-            ",NodeId=" + std::to_string(it->first & 0xFFFFFFFF) +
+            ",NodeId=" + std::to_string(it->first) +
             ",count=" + std::to_string(countInfoWid[it->first]) +
             ",size=" + std::to_string(it->second) +
             "(" + std::to_string(it->second / MB) + " MB)],";
