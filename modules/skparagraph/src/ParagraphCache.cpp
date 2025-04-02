@@ -168,6 +168,13 @@ uint32_t hash = 0;
         hash = mix(hash, SkGoodHash()(ts.fStyle.getFontStyle()));
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getFontSize())));
         hash = mix(hash, SkGoodHash()(ts.fRange));
+
+#ifdef OHOS_SUPPORT
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getDecorationType())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getDecorationColor())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getDecorationStyle())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getDecorationThicknessMultiplier())));
+#endif
     }
 
     hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getHeight())));
