@@ -1185,7 +1185,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto advance = run.advance();
     auto textRange = TextRange(0, this->text().size());
     auto textExcludingSpaces = TextRange(0, fTrailingSpaces);
-    InternalLineMetrics metrics(this->strutForceHeight());
+    InternalLineMetrics metrics(strutForceHeight() && strutEnabled());
     metrics.add(&run);
     auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent;
     auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
