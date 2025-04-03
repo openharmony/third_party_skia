@@ -24,6 +24,11 @@ enum InternalState {
   kFormatted = 6,
   kDrawn = 7
 };
+
+enum UtfEncodeType {
+    kUtf8,
+    kUtf16
+};
 #endif
 
 class ParagraphPainter;
@@ -124,7 +129,7 @@ public:
     virtual void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) = 0;
 #ifdef OHOS_SUPPORT
     virtual std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color,
-        bool isUtf16Index) = 0;
+        UtfEncodeType encodeType) = 0;
 #endif
 
     enum VisitorFlags {

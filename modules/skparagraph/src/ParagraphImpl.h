@@ -276,7 +276,7 @@ public:
     void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) override;
 #ifdef OHOS_SUPPORT
     std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color,
-        bool isUtf16Index) override;
+        UtfEncodeType encodeType) override;
     SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
     SkTArray<Block, true>& exportTextStyles() override { return fTextStyles; }
 #endif
