@@ -165,6 +165,10 @@ public:
     void hasStencilCullingOp() { fHasStencilCullingOp = true; }
 #endif
 
+#ifdef SKIA_OHOS
+    void increaseDrawOpNum() { fNumDrawOp++; }
+#endif
+
 private:
 #if SK_GPU_V1
     GrDrawingManager(GrRecordingContext*,
@@ -249,6 +253,10 @@ private:
     };
 
     GrHashMapWithCache<uint32_t, GrRenderTask*, SurfaceIDKeyTraits, GrCheapHash> fLastRenderTasks;
+
+#ifdef SKIA_OHOS
+    int fNumDrawOp = 0;
+#endif
 };
 
 #endif

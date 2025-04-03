@@ -428,6 +428,11 @@ void OpsTask::addDrawOp(GrDrawingManager* drawingMgr, GrOp::Owner op, bool usesM
                         const GrProcessorSet::Analysis& processorAnalysis, GrAppliedClip&& clip,
                         const GrDstProxyView& dstProxyView,
                         GrTextureResolveManager textureResolveManager, const GrCaps& caps) {
+#ifdef SKIA_OHOS
+    if (UNLIKELY(SkOHOSDebugLevelTraceUtil::getEnableDebugTrace()) && drawingMgr) {
+        drawingMgr->increaseDrawOpNum();
+    }
+#endif
     auto addDependency = [&](GrSurfaceProxy* p, GrMipmapped mipmapped) {
         this->addSampledTexture(p);
         this->addDependency(drawingMgr, p, mipmapped, textureResolveManager, caps);
@@ -462,6 +467,9 @@ void OpsTask::endFlush(GrDrawingManager* drawingMgr) {
     fDeferredProxies.reset();
     fSampledProxies.reset();
     fAuditTrail = nullptr;
+#ifdef SKIA_OHOS
+    fNumOpChainsExecuted = 0;
+#endif
 
     GrRenderTask::endFlush(drawingMgr);
 }
@@ -666,6 +674,9 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
         }
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
         TRACE_EVENT0("skia.gpu", chain.head()->name());
+#endif
+#ifdef SKIA_OHOS
+        fNumOpChainsExecuted++;
 #endif
         tag = chain.head()->getGrOpTag();
             if (grGpu && tag.isGrTagValid()) {
