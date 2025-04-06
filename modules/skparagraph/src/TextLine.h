@@ -201,6 +201,7 @@ public:
 
 #ifdef OHOS_SUPPORT
     SkRect generatePaintRegion(SkScalar x, SkScalar y);
+    void updateTextLinePaintAttributes();
 #endif
 
 private:
