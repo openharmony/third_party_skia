@@ -1387,6 +1387,9 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
             line.setLineOffsetX(0);
         }
         line.format(effectiveAlign, noIndentWidth, this->paragraphStyle().getEllipsisMod());
+#ifdef OHOS_SUPPORT
+        line.updateTextLinePaintAttributes();
+#endif
     }
 }
 
