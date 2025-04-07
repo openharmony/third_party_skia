@@ -93,8 +93,12 @@ void GrGLTexture::init(const Desc& desc) {
 GrGLenum GrGLTexture::target() const { return target_from_texture_type(this->textureType()); }
 
 void GrGLTexture::onRelease() {
+#ifdef SKIA_OHOS
+    HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "Texture release(%u)", this->uniqueID().asUInt());
+#else
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
     ATRACE_ANDROID_FRAMEWORK_ALWAYS("Texture release(%u)", this->uniqueID().asUInt());
+#endif
 
     if (fID) {
         if (GrBackendObjectOwnership::kBorrowed != fTextureIDOwnership) {
