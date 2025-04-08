@@ -180,9 +180,6 @@ std::string GrResourceCache::cacheInfo()
 {
     auto fPurgeableQueueInfoStr = cacheInfoPurgeableQueue();
     auto fNonpurgeableResourcesInfoStr = cacheInfoNoPurgeableQueue();
-    size_t fRealAllocBytes = cacheInfoRealAllocSize();
-    auto fRealAllocInfoStr = cacheInfoRealAllocQueue();
-    auto fRealBytesOfPidInfoStr = realBytesOfPid();
 
     std::ostringstream cacheInfoStream;
     cacheInfoStream << "[fPurgeableQueueInfoStr.count : " << fPurgeableQueue.count()
@@ -200,11 +197,8 @@ std::string GrResourceCache::cacheInfo()
         << "(" << static_cast<size_t>(fAllocImageBytes / MB)
         << " MB); fAllocBufferBytes : " << fAllocBufferBytes
         << "(" << static_cast<size_t>(fAllocBufferBytes / MB)
-        << " MB); fRealAllocBytes : " << fRealAllocBytes
-        << "(" << static_cast<size_t>(fRealAllocBytes / MB)
         << " MB); fTimestamp : " << fTimestamp
-        << "; " << fPurgeableQueueInfoStr << "; " << fNonpurgeableResourcesInfoStr
-        << "; " << fRealAllocInfoStr << "; " << fRealBytesOfPidInfoStr;
+        << "; " << fPurgeableQueueInfoStr << "; " << fNonpurgeableResourcesInfoStr;
     return cacheInfoStream.str();
 }
 
@@ -357,110 +351,6 @@ std::string GrResourceCache::cacheInfoNoPurgeableQueue()
     return infoStr;
 }
 
-size_t GrResourceCache::cacheInfoRealAllocSize()
-{
-    size_t realAllocImageSize = 0;
-    for (int i = 0; i < fPurgeableQueue.count(); i++) {
-        auto resource = fPurgeableQueue.at(i);
-        if (resource == nullptr || !IsValidAddress(resource) || !resource->isRealAlloc()) {
-            continue;
-        }
-        realAllocImageSize += resource->getRealAllocSize();
-    }
-    for (int i = 0; i < fNonpurgeableResources.count(); i++) {
-        auto resource = fNonpurgeableResources[i];
-        if (resource == nullptr || !resource->isRealAlloc()) {
-            continue;
-        }
-        realAllocImageSize += resource->getRealAllocSize();
-    }
-    return realAllocImageSize;
-}
-
-std::string GrResourceCache::cacheInfoRealAllocQueue()
-{
-    std::map<uint64_t, std::string> realAllocNameInfoWid;
-    std::map<uint64_t, size_t> realAllocSizeInfoWid;
-    std::map<uint64_t, int> realAllocPidInfoWid;
-    std::map<uint64_t, int> realAllocCountInfoWid;
-
-    std::map<uint32_t, std::string> realAllocNameInfoPid;
-    std::map<uint32_t, size_t> realAllocSizeInfoPid;
-    std::map<uint32_t, int> realAllocCountInfoPid;
-
-    std::map<uint32_t, std::string> realAllocNameInfoFid;
-    std::map<uint32_t, size_t> realAllocSizeInfoFid;
-    std::map<uint32_t, int> realAllocCountInfoFid;
-
-    int realAllocCountUnknown = 0;
-    size_t realAllocSizeUnknown = 0;
-
-    for (int i = 0; i < fNonpurgeableResources.count(); i++) {
-        auto resource = fNonpurgeableResources[i];
-        if (resource == nullptr || !resource->isRealAlloc()) {
-            continue;
-        }
-        auto resourceTag = resource->getResourceTag();
-        if (resourceTag.fWid != 0) {
-            updateRealAllocWidMap(resource, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
-        } else if (resourceTag.fPid != 0) {
-            updateRealAllocPidMap(resource, realAllocNameInfoPid, realAllocSizeInfoPid, realAllocCountInfoPid);
-        } else if (resourceTag.fFid != 0) {
-            updateRealAllocFidMap(resource, realAllocNameInfoFid, realAllocSizeInfoFid, realAllocCountInfoFid);
-        } else {
-            realAllocCountUnknown++;
-            realAllocSizeUnknown += resource->getRealAllocSize();
-        }
-    }
-
-    for (int i = 0; i < fPurgeableQueue.count(); i++) {
-        auto resource = fPurgeableQueue.at(i);
-        if (resource == nullptr || !IsValidAddress(resource) || !resource->isRealAlloc()) {
-            continue;
-        }
-        auto resourceTag = resource->getResourceTag();
-        if (resourceTag.fWid != 0) {
-            updateRealAllocWidMap(resource, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
-        } else if (resourceTag.fPid != 0) {
-            updateRealAllocPidMap(resource, realAllocNameInfoPid, realAllocSizeInfoPid, realAllocCountInfoPid);
-        } else if (resourceTag.fFid != 0) {
-            updateRealAllocFidMap(resource, realAllocNameInfoFid, realAllocSizeInfoFid, realAllocCountInfoFid);
-        } else {
-            realAllocCountUnknown++;
-            realAllocSizeUnknown += resource->getRealAllocSize();
-        }
-    }
-
-    std::string infoStr;
-    if (realAllocSizeInfoWid.size() > 0) {
-        infoStr += ";RealAllocInfo_Node:[";
-        updatePurgeableWidInfo(infoStr, realAllocNameInfoWid, realAllocSizeInfoWid, realAllocPidInfoWid, realAllocCountInfoWid);
-    }
-    if (realAllocSizeInfoPid.size() > 0) {
-        infoStr += ";RealAllocInfo_Pid:[";
-        updatePurgeablePidInfo(infoStr, realAllocNameInfoPid, realAllocSizeInfoPid, realAllocCountInfoPid);
-    }
-    if (realAllocSizeInfoFid.size() > 0) {
-        infoStr += ";RealAllocInfo_Fid:[";
-        updatePurgeableFidInfo(infoStr, realAllocNameInfoFid, realAllocSizeInfoFid, realAllocCountInfoFid);
-    }
-    updatePurgeableUnknownInfo(infoStr, ";RealAllocInfo_Unknown:", realAllocCountUnknown, realAllocSizeUnknown);
-    return infoStr;
-}
-
-std::string GrResourceCache::realBytesOfPid()
-{
-    std::string infoStr;
-    infoStr += ";fBytesOfPid : [";
-    if (fBytesOfPid.size() > 0) {
-        for (auto it = fBytesOfPid.begin(); it != fBytesOfPid.end(); it++) {
-            infoStr += std::to_string(it->first) + ":" + std::to_string(it->second) + ", ";
-        }
-    }
-    infoStr += "]";
-    return infoStr;
-}
-
 void GrResourceCache::updatePurgeableWidMap(GrGpuResource* resource,
                                             std::map<uint64_t, std::string>& nameInfoWid,
                                             std::map<uint64_t, size_t>& sizeInfoWid,
@@ -509,62 +399,6 @@ void GrResourceCache::updatePurgeableFidMap(GrGpuResource* resource,
         countInfoFid[resourceTag.fFid]++;
     } else {
         sizeInfoFid[resourceTag.fFid] = resource->gpuMemorySize();
-        nameInfoFid[resourceTag.fFid] = resourceTag.fName;
-        countInfoFid[resourceTag.fFid] = 1;
-    }
-}
-
-void GrResourceCache::updateRealAllocWidMap(GrGpuResource* resource,
-                                            std::map<uint64_t, std::string>& nameInfoWid,
-                                            std::map<uint64_t, size_t>& sizeInfoWid,
-                                            std::map<uint64_t, int>& pidInfoWid,
-                                            std::map<uint64_t, int>& countInfoWid)
-{
-    size_t size = resource->getRealAllocSize();
-    auto resourceTag = resource->getResourceTag();
-    auto it = sizeInfoWid.find(resourceTag.fWid);
-    if (it != sizeInfoWid.end()) {
-        sizeInfoWid[resourceTag.fWid] = it->second + size;
-        countInfoWid[resourceTag.fWid]++;
-    } else {
-        sizeInfoWid[resourceTag.fWid] = size;
-        nameInfoWid[resourceTag.fWid] = resourceTag.fName;
-        pidInfoWid[resourceTag.fWid] = resourceTag.fPid;
-        countInfoWid[resourceTag.fWid] = 1;
-    }
-}
-
-void GrResourceCache::updateRealAllocPidMap(GrGpuResource* resource,
-                                            std::map<uint32_t, std::string>& nameInfoPid,
-                                            std::map<uint32_t, size_t>& sizeInfoPid,
-                                            std::map<uint32_t, int>& countInfoPid)
-{
-    size_t size = resource->getRealAllocSize();
-    auto resourceTag = resource->getResourceTag();
-    auto it = sizeInfoPid.find(resourceTag.fPid);
-    if (it != sizeInfoPid.end()) {
-        sizeInfoPid[resourceTag.fPid] = it->second + size;
-        countInfoPid[resourceTag.fPid]++;
-    } else {
-        sizeInfoPid[resourceTag.fPid] = size;
-        nameInfoPid[resourceTag.fPid] = resourceTag.fName;
-        countInfoPid[resourceTag.fPid] = 1;
-    }
-}
-
-void GrResourceCache::updateRealAllocFidMap(GrGpuResource* resource,
-                                            std::map<uint32_t, std::string>& nameInfoFid,
-                                            std::map<uint32_t, size_t>& sizeInfoFid,
-                                            std::map<uint32_t, int>& countInfoFid)
-{
-    size_t size = resource->getRealAllocSize();
-    auto resourceTag = resource->getResourceTag();
-    auto it = sizeInfoFid.find(resourceTag.fFid);
-    if (it != sizeInfoFid.end()) {
-        sizeInfoFid[resourceTag.fFid] = it->second + size;
-        countInfoFid[resourceTag.fFid]++;
-    } else {
-        sizeInfoFid[resourceTag.fFid] = size;
         nameInfoFid[resourceTag.fFid] = resourceTag.fName;
         countInfoFid[resourceTag.fFid] = 1;
     }

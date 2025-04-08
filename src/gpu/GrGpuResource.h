@@ -218,8 +218,6 @@ public:
 
     void setRealAlloc(bool realAlloc) { fRealAlloc = realAlloc; } // OH ISSUE: set real alloc flag
     bool isRealAlloc() { return fRealAlloc; } // OH ISSUE: get real alloc flag
-    void setRealAllocSize(size_t realAllocSize) { fRealAllocSize = realAllocSize; } // OH ISSUE: set real alloc size
-    size_t getRealAllocSize() { return fRealAllocSize; } // OH ISSUE: get real alloc size
 
     /**
      * Retrieves the context that owns the object. Note that it is possible for
@@ -443,7 +441,6 @@ private:
                                          // notifyARefCntIsZero.
 
     bool fRealAlloc = false; // OH ISSUE: real alloc flag
-    size_t fRealAllocSize = 0; // OH ISSUE: real alloc size
 };
 
 class GrGpuResource::ProxyAccess {
