@@ -4,8 +4,11 @@
 # found in the LICENSE file.
 
 declare_args() {
-  third_party_isystem = true
+  third_party_isystem2 = true
 }
+
+import("../../build_overrides/skia.gni")
+import("../gn/platform.gni")
 
 template("third_party_config") {
   enabled = !defined(invoker.enabled) || invoker.enabled
@@ -25,7 +28,7 @@ template("third_party_config") {
         }
       } else {
         foreach(dir, invoker.include_dirs) {
-          if (third_party_isystem) {
+          if (third_party_isystem2) {
             cflags += [
               "-isystem",
               rebase_path(dir),

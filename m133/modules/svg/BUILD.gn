@@ -9,6 +9,14 @@ if (skia_enable_svg && skia_use_expat) {
   config("public_config") {
     defines = [ "SK_ENABLE_SVG" ]
     include_dirs = [ "include" ]
+    if (use_oh_skia) {
+      include_dirs += [
+        "${skia_root_dir}",
+        "${skia_modules_dir}/svg/include",
+        "${skia_modules_dir}/skresources/include",
+        "${skia_modules_dir}/skshaper/include",
+      ]
+    }
   }
 
   skia_component("svg") {
@@ -18,12 +26,16 @@ if (skia_enable_svg && skia_use_expat) {
     public = skia_svg_public
     sources = skia_svg_sources
     configs = [ "../../:skia_private" ]
-    deps = [
-      "../..:skia",
-      "../skresources",
-      "../skshaper",
-      "../skunicode",
-    ]
+    if (!use_oh_skia) {
+      deps = [
+        "../..:skia",
+        "../skresources",
+        "../skshaper",
+        "../skunicode",
+      ]
+    } else {
+      configs += [ "../../:skia_wno" ]
+    }
   }
 
   if (skia_enable_tools) {

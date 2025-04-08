@@ -3,6 +3,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("../../gn/oh_skia.gni")
+
 declare_args() {
-  skia_use_system_zlib = is_official_build
+  if (skia_use_system_lib) {
+    skia_use_system_zlib = true
+  } else {
+    skia_use_system_zlib = is_official_build
+  }
 }

@@ -6,8 +6,8 @@ import("../third_party.gni")
 
 third_party("libavif") {
   deps = [
-    "//third_party/libgav1",
-    "//third_party/libyuv",
+    "${skia_third_party_dir}/libgav1",
+    "${skia_third_party_dir}/libyuv",
   ]
 
   public_include_dirs = [

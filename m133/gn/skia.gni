@@ -2,8 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("../../build_overrides/skia.gni")
+import("oh_skia.gni")
+import("platform.gni")
+
 if (!defined(is_skia_standalone)) {
-  is_skia_standalone = false
+  is_skia_standalone = true
 }
 
 is_skia_dev_build = is_skia_standalone && !is_official_build
@@ -18,7 +22,7 @@ declare_args() {
   skia_enable_discrete_gpu = true
   skia_enable_fontmgr_empty = false
   skia_enable_fontmgr_fuchsia = is_fuchsia
-  skia_enable_fontmgr_win = is_win
+  skia_enable_fontmgr_win = is_win || is_mingw
   skia_enable_gpu_debug_layers = is_skia_dev_build && is_debug
   skia_enable_optimize_size = false
   skia_enable_pdf = !is_wasm
@@ -76,7 +80,7 @@ declare_args() {
 
   # Currently only supported in Android framework
   skia_android_framework_use_perfetto = false
-  skia_use_piex = !is_win && !is_wasm
+  skia_use_piex = !(is_win || is_mingw) && !is_wasm
   skia_use_rust_png_decode = false
   skia_use_rust_png_encode = false
   skia_use_sfml = false
@@ -130,6 +134,12 @@ declare_args() {
     skia_use_vulkan = true
   } else {
     skia_use_vulkan = false
+    if (skia_feature_product == "phone" || skia_feature_product == "pc" ||
+        skia_feature_product == "tablet" ||
+        skia_feature_product == "wearable") {
+      skia_use_vulkan = true
+      skia_vk_enable_partialrender = true
+    }
   }
 
   skia_build_fuzzers = is_clang && is_linux && target_cpu == "x64"
@@ -157,7 +167,7 @@ declare_args() {
   skia_enable_fontmgr_custom_embedded = skia_use_freetype && !is_fuchsia
   skia_enable_fontmgr_custom_empty = skia_use_freetype && !is_wasm
   skia_enable_fontmgr_fontconfig = skia_use_freetype && skia_use_fontconfig
-  skia_enable_fontmgr_win_gdi = is_win && !skia_enable_winuwp
+  skia_enable_fontmgr_win_gdi = (is_win || is_mingw) && !skia_enable_winuwp
   skia_enable_fontmgr_FontConfigInterface =
       skia_use_freetype && skia_use_fontconfig
   skia_enable_spirv_validation = is_skia_dev_build && is_debug && !skia_use_dawn
@@ -168,14 +178,14 @@ declare_args() {
   skia_enable_metal_debug_info = skia_enable_gpu_debug_layers
   skia_use_vma = skia_use_vulkan
   skia_vulkan_memory_allocator_dir =
-      "//third_party/externals/vulkanmemoryallocator"
+      "${skia_third_party_dir}/externals/vulkanmemoryallocator"
   skia_build_for_debugger = false
 
   # icu_bidi sources
-  skia_icu_bidi_third_party_dir = "//third_party/icu_bidi"
+  skia_icu_bidi_third_party_dir = "${skia_third_party_dir}/icu_bidi"
 
   # libgrapheme sources
-  skia_libgrapheme_third_party_dir = "//third_party/libgrapheme"
+  skia_libgrapheme_third_party_dir = "${skia_third_party_dir}/libgrapheme"
 }
 
 assert(!skia_use_dawn || skia_enable_graphite)  # Dawn is Graphite-only
@@ -200,6 +210,36 @@ assert(!skia_use_perfetto || !skia_android_framework_use_perfetto)
 # These will be applied by the 'skia_*' templates.
 # In the Skia build these configs apply many warnings as errors.
 # Other projects may optionally set these configs as they see fit.
+template("component") {
+  _component_mode = "static_library"
+  if (is_arkui_x) {
+    _component_mode = "source_set"
+  }
+
+  if (is_skia_component_build) {
+    _component_mode = "shared_library"
+  }
+
+  target(_component_mode, target_name) {
+    forward_variables_from(invoker, "*")
+  }
+}
+
+set_defaults("component") {
+  if (is_skia_component_build) {
+    configs = []
+    if (defined(default_compiler_configs)) {
+      configs += default_compiler_configs
+    }
+    if (!is_arkui_x) {
+      complete_static_lib = true
+    }
+  } else {
+    configs = default_shared_library_configs
+  }
+  configs += [ "${skia_root_dir}:skia_wno" ]
+}
+
 template("skia_target") {
   target(invoker._skia_target_type, target_name) {
     # set_defaults(invoker._skia_target_type) might not exist or set configs

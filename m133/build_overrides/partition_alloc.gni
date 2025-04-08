@@ -7,7 +7,7 @@
 # shared by Chromium / Dawn / Pdfium / etc... Only Skia is really independent.
 #
 # While waiting for partition_alloc to do the same, they need to be set:
-is_asan = sanitize == "address"
+is_asan = sanitize_skia == "address"
 is_cast_android = false
 is_castos = false
 is_cronet_build = false

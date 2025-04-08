@@ -11,6 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-skia_root_dir = "//third_party/skia"
-skia_third_party_dir = "//third_party/skia/third_party"
-skia_modules_dir = "//third_party/skia/modules"
+declare_args() {
+  skia_use_m133 = false
+}
+
+if (skia_use_m133) {
+  skia_root_dir = "//third_party/skia/m133"
+} else {
+  skia_root_dir = "//third_party/skia"
+}
+
+skia_third_party_dir = "${skia_root_dir}/third_party"
+skia_modules_dir = "${skia_root_dir}/modules"

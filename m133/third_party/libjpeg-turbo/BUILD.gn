@@ -3,15 +3,21 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("../../gn/oh_skia.gni")
+
 declare_args() {
-  skia_use_system_libjpeg_turbo = is_official_build && !is_wasm
+  if (skia_use_system_lib) {
+    skia_use_system_libjpeg_turbo2 = true
+  } else {
+    skia_use_system_libjpeg_turbo2 = is_official_build && !is_wasm
+  }
 }
 
 import("../third_party.gni")
 
-if (skia_use_system_libjpeg_turbo) {
-  system("libjpeg") {
-    libs = [ "jpeg" ]
+if (skia_use_system_libjpeg_turbo2) {
+  source_set("libjpeg") {
+    public_external_deps = [ "libjpeg-turbo:turbojpeg" ]
   }
 } else {
   third_party("libjpeg") {

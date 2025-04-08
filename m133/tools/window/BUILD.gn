@@ -6,7 +6,7 @@
 import("../../gn/skia.gni")
 
 if (skia_use_dawn) {
-  import("//third_party/externals/dawn/scripts/dawn_features.gni")
+  import("${skia_third_party_dir}/externals/dawn/scripts/dawn_features.gni")
 }
 
 config("public_config") {
@@ -222,6 +222,6 @@ skia_component("window") {
   ]
 
   if (skia_use_gl && skia_use_angle) {
-    deps += [ "//third_party/angle2" ]
+    deps += [ "${skia_third_party_dir}/angle2" ]
   }
 }
