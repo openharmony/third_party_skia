@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 typedef enum VkStructureTypeHUAWEI {
+    VK_STRUCTURE_TYPE_DEVICE_MEMORY_EXCLUSIVE_THRESHOLD_INFO = VK_STRUCTURE_TYPE_MAX_ENUM - 37,
     VK_STRUCTURE_TYPE_BLUR_COLOR_FILTER_INFO_HUAWEI = VK_STRUCTURE_TYPE_MAX_ENUM - 15,
     VK_STRUCTURE_TYPE_BLUR_NOISE_INFO_HUAWEI = VK_STRUCTURE_TYPE_MAX_ENUM - 14,
     VK_STRUCTURE_TYPE_DRAW_BLUR_IMAGE_INFO_HUAWEI = VK_STRUCTURE_TYPE_MAX_ENUM - 13,
@@ -72,6 +73,12 @@ VKAPI_ATTR VkResult VKAPI_CALL vkGetBlurImageSizeHUAWEI(
     const VkDrawBlurImageInfoHUAWEI*  drawBlurImageInfo,
     VkRect2D*                         pSize);
 #endif
+
+typedef struct VkDeviceMemoryExclusiveThresholdHUAWEI {
+    VkStructureTypeHUAWEI             sType;
+    const void*                       pNext;
+    uint32_t                          threshold;
+} VkDeviceMemoryExclusiveThresholdHUAWEI;
 
 #ifdef __cplusplus
 }
