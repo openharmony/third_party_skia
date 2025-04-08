@@ -7,8 +7,8 @@ import("../third_party.gni")
 import("zlib.gni")
 
 if (skia_use_system_zlib) {
-  system("zlib") {
-    libs = [ "z" ]
+  source_set("zlib") {
+    public_external_deps = [ "zlib:libz" ]
   }
 } else {
   config("zlib_internal_config") {
@@ -43,10 +43,6 @@ if (skia_use_system_zlib) {
         defines += [ "X86_NOT_WINDOWS" ]
       }
     }
-
-    if (use_arm_neon_optimizations) {
-      defines = [ "ADLER32_SIMD_NEON" ]
-    }
   }
 
   source_set("zlib_adler32_simd") {
@@ -68,6 +64,10 @@ if (skia_use_system_zlib) {
         "../externals/zlib/adler32_simd.c",
         "../externals/zlib/adler32_simd.h",
       ]
+    }
+
+    if (use_arm_neon_optimizations) {
+      defines = [ "ADLER32_SIMD_NEON" ]
     }
 
     configs += [ ":zlib_internal_config" ]
@@ -92,9 +92,9 @@ if (skia_use_system_zlib) {
         defines += [ "ARMV8_OS_FUCHSIA" ]
       } else if (is_win) {
         defines += [ "ARMV8_OS_WINDOWS" ]
-      } else {
-        assert(false, "Unsupported ARM OS")
-      }
+      } # else {
+        # assert(false, "Unsupported ARM OS")
+      # }
     }
 
     source_set("zlib_arm_crc32") {
@@ -116,7 +116,7 @@ if (skia_use_system_zlib) {
 
       configs += [ ":zlib_internal_config" ]
 
-      public_configs = [ ":zlib_arm_crc32_config" ]
+      configs += [ ":zlib_arm_crc32_config" ]
 
       public_deps = [ ":zlib_common_headers" ]
     }
@@ -190,7 +190,7 @@ if (skia_use_system_zlib) {
 
     configs += [ ":zlib_internal_config" ]
 
-    public_configs = [ ":zlib_crc32_simd_config" ]
+    configs += [ ":zlib_crc32_simd_config" ]
 
     public_deps = [ ":zlib_common_headers" ]
   }
@@ -271,7 +271,7 @@ if (skia_use_system_zlib) {
     ]
 
     if (is_android) {
-      deps += [ "//third_party/cpu-features" ]
+      deps += [ "${skia_third_party_dir}/cpu-features" ]
     }
 
     if (!use_x86_x64_optimizations && !use_arm_neon_optimizations) {
@@ -307,7 +307,7 @@ config("zlib_config") {
 }
 
 third_party("compression_utils_portable") {
-  visibility = [ "//third_party/externals/angle2:*" ]
+  visibility = [ "${skia_third_party_dir}/externals/angle2:*" ]
   public_include_dirs = [ "../externals/zlib/google" ]
   sources = [
     "../externals/zlib/google/compression_utils_portable.cc",

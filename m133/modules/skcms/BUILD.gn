@@ -10,14 +10,14 @@ import("skcms.gni")
 template("arch") {
   if (invoker.enabled) {
     source_set(target_name) {
-      visibility = [ ":*" ]
+      # visibility = [ ":*" ]
       check_includes = false
       forward_variables_from(invoker, "*")
     }
   } else {
     # If not enabled, a phony empty target that swallows all otherwise unused variables.
     source_set(target_name) {
-      visibility = [ ":*" ]
+      # visibility = [ ":*" ]
       check_includes = false
       forward_variables_from(invoker,
                              "*",

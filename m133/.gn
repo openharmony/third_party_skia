@@ -1,4 +1,5 @@
-buildconfig = "//gn/BUILDCONFIG.gn"
+buildconfig = "//third_party/skia/m133/gn/BUILDCONFIG.gn"
+root = "//third_party/skia/m133"
 script_executable = "python3"
 
 default_args = {

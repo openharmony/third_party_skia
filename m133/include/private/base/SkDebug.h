@@ -13,7 +13,7 @@
 #include "include/private/base/SkLoadUserConfig.h" // IWYU pragma: keep
 
 #if !defined(SkDebugf)
-    void SK_SPI SkDebugf(const char format[], ...) SK_PRINTF_LIKE(1, 2);
+    extern void SK_SPI SkDebugf(const char format[], ...) SK_PRINTF_LIKE(1, 2);
 #endif
 
 #if defined(SK_DEBUG)

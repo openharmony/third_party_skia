@@ -38,7 +38,9 @@
                 "opengles",
                 "faultloggerd",
                 "icu",
-                "graphic_2d"
+                "graphic_2d",
+                "libpng",
+                "freetype"
             ],
             "third_party": [
                 "vulkan-headers"

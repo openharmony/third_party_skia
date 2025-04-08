@@ -20,7 +20,7 @@ config("c99") {
 
 # Header generation only happens on the host.
 # Ensure it will not be built for non-host even when implicitly building all targets.
-if (current_toolchain == "//gn/toolchain:$host_toolchain") {
+if (current_toolchain == "${skia_root_dir}/gn/toolchain:$host_toolchain") {
   copy("copy_unicode_data") {
     unicode_tools_dir =
         "../externals/unicodetools/unicodetools/data/ucd/$UNICODE_VERSION"
@@ -119,13 +119,13 @@ if (current_toolchain == "//gn/toolchain:$host_toolchain") {
 
 # libgrapheme is built for the target and so must be able to always see headers and headers_config.
 config("headers_config") {
-  if (current_toolchain == "//gn/toolchain:$host_toolchain") {
+  if (current_toolchain == "${skia_root_dir}/gn/toolchain:$host_toolchain") {
     include_dirs = [ "$root_gen_dir/third_party/libgrapheme/gen" ]
   }
 }
 
 source_set("headers") {
-  if (current_toolchain == "//gn/toolchain:$host_toolchain") {
+  if (current_toolchain == "${skia_root_dir}/gn/toolchain:$host_toolchain") {
     # Prevent :generate_headers from being run when building all targets.
     sources = get_target_outputs(":generate_headers")
 
@@ -140,7 +140,7 @@ third_party("libgrapheme") {
 
   configs = [
     ":c99",
-    ":headers_config(//gn/toolchain:$host_toolchain)",
+    ":headers_config(${skia_root_dir}/gn/toolchain:$host_toolchain)",
   ]
 
   sources = [
@@ -154,5 +154,5 @@ third_party("libgrapheme") {
     "$_src/word.c",
   ]
 
-  deps = [ ":headers(//gn/toolchain:$host_toolchain)" ]
+  deps = [ ":headers(${skia_root_dir}/gn/toolchain:$host_toolchain)" ]
 }

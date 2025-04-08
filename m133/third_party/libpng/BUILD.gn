@@ -3,15 +3,21 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("../../gn/oh_skia.gni")
+
 declare_args() {
-  skia_use_system_libpng = is_official_build && !is_wasm
+  if (skia_use_system_lib) {
+    skia_use_system_libpng = true
+  } else {
+    skia_use_system_libpng = is_official_build && !is_wasm
+  }
 }
 
 import("../third_party.gni")
 
 if (skia_use_system_libpng) {
-  system("libpng") {
-    libs = [ "png" ]
+  source_set("libpng") {
+    public_external_deps = [ "libpng:libpng" ]
   }
 } else {
   third_party("libpng") {
@@ -21,7 +27,7 @@ if (skia_use_system_libpng) {
     ]
 
     defines = [ "PNG_SET_OPTION_SUPPORTED" ]
-    deps = [ "//third_party/zlib" ]
+    deps = [ "${skia_third_party_dir}/zlib" ]
     sources = [
       "../externals/libpng/png.c",
       "../externals/libpng/pngerror.c",
