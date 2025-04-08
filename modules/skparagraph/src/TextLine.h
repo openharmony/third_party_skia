@@ -198,6 +198,9 @@ public:
     void setTextBlobCachePopulated(const bool textBlobCachePopulated) {
         fTextBlobCachePopulated = textBlobCachePopulated;
     }
+#ifdef OHOS_SUPPORT
+    void updateTextLinePaintAttributes();
+#endif
 private:
     struct RoundRectAttr {
         int styleId;

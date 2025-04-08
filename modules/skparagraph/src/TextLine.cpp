@@ -2247,5 +2247,26 @@ TextLine TextLine::CloneSelf()
     textLine.fLastClipRunLtr = this->fLastClipRunLtr;
     return textLine;
 }
+
+#ifdef OHOS_SUPPORT
+void TextLine::updateTextLinePaintAttributes() {
+    fHasBackground = false;
+    fHasDecorations = false;
+    fHasShadows = false;
+    for (BlockIndex index = fBlockRange.start; index < fBlockRange.end; ++index) {
+        auto textStyleBlock = fOwner->styles().begin() + index;
+        if (textStyleBlock->fStyle.hasBackground()) {
+            fHasBackground = true;
+        }
+        if (textStyleBlock->fStyle.getDecorationType() != TextDecoration::kNoDecoration &&
+            textStyleBlock->fStyle.getDecorationThicknessMultiplier() > 0) {
+            fHasDecorations = true;
+        }
+        if (textStyleBlock->fStyle.getShadowNumber() > 0) {
+            fHasShadows = true;
+        }
+    }
+}
+#endif
 }  // namespace textlayout
 }  // namespace skia
