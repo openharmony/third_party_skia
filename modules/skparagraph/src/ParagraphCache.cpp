@@ -8,7 +8,7 @@
 #ifdef OHOS_SUPPORT
 #include "log.h"
 #include "src/TextParameter.h"
-#include "utils/text_trace.h"
+#include "trace.h"
 #endif
 
 namespace skia {

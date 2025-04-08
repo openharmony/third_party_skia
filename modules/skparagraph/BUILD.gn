@@ -1,15 +1,125 @@
 # Copyright 2019 Google LLC.
 
-import("../../gn/skia.gni")
-import("../skshaper/skshaper.gni")
-import("../skunicode/skunicode.gni")
+import("//build/ohos.gni")
+import("//third_party/skia/gn/skia.gni")
+import("//third_party/skia/modules/skshaper/skshaper.gni")
+import("//third_party/skia/modules/skunicode/skunicode.gni")
 import("skparagraph.gni")
+
+skia_modules_root = "//third_party/skia/modules"
 
 declare_args() {
   skia_enable_skparagraph = true
   paragraph_gms_enabled = true
   paragraph_tests_enabled = true
   paragraph_bench_enabled = false
+}
+
+config("skia_paragraph_config") {
+  include_dirs = [
+    "$skia_modules_root/skunicode",
+    "$skia_modules_root/skshaper",
+    "$skia_modules_root/skparagraph",
+  ]
+}
+
+ohos_static_library("skia_paragraph_ohos") {
+  part_name = "skia"
+  subsystem_name = "thirdparty"
+
+  deps = []
+  sources = []
+  external_deps = []
+  public_configs = [ ":skia_paragraph_config" ]
+  defines = [
+    "OHOS_SUPPORT",
+    "USE_SKIA_TXT",
+  ]
+
+  cflags_cc = [
+    "-std=c++17",
+    "-fvisibility=hidden",
+  ]
+
+  # skunicode
+  defines += [
+    "SKUNICODE_IMPLEMENTATION=1",
+    "SK_UNICODE_AVAILABLE",
+    "SK_UNICODE_ICU_IMPLEMENTATION",
+  ]
+
+  if (!is_arkui_x) {
+    sources += [
+      "$skia_modules_root/skunicode/src/SkUnicode.cpp",
+      "$skia_modules_root/skunicode/src/SkUnicode_icu.cpp",
+      "$skia_modules_root/skunicode/src/SkUnicode_icu_bidi.cpp",
+      "$skia_modules_root/skunicode/src/SkUnicode_icu_builtin.cpp",
+    ]
+  }
+
+  # skshaper
+  defines += [ "SKSHAPER_IMPLEMENTATION=1" ]
+  sources += [
+    "$skia_modules_root/skshaper/src/SkShaper.cpp",
+    "$skia_modules_root/skshaper/src/SkShaper_harfbuzz.cpp",
+    "$skia_modules_root/skshaper/src/SkShaper_primitive.cpp",
+  ]
+
+  # skparagraph
+  sources += [
+    "$skia_modules_root/skparagraph/src/Decorations.cpp",
+    "$skia_modules_root/skparagraph/src/FontArguments.cpp",
+    "$skia_modules_root/skparagraph/src/FontCollection.cpp",
+    "$skia_modules_root/skparagraph/src/HyphenTrie.cpp",
+    "$skia_modules_root/skparagraph/src/Hyphenator.cpp",
+    "$skia_modules_root/skparagraph/src/OneLineShaper.cpp",
+    "$skia_modules_root/skparagraph/src/ParagraphBuilderImpl.cpp",
+    "$skia_modules_root/skparagraph/src/ParagraphCache.cpp",
+    "$skia_modules_root/skparagraph/src/ParagraphImpl.cpp",
+    "$skia_modules_root/skparagraph/src/ParagraphLineFetcherImpl.cpp",
+    "$skia_modules_root/skparagraph/src/ParagraphPainterImpl.cpp",
+    "$skia_modules_root/skparagraph/src/ParagraphStyle.cpp",
+    "$skia_modules_root/skparagraph/src/Run.cpp",
+    "$skia_modules_root/skparagraph/src/RunBaseImpl.cpp",
+    "$skia_modules_root/skparagraph/src/TextGlobalConfig.cpp",
+    "$skia_modules_root/skparagraph/src/TextLine.cpp",
+    "$skia_modules_root/skparagraph/src/TextLineBaseImpl.cpp",
+    "$skia_modules_root/skparagraph/src/TextLineJustify.cpp",
+    "$skia_modules_root/skparagraph/src/TextShadow.cpp",
+    "$skia_modules_root/skparagraph/src/TextStyle.cpp",
+    "$skia_modules_root/skparagraph/src/TextTabAlign.cpp",
+    "$skia_modules_root/skparagraph/src/TextWrapper.cpp",
+    "$skia_modules_root/skparagraph/src/TypefaceFontProvider.cpp",
+  ]
+
+  platform = current_os
+  if (platform == "mingw") {
+    platform = "windows"
+  }
+
+  if (is_arkui_x) {
+    deps += [
+      "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog_${target_os}",
+      "//third_party/bounds_checking_function:libsec_static",
+      "//third_party/icu/icu4c:static_icuuc",
+      "//third_party/skia:skia_$platform",
+    ]
+  } else {
+    external_deps += [
+      "bounds_checking_function:libsec_shared",
+      "graphic_2d:2d_graphics",
+      "hilog:libhilog",
+      "icu:shared_icuuc",
+    ]
+  }
+
+  if (current_os == "ohos") {
+    defines += [ "OHOS_TEXT_ENABLE" ]
+    external_deps += [
+      "hitrace:hitrace_meter",
+      "init:libbegetutil",
+    ]
+  }
 }
 
 if (skia_enable_skparagraph && skia_enable_skshaper && skia_enable_skunicode &&
