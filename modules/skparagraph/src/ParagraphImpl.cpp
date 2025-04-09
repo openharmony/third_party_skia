@@ -1937,13 +1937,13 @@ ParagraphPainter::PaintID ParagraphImpl::updateTextStyleColorAndForeground(TextS
 }
 
 std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, size_t to, SkColor color,
-    bool isUtf16Index) {
+    UtfEncodeType encodeType) {
     std::vector<ParagraphPainter::PaintID> unresolvedPaintID;
     if (from >= to) {
         return unresolvedPaintID;
     }
     this->ensureUTF16Mapping();
-    if (isUtf16Index) {
+    if (encodeType == UtfEncodeType::kUtf16) {
         from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? from : fText.size();
         to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? to : fText.size();
     } else {
