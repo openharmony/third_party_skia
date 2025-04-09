@@ -474,12 +474,6 @@ void SPIRVCodeGenerator::writeExtensions(OutputStream& out) {
     }
 }
 
-void SPIRVCodeGenerator::writePrecisionDecoration(SpvId var, const Type& type) {
-    if (type.hasPrecision() && !type.highPrecision() &&
-        !fProgram.fConfig->fSettings.fForceHighPrecision) {
-        this->writeInstruction(SpvOpDecorate, var, SpvDecorationRelaxedPrecision, fDecorationBuffer);
-    }
-}
 #endif
 
 void SPIRVCodeGenerator::writeCapabilities(OutputStream& out) {
@@ -1046,7 +1040,11 @@ SpvId SPIRVCodeGenerator::writeSpecialIntrinsic(const FunctionCall& c, SpecialIn
                                                 OutputStream& out) {
     const ExpressionArray& arguments = c.arguments();
     const Type& callType = c.type();
+#ifdef SKSL_EXT
+    SpvId result = this->nextId(&callType);
+#else
     SpvId result = this->nextId(nullptr);
+#endif
     switch (kind) {
         case kAtan_SpecialIntrinsic: {
             std::vector<SpvId> argumentIds;
@@ -1106,9 +1104,6 @@ SpvId SPIRVCodeGenerator::writeSpecialIntrinsic(const FunctionCall& c, SpecialIn
             break;
         }
         case kTexture_SpecialIntrinsic: {
-#ifdef SKSL_EXT
-            this->writePrecisionDecoration(result, callType);
-#endif
             SpvOp_ op = SpvOpImageSampleImplicitLod;
             const Type& arg1Type = arguments[1]->type();
             switch (arguments[0]->type().dimensions()) {
@@ -1205,9 +1200,6 @@ SpvId SPIRVCodeGenerator::writeSpecialIntrinsic(const FunctionCall& c, SpecialIn
             break;
         }
         case kClamp_SpecialIntrinsic: {
-#ifdef SKSL_EXT
-            this->writePrecisionDecoration(result, callType);
-#endif
             std::vector<SpvId> args = this->vectorize(arguments, out);
             SkASSERT(args.size() == 3);
             this->writeGLSLExtendedInstruction(callType, result, GLSLstd450FClamp, GLSLstd450SClamp,
@@ -1229,9 +1221,6 @@ SpvId SPIRVCodeGenerator::writeSpecialIntrinsic(const FunctionCall& c, SpecialIn
             break;
         }
         case kMix_SpecialIntrinsic: {
-#ifdef SKSL_EXT
-            this->writePrecisionDecoration(result, callType);
-#endif
             std::vector<SpvId> args = this->vectorize(arguments, out);
             SkASSERT(args.size() == 3);
             if (arguments[2]->type().componentType().isBoolean()) {
@@ -3289,7 +3278,12 @@ SpvId SPIRVCodeGenerator::writeInterfaceBlock(const InterfaceBlock& intf, bool a
         return this->nextId(nullptr);
     }
     SpvStorageClass_ storageClass = get_storage_class(intf.variable(), SpvStorageClassFunction);
+#ifdef SKSL_EXT
+    if (!fProgram.fConfig->fSettings.fForceNoRTFlip &&
+        fProgram.fInputs.fUseFlipRTUniform && appendRTFlip && type.isStruct()) {
+#else
     if (fProgram.fInputs.fUseFlipRTUniform && appendRTFlip && type.isStruct()) {
+#endif
         // We can only have one interface block (because we use push_constant and that is limited
         // to one per program), so we need to append rtflip to this one rather than synthesize an
         // entirely new block when the variable is referenced. And we can't modify the existing
