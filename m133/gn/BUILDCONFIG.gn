@@ -16,8 +16,6 @@ declare_args() {
   # Android 5.0, Lollipop
   ndk_api = 21
 
-  sanitize = ""
-
   ar = "ar"
   cc = "cc"
   cxx = "c++"
@@ -52,25 +50,7 @@ if (target_cpu == "wasm") {
   target_os = "wasm"
 }
 
-# Platform detection
-if (target_os == "") {
-  target_os = host_os
-  if (ndk != "") {
-    target_os = "android"
-  }
-}
-if (current_os == "") {
-  current_os = target_os
-}
-
-is_android = current_os == "android"
-is_fuchsia = current_os == "fuchsia"
-is_ios = current_os == "ios" || current_os == "tvos"
-is_tvos = current_os == "tvos"
-is_linux = current_os == "linux"
-is_mac = current_os == "mac"
-is_wasm = current_os == "wasm"
-is_win = current_os == "win"
+import("platform.gni")
 
 # This is just to make the Dawn build files happy. Skia itself uses target_os = "linux"
 # for ChromeOS, so this variable will not affect Skia proper.
@@ -95,7 +75,7 @@ if (current_cpu == "") {
 is_clang = is_android || is_ios || is_mac || is_fuchsia || is_wasm ||
            (cc == "clang" && cxx == "clang++") || clang_win != ""
 if (!is_clang && !is_win) {
-  is_clang = exec_script("//gn/is_clang.py",
+  is_clang = exec_script("${skia_root_dir}/gn/is_clang.py",
                          [
                            cc,
                            cxx,
@@ -131,7 +111,7 @@ if (target_os == "win") {
   # non-default location, you can set win_vc to inform us where it is.
 
   if (win_vc == "") {
-    win_vc = exec_script("//gn/find_msvc.py", [], "trim string")
+    win_vc = exec_script("${skia_root_dir}/gn/find_msvc.py", [], "trim string")
   }
   assert(win_vc != "")  # Could not find VC installation. Set win_vc to your VC
                         # directory.
@@ -139,7 +119,7 @@ if (target_os == "win") {
 
 if (target_os == "win") {
   if (win_toolchain_version == "") {
-    win_toolchain_version = exec_script("//gn/highest_version_dir.py",
+    win_toolchain_version = exec_script("${skia_root_dir}/gn/highest_version_dir.py",
                                         [
                                           "$win_vc/Tools/MSVC",
                                           "[0-9]{2}\.[0-9]{2}\.[0-9]{5}",
@@ -147,7 +127,7 @@ if (target_os == "win") {
                                         "trim string")
   }
   if (win_sdk_version == "") {
-    win_sdk_version = exec_script("//gn/highest_version_dir.py",
+    win_sdk_version = exec_script("${skia_root_dir}/gn/highest_version_dir.py",
                                   [
                                     "$win_sdk/Include",
                                     "[0-9]{2}\.[0-9]\.[0-9]{5}\.[0-9]",
@@ -155,7 +135,7 @@ if (target_os == "win") {
                                   "trim string")
   }
   if (clang_win != "" && clang_win_version == "") {
-    clang_win_version = exec_script("//gn/highest_version_dir.py",
+    clang_win_version = exec_script("${skia_root_dir}/gn/highest_version_dir.py",
                                     [
                                       "$clang_win/lib/clang",
                                       "[0-9]+(\.[0-9]+\.[0-9]+)?",
@@ -164,85 +144,30 @@ if (target_os == "win") {
   }
 }
 
-# A component is either a static or a shared library.
-template("component") {
-  _component_mode = "static_library"
-  if (is_component_build) {
-    _component_mode = "shared_library"
-  }
-
-  target(_component_mode, target_name) {
-    forward_variables_from(invoker, "*")
-  }
-}
-
-# Default configs
-default_configs = [
-  "//gn/skia:default",
-  "//gn/skia:no_exceptions",
-  "//gn/skia:no_rtti",
-  "//gn/skia:strict_aliasing",
-]
-if (!is_debug) {
-  default_configs += [
-    "//gn/skia:optimize",
-    "//gn/skia:NDEBUG",
-  ]
-}
-if (is_trivial_abi) {
-  default_configs += [ "//gn/skia:trivial_abi" ]
-}
-if (!is_official_build) {
-  default_configs += [ "//gn/skia:debug_symbols" ]
-}
-default_configs += [ "//gn/skia:extra_flags" ]
-
-set_defaults("executable") {
-  configs = [ "//gn/skia:executable" ] + default_configs
-}
-
 set_defaults("source_set") {
-  configs = default_configs
+  configs = []
 }
 
 set_defaults("static_library") {
-  configs = default_configs
+  configs = []
 }
 
 set_defaults("shared_library") {
-  configs = default_configs
-}
-
-set_defaults("component") {
-  configs = default_configs
-  if (!is_component_build) {
-    complete_static_lib = true
-  }
-}
-
-skia_target_default_configs = []
-if (!is_official_build) {
-  skia_target_default_configs += [ "//gn/skia:warnings" ]
-}
-
-skia_header_target_default_configs = []
-if (!is_official_build) {
-  skia_header_target_default_configs +=
-      [ "//gn/skia:warnings_for_public_headers" ]
+  configs = []
 }
 
 if (is_win) {
   # Windows tool chain
-  set_default_toolchain("//gn/toolchain:msvc")
+  set_default_toolchain("${skia_root_dir}/gn/toolchain:msvc")
   default_toolchain_name = "msvc"
   host_toolchain = "msvc_host"
 } else if (is_wasm) {
-  set_default_toolchain("//gn/toolchain:wasm")
+  set_default_toolchain("${skia_root_dir}/gn/toolchain:wasm")
   default_toolchain_name = "wasm"
   host_toolchain = "wasm"
 } else {
   # GCC-like toolchains, including Clang.
-  set_default_toolchain("//gn/toolchain:gcc_like")
+  set_default_toolchain("${skia_root_dir}/gn/toolchain:gcc_like")
   default_toolchain_name = "gcc_like"
   host_toolchain = "gcc_like_host"
 }

@@ -35,7 +35,9 @@
                 "jsoncpp",
                 "egl",
                 "opengles",
-                "faultloggerd"
+                "faultloggerd",
+                "libpng",
+                "freetype"
             ],
             "third_party": [
                 "vulkan-headers"
