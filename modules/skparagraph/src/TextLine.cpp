@@ -210,6 +210,12 @@ void TextLine::paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOf
     pathParameters.hOffset = hOffset;
     pathParameters.vOffset = vOffset;
     this->ensureTextBlobCachePopulated();
+#ifdef OHOS_SUPPORT
+    const SkString& text = fOwner->getText();
+    if (text.size() == 1 && std::isdigit(text.c_str()[0])) {
+        TEXT_LOGI_LIMIT3_MIN("paint single-digit text %{public}s", fOwner->getText().c_str());
+    }
+#endif
     for (auto& record : fTextBlobCache) {
         record.paint(painter);
     }
