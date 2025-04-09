@@ -218,7 +218,7 @@ SkCanvas::MCRec::MCRec(const MCRec* prev) : fDevice(prev->fDevice), fMatrix(prev
     inc_rec();
 }
 
-SkCanvas::MCRec::~MCRec() { dec_rec(); }
+SK_ALWAYS_INLINE SkCanvas::MCRec::~MCRec() { dec_rec(); }
 
 void SkCanvas::MCRec::newLayer(sk_sp<SkBaseDevice> layerDevice,
                                sk_sp<SkImageFilter> filter,
@@ -1195,7 +1195,7 @@ void SkCanvas::internalSaveBehind(const SkRect* localBounds) {
     this->drawClippedToSaveBehind(paint);
 }
 
-void SkCanvas::internalRestore() {
+SK_ALWAYS_INLINE void SkCanvas::internalRestore() {
     SkASSERT(!fMCStack.empty());
 
     // now detach these from fMCRec so we can pop(). Gets freed after its drawn

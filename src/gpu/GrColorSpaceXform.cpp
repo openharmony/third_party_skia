@@ -89,7 +89,7 @@ SkString GrColorSpaceXformEffect::getShaderDfxInfo() const
     return format;
 }
 
-void GrColorSpaceXformEffect::onAddToKey(const GrShaderCaps&, GrProcessorKeyBuilder* b) const {
+SK_ALWAYS_INLINE void GrColorSpaceXformEffect::onAddToKey(const GrShaderCaps&, GrProcessorKeyBuilder* b) const {
     b->add32(GrColorSpaceXform::XformKey(fColorXform.get()));
 }
 
