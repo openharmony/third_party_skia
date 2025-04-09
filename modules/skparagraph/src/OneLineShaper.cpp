@@ -483,7 +483,7 @@ BlockRange OneLineShaper::generateBlockRange(const Block& block, const TextRange
     size_t end = std::min(block.fRange.end, textRange.end);
 #ifdef OHOS_SUPPORT
     if (fParagraph->isSetMiddleEllipsisShaped() &&
-        fParagraph->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_LT_18) {
+        fParagraph->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_LT_20) {
         end = fParagraph->fText.size();
     }
 #endif
@@ -685,7 +685,7 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
                 auto end = std::min(bidiRegion.end, placeholder.fTextBefore.end);
 #ifdef OHOS_SUPPORT
                 if (fParagraph->isSetMiddleEllipsisShaped() &&
-                    fParagraph->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_LT_18) {
+                    fParagraph->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_LT_20) {
                     end = fParagraph->fText.size();
                 }
 #endif

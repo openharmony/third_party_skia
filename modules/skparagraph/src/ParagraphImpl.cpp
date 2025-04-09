@@ -92,10 +92,10 @@ MiddleEllipsisVersion ParagraphImpl::getMiddleEllipsisVersionState()
 {
     if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
         fParagraphStyle.ellipsized()) {
-        if (TextGlobalConfig::IsTargetApiVersion(SINCE_API18_VERSION)) {
-            return MiddleEllipsisVersion::API_VERSION_GE_18;
+        if (TextGlobalConfig::IsTargetApiVersion(SINCE_API20_VERSION)) {
+            return MiddleEllipsisVersion::API_VERSION_GE_20;
         } else {
-            return MiddleEllipsisVersion::API_VERSION_LT_18;
+            return MiddleEllipsisVersion::API_VERSION_LT_20;
         }
     }
     return MiddleEllipsisVersion::NONE;
@@ -476,7 +476,7 @@ bool ParagraphImpl::shapeForMiddleEllipsis(SkScalar rawWidth)
 
 void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 {
-    if (getMiddleEllipsisVersionState() != MiddleEllipsisVersion::API_VERSION_LT_18) {
+    if (getMiddleEllipsisVersionState() != MiddleEllipsisVersion::API_VERSION_LT_20) {
         return;
     }
 
@@ -1057,7 +1057,7 @@ void ParagraphImpl::middleEllipsisAddText(size_t charStart,
                                           SkScalar& allTextWidth,
                                           SkScalar width,
                                           bool isLeftToRight) {
-    if (getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_LT_18) {
+    if (getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_LT_20) {
         TextCutRecord textCount;
         textCount.charbegin = charStart;
         textCount.charOver = charEnd;
@@ -1262,7 +1262,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
 #ifdef OHOS_SUPPORT
-                else if (getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_GE_18) {
+                else if (getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_GE_20) {
                     line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
                 } else if (textWrapper.brokeLineWithHyphen()
                            || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
