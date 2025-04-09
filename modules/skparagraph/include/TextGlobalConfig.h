@@ -21,7 +21,7 @@
 
 namespace skia {
 namespace textlayout {
-constexpr uint32_t SINCE_API18_VERSION = 18;
+constexpr uint32_t SINCE_API20_VERSION = 20;
 
 class TextGlobalConfig {
 public:

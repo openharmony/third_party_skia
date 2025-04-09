@@ -41,8 +41,8 @@ namespace textlayout {
 #ifdef OHOS_SUPPORT
 enum class MiddleEllipsisVersion {
     NONE,                  // Will not trigger the middle ellipsis
-    API_VERSION_LT_18,     // API verison < 18
-    API_VERSION_GE_18,     // API verison >= 18
+    API_VERSION_LT_20,     // API verison < 20
+    API_VERSION_GE_20,     // API verison >= 20
 };
 #endif
 
