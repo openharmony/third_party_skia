@@ -59,11 +59,17 @@
 
 #define TRACE_EMPTY do {} while (0)
 
+enum DebugTraceLevel {
+    NORMAL = 1,
+    DETAIL = 2,
+};
+
 #ifdef SK_DISABLE_TRACING
 
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
 #define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY
 #define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
 #define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
 #define TRACE_EVENT0(cg, n) TRACE_EMPTY
@@ -142,6 +148,7 @@ public:
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) SkAndroidFrameworkTraceUtil __trace(true, fmt, ##__VA_ARGS__)
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) SkAndroidFrameworkTraceUtilAlways __trace_always(fmt, ##__VA_ARGS__)
 #define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY
 #define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
 #define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
 
@@ -198,7 +205,9 @@ public:
 
 #elif defined(SKIA_OHOS)
 
+#include <stdarg.h>
 #include "hitrace_meter.h"
+#include "securec.h"
 
 #ifdef NOT_BUILD_FOR_OHOS_SDK
 #include "parameters.h"
@@ -208,36 +217,64 @@ public:
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
 #define HITRACE_OHOS_NAME_ALWAYS(name) HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name)
+#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) \
+    SkOHOSDebugLevelTraceUtil _ohosTraceLevel(debugLevel, fmt, ##__VA_ARGS__)
 #define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) \
     HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, ##__VA_ARGS__)
 
 #ifdef NOT_BUILD_FOR_OHOS_SDK
-inline static bool enabledSkiaTrace =
-    std::atoi((OHOS::system::GetParameter("persist.sys.graphic.skia.openDebugTrace", "0")).c_str()) != 0;
+inline static int gTraceDebugLevel =
+    std::atoi((OHOS::system::GetParameter("persist.sys.graphic.2dengine.openDebugTrace", "0")).c_str());
 #else
-inline static bool enabledSkiaTrace = false;
+inline static int gTraceDebugLevel = 0;
 #endif
 
 class SkOHOSTraceUtil {
 public:
     SkOHOSTraceUtil(const char* name) {
-        if (UNLIKELY(enabledSkiaTrace)) {
+        if (UNLIKELY(gTraceDebugLevel >= DebugTraceLevel::DETAIL)) {
             StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name);
         }
     }
 
-    template<typename... Args>
-    SkOHOSTraceUtil(const char* fmt, Args... args) {
-        if (UNLIKELY(enabledSkiaTrace)) {
-            StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, args...);
-        }
-    }
-
     ~SkOHOSTraceUtil() {
-        if (UNLIKELY(enabledSkiaTrace)) {
+        if (UNLIKELY(gTraceDebugLevel >= DebugTraceLevel::DETAIL)) {
             FinishTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL);
         }
     }
+};
+
+class SkOHOSDebugLevelTraceUtil {
+public:
+    SkOHOSDebugLevelTraceUtil(int debugLevel, const char* fmt, ...) {
+        fDebugLevel = debugLevel;
+        if (UNLIKELY(gTraceDebugLevel >= fDebugLevel)) {
+            const int BUFFER_SIZE = 256;
+            char buf[BUFFER_SIZE];
+            va_list args;
+            va_start(args, fmt);
+            if (vsnprintf_s(buf, sizeof(buf), sizeof(buf) - 1, fmt, args) < 0) {
+                va_end(args);
+                StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, "Trace Error");
+                return;
+            }
+            va_end(args);
+            StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, buf);
+        }
+    }
+
+    ~SkOHOSDebugLevelTraceUtil() {
+        if (UNLIKELY(gTraceDebugLevel >= fDebugLevel)) {
+            FinishTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL);
+        }
+    }
+
+    static bool getEnableDebugTrace() {
+        return gTraceDebugLevel > 0;
+    }
+
+private:
+    int fDebugLevel = 1;
 };
 
 // print ohos trace without SKIA_OHOS_DEBUG macro
@@ -271,7 +308,7 @@ public:
 // Records the values of a multi-parted counter called "name" immediately.
 #define TRACE_COUNTER2(category_group, name, value1_name, value1_val, value2_name, value2_val) \
     do { \
-        if (UNLIKELY(enabledSkiaTrace)) { \
+        if (UNLIKELY(gTraceDebugLevel >= DebugTraceLevel::DETAIL)) { \
             std::string tid = std::to_string(gettid()); \
             std::string threadValue1Name = tid + "-" + name + "-" + value1_name; \
             std::string threadValue2Name = tid + "-" + name + "-" + value2_name; \
@@ -301,6 +338,7 @@ public:
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY
 #define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY
 #define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
 #define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
 
