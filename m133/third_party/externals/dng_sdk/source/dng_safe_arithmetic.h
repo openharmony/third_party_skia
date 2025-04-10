@@ -113,9 +113,9 @@ std::int64_t SafeInt64MultSlow(std::int64_t arg1, std::int64_t arg2);
 inline std::int64_t SafeInt64MultByClang(std::int64_t arg1, std::int64_t arg2) {
   std::int64_t result;
 #if (__WORDSIZE == 64) && !defined(__APPLE__)
-  if (__builtin_smull_overflow(arg1, arg2, &result)) {
+  if (__builtin_smull_overflow(arg1, arg2, reinterpret_cast<long*>(&result))) {
 #else
-  if (__builtin_smulll_overflow(arg1, arg2, &result)) {
+  if (__builtin_smulll_overflow(arg1, arg2, reinterpret_cast<long long*>(&result))) {
 #endif
     ThrowProgramError("Arithmetic overflow");
     abort();  // Never reached.
