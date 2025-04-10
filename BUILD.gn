@@ -1387,6 +1387,16 @@ optional("gpu") {
       "hitrace:hitrace_meter",
     ]
   }
+
+  if (is_arkui_x) {
+    deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+  } else if (is_ohos) {
+    if (is_component_build) {
+      external_deps += [ "bounds_checking_function:libsec_shared" ]
+    } else {
+      external_deps += [ "bounds_checking_function:libsec_static" ]
+    }
+  }
 }
 
 optional("gif") {
@@ -1498,6 +1508,15 @@ optional("pdf") {
       "hitrace:hitrace_meter",
       "init:libbegetutil",
     ]
+  }
+  if (is_arkui_x) {
+    deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+  } else if (is_ohos) {
+    if (is_component_build) {
+      external_deps += [ "bounds_checking_function:libsec_shared" ]
+    } else {
+      external_deps += [ "bounds_checking_function:libsec_static" ]
+    }
   }
   if (skia_use_libjpeg_turbo_decode) {
     deps += [ ":jpeg_decode" ]

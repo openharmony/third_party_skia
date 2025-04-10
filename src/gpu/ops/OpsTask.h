@@ -100,6 +100,10 @@ public:
     // renderPass compatible. Return the number of tasks merged into 'this'.
     int mergeFrom(SkSpan<const sk_sp<GrRenderTask>> tasks);
 
+#ifdef SKIA_OHOS
+    int getNumOpChainsExecuted() const { return fNumOpChainsExecuted; }
+#endif
+
 #ifdef SK_DEBUG
     int numClips() const override { return fNumClips; }
     void visitProxies_debugOnly(const GrVisitProxyFunc&) const override;
@@ -289,6 +293,9 @@ private:
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
     bool fDisableStencilCulling = false;
     bool fHasStencilCullingOp = false;
+#endif
+#ifdef SKIA_OHOS
+    int fNumOpChainsExecuted = 0;
 #endif
 };
 
