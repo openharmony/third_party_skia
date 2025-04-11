@@ -255,7 +255,6 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
         SKIA_GRVKIMAGE_GRVKIMAGE_1);
     this->init(gpu, false);
     this->setRealAlloc(true); // OH ISSUE: set real alloc flag
-    this->setRealAllocSize(dimensions.height() * dimensions.width() * 4); // OH ISSUE: set real alloc size
     this->registerWithCache(budgeted);
 }
 
@@ -288,8 +287,6 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
     if (RealAllocConfig::GetRealAllocStatus()) {
         // OH ISSUE: set real alloc flag
         this->setRealAlloc(true);
-        // OH ISSUE: set real alloc size
-        this->setRealAllocSize(dimensions.height() * dimensions.width() * 4);
     }
 #endif
     this->registerWithCacheWrapped(cacheable);
