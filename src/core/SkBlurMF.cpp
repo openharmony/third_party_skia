@@ -1484,14 +1484,18 @@ static std::unique_ptr<GrFragmentProcessor> make_simple_rrect_sdf(GrRecordingCon
         uniform half sdfRadius;
         uniform vec2 wh;
         uniform half r;
-        uniform half4 origColor;
 
         half4 main(float2 pos) {
             vec2 a = vec2(wh.x / 2, wh.y / 2);
             vec2 q = abs(pos)-a + r;
             float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
-            float alpha = smoothstep(sdfRadius / 2, -sdfRadius / 2, d);
-            return half4(alpha) * origColor;
+            float temp = smoothstep(sdfRadius/2, -sdfRadius/2, d);
+            float xfactor = floor(mod(q.x, 2.0));
+            float yfactor = floor(mod(q.y, 2.0));
+            float base = 3.0 * xfactor + 2.0 * yfactor - 4.0 * xfactor * yfactor;
+            float bayer = base/4.0 - 0.46875;
+            float alpha = d < sdfRadius/2 ? temp + bayer/16 : temp;
+            return half4(alpha);
         }
     )");
 
@@ -1499,7 +1503,7 @@ static std::unique_ptr<GrFragmentProcessor> make_simple_rrect_sdf(GrRecordingCon
             GrSkSLFP::Make(effect, "SimpleRRectSDF", nullptr,
                            origColor.isOpaque() ? GrSkSLFP::OptFlags::kPreservesOpaqueInput
                                                 : GrSkSLFP::OptFlags::kNone,
-                           "sdfRadius", sdfRadius, "wh", wh, "r", r, "origColor", origColor);
+                           "sdfRadius", sdfRadius, "wh", wh, "r", r);
 
     if (!fp) {
         return nullptr;
@@ -1510,12 +1514,6 @@ static std::unique_ptr<GrFragmentProcessor> make_simple_rrect_sdf(GrRecordingCon
     matrix.setTranslateY(- srcRRect.rect().fTop - srcRRect.height() * SK_ScalarHalf);
 
     auto paintFP = GrMatrixEffect::Make(matrix, std::move(fp));
-
-#ifndef SK_IGNORE_GPU_DITHER
-    // add dither effect to reduce color discontinuity
-    constexpr float ditherRange = 1.f / 255.f;
-    paintFP = make_dither_effect(context, std::move(paintFP), ditherRange, context->priv().caps());
-#endif
 
     return paintFP;
 }
@@ -1538,15 +1536,19 @@ static std::unique_ptr<GrFragmentProcessor> make_complex_rrect_sdf(GrRecordingCo
         uniform vec2 wh;
         uniform half r0;
         uniform half r3;
-        uniform half4 origColor;
 
         half4 main(float2 pos) {
             vec2 a = vec2(wh.x / 2, wh.y / 2);
             half r = (pos.y < 0.0) ? r0 : r3;
             vec2 q = abs(pos) - a + r;
             float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
-            float alpha = smoothstep(sdfRadius / 2, -sdfRadius / 2, d);
-            return half4(alpha) * origColor;
+            float temp = smoothstep(sdfRadius/2, -sdfRadius/2, d);
+            float xfactor = floor(mod(q.x, 2.0));
+            float yfactor = floor(mod(q.y, 2.0));
+            float base = 3.0 * xfactor + 2.0 * yfactor - 4.0 * xfactor * yfactor;
+            float bayer = base/4.0 - 0.46875;
+            float alpha = d < sdfRadius/2 ? temp + bayer/16 : temp;
+            return half4(alpha);
         }
     )");
 
@@ -1554,7 +1556,7 @@ static std::unique_ptr<GrFragmentProcessor> make_complex_rrect_sdf(GrRecordingCo
             GrSkSLFP::Make(effect, "ComplexRRectSDF", nullptr,
                            origColor.isOpaque() ? GrSkSLFP::OptFlags::kPreservesOpaqueInput
                                                 : GrSkSLFP::OptFlags::kNone,
-                           "sdfRadius", sdfRadius, "wh", wh, "r0", r, "r3", r3, "origColor", origColor);
+                           "sdfRadius", sdfRadius, "wh", wh, "r0", r, "r3", r3);
 
     if (!fp) {
         return nullptr;
@@ -1565,12 +1567,6 @@ static std::unique_ptr<GrFragmentProcessor> make_complex_rrect_sdf(GrRecordingCo
     matrix.setTranslateY(- srcRRect.rect().fTop - srcRRect.height() * SK_ScalarHalf);
 
     auto paintFP = GrMatrixEffect::Make(matrix, std::move(fp));
-
-#ifndef SK_IGNORE_GPU_DITHER
-    // add dither effect to reduce color discontinuity
-    constexpr float ditherRange = 1.f / 255.f;
-    paintFP = make_dither_effect(context, std::move(paintFP), ditherRange, context->priv().caps());
-#endif
 
     return paintFP;
 }
@@ -1743,7 +1739,7 @@ bool SkBlurMaskFilterImpl::directFilterRRectMaskGPU(GrRecordingContext* context,
     if (!this->ignoreXform()) {
         SkRect srcProxyRect = srcRRect.rect();
         srcProxyRect.outset(3.0f*fSigma, 3.0f*fSigma);
-        paint.setColorFragmentProcessor(std::move(fp));
+        paint.setCoverageFragmentProcessor(std::move(fp));
         sdc->drawRect(clip, std::move(paint), GrAA::kNo, viewMatrix, srcProxyRect);
     } else {
         SkMatrix inverse;
@@ -1755,7 +1751,7 @@ bool SkBlurMaskFilterImpl::directFilterRRectMaskGPU(GrRecordingContext* context,
         float extra = 3.f * SkScalarCeilToScalar(xformedSigma - 1 / 6.0f);
         devRRect.rect().makeOutset(extra, extra).roundOut(&proxyBounds);
 
-        paint.setColorFragmentProcessor(std::move(fp));
+        paint.setCoverageFragmentProcessor(std::move(fp));
         sdc->fillPixelsWithLocalMatrix(clip, std::move(paint), proxyBounds, inverse);
     }
     return true;
