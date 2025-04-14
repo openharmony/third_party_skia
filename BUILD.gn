@@ -1942,6 +1942,7 @@ if (use_oh_skia) {
         ldflags += [
           "-Wl,-mllvm,-vectorization-bonus-factor=4",
           "-Wl,-mllvm,-vectorizer-min-trip-count=4",
+          "-Wl,-mllvm,-tail-dup-profile-hot-percentile-override=999990",
         ]
       }
     }
