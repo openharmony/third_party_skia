@@ -107,14 +107,14 @@ private:
     void ParseRenderGroups(const Json::Value& root, std::vector<RenderGroup>& renderGroups);
     void ParseGroupIndexes(const Json::Value& root, std::vector<GroupInfo>& groupInfos);
     void ParseLayerOrMaskIndexes(const Json::Value& root, std::vector<size_t>& indexes);
-    void ParseDefaultColor(const char* defaultColorStr, RenderGroup& renderGroup);
+    void ParseDefaultColor(const std::string& defaultColorStr, RenderGroup& renderGroup);
     void ParseAnimationSettings(const Json::Value& root, std::vector<AnimationSetting>& animationSettings);
     void ParseAnimationSetting(const Json::Value& root, AnimationSetting& animationSetting);
     void ParseAnimationType(const std::string& animationTypeStr, AnimationType& animationType);
     void ParseAnimationTypes(const Json::Value& root, std::vector<AnimationType>& animationTypes);
     void ParseGroupSettings(const Json::Value& root, std::vector<GroupSetting>& groupSettings);
     void ParseGroupSetting(const Json::Value& root, GroupSetting& groupSetting);
-    void ParseSymbolCommonSubType(const char* subTypeStr, CommonSubType& commonSubType);
+    void ParseSymbolCommonSubType(const std::string& subTypeStr, CommonSubType& commonSubType);
 
     void ParseOneSymbolNativeCase(const char* key, const Json::Value& root, SymbolLayersGroups& symbolLayersGroups,
         uint16_t& nativeGlyphId);
