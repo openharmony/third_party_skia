@@ -1942,6 +1942,7 @@ if (use_oh_skia) {
               rebase_path("${skia_feature_pgo_path}/libskia_canvaskit.txt",
                           root_build_dir),
           "-Wl,--no-warn-symbol-ordering",
+          "-Wl,-mllvm,-tail-dup-profile-hot-percentile-override=999990",
         ]
       }
     }
