@@ -692,20 +692,13 @@ void GrResourceCache::releaseByTag(const GrGpuResourceTag& tag) {
 }
 
 void GrResourceCache::setCurrentGrResourceTag(const GrGpuResourceTag& tag) {
-    if (!tag.isGrTagValid() && !grResourceTagCacheStack.empty()) {
-        grResourceTagCacheStack.pop();
+    if (tag.isGrTagValid()) {
+        grResourceTagCacheStack.push(tag);
         return;
     }
-    if (!grResourceTagCacheStack.empty() && tag.fWid == 0) {
-        const GrGpuResourceTag& topTag = grResourceTagCacheStack.top();
-        if (topTag.fWid != 0) {
-            GrGpuResourceTag newTag = tag;
-            newTag.fWid = topTag.fWid;
-            grResourceTagCacheStack.push(newTag);
-            return;
-        }
+    if (!grResourceTagCacheStack.empty()) {
+        grResourceTagCacheStack.pop();
     }
-    grResourceTagCacheStack.push(tag);
 }
 
 void GrResourceCache::popGrResourceTag()

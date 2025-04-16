@@ -17,7 +17,6 @@
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
 #include "src/gpu/vk/GrVkImage.h"
 #include <deque>
-#include <parameters.h>
 
 static thread_local ParallelDebug::VkImageInvokeRecord CALLER_;
 static thread_local std::deque<ParallelDebug::VkImageDestroyRecord> DELETE_;
@@ -28,13 +27,6 @@ static inline int64_t GetNanoSecords()
     struct timespec ts {};
     clock_gettime(CLOCK_REALTIME, &ts);
     return ts.tv_sec * 100000000LL + ts.tv_nsec;
-}
-
-bool ParallelDebug::IsVkImageDfxEnabled()
-{
-    static const bool dfxEnabled =
-        std::atoi(OHOS::system::GetParameter("persist.sys.graphic.openVkImageMemoryDfx", "0").c_str()) != 0;
-    return dfxEnabled;
 }
 
 uint64_t ParallelDebug::GetNodeId()
