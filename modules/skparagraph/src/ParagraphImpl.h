@@ -38,14 +38,6 @@ class SkCanvas;
 namespace skia {
 namespace textlayout {
 
-#ifdef OHOS_SUPPORT
-enum class MiddleEllipsisVersion {
-    NONE,                  // Will not trigger the middle ellipsis
-    API_VERSION_LT_20,     // API verison < 20
-    API_VERSION_GE_20,     // API verison >= 20
-};
-#endif
-
 class LineMetrics;
 class TextLine;
 
@@ -315,10 +307,6 @@ public:
         }
     }
 
-#ifdef OHOS_SUPPORT
-    void scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
-    bool middleEllipsisDeal();
-#endif
     bool codeUnitHasProperty(size_t index, SkUnicode::CodeUnitFlags property) const {
         return (fCodeUnitProperties[index] & property) == property;
     }
@@ -335,10 +323,8 @@ public:
     RSFontMetrics measureText() override;
 #endif
 
-    bool isSetMiddleEllipsisShaped() { return isMiddleEllipsisShaped; }
-
 #ifdef OHOS_SUPPORT
-    MiddleEllipsisVersion getMiddleEllipsisVersionState();
+    bool getMiddleEllipsisVersionState();
 #endif
 #ifndef USE_SKIA_TXT
     bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
@@ -371,24 +357,8 @@ private:
 #endif
     friend class TextWrapper;
     friend class OneLineShaper;
-#ifdef OHOS_SUPPORT
-    void middleEllipsisLtrDeal(size_t& end, size_t& charbegin, size_t& charend);
-    void middleEllipsisRtlDeal(size_t& end, size_t& charbegin, size_t& charend);
-#endif
     void computeEmptyMetrics();
 
-#ifdef OHOS_SUPPORT
-    void middleEllipsisAddText(size_t charStart,
-                               size_t charEnd,
-                               SkScalar& allTextWidth,
-                               SkScalar width,
-                               bool isLeftToRight);
-    SkScalar resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex);
-    void scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
-    void scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
-    void prepareForMiddleEllipsis(SkScalar rawWidth);
-    bool shapeForMiddleEllipsis(SkScalar rawWidth);
-#endif
     TextRange resetRangeWithDeletedRange(const TextRange& sourceRange,
         const TextRange& deletedRange, const size_t& ellSize);
     void resetTextStyleRange(const TextRange& deletedRange);
@@ -457,7 +427,6 @@ private:
     SkTArray<size_t, true> fUnicodeIndexForUTF8Index;
     SkOnce fillUTF16MappingOnce;
     size_t fUnresolvedGlyphs;
-    bool isMiddleEllipsisShaped{false};
     std::unordered_set<SkUnichar> fUnresolvedCodepoints;
 
     SkTArray<TextLine, false> fLines;   // kFormatted   (cached: width, max lines, ellipsis, text align)
