@@ -10,9 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import("//build/ohos_var.gni")
 
 declare_args() {
-  skia_use_m133 = false
+  skia_use_m133 = use_new_skia
 }
 
 if (skia_use_m133) {
