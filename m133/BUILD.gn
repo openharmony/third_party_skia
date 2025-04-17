@@ -8,6 +8,7 @@ import("gn/fuchsia_defines.gni")
 import("gn/shared_sources.gni")
 import("gn/skia.gni")
 import("gn/toolchain/wasm.gni")
+import("//build/templates/cxx/prebuilt.gni")
 
 if (defined(is_mingw) && is_mingw == true) {
   is_win = true
@@ -76,6 +77,8 @@ config("skia_public") {
   defines = [
     "SK_CODEC_DECODES_BMP",
     "SK_CODEC_DECODES_WBMP",
+    "ENABLE_TEXT_ENHANCE",
+    "USE_M133_SKIA",
   ]
   cflags_objcc = []
   if (is_component_build) {
@@ -393,6 +396,46 @@ optional("fontmgr_android_ndk") {
   sources = skia_ports_fontmgr_android_ndk_sources
 }
 
+optional("fontmgr_symbol_load") {
+  enabled = skia_enable_fontmgr_ohos || skia_enable_fontmgr_win ||
+            skia_use_fonthost_mac
+  include_dirs = [
+    "${skia_root_dir}/include/private",
+    "${skia_root_dir}/include/core",
+    "${skia_root_dir}/src/core",
+    "${skia_root_dir}/src/ports",
+    "${skia_root_dir}/src/ports/skia_ohos",
+  ]
+  deps = [
+    ":typeface_freetype",
+    "${skia_third_party_dir}/expat",
+  ]
+  if (is_arkui_x) {
+    deps += [
+      "//third_party/bounds_checking_function:libsec_static",
+      "//third_party/jsoncpp:jsoncpp_static",
+    ]
+  } else {
+    external_deps = [ "jsoncpp:jsoncpp" ]
+    if (is_component_build) {
+      external_deps += [ "bounds_checking_function:libsec_shared" ]
+    } else {
+      external_deps += [ "bounds_checking_function:libsec_static" ]
+    }
+  }
+
+  deps += [
+    ":ohos_font_file_map.json",
+    ":ohos_fontconfig.json",
+    ":ohos_fontconfig_old.json",
+  ]
+  if (skia_feature_product == "wearable") {
+    deps += [ ":ohos_fontconfig_wearable.json" ]
+  }
+  public = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.h" ]
+  sources = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
+}
+
 optional("fontmgr_custom") {
   enabled =
       skia_enable_fontmgr_custom_directory ||
@@ -554,6 +597,99 @@ optional("fontmgr_win") {
       ]
     } else {
       include_dirs = [ "${skia_dwritecore_sdk}/include" ]
+    }
+  }
+}
+
+if (use_oh_skia && !is_arkui_x) {
+  ohos_prebuilt_etc("ohos_fontconfig.json") {
+    source =
+        "${skia_root_dir}/src/ports/skia_ohos/config/fontconfig_ohos.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_fontconfig_old.json") {
+    source = "${skia_root_dir}/src/ports/skia_ohos/config/fontconfig.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_font_file_map.json") {
+    source = "${skia_root_dir}/src/ports/skia_ohos/config/font_file_map.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_fontconfig_wearable.json") {
+    source = "${skia_root_dir}/src/ports/skia_ohos/config/fontconfig_ohos_wearable.json"
+    output = "fontconfig_ohos.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  optional("fontmgr_ohos") {
+    enabled = skia_enable_fontmgr_ohos
+
+    public = [
+      "src/ports/skia_ohos/FontConfig_ohos.h",
+      "src/ports/skia_ohos/FontInfo_ohos.h",
+      "src/ports/skia_ohos/SkFontMgr_ohos.h",
+      "src/ports/skia_ohos/SkFontStyleSet_ohos.h",
+      "src/ports/skia_ohos/SkTypeface_ohos.h",
+    ]
+    sources = [
+      "src/ports/skia_ohos/FontConfig_ohos.cpp",
+      "src/ports/skia_ohos/SkFontMgr_ohos.cpp",
+      "src/ports/skia_ohos/SkFontStyleSet_ohos.cpp",
+      "src/ports/skia_ohos/SkTypeface_ohos.cpp",
+    ]
+
+    include_dirs = [
+      "${skia_root_dir}/include/private",
+      "${skia_root_dir}/include/private/base",
+      "${skia_root_dir}/include/core",
+      "${skia_root_dir}/src/core",
+      "${skia_root_dir}/src/ports",
+      "${skia_root_dir}/src/ports/skia_ohos",
+    ]
+
+    deps = [
+      ":fontmgr_symbol_load",
+      ":typeface_freetype",
+      "${skia_third_party_dir}/expat",
+    ]
+    external_deps = [ "jsoncpp:jsoncpp" ]
+    if (is_component_build) {
+      external_deps += [ "bounds_checking_function:libsec_shared" ]
+    } else {
+      external_deps += [ "bounds_checking_function:libsec_static" ]
+    }
+
+    deps += [
+      ":ohos_font_file_map.json",
+      ":ohos_fontconfig.json",
+      ":ohos_fontconfig_old.json",
+    ]
+    if (skia_feature_product == "wearable") {
+      deps += [ ":ohos_fontconfig_wearable.json" ]
+    }
+
+    if (skia_feature_wuji_enable) {
+      deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
+    } else if (skia_enable_standard_fonts) {
+      deps += []
+    }
+
+    if (use_mingw_win) {
+      defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
+    } else if (use_mac) {
+      defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+    } else if (use_linux) {
+      defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
+    } else if (is_ohos) {
+      external_deps += [ "init:libbegetutil" ]
+      defines = [ "SK_BUILD_FONT_MGR_FOR_OHOS" ]
     }
   }
 }
@@ -1404,6 +1540,12 @@ optional("typeface_freetype") {
 
   public_defines = [ "SK_TYPEFACE_FACTORY_FREETYPE" ]
   deps = [ "${skia_third_party_dir}/freetype2" ]
+  if (defined(external_deps)) {
+    external_deps += [ "bounds_checking_function:libsec_shared" ]
+  } else {
+    external_deps = [ "bounds_checking_function:libsec_shared" ]
+  }
+
   sources = skia_ports_freetype_sources
   sources_for_tests = [ "tests/FontScanner_FreeTypeTest.cpp" ]
 }

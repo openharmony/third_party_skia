@@ -98,6 +98,7 @@ declare_args() {
   skia_enable_gpu = true
   skia_enable_graphite = false
   skia_use_zlib = true
+  skia_enable_standard_fonts = true
 
   if (is_ios) {
     skia_ios_identity = ".*Google.*"
@@ -162,6 +163,9 @@ declare_args() {
 declare_args() {
   skia_enable_fontmgr_android = skia_use_expat && skia_use_freetype
   skia_enable_fontmgr_android_ndk = is_android && skia_use_freetype
+  if (use_oh_skia) {
+    skia_enable_fontmgr_ohos = true
+  }
   skia_enable_fontmgr_custom_directory =
       skia_use_freetype && !is_fuchsia && !is_wasm
   skia_enable_fontmgr_custom_embedded = skia_use_freetype && !is_fuchsia

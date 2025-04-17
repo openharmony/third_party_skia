@@ -4456,6 +4456,7 @@ ohos_static_library("sksl_ext_static") {
       "${skia_root_dir}:fontmgr_fontconfig",
       "${skia_root_dir}:fontmgr_fuchsia",
       "${skia_root_dir}:fontmgr_mac_ct",
+      "${skia_root_dir}:fontmgr_ohos",
       "${skia_root_dir}:fontmgr_win",
       "${skia_root_dir}:fontmgr_win_gdi",
       "${skia_root_dir}:gpu",
