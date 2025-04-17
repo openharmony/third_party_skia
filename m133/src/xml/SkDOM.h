@@ -41,7 +41,7 @@ struct SkDOMNode {
     }
 };
 
-class SkDOM : public SkNoncopyable {
+class SK_API SkDOM : public SkNoncopyable {
 public:
     SkDOM();
     virtual ~SkDOM();

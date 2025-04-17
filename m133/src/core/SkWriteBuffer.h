@@ -94,7 +94,7 @@ protected:
 /**
  * Concrete implementation that serializes to a flat binary blob.
  */
-class SkBinaryWriteBuffer : public SkWriteBuffer {
+class SK_API SkBinaryWriteBuffer : public SkWriteBuffer {
 public:
     SkBinaryWriteBuffer(const SkSerialProcs&);
     SkBinaryWriteBuffer(void* initialStorage, size_t storageSize, const SkSerialProcs&);

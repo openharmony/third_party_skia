@@ -8,6 +8,8 @@
 #ifndef SkAlphaType_DEFINED
 #define SkAlphaType_DEFINED
 
+#include "include/private/base/SkAPI.h"
+
 /** \enum SkAlphaType
     Describes how to interpret the alpha component of a pixel. A pixel may
     be opaque, or alpha, describing multiple levels of transparency.
@@ -23,7 +25,7 @@
     value is the original RGB multiplied by alpha. Premultiplied color
     components improve performance.
 */
-enum SkAlphaType : int {
+enum SK_API SkAlphaType : int {
     kUnknown_SkAlphaType,                          //!< uninitialized
     kOpaque_SkAlphaType,                           //!< pixel is opaque
     kPremul_SkAlphaType,                           //!< pixel components are premultiplied by alpha
