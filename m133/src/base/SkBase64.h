@@ -8,9 +8,10 @@
 #ifndef SkBase64_DEFINED
 #define SkBase64_DEFINED
 
+#include "include/private/base/SkAPI.h"
 #include <cstddef>
 
-struct SkBase64 {
+struct SK_API SkBase64 {
 public:
     enum Error {
         kNoError,
