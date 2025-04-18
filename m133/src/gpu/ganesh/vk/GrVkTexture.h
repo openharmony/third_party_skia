@@ -35,7 +35,7 @@ class MutableTextureState;
 enum class Budgeted : bool;
 }  // namespace skgpu
 
-class GrVkTexture : public GrTexture {
+class SK_API GrVkTexture : public GrTexture {
 public:
     static sk_sp<GrVkTexture> MakeNewTexture(GrVkGpu*,
                                              skgpu::Budgeted budgeted,

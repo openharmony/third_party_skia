@@ -56,7 +56,7 @@ enum class Renderable : bool;
 /**
  * A factory for arbitrary resource types.
  */
-class GrResourceProvider {
+class SK_API GrResourceProvider {
 public:
     GrResourceProvider(GrGpu*, GrResourceCache*, skgpu::SingleOwner*);
 

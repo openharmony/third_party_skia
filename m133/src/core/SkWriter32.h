@@ -31,7 +31,7 @@
 class SkMatrix;
 struct SkSamplingOptions;
 
-class SkWriter32 : SkNoncopyable {
+class SK_API SkWriter32 : SkNoncopyable {
 public:
     /**
      *  The caller can specify an initial block of storage, which the caller manages.
