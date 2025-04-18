@@ -7,6 +7,7 @@
 
 #include "src/gpu/v1/SurfaceFillContext_v1.h"
 
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
 #include "include/private/GrImageContext.h"
 #include "src/gpu/GrDstProxyView.h"
 #include "src/gpu/GrImageContextPriv.h"
@@ -117,7 +118,15 @@ void SurfaceFillContext::ClearToGrPaint(std::array<float, 4> color, GrPaint* pai
 void SurfaceFillContext::addOp(GrOp::Owner op) {
     auto direct = fContext->priv().asDirectContext();
     if (direct && op) {
-        op->setGrOpTag(direct->getCurrentGrResourceTag());
+        auto grTag = direct->getCurrentGrResourceTag();
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        grTag.fCid = ParallelDebug::GetNodeId();
+        if (grTag.fWid == 0 && grTag.fCid != 0) {
+            int pidBits = 32;
+            grTag.fPid = static_cast<uint32_t>(grTag.fCid >> pidBits);
+        }
+#endif
+        op->setGrOpTag(grTag);
     }
     GrDrawingManager* drawingMgr = this->drawingManager();
     this->getOpsTask()->addOp(drawingMgr,

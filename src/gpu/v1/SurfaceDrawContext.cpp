@@ -14,6 +14,7 @@
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrRecordingContext.h"
 #include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
 #include "include/private/GrImageContext.h"
 #include "include/private/SkShadowFlags.h"
 #include "include/private/SkVx.h"
@@ -2054,7 +2055,15 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
 #endif
     auto direct = fContext->priv().asDirectContext();
     if (direct && op) {
-        op->setGrOpTag(direct->getCurrentGrResourceTag());
+        auto grTag = direct->getCurrentGrResourceTag();
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        grTag.fCid = ParallelDebug::GetNodeId();
+        if (grTag.fWid == 0 && grTag.fCid != 0) {
+            int pidBits = 32;
+            grTag.fPid = static_cast<uint32_t>(grTag.fCid >> pidBits);
+        }
+#endif
+        op->setGrOpTag(grTag);
     }
     opsTask->addDrawOp(this->drawingManager(), std::move(op), drawNeedsMSAA, analysis,
                        std::move(appliedClip), dstProxyView,

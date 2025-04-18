@@ -111,15 +111,15 @@ private:
 };
 
 struct GrGpuResourceTag {
-    GrGpuResourceTag() : fPid(0), fTid(0), fWid(0), fFid(0)
+    GrGpuResourceTag() : fPid(0), fTid(0), fWid(0), fFid(0), fSid(0)
     {
         isGrGpuResourceTagValid = false;
     }
 
-    GrGpuResourceTag(uint32_t pid, uint32_t tid, uint64_t wid, uint32_t fid, const std::string& name)
-        : fPid(pid), fTid(tid), fWid(wid), fFid(fid), fName(name)
+    GrGpuResourceTag(uint32_t pid, uint32_t tid, uint64_t wid, uint32_t fid, uint32_t sid, const std::string& name)
+        : fPid(pid), fTid(tid), fWid(wid), fFid(fid), fSid(sid), fName(name)
     {
-        isGrGpuResourceTagValid = fPid || fTid || fWid || fFid;
+        isGrGpuResourceTagValid = fPid || fTid || fWid || fCid || fFid || fSid;
     }
 
     bool operator< (const GrGpuResourceTag& tag) const {
@@ -144,7 +144,8 @@ struct GrGpuResourceTag {
 
     std::string toString() const {
         return "[" + std::to_string(fPid) + "," + std::to_string(fTid) + ","
-            + std::to_string(fWid) + "," + std::to_string(fFid) + "]";
+            + std::to_string(fWid) + "," + std::to_string(fFid) + ","
+            + std::to_string(fCid) + "," + std::to_string(fSid) + "]";
     }
 
     bool isGrTagValid() const {
@@ -191,7 +192,9 @@ struct GrGpuResourceTag {
     uint32_t fPid;
     uint32_t fTid;
     uint64_t fWid;
+    uint64_t fCid{0};
     uint32_t fFid;
+    uint32_t fSid;
     std::string fName;
     bool isGrGpuResourceTagValid;
 };

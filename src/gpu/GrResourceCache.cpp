@@ -36,6 +36,9 @@
 #include "src/gpu/GrThreadSafeCache.h"
 #include "src/gpu/GrTracing.h"
 #include "src/gpu/SkGr.h"
+#ifdef RS_ENABLE_VK
+#include "src/gpu/vk/GrVkImage.h"
+#endif
 
 DECLARE_SKMESSAGEBUS_MESSAGE(GrUniqueKeyInvalidatedMessage, uint32_t, true);
 
@@ -268,13 +271,22 @@ std::string GrResourceCache::cacheInfoPurgeableQueue()
         if (!IsValidAddress(resource)) {
             continue;
         }
+#ifdef RS_ENABLE_VK
+        if (std::strcmp(resource->getResourceType(), "VkImage") == 0) {
+            auto vkimage = static_cast<GrVkImage*>(resource);
+            if (vkimage->supportedUsages() & GrAttachment::UsageFlags::kTexture) {
+                continue;
+            }
+        }
+#endif
         auto resourceTag = resource->getResourceTag();
         if (resourceTag.fWid != 0) {
             updatePurgeableWidMap(resource, purgNameInfoWid, purgSizeInfoWid, purgPidInfoWid, purgCountInfoWid);
-        } else if (resourceTag.fPid != 0) {
-            updatePurgeablePidMap(resource, purgNameInfoPid, purgSizeInfoPid, purgCountInfoPid);
         } else if (resourceTag.fFid != 0) {
             updatePurgeableFidMap(resource, purgNameInfoFid, purgSizeInfoFid, purgCountInfoFid);
+            if (resourceTag.fPid != 0) {
+                updatePurgeablePidMap(resource, purgNameInfoPid, purgSizeInfoPid, purgCountInfoPid);
+            }
         } else {
             purgCountUnknown++;
             purgSizeUnknown += resource->gpuMemorySize();
@@ -321,13 +333,22 @@ std::string GrResourceCache::cacheInfoNoPurgeableQueue()
         if (resource == nullptr) {
             continue;
         }
+#ifdef RS_ENABLE_VK
+        if (std::strcmp(resource->getResourceType(), "VkImage") == 0) {
+            auto vkimage = static_cast<GrVkImage*>(resource);
+            if (vkimage->supportedUsages() & GrAttachment::UsageFlags::kTexture) {
+                continue;
+            }
+        }
+#endif
         auto resourceTag = resource->getResourceTag();
         if (resourceTag.fWid != 0) {
             updatePurgeableWidMap(resource, noPurgNameInfoWid, noPurgSizeInfoWid, noPurgPidInfoWid, noPurgCountInfoWid);
-        } else if (resourceTag.fPid != 0) {
-            updatePurgeablePidMap(resource, noPurgNameInfoPid, noPurgSizeInfoPid, noPurgCountInfoPid);
         } else if (resourceTag.fFid != 0) {
             updatePurgeableFidMap(resource, noPurgNameInfoFid, noPurgSizeInfoFid, noPurgCountInfoFid);
+            if (resourceTag.fPid != 0) {
+                updatePurgeablePidMap(resource, noPurgNameInfoPid, noPurgSizeInfoPid, noPurgCountInfoPid);
+            }
         } else {
             noPurgCountUnknown++;
             noPurgSizeUnknown += resource->gpuMemorySize();

@@ -89,7 +89,15 @@ sk_sp<T> GrProxyProvider::assignTagToProxy(sk_sp<T> proxy) {
     }
     auto direct = fImageContext->priv().asDirectContext();
     if (direct) {
-        proxy->setGrProxyTag(direct->getCurrentGrResourceTag());
+        auto grTag = direct->getCurrentGrResourceTag();
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        grTag.fCid = ParallelDebug::GetNodeId();
+        if (grTag.fWid == 0 && grTag.fCid != 0) {
+            int pidBits = 32;
+            grTag.fPid = static_cast<uint32_t>(grTag.fCid >> pidBits);
+        }
+#endif
+        proxy->setGrProxyTag(grTag);
     }
     return proxy;
 }
