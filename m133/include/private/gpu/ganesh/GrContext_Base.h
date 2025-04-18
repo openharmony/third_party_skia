@@ -25,7 +25,7 @@ enum class SkTextureCompressionType;
 struct GrContextOptions;
 class GrBackendFormat;
 
-class GrContext_Base : public SkRefCnt {
+class SK_API GrContext_Base : public SkRefCnt {
 public:
     ~GrContext_Base() override;
 
