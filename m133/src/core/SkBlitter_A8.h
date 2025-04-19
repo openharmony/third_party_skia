@@ -36,7 +36,7 @@ private:
     const SkPixmap fDevice;
 };
 
-SkBlitter* SkA8Blitter_Choose(const SkPixmap& dst,
+SkBlitter* SK_API SkA8Blitter_Choose(const SkPixmap& dst,
                               const SkMatrix& ctm,
                               const SkPaint& paint,
                               SkArenaAlloc*,
