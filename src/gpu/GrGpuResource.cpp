@@ -7,6 +7,7 @@
 
 #include "include/core/SkTraceMemoryDump.h"
 #include "include/gpu/GrDirectContext.h"
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
 #include "src/gpu/GrDirectContextPriv.h"
 #include "src/gpu/GrGpu.h"
 #include "src/gpu/GrGpuResource.h"
@@ -27,6 +28,15 @@ GrGpuResource::GrGpuResource(GrGpu* gpu) : fGpu(gpu), fUniqueID(CreateUniqueID()
     auto cache = get_resource_cache(fGpu);
     if (cache) {
         fGrResourceTag = cache->resourceAccess().getCurrentGrResourceTag();
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        if (fGrResourceTag.fCid == 0) {
+            fGrResourceTag.fCid = ParallelDebug::GetNodeId();
+            if (fGrResourceTag.fWid == 0 && fGrResourceTag.fCid != 0) {
+                int pidBits = 32;
+                fGrResourceTag.fPid = static_cast<uint32_t>(fGrResourceTag.fCid >> pidBits);
+            }
+        }
+#endif
     }
 }
 
@@ -91,6 +101,7 @@ void GrGpuResource::dumpMemoryStatisticsPriv(SkTraceMemoryDump* traceMemoryDump,
     }
 
     traceMemoryDump->dumpNumericValue(resourceName.c_str(), "size", "bytes", size);
+    traceMemoryDump->dumpNumericValue(resourceName.c_str(), "source", "sourcetype", this->getResourceTag().fSid);
     traceMemoryDump->dumpStringValue(resourceName.c_str(), "type", type);
     traceMemoryDump->dumpStringValue(resourceName.c_str(), "category", tag);
     if (this->isPurgeable()) {
