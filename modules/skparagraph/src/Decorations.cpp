@@ -63,6 +63,12 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         calculatePaint(textStyle);
 
         auto width = context.clip.width();
+
+#ifdef OHOS_SUPPORT
+        if (context.fIsTrimTrailingSpaceWidth) {
+            width = std::max(width - context.fTrailingSpaceWidth, 0.0f);
+        }
+#endif
         SkScalar x = context.clip.left();
         SkScalar y = (TextDecoration::kUnderline == decoration) ?
             fPosition : (context.clip.top() + fPosition);
