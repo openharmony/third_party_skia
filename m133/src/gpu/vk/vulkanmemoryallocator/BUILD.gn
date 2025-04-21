@@ -16,7 +16,7 @@ source_set("vulkanmemoryallocator") {
   public_configs = [ ":vulkanmemoryallocator_public" ]
 
   include_dirs = [
-    "../../../../include/third_party/vulkan",
+    "//third_party/vulkan-headers/include",
     "../../../../",
   ]
   defines = [ "SK_USE_INTERNAL_VULKAN_HEADERS" ]
