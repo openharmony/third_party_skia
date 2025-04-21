@@ -4573,6 +4573,19 @@ ohos_static_library("sksl_ext_static") {
         "uuid",
         "windowscodecs",
       ]
+      if (is_component_build) {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_shared" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_shared" ]
+        }
+      } else {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_static" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_static" ]
+        }
+      }
     } else {
       sources += [ "${skia_root_dir}/src/ports/SkOSFile_posix.cpp" ]
       if (is_ios) {
@@ -4587,6 +4600,9 @@ ohos_static_library("sksl_ext_static") {
         "bounds_checking_function:libsec_shared",
         "hilog:libhilog",
       ]
+      defines += [ "SK_ENABLE_SDF_BLUR_SWITCH" ]
+      defines += [ "SK_ENABLE_PATH_COMPLEXITY_DFX" ]
+      defines += [ "SK_ENABLE_OHOS_CODEC" ]
     }
 
     if (is_android) {
@@ -4619,6 +4635,19 @@ ohos_static_library("sksl_ext_static") {
         "ApplicationServices.framework",
         "OpenGL.framework",
       ]
+      if (is_component_build) {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_shared" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_shared" ]
+        }
+      } else {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_static" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_static" ]
+        }
+      }
       libs += [
         "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreText.framework/Versions/A/CoreText.tbd",
         "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation.tbd",
