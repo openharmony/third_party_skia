@@ -26,7 +26,7 @@ class VulkanExtensions;
  * the Vulkan's version must be non-NULL or Context creation will fail. This can be tested with the
  * validate() method.
  */
-struct VulkanInterface : public SkRefCnt {
+struct SK_API VulkanInterface : public SkRefCnt {
 private:
     // simple wrapper class that exists only to initialize a pointer to NULL
     template <typename FNPTR_TYPE> class VkPtr {
