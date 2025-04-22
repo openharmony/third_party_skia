@@ -40,6 +40,11 @@ namespace VulkanMemory {
 
     void FreeImageMemory(VulkanMemoryAllocator*, const VulkanAlloc& alloc);
 
+    bool ImportAndBindBufferMemory(GrVkGpu* gpu,
+                                   OH_NativeBuffer *nativeBuffer,
+                                   VkBuffer buffer,
+                                   GrVkAlloc* alloc);
+
     // Maps the entire skgpu::VulkanAlloc and returns a pointer to the start of the allocation.
     // Underneath the hood, we may map more than the range of the skgpu::VulkanAlloc (e.g. the
     // entire VkDeviceMemory), but the pointer returned will always be to the start of the
