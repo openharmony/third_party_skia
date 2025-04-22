@@ -36,7 +36,7 @@
 #include "src/gpu/GrThreadSafeCache.h"
 #include "src/gpu/GrTracing.h"
 #include "src/gpu/SkGr.h"
-#ifdef RS_ENABLE_VK
+#ifdef SK_VULKAN
 #include "src/gpu/vk/GrVkImage.h"
 #endif
 
@@ -271,7 +271,7 @@ std::string GrResourceCache::cacheInfoPurgeableQueue()
         if (!IsValidAddress(resource)) {
             continue;
         }
-#ifdef RS_ENABLE_VK
+#ifdef SK_VULKAN
         if (std::strcmp(resource->getResourceType(), "VkImage") == 0) {
             auto vkimage = static_cast<GrVkImage*>(resource);
             if (vkimage->supportedUsages() & GrAttachment::UsageFlags::kTexture) {
@@ -333,7 +333,7 @@ std::string GrResourceCache::cacheInfoNoPurgeableQueue()
         if (resource == nullptr) {
             continue;
         }
-#ifdef RS_ENABLE_VK
+#ifdef SK_VULKAN
         if (std::strcmp(resource->getResourceType(), "VkImage") == 0) {
             auto vkimage = static_cast<GrVkImage*>(resource);
             if (vkimage->supportedUsages() & GrAttachment::UsageFlags::kTexture) {
