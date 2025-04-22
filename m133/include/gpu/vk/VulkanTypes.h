@@ -42,6 +42,7 @@ struct VulkanAlloc {
     uint32_t            fFlags = 0;
     // handle to memory allocated via skgpu::VulkanMemoryAllocator.
     VulkanBackendMemory fBackendMemory = 0;
+    bool                fIsExternalMemory = false; // whether imported from external memory.
 
     enum Flag {
         kNoncoherent_Flag     = 0x1,   // memory must be flushed to device after mapping
