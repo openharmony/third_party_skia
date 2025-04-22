@@ -162,6 +162,9 @@ public:
     std::vector<sk_sp<SkTypeface>> getSystemFonts();
 #endif
 
+    /** Return the default fontmgr. */
+    static sk_sp<SkFontMgr> RefDefault();
+
     /* Returns an empty font manager without any typeface dependencies */
     static sk_sp<SkFontMgr> RefEmpty();
 
