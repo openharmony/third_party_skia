@@ -13,6 +13,20 @@
 
 #include <memory>
 
+#ifdef ENABLE_TEXT_ENHANCE
+#include <vector>
+enum FontCheckCode {
+    SUCCESSED                  = 0, /** no error */
+    ERROR_PARSE_CONFIG_FAILED  = 1, /** failed to parse the JSON configuration file */
+    ERROR_TYPE_OTHER           = 2  /** other reasons, such as empty input parameters or other internal reasons */
+};
+
+struct SkByteArray {
+    std::unique_ptr<uint8_t[]> strData = nullptr; // A byte array in UTF-16BE encoding
+    uint32_t strLen = 0;
+};
+#endif
+
 class SkData;
 class SkFontStyle;
 class SkStreamAsset;
@@ -24,6 +38,13 @@ class SK_API SkFontStyleSet : public SkRefCnt {
 public:
     virtual int count() = 0;
     virtual void getStyle(int index, SkFontStyle*, SkString* style) = 0;
+#ifdef ENABLE_TEXT_ENHANCE
+    virtual SkTypeface* createTypeface(int index) = 0;
+    virtual SkTypeface* matchStyle(const SkFontStyle& pattern) = 0;
+    static SkFontStyleSet* CreateEmpty();
+protected:
+    SkTypeface* matchStyleCSS3(const SkFontStyle& pattern);
+#else
     virtual sk_sp<SkTypeface> createTypeface(int index) = 0;
     virtual sk_sp<SkTypeface> matchStyle(const SkFontStyle& pattern) = 0;
 
@@ -31,13 +52,18 @@ public:
 
 protected:
     sk_sp<SkTypeface> matchStyleCSS3(const SkFontStyle& pattern);
+#endif
 };
 
 class SK_API SkFontMgr : public SkRefCnt {
 public:
     int countFamilies() const;
     void getFamilyName(int index, SkString* familyName) const;
+#ifdef ENABLE_TEXT_ENHANCE
+    SkFontStyleSet* createStyleSet(int index) const;
+#else
     sk_sp<SkFontStyleSet> createStyleSet(int index) const;
+#endif
 
     /**
      *  The caller must call unref() on the returned object.
@@ -50,7 +76,11 @@ public:
      *  It is possible that this will return a style set not accessible from
      *  createStyleSet(int) due to hidden or auto-activated fonts.
      */
+#ifdef ENABLE_TEXT_ENHANCE
+    SkFontStyleSet* matchFamily(const char familyName[]) const;
+#else
     sk_sp<SkFontStyleSet> matchFamily(const char familyName[]) const;
+#endif
 
     /**
      *  Find the closest matching typeface to the specified familyName and style
@@ -64,7 +94,11 @@ public:
      *  createStyleSet(int) or matchFamily(const char[]) due to hidden or
      *  auto-activated fonts.
      */
+#ifdef ENABLE_TEXT_ENHANCE
+    SkTypeface* matchFamilyStyle(const char familyName[], const SkFontStyle&) const;
+#else
     sk_sp<SkTypeface> matchFamilyStyle(const char familyName[], const SkFontStyle&) const;
+#endif
 
     /**
      *  Use the system fallback to find a typeface for the given character.
@@ -81,9 +115,15 @@ public:
      *  most significant. If no specified bcp47 codes match, any font with the
      *  requested character will be matched.
      */
+#ifdef ENABLE_TEXT_ENHANCE
+    SkTypeface* matchFamilyStyleCharacter(const char familyName[], const SkFontStyle&,
+                                          const char* bcp47[], int bcp47Count,
+                                          SkUnichar character) const;
+#else
     sk_sp<SkTypeface> matchFamilyStyleCharacter(const char familyName[], const SkFontStyle&,
                                                 const char* bcp47[], int bcp47Count,
                                                 SkUnichar character) const;
+#endif
 
     /**
      *  Create a typeface for the specified data and TTC index (pass 0 for none)
@@ -112,12 +152,53 @@ public:
 
     sk_sp<SkTypeface> legacyMakeTypeface(const char familyName[], SkFontStyle style) const;
 
+#ifdef ENABLE_TEXT_ENHANCE
+    // this method is never called -- will be removed
+    virtual SkTypeface* onMatchFaceStyle(const SkTypeface*,
+                                         const SkFontStyle&) const {
+        return nullptr;
+    }
+
+    std::vector<sk_sp<SkTypeface>> getSystemFonts();
+#endif
+
     /* Returns an empty font manager without any typeface dependencies */
     static sk_sp<SkFontMgr> RefEmpty();
+
+#ifdef ENABLE_TEXT_ENHANCE
+    /**
+     *  Adding a base class interface function to a subclass, generally doesn't go here
+     *  0 means valid
+     */
+    virtual int GetFontFullName(int fontFd, std::vector<SkByteArray> &fullnameVec)
+    {
+        return ERROR_TYPE_OTHER;
+    }
+    /**
+     *  Adding a base class interface function to a subclass, generally doesn't go here
+     *  0 means success
+     */
+    virtual int ParseInstallFontConfig(const std::string& configPath, std::vector<std::string>& fontPathVec)
+    {
+        return ERROR_PARSE_CONFIG_FAILED;
+    }
+#endif
 
 protected:
     virtual int onCountFamilies() const = 0;
     virtual void onGetFamilyName(int index, SkString* familyName) const = 0;
+#ifdef ENABLE_TEXT_ENHANCE
+    virtual SkFontStyleSet* onCreateStyleSet(int index)const  = 0;
+    /** May return NULL if the name is not found. */
+    virtual SkFontStyleSet* onMatchFamily(const char familyName[]) const = 0;
+
+    virtual SkTypeface* onMatchFamilyStyle(const char familyName[],
+                                                 const SkFontStyle&) const = 0;
+    virtual SkTypeface* onMatchFamilyStyleCharacter(const char familyName[],
+                                                          const SkFontStyle&,
+                                                          const char* bcp47[], int bcp47Count,
+                                                          SkUnichar character) const = 0;
+#else
     virtual sk_sp<SkFontStyleSet> onCreateStyleSet(int index)const  = 0;
 
     /** May return NULL if the name is not found. */
@@ -129,6 +210,7 @@ protected:
                                                           const SkFontStyle&,
                                                           const char* bcp47[], int bcp47Count,
                                                           SkUnichar character) const = 0;
+#endif
 
     virtual sk_sp<SkTypeface> onMakeFromData(sk_sp<SkData>, int ttcIndex) const = 0;
     virtual sk_sp<SkTypeface> onMakeFromStreamIndex(std::unique_ptr<SkStreamAsset>,
@@ -138,6 +220,10 @@ protected:
     virtual sk_sp<SkTypeface> onMakeFromFile(const char path[], int ttcIndex) const = 0;
 
     virtual sk_sp<SkTypeface> onLegacyMakeTypeface(const char familyName[], SkFontStyle) const = 0;
+
+#ifdef ENABLE_TEXT_ENHANCE
+    virtual std::vector<sk_sp<SkTypeface>> onGetSystemFonts() const;
+#endif
 };
 
 #endif

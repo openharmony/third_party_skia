@@ -5,6 +5,11 @@
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "src/base/SkFloatBits.h"
+#ifdef ENABLE_TEXT_ENHANCE
+#include "log.h"
+#include "src/TextParameter.h"
+#include "utils/text_trace.h"
+#endif
 
 using namespace skia_private;
 
@@ -49,6 +54,11 @@ public:
         other.fHash = 0;
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    // thin constructor suitable only for searching
+    explicit ParagraphCacheKey(uint32_t hash) : fHash(hash) {}
+#endif
+
     bool operator==(const ParagraphCacheKey& other) const;
 
     uint32_t hash() const { return fHash; }
@@ -78,7 +88,11 @@ public:
         , fBidiRegions(paragraph->fBidiRegions)
         , fHasLineBreaks(paragraph->fHasLineBreaks)
         , fHasWhitespacesInside(paragraph->fHasWhitespacesInside)
-        , fTrailingSpaces(paragraph->fTrailingSpaces) { }
+        , fTrailingSpaces(paragraph->fTrailingSpaces)
+#ifdef ENABLE_TEXT_ENHANCE
+        , fLayoutRawWidth(paragraph->fLayoutRawWidth)
+#endif
+        { }
 
     // Input == key
     ParagraphCacheKey fKey;
@@ -94,6 +108,27 @@ public:
     bool fHasLineBreaks;
     bool fHasWhitespacesInside;
     TextIndex fTrailingSpaces;
+#ifdef ENABLE_TEXT_ENHANCE
+    skia_private::TArray<TextLine, false> fLines;
+    SkScalar fHeight;
+    SkScalar fWidth;
+    SkScalar fMaxIntrinsicWidth;
+    SkScalar fMinIntrinsicWidth;
+    SkScalar fAlphabeticBaseline;
+    SkScalar fIdeographicBaseline;
+    SkScalar fLongestLine;
+    SkScalar fLongestLineWithIndent;
+    bool fExceededMaxLines;
+    // criteria to apply the layout cache, should presumably hash it, same
+    // hash could be used to check if the entry has cached layout available
+    LineBreakStrategy linebreakStrategy;
+    WordBreakType wordBreakType;
+    std::vector<SkScalar> indents;
+    SkScalar fLayoutRawWidth;
+    size_t maxlines;
+    bool hasEllipsis;
+    EllipsisModal ellipsisModal;
+#endif
 };
 
 uint32_t ParagraphCacheKey::mix(uint32_t hash, uint32_t data) {
@@ -128,6 +163,9 @@ uint32_t ParagraphCacheKey::computeHash() const {
         hash = mix(hash, SkGoodHash()(ts.fStyle.getLocale()));
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getHeight())));
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getBaselineShift())));
+#ifdef ENABLE_TEXT_ENHANCE
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getHalfLeading())));
+#endif
         for (auto& ff : ts.fStyle.getFontFamilies()) {
             hash = mix(hash, SkGoodHash()(ff));
         }
@@ -144,6 +182,11 @@ uint32_t ParagraphCacheKey::computeHash() const {
     hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getHeight())));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getTextDirection()));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getReplaceTabCharacters() ? 1 : 0));
+#ifdef ENABLE_TEXT_ENHANCE
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getTextHeightBehavior()));
+    hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getParagraphSpacing())));
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getIsEndAddParagraphSpacing()));
+#endif
 
     auto& strutStyle = fParagraphStyle.getStrutStyle();
     if (strutStyle.getStrutEnabled()) {
@@ -153,6 +196,9 @@ uint32_t ParagraphCacheKey::computeHash() const {
         hash = mix(hash, SkGoodHash()(strutStyle.getHeightOverride()));
         hash = mix(hash, SkGoodHash()(strutStyle.getFontStyle()));
         hash = mix(hash, SkGoodHash()(strutStyle.getForceStrutHeight()));
+#ifdef ENABLE_TEXT_ENHANCE
+        hash = mix(hash, SkGoodHash()(strutStyle.getHalfLeading()));
+#endif
         for (auto& ff : strutStyle.getFontFamilies()) {
             hash = mix(hash, SkGoodHash()(ff));
         }
@@ -270,6 +316,9 @@ void ParagraphCache::updateTo(ParagraphImpl* paragraph, const Entry* entry) {
     for (auto& cluster : paragraph->fClusters) {
         cluster.setOwner(paragraph);
     }
+#ifdef ENABLE_TEXT_ENHANCE
+    paragraph->hash() = entry->fValue->fKey.hash();
+#endif
 }
 
 void ParagraphCache::printStatistics() {
@@ -297,7 +346,126 @@ void ParagraphCache::reset() {
     fLastCachedValue = nullptr;
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value) {
+    if (value && value->indents == paragraph.fIndents &&
+        paragraph.getLineBreakStrategy() == value->linebreakStrategy &&
+        paragraph.getWordBreakType() == value->wordBreakType &&
+        abs(paragraph.fLayoutRawWidth - value->fLayoutRawWidth) < 1.f &&
+        paragraph.fParagraphStyle.getMaxLines() == value->maxlines &&
+        paragraph.fParagraphStyle.ellipsized() == value->hasEllipsis &&
+        paragraph.fParagraphStyle.getEllipsisMod() == value->ellipsisModal &&
+        paragraph.fText.size() == value->fKey.text().size()) {
+        return true;
+    }
+    return false;
+}
+
+void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
+    SkAutoMutexExclusive lock(fParagraphMutex);
+    auto key = ParagraphCacheKey(&paragraph);
+    std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
+
+    if (entry && *entry) {
+        if (auto value = (*entry)->fValue.get()) {
+            SetStoredLayoutImpl(paragraph, value);
+        }
+    } else {
+        if (auto value = cacheLayout(&paragraph)) {
+            SetStoredLayoutImpl(paragraph, value);
+        }
+    }
+}
+
+void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value) {
+    if (paragraph.fRuns.size() == value->fRuns.size()) {
+        // update PlaceholderRun metrics cache value for placeholder alignment
+        for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
+            value->fRuns[idx].fAutoSpacings = paragraph.fRuns[idx].fAutoSpacings;
+            if (!value->fRuns[idx].isPlaceholder()) {
+                continue;
+            }
+            value->fRuns[idx].fFontMetrics = paragraph.fRuns[idx].fFontMetrics;
+            value->fRuns[idx].fCorrectAscent = paragraph.fRuns[idx].fCorrectAscent;
+            value->fRuns[idx].fCorrectDescent = paragraph.fRuns[idx].fCorrectDescent;
+        }
+    }
+    value->fLines.clear();
+    value->indents.clear();
+
+    for (auto& line : paragraph.fLines) {
+        value->fLines.emplace_back(line.CloneSelf());
+    }
+    paragraph.getSize(value->fHeight, value->fWidth, value->fLongestLine);
+    value->fLongestLineWithIndent = paragraph.getLongestLineWithIndent();
+    paragraph.getIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
+        value->fAlphabeticBaseline, value->fIdeographicBaseline,
+        value->fExceededMaxLines);
+    for (auto& indent : value->indents) {
+        value->indents.push_back(indent);
+    }
+    value->linebreakStrategy = paragraph.getLineBreakStrategy();
+    value->wordBreakType = paragraph.getWordBreakType();
+    value->fLayoutRawWidth = paragraph.fLayoutRawWidth;
+    value->maxlines = paragraph.fParagraphStyle.getMaxLines();
+    value->hasEllipsis = paragraph.fParagraphStyle.ellipsized();
+    value->ellipsisModal = paragraph.fParagraphStyle.getEllipsisMod();
+}
+
+bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
+#ifdef ENABLE_TEXT_ENHANCE
+    TEXT_TRACE_FUNC();
+#endif
+    SkAutoMutexExclusive lock(fParagraphMutex);
+    auto key = ParagraphCacheKey(&paragraph);
+    std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
+    if (!entry || !*entry) {
+        return false;
+    }
+    ParagraphCacheValue* value = (*entry)->fValue.get();
+    if (!value) {
+        return false;
+    }
+    // Check if we have a match, that should be pretty much only lentgh and wrapping modes
+    // if the paragraph and text style match otherwise
+    if (!useCachedLayout(paragraph, value)) {
+        return false;
+    }
+    // Need to ensure we have sufficient info for restoring
+    // need some additionaö metrics
+    if (value->fLines.empty()) {
+        return false;
+    }
+    if (paragraph.fRuns.size() == value->fRuns.size()) {
+        // get PlaceholderRun metrics for placeholder alignment
+        for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
+            paragraph.fRuns[idx].fAutoSpacings = value->fRuns[idx].fAutoSpacings;
+            if (!value->fRuns[idx].isPlaceholder()) {
+                continue;
+            }
+            paragraph.fRuns[idx].fFontMetrics = value->fRuns[idx].fFontMetrics;
+            paragraph.fRuns[idx].fCorrectAscent = value->fRuns[idx].fCorrectAscent;
+            paragraph.fRuns[idx].fCorrectDescent = value->fRuns[idx].fCorrectDescent;
+        }
+    }
+    paragraph.fLines.clear();
+    for (auto& line : value->fLines) {
+        paragraph.fLines.emplace_back(line.CloneSelf());
+        paragraph.fLines.back().setParagraphImpl(&paragraph);
+    }
+    paragraph.setSize(value->fHeight, value->fWidth, value->fLongestLine);
+    paragraph.setLongestLineWithIndent(value->fLongestLineWithIndent);
+    paragraph.setIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
+        value->fAlphabeticBaseline, value->fIdeographicBaseline,
+        value->fExceededMaxLines);
+    return true;
+}
+#endif
+
 bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
+#ifdef ENABLE_TEXT_ENHANCE
+    TEXT_TRACE_FUNC();
+#endif
     if (!fCacheIsOn) {
         return false;
     }
@@ -309,6 +477,9 @@ bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
 
     if (!entry) {
+#ifdef ENABLE_TEXT_ENHANCE
+        TEXT_LOGD("ParagraphCache: cache miss, hash-%{public}d", key.hash());
+#endif
         // We have a cache miss
 #ifdef PARAGRAPH_CACHE_STATS
         ++fCacheMisses;
@@ -317,6 +488,10 @@ bool ParagraphCache::findParagraph(ParagraphImpl* paragraph) {
         return false;
     }
     updateTo(paragraph, entry->get());
+#ifdef ENABLE_TEXT_ENHANCE
+    TEXT_LOGD("ParagraphCache: cache hit, hash-%{public}d", key.hash());
+    paragraph->hash() = key.hash();
+#endif
     fChecker(paragraph, "foundParagraph", true);
     return true;
 }
@@ -325,6 +500,13 @@ bool ParagraphCache::updateParagraph(ParagraphImpl* paragraph) {
     if (!fCacheIsOn) {
         return false;
     }
+
+#ifdef ENABLE_TEXT_ENHANCE
+    if (!canBeCached(paragraph)) {
+        return false;
+    }
+#endif
+
 #ifdef PARAGRAPH_CACHE_STATS
     ++fTotalRequests;
 #endif
@@ -338,16 +520,77 @@ bool ParagraphCache::updateParagraph(ParagraphImpl* paragraph) {
             // Skip this paragraph
             return false;
         }
+#ifdef ENABLE_TEXT_ENHANCE
+        paragraph->hash() = key.hash();
+#endif
         ParagraphCacheValue* value = new ParagraphCacheValue(std::move(key), paragraph);
         fLRUCacheMap.insert(value->fKey, std::make_unique<Entry>(value));
         fChecker(paragraph, "addedParagraph", true);
+#ifdef ENABLE_TEXT_ENHANCE
+#ifdef USE_UNSAFE_CACHED_VALUE
         fLastCachedValue = value;
+#endif
+#else
+        fLastCachedValue = value;
+#endif
         return true;
     } else {
         // We do not have to update the paragraph
         return false;
     }
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+// caller needs to hold fParagraphMutex
+ParagraphCacheValue* ParagraphCache::cacheLayout(ParagraphImpl* paragraph) {
+    if (!fCacheIsOn) {
+        return nullptr;
+    }
+
+    if (!canBeCached(paragraph)) {
+        return nullptr;
+    }
+#ifdef PARAGRAPH_CACHE_STATS
+    ++fTotalRequests;
+#endif
+
+    ParagraphCacheKey key(paragraph);
+    std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
+    if (!entry) {
+        // isTooMuchMemoryWasted(paragraph) not needed for now
+        if (isPossiblyTextEditing(paragraph)) {
+            // Skip this paragraph
+            return nullptr;
+        }
+        paragraph->hash() = key.hash();
+        ParagraphCacheValue* value = new ParagraphCacheValue(std::move(key), paragraph);
+        fLRUCacheMap.insert(value->fKey, std::make_unique<Entry>(value));
+        fChecker(paragraph, "addedParagraph", true);
+#ifdef USE_UNSAFE_CACHED_VALUE
+        fLastCachedValue = value;
+#endif
+        return value;
+    } else {
+        // Paragraph&layout already cached
+        return nullptr;
+    }
+}
+
+bool ParagraphCache::canBeCached(ParagraphImpl* paragraph) const
+{
+    if (paragraph == nullptr) {
+        return false;
+    }
+
+    if (paragraph->unicodeText().size() > TextParameter::GetUnicodeSizeLimitForParagraphCache()) {
+        TEXT_LOGD("Paragraph unicode size is out of limit, unicode size: %{public}zu",
+            paragraph->unicodeText().size());
+        return false;
+    }
+
+    return true;
+}
+#endif
 
 // Special situation: (very) long paragraph that is close to the last formatted paragraph
 #define NOCACHE_PREFIX_LENGTH 40

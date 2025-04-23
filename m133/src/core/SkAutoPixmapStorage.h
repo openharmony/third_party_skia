@@ -18,7 +18,7 @@ class SkData;
 struct SkImageInfo;
 struct SkMask;
 
-class SkAutoPixmapStorage : public SkPixmap {
+class SK_API SkAutoPixmapStorage : public SkPixmap {
 public:
     SkAutoPixmapStorage();
     ~SkAutoPixmapStorage();

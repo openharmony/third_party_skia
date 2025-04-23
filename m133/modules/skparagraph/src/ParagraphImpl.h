@@ -20,6 +20,9 @@
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
+#ifdef ENABLE_TEXT_ENHANCE
+#include "modules/skparagraph/include/TextLineBase.h"
+#endif
 #include "modules/skparagraph/include/TextShadow.h"
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/src/Run.h"
@@ -62,12 +65,19 @@ struct StyleBlock {
 };
 
 struct ResolvedFontDescriptor {
+#ifndef ENABLE_DRAWING_ADAPTER
     ResolvedFontDescriptor(TextIndex index, SkFont font)
             : fFont(std::move(font)), fTextStart(index) {}
     SkFont fFont;
+#else
+    ResolvedFontDescriptor(TextIndex index, RSFont font)
+        : fFont(font), fTextStart(index) { }
+    RSFont fFont;
+#endif
     TextIndex fTextStart;
 };
 
+#ifndef ENABLE_TEXT_ENHANCE
 enum InternalState {
   kUnknown = 0,
   kIndexed = 1,     // Text is indexed
@@ -76,6 +86,7 @@ enum InternalState {
   kFormatted = 6,
   kDrawn = 7
 };
+#endif
 
 /*
 struct BidiRegion {
@@ -88,6 +99,10 @@ struct BidiRegion {
 class ParagraphImpl final : public Paragraph {
 
 public:
+#ifdef ENABLE_TEXT_ENHANCE
+    ParagraphImpl() = default;
+
+#endif // ENABLE_TEXT_ENHANCE
 
     ParagraphImpl(const SkString& text,
                   ParagraphStyle style,
@@ -108,6 +123,9 @@ public:
     void layout(SkScalar width) override;
     void paint(SkCanvas* canvas, SkScalar x, SkScalar y) override;
     void paint(ParagraphPainter* canvas, SkScalar x, SkScalar y) override;
+#ifdef ENABLE_DRAWING_ADAPTER
+    void paint(ParagraphPainter* canvas, RSPath* path, SkScalar hOffset, SkScalar vOffset) override;
+#endif // ENABLE_DRAWING_ADAPTER
     std::vector<TextBox> getRectsForRange(unsigned start,
                                           unsigned end,
                                           RectHeightStyle rectHeightStyle,
@@ -116,10 +134,21 @@ public:
     void getLineMetrics(std::vector<LineMetrics>&) override;
     PositionWithAffinity getGlyphPositionAtCoordinate(SkScalar dx, SkScalar dy) override;
     SkRange<size_t> getWordBoundary(unsigned offset) override;
-
+#ifdef ENABLE_TEXT_ENHANCE
+    bool getApplyRoundingHack() const { return false; }
+#else
     bool getApplyRoundingHack() const { return fParagraphStyle.getApplyRoundingHack(); }
+#endif
 
+#ifdef ENABLE_TEXT_ENHANCE
+    size_t lineNumber() override { return fLineNumber; }
+#else
     size_t lineNumber() override { return fLines.size(); }
+#endif
+
+#ifdef ENABLE_TEXT_ENHANCE
+    TextRange getEllipsisTextRange() override;
+#endif
 
     TextLine& addLine(SkVector offset, SkVector advance,
                       TextRange textExcludingSpaces, TextRange text, TextRange textIncludingNewlines,
@@ -127,6 +156,28 @@ public:
                       InternalLineMetrics sizes);
 
     SkSpan<const char> text() const { return SkSpan<const char>(fText.c_str(), fText.size()); }
+
+#ifdef ENABLE_TEXT_ENHANCE
+    std::vector<SkUnichar> convertUtf8ToUnicode(const SkString& utf8);
+    std::unique_ptr<Paragraph> createCroppedCopy(
+            size_t startIndex, size_t count = std::numeric_limits<size_t>::max()) override;
+    void initUnicodeText() override;
+    const std::vector<SkUnichar>& unicodeText() const override { return fUnicodeText; }
+    size_t getUnicodeIndex(TextIndex index) const override {
+        if (index >= fUnicodeIndexForUTF8Index.size()) {
+            return fUnicodeIndexForUTF8Index.empty() ? 0 : fUnicodeIndexForUTF8Index.back() + 1;
+        }
+        return fUnicodeIndexForUTF8Index[index];
+    }
+#else
+    const std::vector<SkUnichar>& unicodeText() const { return fUnicodeText; }
+    size_t getUnicodeIndex(TextIndex index) const {
+        if (index >= fUnicodeIndexForUTF8Index.size()) {
+            return fUnicodeIndexForUTF8Index.empty() ? 0 : fUnicodeIndexForUTF8Index.back() + 1;
+        }
+        return fUnicodeIndexForUTF8Index[index];
+    }
+#endif
     InternalState state() const { return fState; }
     SkSpan<Run> runs() { return SkSpan<Run>(fRuns.data(), fRuns.size()); }
     SkSpan<Block> styles() {
@@ -150,6 +201,16 @@ public:
         return fUTF16IndexForUTF8Index[index];
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    size_t getUTF16IndexWithOverflowCheck(TextIndex index) const {
+        if (index >= fUTF16IndexForUTF8Index.size()) {
+            // This branch is entered only if the index of the ellipsis exceeds the size of the fUTF16IndexForUTF8Index
+            return fUTF16IndexForUTF8Index.back();
+        }
+        return fUTF16IndexForUTF8Index[index];
+    }
+#endif
+
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }
     bool strutForceHeight() const {
         return paragraphStyle().getStrutStyle().getForceStrutHeight();
@@ -160,6 +221,10 @@ public:
     InternalLineMetrics strutMetrics() const { return fStrutMetrics; }
 
     SkString getEllipsis() const;
+#ifdef ENABLE_TEXT_ENHANCE
+    WordBreakType getWordBreakType() const;
+    LineBreakStrategy getLineBreakStrategy() const;
+#endif
 
     SkSpan<const char> text(TextRange textRange);
     SkSpan<Cluster> clusters(ClusterRange clusterRange);
@@ -189,10 +254,19 @@ public:
     std::unordered_set<SkUnichar> unresolvedCodepoints() override;
     void addUnresolvedCodepoints(TextRange textRange);
 
+#ifdef ENABLE_TEXT_ENHANCE
+    void setState(InternalState state) override;
+    InternalState getState() const override { return state(); }
+#else
     void setState(InternalState state);
+#endif
+
     sk_sp<SkPicture> getPicture() { return fPicture; }
 
     SkScalar widthWithTrailingSpaces() { return fMaxWidthWithTrailingSpaces; }
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar getMaxWidth() { return fOldMaxWidth; }
+#endif
 
     void resetContext();
     void resolveStrut();
@@ -201,16 +275,29 @@ public:
     void applySpacingAndBuildClusterTable();
     void buildClusterTable();
     bool shapeTextIntoEndlessLine();
+#ifdef ENABLE_TEXT_ENHANCE
+    void positionShapedTextIntoLine(SkScalar maxWidth);
+#endif
     void breakShapedTextIntoLines(SkScalar maxWidth);
 
     void updateTextAlign(TextAlign textAlign) override;
     void updateFontSize(size_t from, size_t to, SkScalar fontSize) override;
     void updateForegroundPaint(size_t from, size_t to, SkPaint paint) override;
     void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) override;
+#ifdef ENABLE_TEXT_ENHANCE
+    std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) override;
+    SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
+    skia_private::TArray<Block, true>& exportTextStyles() override { return fTextStyles; }
+#endif
 
     void visit(const Visitor&) override;
+#ifdef ENABLE_TEXT_ENHANCE
+    void setIndents(const std::vector<SkScalar>& indents) override;
+#endif
+#ifndef ENABLE_DRAWING_ADAPTER
     void extendedVisit(const ExtendedVisitor&) override;
     int getPath(int lineNumber, SkPath* dest) override;
+#endif
     bool containsColorFontOrBitmap(SkTextBlob* textBlob) override;
     bool containsEmoji(SkTextBlob* textBlob) override;
 
@@ -225,8 +312,15 @@ public:
 
     bool getGlyphInfoAtUTF16Offset(size_t codeUnitIndex, GlyphInfo* graphemeInfo) override;
     bool getClosestUTF16GlyphInfoAt(SkScalar dx, SkScalar dy, GlyphInfo* graphemeInfo) override;
+
+#ifndef ENABLE_DRAWING_ADAPTER
     SkFont getFontAt(TextIndex codeUnitIndex) const override;
+#else
+    RSFont getFontAt(TextIndex codeUnitIndex) const override;
+#endif
+#ifndef ENABLE_DRAWING_ADAPTER
     SkFont getFontAtUTF16Offset(size_t codeUnitIndex) override;
+#endif
     std::vector<FontInfo> getFonts() const override;
 
     InternalLineMetrics getEmptyMetrics() const { return fEmptyMetrics; }
@@ -240,22 +334,111 @@ public:
         }
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    void resetAutoSpacing() {
+        for (auto& run : fRuns) {
+            run.resetAutoSpacing();
+        }
+    }
+
+    void scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
+    bool middleEllipsisDeal();
+#endif
     bool codeUnitHasProperty(size_t index, SkUnicode::CodeUnitFlags property) const {
         return (fCodeUnitProperties[index] & property) == property;
     }
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar detectIndents(size_t index) override;
 
+    SkScalar getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); }
+
+    bool &getEllipsisState() { return isMiddleEllipsis; }
+    std::vector<std::unique_ptr<TextLineBase>> GetTextLines() override;
+    std::unique_ptr<Paragraph> CloneSelf() override;
+
+    uint32_t& hash() {
+        return hash_;
+    }
+#endif
     sk_sp<SkUnicode> getUnicode() { return fUnicode; }
 
+#ifndef ENABLE_DRAWING_ADAPTER
+    SkFontMetrics measureText() override;
+    bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<SkFontMetrics>& fontMetrics) override;
+#else
+    RSFontMetrics measureText() override;
+    bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<RSFontMetrics>& fontMetrics) override;
+#endif
+
+#ifdef ENABLE_TEXT_ENHANCE
+    size_t GetMaxLines() const override { return fParagraphStyle.getMaxLines(); }
+    void setLastAutoSpacingFlag(Cluster::AutoSpacingFlag flag) { fLastAutoSpacingFlag = flag; }
+    const Cluster::AutoSpacingFlag& getLastAutoSpacingFlag() const { return fLastAutoSpacingFlag; }
+#endif
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
     friend class ParagraphCacheValue;
     friend class ParagraphCache;
-
+#ifdef ENABLE_TEXT_ENHANCE
+    friend struct TextWrapScorer;
+#endif
     friend class TextWrapper;
     friend class OneLineShaper;
-
+#ifdef ENABLE_TEXT_ENHANCE
+    void middleEllipsisLtrDeal(size_t& end, size_t& charbegin, size_t& charend);
+    void middleEllipsisRtlDeal(size_t& end, size_t& charbegin, size_t& charend);
+#endif
     void computeEmptyMetrics();
+#ifdef ENABLE_TEXT_ENHANCE
+    void middleEllipsisAddText(size_t charStart,
+                               size_t charEnd,
+                               SkScalar& allTextWidth,
+                               SkScalar width,
+                               bool isLeftToRight);
+    SkScalar resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex);
+    void scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
+    void scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
+    void prepareForMiddleEllipsis(SkScalar rawWidth);
+    bool shapeForMiddleEllipsis(SkScalar rawWidth);
+    TextRange resetRangeWithDeletedRange(const TextRange& sourceRange,
+        const TextRange& deletedRange, const size_t& ellSize);
+    void resetTextStyleRange(const TextRange& deletedRange);
+    void resetPlaceholderRange(const TextRange& deletedRange);
+    void setSize(SkScalar height, SkScalar width, SkScalar longestLine) {
+        fHeight = height;
+        fWidth = width;
+        fLongestLine = longestLine;
+    }
+    void getSize(SkScalar& height, SkScalar& width, SkScalar& longestLine) {
+        height = fHeight;
+        width = fWidth;
+        longestLine = fLongestLine;
+    }
+    void setIntrinsicSize(SkScalar maxIntrinsicWidth, SkScalar minIntrinsicWidth, SkScalar alphabeticBaseline,
+                          SkScalar ideographicBaseline, bool exceededMaxLines) {
+        fMaxIntrinsicWidth = maxIntrinsicWidth;
+        fMinIntrinsicWidth = minIntrinsicWidth;
+        fAlphabeticBaseline = alphabeticBaseline;
+        fIdeographicBaseline = ideographicBaseline;
+        fExceededMaxLines = exceededMaxLines;
+    }
+    void getIntrinsicSize(SkScalar& maxIntrinsicWidth, SkScalar& minIntrinsicWidth, SkScalar& alphabeticBaseline,
+                          SkScalar& ideographicBaseline, bool& exceededMaxLines) {
+        maxIntrinsicWidth = fMaxIntrinsicWidth;
+        minIntrinsicWidth = fMinIntrinsicWidth;
+        alphabeticBaseline = fAlphabeticBaseline ;
+        ideographicBaseline = fIdeographicBaseline;
+        exceededMaxLines = fExceededMaxLines;
+    }
+
+    ParagraphPainter::PaintID updateTextStyleColorAndForeground(TextStyle& TextStyle, SkColor color);
+    TextBox getEmptyTextRect(RectHeightStyle rectHeightStyle) const;
+    size_t prefixByteCountUntilChar(size_t index);
+    void copyProperties(const ParagraphImpl& source);
+#endif
 
     // Input
     skia_private::TArray<StyleBlock<SkScalar>> fLetterSpaceStyles;
@@ -267,7 +450,9 @@ private:
     skia_private::TArray<Block, true> fTextStyles; // TODO: take out only the font stuff
     skia_private::TArray<Placeholder, true> fPlaceholders;
     SkString fText;
-
+#ifdef ENABLE_TEXT_ENHANCE
+    std::vector<SkUnichar> fUnicodeText;
+#endif
     // Internal structures
     InternalState fState;
     skia_private::TArray<Run, false> fRuns;         // kShaped
@@ -275,13 +460,24 @@ private:
     skia_private::TArray<SkUnicode::CodeUnitFlags, true> fCodeUnitProperties;
     skia_private::TArray<size_t, true> fClustersIndexFromCodeUnit;
     std::vector<size_t> fWords;
+#ifdef ENABLE_TEXT_ENHANCE
+    std::vector<SkScalar> fIndents;
+    std::vector<TextCutRecord> rtlTextSize;
+    std::vector<TextCutRecord> ltrTextSize;
+#endif
     std::vector<SkUnicode::BidiRegion> fBidiRegions;
     // These two arrays are used in measuring methods (getRectsForRange, getGlyphPositionAtCoordinate)
     // They are filled lazily whenever they need and cached
     skia_private::TArray<TextIndex, true> fUTF8IndexForUTF16Index;
     skia_private::TArray<size_t, true> fUTF16IndexForUTF8Index;
+#ifdef ENABLE_TEXT_ENHANCE
+    skia_private::TArray<size_t, true> fUnicodeIndexForUTF8Index;
+#endif
     SkOnce fillUTF16MappingOnce;
     size_t fUnresolvedGlyphs;
+#ifdef ENABLE_TEXT_ENHANCE
+    bool isMiddleEllipsis;
+#endif
     std::unordered_set<SkUnichar> fUnresolvedCodepoints;
 
     skia_private::TArray<TextLine, false> fLines;   // kFormatted   (cached: width, max lines, ellipsis, text align)
@@ -295,11 +491,26 @@ private:
     SkScalar fOldWidth;
     SkScalar fOldHeight;
     SkScalar fMaxWidthWithTrailingSpaces;
-
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar fOldMaxWidth;
+    SkScalar allTextWidth;
+#endif
     sk_sp<SkUnicode> fUnicode;
     bool fHasLineBreaks;
     bool fHasWhitespacesInside;
     TextIndex fTrailingSpaces;
+
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar fLayoutRawWidth {0};
+
+    size_t fLineNumber { 0 };
+    uint32_t hash_{0u};
+
+    TextRange fEllipsisRange{EMPTY_RANGE};
+    std::optional<SkRect> fPaintRegion;
+    // just for building cluster table, record the last built unicode autospacing flag;
+    Cluster::AutoSpacingFlag fLastAutoSpacingFlag;
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia

@@ -57,7 +57,7 @@ class StrikeCache;
 /** Class that adds methods to GrDirectContext that are only intended for use internal to Skia.
     This class is purely a privileged window into GrDirectContext. It should never have additional
     data members or virtual methods. */
-class GrDirectContextPriv : public GrRecordingContextPriv {
+class SK_API GrDirectContextPriv : public GrRecordingContextPriv {
 public:
     static sk_sp<GrDirectContext> Make(GrBackendApi backend,
                                        const GrContextOptions& options,

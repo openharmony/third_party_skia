@@ -62,7 +62,7 @@ struct ProgramInterface {
 };
 
 /** Represents a fully-digested program, ready for code generation. */
-struct Program {
+struct SK_API Program {
     Program(std::unique_ptr<std::string> source,
             std::unique_ptr<ProgramConfig> config,
             std::shared_ptr<Context> context,

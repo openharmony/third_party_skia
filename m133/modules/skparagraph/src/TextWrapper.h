@@ -3,6 +3,9 @@
 #define TextWrapper_DEFINED
 
 #include <string>
+#ifdef ENABLE_TEXT_ENHANCE
+#include "include/ParagraphStyle.h"
+#endif
 #include "include/core/SkSpan.h"
 #include "modules/skparagraph/src/TextLine.h"
 
@@ -10,6 +13,9 @@ namespace skia {
 namespace textlayout {
 
 class ParagraphImpl;
+#ifdef ENABLE_TEXT_ENHANCE
+class TextTabAlign;
+#endif
 
 class TextWrapper {
     class ClusterPos {
@@ -151,6 +157,11 @@ class TextWrapper {
             fMetrics.clean();
         }
 
+#ifdef ENABLE_TEXT_ENHANCE
+        void shiftWidth(SkScalar width) {
+            fWidth += width;
+        }
+#endif
     private:
         ClusterPos fStart;
         ClusterPos fEnd;
@@ -178,17 +189,30 @@ public:
                                                   SkVector offset,
                                                   SkVector advance,
                                                   InternalLineMetrics metrics,
-                                                  bool addEllipsis)>;
+                                                  bool addEllipsis
+#ifdef ENABLE_TEXT_ENHANCE
+                                                  , SkScalar lineIndent,
+                                                  SkScalar noIndentWidth
+#endif
+                                                   )>;
     void breakTextIntoLines(ParagraphImpl* parent,
                             SkScalar maxWidth,
                             const AddLineToParagraph& addLine);
-
+#ifdef ENABLE_TEXT_ENHANCE
+    void updateMetricsWithPlaceholder(std::vector<Run*>& runs, bool iterateByCluster);
+#endif
     SkScalar height() const { return fHeight; }
     SkScalar minIntrinsicWidth() const { return fMinIntrinsicWidth; }
     SkScalar maxIntrinsicWidth() const { return fMaxIntrinsicWidth; }
     bool exceededMaxLines() const { return fExceededMaxLines; }
+#ifdef ENABLE_TEXT_ENHANCE
+    bool brokeLineWithHyphen() const { return fBrokeLineWithHyphen; }
+#endif
 
 private:
+#ifdef ENABLE_TEXT_ENHANCE
+    friend TextTabAlign;
+#endif
     TextStretch fWords;
     TextStretch fClusters;
     TextStretch fClip;
@@ -211,10 +235,30 @@ private:
         fTooLongCluster = false;
         fTooLongWord = false;
         fHardLineBreak = false;
+#ifdef ENABLE_TEXT_ENHANCE
+        fBrokeLineWithHyphen = false;
+#endif
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType,
+                   bool needEllipsis);
+    void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
+    bool lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBeforeCluster, SkScalar maxWidth);
+    uint64_t CalculateBestScore(std::vector<SkScalar>& widthOut,
+        SkScalar maxWidth, ParagraphImpl* parent, size_t maxLines);
+    static size_t tryBreakWord(Cluster* startCluster,
+                               Cluster* endOfClusters,
+                               SkScalar widthBeforeCluster,
+                               SkScalar maxWidth);
+
+    bool fBrokeLineWithHyphen{false};
+    static void matchHyphenResult(const std::vector<uint8_t>& result, ParagraphImpl* owner, size_t& pos,
+                                  SkScalar maxWidth, SkScalar length);
+#else
     void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack);
     void moveForward(bool hasEllipsis);
+#endif
     void trimEndSpaces(TextAlign align);
     std::tuple<Cluster*, size_t, SkScalar> trimStartSpaces(Cluster* endOfClusters);
     SkScalar getClustersTrimmedWidth();

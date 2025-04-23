@@ -61,11 +61,18 @@ using namespace skia_private;
 #endif
 
 namespace {
+#ifndef ENABLE_TEXT_ENHANCE
 using HBBlob   = std::unique_ptr<hb_blob_t  , SkFunctionObject<hb_blob_destroy>  >;
 using HBFace   = std::unique_ptr<hb_face_t  , SkFunctionObject<hb_face_destroy>  >;
 using HBFont   = std::unique_ptr<hb_font_t  , SkFunctionObject<hb_font_destroy>  >;
 using HBBuffer = std::unique_ptr<hb_buffer_t, SkFunctionObject<hb_buffer_destroy>>;
-
+#else
+template <typename T,typename P,P* p> using resource = std::unique_ptr<T, SkOverloadedFunctionObject<P, p>>;
+using HBBlob   = resource<hb_blob_t     , decltype(hb_blob_destroy)  , hb_blob_destroy  >;
+using HBFace   = resource<hb_face_t     , decltype(hb_face_destroy)  , hb_face_destroy  >;
+using HBFont   = resource<hb_font_t     , decltype(hb_font_destroy)  , hb_font_destroy  >;
+using HBBuffer = resource<hb_buffer_t   , decltype(hb_buffer_destroy), hb_buffer_destroy>;
+#endif
 using SkUnicodeBreak = std::unique_ptr<SkBreakIterator>;
 
 hb_position_t skhb_position(SkScalar value) {
@@ -80,9 +87,15 @@ hb_bool_t skhb_glyph(hb_font_t* hb_font,
                      hb_codepoint_t variation_selector,
                      hb_codepoint_t* glyph,
                      void* user_data) {
+#ifndef ENABLE_DRAWING_ADAPTER
     SkFont& font = *reinterpret_cast<SkFont*>(font_data);
 
     *glyph = font.unicharToGlyph(unicode);
+#else
+    RSFont& font = *reinterpret_cast<RSFont*>(font_data);
+
+    *glyph = font.UnicharToGlyph(unicode);
+#endif
     return *glyph != 0;
 }
 
@@ -101,7 +114,11 @@ unsigned skhb_nominal_glyphs(hb_font_t *hb_font, void *font_data,
                              hb_codepoint_t *glyphs,
                              unsigned int glyph_stride,
                              void *user_data) {
+#ifndef ENABLE_DRAWING_ADAPTER
     SkFont& font = *reinterpret_cast<SkFont*>(font_data);
+#else
+    RSFont& font = *reinterpret_cast<RSFont*>(font_data);
+#endif
 
     // Batch call textToGlyphs since entry cost is not cheap.
     // Copy requred because textToGlyphs is dense and hb is strided.
@@ -111,8 +128,13 @@ unsigned skhb_nominal_glyphs(hb_font_t *hb_font, void *font_data,
         unicodes = SkTAddOffset<const hb_codepoint_t>(unicodes, unicode_stride);
     }
     AutoSTMalloc<256, SkGlyphID> glyph(count);
+#ifndef ENABLE_DRAWING_ADAPTER
     font.textToGlyphs(unicode.get(), count * sizeof(SkUnichar), SkTextEncoding::kUTF32,
                         glyph.get(), count);
+#else
+    font.TextToGlyphs(unicode.get(), count * sizeof(SkUnichar), RSDrawing::TextEncoding::UTF32,
+                        glyph.get(), count);
+#endif
 
     // Copy the results back to the sparse array.
     unsigned int done;
@@ -128,15 +150,26 @@ hb_position_t skhb_glyph_h_advance(hb_font_t* hb_font,
                                    void* font_data,
                                    hb_codepoint_t hbGlyph,
                                    void* user_data) {
+#ifndef ENABLE_DRAWING_ADAPTER
     SkFont& font = *reinterpret_cast<SkFont*>(font_data);
+#else
+    RSFont& font = *reinterpret_cast<RSFont*>(font_data);
+#endif
 
     SkScalar advance;
     SkGlyphID skGlyph = SkTo<SkGlyphID>(hbGlyph);
 
+#ifndef ENABLE_DRAWING_ADAPTER
     font.getWidths(&skGlyph, 1, &advance);
     if (!font.isSubpixel()) {
         advance = SkScalarRoundToInt(advance);
     }
+#else
+    font.GetWidths(&skGlyph, 1, &advance);
+    if (!font.IsSubpixel()) {
+        advance = SkScalarRoundToInt(advance);
+    }
+#endif
     return skhb_position(advance);
 }
 
@@ -148,7 +181,11 @@ void skhb_glyph_h_advances(hb_font_t* hb_font,
                            hb_position_t* advances,
                            unsigned int advance_stride,
                            void* user_data) {
+#ifndef ENABLE_DRAWING_ADAPTER
     SkFont& font = *reinterpret_cast<SkFont*>(font_data);
+#else
+    RSFont& font = *reinterpret_cast<RSFont*>(font_data);
+#endif
 
     // Batch call getWidths since entry cost is not cheap.
     // Copy requred because getWidths is dense and hb is strided.
@@ -158,9 +195,17 @@ void skhb_glyph_h_advances(hb_font_t* hb_font,
         glyphs = SkTAddOffset<const hb_codepoint_t>(glyphs, glyph_stride);
     }
     AutoSTMalloc<256, SkScalar> advance(count);
+#ifndef ENABLE_DRAWING_ADAPTER
     font.getWidths(glyph.get(), count, advance.get());
+#else
+    font.GetWidths(glyph.get(), count, advance.get());
+#endif
 
+#ifndef ENABLE_DRAWING_ADAPTER
     if (!font.isSubpixel()) {
+#else
+    if (!font.IsSubpixel()) {
+#endif
         for (unsigned i = 0; i < count; i++) {
             advance[i] = SkScalarRoundToInt(advance[i]);
         }
@@ -184,9 +229,14 @@ hb_bool_t skhb_glyph_extents(hb_font_t* hb_font,
                              hb_codepoint_t hbGlyph,
                              hb_glyph_extents_t* extents,
                              void* user_data) {
+#ifndef ENABLE_DRAWING_ADAPTER
     SkFont& font = *reinterpret_cast<SkFont*>(font_data);
+#else
+    RSFont& font = *reinterpret_cast<RSFont*>(font_data);
+#endif
     SkASSERT(extents);
 
+#ifndef ENABLE_DRAWING_ADAPTER
     SkRect sk_bounds;
     SkGlyphID skGlyph = SkTo<SkGlyphID>(hbGlyph);
 
@@ -200,6 +250,21 @@ hb_bool_t skhb_glyph_extents(hb_font_t* hb_font,
     extents->y_bearing = skhb_position(-sk_bounds.fTop);
     extents->width = skhb_position(sk_bounds.width());
     extents->height = skhb_position(-sk_bounds.height());
+#else
+    RSRect bounds;
+    SkGlyphID skGlyph = SkTo<SkGlyphID>(hbGlyph);
+
+    font.GetWidths(&skGlyph, 1, nullptr, &bounds);
+    if (!font.IsSubpixel()) {
+        bounds = RSRect(bounds.RoundOut());
+    }
+
+    // Skia is y-down but HarfBuzz is y-up.
+    extents->x_bearing = skhb_position(bounds.left_);
+    extents->y_bearing = skhb_position(-bounds.top_);
+    extents->width = skhb_position(bounds.GetWidth());
+    extents->height = skhb_position(-bounds.GetHeight());
+#endif
     return true;
 }
 
@@ -234,6 +299,7 @@ hb_font_funcs_t* skhb_get_font_funcs() {
 }
 
 hb_blob_t* skhb_get_table(hb_face_t* face, hb_tag_t tag, void* user_data) {
+#ifndef ENABLE_DRAWING_ADAPTER
     SkTypeface& typeface = *reinterpret_cast<SkTypeface*>(user_data);
 
     auto data = typeface.copyTableData(tag);
@@ -245,8 +311,31 @@ hb_blob_t* skhb_get_table(hb_face_t* face, hb_tag_t tag, void* user_data) {
                           HB_MEMORY_MODE_READONLY, rawData, [](void* ctx) {
                               SkSafeUnref(((SkData*)ctx));
                           });
+#else
+    RSTypeface& typeface = *reinterpret_cast<RSTypeface*>(user_data);
+
+    auto size = typeface.GetTableSize(tag);
+    if (!size) {
+        return nullptr;
+    }
+    auto data = std::make_unique<char[]>(size);
+    if (!data) {
+        return nullptr;
+    }
+    auto relTableSize = typeface.GetTableData(tag, 0, size, data.get());
+    if (relTableSize != size) {
+        return nullptr;
+    }
+
+    auto rawData = data.release();
+    return hb_blob_create(rawData, size,
+                          HB_MEMORY_MODE_READONLY, rawData, [](void* ctx) {
+                              std::unique_ptr<char[]>((char*)ctx);
+                          });
+#endif
 }
 
+#ifndef ENABLE_DRAWING_ADAPTER
 HBBlob stream_to_blob(std::unique_ptr<SkStreamAsset> asset) {
     size_t size = asset->getLength();
     HBBlob blob;
@@ -306,8 +395,32 @@ HBFace create_hb_face(const SkTypeface& typeface) {
 
     return face;
 }
+#else
+HBFace create_hb_face(const RSTypeface& typeface) {
+    int index = 0;
+    HBFace face;
+    if (!face) {
+        face.reset(hb_face_create_for_tables(
+            skhb_get_table,
+            const_cast<RSTypeface*>(std::make_unique<RSTypeface>(typeface).release()),
+            [](void* user_data){ std::unique_ptr<RSTypeface>(reinterpret_cast<RSTypeface*>(user_data)); }));
+        hb_face_set_index(face.get(), (unsigned)index);
+    }
+    SkASSERT(face);
+    if (!face) {
+        return nullptr;
+    }
+    hb_face_set_upem(face.get(), typeface.GetUnitsPerEm());
 
+    return face;
+}
+#endif
+
+#ifndef ENABLE_DRAWING_ADAPTER
 HBFont create_typeface_hb_font(const SkTypeface& typeface) {
+#else
+HBFont create_typeface_hb_font(const RSTypeface& typeface) {
+#endif
     HBFace face(create_hb_face(typeface));
     if (!face) {
         return nullptr;
@@ -319,6 +432,7 @@ HBFont create_typeface_hb_font(const SkTypeface& typeface) {
         return nullptr;
     }
     hb_ot_font_set_funcs(otFont.get());
+#ifndef ENABLE_DRAWING_ADAPTER
     int axis_count = typeface.getVariationDesignPosition(nullptr, 0);
     if (axis_count > 0) {
         AutoSTMalloc<4, SkFontArguments::VariationPosition::Coordinate> axis_values(axis_count);
@@ -328,10 +442,12 @@ HBFont create_typeface_hb_font(const SkTypeface& typeface) {
                                    axis_count);
         }
     }
+#endif
 
     return otFont;
 }
 
+#ifndef ENABLE_DRAWING_ADAPTER
 HBFont create_sub_hb_font(const SkFont& font, const HBFont& typefaceFont) {
     SkDEBUGCODE(
         hb_face_t* face = hb_font_get_face(typefaceFont.get());
@@ -350,6 +466,20 @@ HBFont create_sub_hb_font(const SkFont& font, const HBFont& typefaceFont) {
 
     return skFont;
 }
+#else
+HBFont create_sub_hb_font(const RSFont& font, const HBFont& typefaceFont) {
+    // Creating a sub font means that non-available functions
+    // are found from the parent.
+    HBFont skFont(hb_font_create_sub_font(typefaceFont.get()));
+    hb_font_set_funcs(skFont.get(), skhb_get_font_funcs(),
+                      reinterpret_cast<void *>(std::make_unique<RSFont>(font).release()),
+                      [](void* user_data){ std::unique_ptr<RSFont>(reinterpret_cast<RSFont*>(user_data)); });
+    int scale = skhb_position(font.GetSize());
+    hb_font_set_scale(skFont.get(), scale, scale);
+
+    return skFont;
+}
+#endif
 
 /** Replaces invalid utf-8 sequences with REPLACEMENT CHARACTER U+FFFD. */
 static inline SkUnichar utf8_next(const char** ptr, const char* end) {
@@ -472,6 +602,7 @@ struct ShapedGlyph {
     bool fGraphemeBreakBefore;
     bool fUnsafeToBreak;
 };
+#ifndef ENABLE_DRAWING_ADAPTER
 struct ShapedRun {
     ShapedRun(SkShaper::RunHandler::Range utf8Range, const SkFont& font, SkBidiIterator::Level level,
               std::unique_ptr<ShapedGlyph[]> glyphs, size_t numGlyphs, SkVector advance = {0, 0})
@@ -485,7 +616,7 @@ struct ShapedRun {
     std::unique_ptr<ShapedGlyph[]> fGlyphs;
     size_t fNumGlyphs;
     SkVector fAdvance;
-
+#ifndef ENABLE_TEXT_ENHANCE
     static_assert(::sk_is_trivially_relocatable<decltype(fUtf8Range)>::value);
     static_assert(::sk_is_trivially_relocatable<decltype(fFont)>::value);
     static_assert(::sk_is_trivially_relocatable<decltype(fLevel)>::value);
@@ -493,7 +624,24 @@ struct ShapedRun {
     static_assert(::sk_is_trivially_relocatable<decltype(fAdvance)>::value);
 
     using sk_is_trivially_relocatable = std::true_type;
+#endif
 };
+#else
+struct ShapedRun {
+    ShapedRun(SkShaper::RunHandler::Range utf8Range, const RSFont& font, SkBidiIterator::Level level,
+              std::unique_ptr<ShapedGlyph[]> glyphs, size_t numGlyphs, SkVector advance = {0, 0})
+        : fUtf8Range(utf8Range), fFont(font), fLevel(level),
+            fGlyphs(std::move(glyphs)), fNumGlyphs(numGlyphs), fAdvance(advance)
+    {}
+
+    SkShaper::RunHandler::Range fUtf8Range;
+    RSFont fFont;
+    SkBidiIterator::Level fLevel;
+    std::unique_ptr<ShapedGlyph[]> fGlyphs;
+    size_t fNumGlyphs;
+    SkVector fAdvance;
+};
+#endif
 struct ShapedLine {
     TArray<ShapedRun> runs;
     SkVector fAdvance = { 0, 0 };
@@ -602,7 +750,11 @@ struct ShapedRunGlyphIterator {
         if (fGlyphIndex == runs[fRunIndex].fNumGlyphs) {
             fGlyphIndex = 0;
             ++fRunIndex;
+#ifdef ENABLE_TEXT_ENHANCE
+            if (static_cast<size_t>(fRunIndex) >= runs.size()) {
+#else
             if (fRunIndex >= runs.size()) {
+#endif
                 return nullptr;
             }
         }
@@ -611,7 +763,11 @@ struct ShapedRunGlyphIterator {
 
     ShapedGlyph* current() {
         const TArray<ShapedRun>& runs = *fRuns;
+#ifdef ENABLE_TEXT_ENHANCE
+        if (static_cast<size_t>(fRunIndex) >= runs.size()) {
+#else
         if (fRunIndex >= runs.size()) {
+#endif
             return nullptr;
         }
         return &runs[fRunIndex].fGlyphs[fGlyphIndex];
@@ -626,7 +782,11 @@ class ShaperHarfBuzz : public SkShaper {
 public:
     ShaperHarfBuzz(sk_sp<SkUnicode>,
                    HBBuffer,
+#ifndef ENABLE_DRAWING_ADAPTER
                    sk_sp<SkFontMgr>);
+#else
+                   std::shared_ptr<RSFontMgr>);
+#endif
 
 protected:
     sk_sp<SkUnicode> fUnicode;
@@ -640,13 +800,21 @@ protected:
                     const FontRunIterator&,
                     const Feature*, size_t featuresSize) const;
 private:
+#ifndef ENABLE_DRAWING_ADAPTER
     const sk_sp<SkFontMgr> fFontMgr; // for fallback
+#else
+    const std::shared_ptr<RSFontMgr> fFontMgr;
+#endif
     HBBuffer               fBuffer;
     hb_language_t          fUndefinedLanguage;
 
 #if !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
     void shape(const char* utf8, size_t utf8Bytes,
+#ifndef ENABLE_DRAWING_ADAPTER
                const SkFont&,
+#else
+               const RSFont&,
+#endif
                bool leftToRight,
                SkScalar width,
                RunHandler*) const override;
@@ -725,11 +893,19 @@ private:
               RunHandler*) const override;
 };
 
+#ifndef ENABLE_DRAWING_ADAPTER
 ShaperHarfBuzz::ShaperHarfBuzz(sk_sp<SkUnicode> unicode,
-                               HBBuffer buffer,
-                               sk_sp<SkFontMgr> fallback)
+                               HBBuffer buffer, sk_sp<SkFontMgr> fallback)
+#else
+ShaperHarfBuzz::ShaperHarfBuzz(sk_sp<SkUnicode> unicode,
+                               HBBuffer buffer, std::shared_ptr<RSFontMgr> fallback)
+#endif
     : fUnicode(unicode)
+#ifndef ENABLE_DRAWING_ADAPTER
     , fFontMgr(fallback ? std::move(fallback) : SkFontMgr::RefEmpty())
+#else
+    , fFontMgr(fallback ? std::move(fallback) : RSFontMgr::CreateDefaultFontMgr())
+#endif
     , fBuffer(std::move(buffer))
     , fUndefinedLanguage(hb_language_from_string("und", -1)) {
 #if defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
@@ -740,7 +916,11 @@ ShaperHarfBuzz::ShaperHarfBuzz(sk_sp<SkUnicode> unicode,
 #if !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
 void ShaperHarfBuzz::shape(const char* utf8,
                            size_t utf8Bytes,
+#ifndef ENABLE_DRAWING_ADAPTER
                            const SkFont& srcFont,
+#else
+                           const RSFont& srcFont,
+#endif
                            bool leftToRight,
                            SkScalar width,
                            RunHandler* handler) const {
@@ -824,7 +1004,11 @@ void ShaperDrivenWrapper::wrap(char const * const utf8, size_t utf8Bytes,
         utf8Start = utf8End;
         utf8End = utf8 + runSegmenter.endOfCurrentRun();
 
+#ifndef ENABLE_DRAWING_ADAPTER
         ShapedRun model(RunHandler::Range(), SkFont(), 0, nullptr, 0);
+#else
+        ShapedRun model(RunHandler::Range(), RSFont(), 0, nullptr, 0);
+#endif
         bool modelNeedsRegenerated = true;
         int modelGlyphOffset = 0;
 
@@ -887,8 +1071,13 @@ void ShaperDrivenWrapper::wrap(char const * const utf8, size_t utf8Bytes,
             }
             SkBreakIterator& breakIterator = *lineBreakIterator;
 
+#ifndef ENABLE_DRAWING_ADAPTER
             ShapedRun best(RunHandler::Range(), SkFont(), 0, nullptr, 0,
                            { SK_ScalarNegativeInfinity, SK_ScalarNegativeInfinity });
+#else
+            ShapedRun best(RunHandler::Range(), RSFont(), 0, nullptr, 0,
+                           { SK_ScalarNegativeInfinity, SK_ScalarNegativeInfinity });
+#endif
             bool bestIsInvalid = true;
             bool bestUsesModelForGlyphs = false;
             SkScalar widthLeft = width - line.fAdvance.fX;
@@ -1119,8 +1308,13 @@ void ShapeThenWrap::wrap(char const * const utf8, size_t utf8Bytes,
         ShapedGlyph* nextGlyph = glyphIterator.next();
 
         if (previousRunIndex != current.fRunIndex) {
+#ifndef ENABLE_DRAWING_ADAPTER
             SkFontMetrics metrics;
             runs[current.fRunIndex].fFont.getMetrics(&metrics);
+#else
+            RSFontMetrics metrics;
+            runs[current.fRunIndex].fFont.GetMetrics(&metrics);
+#endif
             previousRunIndex = current.fRunIndex;
         }
 
@@ -1334,10 +1528,18 @@ ShapedRun ShaperHarfBuzz::shape(char const * const utf8,
     HBFont hbFont;
     {
         HBLockedFaceCache cache = get_hbFace_cache();
+#ifndef ENABLE_DRAWING_ADAPTER
         SkTypefaceID dataId = font.currentFont().getTypeface()->uniqueID();
+#else
+        uint32_t dataId = const_cast<RSFont&>(font.currentFont()).GetTypeface()->GetUniqueID();
+#endif
         HBFont* typefaceFontCached = cache.find(dataId);
         if (!typefaceFontCached) {
+#ifndef ENABLE_DRAWING_ADAPTER
             HBFont typefaceFont(create_typeface_hb_font(*font.currentFont().getTypeface()));
+#else
+            HBFont typefaceFont(create_typeface_hb_font(*const_cast<RSFont&>(font.currentFont()).GetTypeface()));
+#endif
             typefaceFontCached = cache.insert(dataId, std::move(typefaceFont));
         }
         hbFont = create_sub_hb_font(font.currentFont(), *typefaceFontCached);
@@ -1387,11 +1589,20 @@ ShapedRun ShaperHarfBuzz::shape(char const * const utf8,
     for (unsigned i = 0; i < len; i++) {
         glyphIDs[i] = info[i].codepoint;
     }
+#ifndef ENABLE_DRAWING_ADAPTER
     AutoSTArray<32, SkRect> glyphBounds(len);
     SkPaint p;
     run.fFont.getBounds(glyphIDs.get(), len, glyphBounds.get(), &p);
+#else
+    AutoSTArray<32, RSRect> glyphBounds(len);
+    run.fFont.GetWidths(glyphIDs.get(), len, nullptr, glyphBounds.get());
+#endif
 
+#ifndef ENABLE_DRAWING_ADAPTER
     double SkScalarFromHBPosX = +(1.52587890625e-5) * run.fFont.getScaleX();
+#else
+    double SkScalarFromHBPosX = +(1.52587890625e-5) * run.fFont.GetScaleX();
+#endif
     double SkScalarFromHBPosY = -(1.52587890625e-5);  // HarfBuzz y-up, Skia y-down
     SkVector runAdvance = { 0, 0 };
     for (unsigned i = 0; i < len; i++) {
@@ -1403,7 +1614,11 @@ ShapedRun ShaperHarfBuzz::shape(char const * const utf8,
         glyph.fAdvance.fX = pos[i].x_advance * SkScalarFromHBPosX;
         glyph.fAdvance.fY = pos[i].y_advance * SkScalarFromHBPosY;
 
+#ifndef ENABLE_DRAWING_ADAPTER
         glyph.fHasVisual = !glyphBounds[i].isEmpty(); //!font->currentTypeface()->glyphBoundsAreZero(glyph.fID);
+#else
+        glyph.fHasVisual = !glyphBounds[i].IsEmpty(); //!font->currentTypeface()->glyphBoundsAreZero(glyph.fID);
+#endif
 #if SK_HB_VERSION_CHECK(1, 5, 0)
         glyph.fUnsafeToBreak = info[i].mask & HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
 #else
@@ -1467,6 +1682,7 @@ std::unique_ptr<SkShaper::ScriptRunIterator> SkShaper::MakeSkUnicodeHbScriptRunI
     return SkShapers::HB::ScriptRunIterator(utf8, utf8Bytes, script);
 }
 
+#ifndef ENABLE_DRAWING_ADAPTER
 std::unique_ptr<SkShaper> SkShaper::MakeShaperDrivenWrapper(sk_sp<SkFontMgr> fontmgr) {
     return SkShapers::HB::ShaperDrivenWrapper(get_unicode(), fontmgr);
 }
@@ -1474,13 +1690,27 @@ std::unique_ptr<SkShaper> SkShaper::MakeShaperDrivenWrapper(sk_sp<SkFontMgr> fon
 std::unique_ptr<SkShaper> SkShaper::MakeShapeThenWrap(sk_sp<SkFontMgr> fontmgr) {
     return SkShapers::HB::ShapeThenWrap(get_unicode(), fontmgr);
 }
+#else
+std::unique_ptr<SkShaper> SkShaper::MakeShaperDrivenWrapper(std::shared_ptr<RSFontMgr> fontmgr) {
+    return SkShapers::HB::ShaperDrivenWrapper(get_unicode(), fontmgr);
+}
+
+std::unique_ptr<SkShaper> SkShaper::MakeShapeThenWrap(std::shared_ptr<RSFontMgr> fontmgr) {
+    return SkShapers::HB::ShapeThenWrap(get_unicode(), fontmgr);
+}
+#endif // ENABLE_DRAWING_ADAPTER
 
 void SkShaper::PurgeHarfBuzzCache() { SkShapers::HB::PurgeCaches(); }
 #endif  // !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
 
 namespace SkShapers::HB {
+#ifndef ENABLE_DRAWING_ADAPTER
 std::unique_ptr<SkShaper> ShaperDrivenWrapper(sk_sp<SkUnicode> unicode,
                                               sk_sp<SkFontMgr> fallback) {
+#else
+std::unique_ptr<SkShaper> ShaperDrivenWrapper(sk_sp<SkUnicode> unicode,
+                                              std::shared_ptr<RSFontMgr> fallback) {
+#endif
     if (!unicode) {
         return nullptr;
     }
@@ -1493,8 +1723,13 @@ std::unique_ptr<SkShaper> ShaperDrivenWrapper(sk_sp<SkUnicode> unicode,
             unicode, std::move(buffer), std::move(fallback));
 }
 
+#ifndef ENABLE_DRAWING_ADAPTER
 std::unique_ptr<SkShaper> ShapeThenWrap(sk_sp<SkUnicode> unicode,
                                         sk_sp<SkFontMgr> fallback) {
+#else
+std::unique_ptr<SkShaper> ShapeThenWrap(sk_sp<SkUnicode> unicode,
+										std::shared_ptr<RSFontMgr> fallback) {
+#endif
     if (!unicode) {
         return nullptr;
     }
@@ -1507,8 +1742,13 @@ std::unique_ptr<SkShaper> ShapeThenWrap(sk_sp<SkUnicode> unicode,
             unicode, std::move(buffer), std::move(fallback));
 }
 
+#ifndef ENABLE_DRAWING_ADAPTER
 std::unique_ptr<SkShaper> ShapeDontWrapOrReorder(sk_sp<SkUnicode> unicode,
                                                  sk_sp<SkFontMgr> fallback) {
+#else
+std::unique_ptr<SkShaper> ShapeDontWrapOrReorder(sk_sp<SkUnicode> unicode,
+                                                 std::shared_ptr<RSFontMgr> fallback) {
+#endif
     if (!unicode) {
         return nullptr;
     }
