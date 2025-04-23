@@ -61,7 +61,9 @@ public:
 
     // Constructs a SkParagraph object that can be used to layout and paint the text to a SkCanvas.
     std::unique_ptr<Paragraph> Build() override;
-
+#ifdef ENABLE_TEXT_ENHANCE
+    std::unique_ptr<ParagraphLineFetcher> buildLineFetcher() override;
+#endif
     // Support for "Client" unicode
     SkSpan<char> getText() override;
     const ParagraphStyle& getParagraphStyle() const override;

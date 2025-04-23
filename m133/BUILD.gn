@@ -3,12 +3,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/ohos.gni")
 import("gn/codec.gni")
 import("gn/fuchsia_defines.gni")
 import("gn/shared_sources.gni")
 import("gn/skia.gni")
 import("gn/toolchain/wasm.gni")
+import("../build_overrides/skia.gni")
 import("//build/templates/cxx/prebuilt.gni")
+import("gn/effects.gni")
 
 if (defined(is_mingw) && is_mingw == true) {
   is_win = true
@@ -228,6 +231,81 @@ template("opts") {
 
 is_x86 = current_cpu == "x64" || current_cpu == "x86"
 is_loong64 = current_cpu == "loong64"
+opts("none") {
+  enabled = !is_x86 && current_cpu != "arm" && current_cpu != "arm64"
+  sources = skia_opts.none_sources
+  cflags = []
+}
+
+opts("armv7") {
+  enabled = current_cpu == "arm"
+  sources = skia_opts.armv7_sources + skia_opts.neon_sources
+  cflags = []
+}
+
+opts("arm64") {
+  enabled = current_cpu == "arm64"
+  sources = skia_opts.arm64_sources
+  cflags = []
+}
+
+opts("crc32") {
+  enabled = current_cpu == "arm64"
+  sources = skia_opts.crc32_sources
+  cflags = [ "-march=armv8-a+crc" ]
+}
+opts("sse2") {
+  enabled = is_x86
+  sources = skia_opts.sse2_sources
+  if (!is_clang && is_win) {
+    defines = [ "SK_CPU_SSE_LEVEL=SK_CPU_SSE_LEVEL_SSE2" ]
+  } else {
+    cflags = [ "-msse2" ]
+  }
+}
+
+opts("ssse3") {
+  enabled = is_x86
+  sources = skia_opts.ssse3_sources
+  if (!is_clang && is_win) {
+    defines = [ "SK_CPU_SSE_LEVEL=SK_CPU_SSE_LEVEL_SSSE3" ]
+  } else {
+    cflags = [ "-mssse3" ]
+  }
+}
+
+opts("sse41") {
+  enabled = is_x86
+  sources = skia_opts.sse41_sources
+  if (!is_clang && is_win) {
+    defines = [ "SK_CPU_SSE_LEVEL=SK_CPU_SSE_LEVEL_SSE41" ]
+  } else {
+    cflags = [ "-msse4.1" ]
+  }
+}
+
+opts("sse42") {
+  enabled = is_x86
+  sources = skia_opts.sse42_sources
+  if (!is_clang && is_win) {
+    defines = [ "SK_CPU_SSE_LEVEL=SK_CPU_SSE_LEVEL_SSE42" ]
+  } else {
+    cflags = [ "-msse4.2" ]
+  }
+}
+
+opts("avx") {
+  enabled = is_x86
+  sources = skia_opts.avx_sources
+  if (is_win && !is_mingw) {
+    cflags = [ "/arch:AVX" ]
+  } else {
+    cflags = [ "-mavx" ]
+    if (is_mac && is_debug) {
+      cflags += [ "-fno-stack-check" ]  # Work around skia:9709
+    }
+  }
+}
 
 opts("hsw") {
   enabled = is_x86
@@ -253,6 +331,26 @@ opts("lasx") {
   enabled = is_loong64
   sources = skia_opts.lasx_sources
   cflags = [ "-mlasx" ]
+}
+
+config("harfbuzz_config") {
+  include_dirs = [ "${skia_root_dir}/third_party/externals/harfbuzz/src" ]
+
+  defines = [
+    "HAVE_ICU",
+    "HAVE_ICU_BUILTIN",
+    "HAVE_OT",
+    "HAVE_CONFIG_OVERRIDE_H",
+    "HB_NO_FALLBACK_SHAPE",
+    "HB_NO_WIN1256",
+  ]
+}
+
+config("icu_config") {
+  include_dirs = [ "${skia_third_party_dir}/externals/icu/source/common" ]
+  if (is_arkui_x) {
+    include_dirs = [ "//third_party/icu/icu4c/source/common" ]
+  }
 }
 
 # Any feature of Skia that requires third-party code should be optional and use this template.

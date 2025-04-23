@@ -27,7 +27,11 @@ public:
 private:
 #if !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
     void shape(const char* utf8, size_t utf8Bytes,
+#ifdef ENABLE_DRAWING_ADAPTER
+               const RSFont& srcFont,
+#else
                const SkFont& srcFont,
+#endif
                bool leftToRight,
                SkScalar width,
                RunHandler*) const override;
@@ -80,7 +84,11 @@ static inline bool is_breaking_whitespace(SkUnichar c) {
 }
 
 static size_t linebreak(const char text[], const char stop[],
+#ifdef ENABLE_DRAWING_ADAPTER
+                        const RSFont& font, SkScalar width,
+#else
                         const SkFont& font, SkScalar width,
+#endif
                         SkScalar* advance,
                         size_t* trailing)
 {
@@ -152,7 +160,11 @@ void SkShaperPrimitive::shape(const char* utf8,
 
 void SkShaperPrimitive::shape(const char* utf8,
                               size_t utf8Bytes,
+#ifdef ENABLE_DRAWING_ADAPTER
+                              const RSFont& font,
+#else
                               const SkFont& font,
+#endif
                               bool leftToRight,
                               SkScalar width,
                               RunHandler* handler) const {
@@ -179,23 +191,40 @@ void SkShaperPrimitive::shape(const char* utf8,
                               size_t,
                               SkScalar width,
                               RunHandler* handler) const {
+#ifdef ENABLE_DRAWING_ADAPTER
+    RSFont font;
+#else
     SkFont font;
+#endif
     if (!fontRuns.atEnd()) {
         fontRuns.consume();
         font = fontRuns.currentFont();
     }
     SkASSERT(font.getTypeface());
 
+#ifdef ENABLE_DRAWING_ADAPTER
+    int glyphCount = font.CountText(utf8, utf8Bytes, RSDrawing::TextEncoding::UTF8);
+#else
     int glyphCount = font.countText(utf8, utf8Bytes, SkTextEncoding::kUTF8);
+#endif
     if (glyphCount < 0) {
         return;
     }
 
     std::unique_ptr<SkGlyphID[]> glyphs(new SkGlyphID[glyphCount]);
+#ifdef ENABLE_DRAWING_ADAPTER
+    font.TextToGlyphs(utf8, utf8Bytes, RSDrawing::TextEncoding::UTF8, glyphs.get(), glyphCount);
+#else
     font.textToGlyphs(utf8, utf8Bytes, SkTextEncoding::kUTF8, glyphs.get(), glyphCount);
+#endif
 
     std::unique_ptr<SkScalar[]> advances(new SkScalar[glyphCount]);
+#ifdef ENABLE_DRAWING_ADAPTER
+    font.GetWidths(glyphs.get(), glyphCount, advances.get(), nullptr);
+#else
     font.getWidthsBounds(glyphs.get(), glyphCount, advances.get(), nullptr, nullptr);
+#endif
+
 
     size_t glyphOffset = 0;
     size_t utf8Offset = 0;
@@ -209,7 +238,11 @@ void SkShaperPrimitive::shape(const char* utf8,
         const RunHandler::RunInfo info = {
             font,
             0,
+#ifdef ENABLE_DRAWING_ADAPTER
+            { font.MeasureText(utf8, bytesVisible, RSDrawing::TextEncoding::UTF8), 0 },
+#else
             { font.measureText(utf8, bytesVisible, SkTextEncoding::kUTF8), 0 },
+#endif
             numGlyphs,
             RunHandler::Range(utf8Offset, bytesVisible)
         };
