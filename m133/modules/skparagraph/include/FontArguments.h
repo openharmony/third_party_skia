@@ -6,6 +6,9 @@
 #include <vector>
 #include "include/core/SkFontArguments.h"
 #include "include/core/SkTypeface.h"
+#ifdef ENABLE_DRAWING_ADAPTER
+#include "drawing.h"
+#endif
 
 namespace skia {
 namespace textlayout {
@@ -19,7 +22,11 @@ public:
     FontArguments& operator=(const FontArguments&) = default;
     FontArguments& operator=(FontArguments&&) = default;
 
+#ifndef ENABLE_DRAWING_ADAPTER
     sk_sp<SkTypeface> CloneTypeface(const sk_sp<SkTypeface>& typeface) const;
+#else
+    std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface) const;
+#endif
 
     friend bool operator==(const FontArguments& a, const FontArguments& b);
     friend bool operator!=(const FontArguments& a, const FontArguments& b);

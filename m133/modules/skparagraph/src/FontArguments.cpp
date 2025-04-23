@@ -55,6 +55,7 @@ bool operator!=(const skia::textlayout::FontArguments& a, const skia::textlayout
     return !(a == b);
 }
 
+#ifndef ENABLE_DRAWING_ADAPTER
 sk_sp<SkTypeface> FontArguments::CloneTypeface(const sk_sp<SkTypeface>& typeface) const {
     SkFontArguments::VariationPosition position{
         fCoordinates.data(),
@@ -74,6 +75,28 @@ sk_sp<SkTypeface> FontArguments::CloneTypeface(const sk_sp<SkTypeface>& typeface
 
     return typeface->makeClone(args);
 }
+#else
+std::shared_ptr<RSTypeface> FontArguments::CloneTypeface(std::shared_ptr<RSTypeface> typeface) const
+{
+    RSFontArguments::VariationPosition position{
+        (RSFontArguments::VariationPosition::Coordinate*)fCoordinates.data(),
+        static_cast<int>(fCoordinates.size())
+    };
+
+    RSFontArguments::Palette palette{
+        fPaletteIndex,
+        (RSFontArguments::Palette::Override*)fPaletteOverrides.data(),
+        static_cast<int>(fPaletteOverrides.size())
+    };
+
+    RSFontArguments args;
+    args.SetCollectionIndex(fCollectionIndex);
+    args.SetVariationDesignPosition(position);
+    args.SetPalette(palette);
+
+    return typeface->MakeClone(args);
+}
+#endif
 
 }  // namespace textlayout
 }  // namespace skia

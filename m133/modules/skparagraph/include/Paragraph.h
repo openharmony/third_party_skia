@@ -3,22 +3,47 @@
 #define Paragraph_DEFINED
 
 #include "include/core/SkPath.h"
+#ifdef ENABLE_TEXT_ENHANCE
+#include "include/private/base/SkTArray.h"
+#endif
 #include "modules/skparagraph/include/FontCollection.h"
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphStyle.h"
+#ifdef ENABLE_TEXT_ENHANCE
+#include "modules/skparagraph/include/TextLineBase.h"
+#endif
 #include "modules/skparagraph/include/TextStyle.h"
 #include <unordered_set>
+
+#ifdef ENABLE_DRAWING_ADAPTER
+#include "drawing.h"
+#endif
 
 class SkCanvas;
 
 namespace skia {
 namespace textlayout {
 
+#ifdef ENABLE_TEXT_ENHANCE
+enum InternalState {
+  kUnknown = 0,
+  kIndexed = 1,     // Text is indexed
+  kShaped = 2,      // Text is shaped
+  kLineBroken = 5,
+  kFormatted = 6,
+  kDrawn = 7
+};
+#endif
+
 class ParagraphPainter;
 
 class Paragraph {
 
 public:
+#ifdef ENABLE_TEXT_ENHANCE
+    Paragraph() = default;
+#endif // ENABLE_TEXT_ENHANCE
+
     Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts);
 
     virtual ~Paragraph() = default;
@@ -36,15 +61,42 @@ public:
     SkScalar getIdeographicBaseline() { return fIdeographicBaseline; }
 
     SkScalar getLongestLine() { return fLongestLine; }
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar getLongestLineWithIndent() { return fLongestLineWithIndent; }
 
+    void setLongestLineWithIndent(SkScalar longestLineWithIndent)
+    {
+        fLongestLineWithIndent = longestLineWithIndent;
+    }
+
+    SkScalar getGlyphsBoundsTop() { return fGlyphsBoundsTop; }
+
+    SkScalar getGlyphsBoundsBottom() { return fGlyphsBoundsBottom; }
+
+    SkScalar getGlyphsBoundsLeft() { return fGlyphsBoundsLeft; }
+
+    SkScalar getGlyphsBoundsRight() { return fGlyphsBoundsRight; }
+#endif
     bool didExceedMaxLines() { return fExceededMaxLines; }
+
+#ifdef ENABLE_TEXT_ENHANCE
+    ParagraphStyle& getParagraphStyle() { return fParagraphStyle; }
+
+    virtual skia_private::TArray<Block, true>& exportTextStyles() = 0;
+
+    virtual void setState(InternalState state) = 0;
+
+    virtual InternalState getState() const = 0;
+#endif
 
     virtual void layout(SkScalar width) = 0;
 
     virtual void paint(SkCanvas* canvas, SkScalar x, SkScalar y) = 0;
 
     virtual void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) = 0;
-
+#ifdef ENABLE_DRAWING_ADAPTER
+    virtual void paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) = 0;
+#endif
     // Returns a vector of bounding boxes that enclose all text between
     // start and end glyph indexes, including start and excluding end
     virtual std::vector<TextBox> getRectsForRange(unsigned start,
@@ -66,6 +118,10 @@ public:
 
     virtual size_t lineNumber() = 0;
 
+#ifdef ENABLE_TEXT_ENHANCE
+    virtual TextRange getEllipsisTextRange() = 0;
+#endif // ENABLE_TEXT_ENHANCE
+
     virtual void markDirty() = 0;
 
     // This function will return the number of unresolved glyphs or
@@ -79,6 +135,9 @@ public:
     virtual void updateFontSize(size_t from, size_t to, SkScalar fontSize) = 0;
     virtual void updateForegroundPaint(size_t from, size_t to, SkPaint paint) = 0;
     virtual void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) = 0;
+#ifdef ENABLE_TEXT_ENHANCE
+    virtual std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) = 0;
+#endif // ENABLE_TEXT_ENHANCE
 
     enum VisitorFlags {
         kWhiteSpace_VisitorFlag = 1 << 0,
@@ -110,6 +169,7 @@ public:
         unsigned        flags;
     };
     using ExtendedVisitor = std::function<void(int lineNumber, const ExtendedVisitorInfo*)>;
+#ifndef ENABLE_DRAWING_ADAPTER
     virtual void extendedVisit(const ExtendedVisitor&) = 0;
 
     /* Returns path for a given line
@@ -119,6 +179,7 @@ public:
      * @return            a number glyphs that could not be converted to path
      */
     virtual int getPath(int lineNumber, SkPath* dest) = 0;
+#endif
 
     /* Returns path for a text blob
      *
@@ -240,6 +301,7 @@ public:
      */
     virtual bool getClosestUTF16GlyphInfoAt(SkScalar dx, SkScalar dy, GlyphInfo* glyphInfo) = 0;
 
+#ifndef ENABLE_DRAWING_ADAPTER
     struct FontInfo {
         FontInfo(const SkFont& font, const TextRange textRange)
                 : fFont(font), fTextRange(textRange) {}
@@ -248,26 +310,80 @@ public:
         SkFont fFont;
         TextRange fTextRange;
     };
+#else
+    struct FontInfo {
+        FontInfo(const RSFont font, const TextRange textRange)
+            : fFont(font), fTextRange(textRange) { }
+        virtual ~FontInfo() = default;
+        FontInfo(const FontInfo& ) = default;
+        RSFont fFont;
+        TextRange fTextRange;
+    };
+#endif
+
+#ifdef ENABLE_TEXT_ENHANCE
+    struct TextCutRecord {
+        size_t charbegin;
+        size_t charOver;
+        SkScalar phraseWidth;
+    };
+#endif // ENABLE_TEXT_ENHANCE
 
     /** Returns the font that is used to shape the text at the position
      *
      * @param codeUnitIndex   text index
      * @return                font info or an empty font info if the text is not found
      */
+#ifndef ENABLE_DRAWING_ADAPTER
     virtual SkFont getFontAt(TextIndex codeUnitIndex) const = 0;
+#else
+    virtual RSFont getFontAt(TextIndex codeUnitIndex) const = 0;
+#endif
 
+#ifndef ENABLE_DRAWING_ADAPTER
     /** Returns the font used to shape the text at the given UTF-16 offset.
      *
      * @param codeUnitIndex   a UTF-16 offset in the paragraph
      * @return                font info or an empty font info if the text is not found
      */
     virtual SkFont getFontAtUTF16Offset(size_t codeUnitIndex) = 0;
+#endif
 
     /** Returns the information about all the fonts used to shape the paragraph text
      *
      * @return                a list of fonts and text ranges
      */
     virtual std::vector<FontInfo> getFonts() const = 0;
+
+#ifdef ENABLE_TEXT_ENHANCE
+    virtual void setIndents(const std::vector<SkScalar>& indents) = 0;
+    virtual SkScalar detectIndents(size_t index) = 0;
+
+    virtual SkScalar getTextSplitRatio() const = 0;
+    virtual std::vector<std::unique_ptr<TextLineBase>> GetTextLines() = 0;
+    virtual std::unique_ptr<Paragraph> CloneSelf() = 0;
+    virtual size_t getUnicodeIndex(TextIndex index) const = 0;
+    virtual const std::vector<SkUnichar>& unicodeText() const = 0;
+    virtual std::unique_ptr<Paragraph> createCroppedCopy(
+            size_t startIndex, size_t count = std::numeric_limits<size_t>::max()) = 0;
+    virtual void initUnicodeText() = 0;
+    virtual size_t GetMaxLines() const = 0;
+    virtual SkIRect generatePaintRegion(SkScalar x, SkScalar y) = 0;
+#endif
+
+#ifndef ENABLE_DRAWING_ADAPTER
+    virtual SkFontMetrics measureText() = 0;
+#else
+    virtual RSFontMetrics measureText() = 0;
+#endif
+
+#ifndef ENABLE_DRAWING_ADAPTER
+    virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<SkFontMetrics>& fontMetrics) = 0;
+#else
+    virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<RSFontMetrics>& fontMetrics) = 0;
+#endif
 
 protected:
     sk_sp<FontCollection> fFontCollection;
@@ -276,11 +392,20 @@ protected:
     // Things for Flutter
     SkScalar fAlphabeticBaseline;
     SkScalar fIdeographicBaseline;
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar fGlyphsBoundsTop;
+    SkScalar fGlyphsBoundsBottom;
+    SkScalar fGlyphsBoundsLeft;
+    SkScalar fGlyphsBoundsRight;
+#endif
     SkScalar fHeight;
     SkScalar fWidth;
     SkScalar fMaxIntrinsicWidth;
     SkScalar fMinIntrinsicWidth;
     SkScalar fLongestLine;
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar fLongestLineWithIndent;
+#endif
     bool fExceededMaxLines;
 };
 }  // namespace textlayout

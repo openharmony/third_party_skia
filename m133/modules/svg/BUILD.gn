@@ -3,6 +3,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/ohos.gni")
 import("../../gn/skia.gni")
 
 if (skia_enable_svg && skia_use_expat) {
@@ -19,7 +20,7 @@ if (skia_enable_svg && skia_use_expat) {
     }
   }
 
-  skia_component("svg") {
+  ohos_source_set("svg") {
     check_includes = false
     import("svg.gni")
     public_configs = [ ":public_config" ]

@@ -24,6 +24,10 @@ public:
     void reset();
     bool updateParagraph(ParagraphImpl* paragraph);
     bool findParagraph(ParagraphImpl* paragraph);
+#ifdef ENABLE_TEXT_ENHANCE
+    void SetStoredLayout(ParagraphImpl& paragraph);
+    bool GetStoredLayout(ParagraphImpl& paragraph);
+#endif
 
     // For testing
     void setChecker(std::function<void(ParagraphImpl* impl, const char*, bool)> checker) {
@@ -40,6 +44,13 @@ public:
     struct Entry;
     void updateFrom(const ParagraphImpl* paragraph, Entry* entry);
     void updateTo(ParagraphImpl* paragraph, const Entry* entry);
+
+#ifdef ENABLE_TEXT_ENHANCE
+    bool useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value);
+    void SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value);
+    ParagraphCacheValue* cacheLayout(ParagraphImpl* paragraph);
+    bool canBeCached(ParagraphImpl* paragraph) const;
+#endif
 
      mutable SkMutex fParagraphMutex;
      std::function<void(ParagraphImpl* impl, const char*, bool)> fChecker;
