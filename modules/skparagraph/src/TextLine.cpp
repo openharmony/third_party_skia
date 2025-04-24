@@ -443,10 +443,8 @@ void TextLine::computeRoundRect(int& index, int& preIndex, std::vector<Run*>& gr
 void TextLine::prepareRoundRect() {
     fRoundRectAttrs.clear();
     std::vector<Run*> allRuns;
-    EllipsisReadStrategy ellipsisReadStrategy = TextGlobalConfig::IsTargetApiVersion(SINCE_API20_VERSION) ?
-        EllipsisReadStrategy::READ_REPLACED_WORD : EllipsisReadStrategy::DEFAULT;
     this->iterateThroughVisualRuns(
-        ellipsisReadStrategy, true,
+        EllipsisReadStrategy::READ_REPLACED_WORD, true,
         [this, &allRuns](const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* runWidthInLine) {
             *runWidthInLine = this->iterateThroughSingleRunByStyles(
                     TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kBackground,
@@ -1419,7 +1417,7 @@ void TextLine::measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeG
 {
     // Special judgment for the middle ellipsis, reason: inconsistent width behavior between
     // the middle tail ellipsis and the head ellipsis
-    SkScalar lineWidth = fOwner->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_GE_20 ? width() : fAdvance.fX;
+    SkScalar lineWidth = fOwner->needCreateMiddleEllipsis() ? width() : fAdvance.fX;
     if (compareRound(context.clip.fRight, lineWidth, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces
         && lineWidth > 0) {
         // There are few cases when we need it.
@@ -1819,7 +1817,7 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
                                         const RunVisitor& visitor) const {
     IterateRunsContext context;
     if (fEllipsis != nullptr) {
-        if (fOwner->getMiddleEllipsisVersionState() == MiddleEllipsisVersion::API_VERSION_GE_20) {
+        if (fOwner->needCreateMiddleEllipsis()) {
             context.ellipsisMode = EllipsisModal::MIDDLE;
         } else if (fIsTextLineEllipsisHeadModal || fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
             context.ellipsisMode = EllipsisModal::HEAD;
