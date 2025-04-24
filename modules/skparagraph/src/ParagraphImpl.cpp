@@ -87,7 +87,7 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
 }
 
 #ifdef OHOS_SUPPORT
-bool ParagraphImpl::getMiddleEllipsisVersionState()
+bool ParagraphImpl::needCreateMiddleEllipsis()
 {
     if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
         fParagraphStyle.ellipsized()) {
@@ -1027,7 +1027,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
 #ifdef OHOS_SUPPORT
-                else if (getMiddleEllipsisVersionState()) {
+                else if (needCreateMiddleEllipsis()) {
                     line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
                 } else if (textWrapper.brokeLineWithHyphen()
                            || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)

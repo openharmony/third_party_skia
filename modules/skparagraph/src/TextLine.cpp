@@ -1417,7 +1417,7 @@ void TextLine::measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeG
 {
     // Special judgment for the middle ellipsis, reason: inconsistent width behavior between
     // the middle tail ellipsis and the head ellipsis
-    SkScalar lineWidth = fOwner->getMiddleEllipsisVersionState() ? width() : fAdvance.fX;
+    SkScalar lineWidth = fOwner->needCreateMiddleEllipsis() ? width() : fAdvance.fX;
     if (compareRound(context.clip.fRight, lineWidth, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces
         && lineWidth > 0) {
         // There are few cases when we need it.
@@ -1817,7 +1817,7 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
                                         const RunVisitor& visitor) const {
     IterateRunsContext context;
     if (fEllipsis != nullptr) {
-        if (fOwner->getMiddleEllipsisVersionState()) {
+        if (fOwner->needCreateMiddleEllipsis()) {
             context.ellipsisMode = EllipsisModal::MIDDLE;
         } else if (fIsTextLineEllipsisHeadModal || fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
             context.ellipsisMode = EllipsisModal::HEAD;

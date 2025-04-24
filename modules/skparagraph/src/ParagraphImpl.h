@@ -324,7 +324,7 @@ public:
 #endif
 
 #ifdef OHOS_SUPPORT
-    bool getMiddleEllipsisVersionState();
+    bool needCreateMiddleEllipsis();
 #endif
 #ifndef USE_SKIA_TXT
     bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
