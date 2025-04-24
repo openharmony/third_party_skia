@@ -91,7 +91,7 @@ sk_sp<GrVkMemoryAllocator> GrVkAMDMemoryAllocator::Make(VkInstance instance,
     if (cacheFlag) {
         info.preferredLargeHeapBlockSize = SkGetVmaBlockSizeMB() * 1024 * 1024; // 1024 = 1K
     } else {
-        info.preferredLargeHeapBlockSize = 4 * 1024 * 1024;
+        info.preferredLargeHeapBlockSize = 1 * 1024 * 1024;
     }
     info.maxBlockCount = maxBlockCount;
     info.pAllocationCallbacks = nullptr;
