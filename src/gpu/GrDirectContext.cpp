@@ -524,12 +524,6 @@ void GrDirectContext::dumpAllResource(std::stringstream &dump) const {
 #endif
 }
 
-void GrDirectContext::dumpAllCoreTrace(std::stringstream &dump) const {
-#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
-    fResourceCache->dumpAllCoreTrace(dump);
-#endif
-}
-
 void GrDirectContext::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
     ASSERT_SINGLE_OWNER
     fResourceCache->dumpMemoryStatistics(traceMemoryDump);

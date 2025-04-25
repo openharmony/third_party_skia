@@ -10,7 +10,6 @@
 #include "include/core/SkBitmap.h"
 #include "include/core/SkImage.h"
 #include "include/gpu/GrDirectContext.h"
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/private/GrImageContext.h"
 #include "include/private/GrResourceKey.h"
 #include "include/private/GrSingleOwner.h"
@@ -286,8 +285,6 @@ sk_sp<GrTextureProxy> GrProxyProvider::createProxyFromBitmap(const SkBitmap& bit
                                                              GrMipmapped mipMapped,
                                                              SkBackingFit fit,
                                                              SkBudgeted budgeted) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRPROXYPROVIDER_CREATEPROXYFROMBITMAP);
     ASSERT_SINGLE_OWNER
     SkASSERT(fit == SkBackingFit::kExact || mipMapped == GrMipmapped::kNo);
 
@@ -343,8 +340,6 @@ sk_sp<GrTextureProxy> GrProxyProvider::createProxyFromBitmap(const SkBitmap& bit
 sk_sp<GrTextureProxy> GrProxyProvider::createNonMippedProxyFromBitmap(const SkBitmap& bitmap,
                                                                       SkBackingFit fit,
                                                                       SkBudgeted budgeted) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRPROXYPROVIDER_CREATENONMIPPEDPROXYFROMBITMAP);
     auto dims = bitmap.dimensions();
 
     auto colorType = SkColorTypeToGrColorType(bitmap.colorType());
@@ -382,8 +377,6 @@ sk_sp<GrTextureProxy> GrProxyProvider::createNonMippedProxyFromBitmap(const SkBi
 
 sk_sp<GrTextureProxy> GrProxyProvider::createMippedProxyFromBitmap(const SkBitmap& bitmap,
                                                                    SkBudgeted budgeted) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRPROXYPROVIDER_CREATEMIPPEDPROXYFROMBITMAP);
     SkASSERT(this->caps()->mipmapSupport());
 
     auto colorType = SkColorTypeToGrColorType(bitmap.colorType());
@@ -501,8 +494,6 @@ sk_sp<GrTextureProxy> GrProxyProvider::createProxy(const GrBackendFormat& format
 sk_sp<GrTextureProxy> GrProxyProvider::createCompressedTextureProxy(
         SkISize dimensions, SkBudgeted budgeted, GrMipmapped mipMapped, GrProtected isProtected,
         SkImage::CompressionType compressionType, sk_sp<SkData> data) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRPROXYPROVIDER_CREATECOMPRESSEDTEXTUREPROXY);
     ASSERT_SINGLE_OWNER
     if (this->isAbandoned()) {
         return nullptr;

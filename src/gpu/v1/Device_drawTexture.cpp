@@ -9,7 +9,6 @@
 
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrRecordingContext.h"
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/private/SkTPin.h"
 #include "src/core/SkDraw.h"
 #include "src/core/SkImagePriv.h"
@@ -426,8 +425,6 @@ void draw_image(GrRecordingContext* rContext,
                 SkCanvas::SrcRectConstraint constraint,
                 SkSamplingOptions sampling,
                 SkTileMode tm = SkTileMode::kClamp) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_DEVICE_DRAWTEXTURE_DRAW_IMAGE);
     const SkMatrix& ctm(matrixProvider.localToDevice());
     if (tm == SkTileMode::kClamp &&
         !image.isYUVA()          &&

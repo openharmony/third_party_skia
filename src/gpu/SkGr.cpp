@@ -13,7 +13,6 @@
 #include "include/core/SkPixelRef.h"
 #include "include/effects/SkRuntimeEffect.h"
 #include "include/gpu/GrRecordingContext.h"
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/private/SkIDChangeListener.h"
 #include "include/private/SkImageInfoPriv.h"
 #include "include/private/SkTPin.h"
@@ -150,8 +149,6 @@ static sk_sp<GrTextureProxy> make_bmp_proxy(GrProxyProvider* proxyProvider,
                                             GrMipmapped mipmapped,
                                             SkBackingFit fit,
                                             SkBudgeted budgeted) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_SKGR_MAKE_BMP_PROXY);
     SkBitmap bmpToUpload;
     if (ct != SkColorTypeToGrColorType(bitmap.info().colorType())) {
         SkColorType skCT = GrColorTypeToSkColorType(ct);
@@ -172,8 +169,6 @@ std::tuple<GrSurfaceProxyView, GrColorType>
 GrMakeCachedBitmapProxyView(GrRecordingContext* rContext,
                             const SkBitmap& bitmap,
                             GrMipmapped mipmapped) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_SKGR_GRMAKECACHEDBITMAPPROXYVIEW);
     if (!bitmap.peekPixels(nullptr)) {
         return {};
     }
@@ -242,8 +237,6 @@ GrMakeUncachedBitmapProxyView(GrRecordingContext* rContext,
                               GrMipmapped mipmapped,
                               SkBackingFit fit,
                               SkBudgeted budgeted) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_SKGR_GRMAKEUNCACHEDBITMAPPROXYVIEW);
     GrProxyProvider* proxyProvider = rContext->priv().proxyProvider();
     const GrCaps* caps = rContext->priv().caps();
 
@@ -369,8 +362,6 @@ static std::unique_ptr<GrFragmentProcessor> make_dither_effect(
         float range,
         const GrCaps* caps) {
 #endif // SKIA_OHOS
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_SKGR_MAKE_DITHER_EFFECT);
     if (range == 0 || inputFP == nullptr) {
         return inputFP;
     }

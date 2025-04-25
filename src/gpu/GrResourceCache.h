@@ -118,9 +118,6 @@ public:
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     void dumpAllResource(std::stringstream& dump) const;
 #endif
-#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
-    void dumpAllCoreTrace(std::stringstream& dump) const;
-#endif
 
 #ifdef SKIA_DFX_FOR_OHOS
     void addAllocImageBytes(size_t bytes) { fAllocImageBytes += bytes; }

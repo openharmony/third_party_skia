@@ -879,7 +879,6 @@ public:
     void vmaDefragment();
     void dumpVmaStats(SkString *out);
     void dumpAllResource(std::stringstream& dump) const;
-    void dumpAllCoreTrace(std::stringstream& dump) const;
 
     // OH ISSUE: get the memory information of the updated pid.
     void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
