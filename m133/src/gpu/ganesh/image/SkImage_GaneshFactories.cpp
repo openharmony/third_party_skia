@@ -289,7 +289,8 @@ sk_sp<SkImage> TextureFromCompressedTextureData(GrDirectContext* direct,
                                                 int height,
                                                 SkTextureCompressionType type,
                                                 skgpu::Mipmapped mipmapped,
-                                                GrProtected isProtected) {
+                                                GrProtected isProtected,
+                                                sk_sp<SkColorSpace> colorSpace) {
     if (!direct || !data) {
         return nullptr;
     }
@@ -316,7 +317,7 @@ sk_sp<SkImage> TextureFromCompressedTextureData(GrDirectContext* direct,
     return sk_make_sp<SkImage_Ganesh>(sk_ref_sp(direct),
                                       kNeedNewImageUniqueID,
                                       std::move(view),
-                                      SkColorInfo(colorType, kOpaque_SkAlphaType, nullptr));
+                                      SkColorInfo(colorType, kOpaque_SkAlphaType, colorSpace));
 }
 
 sk_sp<SkImage> PromiseTextureFrom(sk_sp<GrContextThreadSafeProxy> threadSafeProxy,
