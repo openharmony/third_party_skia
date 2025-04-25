@@ -163,12 +163,12 @@ int32_t ParagraphImpl::unresolvedGlyphs() {
     return fUnresolvedGlyphs;
 }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
-    std::vector<SkFontMetrics>& fontMetrics) {
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
 bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
     std::vector<RSFontMetrics>& fontMetrics) {
+#else
+bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+    std::vector<SkFontMetrics>& fontMetrics) {
 #endif
     if (lineNumber > fLines.size() || !lineNumber ||
         !fLines[lineNumber - 1].getLineAllRuns().size()) {
@@ -188,12 +188,12 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
             if (++runClock > currentRunCharNumber) {
                 break;
             }
-#ifndef ENABLE_DRAWING_ADAPTER
-            SkFontMetrics newFontMetrics;
-            targetRun.fFont.getMetrics(&newFontMetrics);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
             RSFontMetrics newFontMetrics;
             targetRun.fFont.GetMetrics(&newFontMetrics);
+#else
+            SkFontMetrics newFontMetrics;
+            targetRun.fFont.getMetrics(&newFontMetrics);
 #endif
 #ifdef ENABLE_TEXT_ENHANCE
             auto decompressFont = targetRun.fFont;
@@ -1075,7 +1075,9 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                     }
                 } else if (wordSpacingPending) {
                     SkScalar spacing = currentStyle->fStyle.getWordSpacing();
-#ifndef ENABLE_TEXT_ENHANCE
+#ifdef ENABLE_TEXT_ENHANCE
+                    run.addSpacesAtTheEnd(spacing, lastSpaceCluster);
+#else
                     if (cluster->fRunIndex != lastSpaceCluster->fRunIndex) {
                         // If the last space cluster belongs to the previous run
                         // we have to extend that cluster and that run
@@ -1084,8 +1086,6 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                     } else {
                         run.addSpacesAtTheEnd(spacing, lastSpaceCluster);
                     }
-#else
-                    run.addSpacesAtTheEnd(spacing, lastSpaceCluster);
 #endif
                     run.shift(cluster, spacing);
                     shift += spacing;
@@ -1475,7 +1475,18 @@ void ParagraphImpl::resolveStrut() {
         return;
     }
 
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_DRAWING_ADAPTER
+    RSFont font(typefaces.front(), strutStyle.getFontSize(), 1, 0);
+    RSFontMetrics metrics;
+#ifdef ENABLE_TEXT_ENHANCE
+    RSFont compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.GetMetrics(&metrics);
+    metricsIncludeFontPadding(&metrics, font);
+#else
+    font.GetMetrics(&metrics);
+#endif
+#else
     SkFont font(typefaces.front(), strutStyle.getFontSize());
     SkFontMetrics metrics;
 #ifdef ENABLE_TEXT_ENHANCE
@@ -1486,17 +1497,6 @@ void ParagraphImpl::resolveStrut() {
 #else
     font.getMetrics(&metrics);
     const SkScalar strutLeading = strutStyle.getLeading() < 0 ? 0 : strutStyle.getLeading() * strutStyle.getFontSize();
-#endif
-#else
-    RSFont font(typefaces.front(), strutStyle.getFontSize(), 1, 0);
-    RSFontMetrics metrics;
-#ifdef ENABLE_TEXT_ENHANCE
-    RSFont compressFont = font;
-    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
-    compressFont.GetMetrics(&metrics);
-    metricsIncludeFontPadding(&metrics, font);
-#else
-    font.GetMetrics(&metrics);
 #endif
 #endif
 
@@ -1906,10 +1906,10 @@ void ParagraphImpl::computeEmptyMetrics() {
       textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
     auto typeface = typefaces.empty() ? nullptr : typefaces.front();
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFont font(typeface, textStyle.getFontSize());
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFont font(typeface, textStyle.getFontSize(), 1, 0);
+#else
+    SkFont font(typeface, textStyle.getFontSize());
 #endif
     fEmptyMetrics = InternalLineMetrics(font, paragraphStyle().getStrutStyle().getForceStrutHeight());
 
@@ -2371,17 +2371,7 @@ bool ParagraphImpl::getClosestUTF16GlyphInfoAt(SkScalar dx, SkScalar dy, GlyphIn
     return getGlyphInfoAtUTF16Offset(utf16Offset, glyphInfo);
 }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-SkFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
-    for (auto& run : fRuns) {
-        const auto textRange = run.textRange();
-        if (textRange.start <= codeUnitIndex && codeUnitIndex < textRange.end) {
-            return run.font();
-        }
-    }
-    return SkFont();
-}
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
 RSFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const
 {
     for (auto& run : fRuns) {
@@ -2390,6 +2380,16 @@ RSFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const
         }
     }
     return RSFont();
+}
+#else
+SkFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
+    for (auto& run : fRuns) {
+        const auto textRange = run.textRange();
+        if (textRange.start <= codeUnitIndex && codeUnitIndex < textRange.end) {
+            return run.font();
+        }
+    }
+    return SkFont();
 }
 #endif
 
@@ -2418,47 +2418,7 @@ std::vector<Paragraph::FontInfo> ParagraphImpl::getFonts() const {
     return results;
 }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-SkFontMetrics ParagraphImpl::measureText() {
-    SkFontMetrics metrics;
-    if (fRuns.empty()) {
-        return metrics;
-    }
-
-    const auto& firstFont = fRuns.front().font();
-    SkRect firstBounds;
-    auto firstStr = text(fRuns.front().textRange());
-    firstFont.getMetrics(&metrics);
-#ifdef ENABLE_TEXT_ENHANCE
-    auto decompressFont = firstFont;
-    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
-    metricsIncludeFontPadding(&metrics, decompressFont);
-#endif
-    firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
-    fGlyphsBoundsTop = firstBounds.top();
-    fGlyphsBoundsBottom = firstBounds.bottom();
-    fGlyphsBoundsLeft = firstBounds.left();
-    SkScalar realWidth = 0;
-    for (size_t i = 0; i < fRuns.size(); ++i) {
-        auto run = fRuns[i];
-        const auto& font = run.font();
-        SkRect bounds;
-        auto str = text(run.textRange());
-        auto advance = font.measureText(str.data(), str.size(), SkTextEncoding::kUTF8, &bounds, nullptr);
-        realWidth += advance;
-        if (i == 0) {
-            realWidth -= ((advance - (bounds.right() - bounds.left())) / 2);
-        }
-        if (i == (fRuns.size() - 1)) {
-            realWidth -= ((advance - (bounds.right() - bounds.left())) / 2);
-        }
-        fGlyphsBoundsTop = std::min(fGlyphsBoundsTop, bounds.top());
-        fGlyphsBoundsBottom = std::max(fGlyphsBoundsBottom, bounds.bottom());
-    }
-    fGlyphsBoundsRight = realWidth + fGlyphsBoundsLeft;
-    return metrics;
-}
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
 RSFontMetrics ParagraphImpl::measureText()
 {
     RSFontMetrics metrics;
@@ -2495,6 +2455,46 @@ RSFontMetrics ParagraphImpl::measureText()
         }
         fGlyphsBoundsTop = std::min(fGlyphsBoundsTop, bounds.GetTop());
         fGlyphsBoundsBottom = std::max(fGlyphsBoundsBottom, bounds.GetBottom());
+    }
+    fGlyphsBoundsRight = realWidth + fGlyphsBoundsLeft;
+    return metrics;
+}
+#else
+SkFontMetrics ParagraphImpl::measureText() {
+    SkFontMetrics metrics;
+    if (fRuns.empty()) {
+        return metrics;
+    }
+
+    const auto& firstFont = fRuns.front().font();
+    SkRect firstBounds;
+    auto firstStr = text(fRuns.front().textRange());
+    firstFont.getMetrics(&metrics);
+#ifdef ENABLE_TEXT_ENHANCE
+    auto decompressFont = firstFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    metricsIncludeFontPadding(&metrics, decompressFont);
+#endif
+    firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
+    fGlyphsBoundsTop = firstBounds.top();
+    fGlyphsBoundsBottom = firstBounds.bottom();
+    fGlyphsBoundsLeft = firstBounds.left();
+    SkScalar realWidth = 0;
+    for (size_t i = 0; i < fRuns.size(); ++i) {
+        auto run = fRuns[i];
+        const auto& font = run.font();
+        SkRect bounds;
+        auto str = text(run.textRange());
+        auto advance = font.measureText(str.data(), str.size(), SkTextEncoding::kUTF8, &bounds, nullptr);
+        realWidth += advance;
+        if (i == 0) {
+            realWidth -= ((advance - (bounds.right() - bounds.left())) / 2);
+        }
+        if (i == (fRuns.size() - 1)) {
+            realWidth -= ((advance - (bounds.right() - bounds.left())) / 2);
+        }
+        fGlyphsBoundsTop = std::min(fGlyphsBoundsTop, bounds.top());
+        fGlyphsBoundsBottom = std::max(fGlyphsBoundsBottom, bounds.bottom());
     }
     fGlyphsBoundsRight = realWidth + fGlyphsBoundsLeft;
     return metrics;

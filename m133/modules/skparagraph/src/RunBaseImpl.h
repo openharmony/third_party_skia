@@ -25,10 +25,10 @@ namespace textlayout {
 class RunBaseImpl : public RunBase {
 public:
     RunBaseImpl(
-#ifndef ENABLE_DRAWING_ADAPTER
-        sk_sp<SkTextBlob> blob,
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
         std::shared_ptr<RSTextBlob> blob,
+#else
+        sk_sp<SkTextBlob> blob,
 #endif
         SkPoint offset,
         ParagraphPainter::SkPaintOrID paint,
@@ -41,10 +41,10 @@ public:
         size_t visitorSize
     );
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    const SkFont& font() const override;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     const RSFont& font() const override;
+#else
+    const SkFont& font() const override;
 #endif
 
     size_t size() const override;
@@ -56,12 +56,12 @@ public:
     void getStringRange(uint64_t* location, uint64_t* length) const override;
     std::vector<uint64_t> getStringIndices(int64_t start, int64_t length) const override;
     float getTypographicBounds(float* ascent, float* descent, float* leading) const override;
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkRect getImageBounds() const override;
-    std::vector<SkPoint> getPositions(int64_t start, int64_t length) const override;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSRect getImageBounds() const override;
     std::vector<RSPoint> getPositions(int64_t start, int64_t length) const override;
+#else
+    SkRect getImageBounds() const override;
+    std::vector<SkPoint> getPositions(int64_t start, int64_t length) const override;
 #endif
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) override;
 
@@ -73,12 +73,12 @@ private:
     uint64_t calculateActualLength(int64_t start, int64_t length) const;
     SkRect getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan, size_t startNotWhiteSpaceIndex,
         SkScalar startWhiteSpaceWidth, size_t endWhiteSpaceNum, SkScalar endAdvance) const;
-#ifndef ENABLE_DRAWING_ADAPTER
-    sk_sp<SkTextBlob> fBlob;
-    SkFont fFont;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFont fFont;
     std::shared_ptr<RSTextBlob> fBlob;
+#else
+    sk_sp<SkTextBlob> fBlob;
+    SkFont fFont;
 #endif
     SkPoint fOffset = SkPoint::Make(0.0f, 0.0f);
     ParagraphPainter::SkPaintOrID fPaint;

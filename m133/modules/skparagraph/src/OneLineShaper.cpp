@@ -557,10 +557,11 @@ void OneLineShaper::iterateThroughFontStyles(TextRange textRange,
 
 void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                                        const TypefaceVisitor& visitor) {
-#ifndef ENABLE_DRAWING_ADAPTER
-    std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
+        textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
+#else
+    std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
         textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
 #endif
 
@@ -613,21 +614,21 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                 }
 
                 SkASSERT(codepoint != -1 || emojiStart != -1);
-#ifndef ENABLE_DRAWING_ADAPTER
-                sk_sp<SkTypeface> typeface = nullptr;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
                 std::shared_ptr<RSTypeface> typeface;
+#else
+                sk_sp<SkTypeface> typeface = nullptr;
 #endif
                 if (emojiStart == -1) {
                     // First try to find in in a cache
                     FontKey fontKey(codepoint, textStyle.getFontStyle(), textStyle.getLocale());
                     auto found = fFallbackFonts.find(fontKey);
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_DRAWING_ADAPTER
+                    if (found != fFallbackFonts.end()) {
+                        typeface = found->second;
+#else
                     if (found != nullptr) {
                         typeface = *found;
-#else
-	                if (found != fFallbackFonts.end()) {
-	                    typeface = found->second;
 #endif
                     }
                     if (typeface == nullptr) {
@@ -636,10 +637,10 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                                                     textStyle.getFontStyle(),
                                                     textStyle.getLocale());
                         if (typeface != nullptr) {
-#ifndef ENABLE_DRAWING_ADAPTER
-                            fFallbackFonts.set(fontKey, typeface);
+#ifdef ENABLE_DRAWING_ADAPTER
+                            fFallbackFonts.emplace(fontKey, typeface);
 #else
-                    		fFallbackFonts.emplace(fontKey, typeface);
+                            fFallbackFonts.set(fontKey, typeface);
 #endif
                         }
                     }
@@ -659,12 +660,12 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                 }
 
                 // Check if we already tried this font on this text range
-#ifndef ENABLE_DRAWING_ADAPTER
-                if (!alreadyTriedTypefaces.contains(typeface->uniqueID())) {
-                    alreadyTriedTypefaces.add(typeface->uniqueID());
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
                 if (!alreadyTriedTypefaces.contains(typeface->GetUniqueID())) {
                     alreadyTriedTypefaces.add(typeface->GetUniqueID());
+#else
+                if (!alreadyTriedTypefaces.contains(typeface->uniqueID())) {
+                    alreadyTriedTypefaces.add(typeface->uniqueID());
 #endif
                 } else {
                     continue;
@@ -750,25 +751,25 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
             continue;
         }
 
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_DRAWING_ADAPTER
+        std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
+            placeholder.fTextStyle.getFontFamilies(),
+            placeholder.fTextStyle.getFontStyle(),
+            placeholder.fTextStyle.getFontArguments());
+        std::shared_ptr<RSTypeface> typeface = typefaces.empty() ? nullptr : typefaces.front();
+#else
         // Get the placeholder font
         std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
             placeholder.fTextStyle.getFontFamilies(),
             placeholder.fTextStyle.getFontStyle(),
             placeholder.fTextStyle.getFontArguments());
         sk_sp<SkTypeface> typeface = typefaces.empty() ? nullptr : typefaces.front();
-#else
-        std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
-            placeholder.fTextStyle.getFontFamilies(),
-            placeholder.fTextStyle.getFontStyle(),
-            placeholder.fTextStyle.getFontArguments());
-        std::shared_ptr<RSTypeface> typeface = typefaces.empty() ? nullptr : typefaces.front();
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
-        SkFont font(typeface, placeholder.fTextStyle.getFontSize());
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
         RSFont font(typeface, placeholder.fTextStyle.getFontSize(), 1, 0);
+#else
+        SkFont font(typeface, placeholder.fTextStyle.getFontSize());
 #endif
 
         // "Shape" the placeholder
@@ -817,12 +818,12 @@ bool OneLineShaper::shape() {
             (TextRange textRange, SkSpan<Block> styleSpan, SkScalar& advanceX, TextIndex textStart, uint8_t defaultBidiLevel) {
 
         // Set up the shaper and shape the next
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_DRAWING_ADAPTER
         auto shaper = SkShapers::HB::ShapeDontWrapOrReorder(fParagraph->fUnicode,
-                                                            SkFontMgr::RefEmpty());  // no fallback
+            RSFontMgr::CreateDefaultFontMgr());
 #else
         auto shaper = SkShapers::HB::ShapeDontWrapOrReorder(fParagraph->fUnicode,
-                                                            RSFontMgr::CreateDefaultFontMgr());
+            SkFontMgr::RefEmpty());  // no fallback
 #endif
 		if (shaper == nullptr) {
             // For instance, loadICU does not work. We have to stop the process
@@ -852,19 +853,19 @@ bool OneLineShaper::shape() {
             this->matchResolvedFonts(block.fStyle, [&](sk_sp<SkTypeface> typeface) {
 #endif
                 // Create one more font to try
-#ifndef ENABLE_DRAWING_ADAPTER
-                SkFont font(std::move(typeface), block.fStyle.getFontSize());
-                font.setEdging(SkFont::Edging::kAntiAlias);
-                font.setHinting(SkFontHinting::kSlight);
-                font.setSubpixel(true);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
                 RSFont font(std::move(typeface), block.fStyle.getFontSize(), 1, 0);
                 font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
                 font.SetHinting(RSDrawing::FontHinting::NONE);
                 font.SetSubpixel(true);
 #ifdef ENABLE_TEXT_ENHANCE
-				font.SetBaselineSnap(false);
+                font.SetBaselineSnap(false);
 #endif // ENABLE_TEXT_ENHANCE
+#else
+                SkFont font(std::move(typeface), block.fStyle.getFontSize());
+                font.setEdging(SkFont::Edging::kAntiAlias);
+                font.setHinting(SkFontHinting::kSlight);
+                font.setSubpixel(true);
 #endif // ENABLE_DRAWING_ADAPTER
 
 
@@ -873,17 +874,7 @@ bool OneLineShaper::shape() {
 #endif
                 // Apply fake bold and/or italic settings to the font if the
                 // typeface's attributes do not match the intended font style.
-#ifndef ENABLE_DRAWING_ADAPTER
-                int wantedWeight = block.fStyle.getFontStyle().weight();
-                bool fakeBold =
-                    wantedWeight >= SkFontStyle::kSemiBold_Weight &&
-                    wantedWeight - font.getTypeface()->fontStyle().weight() >= 200;
-                bool fakeItalic =
-                    block.fStyle.getFontStyle().slant() == SkFontStyle::kItalic_Slant &&
-                    font.getTypeface()->fontStyle().slant() != SkFontStyle::kItalic_Slant;
-                font.setEmbolden(fakeBold);
-                font.setSkewX(fakeItalic ? -SK_Scalar1 / 4 : 0);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
                 int wantedWeight = block.fStyle.getFontStyle().GetWeight();
                 bool isCustomSymbol = block.fStyle.isCustomSymbol();
                 bool fakeBold =
@@ -894,6 +885,16 @@ bool OneLineShaper::shape() {
                     font.GetTypeface()->GetFontStyle().GetSlant() != RSFontStyle::ITALIC_SLANT;
                 font.SetEmbolden(fakeBold);
                 font.SetSkewX(fakeItalic ? -SK_Scalar1 / 4 : 0);
+#else
+                int wantedWeight = block.fStyle.getFontStyle().weight();
+                bool fakeBold =
+                    wantedWeight >= SkFontStyle::kSemiBold_Weight &&
+                    wantedWeight - font.getTypeface()->fontStyle().weight() >= 200;
+                bool fakeItalic =
+                    block.fStyle.getFontStyle().slant() == SkFontStyle::kItalic_Slant &&
+                    font.getTypeface()->fontStyle().slant() != SkFontStyle::kItalic_Slant;
+                font.setEmbolden(fakeBold);
+                font.setSkewX(fakeItalic ? -SK_Scalar1 / 4 : 0);
 #endif
 
                 // Walk through all the currently unresolved blocks

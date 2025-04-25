@@ -3,12 +3,10 @@
 #define FontCollection_DEFINED
 
 #include <memory>
-#ifdef ENABLE_TEXT_ENHANCE
-#include <mutex>
-#endif
 #include <optional>
 #include <set>
 #ifdef ENABLE_TEXT_ENHANCE
+#include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
 #endif
@@ -34,7 +32,28 @@ public:
 
     size_t getFontManagersCount() const;
 
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_DRAWING_ADAPTER
+    void setAssetFontManager(std::shared_ptr<RSFontMgr> fontManager);
+    void setDynamicFontManager(std::shared_ptr<RSFontMgr> fontManager);
+    void setTestFontManager(std::shared_ptr<RSFontMgr> fontManager);
+    void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager);
+    void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const char defaultFamilyName[]);
+    void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const std::vector<SkString>& defaultFamilyNames);
+
+    std::shared_ptr<RSFontMgr> getFallbackManager() const
+    {
+        std::shared_lock<std::shared_mutex> readLock(mutex_);
+        return fDefaultFontManager;
+    }
+
+    std::vector<std::shared_ptr<RSTypeface>> findTypefaces(
+        const std::vector<SkString>& familyNames, RSFontStyle fontStyle);
+    std::vector<std::shared_ptr<RSTypeface>> findTypefaces(
+        const std::vector<SkString>& familyNames, RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs);
+
+    std::shared_ptr<RSTypeface> defaultFallback(SkUnichar unicode, RSFontStyle fontStyle, const SkString& locale);
+    std::shared_ptr<RSTypeface> defaultFallback();
+#else
     void setAssetFontManager(sk_sp<SkFontMgr> fontManager);
     void setDynamicFontManager(sk_sp<SkFontMgr> fontManager);
     void setTestFontManager(sk_sp<SkFontMgr> fontManager);
@@ -50,36 +69,13 @@ public:
     sk_sp<SkTypeface> defaultFallback(SkUnichar unicode, SkFontStyle fontStyle, const SkString& locale);
     sk_sp<SkTypeface> defaultEmojiFallback(SkUnichar emojiStart, SkFontStyle fontStyle, const SkString& locale);
     sk_sp<SkTypeface> defaultFallback();
-#else
-    void setAssetFontManager(std::shared_ptr<RSFontMgr> fontManager);
-    void setDynamicFontManager(std::shared_ptr<RSFontMgr> fontManager);
-    void setTestFontManager(std::shared_ptr<RSFontMgr> fontManager);
-    void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager);
-    void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const char defaultFamilyName[]);
-    void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const std::vector<SkString>& defaultFamilyNames);
-
-    std::shared_ptr<RSFontMgr> getFallbackManager() const
-    {
-#ifdef ENABLE_TEXT_ENHANCE
-        std::shared_lock<std::shared_mutex> readLock(mutex_);
-#endif
-        return fDefaultFontManager;
-    }
-
-    std::vector<std::shared_ptr<RSTypeface>> findTypefaces(
-        const std::vector<SkString>& familyNames, RSFontStyle fontStyle);
-    std::vector<std::shared_ptr<RSTypeface>> findTypefaces(
-        const std::vector<SkString>& familyNames, RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs);
-
-    std::shared_ptr<RSTypeface> defaultFallback(SkUnichar unicode, RSFontStyle fontStyle, const SkString& locale);
-    std::shared_ptr<RSTypeface> defaultFallback();
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    sk_sp<SkTypeface> CloneTypeface(sk_sp<SkTypeface> typeface,
+#ifdef ENABLE_DRAWING_ADAPTER
+    std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface,
         const std::optional<FontArguments>& fontArgs);
 #else
-    std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface,
+    sk_sp<SkTypeface> CloneTypeface(sk_sp<SkTypeface> typeface,
         const std::optional<FontArguments>& fontArgs);
 #endif
 
@@ -107,33 +103,33 @@ public:
     }
 #endif
 private:
-#ifndef ENABLE_DRAWING_ADAPTER
-    std::vector<sk_sp<SkFontMgr>> getFontManagerOrder() const;
-
-    sk_sp<SkTypeface> matchTypeface(const SkString& familyName, SkFontStyle fontStyle);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     std::vector<std::shared_ptr<RSFontMgr>> getFontManagerOrder() const;
 
     std::shared_ptr<RSTypeface> matchTypeface(const SkString& familyName, RSFontStyle fontStyle);
+#else
+    std::vector<sk_sp<SkFontMgr>> getFontManagerOrder() const;
+
+    sk_sp<SkTypeface> matchTypeface(const SkString& familyName, SkFontStyle fontStyle);
 #endif
 
     struct FamilyKey {
-#ifndef ENABLE_DRAWING_ADAPTER
-        FamilyKey(const std::vector<SkString>& familyNames, SkFontStyle style, const std::optional<FontArguments>& args)
-                : fFamilyNames(familyNames), fFontStyle(style), fFontArguments(args) {}
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
         FamilyKey(
             const std::vector<SkString>& familyNames, RSFontStyle style, const std::optional<FontArguments>& args)
+                : fFamilyNames(familyNames), fFontStyle(style), fFontArguments(args) {}
+#else
+        FamilyKey(const std::vector<SkString>& familyNames, SkFontStyle style, const std::optional<FontArguments>& args)
                 : fFamilyNames(familyNames), fFontStyle(style), fFontArguments(args) {}
 #endif
 
         FamilyKey() {}
 
         std::vector<SkString> fFamilyNames;
-#ifndef ENABLE_DRAWING_ADAPTER
-        SkFontStyle fFontStyle;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
         RSFontStyle fFontStyle;
+#else
+        SkFontStyle fFontStyle;
 #endif
         std::optional<FontArguments> fFontArguments;
 
@@ -148,25 +144,24 @@ private:
 #endif
 
     bool fEnableFontFallback;
-#ifndef ENABLE_DRAWING_ADAPTER
-    skia_private::THashMap<FamilyKey, std::vector<sk_sp<SkTypeface>>, FamilyKey::Hasher> fTypefaces;
-    sk_sp<SkFontMgr> fDefaultFontManager;
-    sk_sp<SkFontMgr> fAssetFontManager;
-    sk_sp<SkFontMgr> fDynamicFontManager;
-    sk_sp<SkFontMgr> fTestFontManager;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     std::unordered_map<FamilyKey, std::vector<std::shared_ptr<RSTypeface>>, FamilyKey::Hasher> fTypefaces;
     std::shared_ptr<RSFontMgr> fDefaultFontManager;
     std::shared_ptr<RSFontMgr> fAssetFontManager;
     std::shared_ptr<RSFontMgr> fDynamicFontManager;
     std::shared_ptr<RSFontMgr> fTestFontManager;
+#else
+    skia_private::THashMap<FamilyKey, std::vector<sk_sp<SkTypeface>>, FamilyKey::Hasher> fTypefaces;
+    sk_sp<SkFontMgr> fDefaultFontManager;
+    sk_sp<SkFontMgr> fAssetFontManager;
+    sk_sp<SkFontMgr> fDynamicFontManager;
+    sk_sp<SkFontMgr> fTestFontManager;
 #endif
     std::vector<SkString> fDefaultFamilyNames;
     ParagraphCache fParagraphCache;
-#ifdef ENABLE_TEXT_ENHANCE
+
     std::mutex fMutex;
     mutable std::shared_mutex mutex_;
-#endif
 };
 }  // namespace textlayout
 }  // namespace skia

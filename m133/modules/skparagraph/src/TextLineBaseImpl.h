@@ -25,11 +25,7 @@ namespace skia {
 namespace textlayout {
 class TextLineBaseImpl : public TextLineBase {
 public:
-#ifdef ENABLE_TEXT_ENHANCE
     TextLineBaseImpl(std::unique_ptr<TextLine> visitorTextLine);
-#else
-    TextLineBaseImpl(TextLine* visitorTextLine);
-#endif
     size_t getGlyphCount() const override;
     std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const override;
     SkRange<size_t> getTextRange() const override;
@@ -47,11 +43,7 @@ public:
 
 
 private:
-#ifdef ENABLE_TEXT_ENHANCE
     std::unique_ptr<TextLine> fVisitorTextLine;
-#else
-    TextLine* fVisitorTextLine;
-#endif
 };
 }  // namespace textlayout
 }  // namespace skia

@@ -60,12 +60,12 @@ public:
     static std::unique_ptr<SkShaper> MakePrimitive();
 
 #if defined(SK_SHAPER_HARFBUZZ_AVAILABLE)
-#ifndef ENABLE_DRAWING_ADAPTER
-    static std::unique_ptr<SkShaper> MakeShaperDrivenWrapper(sk_sp<SkFontMgr> fallback);
-    static std::unique_ptr<SkShaper> MakeShapeThenWrap(sk_sp<SkFontMgr> fallback);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     static std::unique_ptr<SkShaper> MakeShaperDrivenWrapper(std::shared_ptr<RSFontMgr> = nullptr);
     static std::unique_ptr<SkShaper> MakeShapeThenWrap(std::shared_ptr<RSFontMgr> = nullptr);
+#else
+    static std::unique_ptr<SkShaper> MakeShaperDrivenWrapper(sk_sp<SkFontMgr> fallback);
+    static std::unique_ptr<SkShaper> MakeShapeThenWrap(sk_sp<SkFontMgr> fallback);
 #endif
     static void PurgeHarfBuzzCache();
 #endif
@@ -74,10 +74,10 @@ public:
     static std::unique_ptr<SkShaper> MakeCoreText();
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    static std::unique_ptr<SkShaper> Make(sk_sp<SkFontMgr> fallback = nullptr);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     static std::unique_ptr<SkShaper> Make(std::shared_ptr<RSFontMgr> = nullptr);
+#else
+    static std::unique_ptr<SkShaper> Make(sk_sp<SkFontMgr> fallback = nullptr);
 #endif
     static void PurgeCaches();
 #endif  // !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
@@ -97,10 +97,10 @@ public:
     };
     class FontRunIterator : public RunIterator {
     public:
-#ifndef ENABLE_DRAWING_ADAPTER
-        virtual const SkFont& currentFont() const = 0;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
         virtual const RSFont& currentFont() const = 0;
+#else
+        virtual const SkFont& currentFont() const = 0;
 #endif
     };
     class BiDiRunIterator : public RunIterator {
@@ -140,7 +140,24 @@ private:
     };
 
 public:
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_DRAWING_ADAPTER
+    static std::unique_ptr<FontRunIterator>
+    MakeFontMgrRunIterator(const char* utf8, size_t utf8Bytes,
+                        const RSFont& font, std::shared_ptr<RSFontMgr> fallback);
+    static std::unique_ptr<SkShaper::FontRunIterator>
+    MakeFontMgrRunIterator(const char* utf8, size_t utf8Bytes,
+                        const RSFont& font, std::shared_ptr<RSFontMgr> fallback,
+                        const char* requestName, RSFontStyle requestStyle,
+                        const SkShaper::LanguageRunIterator*);
+    class TrivialFontRunIterator : public TrivialRunIterator<FontRunIterator> {
+    public:
+        TrivialFontRunIterator(const RSFont& font, size_t utf8Bytes)
+            : TrivialRunIterator(utf8Bytes), fFont(font) {}
+        const RSFont& currentFont() const override { return fFont; }
+    private:
+        RSFont fFont;
+    };
+#else
     static std::unique_ptr<FontRunIterator>
     MakeFontMgrRunIterator(const char* utf8, size_t utf8Bytes,
                            const SkFont& font, sk_sp<SkFontMgr> fallback);
@@ -156,23 +173,6 @@ public:
         const SkFont& currentFont() const override { return fFont; }
     private:
         SkFont fFont;
-    };
-#else
-    static std::unique_ptr<FontRunIterator>
-    MakeFontMgrRunIterator(const char* utf8, size_t utf8Bytes,
-                           const RSFont& font, std::shared_ptr<RSFontMgr> fallback);
-    static std::unique_ptr<SkShaper::FontRunIterator>
-    MakeFontMgrRunIterator(const char* utf8, size_t utf8Bytes,
-                           const RSFont& font, std::shared_ptr<RSFontMgr> fallback,
-                           const char* requestName, RSFontStyle requestStyle,
-                           const SkShaper::LanguageRunIterator*);
-    class TrivialFontRunIterator : public TrivialRunIterator<FontRunIterator> {
-    public:
-        TrivialFontRunIterator(const RSFont& font, size_t utf8Bytes)
-            : TrivialRunIterator(utf8Bytes), fFont(font) {}
-        const RSFont& currentFont() const override { return fFont; }
-    private:
-        RSFont fFont;
     };
 #endif
 
@@ -243,10 +243,10 @@ public:
         };
 
         struct RunInfo {
-#ifndef ENABLE_DRAWING_ADAPTER
-            const SkFont& fFont;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
             const RSFont& fFont;
+#else
+            const SkFont& fFont;
 #endif
             uint8_t fBidiLevel;
             SkVector fAdvance;
@@ -284,10 +284,10 @@ public:
 
 #if !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
     virtual void shape(const char* utf8, size_t utf8Bytes,
-#ifndef ENABLE_DRAWING_ADAPTER
-                       const SkFont& srcFont,
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
                        const RSFont& srcFont,
+#else
+                        const SkFont& srcFont,
 #endif
                        bool leftToRight,
                        SkScalar width,

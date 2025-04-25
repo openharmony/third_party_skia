@@ -301,22 +301,22 @@ public:
      */
     virtual bool getClosestUTF16GlyphInfoAt(SkScalar dx, SkScalar dy, GlyphInfo* glyphInfo) = 0;
 
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_DRAWING_ADAPTER
+    struct FontInfo {
+        FontInfo(const RSFont font, const TextRange textRange)
+                : fFont(font), fTextRange(textRange) { }
+        virtual ~FontInfo() = default;
+        FontInfo(const FontInfo& ) = default;
+        RSFont fFont;
+        TextRange fTextRange;
+    };
+#else
     struct FontInfo {
         FontInfo(const SkFont& font, const TextRange textRange)
                 : fFont(font), fTextRange(textRange) {}
         virtual ~FontInfo() = default;
         FontInfo(const FontInfo& ) = default;
         SkFont fFont;
-        TextRange fTextRange;
-    };
-#else
-    struct FontInfo {
-        FontInfo(const RSFont font, const TextRange textRange)
-            : fFont(font), fTextRange(textRange) { }
-        virtual ~FontInfo() = default;
-        FontInfo(const FontInfo& ) = default;
-        RSFont fFont;
         TextRange fTextRange;
     };
 #endif
@@ -334,10 +334,10 @@ public:
      * @param codeUnitIndex   text index
      * @return                font info or an empty font info if the text is not found
      */
-#ifndef ENABLE_DRAWING_ADAPTER
-    virtual SkFont getFontAt(TextIndex codeUnitIndex) const = 0;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     virtual RSFont getFontAt(TextIndex codeUnitIndex) const = 0;
+#else
+    virtual SkFont getFontAt(TextIndex codeUnitIndex) const = 0;
 #endif
 
 #ifndef ENABLE_DRAWING_ADAPTER
@@ -371,18 +371,18 @@ public:
     virtual SkIRect generatePaintRegion(SkScalar x, SkScalar y) = 0;
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    virtual SkFontMetrics measureText() = 0;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     virtual RSFontMetrics measureText() = 0;
+#else
+    virtual SkFontMetrics measureText() = 0;
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
-        std::vector<SkFontMetrics>& fontMetrics) = 0;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
         std::vector<RSFontMetrics>& fontMetrics) = 0;
+#else
+    virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<SkFontMetrics>& fontMetrics) = 0;
 #endif
 
 protected:

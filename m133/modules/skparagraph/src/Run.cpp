@@ -231,10 +231,10 @@ Run::Run(ParagraphImpl* owner,
     fHalfLetterspacings.push_back_n(info.glyphCount + 1);
     std::fill(fHalfLetterspacings.begin(), fHalfLetterspacings.end(), 0.0);
 #endif
-#ifndef ENABLE_DRAWING_ADAPTER
-    info.fFont.getMetrics(&fFontMetrics);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     info.fFont.GetMetrics(&fFontMetrics);
+#else
+    info.fFont.getMetrics(&fFontMetrics);
 #endif
 
 #ifdef ENABLE_TEXT_ENHANCE
@@ -262,10 +262,10 @@ void Run::calculateMetrics() {
     if (SkScalarNearlyZero(fHeightMultiplier)) {
         return;
     }
-#ifndef ENABLE_DRAWING_ADAPTER
-    const auto runHeight = fHeightMultiplier * fFont.getSize();
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     const auto runHeight = fHeightMultiplier * fFont.GetSize();
+#else
+    const auto runHeight = fHeightMultiplier * fFont.getSize();
 #endif
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
     if (fUseHalfLeading) {
@@ -286,27 +286,7 @@ SkShaper::RunHandler::Buffer Run::newRunBuffer() {
     return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset};
 }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-void Run::copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const {
-    SkASSERT(pos + size <= this->size());
-    const auto& blobBuffer = builder.allocRunPos(fFont, SkToInt(size));
-    sk_careful_memcpy(blobBuffer.glyphs, fGlyphs.data() + pos, size * sizeof(SkGlyphID));
-
-    for (size_t i = 0; i < size; ++i) {
-        auto point = fPositions[i + pos];
-        if (!fJustificationShifts.empty()) {
-            point.fX += fJustificationShifts[i + pos].fX;
-        }
-#ifdef ENABLE_TEXT_ENHANCE
-        if (!fAutoSpacings.empty()) {
-            point.fX += fAutoSpacings[i + pos].fX;
-        }
-#endif
-        point += fOffsets[i + pos];
-        blobBuffer.points()[i] = point;
-    }
-}
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
 void Run::copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const {
     SkASSERT(pos + size <= this->size());
     const auto& blobBuffer = builder.AllocRunPos(fFont, SkToInt(size));
@@ -365,6 +345,26 @@ void Run::copyTo(RSTextBlobBuilder& builder,
         xform[i].sin_ = rsTan.GetY();
         xform[i].tx_ = rsPos.GetX() - rsTan.GetY() * vOffset - halfWidth * rsTan.GetX();
         xform[i].ty_ = rsPos.GetY() + rsTan.GetX() * vOffset - halfWidth * rsTan.GetY();
+    }
+}
+#else
+void Run::copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const {
+    SkASSERT(pos + size <= this->size());
+    const auto& blobBuffer = builder.allocRunPos(fFont, SkToInt(size));
+    sk_careful_memcpy(blobBuffer.glyphs, fGlyphs.data() + pos, size * sizeof(SkGlyphID));
+
+    for (size_t i = 0; i < size; ++i) {
+        auto point = fPositions[i + pos];
+        if (!fJustificationShifts.empty()) {
+            point.fX += fJustificationShifts[i + pos].fX;
+        }
+#ifdef ENABLE_TEXT_ENHANCE
+        if (!fAutoSpacings.empty()) {
+            point.fX += fAutoSpacings[i + pos].fX;
+        }
+#endif
+        point += fOffsets[i + pos];
+        blobBuffer.points()[i] = point;
     }
 }
 #endif
@@ -553,12 +553,12 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
     fFontMetrics.fLeading = 0;
     switch (placeholderStyle->fAlignment) {
         case PlaceholderAlignment::kBaseline:
-#ifndef ENABLE_TEXT_ENHANCE
-            fFontMetrics.fAscent = baselineAdjustment - offset;
-            fFontMetrics.fDescent = baselineAdjustment + height - offset;
-#else
+#ifdef ENABLE_TEXT_ENHANCE
             fFontMetrics.fAscent = baselineAdjustment - height - offset;
             fFontMetrics.fDescent = baselineAdjustment - offset;
+#else
+            fFontMetrics.fAscent = baselineAdjustment - offset;
+            fFontMetrics.fDescent = baselineAdjustment + height - offset;
 #endif
             break;
 
@@ -587,14 +587,14 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
             break;
 
         case PlaceholderAlignment::kMiddle:
-#ifndef ENABLE_TEXT_ENHANCE
-            auto mid = (-fFontMetrics.fDescent - fFontMetrics.fAscent)/2.0;
-            fFontMetrics.fDescent = height/2.0 - mid;
-            fFontMetrics.fAscent =  - height/2.0 - mid;
-#else
+#ifdef ENABLE_TEXT_ENHANCE
             auto mid = (endlineMetrics->ascent() + endlineMetrics->descent()) / PARAM_TWO;
             fFontMetrics.fDescent = mid + height / PARAM_TWO;
             fFontMetrics.fAscent = mid - height / PARAM_TWO;
+#else
+            auto mid = (-fFontMetrics.fDescent - fFontMetrics.fAscent)/2.0;
+            fFontMetrics.fDescent = height/2.0 - mid;
+            fFontMetrics.fAscent =  - height/2.0 - mid;
 #endif
             break;
     }
@@ -634,20 +634,20 @@ SkScalar Cluster::trimmedWidth(size_t pos) const {
     // Find the width until the pos and return the min between trimmedWidth and the width(pos)
     // We don't have to take in account cluster shift since it's the same for 0 and for pos
     auto& run = fOwner->run(fRunIndex);
-#ifndef ENABLE_TEXT_ENHANCE
-    return std::min(run.positionX(pos) - run.positionX(fStart), fWidth);
-#else
+#ifdef ENABLE_TEXT_ENHANCE
     SkScalar delta = getHalfLetterSpacing() - run.halfLetterspacing(pos);
     return std::min(run.positionX(pos) - run.positionX(fStart) + delta, fWidth);
+#else
+    return std::min(run.positionX(pos) - run.positionX(fStart), fWidth);
 #endif
 }
 
 SkScalar Run::positionX(size_t pos) const {
-#ifndef ENABLE_TEXT_ENHANCE
-    return posX(pos) + (fJustificationShifts.empty() ? 0 : fJustificationShifts[pos].fY);
-#else
+#ifdef ENABLE_TEXT_ENHANCE
     return posX(pos) + (fJustificationShifts.empty() ? 0 : fJustificationShifts[pos].fY) +
         (fAutoSpacings.empty() ? 0 : fAutoSpacings[pos].fY);
+#else
+    return posX(pos) + (fJustificationShifts.empty() ? 0 : fJustificationShifts[pos].fY);
 #endif
 }
 
@@ -693,10 +693,10 @@ Run& Cluster::run() const {
     return fOwner->run(fRunIndex);
 }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-SkFont Cluster::font() const {
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
 RSFont Cluster::font() const {
+#else
+SkFont Cluster::font() const {
 #endif
     SkASSERT(fRunIndex < fOwner->runs().size());
     return fOwner->run(fRunIndex).font();

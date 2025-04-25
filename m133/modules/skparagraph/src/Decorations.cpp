@@ -43,10 +43,10 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
     }
 
     // Get thickness and position
-#ifndef ENABLE_DRAWING_ADAPTER
-    calculateThickness(textStyle, context.run->font().refTypeface());
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     calculateThickness(textStyle, const_cast<RSFont&>(context.run->font()).GetTypeface());
+#else
+    calculateThickness(textStyle, context.run->font().refTypeface());
 #endif
 
     for (auto decoration : AllTextDecorations) {
@@ -91,10 +91,10 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
               }
 #endif
               calculateWaves(textStyle, context.clip);
-#ifndef ENABLE_DRAWING_ADAPTER
-              fPath.offset(x, y);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
               fPath.Offset(x, y);
+#else
+              fPath.offset(x, y);
 #endif
               painter->drawPath(fPath, fDecorStyle);
               break;
@@ -314,10 +314,10 @@ void Decorations::calculateAvoidanceWaves(const TextStyle& textStyle, SkRect cli
 #endif
 
 // This is how flutter calculates the thickness
-#ifndef ENABLE_DRAWING_ADAPTER
-void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface) {
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
 void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface) {
+#else
+void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface) {
 #endif
 
     textStyle.setTypeface(std::move(typeface));
@@ -426,28 +426,28 @@ void Decorations::calculatePaint(const TextStyle& textStyle) {
 
 void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    fPath.reset();
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     fPath.Reset();
+#else
+    fPath.reset();
 #endif
     int wave_count = 0;
     SkScalar x_start = 0;
     SkScalar quarterWave = fThickness;
-#ifndef ENABLE_DRAWING_ADAPTER
-    fPath.moveTo(0, 0);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     fPath.MoveTo(0, 0);
+#else
+    fPath.moveTo(0, 0);
 #endif
 
     while (x_start + quarterWave * 2 < clip.width()) {
-#ifndef ENABLE_DRAWING_ADAPTER
-        fPath.rQuadTo(quarterWave,
+#ifdef ENABLE_DRAWING_ADAPTER
+        fPath.RQuadTo(quarterWave,
                      wave_count % 2 != 0 ? quarterWave : -quarterWave,
                      quarterWave * 2,
                      0);
 #else
-        fPath.RQuadTo(quarterWave,
+        fPath.rQuadTo(quarterWave,
                      wave_count % 2 != 0 ? quarterWave : -quarterWave,
                      quarterWave * 2,
                      0);
@@ -464,10 +464,10 @@ void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
         double x2 = remaining;
         double y2 = (remaining - remaining * remaining / (quarterWave * 2)) *
                     (wave_count % 2 == 0 ? -1 : 1);
-#ifndef ENABLE_DRAWING_ADAPTER
-        fPath.rQuadTo(x1, y1, x2, y2);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
         fPath.RQuadTo(x1, y1, x2, y2);
+#else
+        fPath.rQuadTo(x1, y1, x2, y2);
 #endif
     }
 }

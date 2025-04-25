@@ -254,12 +254,12 @@ public:
     void setDecorationThicknessMultiplier(SkScalar m) { fDecoration.fThicknessMultiplier = m; }
 
     // Weight/Width/Slant
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFontStyle getFontStyle() const { return fFontStyle; }
-    void setFontStyle(SkFontStyle fontStyle) { fFontStyle = fontStyle; }
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFontStyle getFontStyle() const { return fFontStyle; }
     void setFontStyle(RSFontStyle fontStyle) { fFontStyle = fontStyle; }
+#else
+    SkFontStyle getFontStyle() const { return fFontStyle; }
+    void setFontStyle(SkFontStyle fontStyle) { fFontStyle = fontStyle; }
 #endif
 
     // Shadows
@@ -312,14 +312,14 @@ public:
     void setWordSpacing(SkScalar wordSpacing) { fWordSpacing = wordSpacing; }
     SkScalar getWordSpacing() const { return fWordSpacing; }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkTypeface* getTypeface() const { return fTypeface.get(); }
-    sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
-    void setTypeface(sk_sp<SkTypeface> typeface) { fTypeface = std::move(typeface); }
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSTypeface* getTypeface() const { return fTypeface.get(); }
     std::shared_ptr<RSTypeface> refTypeface() const { return fTypeface; }
     void setTypeface(std::shared_ptr<RSTypeface> typeface) { fTypeface = std::move(typeface); }
+#else
+    SkTypeface* getTypeface() const { return fTypeface.get(); }
+    sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
+    void setTypeface(sk_sp<SkTypeface> typeface) { fTypeface = std::move(typeface); }
 #endif
 
     SkString getLocale() const { return fLocale; }
@@ -328,10 +328,10 @@ public:
     TextBaseline getTextBaseline() const { return fTextBaseline; }
     void setTextBaseline(TextBaseline baseline) { fTextBaseline = baseline; }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    void getFontMetrics(SkFontMetrics* metrics) const;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     void getFontMetrics(RSFontMetrics* metrics) const;
+#else
+    void getFontMetrics(SkFontMetrics* metrics) const;
 #endif
 
     bool isPlaceholder() const { return fIsPlaceholder; }
@@ -353,10 +353,10 @@ private:
     Decoration fDecoration = {
             TextDecoration::kNoDecoration,
             // TODO: switch back to kGaps when (if) switching flutter to skparagraph
-#ifndef ENABLE_DRAWING_ADAPTER
-            TextDecorationMode::kThrough,
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
             TextDecorationMode::kGaps,
+#else
+            TextDecorationMode::kThrough,
 #endif
             // It does not make sense to draw a transparent object, so we use this as a default
             // value to indicate no decoration color was set.
@@ -364,10 +364,10 @@ private:
             // Thickness is applied as a multiplier to the default thickness of the font.
             1.0f};
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFontStyle fFontStyle;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFontStyle fFontStyle;
+#else
+    SkFontStyle fFontStyle;
 #endif
 
     std::vector<SkString> fFontFamilies = *kDefaultFontFamilies;
@@ -401,10 +401,10 @@ private:
 #ifdef ENABLE_TEXT_ENHANCE
     bool fIsCustomSymbol{false};
 #endif
-#ifndef ENABLE_DRAWING_ADAPTER
-    sk_sp<SkTypeface> fTypeface;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     std::shared_ptr<RSTypeface> fTypeface;
+#else
+    sk_sp<SkTypeface> fTypeface;
 #endif
     bool fIsPlaceholder = false;
 

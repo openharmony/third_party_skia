@@ -35,10 +35,10 @@ class Decorations {
     constexpr static float LINE_THROUGH_TOP = LINE_THROUGH_OFFSET - 0.5f * UNDER_LINE_THICKNESS_RATIO;
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    void calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     void calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface);
+#else
+    void calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface);
 #endif
 
 #ifdef ENABLE_TEXT_ENHANCE
@@ -67,14 +67,14 @@ class Decorations {
     DecorationContext fDecorationContext;
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFontMetrics fFontMetrics;
-    ParagraphPainter::DecorationStyle fDecorStyle;
-    SkPath fPath;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFontMetrics fFontMetrics;
     ParagraphPainter::DecorationStyle fDecorStyle;
     RSPath fPath;
+#else
+    SkFontMetrics fFontMetrics;
+    ParagraphPainter::DecorationStyle fDecorStyle;
+    SkPath fPath;
 #endif
 };
 }  // namespace textlayout

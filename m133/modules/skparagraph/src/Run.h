@@ -96,10 +96,10 @@ public:
     void setOwner(ParagraphImpl* owner) { fOwner = owner; }
 
     SkShaper::RunHandler::Buffer newRunBuffer();
-#ifndef ENABLE_TEXT_ENHANCE
-    SkScalar posX(size_t index) const { return fPositions[index].fX; }
-#else
+#ifdef ENABLE_TEXT_ENHANCE
     SkScalar posX(size_t index) const;
+#else
+    SkScalar posX(size_t index) const { return fPositions[index].fX; }
 #endif
     void addX(size_t index, SkScalar shift) { fPositions[index].fX += shift; }
 #ifdef ENABLE_TEXT_ENHANCE
@@ -126,10 +126,10 @@ public:
     SkScalar correctAscent() const { return fCorrectAscent + fBaselineShift; }
     SkScalar correctDescent() const { return fCorrectDescent + fBaselineShift; }
     SkScalar correctLeading() const { return fCorrectLeading; }
-#ifndef ENABLE_DRAWING_ADAPTER
-    const SkFont& font() const { return fFont; }
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     const RSFont& font() const { return fFont; }
+#else
+    const SkFont& font() const { return fFont; }
 #endif
     bool leftToRight() const { return fBidiLevel % 2 == 0; }
     TextDirection getTextDirection() const { return leftToRight() ? TextDirection::kLtr : TextDirection::kRtl; }
@@ -179,9 +179,7 @@ public:
     }
     SkScalar calculateWidth(size_t start, size_t end, bool clip) const;
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    void copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     void copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const;
     void copyTo(RSTextBlobBuilder& builder,
                 const RSPath* path,
@@ -190,6 +188,8 @@ public:
                 float fTextShift,
                 size_t pos,
                 size_t size) const;
+#else
+    void copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const;
 #endif
 
     template<typename Visitor>
@@ -257,10 +257,10 @@ private:
     TextRange fTextRange;
     ClusterRange fClusterRange;
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFont fFont;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFont fFont;
+#else
+    SkFont fFont;
 #endif
     size_t fPlaceholderIndex;
     size_t fIndex;
@@ -290,10 +290,10 @@ private:
                                                                    // (current and prev spacings)
     skia_private::STArray<PARAM_64, SkScalar, true> fHalfLetterspacings; // For letterspacing
 #endif
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFontMetrics fFontMetrics;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFontMetrics fFontMetrics;
+#else
+    SkFontMetrics fFontMetrics;
 #endif
     const SkScalar fHeightMultiplier;
     const bool fUseHalfLeading;
@@ -485,10 +485,10 @@ public:
 
     Run* runOrNull() const;
     Run& run() const;
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFont font() const;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFont font() const;
+#else
+    SkFont font() const;
 #endif
 
     SkScalar trimmedWidth(size_t pos) const;
