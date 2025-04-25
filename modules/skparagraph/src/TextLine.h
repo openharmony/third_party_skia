@@ -44,6 +44,10 @@ public:
       SkRect clip;
       SkScalar fExcludedTrailingSpaces;
       bool clippingNeeded;
+#ifdef OHOS_SUPPORT
+      bool fIsTrimTrailingSpaceWidth{false};
+      SkScalar fTrailingSpaceWidth{0.0f};
+#endif
     };
 
     struct PathParameters {
