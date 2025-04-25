@@ -180,7 +180,8 @@ SK_API sk_sp<SkImage> TextureFromCompressedTextureData(
         int height,
         SkTextureCompressionType type,
         skgpu::Mipmapped mipmapped = skgpu::Mipmapped::kNo,
-        GrProtected isProtected = GrProtected::kNo);
+        GrProtected isProtected = GrProtected::kNo,
+        sk_sp<SkColorSpace> colorSpace = nullptr);
 
 /** Returns SkImage backed by GPU texture associated with context. Returned SkImage is
     compatible with SkSurface created with dstColorSpace. The returned SkImage respects
