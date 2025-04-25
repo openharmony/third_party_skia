@@ -19,12 +19,8 @@
 
 namespace skia {
 namespace textlayout {
-#ifdef ENABLE_TEXT_ENHANCE
 TextLineBaseImpl::TextLineBaseImpl(std::unique_ptr<TextLine> visitorTextLine)
                 : fVisitorTextLine(std::move(visitorTextLine))
-#else
-TextLineBaseImpl::TextLineBaseImpl(TextLine* visitorTextLine) : fVisitorTextLine(visitorTextLine)
-#endif
 {
 }
 
@@ -62,7 +58,6 @@ void TextLineBaseImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y)
     return fVisitorTextLine->paint(painter, x, y);
 }
 
-#ifdef ENABLE_TEXT_ENHANCE
 std::unique_ptr<TextLineBase> TextLineBaseImpl::createTruncatedLine(double width, EllipsisModal ellipsisMode,
     const std::string& ellipsisStr)
 {
@@ -135,7 +130,6 @@ double TextLineBaseImpl::getAlignmentOffset(double alignmentFactor, double align
 
     return fVisitorTextLine->getAlignmentOffset(alignmentFactor, alignmentWidth);
 }
-#endif
 }  // namespace textlayout
 }  // namespace skia
 

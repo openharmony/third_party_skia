@@ -49,12 +49,12 @@ struct StrutStyle {
     const std::vector<SkString>& getFontFamilies() const { return fFontFamilies; }
     void setFontFamilies(std::vector<SkString> families) { fFontFamilies = std::move(families); }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFontStyle getFontStyle() const { return fFontStyle; }
-    void setFontStyle(SkFontStyle fontStyle) { fFontStyle = fontStyle; }
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFontStyle getFontStyle() const { return fFontStyle; }
     void setFontStyle(RSFontStyle fontStyle) { fFontStyle = fontStyle; }
+#else
+    SkFontStyle getFontStyle() const { return fFontStyle; }
+    void setFontStyle(SkFontStyle fontStyle) { fFontStyle = fontStyle; }
 #endif
 
     SkScalar getFontSize() const { return fFontSize; }
@@ -115,10 +115,10 @@ struct StrutStyle {
 private:
 
     std::vector<SkString> fFontFamilies;
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFontStyle fFontStyle;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFontStyle fFontStyle;
+#else
+    SkFontStyle fFontStyle;
 #endif
     SkScalar fFontSize;
     SkScalar fHeight;

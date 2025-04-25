@@ -352,7 +352,6 @@ config("harfbuzz_config") {
 config("icu_config") {
   include_dirs = [ "${skia_third_party_dir}/externals/icu/source/common" ]
   if (is_arkui_x) {
-    include_dirs = []
     include_dirs = [ "//third_party/icu/icu4c/source/common" ]
   }
 }
@@ -468,19 +467,6 @@ optional("android_utils") {
     "client_utils/android/FrontBufferedStream.cpp",
   ]
 }
-
-#group("fontmgr_factory") {
-#  public_deps = [ skia_fontmgr_factory ]
-#}
-#
-#optional("fontmgr_empty_factory") {
-#  if (use_oh_skia) {
-#    enabled = false
-#  } else {
-#    enabled = true
-#  }
-#  sources = [ "src/ports/SkFontMgr_empty_factory.cpp" ]
-#}
 
 optional("fontmgr_android") {
   enabled = skia_enable_fontmgr_android

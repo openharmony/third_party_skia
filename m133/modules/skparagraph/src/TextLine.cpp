@@ -742,10 +742,10 @@ void TextLine::buildTextBlob(TextRange textRange,
 #endif
 
     // TODO: This is the change for flutter, must be removed later
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkTextBlobBuilder builder;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSTextBlobBuilder builder;
+#else
+    SkTextBlobBuilder builder;
 #endif
     if (pathParameters.recordPath) {
         context.run->copyTo(builder,
@@ -778,8 +778,6 @@ void TextLine::buildTextBlob(TextRange textRange,
     if (record.fBlob != nullptr) {
         record.fBounds.joinPossiblyEmptyRect(record.fBlob->bounds());
     }
-#ifdef ENABLE_TEXT_ENHANCE
-#else
     record.fBlob = builder.Make();
     if (record.fBlob != nullptr) {
         auto bounds = record.fBlob->Bounds();
@@ -788,7 +786,6 @@ void TextLine::buildTextBlob(TextRange textRange,
                     SkRect::MakeLTRB(bounds->left_, bounds->top_, bounds->right_, bounds->bottom_));
         }
     }
-#endif
 #endif
 
     record.fOffset =
@@ -800,10 +797,10 @@ void TextLine::buildTextBlob(TextRange textRange,
                           this->offset().fY + correctedBaseline);
 #endif
 #ifdef ENABLE_TEXT_ENHANCE
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFont font;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFont font;
+#else
+    SkFont font;
 #endif
     if (record.fBlob != nullptr && record.fVisitor_Run != nullptr) {
         font = record.fVisitor_Run->font();
@@ -902,10 +899,10 @@ void TextLine::paintShadow(ParagraphPainter* painter,
     for (TextShadow shadow : style.getShadows()) {
         if (!shadow.hasShadow()) continue;
 
-#ifndef ENABLE_DRAWING_ADAPTER
-        SkTextBlobBuilder builder;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
         RSTextBlobBuilder builder;
+#else
+        SkTextBlobBuilder builder;
 #endif
         context.run->copyTo(builder, context.pos, context.size);
 
@@ -916,10 +913,10 @@ void TextLine::paintShadow(ParagraphPainter* painter,
             clip.offset(this->offset());
             painter->clipRect(clip);
         }
-#ifndef ENABLE_DRAWING_ADAPTER
-        auto blob = builder.make();
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
         auto blob = builder.Make();
+#else
+        auto blob = builder.make();
 #endif
         painter->drawTextShadow(blob,
                                 x + this->offset().fX + shadow.fOffset.x() + context.fTextShift,
@@ -1404,12 +1401,12 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
 #endif
     class ShapeHandler final : public SkShaper::RunHandler {
     public:
-#ifndef ENABLE_TEXT_ENHANCE
-        ShapeHandler(SkScalar lineHeight, bool useHalfLeading, SkScalar baselineShift, const SkString& ellipsis)
-            : fRun(nullptr), fLineHeight(lineHeight), fUseHalfLeading(useHalfLeading), fBaselineShift(baselineShift), fEllipsis(ellipsis) {}
-#else
+#ifdef ENABLE_TEXT_ENHANCE
         ShapeHandler(SkScalar lineHeight, bool useHalfLeading, SkScalar baselineShift, const SkString& str)
             : fRun(nullptr), fLineHeight(lineHeight), fUseHalfLeading(useHalfLeading), fBaselineShift(baselineShift), fStr(str) {}
+#else
+        ShapeHandler(SkScalar lineHeight, bool useHalfLeading, SkScalar baselineShift, const SkString& ellipsis)
+            : fRun(nullptr), fLineHeight(lineHeight), fUseHalfLeading(useHalfLeading), fBaselineShift(baselineShift), fEllipsis(ellipsis) {}
 #endif
         std::unique_ptr<Run> run() & { return std::move(fRun); }
 
@@ -1440,10 +1437,10 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
         SkScalar fLineHeight;
         bool fUseHalfLeading;
         SkScalar fBaselineShift;
-#ifndef ENABLE_TEXT_ENHANCE
-        SkString fEllipsis;
+#ifdef ENABLE_TEXT_ENHANCE
+        SkString fStr;
 #else
-		SkString fStr;
+        SkString fEllipsis;
 #endif
     };
 
@@ -1459,35 +1456,35 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
             break;
         }
     }
-#ifndef ENABLE_DRAWING_ADAPTER
-    auto shaped = [&](sk_sp<SkTypeface> typeface, sk_sp<SkFontMgr> fallback) -> std::unique_ptr<Run> {
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     auto shaped = [&](std::shared_ptr<RSTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
+#else
+    auto shaped = [&](sk_sp<SkTypeface> typeface, sk_sp<SkFontMgr> fallback) -> std::unique_ptr<Run> {
 #endif
 
-#ifndef ENABLE_TEXT_ENHANCE
-		ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), ellipsis);
-#else
+#ifdef ENABLE_TEXT_ENHANCE
         ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), str);
-#endif
-#ifndef ENABLE_DRAWING_ADAPTER
-        SkFont font(std::move(typeface), textStyle.getFontSize());
-        font.setEdging(SkFont::Edging::kAntiAlias);
-        font.setHinting(SkFontHinting::kSlight);
-        font.setSubpixel(true);
 #else
+        ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), ellipsis);
+#endif
+#ifdef ENABLE_DRAWING_ADAPTER
         RSFont font(typeface, textStyle.getFontSize(), 1, 0);
         font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
         font.SetHinting(RSDrawing::FontHinting::SLIGHT);
         font.SetSubpixel(true);
+#else
+        SkFont font(std::move(typeface), textStyle.getFontSize());
+        font.setEdging(SkFont::Edging::kAntiAlias);
+        font.setHinting(SkFontHinting::kSlight);
+        font.setSubpixel(true);
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_DRAWING_ADAPTER
+        std::unique_ptr<SkShaper> shaper = SkShapers::HB::ShapeDontWrapOrReorder(
+                fOwner->getUnicode(), fallback ? RSFontMgr::CreateDefaultFontMgr() : RSFontMgr::CreateDefaultFontMgr());
+#else
         std::unique_ptr<SkShaper> shaper = SkShapers::HB::ShapeDontWrapOrReorder(
                 fOwner->getUnicode(), fallback ? fallback : SkFontMgr::RefEmpty());
-#else
-	    std::unique_ptr<SkShaper> shaper = SkShapers::HB::ShapeDontWrapOrReorder(
-	            fOwner->getUnicode(), fallback ? RSFontMgr::CreateDefaultFontMgr() : RSFontMgr::CreateDefaultFontMgr());
 #endif
 
 #ifdef ENABLE_TEXT_ENHANCE
@@ -1538,7 +1535,17 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
     return ellipsisRun;
 #endif
     };
-#ifndef ENABLE_TEXT_ENHANCE
+#ifdef ENABLE_TEXT_ENHANCE
+    // Check all allowed fonts
+    auto typefaces = fOwner->fontCollection()->findTypefaces(
+            textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
+    for (const auto& typeface : typefaces) {
+        auto run = shaped(typeface, false);
+        if (run->isResolved()) {
+            return run;
+        }
+    }
+#else
     // Check the current font
     auto ellipsisRun = shaped(run.fFont.refTypeface(), nullptr);
     if (ellipsisRun->isResolved()) {
@@ -1552,16 +1559,6 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
         ellipsisRun = shaped(typeface, nullptr);
         if (ellipsisRun->isResolved()) {
             return ellipsisRun;
-        }
-    }
-#else
-    // Check all allowed fonts
-    auto typefaces = fOwner->fontCollection()->findTypefaces(
-            textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
-    for (const auto& typeface : typefaces) {
-        auto run = shaped(typeface, false);
-        if (run->isResolved()) {
-            return run;
         }
     }
 #endif
@@ -1580,15 +1577,7 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
         auto typeface = fOwner->fontCollection()->defaultFallback(
                 unicode, textStyle.getFontStyle(), textStyle.getLocale());
         if (typeface) {
-#ifndef ENABLE_TEXT_ENHANCE
-            ellipsisRun = shaped(typeface, fOwner->fontCollection()->getFallbackManager());
-            if (ellipsisRun->isResolved()) {
-                return ellipsisRun;
-            }
-        }
-    }
-    return ellipsisRun;
-#else
+#ifdef ENABLE_TEXT_ENHANCE
             if (textStyle.getFontArguments()) {
                 typeface = fOwner->fontCollection()->CloneTypeface(typeface, textStyle.getFontArguments());
             }
@@ -1600,15 +1589,23 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
     }
 
     // Check the current font
-#ifndef ENABLE_DRAWING_ADAPTER
-    auto finalRun = shaped(run.fFont.refTypeface(), false);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     auto finalRun = shaped(const_cast<RSFont&>(run.fFont).GetTypeface(), false);
+#else
+    auto finalRun = shaped(run.fFont.refTypeface(), false);
 #endif
     if (finalRun->isResolved()) {
         return finalRun;
     }
     return finalRun;
+#else
+            ellipsisRun = shaped(typeface, fOwner->fontCollection()->getFallbackManager());
+            if (ellipsisRun->isResolved()) {
+                return ellipsisRun;
+            }
+        }
+    }
+    return ellipsisRun;
 #endif
 }
 
@@ -2243,12 +2240,12 @@ LineMetrics TextLine::getMetrics() const {
         TextAdjustment::GlyphCluster, run, runOffsetInLine, textRange, StyleType::kForeground,
         [&result, &run](TextRange textRange, const TextStyle& style, const ClipContext& context) {
 #ifdef ENABLE_TEXT_ENHANCE
-#ifndef ENABLE_DRAWING_ADAPTER
-            SkFontMetrics fontMetrics;
-            run->fFont.getMetrics(&fontMetrics);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
             RSFontMetrics fontMetrics;
             run->fFont.GetMetrics(&fontMetrics);
+#else
+            SkFontMetrics fontMetrics;
+            run->fFont.getMetrics(&fontMetrics);
 #endif
 #ifdef ENABLE_TEXT_ENHANCE
             auto decompressFont = run->fFont;
@@ -2453,10 +2450,10 @@ void TextLine::getRectsForRange(TextRange textRange0,
                     context.run->placeholderStyle() == nullptr &&
                     nearlyEqual(lastRun->heightMultiplier(),
                                 context.run->heightMultiplier()) &&
-#ifndef ENABLE_TEXT_ENHANCE
-                    lastRun->font() == context.run->font())
-#else
+#ifdef ENABLE_TEXT_ENHANCE
                     IsRSFontEquals(lastRun->font(), context.run->font()))
+#else
+                    lastRun->font() == context.run->font())
 #endif
                 {
                     auto& lastBox = boxes.back();
@@ -2889,14 +2886,14 @@ size_t getPrevGlyphsIndex(const ClusterRange& range, ParagraphImpl* owner, RunIn
     return glyphsIndex;
 }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-std::vector<SkRect> getAllRectInfo(const ClusterRange& range, ParagraphImpl* owner)
-{
-    std::vector<SkRect> rectVec;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
 std::vector<RSRect> getAllRectInfo(const ClusterRange& range, ParagraphImpl* owner)
 {
     std::vector<RSRect> rectVec;
+#else
+std::vector<SkRect> getAllRectInfo(const ClusterRange& range, ParagraphImpl* owner)
+{
+    std::vector<SkRect> rectVec;
 #endif
     if (owner == nullptr) {
         return rectVec;
@@ -2921,12 +2918,12 @@ std::vector<RSRect> getAllRectInfo(const ClusterRange& range, ParagraphImpl* own
         }
 
         SkGlyphID glyphId = run->glyphs()[glyphsIndex];
-#ifndef ENABLE_DRAWING_ADAPTER
-        SkRect glyphBounds;
-        run->font().getBounds(&glyphId, 1, &glyphBounds, nullptr);
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
         RSRect glyphBounds;
         run->font().GetWidths(&glyphId, 1, nullptr, &glyphBounds);
+#else
+        SkRect glyphBounds;
+        run->font().getBounds(&glyphId, 1, &glyphBounds, nullptr);
 #endif
         rectVec.push_back(glyphBounds);
         glyphsIndex++;
@@ -2971,16 +2968,16 @@ RSRect TextLine::getImageBounds() const
 
     SkScalar lineWidth = width();
     auto endRect = rectVec[rectVec.size() - endWhitespaceCountVal - 1];
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkScalar x = rectVec[startWhitespaceCount].x() + startWhitespaceAdvance;
-    SkScalar y = joinRect.bottom();
-    SkScalar width = lineWidth - (endAdvance - endRect.x() - endRect.width()) - x;
-    SkScalar height = joinRect.height();
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     SkScalar x = rectVec[startWhitespaceCount].GetLeft() + startWhitespaceAdvance;
     SkScalar y = joinRect.GetBottom();
     SkScalar width = lineWidth - (endAdvance - endRect.GetLeft() - endRect.GetWidth()) - x;
     SkScalar height = joinRect.GetHeight();
+#else
+    SkScalar x = rectVec[startWhitespaceCount].x() + startWhitespaceAdvance;
+    SkScalar y = joinRect.bottom();
+    SkScalar width = lineWidth - (endAdvance - endRect.x() - endRect.width()) - x;
+    SkScalar height = joinRect.height();
 #endif
 
     rect.setXYWH(x, y, width, height);

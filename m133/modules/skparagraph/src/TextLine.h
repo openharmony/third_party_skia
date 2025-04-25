@@ -368,10 +368,10 @@ private:
         void paint(ParagraphPainter* painter);
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
-        sk_sp<SkTextBlob> fBlob;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
         std::shared_ptr<RSTextBlob> fBlob;
+#else
+        sk_sp<SkTextBlob> fBlob;
 #endif
         SkPoint fOffset = SkPoint::Make(0.0f, 0.0f);
         ParagraphPainter::SkPaintOrID fPaint;

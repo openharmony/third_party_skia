@@ -24,10 +24,10 @@ class RunBase {
 public:
 
     virtual ~RunBase() = default;
-#ifndef ENABLE_DRAWING_ADAPTER
-    virtual const SkFont& font() const = 0;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     virtual const RSFont& font() const = 0;
+#else
+    virtual const SkFont& font() const = 0;
 #endif // ENABLE_DRAWING_ADAPTER
 
     virtual size_t size() const = 0;
@@ -40,12 +40,12 @@ public:
     virtual void getStringRange(uint64_t* location, uint64_t* length) const = 0;
     virtual std::vector<uint64_t> getStringIndices(int64_t start, int64_t length) const = 0;
     virtual float getTypographicBounds(float* ascent, float* descent, float* leading) const = 0;
-#ifndef ENABLE_DRAWING_ADAPTER
-    virtual SkRect getImageBounds() const = 0;
-    virtual std::vector<SkPoint> getPositions(int64_t start, int64_t length) const = 0;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     virtual RSRect getImageBounds() const = 0;
     virtual std::vector<RSPoint> getPositions(int64_t start, int64_t length) const = 0;
+#else
+    virtual SkRect getImageBounds() const = 0;
+    virtual std::vector<SkPoint> getPositions(int64_t start, int64_t length) const = 0;
 #endif // ENABLE_DRAWING_ADAPTER
 #endif // ENABLE_TEXT_ENHANCE
     virtual void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) = 0;

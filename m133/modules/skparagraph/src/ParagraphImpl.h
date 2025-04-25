@@ -65,14 +65,14 @@ struct StyleBlock {
 };
 
 struct ResolvedFontDescriptor {
-#ifndef ENABLE_DRAWING_ADAPTER
-    ResolvedFontDescriptor(TextIndex index, SkFont font)
-            : fFont(std::move(font)), fTextStart(index) {}
-    SkFont fFont;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     ResolvedFontDescriptor(TextIndex index, RSFont font)
         : fFont(font), fTextStart(index) { }
     RSFont fFont;
+#else
+    ResolvedFontDescriptor(TextIndex index, SkFont font)
+        : fFont(std::move(font)), fTextStart(index) {}
+    SkFont fFont;
 #endif
     TextIndex fTextStart;
 };
@@ -313,10 +313,10 @@ public:
     bool getGlyphInfoAtUTF16Offset(size_t codeUnitIndex, GlyphInfo* graphemeInfo) override;
     bool getClosestUTF16GlyphInfoAt(SkScalar dx, SkScalar dy, GlyphInfo* graphemeInfo) override;
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFont getFontAt(TextIndex codeUnitIndex) const override;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFont getFontAt(TextIndex codeUnitIndex) const override;
+#else
+    SkFont getFontAt(TextIndex codeUnitIndex) const override;
 #endif
 #ifndef ENABLE_DRAWING_ADAPTER
     SkFont getFontAtUTF16Offset(size_t codeUnitIndex) override;
@@ -362,14 +362,14 @@ public:
 #endif
     sk_sp<SkUnicode> getUnicode() { return fUnicode; }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFontMetrics measureText() override;
-    bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
-        std::vector<SkFontMetrics>& fontMetrics) override;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFontMetrics measureText() override;
     bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
         std::vector<RSFontMetrics>& fontMetrics) override;
+#else
+    SkFontMetrics measureText() override;
+    bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<SkFontMetrics>& fontMetrics) override;
 #endif
 
 #ifdef ENABLE_TEXT_ENHANCE

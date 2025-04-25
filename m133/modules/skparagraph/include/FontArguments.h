@@ -22,10 +22,10 @@ public:
     FontArguments& operator=(const FontArguments&) = default;
     FontArguments& operator=(FontArguments&&) = default;
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    sk_sp<SkTypeface> CloneTypeface(const sk_sp<SkTypeface>& typeface) const;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface) const;
+#else
+    sk_sp<SkTypeface> CloneTypeface(const sk_sp<SkTypeface>& typeface) const;
 #endif
 
     friend bool operator==(const FontArguments& a, const FontArguments& b);

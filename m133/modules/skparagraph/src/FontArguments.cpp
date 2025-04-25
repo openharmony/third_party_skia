@@ -55,27 +55,7 @@ bool operator!=(const skia::textlayout::FontArguments& a, const skia::textlayout
     return !(a == b);
 }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-sk_sp<SkTypeface> FontArguments::CloneTypeface(const sk_sp<SkTypeface>& typeface) const {
-    SkFontArguments::VariationPosition position{
-        fCoordinates.data(),
-        static_cast<int>(fCoordinates.size())
-    };
-
-    SkFontArguments::Palette palette{
-        fPaletteIndex,
-        fPaletteOverrides.data(),
-        static_cast<int>(fPaletteOverrides.size())
-    };
-
-    SkFontArguments args;
-    args.setCollectionIndex(fCollectionIndex);
-    args.setVariationDesignPosition(position);
-    args.setPalette(palette);
-
-    return typeface->makeClone(args);
-}
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
 std::shared_ptr<RSTypeface> FontArguments::CloneTypeface(std::shared_ptr<RSTypeface> typeface) const
 {
     RSFontArguments::VariationPosition position{
@@ -95,6 +75,26 @@ std::shared_ptr<RSTypeface> FontArguments::CloneTypeface(std::shared_ptr<RSTypef
     args.SetPalette(palette);
 
     return typeface->MakeClone(args);
+}
+#else
+sk_sp<SkTypeface> FontArguments::CloneTypeface(const sk_sp<SkTypeface>& typeface) const {
+    SkFontArguments::VariationPosition position{
+        fCoordinates.data(),
+        static_cast<int>(fCoordinates.size())
+    };
+
+    SkFontArguments::Palette palette{
+        fPaletteIndex,
+        fPaletteOverrides.data(),
+        static_cast<int>(fPaletteOverrides.size())
+    };
+
+    SkFontArguments args;
+    args.setCollectionIndex(fCollectionIndex);
+    args.setVariationDesignPosition(position);
+    args.setPalette(palette);
+
+    return typeface->makeClone(args);
 }
 #endif
 

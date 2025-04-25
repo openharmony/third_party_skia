@@ -14,11 +14,11 @@ class StyleMetrics {
 public:
     StyleMetrics(const TextStyle* style) : text_style(style) {}
 
-#ifndef ENABLE_DRAWING_ADAPTER
-    StyleMetrics(const TextStyle* style, SkFontMetrics& metrics)
-            : text_style(style), font_metrics(metrics) {}
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     StyleMetrics(const TextStyle* style, RSFontMetrics& metrics)
+        : text_style(style), font_metrics(metrics) {}
+#else
+    StyleMetrics(const TextStyle* style, SkFontMetrics& metrics)
         : text_style(style), font_metrics(metrics) {}
 #endif
 
@@ -41,10 +41,10 @@ public:
     // * UnderlinePosition   underline position relative to baseline
     // * StrikeoutThickness  strikeout thickness
     // * StrikeoutPosition   strikeout position relative to baseline
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFontMetrics font_metrics;
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFontMetrics font_metrics;
+#else
+    SkFontMetrics font_metrics;
 #endif
 };
 

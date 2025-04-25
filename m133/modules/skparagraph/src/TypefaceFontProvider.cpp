@@ -37,9 +37,6 @@ sk_sp<SkFontStyleSet> TypefaceFontProvider::onCreateStyleSet(int index) const {
     auto found = fRegisteredFamilies.find(fFamilyNames[index]);
     return found ? *found : nullptr;
 }
-#endif
-
-#ifndef ENABLE_TEXT_ENHANCE
 sk_sp<SkTypeface> TypefaceFontProvider::onMatchFamilyStyle(const char familyName[], const SkFontStyle& pattern) const {
     sk_sp<SkFontStyleSet> sset(this->matchFamily(familyName));
     if (sset) {
@@ -126,22 +123,22 @@ void TypefaceFontStyleSet::getStyle(int index, SkFontStyle* style, SkString* nam
     }
 }
 
-#ifndef ENABLE_TEXT_ENHANCE
-sk_sp<SkTypeface> TypefaceFontStyleSet::createTypeface(int index) {
-    SkASSERT(index < fStyles.size());
-    return fStyles[index];
-}
-
-sk_sp<SkTypeface> TypefaceFontStyleSet::matchStyle(const SkFontStyle& pattern) {
-    return this->matchStyleCSS3(pattern);
-}
-#else
+#ifdef ENABLE_TEXT_ENHANCE
 SkTypeface* TypefaceFontStyleSet::createTypeface(int index) {
     SkASSERT(index < fStyles.size());
     return SkRef(fStyles[index].get());
 }
 
 SkTypeface* TypefaceFontStyleSet::matchStyle(const SkFontStyle& pattern) {
+    return this->matchStyleCSS3(pattern);
+}
+#else
+sk_sp<SkTypeface> TypefaceFontStyleSet::createTypeface(int index) {
+    SkASSERT(index < fStyles.size());
+    return fStyles[index];
+}
+
+sk_sp<SkTypeface> TypefaceFontStyleSet::matchStyle(const SkFontStyle& pattern) {
     return this->matchStyleCSS3(pattern);
 }
 #endif
