@@ -28,12 +28,6 @@ public:
                                   GrGpuBufferType bufferType,
                                   GrAccessPattern accessPattern);
 
-    static sk_sp<GrVkBuffer> MakeFromOHNativeBuffer(GrVkGpu* gpu,
-                                                    OH_NativeBuffer *nativeBuffer,
-                                                    size_t bufferSize,
-                                                    GrGpuBufferType bufferType,
-                                                    GrAccessPattern accessPattern);
-
     VkBuffer vkBuffer() const { return fBuffer; }
 
     void addMemoryBarrier(VkAccessFlags srcAccessMask,

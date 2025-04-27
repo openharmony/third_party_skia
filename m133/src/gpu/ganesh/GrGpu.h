@@ -180,14 +180,6 @@ public:
                                              const void* data,
                                              size_t dataSize);
 
-    sk_sp<GrTexture> createCompressedTexture(SkISize dimensions,
-                                             const GrBackendFormat& format,
-                                             skgpu::Budgeted budgeted,
-                                             skgpu::Mipmapped mipMapped,
-                                             GrProtected isProtected,
-                                             OH_NativeBuffer* nativeBuffer,
-                                             size_t bufferSize);
-
     /**
      * Implements GrResourceProvider::wrapBackendTexture
      */
@@ -777,13 +769,6 @@ private:
                                                        GrProtected,
                                                        const void* data,
                                                        size_t dataSize) = 0;
-    virtual sk_sp<GrTexture> onCreateCompressedTexture(SkISize dimensions,
-                                                       const GrBackendFormat&,
-                                                       skgpu::Budgeted,
-                                                       skgpu::Mipmapped,
-                                                       GrProtected,
-                                                       OH_NativeBuffer* nativeBuffer,
-                                                       size_t bufferSize) = 0;
     virtual sk_sp<GrTexture> onWrapBackendTexture(const GrBackendTexture&,
                                                   GrWrapOwnership,
                                                   GrWrapCacheable,
