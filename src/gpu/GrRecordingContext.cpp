@@ -177,6 +177,30 @@ bool GrRecordingContext::colorTypeSupportedAsImage(SkColorType colorType) const 
     return format.isValid();
 }
 
+void GrRecordingContext::registerDrawOpOverCallback(const std::function<void (int32_t)>& drawOpOverCallback) {
+    fDrawOpOverCallback = drawOpOverCallback;
+}
+
+namespace {
+    constexpr int32_t MAX_COUNT = 50000;
+}
+
+#ifdef SKIA_OHOS
+void GrRecordingContext::processDrawOpOverCallback() {
+    if (fDrawOpOverCallback && fDrawOpCounter > MAX_COUNT) {
+        SK_LOGE("DrawOp [%{public}d] Over Budget.", fDrawOpCounter);
+        fDrawOpOverCallback(fDrawOpCounter);
+    }
+}
+
+bool GrRecordingContext::checkDrawOpOverBudget() {
+    static const bool isInRenderService = IsRenderService();
+    if (fDrawOpOverCallback && isInRenderService && fDrawOpCounter >= 0) {
+        return ++fDrawOpCounter > MAX_COUNT;
+    }
+    return false;
+}
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef SK_ENABLE_DUMP_GPU
