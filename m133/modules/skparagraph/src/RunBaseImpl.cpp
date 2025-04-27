@@ -12,13 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifdef ENABLE_TEXT_ENHANCE
 #include "ParagraphImpl.h"
-#endif
 #include "modules/skparagraph/src/RunBaseImpl.h"
 
-#ifdef ENABLE_TEXT_ENHANCE
 namespace skia {
 namespace textlayout {
 RunBaseImpl::RunBaseImpl(

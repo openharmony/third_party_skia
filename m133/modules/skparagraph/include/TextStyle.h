@@ -135,8 +135,8 @@ struct PlaceholderStyle {
 
     bool equals(const PlaceholderStyle&) const;
 
-    SkScalar fWidth = 0;
-    SkScalar fHeight = 0;
+    SkScalar fWidth{0};
+    SkScalar fHeight{0};
     PlaceholderAlignment fAlignment = PlaceholderAlignment::kBaseline;
     TextBaseline fBaseline = TextBaseline::kAlphabetic;
     // Distance from the top edge of the rect to the baseline position. This
@@ -147,16 +147,16 @@ struct PlaceholderStyle {
     // small or negative values will cause the rect to be positioned underneath
     // the line. When baseline == height, the bottom edge of the rect will rest on
     // the alphabetic baseline.
-    SkScalar fBaselineOffset = 0;
+    SkScalar fBaselineOffset{0};
 };
 
 #ifdef ENABLE_TEXT_ENHANCE
 struct RectStyle {
-    SkColor color = 0;
-    SkScalar leftTopRadius = 0.0f;
-    SkScalar rightTopRadius = 0.0f;
-    SkScalar rightBottomRadius = 0.0f;
-    SkScalar leftBottomRadius = 0.0f;
+    SkColor color{0};
+    SkScalar leftTopRadius{0.0f};
+    SkScalar rightTopRadius{0.0f};
+    SkScalar rightBottomRadius{0.0f};
+    SkScalar leftBottomRadius{0.0f};
 
     bool operator ==(const RectStyle& rhs) const
     {
@@ -353,7 +353,7 @@ private:
     Decoration fDecoration = {
             TextDecoration::kNoDecoration,
             // TODO: switch back to kGaps when (if) switching flutter to skparagraph
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
             TextDecorationMode::kGaps,
 #else
             TextDecorationMode::kThrough,
@@ -375,18 +375,18 @@ private:
     SkScalar fFontSize = 14.0;
     SkScalar fHeight = 1.0;
     bool fHeightOverride = false;
-    SkScalar fBaselineShift = 0.0f;
+    SkScalar fBaselineShift{0.0f};
     // true: half leading.
     // false: scale ascent/descent with fHeight.
     bool fHalfLeading = false;
     SkString fLocale = {};
 #ifdef ENABLE_TEXT_ENHANCE
     RectStyle fBackgroundRect = {0, 0.0f, 0.0f, 0.0f, 0.0f};
-    SkColor fStyleId = 0;
-    size_t fTextStyleUid = { 0 };
+    SkColor fStyleId = {0};
+    size_t fTextStyleUid = {0};
 #endif
-    SkScalar fLetterSpacing = 0.0;
-    SkScalar fWordSpacing = 0.0;
+    SkScalar fLetterSpacing{0.0};
+    SkScalar fWordSpacing{0.0};
 
     TextBaseline fTextBaseline = TextBaseline::kAlphabetic;
 
@@ -406,7 +406,7 @@ private:
 #else
     sk_sp<SkTypeface> fTypeface;
 #endif
-    bool fIsPlaceholder = false;
+    bool fIsPlaceholder{false};
 
     std::vector<FontFeature> fFontFeatures;
 

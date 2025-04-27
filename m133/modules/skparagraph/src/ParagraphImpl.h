@@ -136,13 +136,9 @@ public:
     SkRange<size_t> getWordBoundary(unsigned offset) override;
 #ifdef ENABLE_TEXT_ENHANCE
     bool getApplyRoundingHack() const { return false; }
-#else
-    bool getApplyRoundingHack() const { return fParagraphStyle.getApplyRoundingHack(); }
-#endif
-
-#ifdef ENABLE_TEXT_ENHANCE
     size_t lineNumber() override { return fLineNumber; }
 #else
+    bool getApplyRoundingHack() const { return fParagraphStyle.getApplyRoundingHack(); }
     size_t lineNumber() override { return fLines.size(); }
 #endif
 
@@ -501,9 +497,9 @@ private:
     TextIndex fTrailingSpaces;
 
 #ifdef ENABLE_TEXT_ENHANCE
-    SkScalar fLayoutRawWidth {0};
+    SkScalar fLayoutRawWidth{0};
 
-    size_t fLineNumber { 0 };
+    size_t fLineNumber{0};
     uint32_t hash_{0u};
 
     TextRange fEllipsisRange{EMPTY_RANGE};

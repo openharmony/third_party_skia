@@ -557,18 +557,6 @@ optional("fontmgr_custom_directory") {
   sources = skia_ports_fontmgr_directory_sources
 }
 
-#optional("fontmgr_custom_directory_factory") {
-#  enabled = skia_enable_fontmgr_custom_directory
-#  deps = [ ":fontmgr_custom_directory" ]
-#  sources = [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
-#  if (use_linux) {
-#    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
-#  }
-#  if (is_arkui_x) {
-#    sources -= [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
-#  }
-#}
-
 optional("fontmgr_custom_embedded") {
   enabled = skia_enable_fontmgr_custom_embedded
   public_defines = [ "SK_FONTMGR_FREETYPE_EMBEDDED_AVAILABLE" ]

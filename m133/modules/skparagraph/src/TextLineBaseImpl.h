@@ -41,7 +41,6 @@ public:
     std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const override;
     double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const override;
 
-
 private:
     std::unique_ptr<TextLine> fVisitorTextLine;
 };

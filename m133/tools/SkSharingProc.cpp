@@ -31,7 +31,11 @@ namespace {
     }
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
 SK_API void SkSharingSerialContext::collectNonTextureImagesFromPicture(
+#else
+void SkSharingSerialContext::collectNonTextureImagesFromPicture(
+#endif
     const SkPicture* pic, SkSharingSerialContext* sharingCtx) {
     SkSerialProcs tempProc;
     tempProc.fImageCtx = sharingCtx;

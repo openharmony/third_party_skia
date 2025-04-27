@@ -373,14 +373,10 @@ public:
 
 #ifdef ENABLE_DRAWING_ADAPTER
     virtual RSFontMetrics measureText() = 0;
-#else
-    virtual SkFontMetrics measureText() = 0;
-#endif
-
-#ifdef ENABLE_DRAWING_ADAPTER
     virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
         std::vector<RSFontMetrics>& fontMetrics) = 0;
 #else
+    virtual SkFontMetrics measureText() = 0;
     virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
         std::vector<SkFontMetrics>& fontMetrics) = 0;
 #endif

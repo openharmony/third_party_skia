@@ -413,9 +413,7 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
 }
 
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
-#ifdef ENABLE_TEXT_ENHANCE
     TEXT_TRACE_FUNC();
-#endif
     SkAutoMutexExclusive lock(fParagraphMutex);
     auto key = ParagraphCacheKey(&paragraph);
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
@@ -526,11 +524,7 @@ bool ParagraphCache::updateParagraph(ParagraphImpl* paragraph) {
         ParagraphCacheValue* value = new ParagraphCacheValue(std::move(key), paragraph);
         fLRUCacheMap.insert(value->fKey, std::make_unique<Entry>(value));
         fChecker(paragraph, "addedParagraph", true);
-#ifdef ENABLE_TEXT_ENHANCE
-#ifdef USE_UNSAFE_CACHED_VALUE
-        fLastCachedValue = value;
-#endif
-#else
+#ifndef ENABLE_TEXT_ENHANCE
         fLastCachedValue = value;
 #endif
         return true;
@@ -566,9 +560,6 @@ ParagraphCacheValue* ParagraphCache::cacheLayout(ParagraphImpl* paragraph) {
         ParagraphCacheValue* value = new ParagraphCacheValue(std::move(key), paragraph);
         fLRUCacheMap.insert(value->fKey, std::make_unique<Entry>(value));
         fChecker(paragraph, "addedParagraph", true);
-#ifdef USE_UNSAFE_CACHED_VALUE
-        fLastCachedValue = value;
-#endif
         return value;
     } else {
         // Paragraph&layout already cached

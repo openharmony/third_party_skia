@@ -53,7 +53,6 @@ class DirText {
     size_t end;
 };
 
-#ifdef ENABLE_TEXT_ENHANCE
 enum class RoundRectType {
     NONE,
     LEFT_ONLY,
@@ -68,13 +67,13 @@ enum class ScaleOP {
     COMPRESS,
     DECOMPRESS,
 };
+
 #ifdef ENABLE_DRAWING_ADAPTER
 void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op);
 void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font);
 #else
 void scaleFontWithCompressionConfig(SkFont& font, ScaleOP op);
 void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font);
-#endif
 #endif
 
 class Run {
@@ -306,11 +305,11 @@ private:
     uint8_t fBidiLevel;
 #ifdef ENABLE_TEXT_ENHANCE
     RoundRectType fRoundRectType = RoundRectType::NONE;
-    SkScalar fTopInGroup = 0.0f;
-    SkScalar fBottomInGroup = 0.0f;
-    SkScalar fMaxRoundRectRadius = 0.0f;
+    SkScalar fTopInGroup{0.0f};
+    SkScalar fBottomInGroup{0.0f};
+    SkScalar fMaxRoundRectRadius{0.0f};
     size_t indexInLine;
-    SkScalar fCompressionBaselineShift{ 0.0f };
+    SkScalar fCompressionBaselineShift{0.0f};
 #endif
 };
 
@@ -568,26 +567,14 @@ public:
         fForceStrut = false;
     }
 
-#ifdef ENABLE_TEXT_ENHANCE
 #ifdef ENABLE_DRAWING_ADAPTER
     InternalLineMetrics(const RSFont& font, bool forceStrut) {
         RSFontMetrics metrics;
         auto compressFont = font;
         scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
         compressFont.GetMetrics(&metrics);
-#else
-    InternalLineMetrics(const SkFont& font, bool forceStrut) {
-        SkFontMetrics metrics;
-        auto compressFont = font;
-        scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
-        compressFont.getMetrics(&metrics);
-#endif
+
         metricsIncludeFontPadding(&metrics, font);
-#else
-    InternalLineMetrics(const SkFont& font, bool forceStrut) {
-        SkFontMetrics metrics;
-        font.getMetrics(&metrics);
-#endif
         fAscent = metrics.fAscent;
         fDescent = metrics.fDescent;
         fLeading = metrics.fLeading;
@@ -596,6 +583,19 @@ public:
         fRawLeading = metrics.fLeading;
         fForceStrut = forceStrut;
     }
+#else
+    InternalLineMetrics(const SkFont& font, bool forceStrut) {
+        SkFontMetrics metrics;
+        font.getMetrics(&metrics);
+        fAscent = metrics.fAscent;
+        fDescent = metrics.fDescent;
+        fLeading = metrics.fLeading;
+        fRawAscent = metrics.fAscent;
+        fRawDescent = metrics.fDescent;
+        fRawLeading = metrics.fLeading;
+        fForceStrut = forceStrut;
+    }
+#endif
 
     void add(Run* run) {
         if (fForceStrut) {

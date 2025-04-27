@@ -1478,26 +1478,15 @@ void ParagraphImpl::resolveStrut() {
 #ifdef ENABLE_DRAWING_ADAPTER
     RSFont font(typefaces.front(), strutStyle.getFontSize(), 1, 0);
     RSFontMetrics metrics;
-#ifdef ENABLE_TEXT_ENHANCE
     RSFont compressFont = font;
     scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
     compressFont.GetMetrics(&metrics);
     metricsIncludeFontPadding(&metrics, font);
 #else
-    font.GetMetrics(&metrics);
-#endif
-#else
     SkFont font(typefaces.front(), strutStyle.getFontSize());
     SkFontMetrics metrics;
-#ifdef ENABLE_TEXT_ENHANCE
-    SkFont compressFont = font;
-    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
-    compressFont.getMetrics(&metrics);
-    metricsIncludeFontPadding(&metrics, font);
-#else
     font.getMetrics(&metrics);
     const SkScalar strutLeading = strutStyle.getLeading() < 0 ? 0 : strutStyle.getLeading() * strutStyle.getFontSize();
-#endif
 #endif
 
 #ifdef ENABLE_TEXT_ENHANCE
@@ -2430,11 +2419,9 @@ RSFontMetrics ParagraphImpl::measureText()
     RSRect firstBounds;
     auto firstStr = text(fRuns.front().textRange());
     firstFont.GetMetrics(&metrics);
-#ifdef ENABLE_TEXT_ENHANCE
     auto decompressFont = firstFont;
     scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
     metricsIncludeFontPadding(&metrics, decompressFont);
-#endif
     firstFont.MeasureText(firstStr.data(), firstStr.size(), RSDrawing::TextEncoding::UTF8, &firstBounds);
     fGlyphsBoundsTop = firstBounds.GetTop();
     fGlyphsBoundsBottom = firstBounds.GetBottom();
@@ -2470,11 +2457,6 @@ SkFontMetrics ParagraphImpl::measureText() {
     SkRect firstBounds;
     auto firstStr = text(fRuns.front().textRange());
     firstFont.getMetrics(&metrics);
-#ifdef ENABLE_TEXT_ENHANCE
-    auto decompressFont = firstFont;
-    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
-    metricsIncludeFontPadding(&metrics, decompressFont);
-#endif
     firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
     fGlyphsBoundsTop = firstBounds.top();
     fGlyphsBoundsBottom = firstBounds.bottom();
@@ -2512,9 +2494,7 @@ std::vector<std::unique_ptr<TextLineBase>> ParagraphImpl::GetTextLines() {
 
     return textLineBases;
 }
-#endif
 
-#ifdef ENABLE_TEXT_ENHANCE
 size_t ParagraphImpl::prefixByteCountUntilChar(size_t index) {
     convertUtf8ToUnicode(fText);
     if (fUnicodeIndexForUTF8Index.empty()) {
@@ -2619,9 +2599,7 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fMaxIntrinsicWidth = this->fMaxIntrinsicWidth;
     paragraph->fMinIntrinsicWidth = this->fMinIntrinsicWidth;
     paragraph->fLongestLine = this->fLongestLine;
-#ifdef ENABLE_TEXT_ENHANCE
     paragraph->fLongestLineWithIndent = this->fLongestLineWithIndent;
-#endif
     paragraph->fExceededMaxLines = this->fExceededMaxLines;
 
     paragraph->fLetterSpaceStyles = this->fLetterSpaceStyles;

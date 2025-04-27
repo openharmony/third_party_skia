@@ -104,17 +104,17 @@ private:
         Cluster* currentCluster, SkScalar totalFakeSpacing);
 
     TextAlign fTabAlignMode;
-    SkScalar fTabPosition = 0.0;
-    bool fAlreadyInTab = false;
-    SkScalar fTabStartPos = 0.0;
-    SkScalar fTabEndPos = 0.0;
-    SkScalar fTabShift = 0.0;
-    int fTabIndex = 0;
-    int fMaxTabIndex = 0;
-    Cluster* fTabBlockEnd = nullptr;
-    Cluster* fEndOfClusters = nullptr;
-    SkScalar fMaxWidth = 0.0f;
-    Cluster* fTabCluster = nullptr;
+    SkScalar fTabPosition{0.0};
+    bool fAlreadyInTab{false};
+    SkScalar fTabStartPos{0.0};
+    SkScalar fTabEndPos{0.0};
+    SkScalar fTabShift{0.0};
+    int fTabIndex{0};
+    int fMaxTabIndex{0};
+    Cluster* fTabBlockEnd{nullptr};
+    Cluster* fEndOfClusters{nullptr};
+    SkScalar fMaxWidth{0.0f};
+    Cluster* fTabCluster{nullptr};
 
     using TextTabFunc = bool (TextTabAlign::*)(TextWrapper::TextStretch&, TextWrapper::TextStretch&, Cluster*, SkScalar);
     struct TextTabFuncs {
@@ -125,7 +125,7 @@ private:
     };
     constexpr static size_t textAlignCount = static_cast<size_t>(TextAlign::kCenter) + 1;
     static TextTabFuncs fTextTabFuncsTable[textAlignCount];
-    TextTabFuncs* fTextTabFuncs = nullptr;
+    TextTabFuncs* fTextTabFuncs{nullptr};
 
 };
 }  // namespace textlayout
