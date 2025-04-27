@@ -1940,6 +1940,11 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
     if (fContext->abandoned()) {
         return;
     }
+#ifdef SKIA_OHOS
+    if (fContext->checkDrawOpOverBudget()) {
+        return;
+    }
+#endif
     GrDrawOp* drawOp = (GrDrawOp*)op.get();
     SkDEBUGCODE(this->validate();)
     SkDEBUGCODE(drawOp->fAddDrawOpCalled = true;)

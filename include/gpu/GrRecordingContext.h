@@ -115,6 +115,13 @@ public:
 
     // OH ISSUE: check whether the PID is abnormal.
     virtual bool isPidAbnormal() const { return false; }
+    SK_API void registerDrawOpOverCallback(const std::function<void(int32_t drawOpCount)>& drawOpOverCallback);
+
+#ifdef SKIA_OHOS
+    void processDrawOpOverCallback();
+    void resetDrawOpCounter() { fDrawOpCounter = 0; }
+    bool checkDrawOpOverBudget();
+#endif
 
 protected:
     friend class GrRecordingContextPriv;    // for hidden functions
@@ -250,6 +257,7 @@ protected:
     Stats* stats() { return &fStats; }
     const Stats* stats() const { return &fStats; }
     void dumpJSON(SkJSONWriter*) const;
+    std::function<void(int32_t drawOpCount)> fDrawOpOverCallback;
 
 protected:
     // Delete last in case other objects call it during destruction.
@@ -264,7 +272,9 @@ private:
 #if GR_TEST_UTILS
     int fSuppressWarningMessages = 0;
 #endif
-
+#ifdef SKIA_OHOS
+    int32_t fDrawOpCounter = -1;
+#endif
     using INHERITED = GrImageContext;
 };
 
