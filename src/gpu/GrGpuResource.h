@@ -17,6 +17,9 @@
 #ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
 #include <sstream>
 #endif
+#ifdef SKIA_OHOS_SINGLE_OWNER
+#include <pthread.h>
+#endif
 
 class GrGpu;
 class GrResourceCache;
@@ -444,6 +447,10 @@ private:
                                          // notifyARefCntIsZero.
 
     bool fRealAlloc = false; // OH ISSUE: real alloc flag
+
+#ifdef SKIA_OHOS_SINGLE_OWNER
+    pthread_t fTid = pthread_self();
+#endif
 };
 
 class GrGpuResource::ProxyAccess {
