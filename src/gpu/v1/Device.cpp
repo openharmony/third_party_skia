@@ -16,7 +16,6 @@
 #include "include/effects/SkRuntimeEffect.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrRecordingContext.h"
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/private/SkShadowFlags.h"
 #include "include/private/SkTo.h"
 #include "src/core/SkCanvasPriv.h"
@@ -624,8 +623,6 @@ void Device::drawArc(const SkRect& oval,
 ///////////////////////////////////////////////////////////////////////////////
 
 void Device::drawPath(const SkPath& origSrcPath, const SkPaint& paint, bool pathIsMutable) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_V1_DEVICE_DRAWPATH);
 #if GR_TEST_UTILS
     if (fContext->priv().options().fAllPathsVolatile && !origSrcPath.isVolatile()) {
         this->drawPath(SkPath(origSrcPath).setIsVolatile(true), paint, true);
@@ -864,8 +861,6 @@ void Device::drawVertices(const SkVertices* vertices, SkBlendMode mode, const Sk
 ///////////////////////////////////////////////////////////////////////////////
 
 void Device::drawShadow(const SkPath& path, const SkDrawShadowRec& rec) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_V1_DEVICE_DRAWSHADOW);
 #if GR_TEST_UTILS
     if (fContext->priv().options().fAllPathsVolatile && !path.isVolatile()) {
         this->drawShadow(SkPath(path).setIsVolatile(true), rec);

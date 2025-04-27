@@ -11,7 +11,6 @@
 #include "include/core/SkRRect.h"
 #include "include/core/SkStrokeRec.h"
 #include "include/core/SkVertices.h"
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/core/SkBlurMask.h"
 #include "src/core/SkGpuBlurUtils.h"
 #include "src/core/SkMaskFilterBase.h"
@@ -770,8 +769,6 @@ static std::unique_ptr<GrFragmentProcessor> create_profile_effect(GrRecordingCon
                                                                   float sigma,
                                                                   float* solidRadius,
                                                                   float* textureRadius) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_SKBLURMF_CREATE_PROFILE_EFFECT);
     float circleR = circle.width() / 2.0f;
     if (!sk_float_isfinite(circleR) || circleR < SK_ScalarNearlyZero) {
         return nullptr;
@@ -892,8 +889,6 @@ static std::unique_ptr<GrFragmentProcessor> make_circle_blur(GrRecordingContext*
 
 static std::unique_ptr<GrFragmentProcessor> make_rect_integral_fp(GrRecordingContext* rContext,
                                                                   float sixSigma) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_BLURMF_MAKE_RECT_INTEGRAL_FP);
     SkASSERT(!SkGpuBlurUtils::IsEffectivelyZeroSigma(sixSigma / 6.f));
     auto threadSafeCache = rContext->priv().threadSafeCache();
 
