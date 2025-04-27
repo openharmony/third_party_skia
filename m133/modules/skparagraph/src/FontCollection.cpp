@@ -79,71 +79,56 @@ void FontCollection::setAssetFontManager(std::shared_ptr<RSFontMgr> font_manager
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fAssetFontManager = font_manager;
 }
-#else
-void FontCollection::setAssetFontManager(sk_sp<SkFontMgr> font_manager) {
-    fAssetFontManager = std::move(font_manager);
-}
-#endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
 void FontCollection::setDynamicFontManager(std::shared_ptr<RSFontMgr> font_manager) {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fDynamicFontManager = font_manager;
 }
-#else
-void FontCollection::setDynamicFontManager(sk_sp<SkFontMgr> font_manager) {
-    fDynamicFontManager = std::move(font_manager);
-}
-#endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
 void FontCollection::setTestFontManager(std::shared_ptr<RSFontMgr> font_manager)
 {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fTestFontManager = font_manager;
 }
+
+void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager,
+    const char defaultFamilyName[]) {
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    fDefaultFontManager = std::move(fontManager);
+    fDefaultFamilyNames.emplace_back(defaultFamilyName);
+}
+
+void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager,
+    const std::vector<SkString>& defaultFamilyNames) {
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    fDefaultFontManager = std::move(fontManager);
+    fDefaultFamilyNames = defaultFamilyNames;
+}
 #else
+void FontCollection::setAssetFontManager(sk_sp<SkFontMgr> font_manager) {
+    fAssetFontManager = std::move(font_manager);
+}
+
+void FontCollection::setDynamicFontManager(sk_sp<SkFontMgr> font_manager) {
+    fDynamicFontManager = std::move(font_manager);
+}
+
 void FontCollection::setTestFontManager(sk_sp<SkFontMgr> font_manager) {
     fTestFontManager = std::move(font_manager);
 }
-#endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
-void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager,
-    const char defaultFamilyName[]) {
-    std::unique_lock<std::shared_mutex> writeLock(mutex_);
-    fDefaultFontManager = std::move(fontManager);
-    fDefaultFamilyNames.emplace_back(defaultFamilyName);
-}
-#else
 void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager,
     const char defaultFamilyName[]) {
     fDefaultFontManager = std::move(fontManager);
     fDefaultFamilyNames.emplace_back(defaultFamilyName);
 }
-#endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
-void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager,
-                                           const std::vector<SkString>& defaultFamilyNames) {
-    std::unique_lock<std::shared_mutex> writeLock(mutex_);
-    fDefaultFontManager = std::move(fontManager);
-    fDefaultFamilyNames = defaultFamilyNames;
-}
-#else
 void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager,
-                                           const std::vector<SkString>& defaultFamilyNames) {
+    const std::vector<SkString>& defaultFamilyNames) {
     fDefaultFontManager = std::move(fontManager);
     fDefaultFamilyNames = defaultFamilyNames;
 }
-#endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
-void FontCollection::setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager) {
-    std::unique_lock<std::shared_mutex> writeLock(mutex_);
-    fDefaultFontManager = fontManager;
-}
-#else
 void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager) {
     fDefaultFontManager = std::move(fontManager);
 }

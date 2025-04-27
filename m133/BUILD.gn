@@ -557,18 +557,6 @@ optional("fontmgr_custom_directory") {
   sources = skia_ports_fontmgr_directory_sources
 }
 
-#optional("fontmgr_custom_directory_factory") {
-#  enabled = skia_enable_fontmgr_custom_directory
-#  deps = [ ":fontmgr_custom_directory" ]
-#  sources = [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
-#  if (use_linux) {
-#    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
-#  }
-#  if (is_arkui_x) {
-#    sources -= [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
-#  }
-#}
-
 optional("fontmgr_custom_embedded") {
   enabled = skia_enable_fontmgr_custom_embedded
   public_defines = [ "SK_FONTMGR_FREETYPE_EMBEDDED_AVAILABLE" ]
@@ -1423,26 +1411,6 @@ optional("vello") {
   public_deps = [ "${skia_third_party_dir}/vello" ]
 }
 
-#optional("gif") {
-  #enabled = !skia_use_wuffs && skia_use_libgifcodec
-  #_libgifcodec_gni_path = "third_party/externals/libgifcodec/libgifcodec.gni"
-  #if ("True" ==
-  #    exec_script("gn/checkpath.py",
-  #                [ rebase_path(_libgifcodec_gni_path, root_build_dir) ],
-  #                "trim string")) {
-  #  public_defines = [ "SK_USE_LIBGIFCODEC" ]
-  #  public_include_dirs = [
-  #    ".",
-  #    skia_libgifcodec_path,
-  #  ]
-  #  include_dirs = public_include_dirs
-  #  import(_libgifcodec_gni_path)
-  #  sources = rebase_path(libgifcodec_sources + libgifcodec_public,
-  #                        ".",
-  #                        skia_libgifcodec_path)
-  #}
-#}
-
 optional("heif") {
   enabled = skia_use_libheif
   public_defines = [ "SK_HAS_HEIF_LIBRARY" ]
@@ -1926,16 +1894,6 @@ optional("xml") {
               "src/svg/SkSVGDevice.cpp",
             ]
 }
-
-#optional("skvm_jit") {
-#  enabled = skia_enable_skvm_jit_when_possible
-#  public_defines = [ "SKVM_JIT_WHEN_POSSIBLE" ]
-#  if (skia_vtune_path != "") {
-#    public_defines += [ "SKVM_JIT_VTUNE" ]
-#    public_include_dirs = [ "$skia_vtune_path/include" ]
-#    libs = [ "$skia_vtune_path/lib64/jitprofiling.lib" ]
-#  }
-#}
 
 if (skia_enable_ganesh && skia_generate_workarounds) {
   action("workaround_list") {

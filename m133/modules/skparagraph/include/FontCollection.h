@@ -9,6 +9,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
+#include "drawing.h"
 #endif
 #include "include/core/SkFontMgr.h"
 #include "include/core/SkRefCnt.h"
@@ -17,9 +18,6 @@
 #include "modules/skparagraph/include/ParagraphCache.h"
 #include "modules/skparagraph/include/TextStyle.h"
 #include "src/core/SkTHash.h"
-#ifdef ENABLE_TEXT_ENHANCE
-#include "drawing.h"
-#endif
 
 namespace skia {
 namespace textlayout {

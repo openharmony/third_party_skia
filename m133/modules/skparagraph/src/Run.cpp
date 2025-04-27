@@ -290,11 +290,10 @@ SkShaper::RunHandler::Buffer Run::newRunBuffer() {
 void Run::copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const {
     SkASSERT(pos + size <= this->size());
     const auto& blobBuffer = builder.AllocRunPos(fFont, SkToInt(size));
-    #ifdef ENABLE_TEXT_ENHANCE
     if (!blobBuffer.glyphs || !fGlyphs.data()) {
         return;
     }
-    #endif
+
     sk_careful_memcpy(blobBuffer.glyphs, fGlyphs.data() + pos, size * sizeof(SkGlyphID));
     auto points = reinterpret_cast<SkPoint*>(blobBuffer.pos);
 
@@ -320,11 +319,10 @@ void Run::copyTo(RSTextBlobBuilder& builder,
                  size_t size) const {
     SkASSERT(pos + size <= this->size());
     auto& blobBuffer = builder.AllocRunRSXform(fFont, SkToInt(size));
-    #ifdef ENABLE_TEXT_ENHANCE
     if (!blobBuffer.glyphs || !fGlyphs.data()) {
         return;
     }
-    #endif
+
     sk_careful_memcpy(blobBuffer.glyphs, fGlyphs.data() + pos, size * sizeof(SkGlyphID));
     std::vector<float> widths(size);
     fFont.GetWidths(blobBuffer.glyphs, size, widths.data());

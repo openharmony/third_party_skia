@@ -33,7 +33,6 @@ public:
     virtual SkRange<size_t> getTextRange() const = 0;
     virtual void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) = 0;
 
-#ifdef ENABLE_TEXT_ENHANCE
     virtual std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
         const std::string& ellipsisStr) = 0;
     virtual double getTypographicBounds(double* ascent, double* descent, double* leading) const = 0;
@@ -43,7 +42,6 @@ public:
     virtual double getOffsetForStringIndex(int32_t index) const = 0;
     virtual std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const = 0;
     virtual double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const = 0;
-#endif
 };
 }  // namespace textlayout
 }  // namespace skia

@@ -190,9 +190,7 @@ static RSDrawing::Paint ConvertDecorStyle(const ParagraphPainter::DecorationStyl
     }
     return paint;
 }
-#endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
 void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRect& rect,
     SkScalar baseline, SkScalar halo, const TextStyle& textStyle) {
     // Create a special text blob for decorations

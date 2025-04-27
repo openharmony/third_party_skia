@@ -35,11 +35,11 @@ public:
     virtual std::vector<RSPoint> getPositions() const = 0;
     virtual std::vector<RSPoint> getOffsets() const = 0;
 
-#ifdef ENABLE_TEXT_ENHANCE
     virtual std::vector<uint16_t> getGlyphs(int64_t start, int64_t length) const = 0;
     virtual void getStringRange(uint64_t* location, uint64_t* length) const = 0;
     virtual std::vector<uint64_t> getStringIndices(int64_t start, int64_t length) const = 0;
     virtual float getTypographicBounds(float* ascent, float* descent, float* leading) const = 0;
+
 #ifdef ENABLE_DRAWING_ADAPTER
     virtual RSRect getImageBounds() const = 0;
     virtual std::vector<RSPoint> getPositions(int64_t start, int64_t length) const = 0;
@@ -47,7 +47,6 @@ public:
     virtual SkRect getImageBounds() const = 0;
     virtual std::vector<SkPoint> getPositions(int64_t start, int64_t length) const = 0;
 #endif // ENABLE_DRAWING_ADAPTER
-#endif // ENABLE_TEXT_ENHANCE
     virtual void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) = 0;
 };
 }  // namespace textlayout

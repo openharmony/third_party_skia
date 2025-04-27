@@ -243,12 +243,12 @@ private:
 #ifdef ENABLE_TEXT_ENHANCE
     bool fTextOverflower;
     skia::textlayout::EllipsisModal fEllipsisModal;
-    SkScalar fTextSplitRatio = 0.5f;
+    SkScalar fTextSplitRatio{0.5f};
     TextTabs fTextTab;
-    SkScalar fParagraphSpacing { 0.0f };
-    bool fIsEndAddParagraphSpacing { false };
+    SkScalar fParagraphSpacing{0.0f};
+    bool fIsEndAddParagraphSpacing{false};
 #endif
-    bool fApplyRoundingHack = true;
+    bool fApplyRoundingHack{true};
 };
 }  // namespace textlayout
 }  // namespace skia

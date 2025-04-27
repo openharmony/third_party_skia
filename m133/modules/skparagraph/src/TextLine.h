@@ -31,9 +31,9 @@ namespace textlayout {
 class ParagraphImpl;
 #ifdef ENABLE_TEXT_ENHANCE
 struct DecorationContext {
-    SkScalar thickness = 0.0f;
-    SkScalar underlinePosition = 0.0f;
-    SkScalar textBlobTop = 0.0f;
+    SkScalar thickness{0.0f};
+    SkScalar underlinePosition{0.0f};
+    SkScalar textBlobTop{0.0f};
 };
 #endif
 class TextLine {
@@ -51,9 +51,9 @@ public:
 
 #ifdef ENABLE_TEXT_ENHANCE
     struct PathParameters {
-        const RSPath* recordPath = nullptr;
-        SkScalar hOffset = 0;
-        SkScalar vOffset = 0;
+        const RSPath* recordPath{nullptr};
+        SkScalar hOffset{0};
+        SkScalar vOffset{0};
     } pathParameters;
 #endif
 
@@ -171,9 +171,6 @@ public:
                             EllipsisReadStrategy ellipsisReadStrategy,
                             const RunVisitor& visitor,
                             SkScalar& runWidthInLine) const;
-#endif
-
-#ifdef ENABLE_TEXT_ENHANCE
     void iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
                                   bool includingGhostSpaces,
                                   const RunVisitor& runVisitor) const;
@@ -195,7 +192,7 @@ public:
                                              const ClustersVisitor& visitor) const;
 
 #ifdef ENABLE_TEXT_ENHANCE
-	void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
+    void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
     SkScalar autoSpacing();
 #else
 	void format(TextAlign align, SkScalar maxWidth);
@@ -203,21 +200,26 @@ public:
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
     void visit(SkScalar x, SkScalar y);
     void ensureTextBlobCachePopulated();
-	
-	void createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
+
+    void createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
 
 #ifdef ENABLE_TEXT_ENHANCE
     void setParagraphImpl(ParagraphImpl* newpara) { fOwner = newpara; }
     void setBlockRange(const BlockRange& blockRange) { fBlockRange = blockRange; }
     void countWord(int& wordCount, bool& inWord);
     void ellipsisNotFitProcess(EllipsisModal ellipsisModal);
-	void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
+
     void createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
     void handleTailEllipsisInEmptyLine(std::unique_ptr<Run>& ellipsisRun, const SkString& ellipsis,
         SkScalar width, WordBreakType wordBreakType);
     void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
 #endif
+
+#ifdef ENABLE_DRAWING_ADAPTER
+    void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
+#endif
+
     // For testing internal structures
     void scanStyles(StyleType style, const RunStyleVisitor& visitor);
 
@@ -250,29 +252,30 @@ public:
     void setDescentStyle(LineMetricStyle style) { fDescentStyle = style; }
 
     bool endsWithHardLineBreak() const;
-#ifdef ENABLE_TEXT_ENHANCE
 
-    size_t getGlyphCount() const;
+    std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
+
+#ifdef ENABLE_DRAWING_ADAPTER
     std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const;
+    double getTypographicBounds(double* ascent, double* descent, double* leading) const;
+    RSRect getImageBounds() const;
+#endif
+
+#ifdef ENABLE_TEXT_ENHANCE
+    int32_t getStringIndexForPosition(SkPoint point) const;
+    size_t getGlyphCount() const;
     bool endsWithOnlyHardBreak() const;
     std::unique_ptr<Run> shapeString(const SkString& string, const Cluster* cluster);
-
-	std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
     skia_private::STArray<1, size_t, true> getLineAllRuns() const { return fRunsInVisualOrder; };
     TextLine CloneSelf();
     TextRange getTextRangeReplacedByEllipsis() const { return fTextRangeReplacedByEllipsis; }
     void setTextBlobCachePopulated(const bool textBlobCachePopulated) {
         fTextBlobCachePopulated = textBlobCachePopulated;
     }
-#endif
-
-#ifdef ENABLE_TEXT_ENHANCE
     std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
         const std::string& ellipsisStr);
-    double getTypographicBounds(double* ascent, double* descent, double* leading) const;
-    RSRect getImageBounds() const;
+
     double getTrailingSpaceWidth() const;
-    int32_t getStringIndexForPosition(SkPoint point) const;
     double getOffsetForStringIndex(int32_t index) const;
     std::map<int32_t, double> getIndexAndOffsets(bool& isHardBreak) const;
     double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const;
@@ -284,7 +287,7 @@ public:
 #endif
 private:
 #ifdef ENABLE_TEXT_ENHANCE	
-	struct RoundRectAttr {
+    struct RoundRectAttr {
         int styleId;
         RectStyle roundRectStyle;
         SkRect rect;

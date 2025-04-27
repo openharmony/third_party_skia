@@ -204,37 +204,26 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
     }
 }
 
-#ifndef ENABLE_DRAWING_ADAPTER
-void TextStyle::getFontMetrics(SkFontMetrics* metrics) const {
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
 void TextStyle::getFontMetrics(RSFontMetrics* metrics) const {
-#endif
-#ifndef ENABLE_DRAWING_ADAPTER
-    SkFont font(fTypeface, fFontSize);
-    font.setEdging(SkFont::Edging::kAntiAlias);
-    font.setSubpixel(true);
-    font.setHinting(SkFontHinting::kSlight);
-#ifdef ENABLE_TEXT_ENHANCE
-    auto compressFont = font;
-    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
-    compressFont.getMetrics(metrics);
-    metricsIncludeFontPadding(metrics, font);
 #else
-    font.getMetrics(metrics);
+void TextStyle::getFontMetrics(SkFontMetrics* metrics) const {
 #endif
-#else
+#ifdef ENABLE_DRAWING_ADAPTER
     RSFont font(fTypeface, fFontSize, 1, 0);
     font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
     font.SetHinting(RSDrawing::FontHinting::SLIGHT);
     font.SetSubpixel(true);
-#ifdef ENABLE_TEXT_ENHANCE
     auto compressFont = font;
     scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
     compressFont.GetMetrics(metrics);
     metricsIncludeFontPadding(metrics, font);
 #else
-    font.GetMetrics(metrics);
-#endif
+    SkFont font(fTypeface, fFontSize);
+    font.setEdging(SkFont::Edging::kAntiAlias);
+    font.setSubpixel(true);
+    font.setHinting(SkFontHinting::kSlight);
+    font.getMetrics(metrics);
 #endif
     if (fHeightOverride) {
         auto multiplier = fHeight * fFontSize;

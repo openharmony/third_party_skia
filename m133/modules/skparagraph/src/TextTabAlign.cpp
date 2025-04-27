@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- #ifdef ENABLE_TEXT_ENHANCE
+#ifdef ENABLE_TEXT_ENHANCE
 
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/TextTabAlign.h"

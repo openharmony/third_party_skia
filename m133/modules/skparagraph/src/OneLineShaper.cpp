@@ -757,6 +757,7 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
             placeholder.fTextStyle.getFontStyle(),
             placeholder.fTextStyle.getFontArguments());
         std::shared_ptr<RSTypeface> typeface = typefaces.empty() ? nullptr : typefaces.front();
+        RSFont font(typeface, placeholder.fTextStyle.getFontSize(), 1, 0);
 #else
         // Get the placeholder font
         std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
@@ -764,11 +765,6 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
             placeholder.fTextStyle.getFontStyle(),
             placeholder.fTextStyle.getFontArguments());
         sk_sp<SkTypeface> typeface = typefaces.empty() ? nullptr : typefaces.front();
-#endif
-
-#ifdef ENABLE_DRAWING_ADAPTER
-        RSFont font(typeface, placeholder.fTextStyle.getFontSize(), 1, 0);
-#else
         SkFont font(typeface, placeholder.fTextStyle.getFontSize());
 #endif
 
@@ -843,25 +839,16 @@ bool OneLineShaper::shape() {
             fCurrentText = block.fRange;
             fUnresolvedBlocks.emplace_back(RunBlock(block.fRange));
 
-#ifdef ENABLE_TEXT_ENHANCE
 #ifdef ENABLE_DRAWING_ADAPTER
             auto typefaceVisitor = [&](std::shared_ptr<RSTypeface> typeface) {
-#else
-            auto typefaceVisitor = [&](sk_sp<SkTypeface> typeface) {
-#endif
-#else
-            this->matchResolvedFonts(block.fStyle, [&](sk_sp<SkTypeface> typeface) {
-#endif
                 // Create one more font to try
-#ifdef ENABLE_DRAWING_ADAPTER
                 RSFont font(std::move(typeface), block.fStyle.getFontSize(), 1, 0);
                 font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
                 font.SetHinting(RSDrawing::FontHinting::NONE);
                 font.SetSubpixel(true);
-#ifdef ENABLE_TEXT_ENHANCE
                 font.SetBaselineSnap(false);
-#endif // ENABLE_TEXT_ENHANCE
 #else
+            this->matchResolvedFonts(block.fStyle, [&](sk_sp<SkTypeface> typeface) {
                 SkFont font(std::move(typeface), block.fStyle.getFontSize());
                 font.setEdging(SkFont::Edging::kAntiAlias);
                 font.setHinting(SkFontHinting::kSlight);
