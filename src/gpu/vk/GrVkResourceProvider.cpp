@@ -448,6 +448,9 @@ void GrVkResourceProvider::checkCommandBuffers() {
             }
         }
     }
+    if (fActiveCommandPools.count() >= 3000) {
+        SK_LOGE("GrVkResourceProvider::checkCommandBuffers: fActiveCommandPools size [%{public}d]", fActiveCommandPools.count());
+    }
 }
 
 void GrVkResourceProvider::forceSyncAllCommandBuffers() {
