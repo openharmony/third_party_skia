@@ -1708,10 +1708,7 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
         return unresolvedPaintID;
     }
     this->ensureUTF16Mapping();
-    if (encodeType == UtfEncodeType::kUtf16) {
-        from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? from : fText.size();
-        to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? to : fText.size();
-    } else {
+    if (encodeType == UtfEncodeType::kUtf8) {
         from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[from] : fText.size();
         to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[to] : fText.size();
     }
