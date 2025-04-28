@@ -14,6 +14,9 @@
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
 #include <sstream>
 #endif
+#ifdef SKIA_OHOS_SINGLE_OWNER
+#include <pthread.h>
+#endif
 
 class GrGpu;
 class GrResourceCache;
@@ -435,6 +438,10 @@ private:
 
     bool fRealAlloc = false; // OH ISSUE: real alloc flag
     size_t fRealAllocSize = 0; // OH ISSUE: real alloc size
+
+#ifdef SKIA_OHOS_SINGLE_OWNER
+    pthread_t fTid = pthread_self();
+#endif
 };
 
 class GrGpuResource::ProxyAccess {
