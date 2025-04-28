@@ -33,6 +33,10 @@
 
 #include <memory>
 #include <utility>
+#ifdef ENABLE_TEXT_ENHANCE
+#include <algorithm>
+#include "modules/skparagraph/src/ParagraphLineFetcherImpl.h"
+#endif
 
 namespace skia {
 namespace textlayout {
@@ -85,6 +89,7 @@ std::unique_ptr<ParagraphBuilder> ParagraphBuilder::make(const ParagraphStyle& s
     return ParagraphBuilderImpl::make(style, std::move(fontCollection), std::move(unicode));
 }
 
+
 std::unique_ptr<ParagraphBuilder> ParagraphBuilderImpl::make(const ParagraphStyle& style,
                                                              sk_sp<FontCollection> fontCollection,
                                                              sk_sp<SkUnicode> unicode) {
@@ -94,7 +99,11 @@ std::unique_ptr<ParagraphBuilder> ParagraphBuilderImpl::make(const ParagraphStyl
 
 ParagraphBuilderImpl::ParagraphBuilderImpl(
         const ParagraphStyle& style, sk_sp<FontCollection> fontCollection, sk_sp<SkUnicode> unicode)
+#ifdef ENABLE_TEXT_ENHANCE
+        : ParagraphBuilder(style, fontCollection)
+#else
         : ParagraphBuilder()
+#endif // ENABLE_TEXT_ENHANCE
         , fUtf8()
         , fFontCollection(std::move(fontCollection))
         , fParagraphStyle(style)
@@ -107,6 +116,7 @@ ParagraphBuilderImpl::ParagraphBuilderImpl(
     SkASSERT(fFontCollection);
     startStyledBlock();
 }
+
 
 ParagraphBuilderImpl::~ParagraphBuilderImpl() = default;
 
@@ -253,6 +263,17 @@ std::unique_ptr<Paragraph> ParagraphBuilderImpl::Build() {
     return std::make_unique<ParagraphImpl>(
             fUtf8, fParagraphStyle, fStyledBlocks, fPlaceholders, fFontCollection, fUnicode);
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+std::unique_ptr<ParagraphLineFetcher> ParagraphBuilderImpl::buildLineFetcher() {
+    if (fUtf8.isEmpty()) {
+        return nullptr;
+    }
+    fParagraphStyle.setMaxLines(1);
+    fParagraphStyle.setTextAlign(TextAlign::kLeft);
+    return std::make_unique<ParagraphLineFetcherImpl>(Build());
+}
+#endif
 
 SkSpan<char> ParagraphBuilderImpl::getText() {
     this->finalize();

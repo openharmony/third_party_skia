@@ -90,6 +90,11 @@ class SKUNICODE_API SkUnicode : public SkRefCnt {
             kEmoji = 0x200,
             kWordBreak = 0x400,
             kSentenceBreak = 0x800,
+#ifdef ENABLE_TEXT_ENHANCE
+            kCombine = 0x1000,
+            kPunctuation = 0x2000,
+            kEllipsis = 0x4000,
+#endif
         };
         enum class TextDirection {
             kLTR,
@@ -157,6 +162,10 @@ class SKUNICODE_API SkUnicode : public SkRefCnt {
         static bool hasGraphemeStartFlag(SkUnicode::CodeUnitFlags flags);
         static bool hasControlFlag(SkUnicode::CodeUnitFlags flags);
         static bool hasPartOfWhiteSpaceBreakFlag(SkUnicode::CodeUnitFlags flags);
+#ifdef ENABLE_TEXT_ENHANCE
+        static bool isPunctuation(SkUnichar utf8);
+        static bool isEllipsis(SkUnichar utf8);
+#endif
 
         static bool extractBidi(const char utf8[],
                                 int utf8Units,

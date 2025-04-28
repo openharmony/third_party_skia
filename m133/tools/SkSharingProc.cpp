@@ -31,7 +31,11 @@ namespace {
     }
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+SK_API void SkSharingSerialContext::collectNonTextureImagesFromPicture(
+#else
 void SkSharingSerialContext::collectNonTextureImagesFromPicture(
+#endif
     const SkPicture* pic, SkSharingSerialContext* sharingCtx) {
     SkSerialProcs tempProc;
     tempProc.fImageCtx = sharingCtx;
@@ -40,7 +44,11 @@ void SkSharingSerialContext::collectNonTextureImagesFromPicture(
     pic->serialize(&ns, &tempProc);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+SK_API sk_sp<SkData> SkSharingSerialContext::serializeImage(SkImage* img, void* ctx) {
+#else
 sk_sp<SkData> SkSharingSerialContext::serializeImage(SkImage* img, void* ctx) {
+#endif
     SkSharingSerialContext* context = reinterpret_cast<SkSharingSerialContext*>(ctx);
     uint32_t id = img->uniqueID(); // get this process's id for the image. these are not hashes.
     // find out if we have already serialized this, and if so, what its in-file id is.

@@ -63,6 +63,14 @@ enum class TextDirection {
     kLtr,
 };
 
+#ifdef ENABLE_TEXT_ENHANCE
+enum class EllipsisModal {
+    HEAD = 0,
+    MIDDLE = 1,
+    TAIL = 2,
+};
+#endif
+
 struct PositionWithAffinity {
     int32_t position;
     Affinity affinity;
