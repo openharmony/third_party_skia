@@ -182,7 +182,11 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
             return fFontStyle == other.fFontStyle &&
                    fLocale == other.fLocale &&
                    fFontFamilies == other.fFontFamilies &&
+#ifdef OHOS_SUPPORT
+                   getCorrectFontSize() == other.getCorrectFontSize() &&
+#else
                    fFontSize == other.fFontSize &&
+#endif
                    fHeight == other.fHeight &&
                    fHalfLeading == other.fHalfLeading &&
                    fBaselineShift == other.fBaselineShift &&
@@ -269,6 +273,24 @@ void TextStyle::setFontFamilies(std::vector<SkString> families) {
     });
     fFontFamilies = std::move(families);
 }
+
+SkScalar TextStyle::getBadgeBaseLineShift() const {
+    if (getTextBadgeType() == TextBadgeType::BADGE_NONE) {
+        return 0;
+    }
+
+    SkScalar actualFontSize = getFontSize() * TEXT_BADGE_FONT_SIZE_SCALE;
+    return getTextBadgeType() == TextBadgeType::SUPER_SCRIPT ? actualFontSize * SUPS_BASELINE_SHIFT_SCALE :
+        actualFontSize * SUBS_BASELINE_SHIFT_SCALE;
+}
+
+SkScalar TextStyle::getCorrectFontSize() const {
+    if (getTextBadgeType() == TextBadgeType::BADGE_NONE) {
+        return getFontSize();
+    }
+
+    return getFontSize() * TEXT_BADGE_FONT_SIZE_SCALE;
+};
 #endif
 
 }  // namespace textlayout

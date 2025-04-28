@@ -179,8 +179,23 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 SkScalar width = cluster->width() + widthBeforeCluster;
                 (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
                 breaker.breakLine(width)) {
+            if (cluster->getBadgeType() != TextBadgeType::BADGE_NONE) {
+                if (fWords.empty() && fClusters.empty()) {
+                    fClusters.extend(cluster);
+                    fTooLongCluster = true;
+                    break;
+                }
+
+                if (!fClusters.empty() && !fClusters.endCluster()->textRange().contains(fClusters.startCluster()->textRange())) {
+                    fClusters.trim(cluster - 1);
+                }
+
+                if (!fClusters.empty()) {
+                    fWords.extend(fClusters);
+                    break;
+                }
             // if the hyphenator has already run as balancing algorithm, use the cluster information
-            if (cluster->isHyphenBreak() && !needEllipsis) {
+            } else if (cluster->isHyphenBreak() && !needEllipsis) {
                 // we dont want to add the current cluster as the hyphenation algorithm marks breaks before a cluster
                 // however, if we cannot fit anything to a line, we need to break out here
                 if (fWords.empty() && fClusters.empty()) {

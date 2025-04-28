@@ -21,6 +21,13 @@
 
 namespace skia {
 namespace textlayout {
+#ifdef OHOS_SUPPORT
+const SkScalar TEXT_BADGE_FONT_SIZE_SCALE = 0.75;
+const SkScalar SUPS_BASELINE_SHIFT_SCALE = - 0.5;
+const SkScalar SUBS_BASELINE_SHIFT_SCALE = 0.4;
+const SkScalar SUPS_HORIZONTAL_SHIFT_SCALE = - 0.05;
+const SkScalar SUBS_HORIZONTAL_SHIFT_SCALE = 0.1;
+#endif
 
 static inline bool nearlyZero(SkScalar x, SkScalar tolerance = SK_ScalarNearlyZero) {
     if (SkScalarIsFinite(x)) {
@@ -181,6 +188,14 @@ struct RectStyle {
     }
 };
 
+#ifdef OHOS_SUPPORT
+enum class TextBadgeType {
+    BADGE_NONE,
+    SUPER_SCRIPT,
+    SUB_SCRIPT,
+};
+#endif
+
 class TextStyle {
 public:
     TextStyle() = default;
@@ -295,7 +310,7 @@ public:
     }
 #endif
 
-    SkScalar getBaselineShift() const { return fBaselineShift; }
+    SkScalar getBaselineShift() const { return fBaselineShift + getBadgeBaseLineShift(); }
     void setBaselineShift(SkScalar baselineShift) { fBaselineShift = baselineShift; }
 
     void setHeight(SkScalar height) { fHeight = height; }
@@ -350,8 +365,17 @@ public:
     void setBackgroundRect(RectStyle rect) { fBackgroundRect = rect; }
 
 #ifdef OHOS_SUPPORT
-    bool isCustomSymbol() const {return fIsCustomSymbol;}
-    void setCustomSymbol(bool state) {fIsCustomSymbol = state;}
+    bool isCustomSymbol() const { return fIsCustomSymbol; }
+
+    void setCustomSymbol(bool state) { fIsCustomSymbol = state; }
+
+    TextBadgeType getTextBadgeType() const { return fBadgeType; }
+
+    void setTextBadgeType(TextBadgeType badgeType) { fBadgeType = badgeType; }
+
+    SkScalar getBadgeBaseLineShift() const;
+
+    SkScalar getCorrectFontSize() const;
 #endif
 
 private:
@@ -415,6 +439,10 @@ private:
     std::vector<FontFeature> fFontFeatures;
 
     std::optional<FontArguments> fFontArguments;
+
+#ifdef OHOS_SUPPORT
+    TextBadgeType fBadgeType{TextBadgeType::BADGE_NONE};
+#endif
 };
 
 typedef size_t TextIndex;
