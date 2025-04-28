@@ -14,6 +14,7 @@
 #include "src/gpu/GrResourceCache.h"
 #include <atomic>
 #include "include/core/SkLog.h"
+#include "include/core/SkTypes.h"
 
 static inline GrResourceCache* get_resource_cache(GrGpu* gpu) {
     SkASSERT(gpu);
@@ -49,6 +50,14 @@ void GrGpuResource::registerWithCacheWrapped(GrWrapCacheable wrapType) {
 
 GrGpuResource::~GrGpuResource() {
     // The cache should have released or destroyed this resource.
+#ifdef SKIA_OHOS_SINGLE_OWNER
+    static const bool isEnabledSkiaSingleOwner = GetEnableSkiaSingleOwner();
+    static const int SIGNAL_FOR_OCEAN = 42;
+    if (isEnabledSkiaSingleOwner && fTid != pthread_self()) {
+        SK_LOGE("GrResource fTid[%{public}d]", fTid);
+        raise(SIGNAL_FOR_OCEAN);
+    }
+#endif
     fMagicNum = 0;
     SkASSERT(this->wasDestroyed());
 }
