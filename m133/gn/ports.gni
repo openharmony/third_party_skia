@@ -22,6 +22,7 @@ skia_ports_sources = [
 skia_ports_freetype_sources = [
   "$_src/ports/SkFontHost_FreeType.cpp",
   "$_src/ports/SkFontHost_FreeType_common.cpp",
+  "$_src/ports/SkFontScanner_FreeType.cpp",
   "$_src/ports/SkFontHost_FreeType_common.h",
   "$_src/ports/SkFontScanner_FreeType_priv.h",
   "$_src/ports/SkTypeface_FreeType.h",

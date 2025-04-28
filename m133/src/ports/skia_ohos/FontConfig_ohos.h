@@ -44,6 +44,7 @@ enum {
 };
 } /* namespace ErrorCode */
 
+constexpr int RANGE_NUM = 4;
 
 /*!
  * \brief To parse the font configuration document and manage the system fonts
@@ -80,7 +81,7 @@ public:
         // all the typefaces of this font
         std::vector<sk_sp<SkTypeface_OHOS>> typefaces;
         // the unicode range of this font
-        std::array<uint32_t, 4> range{};
+        std::array<uint32_t, RANGE_NUM> range{};
 
         // may be redundant move
         explicit Font(FontJson&& info)
