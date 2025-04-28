@@ -674,7 +674,7 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
     }
 
     SkASSERT(nearlyEqual(context.run->baselineShift(), style.getBaselineShift()));
-    SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getBaselineShift() +  0.5);
+    SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getBaselineShift() + 0.5);
 #ifndef USE_SKIA_TXT
     record.fBlob = builder.make();
     if (record.fBlob != nullptr) {
@@ -1348,7 +1348,7 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
         font.setHinting(SkFontHinting::kSlight);
         font.setSubpixel(true);
 #else
-        RSFont font(typeface, textStyle.getFontSize(), 1, 0);
+        RSFont font(typeface, textStyle.getCorrectFontSize(), 1, 0);
         font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
         font.SetHinting(RSDrawing::FontHinting::SLIGHT);
         font.SetSubpixel(true);
