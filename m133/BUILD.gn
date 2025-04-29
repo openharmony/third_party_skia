@@ -2210,7 +2210,6 @@ group("modules") {
 }
 
 config("use_skia_vulkan_headers") {
-  include_dirs = [ "//third_party/vulkan_headers/include" ]
   defines = [ "SK_USE_INTERNAL_VULKAN_HEADERS" ]
 }
 
@@ -2426,8 +2425,8 @@ if (skia_enable_tools) {
 
     # Bots and even devs may not have Vulkan headers, so put
     # include/third_party/vulkan on our path so they're always available.
-    all_dependent_configs = [ ":use_skia_vulkan_headers" ]
-
+    configs = [ ":use_skia_vulkan_headers" ]
+    external_deps = [ "vulkan-headers:vulkan_headers" ]
     defines = []
     if (skia_enable_discrete_gpu) {
       defines += [ "SK_ENABLE_DISCRETE_GPU" ]
@@ -2484,9 +2483,14 @@ if (skia_enable_tools) {
     }
 
     if (skia_use_gl && target_cpu != "wasm") {
-      if (is_android || skia_use_egl) {
+      if (is_android || skia_use_egl || is_ohos) {
         sources += [ "tools/gpu/gl/egl/CreatePlatformGLTestContext_egl.cpp" ]
-        libs += [ "EGL" ]
+        if (is_ohos) {
+          external_deps += [
+            "graphic_2d:EGL",
+            "graphic_2d:GLESv3",
+          ]
+        }
       } else if (is_linux) {
         sources += [ "tools/gpu/gl/glx/CreatePlatformGLTestContext_glx.cpp" ]
         libs += [
@@ -2731,6 +2735,7 @@ if (skia_enable_tools) {
     if (skia_enable_svg) {
       deps += [ "modules/svg" ]
     }
+    deps += [ ":xml" ]
     public_deps = [
       ":gpu_tool_utils",
       "modules/jsonreader",
@@ -2760,11 +2765,16 @@ if (skia_enable_tools) {
       ":tool_utils",
       "modules/skottie",
       "modules/skottie:gm",
-      "modules/skparagraph",
-      "modules/skparagraph:gm",
       "modules/skresources",
       "modules/skshaper",
     ]
+    if (gm_test_enable_font) {
+      deps += [
+        "modules/skparagraph",
+        "modules/skparagraph:gm",
+      ]
+      sources += gm_font_sources
+    }
     if (is_skia_dev_build) {
       sources += [ "gm/fiddle.cpp" ]
       deps += [ ":skia.h" ]
@@ -2834,6 +2844,9 @@ if (skia_enable_tools) {
     if (skia_enable_precompile) {
       sources += precompile_tests_sources
     }
+    if (gm_test_enable_font) {
+      sources += font_tests_sources
+    }
     deps = [
       ":flags",
       ":fontmgr_FontConfigInterface_tests",
@@ -2841,6 +2854,7 @@ if (skia_enable_tools) {
       ":fontmgr_fontconfig_tests",
       ":fontmgr_mac_ct_tests",
       ":fontscanner_tests",
+      ":jpeg_decode",
       ":png_decode_rust_tests",
       ":png_encode_rust_tests",
       ":skia",
@@ -2849,16 +2863,20 @@ if (skia_enable_tools) {
       ":typeface_fontations_tests",
       "modules/bentleyottmann:tests",
       "modules/skottie:tests",
-      "modules/skparagraph:tests",
       "modules/sksg:tests",
       "modules/skshaper",
-      "modules/skshaper:tests",
       "modules/skunicode:tests",
       "modules/svg:tests",
       "${skia_third_party_dir}/libpng",
       "${skia_third_party_dir}/libwebp",
       "${skia_third_party_dir}/zlib",
     ]
+    if (gm_test_enable_font) {
+      deps += [
+        "modules/skparagraph:tests",
+        "modules/skshaper:tests",
+      ]
+    }
   }
 
   import("gn/bench.gni")
@@ -2922,6 +2940,7 @@ if (skia_enable_tools) {
     test_app("imgcvt") {
       sources = [ "tools/imgcvt.cpp" ]
       configs = [ ":use_skia_vulkan_headers" ]
+      external_deps = [ "vulkan-headers:vulkan_headers" ]
       deps = [
         ":skia",
         "modules/skcms",
@@ -2956,6 +2975,21 @@ if (skia_enable_tools) {
         "modules/skunicode",
       ]
       if (skia_use_libpng_decode) {
+        deps += [ "modules/svg" ]
+      }
+      ldflags = [
+        "--stdlib=libc++",
+        "-lc++",
+      ]
+      if (is_ohos) {
+        sources += [ "${skia_root_dir}/src/ports/SkDebug_ohos.cpp" ]
+        external_deps = [
+          "bounds_checking_function:libsec_shared",
+          "faultloggerd:libbacktrace_local",
+          "hilog:libhilog",
+          "hitrace:hitrace_meter",
+          "init:libbegetutil",
+        ]
         deps += [ "modules/svg" ]
       }
     }
@@ -3085,7 +3119,7 @@ if (skia_enable_tools) {
         ":flags",
         ":skia",
         ":tool_utils",
-        "//modules/svg",
+        "modules/svg",
       ]
     }
   }
