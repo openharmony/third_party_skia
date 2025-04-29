@@ -191,6 +191,37 @@ sk_sp<SkTypeface> SkTypeface::makeClone(const SkFontArguments& args) const {
     return this->onMakeClone(args);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+SkFontStyle SkTypeface::FromOldStyle(Style oldStyle) {
+    return SkFontStyle((oldStyle & SkTypeface::kBold) ? SkFontStyle::kBold_Weight
+                                                      : SkFontStyle::kNormal_Weight,
+                       SkFontStyle::kNormal_Width,
+                       (oldStyle & SkTypeface::kItalic) ? SkFontStyle::kItalic_Slant
+                                                        : SkFontStyle::kUpright_Slant);
+}
+
+SkTypeface* SkTypeface::GetDefaultTypeface(Style style) {
+    constexpr int kStyleCount = 4;
+    static SkOnce once[kStyleCount];
+    static sk_sp<SkTypeface> defaults[kStyleCount];
+    SkASSERT((int)style < kStyleCount);
+    once[style]([style] {
+        sk_sp<SkFontMgr> fm(SkFontMgr::RefDefault());
+        auto t = fm->legacyMakeTypeface(nullptr, FromOldStyle(style));
+        defaults[style] = t ? t : SkEmptyTypeface::Make();
+    });
+    return defaults[style].get();
+}
+
+sk_sp<SkTypeface> SkTypeface::MakeDefault() {
+    return sk_ref_sp(GetDefaultTypeface());
+}
+
+std::vector<sk_sp<SkTypeface>> SkTypeface::GetSystemFonts() {
+    return SkFontMgr::RefDefault()->getSystemFonts();
+}
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void SkTypeface::Register(
