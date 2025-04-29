@@ -78,6 +78,7 @@ public:
      */
     void setContainerSize(const SkSize&);
 
+    void setResizePercentage(float resizePercentage);
     /**
      * DEPRECATED: use getRoot()->intrinsicSize() to query the root element intrinsic size.
      *
@@ -112,6 +113,7 @@ private:
     const sk_sp<SkShapers::Factory>             fTextShapingFactory;
     const sk_sp<skresources::ResourceProvider>  fResourceProvider;
     const SkSVGIDMapper                         fIDMapper;
+    float                                       fSVGResizePercentage;
     SkSize                                      fContainerSize;
 };
 

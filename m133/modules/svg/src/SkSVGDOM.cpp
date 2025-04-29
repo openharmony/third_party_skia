@@ -493,6 +493,7 @@ SkSVGDOM::SkSVGDOM(sk_sp<SkSVGSVG> root,
         , fTextShapingFactory(std::move(fact))
         , fResourceProvider(std::move(rp))
         , fIDMapper(std::move(mapper))
+        , fSVGResizePercentage(DEFAULT_RESIZE_PERCENTAGE)
         , fContainerSize(fRoot->intrinsicSize(SkSVGLengthContext(SkSize::Make(0, 0)))) {
     SkASSERT(fResourceProvider);
     SkASSERT(fTextShapingFactory);
@@ -501,7 +502,7 @@ SkSVGDOM::SkSVGDOM(sk_sp<SkSVGSVG> root,
 void SkSVGDOM::render(SkCanvas* canvas) const {
     TRACE_EVENT0("skia", TRACE_FUNC);
     if (fRoot) {
-        SkSVGLengthContext       lctx(fContainerSize);
+        SkSVGLengthContext       lctx(fContainerSize, fSVGResizePercentage);
         SkSVGPresentationContext pctx;
         fRoot->render(SkSVGRenderContext(canvas,
                                          fFontMgr,
@@ -529,6 +530,13 @@ void SkSVGDOM::renderNode(SkCanvas* canvas, SkSVGPresentationContext& pctx, cons
                                              fTextShapingFactory),
                           SkSVGIRI(SkSVGIRI::Type::kLocal, SkSVGStringType(id)));
     }
+}
+
+void SkSVGDOM::setResizePercentage(float resizePercentage)
+{
+    fSVGResizePercentage *= resizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    fContainerSize.fWidth *= fSVGResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    fContainerSize.fHeight *= fSVGResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
 }
 
 const SkSize& SkSVGDOM::containerSize() const {
