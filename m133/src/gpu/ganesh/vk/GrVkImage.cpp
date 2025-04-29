@@ -722,6 +722,15 @@ GrVkGpu* GrVkImage::getVkGpu() const {
     return static_cast<GrVkGpu*>(this->getGpu());
 }
 
+size_t GrVkImage::onGpuMemorySize() const
+{
+    if (supportedUsages() & UsageFlags::kTexture) {
+        return GrSurface::ComputeSize(this->backendFormat(), this->dimensions(), 1, this->mipmapped());
+    } else {
+        return GrAttachment::onGpuMemorySize();
+    }
+}
+
 #if defined(GPU_TEST_UTILS)
 void GrVkImage::setCurrentQueueFamilyToGraphicsQueue(GrVkGpu* gpu) {
     skgpu::MutableTextureStates::SetVkQueueFamilyIndex(fMutableState.get(), gpu->queueIndex());
