@@ -468,6 +468,24 @@ void SkTypeface::getFamilyName(SkString* name) const {
     this->onGetFamilyName(name);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+bool SkTypeface::isCustomTypeface() const {
+    return fIsCustom;
+}
+
+void SkTypeface::setIsCustomTypeface(bool isCustom) {
+    fIsCustom = isCustom;
+}
+
+bool SkTypeface::isThemeTypeface() const {
+    return fIsTheme;
+}
+
+void SkTypeface::setIsThemeTypeface(bool isTheme) {
+    fIsTheme = isTheme;
+}
+#endif
+
 bool SkTypeface::getPostScriptName(SkString* name) const {
     return this->onGetPostScriptName(name);
 }

@@ -168,6 +168,8 @@ public:
     void extend(const Cluster* cluster, SkScalar offset);
 #ifdef ENABLE_TEXT_ENHANCE
     void extendClusterWidth(Cluster* cluster, SkScalar space);
+    bool isTrailingSpaceIncluded(const ClusterRange& fTextLineClusterRange,
+        const ClusterRange& fTextLineGhostClusterRange) const;
 #endif
     SkScalar calculateHeight(LineMetricStyle ascentStyle, LineMetricStyle descentStyle) const {
         auto ascent = ascentStyle == LineMetricStyle::Typographic ? this->ascent()
