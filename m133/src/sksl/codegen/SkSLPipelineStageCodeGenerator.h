@@ -54,7 +54,7 @@ namespace PipelineStage {
      * - Each invocation of sample() triggers a call to 'sampleChild', which should return the full
      *   text of the call expression.
      */
-    void ConvertProgram(const Program& program,
+    SK_API void ConvertProgram(const Program& program,
                         const char* sampleCoords,
                         const char* inputColor,
                         const char* destColor,
