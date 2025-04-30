@@ -31,6 +31,7 @@
 #include <memory>
 #include <utility>
 
+static constexpr float DEFAULT_RESIZE_PERCENTAGE = 100;
 class SkCanvas;
 class SkPaint;
 class SkString;
@@ -38,8 +39,8 @@ namespace skresources { class ResourceProvider; }
 
 class SK_API SkSVGLengthContext {
 public:
-    SkSVGLengthContext(const SkSize& viewport, SkScalar dpi = 90)
-        : fViewport(viewport), fDPI(dpi) {}
+    SkSVGLengthContext(const SkSize& viewport, float resizePercentage = DEFAULT_RESIZE_PERCENTAGE, SkScalar dpi = 90)
+        : fViewport(viewport), fResizePercentage(resizePercentage), fDPI(dpi) {}
 
     enum class LengthType {
         kHorizontal,
@@ -56,6 +57,7 @@ public:
 
 private:
     SkSize   fViewport;
+    float  fResizePercentage;
     SkScalar fDPI;
 };
 
