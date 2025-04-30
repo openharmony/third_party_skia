@@ -1930,13 +1930,9 @@ if (use_oh_skia) {
           "-Wl,-mllvm,-vectorization-bonus-factor=4",
           "-Wl,-mllvm,-vectorizer-min-trip-count=4",
           "-Wl,--aarch64-inline-plt",
-          "-Wl,--symbol-ordering-file=" +
-              rebase_path("${skia_feature_pgo_path}/libskia_canvaskit.txt",
-                          root_build_dir),
-          "-Wl,--no-warn-symbol-ordering",
           "-Wl,-mllvm,-tail-dup-profile-hot-percentile-override=999990",
         ]
-        if (skia_feature_enable_mfs) {
+        if (skia_feature_enable_codemerge) {
           ldflags += [
             "-Wl,-plugin-opt=-split-machine-functions",
             "-Wl,-mllvm",
@@ -1946,6 +1942,10 @@ if (use_oh_skia) {
             "-Wl,-mfs-psi-cutoff=999500",
             "-Wl,-z",
             "-Wl,keep-text-section-prefix",
+            "-Wl,--symbol-ordering-file=" +
+                rebase_path("${skia_feature_pgo_path}/libskia_canvaskit.txt",
+                            root_build_dir),
+            "-Wl,--no-warn-symbol-ordering",
           ]
         }
       }
