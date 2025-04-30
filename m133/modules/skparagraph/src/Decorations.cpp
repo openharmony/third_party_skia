@@ -70,6 +70,12 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         calculatePaint(textStyle);
 
         auto width = context.clip.width();
+#ifdef ENABLE_TEXT_ENHANCE
+        if (context.fIsTrimTrailingSpaceWidth) {
+            width -= context.fTrailingSpaceWidth;
+        }
+#endif
+
         SkScalar x = context.clip.left();
 #ifdef ENABLE_TEXT_ENHANCE
         SkScalar y = (TextDecoration::kUnderline == decoration) ?

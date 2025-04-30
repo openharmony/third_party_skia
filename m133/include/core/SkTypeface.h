@@ -339,6 +339,12 @@ public:
      */
     SkRect getBounds() const;
 
+#ifdef ENABLE_TEXT_ENHANCE
+    bool isCustomTypeface() const;
+    void setIsCustomTypeface(bool isCustom);
+    bool isThemeTypeface() const;
+    void setIsThemeTypeface(bool isTheme);
+#endif
     // PRIVATE / EXPERIMENTAL -- do not call
     void filterRec(SkScalerContextRec* rec) const {
         this->onFilterRec(rec);
@@ -475,7 +481,10 @@ private:
     mutable SkRect      fBounds;
     mutable SkOnce      fBoundsOnce;
     bool                fIsFixedPitch;
-
+#ifdef ENABLE_TEXT_ENHANCE
+    bool                fIsCustom = false;
+    bool                fIsTheme = false;
+#endif
     using INHERITED = SkWeakRefCnt;
 };
 #endif

@@ -151,6 +151,7 @@ struct ParagraphStyle {
                this->fTextTab == rhs.fTextTab &&
                this->fParagraphSpacing == rhs.fParagraphSpacing &&
                this->fIsEndAddParagraphSpacing == rhs.fIsEndAddParagraphSpacing &&
+               this->fIsTrailingSpaceOptimized == rhs.fIsTrailingSpaceOptimized &&
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
 #else
         return this->fHeight == rhs.fHeight &&
@@ -224,6 +225,11 @@ struct ParagraphStyle {
     {
         fIsEndAddParagraphSpacing = isEndAddParagraphSpacing;
     }
+    bool getTrailingSpaceOptimized() const { return fIsTrailingSpaceOptimized; }
+    void setTrailingSpaceOptimized(bool isTrailingSpaceOptimized)
+    {
+        fIsTrailingSpaceOptimized = isTrailingSpaceOptimized;
+    }
 #endif
     bool getApplyRoundingHack() const { return fApplyRoundingHack; }
     void setApplyRoundingHack(bool value) { fApplyRoundingHack = value; }
@@ -247,6 +253,7 @@ private:
     TextTabs fTextTab;
     SkScalar fParagraphSpacing{0.0f};
     bool fIsEndAddParagraphSpacing{false};
+    bool fIsTrailingSpaceOptimized{false};
 #endif
     bool fApplyRoundingHack{true};
 };
