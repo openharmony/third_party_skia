@@ -4363,6 +4363,7 @@ ohos_static_library("sksl_ext_static") {
   }
   config("skia_config") {
     include_dirs = [
+      "//third_party/skia",
       "${skia_root_dir}",
       "${skia_root_dir}/include/core",
       "${skia_root_dir}/src/core",
