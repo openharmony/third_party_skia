@@ -103,6 +103,8 @@ struct HeifDecoder {
 
     virtual void getISOMetadata(std::vector<uint8_t>& isoMetadata) = 0;
 
+    virtual void getErrMsg(std::string& errMsg) = 0;
+
     virtual uint32_t getColorDepth() = 0;
 };
 
@@ -171,6 +173,10 @@ struct StubHeifDecoder : HeifDecoder {
     }
 
     void getISOMetadata(std::vector<uint8_t>& isoMetadata) override {
+        return;
+    }
+
+    void getErrMsg(std::string& errMsg) override {
         return;
     }
 
