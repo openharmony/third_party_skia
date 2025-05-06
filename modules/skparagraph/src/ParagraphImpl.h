@@ -170,6 +170,11 @@ public:
     }
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }
+
+#ifdef OHOS_SUPPORT
+    const SkString& getText() const { return fText; }
+#endif
+
     bool strutForceHeight() const {
         return paragraphStyle().getStrutStyle().getForceStrutHeight();
     }
