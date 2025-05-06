@@ -17,8 +17,8 @@
  */
 class SK_API SkTypeface_OHOS : public SkTypeface_FreeType {
 public:
-    SkTypeface_OHOS(const SkString& specifiedName, FontInfo& info);
-    explicit SkTypeface_OHOS(FontInfo& info);
+    SkTypeface_OHOS(const SkString& specifiedName, const FontInfo& info);
+    explicit SkTypeface_OHOS(const FontInfo& info);
     ~SkTypeface_OHOS() override = default;
     const FontInfo* getFontInfo() const;
 protected:
