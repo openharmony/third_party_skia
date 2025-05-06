@@ -1,3 +1,20 @@
+/*
+ * fontconfig_ohos.json - Internal System Font Configuration File
+ *
+ * WARNING:
+ * This file is part of the system's internal font management infrastructure.
+ * It defines critical font mappings, fallbacks, and rendering behaviors
+ * essential for correct system operation.
+ *
+ * DO NOT read, modify, rename, copy, or redistribute this file.
+ * Unauthorized access or changes may lead to incorrect font rendering,
+ * UI malfunctions, or degraded multilingual support.
+ *
+ * This file is maintained exclusively by system components and trusted services.
+ * External applications and users must not rely on or interact with its contents.
+ *
+ * All access to this file should be strictly controlled and audited.
+ */
 {
   "font_dir": ["/system/fonts/"],
   "fonts": [
@@ -84,630 +101,630 @@
       "lang": "und-Zsye",
       "family": "HMOS Color Emoji",
       "file": "HMOSColorEmojiCompat.ttf",
-      "range": [3, 4512398166284544, 0, 0, 3080039932656353280, 3328]
+      "range": [3, 0, 2445891840, 1050624, 0, 0, 0, 0, 0, 717127680, 3328]
     },
     {
       "type": 1,
       "lang": "",
       "family": "Noto Sans",
       "file": "NotoSans[wdth,wght].ttf",
-      "range": [9367487293650109439, 11529215879296368632, 288230420510736481, 0, 8589934592, 0]
+      "range": [1023, 2181038096, 4243448, 2684354754, 1409351777, 67108874, 0, 0, 0, 2, 0]
     },
     {
       "type": 1,
       "lang": "und-Arab",
       "family": "HarmonyOS Sans Naskh Arabic UI",
       "file": "HarmonyOS_Sans_Naskh_Arabic_UI.ttf",
-      "range": [20483, 256, 8724152320, 0, 0, 0]
+      "range": [20483, 0, 256, 0, 134217728, 2, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Ethi",
       "family": "Noto Sans Ethiopic",
       "file": "NotoSansEthiopic[wdth,wght].ttf",
-      "range": [824633720943, 137443185984, 32768, 0, 2199023255552, 0]
+      "range": [111, 192, 4232512, 32, 32768, 0, 0, 0, 0, 512, 0]
     },
     {
       "type": 1,
       "lang": "und-Hebr",
       "family": "Noto Sans Hebrew",
       "file": "NotoSansHebrew[wdth,wght].ttf",
-      "range": [2159, 4199744, 67108864, 0, 0, 0]
+      "range": [2159, 0, 4199744, 0, 67108864, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Thai",
       "family": "Noto Sans Thai",
       "file": "NotoSansThai[wdth,wght].ttf",
-      "range": [4294967407, 4199744, 0, 0, 0, 0]
+      "range": [111, 1, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Armn",
       "family": "Noto Sans Armenian",
       "file": "NotoSansArmenian[wdth,wght].ttf",
-      "range": [1135, 4199744, 67108864, 0, 0, 0]
+      "range": [1135, 0, 4199744, 0, 67108864, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Geor,und-Geok",
       "family": "Noto Sans Georgian",
       "file": "NotoSansGeorgian[wdth,wght].ttf",
-      "range": [68719477871, 34359743809, 0, 0, 0, 0]
+      "range": [1135, 16, 5441, 8, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Deva",
       "family": "Noto Sans Devanagari",
       "file": "NotoSansDevanagari[wdth,wght].ttf",
-      "range": [4194415, 4199748, 36, 0, 0, 0]
+      "range": [4194415, 0, 4199748, 0, 36, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Gujr",
       "family": "Noto Sans Gujarati",
       "file": "NotoSansGujarati[wdth,wght].ttf",
-      "range": [33554543, 4199744, 4, 0, 0, 0]
+      "range": [33554543, 0, 4199744, 0, 4, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Guru",
       "family": "Noto Sans Gurmukhi",
       "file": "NotoSansGurmukhi[wdth,wght].ttf",
-      "range": [16777327, 12588352, 4, 0, 0, 0]
+      "range": [16777327, 0, 12588352, 0, 4, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Taml",
       "family": "Noto Sans Tamil",
       "file": "NotoSansTamil[wdth,wght].ttf",
-      "range": [134217839, 4200260, 32, 8589934592, 0, 0]
+      "range": [134217839, 0, 4200260, 0, 32, 0, 0, 2, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Mlym",
       "family": "Noto Sans Malayalam",
       "file": "NotoSansMalayalam[wdth,wght].ttf",
-      "range": [1073741935, 4199748, 4, 0, 0, 0]
+      "range": [1073741935, 0, 4199748, 0, 4, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Beng",
       "family": "Noto Sans Bengali",
       "file": "NotoSansBengali[wdth,wght].ttf",
-      "range": [8388719, 4199748, 32, 0, 0, 0]
+      "range": [8388719, 0, 4199748, 0, 32, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Telu",
       "family": "Noto Sans Telugu",
       "file": "NotoSansTelugu[wdth,wght].ttf",
-      "range": [268435567, 4199748, 0, 0, 0, 0]
+      "range": [268435567, 0, 4199748, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Knda",
       "family": "Noto Sans Kannada",
       "file": "NotoSansKannada[wdth,wght].ttf",
-      "range": [536871023, 4199748, 4, 0, 0, 0]
+      "range": [536871023, 0, 4199748, 0, 4, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Orya",
       "family": "Noto Sans Oriya",
       "file": "NotoSansOriya[wdth,wght].ttf",
-      "range": [67108975, 4199744, 0, 0, 0, 0]
+      "range": [67108975, 0, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Sinh",
       "family": "Noto Sans Sinhala",
       "file": "NotoSansSinhala[wdth,wght].ttf",
-      "range": [2147483759, 4199744, 0, 536870912, 0, 0]
+      "range": [2147483759, 0, 4199744, 0, 0, 0, 536870912, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Khmr",
       "family": "Noto Sans Khmer",
       "file": "NotoSansKhmer[wdth,wght].ttf",
-      "range": [18295873486192751, 4199744, 0, 0, 0, 0]
+      "range": [111, 4259840, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Laoo",
       "family": "Noto Sans Lao",
       "file": "NotoSansLao[wdth,wght].ttf",
-      "range": [8589934703, 4199744, 0, 0, 0, 0]
+      "range": [111, 2, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Mymr",
       "family": "Noto Sans Myanmar",
       "file": "NotoSansMyanmar[wdth,wght].ttf",
-      "range": [34359738479, 4199744, 268440640, 0, 0, 0]
+      "range": [111, 8, 4199744, 0, 268440640, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Thaa",
       "family": "Noto Sans Thaana",
       "file": "NotoSansThaana[wght].ttf",
-      "range": [36975, 4199744, 134217728, 0, 0, 0]
+      "range": [36975, 0, 4199744, 0, 134217728, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Cham",
       "family": "Noto Sans Cham",
       "file": "NotoSansCham[wght].ttf",
-      "range": [111, 4199744, 2048, 0, 0, 0]
+      "range": [111, 0, 4199744, 0, 2048, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Ahom",
       "family": "Noto Serif Ahom",
       "file": "NotoSerifAhom-Regular.ttf",
-      "range": [111, 4199744, 0, 2199023255552, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 512, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Adlm",
       "family": "Noto Sans Adlam",
       "file": "NotoSansAdlam[wght].ttf",
-      "range": [4207, 549760013632, 0, 0, 8796093022208, 0]
+      "range": [4207, 0, 4199744, 128, 0, 0, 0, 0, 0, 2048, 0]
     },
     {
       "type": 1,
       "lang": "und-Avst",
       "family": "Noto Sans Avestan",
       "file": "NotoSansAvestan-Regular.ttf",
-      "range": [111, 549755819328, 0, 256, 0, 0]
+      "range": [111, 0, 5440, 128, 0, 0, 256, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Bali",
       "family": "Noto Sans Balinese",
       "file": "NotoSansBalinese[wght].ttf",
-      "range": [288230376151711855, 4199744, 0, 0, 0, 0]
+      "range": [111, 67108864, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Bamu",
       "family": "Noto Sans Bamum",
       "file": "NotoSansBamum[wght].ttf",
-      "range": [111, 4611686018431587648, 0, 0, 4, 0]
+      "range": [111, 0, 4199744, 1073741824, 0, 0, 0, 0, 4, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Batk",
       "family": "Noto Sans Batak",
       "file": "NotoSansBatak-Regular.ttf",
-      "range": [1152921504606847087, 4199744, 0, 0, 0, 0]
+      "range": [111, 268435456, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Brah",
       "family": "Noto Sans Brahmi",
       "file": "NotoSansBrahmi-Regular.ttf",
-      "range": [111, 4199744, 0, 8388608, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 8388608, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Bugi",
       "family": "Noto Sans Buginese",
       "file": "NotoSansBuginese-Regular.ttf",
-      "range": [36028797018964079, 4199744, 512, 0, 0, 0]
+      "range": [111, 8388608, 4199744, 0, 512, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Buhd",
       "family": "Noto Sans Buhid",
       "file": "NotoSansBuhid-Regular.ttf",
-      "range": [105553116266607, 4199744, 0, 0, 0, 0]
+      "range": [111, 24576, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Cans",
       "family": "Noto Sans Canadian Aboriginal",
       "file": "NotoSansCanadianAboriginal[wght].ttf",
-      "range": [1128098930098287, 4199744, 0, 281474976710656, 0, 0]
+      "range": [111, 262656, 4199744, 0, 0, 0, 0, 65536, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Cari",
       "family": "Noto Sans Carian",
       "file": "NotoSansCarian-Regular.ttf",
-      "range": [111, 5440, 8796093022208, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 2048, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Cakm",
       "family": "Noto Sans Chakma",
       "file": "NotoSansChakma-Regular.ttf",
-      "range": [34368127087, 4199744, 0, 67108864, 0, 0]
+      "range": [8388719, 8, 4199744, 0, 0, 0, 67108864, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Cher",
       "family": "Noto Sans Cherokee",
       "file": "NotoSansCherokee[wght].ttf",
-      "range": [1099511627887, 5440, 131072, 0, 0, 0]
+      "range": [111, 256, 5440, 0, 131072, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Copt",
       "family": "Noto Sans Coptic",
       "file": "NotoSansCoptic-Regular.ttf",
-      "range": [4335, 566939882848, 17593259786240, 0, 0, 0]
+      "range": [4335, 0, 4199776, 132, 1073741824, 4096, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Xsux",
       "family": "Noto Sans Cuneiform",
       "file": "NotoSansCuneiform-Regular.ttf",
-      "range": [111, 5440, 0, 4035225266123964416, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 0, 939524096, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Cprt",
       "family": "Noto Sans Cypriot",
       "file": "NotoSansCypriot-Regular.ttf",
-      "range": [111, 5440, 576461027181330432, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 134217792, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Dsrt",
       "family": "Noto Sans Deseret",
       "file": "NotoSansDeseret-Regular.ttf",
-      "range": [111, 5440, 1125899906842624, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 262144, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Egyp",
       "family": "Noto Sans Egyptian Hieroglyphs",
       "file": "NotoSansEgyptianHieroglyphs-Regular.ttf",
-      "range": [111, 4199744, 0, 9223372036854775808, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 2147483648, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Elba",
       "family": "Noto Sans Elbasan",
       "file": "NotoSansElbasan-Regular.ttf",
-      "range": [239, 4199744, 18014398509481984, 0, 0, 0]
+      "range": [239, 0, 4199744, 0, 0, 4194304, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Glag",
       "family": "Noto Sans Glagolitic",
       "file": "NotoSansGlagolitic-Regular.ttf",
-      "range": [367, 2305843013508666688, 1073741824, 0, 17179869184, 0]
+      "range": [367, 0, 5440, 536870913, 1073741824, 0, 0, 0, 0, 4, 0]
     },
     {
       "type": 1,
       "lang": "und-Goth",
       "family": "Noto Sans Gothic",
       "file": "NotoSansGothic-Regular.ttf",
-      "range": [111, 4199744, 70368744177664, 0, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 16384, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Hano",
       "family": "Noto Sans Hanunoo",
       "file": "NotoSansHanunoo-Regular.ttf",
-      "range": [35184372088943, 4199744, 0, 0, 0, 0]
+      "range": [111, 8192, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Armi",
       "family": "Noto Sans Imperial Aramaic",
       "file": "NotoSansImperialAramaic-Regular.ttf",
-      "range": [111, 5440, 1152921504606846976, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 268435456, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Phli",
       "family": "Noto Sans Inscriptional Pahlavi",
       "file": "NotoSansInscriptionalPahlavi-Regular.ttf",
-      "range": [111, 5440, 0, 1024, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 1024, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Prti",
       "family": "Noto Sans Inscriptional Parthian",
       "file": "NotoSansInscriptionalParthian-Regular.ttf",
-      "range": [111, 5440, 0, 512, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 512, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Java",
       "family": "Noto Sans Javanese",
       "file": "NotoSansJavanese[wght].ttf",
-      "range": [111, 4199744, 512, 0, 0, 0]
+      "range": [111, 0, 4199744, 0, 512, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Kthi",
       "family": "Noto Sans Kaithi",
       "file": "NotoSansKaithi-Regular.ttf",
-      "range": [111, 4199744, 4, 16777216, 0, 0]
+      "range": [111, 0, 4199744, 0, 4, 0, 16777216, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Kali",
       "family": "Noto Sans Kayah Li",
       "file": "NotoSansKayahLi[wght].ttf",
-      "range": [111, 4199744, 64, 0, 0, 0]
+      "range": [111, 0, 4199744, 0, 64, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Khar",
       "family": "Noto Sans Kharoshthi",
       "file": "NotoSansKharoshthi-Regular.ttf",
-      "range": [111, 4199744, 0, 16, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 16, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Lepc",
       "family": "Noto Sans Lepcha",
       "file": "NotoSansLepcha-Regular.ttf",
-      "range": [2305843009213694063, 4199744, 0, 0, 0, 0]
+      "range": [111, 536870912, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Limb",
       "family": "Noto Sans Limbu",
       "file": "NotoSansLimbu-Regular.ttf",
-      "range": [2251799813685359, 4199744, 0, 0, 0, 0]
+      "range": [111, 524288, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Linb",
       "family": "Noto Sans Linear B",
       "file": "NotoSansLinearB-Regular.ttf",
-      "range": [111, 5440, 481036337152, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 112, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Lisu",
       "family": "Noto Sans Lisu",
       "file": "NotoSansLisu[wght].ttf",
-      "range": [111, 576469548400645440, 0, 144115188075855872, 0, 0]
+      "range": [111, 0, 4199744, 134219776, 0, 0, 0, 33554432, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Lyci",
       "family": "Noto Sans Lycian",
       "file": "NotoSansLycian-Regular.ttf",
-      "range": [111, 5440, 4398046511104, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 1024, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Lydi",
       "family": "Noto Sans Lydian",
       "file": "NotoSansLydian-Regular.ttf",
-      "range": [111, 5440, 0, 2, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 2, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Mand",
       "family": "Noto Sans Mandaic",
       "file": "NotoSansMandaic-Regular.ttf",
-      "range": [266351, 4199744, 0, 0, 0, 0]
+      "range": [266351, 0, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Mtei",
       "family": "Noto Sans Meetei Mayek",
       "file": "NotoSansMeeteiMayek[wght].ttf",
-      "range": [111, 4199744, 278528, 0, 0, 0]
+      "range": [111, 0, 4199744, 0, 278528, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Talu",
       "family": "Noto Sans New Tai Lue",
       "file": "NotoSansNewTaiLue[wght].ttf",
-      "range": [9007199254741103, 8796097221952, 17179869184, 0, 0, 0]
+      "range": [111, 2097152, 4199744, 2048, 0, 4, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Nkoo",
       "family": "Noto Sans NKo",
       "file": "NotoSansNKo-Regular.ttf",
-      "range": [69743, 549760013632, 134217728, 0, 0, 0]
+      "range": [69743, 0, 4199744, 128, 134217728, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Ogam",
       "family": "Noto Sans Ogham",
       "file": "NotoSansOgham-Regular.ttf",
-      "range": [4398046511215, 5440, 0, 0, 0, 0]
+      "range": [111, 1024, 5440, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Olck",
       "family": "Noto Sans Ol Chiki",
       "file": "NotoSansOlChiki[wght].ttf",
-      "range": [4611686018427388015, 5440, 0, 0, 0, 0]
+      "range": [111, 1073741824, 5440, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Ital",
       "family": "Noto Sans Old Italic",
       "file": "NotoSansOldItalic-Regular.ttf",
-      "range": [111, 5440, 35184372088832, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 8192, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Xpeo",
       "family": "Noto Sans Old Persian",
       "file": "NotoSansOldPersian-Regular.ttf",
-      "range": [111, 5440, 562949953421312, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 131072, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Sarb",
       "family": "Noto Sans Old South Arabian",
       "file": "NotoSansOldSouthArabian-Regular.ttf",
-      "range": [111, 5440, 0, 32, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 32, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Orkh",
       "family": "Noto Sans Old Turkic",
       "file": "NotoSansOldTurkic-Regular.ttf",
-      "range": [111, 5440, 0, 4096, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 4096, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Osge",
       "family": "Noto Sans Osage",
       "file": "NotoSansOsage-Regular.ttf",
-      "range": [111, 4199744, 9007199254740992, 0, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 2097152, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Osma",
       "family": "Noto Sans Osmanya",
       "file": "NotoSansOsmanya-Regular.ttf",
-      "range": [111, 5440, 4503599627370496, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 1048576, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Phnx",
       "family": "Noto Sans Phoenician",
       "file": "NotoSansPhoenician-Regular.ttf",
-      "range": [111, 5440, 0, 1, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 1, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Rjng",
       "family": "Noto Sans Rejang",
       "file": "NotoSansRejang-Regular.ttf",
-      "range": [111, 4199744, 128, 0, 0, 0]
+      "range": [111, 0, 4199744, 0, 128, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Runr",
       "family": "Noto Sans Runic",
       "file": "NotoSansRunic-Regular.ttf",
-      "range": [8796093022319, 4199744, 0, 0, 0, 0]
+      "range": [111, 2048, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Samr",
       "family": "Noto Sans Samaritan",
       "file": "NotoSansSamaritan-Regular.ttf",
-      "range": [131183, 549755819328, 0, 0, 0, 0]
+      "range": [131183, 0, 5440, 128, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Saur",
       "family": "Noto Sans Saurashtra",
       "file": "NotoSansSaurashtra-Regular.ttf",
-      "range": [111, 4199744, 16, 0, 0, 0]
+      "range": [111, 0, 4199744, 0, 16, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Shaw",
       "family": "Noto Sans Shavian",
       "file": "NotoSansShavian-Regular.ttf",
-      "range": [111, 5440, 2251799813685248, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 524288, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Sund",
       "family": "Noto Sans Sundanese",
       "file": "NotoSansSundanese[wght].ttf",
-      "range": [576460752303423599, 4199746, 0, 0, 0, 0]
+      "range": [111, 134217728, 4199746, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Sylo",
       "family": "Noto Sans Syloti Nagri",
       "file": "NotoSansSylotiNagri-Regular.ttf",
-      "range": [8388719, 4199744, 2, 0, 0, 0]
+      "range": [8388719, 0, 4199744, 0, 2, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Syrn",
       "family": "Noto Sans Syriac Eastern",
       "file": "NotoSansSyriacEastern[wght].ttf",
-      "range": [12399, 12588352, 0, 0, 0, 0]
+      "range": [12399, 0, 12588352, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Syrj",
       "family": "Noto Sans Syriac Western",
       "file": "NotoSansSyriacWestern[wght].ttf",
-      "range": [12399, 12588352, 0, 0, 0, 0]
+      "range": [12399, 0, 12588352, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Tglg",
       "family": "Noto Sans Tagalog",
       "file": "NotoSansTagalog-Regular.ttf",
-      "range": [52776558133359, 4199744, 0, 0, 0, 0]
+      "range": [111, 12288, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Tagb",
       "family": "Noto Sans Tagbanwa",
       "file": "NotoSansTagbanwa-Regular.ttf",
-      "range": [175921860444271, 4199744, 0, 0, 0, 0]
+      "range": [111, 40960, 4199744, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Lana",
       "family": "Noto Sans Tai Tham",
       "file": "NotoSansTaiTham[wght].ttf",
-      "range": [72057594037928047, 38208, 0, 0, 0, 0]
+      "range": [111, 16777216, 38208, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Tavt",
       "family": "Noto Sans Tai Viet",
       "file": "NotoSansTaiViet-Regular.ttf",
-      "range": [111, 4199744, 8193, 0, 0, 0]
+      "range": [111, 0, 4199744, 0, 8193, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Tibt",
       "family": "Noto Serif Tibetan",
       "file": "NotoSerifTibetan[wght].ttf",
-      "range": [17179869295, 12588352, 0, 0, 0, 0]
+      "range": [111, 4, 12588352, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Tfng",
       "family": "Noto Sans Tifinagh",
       "file": "NotoSansTifinagh-Regular.ttf",
-      "range": [111, 68723676480, 0, 0, 0, 0]
+      "range": [111, 0, 4199744, 16, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Ugar",
       "family": "Noto Sans Ugaritic",
       "file": "NotoSansUgaritic-Regular.ttf",
-      "range": [111, 5440, 281474976710656, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 65536, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Vaii",
       "family": "Noto Sans Vai",
       "file": "NotoSansVai-Regular.ttf",
-      "range": [111, 1152921504606852416, 0, 0, 0, 0]
+      "range": [111, 0, 5440, 268435456, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "zh-Hans",
       "family": "HarmonyOS Sans SC",
       "file": "HarmonyOS_Sans_SC.ttf",
-      "range": [511, 104846130339772352, 24192745472, 0, 9223372036854775808, 111]
+      "range": [511, 0, 49936320, 24411392, 2717908992, 5, 0, 0, 0, 2147483648, 111]
     },
     {
       "type": 1,
       "lang": "zh-Hant",
       "family": "HarmonyOS Sans TC",
       "file": "HarmonyOS_Sans_TC.ttf",
-      "range": [511, 103719130921269184, 24192745472, 0, 0, 0]
+      "range": [511, 0, 49903552, 24148992, 2717908992, 5, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
@@ -715,7 +732,7 @@
       "family": "Noto Sans CJK JP",
       "file": "NotoSansCJK-Regular.ttc",
       "index": 0,
-      "range": [137438953983, 108085844287160128, 24261427456, 0, 9226749736575303680, 111]
+      "range": [511, 32, 2986082112, 25165696, 2786590976, 5, 0, 0, 0, 2148270080, 111]
     },
     {
       "type": 1,
@@ -723,301 +740,301 @@
       "family": "Noto Sans CJK KR",
       "file": "NotoSansCJK-Regular.ttc",
       "index": 1,
-      "range": [0, 0, 0, 0, 0, 0]
+      "range": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Zsye",
       "family": "HMOS Color Emoji Flags",
       "file": "HMOSColorEmojiFlags.ttf",
-      "range": [0, 0, 0, 0, 1125899906842624, 0]
+      "range": [0, 0, 0, 0, 0, 0, 0, 0, 0, 262144, 0]
     },
     {
       "type": 1,
       "lang": "und-Zsym",
       "family": "Noto Sans Symbols",
       "file": "NotoSansSymbols-Regular.ttf",
-      "range": [111, 298417472, 0, 0, 86694292826882048, 0]
+      "range": [111, 0, 298417472, 0, 0, 0, 0, 0, 0, 20185088, 0]
     },
     {
       "type": 1,
       "lang": "und-Zsym",
       "family": "Noto Sans Symbols 2",
       "file": "NotoSansSymbols2-Regular.ttf",
-      "range": [111, 36028799867409728, 21474836480000, 32768, 9138788808366489600, 0]
+      "range": [111, 0, 2848445760, 8388608, 0, 5000, 32768, 0, 2013265920, 2127790080, 0]
     },
     {
       "type": 1,
       "lang": "und-Tale",
       "family": "Noto Sans Tai Le",
       "file": "NotoSansTaiLe-Regular.ttf",
-      "range": [4503633987108975, 8796097221952, 0, 0, 0, 0]
+      "range": [111, 1048584, 4199744, 2048, 0, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Yiii",
       "family": "Noto Sans Yi",
       "file": "NotoSansYi-Regular.ttf",
-      "range": [111, 432389544692684096, 17179869184, 0, 0, 0]
+      "range": [111, 0, 5440, 100673536, 0, 4, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Mong",
       "family": "Noto Sans Mongolian",
       "file": "NotoSansMongolian-Regular.ttf",
-      "range": [562949953421423, 8796097746240, 2147483648, 274877906944, 0, 0]
+      "range": [111, 131072, 4724032, 2048, 2147483648, 0, 0, 64, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Phag",
       "family": "Noto Sans Phags-Pa",
       "file": "NotoSansPhags-Pa-Regular.ttf",
-      "range": [562949953421423, 8796097221952, 268435464, 0, 0, 0]
+      "range": [111, 131072, 4199744, 2048, 268435464, 0, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Hluw",
       "family": "Noto Sans Anatolian Hieroglyphs",
       "file": "NotoSansAnatolianHieroglyphs-Regular.ttf",
-      "range": [111, 5440, 0, 0, 2, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 0, 0, 2, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Bass",
       "family": "Noto Sans Bassa Vah",
       "file": "NotoSansBassaVah[wght].ttf",
-      "range": [111, 4199744, 0, 0, 32, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 0, 32, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Bhks",
       "family": "Noto Sans Bhaiksuki",
       "file": "NotoSansBhaiksuki-Regular.ttf",
-      "range": [111, 4199744, 0, 2251799813685248, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 524288, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Hatr",
       "family": "Noto Sans Hatran",
       "file": "NotoSansHatran-Regular.ttf",
-      "range": [111, 5440, 9223372036854775808, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 2147483648, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Lina",
       "family": "Noto Sans Linear A",
       "file": "NotoSansLinearA-Regular.ttf",
-      "range": [111, 5440, 144115462953762816, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 33554496, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Mani",
       "family": "Noto Sans Manichaean",
       "file": "NotoSansManichaean-Regular.ttf",
-      "range": [4207, 4199744, 268435456, 128, 0, 0]
+      "range": [4207, 0, 4199744, 0, 268435456, 0, 128, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Marc",
       "family": "Noto Sans Marchen",
       "file": "NotoSansMarchen-Regular.ttf",
-      "range": [111, 4199744, 0, 4503599627370496, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 1048576, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Merc",
       "family": "Noto Sans Meroitic",
       "file": "NotoSansMeroitic-Regular.ttf",
-      "range": [111, 5440, 0, 12, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 12, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Plrd",
       "family": "Noto Sans Miao",
       "file": "NotoSansMiao-Regular.ttf",
-      "range": [111, 4199744, 0, 0, 512, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 0, 512, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Mroo",
       "family": "Noto Sans Mro",
       "file": "NotoSansMro-Regular.ttf",
-      "range": [111, 5440, 0, 0, 8, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 0, 0, 8, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Mult",
       "family": "Noto Sans Multani",
       "file": "NotoSansMultani-Regular.ttf",
-      "range": [16777327, 5440, 0, 2147483648, 0, 0]
+      "range": [16777327, 0, 5440, 0, 0, 0, 2147483648, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Nbat",
       "family": "Noto Sans Nabataean",
       "file": "NotoSansNabataean-Regular.ttf",
-      "range": [111, 5440, 4611686018427387904, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 1073741824, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Newa",
       "family": "Noto Sans Newa",
       "file": "NotoSansNewa-Regular.ttf",
-      "range": [111, 4199776, 0, 17179869184, 0, 0]
+      "range": [111, 0, 4199776, 0, 0, 0, 0, 4, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Narb",
       "family": "Noto Sans Old North Arabian",
       "file": "NotoSansOldNorthArabian-Regular.ttf",
-      "range": [111, 5440, 0, 64, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 64, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Perm",
       "family": "Noto Sans Old Permic",
       "file": "NotoSansOldPermic-Regular.ttf",
-      "range": [367, 4201792, 140737488355328, 0, 0, 0]
+      "range": [367, 0, 4201792, 0, 0, 32768, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Hmng",
       "family": "Noto Sans Pahawh Hmong",
       "file": "NotoSansPahawhHmong-Regular.ttf",
-      "range": [111, 4199744, 0, 0, 64, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 0, 64, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Palm",
       "family": "Noto Sans Palmyrene",
       "file": "NotoSansPalmyrene-Regular.ttf",
-      "range": [111, 5440, 2305843009213693952, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 536870912, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Pauc",
       "family": "Noto Sans Pau Cin Hau",
       "file": "NotoSansPauCinHau-Regular.ttf",
-      "range": [111, 5440, 0, 562949953421312, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 0, 131072, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Shrd",
       "family": "Noto Sans Sharada",
       "file": "NotoSansSharada-Regular.ttf",
-      "range": [111, 4199748, 0, 268435456, 0, 0]
+      "range": [111, 0, 4199748, 0, 0, 0, 268435456, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Sora",
       "family": "Noto Sans Sora Sompeng",
       "file": "NotoSansSoraSompeng[wght].ttf",
-      "range": [111, 5440, 0, 33554432, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 33554432, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Gong",
       "family": "Noto Sans Gunjala Gondi",
       "file": "NotoSansGunjalaGondi[wght].ttf",
-      "range": [111, 4199744, 0, 18014398509481984, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 4194304, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Rohg",
       "family": "Noto Sans Hanifi Rohingya",
       "file": "NotoSansHanifiRohingya[wght].ttf",
-      "range": [4207, 4199744, 0, 16384, 0, 0]
+      "range": [4207, 0, 4199744, 0, 0, 0, 16384, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Khoj",
       "family": "Noto Sans Khojki",
       "file": "NotoSansKhojki-Regular.ttf",
-      "range": [33554543, 4199744, 4, 1073741824, 0, 0]
+      "range": [33554543, 0, 4199744, 0, 4, 0, 1073741824, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Gonm",
       "family": "Noto Sans Masaram Gondi",
       "file": "NotoSansMasaramGondi-Regular.ttf",
-      "range": [111, 4199744, 0, 9007199254740992, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 2097152, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Wcho",
       "family": "Noto Sans Wancho",
       "file": "NotoSansWancho-Regular.ttf",
-      "range": [111, 4199744, 0, 0, 274877906944, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 0, 0, 64, 0]
     },
     {
       "type": 1,
       "lang": "und-Wara",
       "family": "Noto Sans Warang Citi",
       "file": "NotoSansWarangCiti-Regular.ttf",
-      "range": [111, 5440, 0, 8796093022208, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 0, 2048, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Gran",
       "family": "Noto Sans Grantha",
       "file": "NotoSansGrantha-Regular.ttf",
-      "range": [134217839, 4199748, 0, 8589934592, 0, 0]
+      "range": [134217839, 0, 4199748, 0, 0, 0, 0, 2, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Modi",
       "family": "Noto Sans Modi",
       "file": "NotoSansModi-Regular.ttf",
-      "range": [111, 4199744, 4, 137438953472, 0, 0]
+      "range": [111, 0, 4199744, 0, 4, 0, 0, 32, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Dogr",
       "family": "Noto Serif Dogra",
       "file": "NotoSerifDogra-Regular.ttf",
-      "range": [111, 4199744, 0, 4398046511104, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 1024, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Medf",
       "family": "Noto Sans Medefaidrin",
       "file": "NotoSansMedefaidrin[wght].ttf",
-      "range": [111, 5440, 0, 0, 256, 0]
+      "range": [111, 0, 5440, 0, 0, 0, 0, 0, 256, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Soyo",
       "family": "Noto Sans Soyombo",
       "file": "NotoSansSoyombo-Regular.ttf",
-      "range": [111, 4199744, 0, 140737488355328, 0, 0]
+      "range": [111, 0, 4199744, 0, 0, 0, 0, 32768, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Takr",
       "family": "Noto Sans Takri",
       "file": "NotoSansTakri-Regular.ttf",
-      "range": [111, 4199744, 4, 549755813888, 0, 0]
+      "range": [111, 0, 4199744, 0, 4, 0, 0, 128, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Yezi",
       "family": "Noto Serif Yezidi",
       "file": "NotoSerifYezidi[wght].ttf",
-      "range": [4207, 4199744, 0, 65536, 0, 0]
+      "range": [4207, 0, 4199744, 0, 0, 0, 65536, 0, 0, 0, 0]
     },
     {
       "type": 1,
       "lang": "und-Zsym",
       "family": "HM Symbol",
       "file": "HMSymbolVF.ttf",
-      "range": [3, 0, 0, 0, 0, 1024]
+      "range": [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1024]
     },
     {
       "type": 1,
       "lang": "und-Math",
       "family": "Noto Sans Math",
       "file": "NotoSansMath-Regular.ttf",
-      "range": [511, 4158250248, 17448304640, 0, 144185558967517184, 0]
+      "range": [511, 0, 4158250248, 0, 268435456, 4, 0, 0, 2147483648, 33570816, 0]
     },
     {
       "type": 1,
@@ -1030,6 +1047,12 @@
       "alias": "notdef",
       "family": "HarmonyOS Sans Notdef",
       "file": "HarmonyOS_Sans_Notdef.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "zh-Hans",
+      "family": "HYQiHei L3",
+      "file": "HYQiHeiL3.ttf"
     }
   ]
 }
