@@ -24,7 +24,7 @@ SkTypeface_OHOS::SkTypeface_OHOS(const SkString& familyName, const FontInfo& inf
 /*! Constructor
  * \param info the font information for the typeface
  */
-SkTypeface_OHOS::SkTypeface_OHOS(FontInfo& info)
+SkTypeface_OHOS::SkTypeface_OHOS(const FontInfo& info)
     : SkTypeface_FreeType(info.style, info.isFixedWidth)
 {
     specifiedName.reset();

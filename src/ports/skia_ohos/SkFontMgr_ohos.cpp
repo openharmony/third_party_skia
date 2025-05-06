@@ -373,7 +373,7 @@ std::vector<sk_sp<SkTypeface>> SkFontMgr_OHOS::onGetSystemFonts() const
     std::vector<sk_sp<SkTypeface>> skTypefaces;
     SkString familyName;
     fFontConfig->forAll([&skTypefaces, &familyName](const auto& f) {
-        for (auto& iter : f.typefaces) {
+        for (const auto& iter : f.typefaces) {
             if (iter == nullptr || iter->getFontInfo() == nullptr) {
                 continue;
             }
