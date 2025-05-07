@@ -199,7 +199,7 @@ void GrResourceCache::releaseAll() {
     SkASSERT(!fPurgeableBytes);
 }
 
-void GrResourceCache::releaseByTag(const GrGpuResourceTag tag) {
+void GrResourceCache::releaseByTag(const GrGpuResourceTag& tag) {
     AutoValidate av(this);
     this->processFreedGpuResources();
     SkASSERT(fProxyProvider); // better have called setProxyProvider
@@ -232,11 +232,18 @@ void GrResourceCache::releaseByTag(const GrGpuResourceTag tag) {
     }
 }
 
-void GrResourceCache::setCurrentGrResourceTag(const GrGpuResourceTag tag) {
+void GrResourceCache::setCurrentGrResourceTag(const GrGpuResourceTag& tag) {
     if (tag.isGrTagValid()) {
         grResourceTagCacheStack.push(tag);
         return;
     }
+    if (!grResourceTagCacheStack.empty()) {
+        grResourceTagCacheStack.pop();
+    }
+}
+
+void GrResourceCache::popGrResourceTag()
+{
     if (!grResourceTagCacheStack.empty()) {
         grResourceTagCacheStack.pop();
     }
@@ -611,7 +618,7 @@ void GrResourceCache::purgeUnlockedResources(const skgpu::StdSteadyClock::time_p
     this->validate();
 }
 
-void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag tag) {
+void GrResourceCache::purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag& tag) {
     // Sort the queue
     fPurgeableQueue.sort();
 
@@ -814,7 +821,7 @@ void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) c
     }
 }
 
-void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag tag) const {
+void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag& tag) const {
     for (int i = 0; i < fNonpurgeableResources.size(); ++i) {
         if (tag.filter(fNonpurgeableResources[i]->getResourceTag())) {
             fNonpurgeableResources[i]->dumpMemoryStatistics(traceMemoryDump);

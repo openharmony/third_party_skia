@@ -103,7 +103,12 @@ public:
     /**
      * Set current resourcetag for gpu cache recycle.
      */
-    void setCurrentGrResourceTag(const GrGpuResourceTag tag);
+    void setCurrentGrResourceTag(const GrGpuResourceTag& tag);
+
+    /**
+     * Pop resource tag.
+     */
+    void popGrResourceTag();
 
     /** Unique ID of the owning GrContext. */
     uint32_t contextUniqueID() const { return fContextUniqueID; }
@@ -158,7 +163,7 @@ public:
     /**
      * Release GrGpuResource objects and removes them from the cache by tag.
      */
-    void releaseByTag(const GrGpuResourceTag tag);
+    void releaseByTag(const GrGpuResourceTag& tag);
     /**
      * Get all GrGpuResource tags.
     */
@@ -205,7 +210,7 @@ public:
         this->purgeUnlockedResources(/*purgeTime=*/nullptr, opts);
     }
 
-    void purgeUnlockedResourcesByTag(bool scratchResourceOnly, const GrGpuResourceTag tag);
+    void purgeUnlockedResourcesByTag(bool scratchResourceOnly, const GrGpuResourceTag& tag);
 
     // Purge unlocked resources not used since the passed point in time. If 'opts' is
     // kScratchResourcesOnly, the purgeable resources containing persistent data are spared.
@@ -293,7 +298,7 @@ public:
 
     // Enumerates all cached resources and dumps their details to traceMemoryDump.
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
-    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag tag) const;
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag& tag) const;
 
     void setProxyProvider(GrProxyProvider* proxyProvider) { fProxyProvider = proxyProvider; }
     void setThreadSafeCache(GrThreadSafeCache* threadSafeCache) {
