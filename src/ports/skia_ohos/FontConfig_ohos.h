@@ -126,7 +126,7 @@ private:
     std::vector<std::string> fFontDir; // the directories where the fonts are
     const SkTypeface_FreeType::Scanner& fFontScanner;
     mutable std::mutex fFontMutex;
-    static const std::map<std::pair<uint32_t, uint32_t>, int16_t> gRangeMap;
+    static const std::map<std::pair<uint32_t, uint32_t>, int16_t> fRangeMap;
 
     int parseConfig(const char* fname);
     int checkConfigFile(const char* fname, Json::Value& root);

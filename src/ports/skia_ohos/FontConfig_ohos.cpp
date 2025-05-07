@@ -665,8 +665,8 @@ void FontConfig_OHOS::FontCollection::forAll(std::function<void(FontConfig_OHOS:
 
 int16_t FontConfig_OHOS::charRangeIndex(SkUnichar unicode)
 {
-    auto it = gRangeMap.upper_bound({ unicode, UINT32_MAX });
-    if (it != gRangeMap.begin()) {
+    auto it = fRangeMap.upper_bound({ unicode, UINT32_MAX });
+    if (it != fRangeMap.begin()) {
         --it;
     }
     if (unicode >= it->first.first && unicode <= it->first.second) {
@@ -675,7 +675,7 @@ int16_t FontConfig_OHOS::charRangeIndex(SkUnichar unicode)
     return -1;
 }
 
-const std::map<std::pair<uint32_t, uint32_t>, int16_t> FontConfig_OHOS::gRangeMap {
+const std::map<std::pair<uint32_t, uint32_t>, int16_t> FontConfig_OHOS::fRangeMap {
     { { 0x0, 0x7F }, 0 },
     { { 0x80, 0xFF }, 1 },
     { { 0x100, 0x17F }, 2 },
