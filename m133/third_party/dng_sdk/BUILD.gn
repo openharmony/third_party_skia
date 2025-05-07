@@ -7,6 +7,7 @@
 declare_args() {
 }
 
+import("../../gn/oh_skia.gni")
 import("../third_party.gni")
 
 third_party("dng_sdk") {
@@ -29,10 +30,13 @@ third_party("dng_sdk") {
     "UNIX_ENV=1",
   ]
 
-  deps = [
-    "${skia_third_party_dir}/libjpeg-turbo:libjpeg",
-    "${skia_third_party_dir}/zlib",
-  ]
+  deps = [ "${skia_third_party_dir}/libjpeg-turbo:libjpeg" ]
+
+  if (skia_feature_zlib != "") {
+    external_deps = [ skia_feature_zlib ]
+  } else {
+    deps += [ "${skia_third_party_dir}/zlib" ]
+  }
 
   sources = [
     "../externals/dng_sdk/source/RawEnvironment.h",
