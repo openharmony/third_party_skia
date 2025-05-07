@@ -366,12 +366,11 @@ int FontConfig_OHOS::parseConfig(const char* fname)
         return err;
     }
 
-    for (const auto& key : root.getMemberNames()) {
-        if (root[key].isArray() && key == "font_dir") {
-            parseFontDir(fname, root[key]);
-        } else if (root[key].isArray() && key == "fonts") {
-            parseFonts(root[key]);
-        }
+    if (root["font_dir"].isArray()) {
+        parseFontDir(fname, root["font_dir"]);
+    } 
+    if (root["fonts"].isArray()) {
+        parseFonts(root["fonts"]);
     }
 
     return NO_ERROR;
@@ -384,7 +383,7 @@ bool Json::Value::is<UnicodeRange>() const
     if (!isArray() || size() != RANGE_SIZE) {
         return false;
     }
-    return std::all_of(begin(), end(), [](const Value& item) { return item.isUInt64(); });
+    return std::all_of(begin(), end(), [](const Value& item) { return item.isUInt(); });
 }
 
 
@@ -394,7 +393,7 @@ UnicodeRange Json::Value::as<UnicodeRange>() const
     UnicodeRange res;
     size_t index = 0;
     for (const auto& item : *this) {
-        res[index++] = item.asUInt64();
+        res[index++] = item.asUInt();
     }
     return res;
 }
@@ -420,8 +419,6 @@ int FontConfig_OHOS::parseFonts(const Json::Value& array)
             { "index", GEN_GET_FONT_FUNC(f, index) }, { "weight", GEN_GET_FONT_FUNC(f, weight) },
             { "lang", GEN_GET_FONT_FUNC(f, lang) }, { "file", GEN_GET_FONT_FUNC(f, file) },
             { "alias", GEN_GET_FONT_FUNC(f, alias) }, { "range", GEN_GET_FONT_FUNC(f, range)} };
-
-    std::vector<FontJson> fonts;
 
     for (const auto& font : array) {
         if (!font.isObject()) {
@@ -607,10 +604,10 @@ FontConfig_OHOS::Font::Font(FontJson& info)
 
 bool FontConfig_OHOS::containRange(const UnicodeRange& range, size_t index)
 {
-    // because the range is 6 64-bit, so we need to / 64 means >> 6
-    int16_t i = index >> 6;
-    // get the bit position by mod 64 which means & 63
-    int16_t bit = index & 63;
+    // because the range is 11 32-bit, so we need to / 32 means >> 5
+    int16_t i = index >> 5;
+    // get the bit position by mod 32 which means & 31
+    int16_t bit = index & 31;
     return ((range[i] >> bit) & 1) != 0;
 }
 
@@ -668,7 +665,7 @@ void FontConfig_OHOS::FontCollection::forAll(std::function<void(FontConfig_OHOS:
 
 int16_t FontConfig_OHOS::charRangeIndex(SkUnichar unicode)
 {
-    auto it = gRangeMap.upper_bound({ unicode, UINT64_MAX });
+    auto it = gRangeMap.upper_bound({ unicode, UINT32_MAX });
     if (it != gRangeMap.begin()) {
         --it;
     }

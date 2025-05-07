@@ -42,9 +42,9 @@ enum {
 };
 } /* namespace ErrorCode */
 
-constexpr size_t RANGE_SIZE = 6;
+constexpr size_t RANGE_SIZE = 11;
 constexpr size_t UNICODE_RANGE_SIZE = 332;
-using UnicodeRange = std::array<uint64_t, RANGE_SIZE>;
+using UnicodeRange = std::array<uint32_t, RANGE_SIZE>;
 
 /*!
  * \brief To parse the font configuration document and manage the system fonts
@@ -63,7 +63,8 @@ public:
         std::string family;
         std::string lang;
         std::string file;
-        UnicodeRange range { UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX };
+        UnicodeRange range { UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX,
+            UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX };
     };
 
     struct Font {
