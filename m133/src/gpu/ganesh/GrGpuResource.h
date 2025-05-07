@@ -121,10 +121,16 @@ private:
 };
 
 struct GrGpuResourceTag {
-    GrGpuResourceTag() : fPid(0), fTid(0), fWid(0), fFid(0) {}
+    GrGpuResourceTag() : fPid(0), fTid(0), fWid(0), fFid(0)
+    {
+        isGrGpuResourceTagValid = false;
+    }
 
     GrGpuResourceTag(uint32_t pid, uint32_t tid, uint32_t wid, uint32_t fid)
-        : fPid(pid), fTid(tid), fWid(wid), fFid(fid) {}
+        : fPid(pid), fTid(tid), fWid(wid), fFid(fid)
+    {
+        isGrGpuResourceTagValid = fPid || fTid || fWid || fFid;
+    }
 
     bool operator< (const GrGpuResourceTag& tag) const {
         if (fPid != tag.fPid) {
@@ -152,7 +158,7 @@ struct GrGpuResourceTag {
     }
 
     bool isGrTagValid() const {
-        return fPid || fTid || fWid || fFid;
+        return isGrGpuResourceTagValid;
     }
 
     bool filter(GrGpuResourceTag& tag) const {
@@ -196,6 +202,7 @@ struct GrGpuResourceTag {
     uint32_t fTid;
     uint32_t fWid;
     uint32_t fFid;
+    bool isGrGpuResourceTagValid;
 };
 
 /**

@@ -259,7 +259,7 @@ public:
      *                               resource types.
      */
     void purgeUnlockedResources(size_t bytesToPurge, bool preferScratchResources);
-    void purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag tag);
+    void purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag& tag);
 
     /**
      * This entry point is intended for instances where an app has been backgrounded or
@@ -517,7 +517,7 @@ public:
     /** Enumerates all cached GPU resources and dumps their memory to traceMemoryDump. */
     // Chrome is using this!
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
-    void dumpMemoryStatisticsByTag(SkTraceMemoryDump* traceMemoryDump, const GrGpuResourceTag tag) const;
+    void dumpMemoryStatisticsByTag(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag& tag) const;
 
     bool supportsDistanceFieldText() const;
 
@@ -935,7 +935,13 @@ public:
     /**
      * Set current resource tag for gpu cache recycle.
      */
-    void setCurrentGrResourceTag(const GrGpuResourceTag tag);
+    void setCurrentGrResourceTag(const GrGpuResourceTag& tag);
+
+    /**
+     * Pop resource tag.
+     */
+    void popGrResourceTag();
+
 
     /**
      * Get current resource tag for gpu cache recycle.
@@ -947,7 +953,7 @@ public:
     /**
      * Releases GrGpuResource objects and removes them from the cache by tag.
      */
-    void releasesByTag(const GrGpuResourceTag tag);
+    void releaseByTag(const GrGpuResourceTag& tag);
 
     /**
      * Get all GrGpuResource tag.
