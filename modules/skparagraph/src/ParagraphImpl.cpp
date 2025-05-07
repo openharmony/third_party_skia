@@ -592,11 +592,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->fLines.reset();
 #ifdef OHOS_SUPPORT
         // fast path
-        auto singleRunWidth = fRuns[0].fAdvance.fX;
-        bool isFastPath = !fHasLineBreaks && !fHasWhitespacesInside && fPlaceholders.size() == 1 &&
-            fRuns.size() == 1 && singleRunWidth <= floorWidth - this->detectIndents(0);
-        preCalculateSingleRunAutoSpaceWidth(singleRunWidth, isFastPath, floorWidth);
-        if (isFastPath) {
+        if (!fHasLineBreaks &&
+            !fHasWhitespacesInside &&
+            fPlaceholders.size() == 1 &&
+            (fRuns.size() == 1 && preCalculateSingleRunAutoSpaceWidth(floorWidth))) {
             positionShapedTextIntoLine(floorWidth);
         } else if (!paragraphCache->GetStoredLayout(*this)) {
             breakShapedTextIntoLines(floorWidth);
@@ -2000,11 +1999,12 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
     return unresolvedPaintID;
 }
 
-void ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar& singleRunWidth, bool& isFastPath, SkScalar floorWidth)
+bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
 {
+    SkScalar singleRunWidth = fRuns[0].fAdvance.fX;
     bool enableAutoSpace = paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
-    if ((!isFastPath) || (!enableAutoSpace)) {
-        return;
+    if (!enableAutoSpace) {
+        return singleRunWidth <= floorWidth - this->detectIndents(0);
     }
     SkScalar totalFakeSpacing = 0.0f;
     ClusterIndex endOfClusters = fClusters.size();
@@ -2013,7 +2013,7 @@ void ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar& singleRunWidth
             ? fClusters[cluster - 1].getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
         singleRunWidth += totalFakeSpacing;
     }
-    isFastPath = isFastPath && (singleRunWidth <= floorWidth - this->detectIndents(0));
+    return singleRunWidth <= floorWidth - this->detectIndents(0);
 }
 #endif
 
