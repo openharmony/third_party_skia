@@ -22,11 +22,12 @@
 namespace skia {
 namespace textlayout {
 #ifdef OHOS_SUPPORT
-const SkScalar TEXT_BADGE_FONT_SIZE_SCALE = 0.75;
-const SkScalar SUPS_BASELINE_SHIFT_SCALE = - 0.5;
-const SkScalar SUBS_BASELINE_SHIFT_SCALE = 0.4;
-const SkScalar SUPS_HORIZONTAL_SHIFT_SCALE = - 0.05;
-const SkScalar SUBS_HORIZONTAL_SHIFT_SCALE = 0.1;
+const SkScalar TEXT_BADGE_FONT_SIZE_SCALE = 0.65;
+const SkScalar TEXT_BADGE_HEIGHT_SCALE = 2.0;
+const SkScalar SUPS_BASELINE_SHIFT_SCALE = - 0.7;
+const SkScalar SUBS_BASELINE_SHIFT_SCALE = 0.2;
+const SkScalar SUPS_HORIZONTAL_SHIFT_SCALE = 0;
+const SkScalar SUBS_HORIZONTAL_SHIFT_SCALE = 0;
 #endif
 
 static inline bool nearlyZero(SkScalar x, SkScalar tolerance = SK_ScalarNearlyZero) {
@@ -371,7 +372,7 @@ public:
 
     TextBadgeType getTextBadgeType() const { return fBadgeType; }
 
-    void setTextBadgeType(TextBadgeType badgeType) { fBadgeType = badgeType; }
+    void setTextBadgeType(TextBadgeType badgeType);
 
     SkScalar getBadgeBaseLineShift() const;
 

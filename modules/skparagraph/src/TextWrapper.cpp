@@ -179,23 +179,9 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 SkScalar width = cluster->width() + widthBeforeCluster;
                 (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
                 breaker.breakLine(width)) {
-            if (cluster->getBadgeType() != TextBadgeType::BADGE_NONE) {
-                if (fWords.empty() && fClusters.empty()) {
-                    fClusters.extend(cluster);
-                    fTooLongCluster = true;
-                    break;
-                }
 
-                if (!fClusters.empty() && !fClusters.endCluster()->textRange().contains(fClusters.startCluster()->textRange())) {
-                    fClusters.trim(cluster - 1);
-                }
-
-                if (!fClusters.empty()) {
-                    fWords.extend(fClusters);
-                    break;
-                }
             // if the hyphenator has already run as balancing algorithm, use the cluster information
-            } else if (cluster->isHyphenBreak() && !needEllipsis) {
+            if (cluster->isHyphenBreak() && !needEllipsis) {
                 // we dont want to add the current cluster as the hyphenation algorithm marks breaks before a cluster
                 // however, if we cannot fit anything to a line, we need to break out here
                 if (fWords.empty() && fClusters.empty()) {
@@ -245,6 +231,24 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                     // Placeholder does not fit the line; it will be considered again on the next line
                 }
                 break;
+            } else if (cluster->getBadgeType() != TextBadgeType::BADGE_NONE) {
+                if (fWords.empty() && fClusters.empty()) {
+                    fClusters.extend(cluster);
+                    fTooLongCluster = true;
+                    break;
+                }
+
+                if (!fClusters.empty() && (cluster - 1)->getBadgeType() == TextBadgeType::BADGE_NONE) {
+                    fClusters.trim(cluster - 1);
+                } else if (wordBreakType != WordBreakType::NORMAL && fClusters.empty() && !isFirstWord &&
+                    !fWords.empty() && (cluster - 1)->getBadgeType() == TextBadgeType::BADGE_NONE) {
+                    fWords.trim(cluster - 1);
+                }
+
+                if (!fClusters.empty() && (cluster - 1)->getBadgeType() == TextBadgeType::BADGE_NONE) {
+                    fWords.extend(fClusters);
+                    break;
+                }
             }
 
             // should do this only if hyphenation is enabled

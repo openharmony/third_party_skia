@@ -184,12 +184,15 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
                    fFontFamilies == other.fFontFamilies &&
 #ifdef OHOS_SUPPORT
                    getCorrectFontSize() == other.getCorrectFontSize() &&
+                   fHeight == other.fHeight &&
+                   fHalfLeading == other.fHalfLeading &&
+                   getBaselineShift() == other.getBaselineShift() &&
 #else
                    fFontSize == other.fFontSize &&
-#endif
                    fHeight == other.fHeight &&
                    fHalfLeading == other.fHalfLeading &&
                    fBaselineShift == other.fBaselineShift &&
+#endif
                    fFontArguments == other.fFontArguments &&
                    fStyleId == other.fStyleId &&
                    fBackgroundRect == other.fBackgroundRect;
@@ -291,6 +294,15 @@ SkScalar TextStyle::getCorrectFontSize() const {
 
     return getFontSize() * TEXT_BADGE_FONT_SIZE_SCALE;
 };
+
+void TextStyle::setTextBadgeType(TextBadgeType badgeType) {
+    if (badgeType == TextBadgeType::BADGE_NONE) {
+        return;
+    }
+    fBadgeType = badgeType;
+    fHeightOverride = true;
+    fHeight = TEXT_BADGE_HEIGHT_SCALE;
+}
 #endif
 
 }  // namespace textlayout
