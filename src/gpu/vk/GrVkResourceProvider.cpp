@@ -449,7 +449,9 @@ void GrVkResourceProvider::checkCommandBuffers() {
         }
     }
     if (fActiveCommandPools.count() >= 3000) {
+#ifdef SKIA_OHOS
         SK_LOGE("GrVkResourceProvider::checkCommandBuffers: fActiveCommandPools size [%{public}d]", fActiveCommandPools.count());
+#endif
     }
 }
 
