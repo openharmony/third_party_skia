@@ -265,6 +265,10 @@ public:
     virtual void validate() const {}
 #endif
 
+    GrGpuResourceTag getGrOpTag() const { return fGrOpTag; }
+
+    void setGrOpTag(const GrGpuResourceTag tag) { fGrOpTag = tag; }
+
 protected:
     GrOp(uint32_t classID);
 
@@ -358,6 +362,8 @@ private:
     GrOp*                               fPrevInChain = nullptr;
     const uint16_t                      fClassID;
     uint16_t                            fBoundsFlags;
+
+    GrGpuResourceTag fGrOpTag;
 
     static uint32_t GenOpID() { return GenID(&gCurrOpUniqueID); }
     mutable uint32_t                    fUniqueID = SK_InvalidUniqueID;
