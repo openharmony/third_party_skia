@@ -17,6 +17,7 @@
         "features": [
             "skia_feature_product",
             "skia_feature_enable_pgo",
+            "skia_feature_enable_codemerge",
             "skia_feature_pgo_path",
             "skia_feature_zlib",
             "skia_feature_wuji_enable",
