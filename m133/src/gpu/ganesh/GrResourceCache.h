@@ -8,6 +8,9 @@
 #ifndef GrResourceCache_DEFINED
 #define GrResourceCache_DEFINED
 
+#include <set>
+#include <stack>
+
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
@@ -92,6 +95,16 @@ public:
     class ResourceAccess;
     ResourceAccess resourceAccess();
 
+    /**
+     * Get current resource tag for gpu cache recycle.
+     */
+    GrGpuResourceTag getCurrentGrResourceTag() const;
+
+    /**
+     * Set current resourcetag for gpu cache recycle.
+     */
+    void setCurrentGrResourceTag(const GrGpuResourceTag tag);
+
     /** Unique ID of the owning GrContext. */
     uint32_t contextUniqueID() const { return fContextUniqueID; }
 
@@ -143,6 +156,15 @@ public:
     void releaseAll();
 
     /**
+     * Release GrGpuResource objects and removes them from the cache by tag.
+     */
+    void releaseByTag(const GrGpuResourceTag tag);
+    /**
+     * Get all GrGpuResource tags.
+    */
+    std::set<GrGpuResourceTag> getAllGrGpuResourceTag() const;
+
+    /**
      * Find a resource that matches a scratch key.
      */
     GrGpuResource* findAndRefScratchResource(const skgpu::ScratchKey& scratchKey);
@@ -182,6 +204,8 @@ public:
     void purgeUnlockedResources(GrPurgeResourceOptions opts) {
         this->purgeUnlockedResources(/*purgeTime=*/nullptr, opts);
     }
+
+    void purgeUnlockedResourcesByTag(bool scratchResourceOnly, const GrGpuResourceTag tag);
 
     // Purge unlocked resources not used since the passed point in time. If 'opts' is
     // kScratchResourcesOnly, the purgeable resources containing persistent data are spared.
@@ -269,11 +293,14 @@ public:
 
     // Enumerates all cached resources and dumps their details to traceMemoryDump.
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag tag) const;
 
     void setProxyProvider(GrProxyProvider* proxyProvider) { fProxyProvider = proxyProvider; }
     void setThreadSafeCache(GrThreadSafeCache* threadSafeCache) {
         fThreadSafeCache = threadSafeCache;
     }
+
+    std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const; // Get the tag of all GPU resources
 
     // It'd be nice if this could be private but SkMessageBus relies on macros to define types that
     // require this to be public.
@@ -411,6 +438,10 @@ private:
     // This resource is allowed to be in the nonpurgeable array for the sake of validate() because
     // we're in the midst of converting it to purgeable status.
     SkDEBUGCODE(GrGpuResource*          fNewlyPurgeableResourceForValidation = nullptr;)
+    std::stack<GrGpuResourceTag> grResourceTagCacheStack;
+
+    //Indicates the cached resource tags.
+    std::stack<GrGpuResourceTag> GrResourceCacheStack;
 };
 
 class GrResourceCache::ResourceAccess {
@@ -434,6 +465,11 @@ private:
      * adding the ref.
      */
     void refResource(GrGpuResource* resource) { fCache->refResource(resource); }
+
+    /**
+     * Get current resource tag for gpu cache recycle.
+     */
+    GrGpuResourceTag getCurrentGrResourceTag() const { return fCache->getCurrentGrResourceTag(); }
 
     /**
      * Notifications that should be sent to the cache when the ref/io cnt status of resources
