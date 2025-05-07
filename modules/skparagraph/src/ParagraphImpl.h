@@ -270,7 +270,7 @@ public:
     std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) override;
     SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
     SkTArray<Block, true>& exportTextStyles() override { return fTextStyles; }
-    void preCalculateSingleRunAutoSpaceWidth(SkScalar& singleRunWidth);
+    void preCalculateSingleRunAutoSpaceWidth(SkScalar& singleRunWidth, bool& isFastPath, SkScalar floorWidth);
 #endif
 
     void visit(const Visitor&) override;

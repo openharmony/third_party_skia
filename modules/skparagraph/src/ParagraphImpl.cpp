@@ -593,11 +593,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 #ifdef OHOS_SUPPORT
         // fast path
         auto singleRunWidth = fRuns[0].fAdvance.fX;
-        preCalculateSingleRunAutoSpaceWidth(singleRunWidth);
-        if (!fHasLineBreaks &&
-            !fHasWhitespacesInside &&
-            fPlaceholders.size() == 1 &&
-            (fRuns.size() == 1 && singleRunWidth <= floorWidth - this->detectIndents(0))) {
+        bool isFastPath = !fHasLineBreaks && !fHasWhitespacesInside && fPlaceholders.size() == 1 &&
+            fRuns.size() == 1 && singleRunWidth <= floorWidth - this->detectIndents(0);
+        preCalculateSingleRunAutoSpaceWidth(singleRunWidth, isFastPath, floorWidth);
+        if (isFastPath) {
             positionShapedTextIntoLine(floorWidth);
         } else if (!paragraphCache->GetStoredLayout(*this)) {
             breakShapedTextIntoLines(floorWidth);
@@ -895,18 +894,18 @@ static const UnicodeIdentifier WESTERN_IDENTIFIER(WESTERN_UNICODE_SET);
 static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(ParagraphImpl& paragraph, SkUnichar unicode)
 {
     bool enableAutoSpaceFlag = paragraph.paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
-    if (enableAutoSpaceFlag && WESTERN_IDENTIFIER.exist(unicode)) {
+    if (!enableAutoSpaceFlag) {
+        return Cluster::AutoSpacingFlag::NoFlag;
+    }
+    if (WESTERN_IDENTIFIER.exist(unicode)) {
         return Cluster::AutoSpacingFlag::Western;
     }
-
-    if (enableAutoSpaceFlag && CJK_IDENTIFIER.exist(unicode)) {
+    if (CJK_IDENTIFIER.exist(unicode)) {
         return Cluster::AutoSpacingFlag::CJK;
     }
-
-    if (enableAutoSpaceFlag && (unicode == COPYRIGHT_UNICODE)) {
+    if (unicode == COPYRIGHT_UNICODE) {
         return Cluster::AutoSpacingFlag::Copyright;
     }
-
     return Cluster::AutoSpacingFlag::NoFlag;
 }
 #endif
@@ -2001,20 +2000,20 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
     return unresolvedPaintID;
 }
 
-void ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar& singleRunWidth) {
-    bool enableAutoSpace =
-            paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
-    if (fRuns.size() == 1 && enableAutoSpace) {
-        SkScalar totalFakeSpacing = 0.0f;
-        ClusterIndex endOfClusters = fClusters.size();
-        for (size_t cluster = 1; cluster < endOfClusters; ++cluster) {
-            totalFakeSpacing +=
-                    (fClusters[cluster].needAutoSpacing())
-                            ? fClusters[cluster - 1].getFontSize() / AUTO_SPACING_WIDTH_RATIO
-                            : 0;
-            singleRunWidth += totalFakeSpacing;
-        }
+void ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar& singleRunWidth, bool& isFastPath, SkScalar floorWidth)
+{
+    bool enableAutoSpace = paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
+    if ((!isFastPath) || (!enableAutoSpace)) {
+        return;
     }
+    SkScalar totalFakeSpacing = 0.0f;
+    ClusterIndex endOfClusters = fClusters.size();
+    for (size_t cluster = 1; cluster < endOfClusters; ++cluster) {
+        totalFakeSpacing += (fClusters[cluster].needAutoSpacing())
+            ? fClusters[cluster - 1].getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
+        singleRunWidth += totalFakeSpacing;
+    }
+    isFastPath = isFastPath && (singleRunWidth <= floorWidth - this->detectIndents(0));
 }
 #endif
 
