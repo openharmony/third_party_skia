@@ -47,6 +47,10 @@ public:
       SkRect clip;
       SkScalar fExcludedTrailingSpaces;
       bool clippingNeeded;
+#ifdef ENABLE_TEXT_ENHANCE
+      bool fIsTrimTrailingSpaceWidth{false};
+      SkScalar fTrailingSpaceWidth{0.0f};
+#endif
     };
 
 #ifdef ENABLE_TEXT_ENHANCE
@@ -286,7 +290,7 @@ public:
     bool getBreakWithHyphen() const;
 #endif
 private:
-#ifdef ENABLE_TEXT_ENHANCE	
+#ifdef ENABLE_TEXT_ENHANCE
     struct RoundRectAttr {
         int styleId;
         RectStyle roundRectStyle;
@@ -350,13 +354,13 @@ private:
 #endif
     InternalLineMetrics fSizes;                 // Line metrics as a max of all run metrics and struts
     InternalLineMetrics fMaxRunMetrics;         // No struts - need it for GetRectForRange(max height)
-#ifdef ENABLE_TEXT_ENHANCE	
+#ifdef ENABLE_TEXT_ENHANCE
     size_t fEllipsisIndex = EMPTY_INDEX;
 #endif
     bool fHasBackground;
     bool fHasShadows;
     bool fHasDecorations;
-#ifdef ENABLE_TEXT_ENHANCE	
+#ifdef ENABLE_TEXT_ENHANCE
     bool fIsArcText;
     bool fArcTextState;
     bool fLastClipRunLtr;

@@ -622,6 +622,9 @@ void TextLine::ensureTextBlobCachePopulated() {
 #ifdef ENABLE_TEXT_ENHANCE
 void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal) {
     SkScalar delta = maxWidth - this->widthWithEllipsisSpaces();
+    if (fOwner->paragraphStyle().getTrailingSpaceOptimized()) {
+        delta = maxWidth - this->width();
+    }
     delta = (delta < 0) ? 0 : delta;
 #else
 void TextLine::format(TextAlign align, SkScalar maxWidth) {
@@ -1850,6 +1853,18 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
 #endif
             result.clip.fBottom = result.clip.fTop +
                                   run->calculateHeight(LineMetricStyle::CSS, LineMetricStyle::CSS);
+#ifdef ENABLE_TEXT_ENHANCE
+            result.fIsTrimTrailingSpaceWidth = false;
+            if (fOwner->paragraphStyle().getTrailingSpaceOptimized() &&
+                run->isTrailingSpaceIncluded(fClusterRange, fGhostClusterRange)) {
+                result.fTrailingSpaceWidth = spacesWidth() < 0 ? 0 : spacesWidth();
+                if (!run->leftToRight() && (fGhostClusterRange.width() > 0 &&
+                    fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak())) {
+                    result.fTrailingSpaceWidth += fOwner->cluster(fGhostClusterRange.end - 1).width();
+                }
+                result.fIsTrimTrailingSpaceWidth = true;
+            }
+#endif
         }
         return result;
     };
