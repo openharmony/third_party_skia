@@ -189,25 +189,24 @@ public:
                                                   SkVector offset,
                                                   SkVector advance,
                                                   InternalLineMetrics metrics,
-                                                  bool addEllipsis
 #ifdef ENABLE_TEXT_ENHANCE
-                                                  , SkScalar lineIndent,
-                                                  SkScalar noIndentWidth
+                                                  bool addEllipsis,
+                                                  SkScalar lineIndent,
+                                                  SkScalar noIndentWidth)>;
+#else
+                                                  bool addEllipsis)>;
 #endif
-                                                   )>;
     void breakTextIntoLines(ParagraphImpl* parent,
                             SkScalar maxWidth,
                             const AddLineToParagraph& addLine);
 #ifdef ENABLE_TEXT_ENHANCE
     void updateMetricsWithPlaceholder(std::vector<Run*>& runs, bool iterateByCluster);
+    bool brokeLineWithHyphen() const { return fBrokeLineWithHyphen; }
 #endif
     SkScalar height() const { return fHeight; }
     SkScalar minIntrinsicWidth() const { return fMinIntrinsicWidth; }
     SkScalar maxIntrinsicWidth() const { return fMaxIntrinsicWidth; }
     bool exceededMaxLines() const { return fExceededMaxLines; }
-#ifdef ENABLE_TEXT_ENHANCE
-    bool brokeLineWithHyphen() const { return fBrokeLineWithHyphen; }
-#endif
 
 private:
 #ifdef ENABLE_TEXT_ENHANCE

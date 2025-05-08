@@ -108,6 +108,7 @@ struct HyphenatorHeader {
         return (maxCp - minCp) * HYPHEN_BASE_CODE_SHIFT + maps->count;
     }
 };
+
 class Hyphenator {
 public:
     static Hyphenator& getInstance()

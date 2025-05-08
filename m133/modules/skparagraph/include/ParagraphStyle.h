@@ -7,7 +7,7 @@
 #include "include/core/SkString.h"
 #include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/TextStyle.h"
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 #include "drawing.h"
 #endif
 
@@ -49,7 +49,7 @@ struct StrutStyle {
     const std::vector<SkString>& getFontFamilies() const { return fFontFamilies; }
     void setFontFamilies(std::vector<SkString> families) { fFontFamilies = std::move(families); }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     RSFontStyle getFontStyle() const { return fFontStyle; }
     void setFontStyle(RSFontStyle fontStyle) { fFontStyle = fontStyle; }
 #else
@@ -115,7 +115,7 @@ struct StrutStyle {
 private:
 
     std::vector<SkString> fFontFamilies;
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     RSFontStyle fFontStyle;
 #else
     SkFontStyle fFontStyle;
@@ -163,11 +163,6 @@ struct ParagraphStyle {
 #endif
     }
 
-#ifdef ENABLE_TEXT_ENHANCE
-    StrutStyle& exportStrutStyle() { return fStrutStyle; }
-    TextStyle& exportTextStyle() { return fDefaultTextStyle; }
-#endif
-
     const StrutStyle& getStrutStyle() const { return fStrutStyle; }
     void setStrutStyle(StrutStyle strutStyle) { fStrutStyle = std::move(strutStyle); }
 
@@ -206,6 +201,9 @@ struct ParagraphStyle {
     void setReplaceTabCharacters(bool value) { fReplaceTabCharacters = value; }
 
 #ifdef ENABLE_TEXT_ENHANCE
+    StrutStyle& exportStrutStyle() { return fStrutStyle; }
+    TextStyle& exportTextStyle() { return fDefaultTextStyle; }
+
     skia::textlayout::EllipsisModal getEllipsisMod() const { return fEllipsisModal; }
     void setEllipsisMod(skia::textlayout::EllipsisModal ellipsisModel) { fEllipsisModal = ellipsisModel; }
     SkScalar getTextSplitRatio() const { return fTextSplitRatio; }
@@ -246,6 +244,7 @@ private:
     TextHeightBehavior fTextHeightBehavior;
     bool fHintingIsOn;
     bool fReplaceTabCharacters;
+    bool fApplyRoundingHack = true;
 #ifdef ENABLE_TEXT_ENHANCE
     bool fTextOverflower;
     skia::textlayout::EllipsisModal fEllipsisModal;
@@ -255,7 +254,6 @@ private:
     bool fIsEndAddParagraphSpacing{false};
     bool fIsTrailingSpaceOptimized{false};
 #endif
-    bool fApplyRoundingHack{true};
 };
 }  // namespace textlayout
 }  // namespace skia

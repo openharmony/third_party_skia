@@ -96,8 +96,8 @@ public:
 
     explicit FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname = nullptr);
     virtual ~FontConfig_OHOS() = default;
-    SkTypeface* matchFallback(SkUnichar character, const SkFontStyle& style) const;
-    SkTypeface* matchFallback(size_t index, SkUnichar character, const SkFontStyle& style) const;
+    sk_sp<SkTypeface> matchFallback(SkUnichar character, const SkFontStyle& style) const;
+    sk_sp<SkTypeface> matchFallback(size_t index, SkUnichar character, const SkFontStyle& style) const;
     std::vector<size_t> matchFallbackByBCP47(std::function<int(const std::string&)>) const;
     int getFamilyCount() const;
     int getDefaultFamily(SkString& familyName) const;
@@ -111,8 +111,8 @@ public:
     }
 
     sk_sp<SkTypeface_OHOS> getTypefaceSP(size_t styleIndex, size_t index, bool isFallback = false) const;
-    SkTypeface_OHOS* getTypeface(size_t styleIndex, size_t index, bool isFallback = false) const;
-    SkTypeface_OHOS* getTypeface(size_t styleIndex, const SkFontStyle& style, bool isFallback = false) const;
+    sk_sp<SkTypeface_OHOS> getTypeface(size_t styleIndex, size_t index, bool isFallback = false) const;
+    sk_sp<SkTypeface_OHOS> getTypeface(size_t styleIndex, const SkFontStyle& style, bool isFallback = false) const;
 
     static sk_sp<SkTypeface_OHOS> matchFontStyle(
         const std::vector<sk_sp<SkTypeface_OHOS>>& typefaceSet, const SkFontStyle& pattern);

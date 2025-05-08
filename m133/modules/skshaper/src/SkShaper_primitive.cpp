@@ -27,7 +27,7 @@ public:
 private:
 #if !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
     void shape(const char* utf8, size_t utf8Bytes,
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
                const RSFont& srcFont,
 #else
                const SkFont& srcFont,
@@ -53,6 +53,11 @@ private:
                const Feature*, size_t featureSize,
                SkScalar width,
                RunHandler*) const override;
+
+#ifdef ENABLE_TEXT_ENHANCE
+    void shapeProcessUtf(const char* utf8, size_t utf8Bytes, SkScalar width, RunHandler* handler,
+        RSFont font, std::unique_ptr<SkGlyphID[]>& glyphs, std::unique_ptr<SkScalar[]>& advances) const;
+#endif
 };
 
 static inline bool is_breaking_whitespace(SkUnichar c) {
@@ -84,7 +89,7 @@ static inline bool is_breaking_whitespace(SkUnichar c) {
 }
 
 static size_t linebreak(const char text[], const char stop[],
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
                         const RSFont& font, SkScalar width,
 #else
                         const SkFont& font, SkScalar width,
@@ -160,7 +165,7 @@ void SkShaperPrimitive::shape(const char* utf8,
 
 void SkShaperPrimitive::shape(const char* utf8,
                               size_t utf8Bytes,
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
                               const RSFont& font,
 #else
                               const SkFont& font,
@@ -181,51 +186,9 @@ void SkShaperPrimitive::shape(const char* utf8,
 }
 #endif
 
-void SkShaperPrimitive::shape(const char* utf8,
-                              size_t utf8Bytes,
-                              FontRunIterator& fontRuns,
-                              BiDiRunIterator&,
-                              ScriptRunIterator&,
-                              LanguageRunIterator&,
-                              const Feature*,
-                              size_t,
-                              SkScalar width,
-                              RunHandler* handler) const {
-#ifdef ENABLE_DRAWING_ADAPTER
-    RSFont font;
-#else
-    SkFont font;
-#endif
-    if (!fontRuns.atEnd()) {
-        fontRuns.consume();
-        font = fontRuns.currentFont();
-    }
-    SkASSERT(font.getTypeface());
-
-#ifdef ENABLE_DRAWING_ADAPTER
-    int glyphCount = font.CountText(utf8, utf8Bytes, RSDrawing::TextEncoding::UTF8);
-#else
-    int glyphCount = font.countText(utf8, utf8Bytes, SkTextEncoding::kUTF8);
-#endif
-    if (glyphCount < 0) {
-        return;
-    }
-
-    std::unique_ptr<SkGlyphID[]> glyphs(new SkGlyphID[glyphCount]);
-#ifdef ENABLE_DRAWING_ADAPTER
-    font.TextToGlyphs(utf8, utf8Bytes, RSDrawing::TextEncoding::UTF8, glyphs.get(), glyphCount);
-#else
-    font.textToGlyphs(utf8, utf8Bytes, SkTextEncoding::kUTF8, glyphs.get(), glyphCount);
-#endif
-
-    std::unique_ptr<SkScalar[]> advances(new SkScalar[glyphCount]);
-#ifdef ENABLE_DRAWING_ADAPTER
-    font.GetWidths(glyphs.get(), glyphCount, advances.get(), nullptr);
-#else
-    font.getWidthsBounds(glyphs.get(), glyphCount, advances.get(), nullptr, nullptr);
-#endif
-
-
+#ifdef ENABLE_TEXT_ENHANCE
+void SkShaperPrimitive::shapeProcessUtf(const char* utf8, size_t utf8Bytes, SkScalar width, RunHandler* handler,
+    RSFont font, std::unique_ptr<SkGlyphID[]>& glyphs, std::unique_ptr<SkScalar[]>& advances) const {
     size_t glyphOffset = 0;
     size_t utf8Offset = 0;
     do {
@@ -238,11 +201,7 @@ void SkShaperPrimitive::shape(const char* utf8,
         const RunHandler::RunInfo info = {
             font,
             0,
-#ifdef ENABLE_DRAWING_ADAPTER
             { font.MeasureText(utf8, bytesVisible, RSDrawing::TextEncoding::UTF8), 0 },
-#else
-            { font.measureText(utf8, bytesVisible, SkTextEncoding::kUTF8), 0 },
-#endif
             numGlyphs,
             RunHandler::Range(utf8Offset, bytesVisible)
         };
@@ -278,6 +237,107 @@ void SkShaperPrimitive::shape(const char* utf8,
         utf8Bytes -= bytesConsumed;
     } while (0 < utf8Bytes);
 }
+#endif
+
+void SkShaperPrimitive::shape(const char* utf8,
+                              size_t utf8Bytes,
+                              FontRunIterator& fontRuns,
+                              BiDiRunIterator&,
+                              ScriptRunIterator&,
+                              LanguageRunIterator&,
+                              const Feature*,
+                              size_t,
+                              SkScalar width,
+                              RunHandler* handler) const {
+#ifdef ENABLE_TEXT_ENHANCE
+    RSFont font;
+    if (!fontRuns.atEnd()) {
+        fontRuns.consume();
+        font = fontRuns.currentFont();
+    }
+    SkASSERT(font.getTypeface());
+
+    int glyphCount = font.CountText(utf8, utf8Bytes, RSDrawing::TextEncoding::UTF8);
+    if (glyphCount < 0) {
+        return;
+    }
+
+    std::unique_ptr<SkGlyphID[]> glyphs(new SkGlyphID[glyphCount]);
+    font.TextToGlyphs(utf8, utf8Bytes, RSDrawing::TextEncoding::UTF8, glyphs.get(), glyphCount);
+
+    std::unique_ptr<SkScalar[]> advances(new SkScalar[glyphCount]);
+    font.GetWidths(glyphs.get(), glyphCount, advances.get(), nullptr);
+
+    shapeProcessUtf(utf8, utf8Bytes, width, handler, font, glyphs, advances);
+}
+#else
+    SkFont font;
+    if (!fontRuns.atEnd()) {
+        fontRuns.consume();
+        font = fontRuns.currentFont();
+    }
+    SkASSERT(font.getTypeface());
+
+    int glyphCount = font.countText(utf8, utf8Bytes, SkTextEncoding::kUTF8);
+    if (glyphCount < 0) {
+        return;
+    }
+
+    std::unique_ptr<SkGlyphID[]> glyphs(new SkGlyphID[glyphCount]);
+    font.textToGlyphs(utf8, utf8Bytes, SkTextEncoding::kUTF8, glyphs.get(), glyphCount);
+
+    std::unique_ptr<SkScalar[]> advances(new SkScalar[glyphCount]);
+    font.getWidthsBounds(glyphs.get(), glyphCount, advances.get(), nullptr, nullptr);
+
+    size_t glyphOffset = 0;
+    size_t utf8Offset = 0;
+    do {
+        size_t bytesCollapsed;
+        size_t bytesConsumed = linebreak(utf8, utf8 + utf8Bytes, font, width,
+                                         advances.get() + glyphOffset, &bytesCollapsed);
+        size_t bytesVisible = bytesConsumed - bytesCollapsed;
+
+        size_t numGlyphs = SkUTF::CountUTF8(utf8, bytesVisible);
+        const RunHandler::RunInfo info = {
+            font,
+            0,
+            { font.measureText(utf8, bytesVisible, SkTextEncoding::kUTF8), 0 },
+            numGlyphs,
+            RunHandler::Range(utf8Offset, bytesVisible)
+        };
+        handler->beginLine();
+        if (info.glyphCount) {
+            handler->runInfo(info);
+        }
+        handler->commitRunInfo();
+        if (info.glyphCount) {
+            const auto buffer = handler->runBuffer(info);
+
+            memcpy(buffer.glyphs, glyphs.get() + glyphOffset, info.glyphCount * sizeof(SkGlyphID));
+            SkPoint position = buffer.point;
+            for (size_t i = 0; i < info.glyphCount; ++i) {
+                buffer.positions[i] = position;
+                position.fX += advances[i + glyphOffset];
+            }
+            if (buffer.clusters) {
+                const char* txtPtr = utf8;
+                for (size_t i = 0; i < info.glyphCount; ++i) {
+                    // Each character maps to exactly one glyph.
+                    buffer.clusters[i] = SkToU32(txtPtr - utf8 + utf8Offset);
+                    SkUTF::NextUTF8(&txtPtr, utf8 + utf8Bytes);
+                }
+            }
+            handler->commitRunBuffer(info);
+        }
+        handler->commitLine();
+
+        glyphOffset += SkUTF::CountUTF8(utf8, bytesConsumed);
+        utf8Offset += bytesConsumed;
+        utf8 += bytesConsumed;
+        utf8Bytes -= bytesConsumed;
+    } while (0 < utf8Bytes);
+}
+#endif
 
 #if !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
 std::unique_ptr<SkShaper> SkShaper::MakePrimitive() { return SkShapers::Primitive::PrimitiveText(); }

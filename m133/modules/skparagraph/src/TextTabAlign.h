@@ -116,7 +116,8 @@ private:
     SkScalar fMaxWidth{0.0f};
     Cluster* fTabCluster{nullptr};
 
-    using TextTabFunc = bool (TextTabAlign::*)(TextWrapper::TextStretch&, TextWrapper::TextStretch&, Cluster*, SkScalar);
+    using TextTabFunc = bool (TextTabAlign::*)(TextWrapper::TextStretch&, TextWrapper::TextStretch&,
+        Cluster*, SkScalar);
     struct TextTabFuncs {
         TextTabFunc processTabFunc;
         TextTabFunc processEndofWordFunc;
@@ -126,8 +127,8 @@ private:
     constexpr static size_t textAlignCount = static_cast<size_t>(TextAlign::kCenter) + 1;
     static TextTabFuncs fTextTabFuncsTable[textAlignCount];
     TextTabFuncs* fTextTabFuncs{nullptr};
-
 };
+constexpr int POSITION_COEFFICIENT = 2;
 }  // namespace textlayout
 }  // namespace skia
 

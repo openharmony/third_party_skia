@@ -1499,7 +1499,6 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
         maxRunMetrics = fEndLine.metrics();
         maxRunMetrics.fForceStrut = false;
 
-        // TODO: keep start/end/break info for text and runs but in a better way that below
         TextRange textExcludingSpaces(fEndLine.startCluster()->textRange().start, fEndLine.endCluster()->textRange().end);
         TextRange text(fEndLine.startCluster()->textRange().start, fEndLine.breakCluster()->textRange().start);
         TextRange textIncludingNewlines(fEndLine.startCluster()->textRange().start, startLine->textRange().start);
@@ -1574,7 +1573,6 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     }
 
     // We finished formatting the text but we need to scan the rest for some numbers
-    // TODO: make it a case of a normal flow
     if (fEndLine.endCluster() != nullptr) {
         auto lastWordLength = 0.0f;
         auto cluster = fEndLine.endCluster();

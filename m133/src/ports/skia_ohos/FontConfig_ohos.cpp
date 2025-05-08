@@ -87,12 +87,12 @@ int FontConfig_OHOS::getFamilyCount() const
  *  \param style the style to be matched
  *  \return the matched typeface
 */
-SkTypeface* FontConfig_OHOS::matchFallback(SkUnichar character, const SkFontStyle& style) const
+sk_sp<SkTypeface> FontConfig_OHOS::matchFallback(SkUnichar character, const SkFontStyle& style) const
 {
     // find the fallback typeface at emoji first
     const auto& emoji = getFallbackTypeface(SkString("HMOS Color Emoji"), style);
     if (emoji && emoji->unicharToGlyph(character)) {
-        return SkSafeRef(emoji.get());
+        return emoji;
     }
 
     for (auto& f : fFontCollection.fFallback) {
@@ -102,20 +102,20 @@ SkTypeface* FontConfig_OHOS::matchFallback(SkUnichar character, const SkFontStyl
             if (!typefaces[0]->unicharToGlyph(character)) {
                 continue;
             }
-            return SkSafeRef(matchFontStyle(typefaces, style).get());
+            return matchFontStyle(typefaces, style);
         }
     }
 
     // find the fallback typeface at emoji flags third
     const auto& flags = getFallbackTypeface(SkString("HMOS Color Emoji Flags"), style);
     if (flags && flags->unicharToGlyph(character)) {
-        return SkSafeRef(flags.get());
+        return flags;
     }
 
     for (auto& f : fFontCollection.fFallback) {
         const auto& typefaces = f.typefaces;
         if (!typefaces.empty() && typefaces[0]->unicharToGlyph(character)) {
-            return SkSafeRef(matchFontStyle(typefaces, style).get());
+            return matchFontStyle(typefaces, style);
         }
     }
     return nullptr;
@@ -129,7 +129,7 @@ SkTypeface* FontConfig_OHOS::matchFallback(SkUnichar character, const SkFontStyl
  *  \param style the style to be matched
  *  \return the matched typeface
 */
-SkTypeface* FontConfig_OHOS::matchFallback(size_t index, SkUnichar character, const SkFontStyle& style) const
+sk_sp<SkTypeface> FontConfig_OHOS::matchFallback(size_t index, SkUnichar character, const SkFontStyle& style) const
 {
     if (index >= fFontCollection.fFallback.size()) {
         return nullptr;
@@ -137,7 +137,7 @@ SkTypeface* FontConfig_OHOS::matchFallback(size_t index, SkUnichar character, co
     const auto& typefaces = fFontCollection.fFallback[index].typefaces;
     if (!typefaces.empty() && typefaces[0]->unicharToGlyph(character)) {
         auto typeface = matchFontStyle(typefaces, style);
-        return SkSafeRef(typeface.get());
+        return typeface;
     }
     return nullptr;
 }
@@ -225,10 +225,10 @@ size_t FontConfig_OHOS::getTypefaceCount(size_t styleIndex, bool isFallback) con
  * \return The pointer of a typeface
  * \n       Return null, if 'styleIndex' or 'index' is out of range
  */
-SkTypeface_OHOS* FontConfig_OHOS::getTypeface(size_t styleIndex, size_t index, bool isFallback) const
+sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getTypeface(size_t styleIndex, size_t index, bool isFallback) const
 {
     sk_sp<SkTypeface_OHOS> typeface = getTypefaceSP(styleIndex, index, isFallback);
-    return (typeface == nullptr) ? nullptr : typeface.get();
+    return (typeface == nullptr) ? nullptr : typeface;
 }
 
 sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getTypefaceSP(size_t styleIndex, size_t index, bool isFallback) const
@@ -249,7 +249,7 @@ sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getTypefaceSP(size_t styleIndex, size_t 
  * \return An object of typeface whose font style is the closest matching to 'style'
  * \n      Return null, if 'styleIndex' is out of range
  */
-SkTypeface_OHOS* FontConfig_OHOS::getTypeface(size_t styleIndex, const SkFontStyle& style, bool isFallback) const
+sk_sp<SkTypeface_OHOS> FontConfig_OHOS::getTypeface(size_t styleIndex, const SkFontStyle& style, bool isFallback) const
 {
     auto& fontSet = fFontCollection.getSet(isFallback);
     if (styleIndex >= fontSet.size()) {
@@ -258,7 +258,7 @@ SkTypeface_OHOS* FontConfig_OHOS::getTypeface(size_t styleIndex, const SkFontSty
 
     const std::vector<sk_sp<SkTypeface_OHOS>>& pSet = fontSet[styleIndex].typefaces;
     sk_sp<SkTypeface_OHOS> tp = matchFontStyle(pSet, style);
-    return tp.get();
+    return tp;
 }
 
 /*! To get the index of a font style set

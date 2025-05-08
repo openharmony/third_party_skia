@@ -123,8 +123,7 @@ struct HyphenTableInfo {
     const uint32_t* maindict{nullptr};
     const ArrayOf16bits* mappings{nullptr};
 
-    bool initHyphenTableInfo(const std::vector<uint8_t>& hyphenatorData)
-    {
+    bool initHyphenTableInfo(const std::vector<uint8_t>& hyphenatorData) {
         if (hyphenatorData.size() < sizeof(HyphenatorHeader)) {
             return false;
         }
@@ -143,8 +142,7 @@ struct HyphenSubTable {
     uint32_t nextOffset{0};
     PathType type{PathType::PATTERN};
 
-    bool initHyphenSubTableInfo(uint16_t& code, uint16_t& offset, HyphenTableInfo& hyphenInfo)
-    {
+    bool initHyphenSubTableInfo(uint16_t& code, uint16_t& offset, HyphenTableInfo& hyphenInfo) {
         auto header = hyphenInfo.header;
         if (offset == header->maxCount(hyphenInfo.mappings)) {
             code = 0;
@@ -176,8 +174,7 @@ struct HyphenFindBreakParam {
     uint16_t offset{0};
 };
 
-void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
-{
+void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer) {
     char tmpPath[PATH_MAX] = {0};
     if (filePath.size() > PATH_MAX) {
         TEXT_LOGE("File name is too long");
@@ -209,8 +206,7 @@ void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer)
     file.close();
 }
 
-std::string getLanguageCode(std::string locale, int hyphenPos)
-{
+std::string getLanguageCode(std::string locale, int hyphenPos) {
     // to lower case
     std::transform(locale.begin(), locale.end(), locale.begin(), ::tolower);
 
@@ -234,15 +230,13 @@ std::string getLanguageCode(std::string locale, int hyphenPos)
     }
 }
 
-void Hyphenator::initTrieTree()
-{
+void Hyphenator::initTrieTree() {
     for (const auto& item : HPB_FILE_NAMES) {
         fTrieTree.insert(item.first, item.second);
     }
 }
 
-const std::vector<uint8_t>& Hyphenator::getHyphenatorData(const std::string& locale)
-{
+const std::vector<uint8_t>& Hyphenator::getHyphenatorData(const std::string& locale) {
     const std::vector<uint8_t>& firstResult =
         findHyphenatorData(getLanguageCode(locale, 2)); //num 2:sub string locale to the second '-'
     if (!firstResult.empty()) {
@@ -252,8 +246,7 @@ const std::vector<uint8_t>& Hyphenator::getHyphenatorData(const std::string& loc
     }
 }
 
-const std::vector<uint8_t>& Hyphenator::findHyphenatorData(const std::string& langCode)
-{
+const std::vector<uint8_t>& Hyphenator::findHyphenatorData(const std::string& langCode) {
     {
         std::shared_lock<std::shared_mutex> readLock(mutex_);
         auto search = fHyphenMap.find(langCode);
@@ -265,8 +258,7 @@ const std::vector<uint8_t>& Hyphenator::findHyphenatorData(const std::string& la
     return loadPatternFile(langCode);
 }
 
-const std::vector<uint8_t>& Hyphenator::loadPatternFile(const std::string& langCode)
-{
+const std::vector<uint8_t>& Hyphenator::loadPatternFile(const std::string& langCode) {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     auto search = fHyphenMap.find(langCode);
     if (search != fHyphenMap.end()) {
@@ -285,8 +277,7 @@ const std::vector<uint8_t>& Hyphenator::loadPatternFile(const std::string& langC
     return fEmptyResult;
 }
 
-void formatTarget(std::vector<uint16_t>& target)
-{
+void formatTarget(std::vector<uint16_t>& target) {
     while (EXCLUDED_WORD_ENDING_CHARS.find(target.back()) != EXCLUDED_WORD_ENDING_CHARS.end()) {
         target.pop_back();
     }
@@ -299,8 +290,7 @@ void formatTarget(std::vector<uint16_t>& target)
 }
 
 void processPattern(const Pattern* p, size_t count, uint32_t index, std::vector<uint16_t>& word,
-                    std::vector<uint8_t>& res)
-{
+                    std::vector<uint8_t>& res) {
     TEXT_LOGD("Index:%{public}u", index);
     if (count > 0) {
         count *= 0x4; // patterns are padded to 4 byte arrays
@@ -315,8 +305,7 @@ void processPattern(const Pattern* p, size_t count, uint32_t index, std::vector<
 }
 
 void processLinear(uint16_t* data, size_t index, HyphenFindBreakParam& param, std::vector<uint16_t>& word,
-                   std::vector<uint8_t>& res)
-{
+                   std::vector<uint8_t>& res) {
     TEXT_LOGD("Index:%{public}zu", index);
     const ArrayOf16bits* p = reinterpret_cast<const ArrayOf16bits*>(data);
     uint16_t count = p->count;
@@ -350,8 +339,7 @@ void processLinear(uint16_t* data, size_t index, HyphenFindBreakParam& param, st
     }
 }
 
-bool processDirect(uint16_t* data, HyphenFindBreakParam& param, uint32_t& nextOffset, PathType& type)
-{
+bool processDirect(uint16_t* data, HyphenFindBreakParam& param, uint32_t& nextOffset, PathType& type) {
     TEXT_LOGD("");
     param.offset = param.header->codeOffset(param.code);
     if (param.header->minCp != param.header->maxCp && param.offset > param.header->maxCp) {
@@ -364,8 +352,7 @@ bool processDirect(uint16_t* data, HyphenFindBreakParam& param, uint32_t& nextOf
 }
 
 bool processPairs(const ArrayOf16bits* data, HyphenFindBreakParam& param, uint16_t code, uint32_t& nextOffset,
-                  PathType& type)
-{
+                  PathType& type) {
     TEXT_LOGD("Code:0x%{public}x", code);
     uint16_t count = data->count;
     bool match = false;
@@ -383,8 +370,7 @@ bool processPairs(const ArrayOf16bits* data, HyphenFindBreakParam& param, uint16
 }
 
 void findBreakByType(HyphenFindBreakParam& param, const size_t& targetIndex, std::vector<uint16_t>& target,
-                     std::vector<uint8_t>& result)
-{
+                     std::vector<uint8_t>& result) {
     TEXT_LOGD("TopLevel:%{public}zu", targetIndex);
     auto [staticOffset, nextOffset, type] = param.hyphenSubTable;
     uint32_t index = 0; // used in inner loop to traverse path further (backwards)
@@ -434,8 +420,8 @@ void findBreakByType(HyphenFindBreakParam& param, const size_t& targetIndex, std
     }
 }
 
-void findBreaks(const std::vector<uint8_t>& hyphenatorData, std::vector<uint16_t>& target, std::vector<uint8_t>& result)
-{
+void findBreaks(const std::vector<uint8_t>& hyphenatorData, std::vector<uint16_t>& target,
+    std::vector<uint8_t>& result) {
     HyphenTableInfo hyphenInfo;
     if (!hyphenInfo.initHyphenTableInfo(hyphenatorData)) {
         return;
@@ -456,8 +442,7 @@ void findBreaks(const std::vector<uint8_t>& hyphenatorData, std::vector<uint16_t
     }
 }
 
-size_t getLanguagespecificLeadingBounds(const std::string& locale)
-{
+size_t getLanguagespecificLeadingBounds(const std::string& locale) {
     static const std::unordered_set<std::string> specialLocales = {"ka", "hy", "pinyin", "el-monoton", "el-polyton"};
     size_t lead = 2; // hardcoded for the most of the language pattern files
     if (specialLocales.count(locale)) {
@@ -466,8 +451,7 @@ size_t getLanguagespecificLeadingBounds(const std::string& locale)
     return lead + 1; // we pad the target with surrounding marks ('.'), thus +1
 }
 
-size_t getLanguagespecificTrailingBounds(const std::string& locale)
-{
+size_t getLanguagespecificTrailingBounds(const std::string& locale) {
     static const std::unordered_set<std::string> threeCharLocales = {"en-gb", "et", "th", "pt", "ga",
                                                                      "cs", "cy", "sk", "en-us"};
     static const std::unordered_set<std::string> oneCharLocales = {"el-monoton", "el-polyton"};
@@ -482,8 +466,7 @@ size_t getLanguagespecificTrailingBounds(const std::string& locale)
 }
 
 inline void formatResult(std::vector<uint8_t>& result, const size_t& leadingHyphmins, const size_t& trailingHyphmins,
-                         std::vector<uint8_t>& offsets)
-{
+                         std::vector<uint8_t>& offsets) {
     for (size_t i = 0; i < leadingHyphmins; i++) {
         result[i] = 0;
     }
@@ -506,8 +489,7 @@ inline void formatResult(std::vector<uint8_t>& result, const size_t& leadingHyph
 }
 
 std::vector<uint8_t> Hyphenator::findBreakPositions(const SkString& locale, const SkString& text, size_t startPos,
-                                                    size_t endPos)
-{
+                                                    size_t endPos) {
     TEXT_LOGD("Find break pos:%{public}zu %{public}zu %{public}zu", text.size(), startPos, endPos);
     const std::string dummy(locale.c_str());
     auto hyphenatorData = getHyphenatorData(dummy);

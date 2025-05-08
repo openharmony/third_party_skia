@@ -6,7 +6,7 @@
 #include <vector>
 #include "include/core/SkFontArguments.h"
 #include "include/core/SkTypeface.h"
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 #include "drawing.h"
 #endif
 
@@ -22,7 +22,7 @@ public:
     FontArguments& operator=(const FontArguments&) = default;
     FontArguments& operator=(FontArguments&&) = default;
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface) const;
 #else
     sk_sp<SkTypeface> CloneTypeface(const sk_sp<SkTypeface>& typeface) const;

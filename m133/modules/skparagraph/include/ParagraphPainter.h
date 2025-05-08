@@ -3,11 +3,9 @@
 #define ParagraphPainter_DEFINED
 
 #include "include/core/SkPaint.h"
+#include "include/core/SkTextBlob.h"
 #ifdef ENABLE_TEXT_ENHANCE
 #include "include/core/SkRRect.h"
-#endif
-#include "include/core/SkTextBlob.h"
-#ifdef ENABLE_DRAWING_ADAPTER
 #include "drawing.h"
 #endif
 
@@ -49,26 +47,20 @@ public:
 
     virtual ~ParagraphPainter() = default;
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     virtual void drawTextBlob(
         const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) = 0;
     virtual void drawTextShadow(
         const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) = 0;
-#else
-    virtual void drawTextBlob(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) = 0;
-    virtual void drawTextShadow(
-        const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) = 0;
-#endif
-    virtual void drawRect(const SkRect& rect, const SkPaintOrID& paint) = 0;
-#ifdef ENABLE_TEXT_ENHANCE
     virtual void drawRRect(const SkRRect& rrect, const SkColor color) = 0;
-#endif
-    virtual void drawFilledRect(const SkRect& rect, const DecorationStyle& decorStyle) = 0;
-#ifdef ENABLE_DRAWING_ADAPTER
     virtual void drawPath(const RSPath& path, const DecorationStyle& decorStyle) = 0;
 #else
+    virtual void drawTextBlob(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) = 0;
+    virtual void drawTextShadow(const sk_sp<SkTextBlob>& blob, SkScalar x, SkScalar y, SkColor color, SkScalar blurSigma) = 0;
     virtual void drawPath(const SkPath& path, const DecorationStyle& decorStyle) = 0;
 #endif
+    virtual void drawRect(const SkRect& rect, const SkPaintOrID& paint) = 0;
+    virtual void drawFilledRect(const SkRect& rect, const DecorationStyle& decorStyle) = 0;
     virtual void drawLine(SkScalar x0, SkScalar y0, SkScalar x1, SkScalar y1, const DecorationStyle& decorStyle) = 0;
 
     virtual void clipRect(const SkRect& rect) = 0;

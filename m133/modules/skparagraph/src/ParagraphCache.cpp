@@ -68,7 +68,9 @@ public:
 private:
     static uint32_t mix(uint32_t hash, uint32_t data);
     uint32_t computeHash() const;
-
+#ifdef ENABLE_TEXT_ENHANCE
+    void computeHashMix(uint32_t& hash) const;
+#endif
     SkString fText;
     TArray<Placeholder, true> fPlaceholders;
     TArray<Block, true> fTextStyles;
@@ -90,9 +92,10 @@ public:
         , fHasWhitespacesInside(paragraph->fHasWhitespacesInside)
         , fTrailingSpaces(paragraph->fTrailingSpaces)
 #ifdef ENABLE_TEXT_ENHANCE
-        , fLayoutRawWidth(paragraph->fLayoutRawWidth)
-#endif
+        , fLayoutRawWidth(paragraph->fLayoutRawWidth) { }
+#else
         { }
+#endif
 
     // Input == key
     ParagraphCacheKey fKey;
@@ -138,6 +141,32 @@ uint32_t ParagraphCacheKey::mix(uint32_t hash, uint32_t data) {
     return hash;
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+void ParagraphCacheKey::computeHashMix(uint32_t& hash) const {
+    hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getHeight())));
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getTextDirection()));
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getReplaceTabCharacters() ? 1 : 0));
+
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getTextHeightBehavior()));
+    hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getParagraphSpacing())));
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getIsEndAddParagraphSpacing()));
+
+    auto& strutStyle = fParagraphStyle.getStrutStyle();
+    if (strutStyle.getStrutEnabled()) {
+        hash = mix(hash, SkGoodHash()(relax(strutStyle.getHeight())));
+        hash = mix(hash, SkGoodHash()(relax(strutStyle.getLeading())));
+        hash = mix(hash, SkGoodHash()(relax(strutStyle.getFontSize())));
+        hash = mix(hash, SkGoodHash()(strutStyle.getHeightOverride()));
+        hash = mix(hash, SkGoodHash()(strutStyle.getFontStyle()));
+        hash = mix(hash, SkGoodHash()(strutStyle.getForceStrutHeight()));
+        hash = mix(hash, SkGoodHash()(strutStyle.getHalfLeading()));
+
+        for (auto& ff : strutStyle.getFontFamilies()) {
+            hash = mix(hash, SkGoodHash()(ff));
+        }
+    }
+}
+
 uint32_t ParagraphCacheKey::computeHash() const {
     uint32_t hash = 0;
     for (auto& ph : fPlaceholders) {
@@ -163,9 +192,52 @@ uint32_t ParagraphCacheKey::computeHash() const {
         hash = mix(hash, SkGoodHash()(ts.fStyle.getLocale()));
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getHeight())));
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getBaselineShift())));
-#ifdef ENABLE_TEXT_ENHANCE
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getHalfLeading())));
-#endif
+
+        for (auto& ff : ts.fStyle.getFontFamilies()) {
+            hash = mix(hash, SkGoodHash()(ff));
+        }
+        for (auto& ff : ts.fStyle.getFontFeatures()) {
+            hash = mix(hash, SkGoodHash()(ff.fValue));
+            hash = mix(hash, SkGoodHash()(ff.fName));
+        }
+        hash = mix(hash, std::hash<std::optional<FontArguments>>()(ts.fStyle.getFontArguments()));
+        hash = mix(hash, SkGoodHash()(ts.fStyle.getFontStyle()));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getFontSize())));
+        hash = mix(hash, SkGoodHash()(ts.fRange));
+    }
+
+    computeHashMix(hash);
+
+    hash = mix(hash, SkGoodHash()(fText));
+    return hash;
+}
+#else
+uint32_t ParagraphCacheKey::computeHash() const {
+    uint32_t hash = 0;
+    for (auto& ph : fPlaceholders) {
+        if (ph.fRange.width() == 0) {
+            continue;
+        }
+        hash = mix(hash, SkGoodHash()(ph.fRange));
+        hash = mix(hash, SkGoodHash()(relax(ph.fStyle.fHeight)));
+        hash = mix(hash, SkGoodHash()(relax(ph.fStyle.fWidth)));
+        hash = mix(hash, SkGoodHash()(ph.fStyle.fAlignment));
+        hash = mix(hash, SkGoodHash()(ph.fStyle.fBaseline));
+        if (ph.fStyle.fAlignment == PlaceholderAlignment::kBaseline) {
+            hash = mix(hash, SkGoodHash()(relax(ph.fStyle.fBaselineOffset)));
+        }
+    }
+
+    for (auto& ts : fTextStyles) {
+        if (ts.fStyle.isPlaceholder()) {
+            continue;
+        }
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getLetterSpacing())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getWordSpacing())));
+        hash = mix(hash, SkGoodHash()(ts.fStyle.getLocale()));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getHeight())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getBaselineShift())));
         for (auto& ff : ts.fStyle.getFontFamilies()) {
             hash = mix(hash, SkGoodHash()(ff));
         }
@@ -182,11 +254,6 @@ uint32_t ParagraphCacheKey::computeHash() const {
     hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getHeight())));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getTextDirection()));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getReplaceTabCharacters() ? 1 : 0));
-#ifdef ENABLE_TEXT_ENHANCE
-    hash = mix(hash, SkGoodHash()(fParagraphStyle.getTextHeightBehavior()));
-    hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getParagraphSpacing())));
-    hash = mix(hash, SkGoodHash()(fParagraphStyle.getIsEndAddParagraphSpacing()));
-#endif
 
     auto& strutStyle = fParagraphStyle.getStrutStyle();
     if (strutStyle.getStrutEnabled()) {
@@ -196,9 +263,6 @@ uint32_t ParagraphCacheKey::computeHash() const {
         hash = mix(hash, SkGoodHash()(strutStyle.getHeightOverride()));
         hash = mix(hash, SkGoodHash()(strutStyle.getFontStyle()));
         hash = mix(hash, SkGoodHash()(strutStyle.getForceStrutHeight()));
-#ifdef ENABLE_TEXT_ENHANCE
-        hash = mix(hash, SkGoodHash()(strutStyle.getHalfLeading()));
-#endif
         for (auto& ff : strutStyle.getFontFamilies()) {
             hash = mix(hash, SkGoodHash()(ff));
         }
@@ -207,6 +271,7 @@ uint32_t ParagraphCacheKey::computeHash() const {
     hash = mix(hash, SkGoodHash()(fText));
     return hash;
 }
+#endif
 
 uint32_t ParagraphCache::KeyHash::operator()(const ParagraphCacheKey& key) const {
     return key.hash();
@@ -430,7 +495,7 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
         return false;
     }
     // Need to ensure we have sufficient info for restoring
-    // need some additionaö metrics
+    // need some additiona? metrics
     if (value->fLines.empty()) {
         return false;
     }

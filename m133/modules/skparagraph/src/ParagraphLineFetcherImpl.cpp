@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ParagraphLineFetcherImpl.h"
 #ifdef ENABLE_TEXT_ENHANCE
+#include "ParagraphLineFetcherImpl.h"
 namespace skia {
 namespace textlayout {
-ParagraphLineFetcherImpl::ParagraphLineFetcherImpl(std::unique_ptr<Paragraph>&& paragraph)
-        : fRootParagraph(move(paragraph)) {
+ParagraphLineFetcherImpl::ParagraphLineFetcherImpl(
+    std::unique_ptr<Paragraph>&& paragraph) : fRootParagraph(move(paragraph)) {
     fRootParagraph->initUnicodeText();
     fUnicodeSize = fRootParagraph->unicodeText().size();
 }
@@ -45,8 +45,7 @@ size_t ParagraphLineFetcherImpl::getLineBreak(size_t startIndex, SkScalar width)
     return count;
 }
 
-std::unique_ptr<TextLineBase> ParagraphLineFetcherImpl::createLine(size_t startIndex,
-                                                                   size_t count) {
+std::unique_ptr<TextLineBase> ParagraphLineFetcherImpl::createLine(size_t startIndex, size_t count) {
     size_t unicodeSize = fRootParagraph->unicodeText().size();
     if (startIndex >= unicodeSize) {
         return nullptr;

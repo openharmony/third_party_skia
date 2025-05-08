@@ -163,13 +163,9 @@ int32_t ParagraphImpl::unresolvedGlyphs() {
     return fUnresolvedGlyphs;
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
     std::vector<RSFontMetrics>& fontMetrics) {
-#else
-bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
-    std::vector<SkFontMetrics>& fontMetrics) {
-#endif
     if (lineNumber > fLines.size() || !lineNumber ||
         !fLines[lineNumber - 1].getLineAllRuns().size()) {
         return false;
@@ -188,18 +184,11 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
             if (++runClock > currentRunCharNumber) {
                 break;
             }
-#ifdef ENABLE_DRAWING_ADAPTER
             RSFontMetrics newFontMetrics;
             targetRun.fFont.GetMetrics(&newFontMetrics);
-#else
-            SkFontMetrics newFontMetrics;
-            targetRun.fFont.getMetrics(&newFontMetrics);
-#endif
-#ifdef ENABLE_TEXT_ENHANCE
             auto decompressFont = targetRun.fFont;
             scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
             metricsIncludeFontPadding(&newFontMetrics, decompressFont);
-#endif
             fontMetrics.emplace_back(newFontMetrics);
         }
     }
@@ -207,6 +196,7 @@ bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumb
     charNumber = lineCharCount;
     return true;
 }
+#endif
 
 std::unordered_set<SkUnichar> ParagraphImpl::unresolvedCodepoints() {
     return fUnresolvedCodepoints;
@@ -641,8 +631,8 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     if (fParagraphStyle.getMaxLines() == 0) {
         fHeight = 0;
         fLines.clear();
-#endif
     }
+#endif
 
     this->fOldWidth = floorWidth;
     this->fOldHeight = this->fHeight;
@@ -666,11 +656,11 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     if (fMaxIntrinsicWidth < fMinIntrinsicWidth) {
         fMaxIntrinsicWidth = fMinIntrinsicWidth;
     }
-#ifndef ENABLE_TEXT_ENHANCE
+#ifdef ENABLE_TEXT_ENHANCE
     if (fParagraphStyle.getMaxLines() == 0) {
         fLineNumber = 0;
     } else {
-        fLineNumber = std::max(size_t(1), fLines.size());
+        fLineNumber = std::max(size_t(1), static_cast<size_t>(fLines.size()));
     }
 #endif
     //SkDebugf("layout('%s', %f): %f %f\n", fText.c_str(), rawWidth, fMinIntrinsicWidth, fMaxIntrinsicWidth);
@@ -687,7 +677,7 @@ void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) {
     auto& style = fTextStyles[0].fStyle;
     float align = 0.0f;
@@ -706,9 +696,7 @@ void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOff
         line.paint(painter, path, hOffset, vOffset);
     }
 }
-#endif
 
-#ifdef ENABLE_TEXT_ENHANCE
 TextRange ParagraphImpl::getEllipsisTextRange() {
     if (fState < kLineBroken) {
         return EMPTY_RANGE;
@@ -1123,8 +1111,69 @@ void ParagraphImpl::middleEllipsisAddText(size_t charStart,
         }
     }
 }
-#endif
 
+void ParagraphImpl::buildClusterPlaceholder(Run& run, size_t runIndex)
+{
+    if (run.isPlaceholder()) {
+        // Add info to cluster indexes table (text -> cluster)
+        for (auto i = run.textRange().start; i < run.textRange().end; ++i) {
+          fClustersIndexFromCodeUnit[i] = fClusters.size();
+        }
+        // There are no glyphs but we want to have one cluster
+        fClusters.emplace_back(this, runIndex, 0ul, 1ul, this->text(run.textRange()),
+            run.advance().fX, run.advance().fY);
+        fCodeUnitProperties[run.textRange().start] |= SkUnicode::CodeUnitFlags::kSoftLineBreakBefore;
+        fCodeUnitProperties[run.textRange().end] |= SkUnicode::CodeUnitFlags::kSoftLineBreakBefore;
+    } else {
+        // Walk through the glyph in the direction of input text
+        run.iterateThroughClustersInTextOrder([&run, runIndex, this](size_t glyphStart,
+            size_t glyphEnd, size_t charStart, size_t charEnd, SkScalar width, SkScalar height) {
+            SkASSERT(charEnd >= charStart);
+            // Add info to cluster indexes table (text -> cluster)
+            for (auto i = charStart; i < charEnd; ++i) {
+              fClustersIndexFromCodeUnit[i] = fClusters.size();
+            }
+            middleEllipsisAddText(charStart, charEnd, allTextWidth, width, run.leftToRight());
+            SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
+            fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
+            fCodeUnitProperties[charStart] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
+        });
+    }
+}
+
+// Clusters in the order of the input text
+void ParagraphImpl::buildClusterTable()
+{
+    // It's possible that one grapheme includes few runs; we cannot handle it
+    // so we break graphemes by the runs instead
+    // It's not the ideal solution and has to be revisited later
+    int cluster_count = 1;
+    for (auto& run : fRuns) {
+        cluster_count += run.isPlaceholder() ? 1 : run.size();
+        fCodeUnitProperties[run.fTextRange.start] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
+        fCodeUnitProperties[run.fTextRange.start] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
+    }
+    if (!fRuns.empty()) {
+        fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
+        fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
+    }
+    fClusters.reserve_exact(fClusters.size() + cluster_count);
+
+    // Walk through all the run in the direction of input text
+    for (auto& run : fRuns) {
+        auto runIndex = run.index();
+        auto runStart = fClusters.size();
+        buildClusterPlaceholder(run, runIndex);
+
+        fCodeUnitProperties[run.textRange().start] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
+
+        run.setClusterRange(runStart, fClusters.size());
+        fMaxIntrinsicWidth += run.advance().fX;
+    }
+    fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
+    fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
+}
+#else
 // Clusters in the order of the input text
 void ParagraphImpl::buildClusterTable() {
     // It's possible that one grapheme includes few runs; we cannot handle it
@@ -1157,11 +1206,7 @@ void ParagraphImpl::buildClusterTable() {
             fCodeUnitProperties[run.textRange().end] |= SkUnicode::CodeUnitFlags::kSoftLineBreakBefore;
         } else {
             // Walk through the glyph in the direction of input text
-#ifdef ENABLE_TEXT_ENHANCE
-            run.iterateThroughClustersInTextOrder([&run, runIndex, this](size_t glyphStart,
-#else
             run.iterateThroughClustersInTextOrder([runIndex, this](size_t glyphStart,
-#endif
                                                                    size_t glyphEnd,
                                                                    size_t charStart,
                                                                    size_t charEnd,
@@ -1172,9 +1217,6 @@ void ParagraphImpl::buildClusterTable() {
                 for (auto i = charStart; i < charEnd; ++i) {
                   fClustersIndexFromCodeUnit[i] = fClusters.size();
                 }
-#ifdef ENABLE_TEXT_ENHANCE
-                middleEllipsisAddText(charStart, charEnd, allTextWidth, width, run.leftToRight());
-#endif
                 SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
                 fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
                 fCodeUnitProperties[charStart] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
@@ -1188,6 +1230,7 @@ void ParagraphImpl::buildClusterTable() {
     fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
     fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
 }
+#endif
 
 bool ParagraphImpl::shapeTextIntoEndlessLine() {
 #ifdef ENABLE_TEXT_ENHANCE
@@ -1463,33 +1506,27 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
 #endif
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
 void ParagraphImpl::resolveStrut() {
     auto strutStyle = this->paragraphStyle().getStrutStyle();
     if (!strutStyle.getStrutEnabled() || strutStyle.getFontSize() < 0) {
         return;
     }
 
-    auto typefaces = fFontCollection->findTypefaces(strutStyle.getFontFamilies(), strutStyle.getFontStyle(), std::nullopt);
+    auto typefaces = fFontCollection->findTypefaces(strutStyle.getFontFamilies(),
+        strutStyle.getFontStyle(), std::nullopt);
     if (typefaces.empty()) {
         SkDEBUGF("Could not resolve strut font\n");
         return;
     }
 
-#ifdef ENABLE_DRAWING_ADAPTER
     RSFont font(typefaces.front(), strutStyle.getFontSize(), 1, 0);
     RSFontMetrics metrics;
     RSFont compressFont = font;
     scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
     compressFont.GetMetrics(&metrics);
     metricsIncludeFontPadding(&metrics, font);
-#else
-    SkFont font(typefaces.front(), strutStyle.getFontSize());
-    SkFontMetrics metrics;
-    font.getMetrics(&metrics);
-    const SkScalar strutLeading = strutStyle.getLeading() < 0 ? 0 : strutStyle.getLeading() * strutStyle.getFontSize();
-#endif
 
-#ifdef ENABLE_TEXT_ENHANCE
     if (strutStyle.getHeightOverride()) {
         auto strutHeight = metrics.fDescent - metrics.fAscent;
         auto strutMultiplier = strutStyle.getHeight() * strutStyle.getFontSize();
@@ -1504,7 +1541,27 @@ void ParagraphImpl::resolveStrut() {
                 metrics.fDescent,
                 strutStyle.getLeading() < 0 ? 0 : strutStyle.getLeading() * strutStyle.getFontSize());
     }
+    fStrutMetrics.setForceStrut(this->paragraphStyle().getStrutStyle().getForceStrutHeight());
+}
 #else
+void ParagraphImpl::resolveStrut() {
+    auto strutStyle = this->paragraphStyle().getStrutStyle();
+    if (!strutStyle.getStrutEnabled() || strutStyle.getFontSize() < 0) {
+        return;
+    }
+
+    std::vector<sk_sp<SkTypeface>> typefaces = fFontCollection->findTypefaces(strutStyle.getFontFamilies(),
+        strutStyle.getFontStyle(), std::nullopt);
+    if (typefaces.empty()) {
+        SkDEBUGF("Could not resolve strut font\n");
+        return;
+    }
+
+    SkFont font(typefaces.front(), strutStyle.getFontSize());
+    SkFontMetrics metrics;
+    font.getMetrics(&metrics);
+    const SkScalar strutLeading = strutStyle.getLeading() < 0 ? 0 : strutStyle.getLeading() * strutStyle.getFontSize();
+
     if (strutStyle.getHeightOverride()) {
         SkScalar strutAscent = 0.0f;
         SkScalar strutDescent = 0.0f;
@@ -1535,9 +1592,9 @@ void ParagraphImpl::resolveStrut() {
                 metrics.fDescent,
                 strutLeading);
     }
-#endif
     fStrutMetrics.setForceStrut(this->paragraphStyle().getStrutStyle().getForceStrutHeight());
 }
+#endif
 
 BlockRange ParagraphImpl::findAllBlocks(TextRange textRange) {
     BlockIndex begin = EMPTY_BLOCK;
@@ -1895,7 +1952,7 @@ void ParagraphImpl::computeEmptyMetrics() {
       textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
     auto typeface = typefaces.empty() ? nullptr : typefaces.front();
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     RSFont font(typeface, textStyle.getFontSize(), 1, 0);
 #else
     SkFont font(typeface, textStyle.getFontSize());
@@ -2121,7 +2178,7 @@ void ParagraphImpl::ensureUTF16Mapping() {
 }
 
 void ParagraphImpl::visit(const Visitor& visitor) {
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifndef ENABLE_TEXT_ENHANCE
     int lineNumber = 0;
     for (auto& line : fLines) {
         line.ensureTextBlobCachePopulated();
@@ -2167,7 +2224,7 @@ void ParagraphImpl::visit(const Visitor& visitor) {
 #endif
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 int ParagraphImpl::getLineNumberAt(TextIndex codeUnitIndex) const {
     for (size_t i = 0; i < fLines.size(); ++i) {
         auto& line = fLines[i];
@@ -2215,7 +2272,7 @@ int ParagraphImpl::getLineNumberAtUTF16Offset(size_t codeUnitIndex) {
 }
 
 bool ParagraphImpl::getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) const {
-    if (lineNumber < 0 || static_cast<size_t>(lineNumber) >= fLines.size()) {
+    if (lineNumber < 0 || lineNumber >= fLines.size()) {
         return false;
     }
     auto& line = fLines[lineNumber];
@@ -2226,7 +2283,7 @@ bool ParagraphImpl::getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) c
 }
 
 TextRange ParagraphImpl::getActualTextRange(int lineNumber, bool includeSpaces) const {
-    if (lineNumber < 0 || static_cast<size_t>(lineNumber) >= fLines.size()) {
+    if (lineNumber < 0 || lineNumber >= fLines.size()) {
 #ifdef ENABLE_TEXT_ENHANCE
         return {0, 0};
 #else
@@ -2360,7 +2417,7 @@ bool ParagraphImpl::getClosestUTF16GlyphInfoAt(SkScalar dx, SkScalar dy, GlyphIn
     return getGlyphInfoAtUTF16Offset(utf16Offset, glyphInfo);
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 RSFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const
 {
     for (auto& run : fRuns) {
@@ -2382,7 +2439,7 @@ SkFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const {
 }
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifndef ENABLE_TEXT_ENHANCE
 SkFont ParagraphImpl::getFontAtUTF16Offset(size_t codeUnitIndex) {
     ensureUTF16Mapping();
     if (codeUnitIndex >= SkToSizeT(fUTF8IndexForUTF16Index.size())) {
@@ -2407,7 +2464,7 @@ std::vector<Paragraph::FontInfo> ParagraphImpl::getFonts() const {
     return results;
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 RSFontMetrics ParagraphImpl::measureText()
 {
     RSFontMetrics metrics;
@@ -2446,44 +2503,7 @@ RSFontMetrics ParagraphImpl::measureText()
     fGlyphsBoundsRight = realWidth + fGlyphsBoundsLeft;
     return metrics;
 }
-#else
-SkFontMetrics ParagraphImpl::measureText() {
-    SkFontMetrics metrics;
-    if (fRuns.empty()) {
-        return metrics;
-    }
 
-    const auto& firstFont = fRuns.front().font();
-    SkRect firstBounds;
-    auto firstStr = text(fRuns.front().textRange());
-    firstFont.getMetrics(&metrics);
-    firstFont.measureText(firstStr.data(), firstStr.size(), SkTextEncoding::kUTF8, &firstBounds, nullptr);
-    fGlyphsBoundsTop = firstBounds.top();
-    fGlyphsBoundsBottom = firstBounds.bottom();
-    fGlyphsBoundsLeft = firstBounds.left();
-    SkScalar realWidth = 0;
-    for (size_t i = 0; i < fRuns.size(); ++i) {
-        auto run = fRuns[i];
-        const auto& font = run.font();
-        SkRect bounds;
-        auto str = text(run.textRange());
-        auto advance = font.measureText(str.data(), str.size(), SkTextEncoding::kUTF8, &bounds, nullptr);
-        realWidth += advance;
-        if (i == 0) {
-            realWidth -= ((advance - (bounds.right() - bounds.left())) / 2);
-        }
-        if (i == (fRuns.size() - 1)) {
-            realWidth -= ((advance - (bounds.right() - bounds.left())) / 2);
-        }
-        fGlyphsBoundsTop = std::min(fGlyphsBoundsTop, bounds.top());
-        fGlyphsBoundsBottom = std::max(fGlyphsBoundsBottom, bounds.bottom());
-    }
-    fGlyphsBoundsRight = realWidth + fGlyphsBoundsLeft;
-    return metrics;
-}
-#endif
-
-#ifdef ENABLE_TEXT_ENHANCE
 std::vector<std::unique_ptr<TextLineBase>> ParagraphImpl::GetTextLines() {
     std::vector<std::unique_ptr<TextLineBase>> textLineBases;
     for (auto& line: fLines) {
@@ -2666,7 +2686,7 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
 
 #endif
 
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifndef ENABLE_TEXT_ENHANCE
 void ParagraphImpl::extendedVisit(const ExtendedVisitor& visitor) {
     int lineNumber = 0;
     for (auto& line : fLines) {

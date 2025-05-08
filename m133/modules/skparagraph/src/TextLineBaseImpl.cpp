@@ -19,8 +19,8 @@
 
 namespace skia {
 namespace textlayout {
-TextLineBaseImpl::TextLineBaseImpl(std::unique_ptr<TextLine> visitorTextLine)
-                : fVisitorTextLine(std::move(visitorTextLine))
+TextLineBaseImpl::TextLineBaseImpl(
+    std::unique_ptr<TextLine> visitorTextLine) : fVisitorTextLine(std::move(visitorTextLine))
 {
 }
 
