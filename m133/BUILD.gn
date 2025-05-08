@@ -12,7 +12,7 @@ import("gn/toolchain/wasm.gni")
 import("../build_overrides/skia.gni")
 import("//build/templates/cxx/prebuilt.gni")
 import("gn/effects.gni")
-
+import("modules/skottie/skottie.gni")
 if (defined(is_mingw) && is_mingw == true) {
   is_win = true
 }
@@ -3020,11 +3020,25 @@ if (skia_enable_tools) {
         ":skia",
         ":tool_utils",
         ":trace",
-        "modules/skparagraph",
-        "modules/skshaper",
         "modules/skunicode",
         "modules/svg",
       ]
+      if (gm_test_enable_font) {
+        deps += [
+          "modules/skparagraph",
+          "modules/skshaper",
+        ]
+      }
+      ldflags = [
+        "--stdlib=libc++",
+        "-lc++",
+      ]
+      if (is_ohos) {
+        sources += [ "${skia_root_dir}/src/ports/SkDebug_ohos.cpp" ]
+        sources += skia_skottie_sources
+        external_deps = [ "hilog:libhilog" ]
+        deps += [ "modules/sksg" ]
+      }
     }
   }
 

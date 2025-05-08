@@ -26,6 +26,7 @@
 #include "include/codec/SkJpegDecoder.h"
 #include "include/codec/SkPngDecoder.h"
 #include "include/core/SkBBHFactory.h"
+#include "include/core/SkBitmap.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkData.h"
 #include "include/core/SkGraphics.h"
@@ -1591,6 +1592,7 @@ int main(int argc, char** argv) {
 
             // Metrics
             log.appendMetric("min_ms", stats.min);
+            log.appendMetric("median_ms", stats.median);
             log.appendMetric("min_ratio", sk_ieee_double_divide(stats.median, stats.min));
             log.beginArray("samples");
             for (double sample : samples) {
