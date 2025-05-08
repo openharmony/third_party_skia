@@ -26,8 +26,6 @@ const SkScalar TEXT_BADGE_FONT_SIZE_SCALE = 0.65;
 const SkScalar TEXT_BADGE_HEIGHT_SCALE = 2.0;
 const SkScalar SUPS_BASELINE_SHIFT_SCALE = - 0.7;
 const SkScalar SUBS_BASELINE_SHIFT_SCALE = 0.2;
-const SkScalar SUPS_HORIZONTAL_SHIFT_SCALE = 0;
-const SkScalar SUBS_HORIZONTAL_SHIFT_SCALE = 0;
 #endif
 
 static inline bool nearlyZero(SkScalar x, SkScalar tolerance = SK_ScalarNearlyZero) {
@@ -305,13 +303,16 @@ public:
 
 #ifdef OHOS_SUPPORT
     void setFontFamilies(std::vector<SkString> families);
+
+    SkScalar getBaselineShift() const { return fBaselineShift + getBadgeBaseLineShift(); }
 #else
     void setFontFamilies(std::vector<SkString> families) {
         fFontFamilies = std::move(families);
     }
+
+    SkScalar getBaselineShift() const { return fBaselineShift; }
 #endif
 
-    SkScalar getBaselineShift() const { return fBaselineShift + getBadgeBaseLineShift(); }
     void setBaselineShift(SkScalar baselineShift) { fBaselineShift = baselineShift; }
 
     void setHeight(SkScalar height) { fHeight = height; }

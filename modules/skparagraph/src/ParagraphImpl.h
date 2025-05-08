@@ -199,8 +199,6 @@ public:
     }
     void handleBadgeCluster();
     void markBadgeCluster(ClusterIndex start, ClusterIndex end, TextBadgeType badgeType);
-    void applyClusterSpacing();
-    SkScalar processTextBadgeSpacing(Block* currentStyle, Cluster* cluster, Run& run);
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }

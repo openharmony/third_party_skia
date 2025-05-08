@@ -3,6 +3,7 @@
 #include "modules/skparagraph/src/TextWrapper.h"
 
 #ifdef OHOS_SUPPORT
+#include "include/TextStyle.h"
 #include "log.h"
 #include "modules/skparagraph/include/Hyphenator.h"
 #include "modules/skparagraph/src/TextTabAlign.h"
@@ -146,6 +147,14 @@ bool TextWrapper::lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBefore
     return true;
 }
 
+bool isBadgeCluster(Cluster* cluster) {
+    if (cluster == nullptr || cluster->getBadgeType() == TextBadgeType::BADGE_NONE) {
+        return false;
+    }
+
+    return true;
+}
+
 // Since we allow cluster clipping when they don't fit
 // we have to work with stretches - parts of clusters
 void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack,
@@ -231,21 +240,21 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                     // Placeholder does not fit the line; it will be considered again on the next line
                 }
                 break;
-            } else if (cluster->getBadgeType() != TextBadgeType::BADGE_NONE) {
+            } else if (isBadgeCluster(cluster)) {
                 if (fWords.empty() && fClusters.empty()) {
                     fClusters.extend(cluster);
                     fTooLongCluster = true;
                     break;
                 }
 
-                if (!fClusters.empty() && (cluster - 1)->getBadgeType() == TextBadgeType::BADGE_NONE) {
+                if (!fClusters.empty() && !isBadgeCluster(cluster - 1)) {
                     fClusters.trim(cluster - 1);
                 } else if (wordBreakType != WordBreakType::NORMAL && fClusters.empty() && !isFirstWord &&
-                    !fWords.empty() && (cluster - 1)->getBadgeType() == TextBadgeType::BADGE_NONE) {
+                    !fWords.empty() && !isBadgeCluster(cluster - 1)) {
                     fWords.trim(cluster - 1);
                 }
 
-                if (!fClusters.empty() && (cluster - 1)->getBadgeType() == TextBadgeType::BADGE_NONE) {
+                if (!fClusters.empty() && !isBadgeCluster(cluster - 1)) {
                     fWords.extend(fClusters);
                     break;
                 }
