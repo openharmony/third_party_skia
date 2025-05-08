@@ -11,8 +11,8 @@
 
 #ifdef OHOS_SUPPORT
 #include "include/TextStyle.h"
-#include "utils/text_trace.h"
 #include "SkScalar.h"
+#include "utils/text_trace.h"
 #endif
 
 static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {

@@ -485,6 +485,9 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 #ifdef OHOS_SUPPORT
 void ParagraphImpl::markBadgeCluster(ClusterIndex start, ClusterIndex end, TextBadgeType badgeType) {
     while (start <= end) {
+        if (start >= fClusters.size()) {
+            return;
+        }
         cluster(start).setBadgeType(badgeType);
         ++start;
     }

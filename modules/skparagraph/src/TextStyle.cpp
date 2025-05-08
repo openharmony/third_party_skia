@@ -283,7 +283,7 @@ SkScalar TextStyle::getBadgeBaseLineShift() const {
     }
 
     SkScalar actualFontSize = getFontSize() * TEXT_BADGE_FONT_SIZE_SCALE;
-    return getTextBadgeType() == TextBadgeType::SUPER_SCRIPT ? actualFontSize * SUPS_BASELINE_SHIFT_SCALE :
+    return getTextBadgeType() == TextBadgeType::SUPERSCRIPT ? actualFontSize * SUPS_BASELINE_SHIFT_SCALE :
         actualFontSize * SUBS_BASELINE_SHIFT_SCALE;
 }
 
@@ -296,12 +296,14 @@ SkScalar TextStyle::getCorrectFontSize() const {
 };
 
 void TextStyle::setTextBadgeType(TextBadgeType badgeType) {
-    if (badgeType == TextBadgeType::BADGE_NONE) {
-        return;
+    if (badgeType != TextBadgeType::BADGE_NONE && fHeightOverride == false && nearlyEqual(fHeight, 1)) {
+        fHeightOverride = true;
+        fHeight = TEXT_BADGE_HEIGHT_SCALE;
+    } else {
+        fHeightOverride = false;
+        fHeight = 1;
     }
     fBadgeType = badgeType;
-    fHeightOverride = true;
-    fHeight = TEXT_BADGE_HEIGHT_SCALE;
 }
 #endif
 

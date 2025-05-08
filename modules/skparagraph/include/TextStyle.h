@@ -190,8 +190,8 @@ struct RectStyle {
 #ifdef OHOS_SUPPORT
 enum class TextBadgeType {
     BADGE_NONE,
-    SUPER_SCRIPT,
-    SUB_SCRIPT,
+    SUPERSCRIPT,
+    SUBSCRIPT,
 };
 #endif
 
