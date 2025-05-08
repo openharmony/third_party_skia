@@ -235,9 +235,13 @@ bool AnimationBuilder::resolveNativeTypefaces() {
         }
 
         if (!finfo->fTypeface && fFontMgr) {
+#ifdef ENABLE_TEXT_ENHANCE
+            finfo->fTypeface = sk_sp<SkTypeface>(fFontMgr->matchFamilyStyle(
+                    finfo->fFamily.c_str(), FontStyle(this, finfo->fStyle.c_str())));
+#else
             finfo->fTypeface = fFontMgr->matchFamilyStyle(finfo->fFamily.c_str(),
-                                                      FontStyle(this, finfo->fStyle.c_str()));
-
+                                                          FontStyle(this, finfo->fStyle.c_str()));
+#endif  // ENABLE_TEXT_ENHANCE
             if (!finfo->fTypeface) {
                 this->log(Logger::Level::kError, nullptr, "Could not create typeface for %s|%s.",
                           finfo->fFamily.c_str(), finfo->fStyle.c_str());
