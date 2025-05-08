@@ -4,14 +4,16 @@
 #include "modules/skparagraph/src/OneLineShaper.h"
 #include "src/Run.h"
 #include "src/utils/SkUTF.h"
-#ifdef OHOS_SUPPORT
-#include "utils/text_trace.h"
-#endif
 
 #include <algorithm>
 #include <cstdint>
 #include <unordered_set>
 
+#ifdef OHOS_SUPPORT
+#include "include/TextStyle.h"
+#include "SkScalar.h"
+#include "utils/text_trace.h"
+#endif
 
 static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
     SkUnichar val = SkUTF::NextUTF8(ptr, end);
@@ -805,7 +807,7 @@ bool OneLineShaper::shape() {
                 font.setSubpixel(true);
                 font.setBaselineSnap(false);
 #else
-                RSFont font(std::move(typeface), block.fStyle.getFontSize(), 1, 0);
+                RSFont font(std::move(typeface), block.fStyle.getCorrectFontSize(), 1, 0);
                 font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
                 font.SetHinting(RSDrawing::FontHinting::NONE);
                 font.SetSubpixel(true);

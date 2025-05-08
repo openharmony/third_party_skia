@@ -182,10 +182,17 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
             return fFontStyle == other.fFontStyle &&
                    fLocale == other.fLocale &&
                    fFontFamilies == other.fFontFamilies &&
+#ifdef OHOS_SUPPORT
+                   getCorrectFontSize() == other.getCorrectFontSize() &&
+                   fHeight == other.fHeight &&
+                   fHalfLeading == other.fHalfLeading &&
+                   getBaselineShift() == other.getBaselineShift() &&
+#else
                    fFontSize == other.fFontSize &&
                    fHeight == other.fHeight &&
                    fHalfLeading == other.fHalfLeading &&
                    fBaselineShift == other.fBaselineShift &&
+#endif
                    fFontArguments == other.fFontArguments &&
                    fStyleId == other.fStyleId &&
                    fBackgroundRect == other.fBackgroundRect;
@@ -268,6 +275,35 @@ void TextStyle::setFontFamilies(std::vector<SkString> families) {
         }
     });
     fFontFamilies = std::move(families);
+}
+
+SkScalar TextStyle::getBadgeBaseLineShift() const {
+    if (getTextBadgeType() == TextBadgeType::BADGE_NONE) {
+        return 0;
+    }
+
+    SkScalar actualFontSize = getFontSize() * TEXT_BADGE_FONT_SIZE_SCALE;
+    return getTextBadgeType() == TextBadgeType::SUPERSCRIPT ? actualFontSize * SUPS_BASELINE_SHIFT_SCALE :
+        actualFontSize * SUBS_BASELINE_SHIFT_SCALE;
+}
+
+SkScalar TextStyle::getCorrectFontSize() const {
+    if (getTextBadgeType() == TextBadgeType::BADGE_NONE) {
+        return getFontSize();
+    }
+
+    return getFontSize() * TEXT_BADGE_FONT_SIZE_SCALE;
+};
+
+void TextStyle::setTextBadgeType(TextBadgeType badgeType) {
+    if (badgeType != TextBadgeType::BADGE_NONE && fHeightOverride == false && nearlyEqual(fHeight, 1)) {
+        fHeightOverride = true;
+        fHeight = TEXT_BADGE_HEIGHT_SCALE;
+    } else {
+        fHeightOverride = false;
+        fHeight = 1;
+    }
+    fBadgeType = badgeType;
 }
 #endif
 
