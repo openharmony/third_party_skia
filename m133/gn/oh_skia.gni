@@ -16,6 +16,7 @@ import("//build/ohos_var.gni")
 declare_args() {
   skia_feature_product = "default"
   skia_feature_enable_pgo = false
+  skia_feature_enable_codemerge = false
   skia_feature_pgo_path = ""
   skia_feature_wuji_enable = false
 }
