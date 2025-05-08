@@ -3,7 +3,6 @@
 #include "modules/skparagraph/src/TextWrapper.h"
 
 #ifdef OHOS_SUPPORT
-#include "include/TextStyle.h"
 #include "log.h"
 #include "modules/skparagraph/include/Hyphenator.h"
 #include "modules/skparagraph/src/TextTabAlign.h"
@@ -147,14 +146,6 @@ bool TextWrapper::lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBefore
     return true;
 }
 
-bool isBadgeCluster(Cluster* cluster) {
-    if (cluster == nullptr || cluster->getBadgeType() == TextBadgeType::BADGE_NONE) {
-        return false;
-    }
-
-    return true;
-}
-
 // Since we allow cluster clipping when they don't fit
 // we have to work with stretches - parts of clusters
 void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack,
@@ -188,7 +179,6 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 SkScalar width = cluster->width() + widthBeforeCluster;
                 (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
                 breaker.breakLine(width)) {
-
             // if the hyphenator has already run as balancing algorithm, use the cluster information
             if (cluster->isHyphenBreak() && !needEllipsis) {
                 // we dont want to add the current cluster as the hyphenation algorithm marks breaks before a cluster
@@ -240,24 +230,6 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                     // Placeholder does not fit the line; it will be considered again on the next line
                 }
                 break;
-            } else if (isBadgeCluster(cluster)) {
-                if (fWords.empty() && fClusters.empty()) {
-                    fClusters.extend(cluster);
-                    fTooLongCluster = true;
-                    break;
-                }
-
-                if (!fClusters.empty() && !isBadgeCluster(cluster - 1)) {
-                    fClusters.trim(cluster - 1);
-                } else if (wordBreakType != WordBreakType::NORMAL && fClusters.empty() && !isFirstWord &&
-                    !fWords.empty() && !isBadgeCluster(cluster - 1)) {
-                    fWords.trim(cluster - 1);
-                }
-
-                if (!fClusters.empty() && !isBadgeCluster(cluster - 1)) {
-                    fWords.extend(fClusters);
-                    break;
-                }
             }
 
             // should do this only if hyphenation is enabled

@@ -30,7 +30,6 @@
 #ifdef OHOS_SUPPORT
 #include "log.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
-#include "SkScalar.h"
 #include "TextParameter.h"
 #endif
 
@@ -481,37 +480,6 @@ void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
 #endif
     }
 }
-
-#ifdef OHOS_SUPPORT
-void ParagraphImpl::markBadgeCluster(ClusterIndex start, ClusterIndex end, TextBadgeType badgeType) {
-    while (start <= end) {
-        if (start >= fClusters.size()) {
-            return;
-        }
-        cluster(start).setBadgeType(badgeType);
-        ++start;
-    }
-}
-
-void ParagraphImpl::handleBadgeCluster() {
-    if (fClusters.empty()) {
-        return;
-    }
-
-    for (const Block& s : fTextStyles) {
-        TextBadgeType curBadgeType = s.fStyle.getTextBadgeType();
-        if (curBadgeType == TextBadgeType::BADGE_NONE) {
-            continue;
-        }
-
-        if (s.fRange.empty()) {
-            continue;
-        }
-
-        markBadgeCluster(clusterIndex(s.fRange.start), clusterIndex(s.fRange.end - 1), curBadgeType);
-    }
-}
-#endif
 
 void ParagraphImpl::layout(SkScalar rawWidth) {
 #ifdef OHOS_SUPPORT
@@ -1213,10 +1181,6 @@ bool ParagraphImpl::shapeTextIntoEndlessLine() {
     fUnresolvedGlyphs = oneLineShaper.unresolvedGlyphs();
 
     this->applySpacingAndBuildClusterTable();
-
-#ifdef OHOS_SUPPORT
-    handleBadgeCluster();
-#endif
 
     return result;
 }

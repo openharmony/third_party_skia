@@ -197,8 +197,6 @@ public:
         }
         return fUTF16IndexForUTF8Index[index];
     }
-    void handleBadgeCluster();
-    void markBadgeCluster(ClusterIndex start, ClusterIndex end, TextBadgeType badgeType);
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }
