@@ -27,13 +27,8 @@ public:
 
     int count() override;
     void getStyle(int index, SkFontStyle*, SkString* name) override;
-#ifdef ENABLE_TEXT_ENHANCE
-    SkTypeface* createTypeface(int index) override;
-    SkTypeface* matchStyle(const SkFontStyle& pattern) override;
-#else
     sk_sp<SkTypeface> createTypeface(int index) override;
     sk_sp<SkTypeface> matchStyle(const SkFontStyle& pattern) override;
-#endif
 
     SkString getFamilyName() const { return fFamilyName; }
     SkString getAlias() const { return fAlias; }
@@ -57,18 +52,6 @@ public:
 
     void onGetFamilyName(int index, SkString* familyName) const override;
 
-#ifdef ENABLE_TEXT_ENHANCE
-    SkFontStyleSet* onMatchFamily(const char familyName[]) const override;
-    SkFontStyleSet* onCreateStyleSet(int) const override { return nullptr; }
-    SkTypeface* onMatchFamilyStyle(const char[], const SkFontStyle&) const override {
-        return nullptr;
-    }
-    SkTypeface* onMatchFamilyStyleCharacter(const char[], const SkFontStyle&,
-                                            const char*[], int,
-                                            SkUnichar) const override {
-        return nullptr;
-    }
-#else
     sk_sp<SkFontStyleSet> onMatchFamily(const char familyName[]) const override;
     sk_sp<SkFontStyleSet> onCreateStyleSet(int) const override;
     sk_sp<SkTypeface> onMatchFamilyStyle(const char familyName[], const SkFontStyle& pattern) const override;
@@ -77,7 +60,6 @@ public:
                                                   SkUnichar) const override {
         return nullptr;
     }
-#endif
 
     sk_sp<SkTypeface> onMakeFromData(sk_sp<SkData>, int) const override { return nullptr; }
     sk_sp<SkTypeface> onMakeFromStreamIndex(std::unique_ptr<SkStreamAsset>, int) const override {

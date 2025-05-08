@@ -32,7 +32,7 @@
 
 #endif  // !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 namespace {
 std::shared_ptr<RSTypeface> GetRSTypefaceOrDefault(std::shared_ptr<RSTypeface> typeface) {
     if (typeface) {
@@ -45,7 +45,7 @@ std::shared_ptr<RSTypeface> GetRSTypefaceOrDefault(std::shared_ptr<RSTypeface> t
 #endif
 
 #if !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 std::unique_ptr<SkShaper> SkShaper::Make(std::shared_ptr<RSFontMgr> fallback) {
 #else
 std::unique_ptr<SkShaper> SkShaper::Make(sk_sp<SkFontMgr> fallback) {
@@ -102,7 +102,7 @@ static inline SkUnichar utf8_next(const char** ptr, const char* end) {
     return val < 0 ? 0xFFFD : val;
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 class FontMgrRunIterator final : public SkShaper::FontRunIterator {
 public:
     FontMgrRunIterator(const char* utf8, size_t utf8Bytes,
@@ -296,7 +296,7 @@ private:
 };
 #endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 std::unique_ptr<SkShaper::FontRunIterator>
 SkShaper::MakeFontMgrRunIterator(const char* utf8, size_t utf8Bytes,
                                  const RSFont& font, std::shared_ptr<RSFontMgr> fallback)
@@ -337,7 +337,7 @@ SkShaper::MakeStdLanguageRunIterator(const char* utf8, size_t utf8Bytes) {
     return std::make_unique<TrivialLanguageRunIterator>(std::locale().name().c_str(), utf8Bytes);
 }
 
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifndef ENABLE_TEXT_ENHANCE
 void SkTextBlobBuilderRunHandler::beginLine() {
     fCurrentPosition = fOffset;
     fMaxRunAscent = 0;

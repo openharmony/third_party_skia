@@ -19,11 +19,7 @@
 namespace skia {
 namespace textlayout {
 RunBaseImpl::RunBaseImpl(
-#ifdef ENABLE_DRAWING_ADAPTER
     std::shared_ptr<RSTextBlob> blob,
-#else
-    sk_sp<SkTextBlob> blob,
-#endif
     SkPoint offset,
     ParagraphPainter::SkPaintOrID paint,
     bool clippingNeeded,
@@ -48,14 +44,9 @@ RunBaseImpl::RunBaseImpl(
     } else if (std::holds_alternative<ParagraphPainter::PaintID>(paint)) {
         fPaint = std::get<ParagraphPainter::PaintID>(paint);
     }
-
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
 const RSFont& RunBaseImpl::font() const
-#else
-const SkFont& RunBaseImpl::font() const
-#endif
 {
     if (!fVisitorRun) {
         return fFont;
@@ -92,7 +83,6 @@ std::vector<RSPoint> RunBaseImpl::getPositions() const
     }
 
     return positions;
-
 }
 
 std::vector<RSPoint> RunBaseImpl::getOffsets() const
@@ -109,7 +99,6 @@ std::vector<RSPoint> RunBaseImpl::getOffsets() const
     }
 
     return offsets;
-
 }
 
 void RunBaseImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y)
@@ -156,11 +145,7 @@ std::vector<uint16_t> RunBaseImpl::getGlyphs(int64_t start, int64_t length) cons
     return glyphs;
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
 std::vector<RSPoint> RunBaseImpl::getPositions(int64_t start, int64_t length) const
-#else
-std::vector<SkPoint> RunBaseImpl::getPositions(int64_t start, int64_t length) const
-#endif
 {
     if (!fVisitorRun) {
         return {};
@@ -171,17 +156,9 @@ std::vector<SkPoint> RunBaseImpl::getPositions(int64_t start, int64_t length) co
     }
     SkSpan<const SkPoint> positionSpan = fVisitorRun->positions();
     SkSpan<const SkPoint> runPositionSpan = positionSpan.subspan(fVisitorPos + start, actualLength);
-#ifdef ENABLE_DRAWING_ADAPTER
     std::vector<RSPoint> positions;
-#else
-    std::vector<SkPoint> positions;
-#endif
     for (size_t i = 0; i < runPositionSpan.size(); i++) {
-#ifdef ENABLE_DRAWING_ADAPTER
         positions.emplace_back(runPositionSpan[i].fX, runPositionSpan[i].fY);
-#else
-        positions.emplace_back(SkPoint::Make(runPositionSpan[i].fX, runPositionSpan[i].fY));
-#endif
     }
 
     return positions;
@@ -222,25 +199,14 @@ SkRect RunBaseImpl::getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan,
 {
     SkRect rect = {0.0, 0.0, 0.0, 0.0};
     SkScalar runNotWhiteSpaceWidth = 0.0;
-#ifdef ENABLE_DRAWING_ADAPTER
     RSRect joinRect{0.0, 0.0, 0.0, 0.0};
     RSRect endRect {0.0, 0.0, 0.0, 0.0};
     RSRect startRect {0.0, 0.0, 0.0, 0.0};
-#else
-    SkRect joinRect{0.0, 0.0, 0.0, 0.0};
-    SkRect endRect {0.0, 0.0, 0.0, 0.0};
-    SkRect startRect {0.0, 0.0, 0.0, 0.0};
-#endif
     size_t end = runGlyphIdSpan.size() - endWhiteSpaceNum;
     for (size_t i = startNotWhiteSpaceIndex; i < end; i++) {
     // Get the bounds of each glyph
-#ifdef ENABLE_DRAWING_ADAPTER
         RSRect glyphBounds;
         fVisitorRun->font().GetWidths(&runGlyphIdSpan[i], 1, nullptr, &glyphBounds);
-#else
-        SkRect glyphBounds;
-        fVisitorRun->font().getBounds(&runGlyphIdSpan[i], 1, &glyphBounds, nullptr);
-#endif
         // Record the first non-blank glyph boundary
         if (i == startNotWhiteSpaceIndex) {
             startRect = glyphBounds;
@@ -254,27 +220,17 @@ SkRect RunBaseImpl::getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan,
         // Calculates the width of the glyph with the beginning and end of the line removed
         runNotWhiteSpaceWidth += cluster.width();
     }
-#ifdef ENABLE_DRAWING_ADAPTER
     // If the first glyph of run is a blank glyph, you need to add startWhitespaceWidth
     SkScalar x = fClipRect.fLeft + startRect.GetLeft() + startWhiteSpaceWidth;
     SkScalar y = joinRect.GetBottom();
-    SkScalar width = runNotWhiteSpaceWidth - (endAdvance - endRect.GetLeft() - endRect.GetWidth()) - startRect.GetLeft();
+    SkScalar width = runNotWhiteSpaceWidth -
+        (endAdvance - endRect.GetLeft() - endRect.GetWidth()) - startRect.GetLeft();
     SkScalar height = joinRect.GetHeight();
-#else
-    SkScalar x = fClipRect.fLeft + startRect.x() + startWhiteSpaceWidth;
-    SkScalar y = joinRect.bottom();
-    SkScalar width = runNotWhiteSpaceWidth - (endAdvance - endRect.x() - endRect.width()) - startRect.x();
-    SkScalar height = joinRect.height();
-#endif
      rect.setXYWH(x, y, width, height);
      return rect;
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
 RSRect RunBaseImpl::getImageBounds() const
-#else
-SkRect RunBaseImpl::getImageBounds() const
-#endif
 {
     if (!fVisitorRun) {
         return {};
@@ -309,7 +265,8 @@ SkRect RunBaseImpl::getImageBounds() const
         startWhiteSpaceWidth += cluster.width();
         ++startNotWhiteSpaceIndex;
     }
-    SkRect rect = getAllGlyphRectInfo(runGlyphIdSpan, startNotWhiteSpaceIndex, startWhiteSpaceWidth, endWhiteSpaceNum, endAdvance);
+    SkRect rect = getAllGlyphRectInfo(runGlyphIdSpan, startNotWhiteSpaceIndex, startWhiteSpaceWidth,
+        endWhiteSpaceNum, endAdvance);
     return {rect.fLeft, rect.fTop, rect.fRight, rect.fBottom};
 }
 

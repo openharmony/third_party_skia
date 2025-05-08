@@ -4,7 +4,7 @@
 
 #include <map>
 #include "modules/skparagraph/include/TextStyle.h"
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 #include "drawing.h"
 #endif
 
@@ -14,12 +14,12 @@ class StyleMetrics {
 public:
     StyleMetrics(const TextStyle* style) : text_style(style) {}
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     StyleMetrics(const TextStyle* style, RSFontMetrics& metrics)
         : text_style(style), font_metrics(metrics) {}
 #else
     StyleMetrics(const TextStyle* style, SkFontMetrics& metrics)
-        : text_style(style), font_metrics(metrics) {}
+            : text_style(style), font_metrics(metrics) {}
 #endif
 
     const TextStyle* text_style;
@@ -41,7 +41,7 @@ public:
     // * UnderlinePosition   underline position relative to baseline
     // * StrikeoutThickness  strikeout thickness
     // * StrikeoutPosition   strikeout position relative to baseline
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     RSFontMetrics font_metrics;
 #else
     SkFontMetrics font_metrics;

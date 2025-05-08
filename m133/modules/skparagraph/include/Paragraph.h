@@ -15,7 +15,7 @@
 #include "modules/skparagraph/include/TextStyle.h"
 #include <unordered_set>
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 #include "drawing.h"
 #endif
 
@@ -76,10 +76,7 @@ public:
     SkScalar getGlyphsBoundsLeft() { return fGlyphsBoundsLeft; }
 
     SkScalar getGlyphsBoundsRight() { return fGlyphsBoundsRight; }
-#endif
-    bool didExceedMaxLines() { return fExceededMaxLines; }
 
-#ifdef ENABLE_TEXT_ENHANCE
     ParagraphStyle& getParagraphStyle() { return fParagraphStyle; }
 
     virtual skia_private::TArray<Block, true>& exportTextStyles() = 0;
@@ -87,16 +84,22 @@ public:
     virtual void setState(InternalState state) = 0;
 
     virtual InternalState getState() const = 0;
+
+    virtual void paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) = 0;
+
+    virtual TextRange getEllipsisTextRange() = 0;
+
+    virtual std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) = 0;
 #endif
+
+    bool didExceedMaxLines() { return fExceededMaxLines; }
 
     virtual void layout(SkScalar width) = 0;
 
     virtual void paint(SkCanvas* canvas, SkScalar x, SkScalar y) = 0;
 
     virtual void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) = 0;
-#ifdef ENABLE_DRAWING_ADAPTER
-    virtual void paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) = 0;
-#endif
+
     // Returns a vector of bounding boxes that enclose all text between
     // start and end glyph indexes, including start and excluding end
     virtual std::vector<TextBox> getRectsForRange(unsigned start,
@@ -118,10 +121,6 @@ public:
 
     virtual size_t lineNumber() = 0;
 
-#ifdef ENABLE_TEXT_ENHANCE
-    virtual TextRange getEllipsisTextRange() = 0;
-#endif // ENABLE_TEXT_ENHANCE
-
     virtual void markDirty() = 0;
 
     // This function will return the number of unresolved glyphs or
@@ -135,9 +134,6 @@ public:
     virtual void updateFontSize(size_t from, size_t to, SkScalar fontSize) = 0;
     virtual void updateForegroundPaint(size_t from, size_t to, SkPaint paint) = 0;
     virtual void updateBackgroundPaint(size_t from, size_t to, SkPaint paint) = 0;
-#ifdef ENABLE_TEXT_ENHANCE
-    virtual std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) = 0;
-#endif // ENABLE_TEXT_ENHANCE
 
     enum VisitorFlags {
         kWhiteSpace_VisitorFlag = 1 << 0,
@@ -169,7 +165,7 @@ public:
         unsigned        flags;
     };
     using ExtendedVisitor = std::function<void(int lineNumber, const ExtendedVisitorInfo*)>;
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifndef ENABLE_TEXT_ENHANCE
     virtual void extendedVisit(const ExtendedVisitor&) = 0;
 
     /* Returns path for a given line
@@ -301,10 +297,9 @@ public:
      */
     virtual bool getClosestUTF16GlyphInfoAt(SkScalar dx, SkScalar dy, GlyphInfo* glyphInfo) = 0;
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     struct FontInfo {
-        FontInfo(const RSFont font, const TextRange textRange)
-                : fFont(font), fTextRange(textRange) { }
+        FontInfo(const RSFont font, const TextRange textRange) : fFont(font), fTextRange(textRange) {}
         virtual ~FontInfo() = default;
         FontInfo(const FontInfo& ) = default;
         RSFont fFont;
@@ -321,26 +316,7 @@ public:
     };
 #endif
 
-#ifdef ENABLE_TEXT_ENHANCE
-    struct TextCutRecord {
-        size_t charbegin;
-        size_t charOver;
-        SkScalar phraseWidth;
-    };
-#endif // ENABLE_TEXT_ENHANCE
-
-    /** Returns the font that is used to shape the text at the position
-     *
-     * @param codeUnitIndex   text index
-     * @return                font info or an empty font info if the text is not found
-     */
-#ifdef ENABLE_DRAWING_ADAPTER
-    virtual RSFont getFontAt(TextIndex codeUnitIndex) const = 0;
-#else
-    virtual SkFont getFontAt(TextIndex codeUnitIndex) const = 0;
-#endif
-
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifndef ENABLE_TEXT_ENHANCE
     /** Returns the font used to shape the text at the given UTF-16 offset.
      *
      * @param codeUnitIndex   a UTF-16 offset in the paragraph
@@ -356,6 +332,13 @@ public:
     virtual std::vector<FontInfo> getFonts() const = 0;
 
 #ifdef ENABLE_TEXT_ENHANCE
+    struct TextCutRecord {
+        size_t charbegin;
+        size_t charOver;
+        SkScalar phraseWidth;
+    };
+    virtual RSFont getFontAt(TextIndex codeUnitIndex) const = 0;
+
     virtual void setIndents(const std::vector<SkScalar>& indents) = 0;
     virtual SkScalar detectIndents(size_t index) = 0;
 
@@ -369,16 +352,17 @@ public:
     virtual void initUnicodeText() = 0;
     virtual size_t GetMaxLines() const = 0;
     virtual SkIRect generatePaintRegion(SkScalar x, SkScalar y) = 0;
-#endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
     virtual RSFontMetrics measureText() = 0;
     virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
         std::vector<RSFontMetrics>& fontMetrics) = 0;
 #else
-    virtual SkFontMetrics measureText() = 0;
-    virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
-        std::vector<SkFontMetrics>& fontMetrics) = 0;
+    /** Returns the font that is used to shape the text at the position
+     *
+     * @param codeUnitIndex   text index
+     * @return                font info or an empty font info if the text is not found
+     */
+    virtual SkFont getFontAt(TextIndex codeUnitIndex) const = 0;
 #endif
 
 protected:
@@ -388,12 +372,6 @@ protected:
     // Things for Flutter
     SkScalar fAlphabeticBaseline;
     SkScalar fIdeographicBaseline;
-#ifdef ENABLE_TEXT_ENHANCE
-    SkScalar fGlyphsBoundsTop;
-    SkScalar fGlyphsBoundsBottom;
-    SkScalar fGlyphsBoundsLeft;
-    SkScalar fGlyphsBoundsRight;
-#endif
     SkScalar fHeight;
     SkScalar fWidth;
     SkScalar fMaxIntrinsicWidth;
@@ -401,6 +379,10 @@ protected:
     SkScalar fLongestLine;
 #ifdef ENABLE_TEXT_ENHANCE
     SkScalar fLongestLineWithIndent;
+    SkScalar fGlyphsBoundsTop;
+    SkScalar fGlyphsBoundsBottom;
+    SkScalar fGlyphsBoundsLeft;
+    SkScalar fGlyphsBoundsRight;
 #endif
     bool fExceededMaxLines;
 };

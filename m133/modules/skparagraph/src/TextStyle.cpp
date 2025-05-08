@@ -143,10 +143,12 @@ bool TextStyle::equalsByFonts(const TextStyle& that) const {
            nearlyEqual(fHeight, that.fHeight) &&
            nearlyEqual(fBaselineShift, that.fBaselineShift) &&
            nearlyEqual(fFontSize, that.fFontSize) &&
-           fLocale == that.fLocale &&
 #ifdef ENABLE_TEXT_ENHANCE
+           fLocale == that.fLocale &&
            fStyleId == that.fStyleId &&
            fBackgroundRect == that.fBackgroundRect;
+#else
+           fLocale == that.fLocale;
 #endif
 }
 
@@ -193,10 +195,12 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
                    fHeight == other.fHeight &&
                    fHalfLeading == other.fHalfLeading &&
                    fBaselineShift == other.fBaselineShift &&
-                   fFontArguments == other.fFontArguments &&
 #ifdef ENABLE_TEXT_ENHANCE
+                   fFontArguments == other.fFontArguments &&
                    fStyleId == other.fStyleId &&
                    fBackgroundRect == other.fBackgroundRect;
+#else
+                   fFontArguments == other.fFontArguments;
 #endif
         default:
             SkASSERT(false);
@@ -204,12 +208,12 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
     }
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 void TextStyle::getFontMetrics(RSFontMetrics* metrics) const {
 #else
 void TextStyle::getFontMetrics(SkFontMetrics* metrics) const {
 #endif
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     RSFont font(fTypeface, fFontSize, 1, 0);
     font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
     font.SetHinting(RSDrawing::FontHinting::SLIGHT);

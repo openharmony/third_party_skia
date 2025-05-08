@@ -55,7 +55,7 @@ bool operator!=(const skia::textlayout::FontArguments& a, const skia::textlayout
     return !(a == b);
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 std::shared_ptr<RSTypeface> FontArguments::CloneTypeface(std::shared_ptr<RSTypeface> typeface) const
 {
     RSFontArguments::VariationPosition position{

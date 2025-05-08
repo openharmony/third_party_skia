@@ -16,20 +16,16 @@
 #ifndef SKPARAGRAPH_SRC_RUN_BASE_IMPL_H
 #define SKPARAGRAPH_SRC_RUN_BASE_IMPL_H
 
+#ifdef ENABLE_TEXT_ENHANCE
 #include "modules/skparagraph/include/RunBase.h"
 #include "modules/skparagraph/src/Run.h"
 
-#ifdef ENABLE_TEXT_ENHANCE
 namespace skia {
 namespace textlayout {
 class RunBaseImpl : public RunBase {
 public:
     RunBaseImpl(
-#ifdef ENABLE_DRAWING_ADAPTER
         std::shared_ptr<RSTextBlob> blob,
-#else
-        sk_sp<SkTextBlob> blob,
-#endif
         SkPoint offset,
         ParagraphPainter::SkPaintOrID paint,
         bool clippingNeeded,
@@ -41,12 +37,7 @@ public:
         size_t visitorSize
     );
 
-#ifdef ENABLE_DRAWING_ADAPTER
     const RSFont& font() const override;
-#else
-    const SkFont& font() const override;
-#endif
-
     size_t size() const override;
     std::vector<uint16_t> getGlyphs() const override;
     std::vector<RSPoint> getPositions() const override;
@@ -56,13 +47,8 @@ public:
     void getStringRange(uint64_t* location, uint64_t* length) const override;
     std::vector<uint64_t> getStringIndices(int64_t start, int64_t length) const override;
     float getTypographicBounds(float* ascent, float* descent, float* leading) const override;
-#ifdef ENABLE_DRAWING_ADAPTER
     RSRect getImageBounds() const override;
     std::vector<RSPoint> getPositions(int64_t start, int64_t length) const override;
-#else
-    SkRect getImageBounds() const override;
-    std::vector<SkPoint> getPositions(int64_t start, int64_t length) const override;
-#endif
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) override;
 
     size_t getVisitorPos() const;
@@ -73,13 +59,8 @@ private:
     uint64_t calculateActualLength(int64_t start, int64_t length) const;
     SkRect getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan, size_t startNotWhiteSpaceIndex,
         SkScalar startWhiteSpaceWidth, size_t endWhiteSpaceNum, SkScalar endAdvance) const;
-#ifdef ENABLE_DRAWING_ADAPTER
     RSFont fFont;
     std::shared_ptr<RSTextBlob> fBlob;
-#else
-    sk_sp<SkTextBlob> fBlob;
-    SkFont fFont;
-#endif
     SkPoint fOffset = SkPoint::Make(0.0f, 0.0f);
     ParagraphPainter::SkPaintOrID fPaint;
     bool fClippingNeeded = false;

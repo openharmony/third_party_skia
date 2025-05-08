@@ -16,6 +16,7 @@
 #ifndef DRAWING_DEFINED
 #define DRAWING_DEFINED
 
+#ifdef ENABLE_TEXT_ENHANCE
 #include "draw/path.h"
 #include "effect/mask_filter.h"
 #include "effect/path_effect.h"
@@ -57,4 +58,5 @@ using RSTextBlobBuilder = RSDrawing::TextBlobBuilder;
 using RSTypeface = RSDrawing::Typeface;
 using RSFontArguments = RSDrawing::FontArguments;
 
+#endif  // ENABLE_TEXT_ENHANCE
 #endif  // DRAWING_DEFINED

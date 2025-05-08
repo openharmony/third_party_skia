@@ -566,18 +566,6 @@ public:
         return SkUnicode_icu::extractWords((uint16_t*)utf16.c_str(), utf16.size(), locale, results);
     }
 
-#ifdef ENABLE_TEXT_ENHANCE
-    void processPunctuationAndEllipsis(skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results, int i, SkUnichar unichar)
-    {
-        if (SkUnicode_icu::isPunctuation(unichar)) {
-            results->at(i) |= SkUnicode::kPunctuation;
-        }
-        if (SkUnicode_icu::isEllipsis(unichar)) {
-            results->at(i) |= SkUnicode::kEllipsis;
-        }
-    }
-#endif
-
     bool getUtf8Words(const char utf8[],
                       int utf8Units,
                       const char* locale,
@@ -613,6 +601,72 @@ public:
         return true;
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    void processPunctuationAndEllipsis(skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results,
+        int i, SkUnichar unichar) {
+        if (SkUnicode_icu::isPunctuation(unichar)) {
+            results->at(i) |= SkUnicode::kPunctuation;
+        }
+        if (SkUnicode_icu::isEllipsis(unichar)) {
+            results->at(i) |= SkUnicode::kEllipsis;
+        }
+    }
+
+    bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs,
+                              TArray<SkUnicode::CodeUnitFlags, true>* results) override {
+        results->clear();
+        results->push_back_n(utf8Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
+
+        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kLines, nullptr,
+                                        [&](int pos, int status) {
+            (*results)[pos] |= status == UBRK_LINE_HARD ? CodeUnitFlags::kHardLineBreakBefore :
+                CodeUnitFlags::kSoftLineBreakBefore;
+        });
+
+        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kGraphemes, nullptr,
+                                        [&](int pos, int status) {
+            (*results)[pos] |= CodeUnitFlags::kGraphemeStart;
+        });
+
+        const char* current = utf8;
+        const char* end = utf8 + utf8Units;
+        while (current < end) {
+            auto before = current - utf8;
+            SkUnichar unichar = SkUTF::NextUTF8(&current, end);
+            if (unichar < 0) unichar = 0xFFFD;
+            auto after = current - utf8;
+            if (replaceTabs && this->isTabulation(unichar)) {
+                results->at(before) |= SkUnicode::kTabulation;
+                if (replaceTabs) {
+                    unichar = ' ';
+                    utf8[before] = ' ';
+                }
+            }
+            for (auto i = before; i < after; ++i) {
+                if (this->isSpace(unichar)) {
+                    results->at(i) |= SkUnicode::kPartOfIntraWordBreak;
+                }
+                if (this->isWhitespace(unichar)) {
+                    results->at(i) |= SkUnicode::kPartOfWhiteSpaceBreak;
+                }
+                if (this->isControl(unichar)) {
+                    results->at(i) |= SkUnicode::kControl;
+                }
+                if (this->isIdeographic(unichar)) {
+                    results->at(i) |= SkUnicode::kIdeographic;
+                }
+                processPunctuationAndEllipsis(results, i, unichar);
+            }
+
+            if (SkUnicode_icu::isGraphemeExtend(unichar)) {
+                // Current unichar is a combining one.
+                results->at(before) |= SkUnicode::kCombine;
+            }
+        }
+
+        return true;
+    }
+#else
     bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs,
                               TArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->clear();
@@ -657,21 +711,12 @@ public:
                 if (this->isIdeographic(unichar)) {
                     results->at(i) |= SkUnicode::kIdeographic;
                 }
-#ifdef ENABLE_TEXT_ENHANCE
-                processPunctuationAndEllipsis(results, i, unichar);
-#endif
             }
-
-#ifdef ENABLE_TEXT_ENHANCE
-            if (SkUnicode_icu::isGraphemeExtend(unichar)) {
-                // Current unichar is a combining one.
-                results->at(before) |= SkUnicode::kCombine;
-            }
-#endif
         }
 
         return true;
     }
+#endif
 
     bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs,
                           TArray<SkUnicode::CodeUnitFlags, true>* results) override {

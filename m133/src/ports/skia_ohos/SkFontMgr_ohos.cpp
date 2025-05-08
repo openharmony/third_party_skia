@@ -47,7 +47,7 @@ void SkFontMgr_OHOS::onGetFamilyName(int index, SkString* familyName) const
  * \n      Return null, if index is out of range
  * \note   The caller must call unref() on the returned object if it's not null
  */
-SkFontStyleSet* SkFontMgr_OHOS::onCreateStyleSet(int index) const
+sk_sp<SkFontStyleSet> SkFontMgr_OHOS::onCreateStyleSet(int index) const
 {
     if (fFontConfig == nullptr) {
         return nullptr;
@@ -55,7 +55,7 @@ SkFontStyleSet* SkFontMgr_OHOS::onCreateStyleSet(int index) const
     if (index < 0 || index >= this->countFamilies()) {
         return nullptr;
     }
-    return new SkFontStyleSet_OHOS(fFontConfig, index);
+    return sk_sp<SkFontStyleSet>(new SkFontStyleSet_OHOS(fFontConfig, index));
 }
 
 /*! To get a matched object of SkFontStyleSet
@@ -65,14 +65,14 @@ SkFontStyleSet* SkFontMgr_OHOS::onCreateStyleSet(int index) const
  * \n      Return null, if family name is not found
  * \note   The caller must call unref() on the returned object if it's not null
  */
-SkFontStyleSet* SkFontMgr_OHOS::onMatchFamily(const char familyName[]) const
+sk_sp<SkFontStyleSet> SkFontMgr_OHOS::onMatchFamily(const char familyName[]) const
 {
     if (fFontConfig == nullptr) {
         return nullptr;
     }
     // return default system font when familyName is null
     if (familyName == nullptr) {
-        return new SkFontStyleSet_OHOS(fFontConfig, 0);
+        return sk_sp<SkFontStyleSet>(new SkFontStyleSet_OHOS(fFontConfig, 0));
     }
 
     bool isFallback = false;
@@ -80,7 +80,7 @@ SkFontStyleSet* SkFontMgr_OHOS::onMatchFamily(const char familyName[]) const
     if (!fFontConfig->getStyleIndex(familyName, isFallback, index)) {
         return nullptr;
     }
-    return new SkFontStyleSet_OHOS(fFontConfig, index, isFallback);
+    return sk_sp<SkFontStyleSet>(new SkFontStyleSet_OHOS(fFontConfig, index, isFallback));
 }
 
 /*! To get a matched typeface
@@ -91,7 +91,7 @@ SkFontStyleSet* SkFontMgr_OHOS::onMatchFamily(const char familyName[]) const
  * \n      Return null, if family name is not found
  * \note   The caller must call unref() on the returned object if it's not null
  */
-SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyle(const char familyName[], const SkFontStyle& style) const
+sk_sp<SkTypeface> SkFontMgr_OHOS::onMatchFamilyStyle(const char familyName[], const SkFontStyle& style) const
 {
     if (fFontConfig == nullptr) {
         return nullptr;
@@ -101,7 +101,7 @@ SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyle(const char familyName[], const Sk
     if (!fFontConfig->getStyleIndex(familyName, isFallback, styleIndex)) {
         return nullptr;
     }
-    return SkSafeRef(fFontConfig->getTypeface(styleIndex, style, isFallback));
+    return fFontConfig->getTypeface(styleIndex, style, isFallback);
 }
 
 struct SpecialUnicodeFamilyName {
@@ -109,7 +109,7 @@ struct SpecialUnicodeFamilyName {
     std::string familyName;
 };
 
-SkTypeface* SkFontMgr_OHOS::findSpecialTypeface(SkUnichar character, const SkFontStyle& style) const
+sk_sp<SkTypeface> SkFontMgr_OHOS::findSpecialTypeface(SkUnichar character, const SkFontStyle& style) const
 {
     // The key values in this list are Unicode that support the identification characters
     // of several high-frequency languages in the fallback list corresponding to Chinese, Uyghur, and Tibetan
@@ -138,7 +138,7 @@ SkTypeface* SkFontMgr_OHOS::findSpecialTypeface(SkUnichar character, const SkFon
 
     SkString fname(name.c_str());
     sk_sp<SkTypeface_OHOS> typeface = fFontConfig->getFallbackTypeface(fname, style);
-    return SkSafeRef(typeface.get());
+    return typeface;
 }
 
 /*! To get a matched typeface
@@ -153,7 +153,7 @@ SkTypeface* SkFontMgr_OHOS::findSpecialTypeface(SkUnichar character, const SkFon
  * \return Return null, if the typeface is not found for the given character
  * \note The caller must call unref() on the returned object if it's not null
  */
-SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[], const SkFontStyle& style,
+sk_sp<SkTypeface> SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[], const SkFontStyle& style,
     const char* bcp47[], int bcp47Count, SkUnichar character) const
 {
     if (fFontConfig == nullptr) {
@@ -181,7 +181,7 @@ SkTypeface* SkFontMgr_OHOS::onMatchFamilyStyleCharacter(const char familyName[],
  * \return An object of typeface which is for the given character
  * \return Return null, if the typeface is not found for the given character
  */
-SkTypeface* SkFontMgr_OHOS::findTypeface(const SkFontStyle& style,
+sk_sp<SkTypeface> SkFontMgr_OHOS::findTypeface(const SkFontStyle& style,
     const char* bcp47[], int bcp47Count, SkUnichar character) const
 {
     if (bcp47Count == 0 || fFontConfig == nullptr) {
@@ -257,7 +257,7 @@ int SkFontMgr_OHOS::compareLangs(const std::string& langs, const char* bcp47[], 
  * \n      Return null, if the family name of the given typeface is not found in the system
  * \note The caller must call unref() on the returned object if it's not null
  */
-SkTypeface* SkFontMgr_OHOS::onMatchFaceStyle(const SkTypeface* typeface, const SkFontStyle& style) const
+sk_sp<SkTypeface> SkFontMgr_OHOS::onMatchFaceStyle(const SkTypeface* typeface, const SkFontStyle& style) const
 {
     if (typeface == nullptr) {
         return nullptr;
@@ -352,14 +352,14 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::onMakeFromFile(const char path[], int ttcIndex
  */
 sk_sp<SkTypeface> SkFontMgr_OHOS::onLegacyMakeTypeface(const char familyName[], SkFontStyle style) const
 {
-    SkTypeface* typeface = this->onMatchFamilyStyle(familyName, style);
+    sk_sp<SkTypeface> typeface = this->onMatchFamilyStyle(familyName, style);
     // if familyName is not found, then try the default family
     if (typeface == nullptr && familyName != nullptr) {
         typeface = this->onMatchFamilyStyle(nullptr, style);
     }
 
     if (typeface) {
-        return sk_sp<SkTypeface>(typeface);
+        return typeface;
     }
     return nullptr;
 }

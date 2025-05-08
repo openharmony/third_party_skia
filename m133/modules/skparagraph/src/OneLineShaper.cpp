@@ -158,8 +158,7 @@ void OneLineShaper::fillGaps(size_t startingCount) {
 // one of the above conditions is met, will return true.
 // anything else, return false.
 bool OneLineShaper::isUnresolvedCombineGlyphRange(std::shared_ptr<Run> run, size_t glyphStart, size_t glyphEnd,
-    size_t charStart) const
-{
+    size_t charStart) const {
     if (run == nullptr ||
         (fParagraph != nullptr && !fParagraph->codeUnitHasProperty(charStart, SkUnicode::kCombine))) {
         return true;
@@ -178,8 +177,7 @@ bool OneLineShaper::isUnresolvedCombineGlyphRange(std::shared_ptr<Run> run, size
 // extract resolvedBlock(which isUnresolvedGlyphRange is false), emplace back to stagedUnresolvedBlocks.
 // the rest block emplace back to fUnresolvedBlocks without run.
 void OneLineShaper::splitUnresolvedBlockAndStageResolvedSubBlock(
-    std::deque<RunBlock>& stagedUnresolvedBlocks, const RunBlock& unresolvedBlock)
-{
+    std::deque<RunBlock>& stagedUnresolvedBlocks, const RunBlock& unresolvedBlock) {
     if (unresolvedBlock.fRun == nullptr) {
         return;
     }
@@ -232,8 +230,7 @@ void OneLineShaper::splitUnresolvedBlockAndStageResolvedSubBlock(
 
 // shape unresolved text separately.
 void OneLineShaper::shapeUnresolvedTextSeparatelyFromUnresolvedBlock(
-    const TextStyle& textStyle, const TypefaceVisitor& visitor)
-{
+    const TextStyle& textStyle, const TypefaceVisitor& visitor) {
     if (fUnresolvedBlocks.empty()) {
         return;
     }
@@ -485,8 +482,7 @@ void OneLineShaper::sortOutGlyphs(std::function<void(GlyphRange)>&& sortOutUnres
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
-BlockRange OneLineShaper::generateBlockRange(const Block& block, const TextRange& textRange)
-{
+BlockRange OneLineShaper::generateBlockRange(const Block& block, const TextRange& textRange) {
     size_t start = std::max(block.fRange.start, textRange.start);
     size_t end = std::min(block.fRange.end, textRange.end);
     if (fParagraph->fParagraphStyle.getMaxLines() == 1 &&
@@ -527,7 +523,11 @@ void OneLineShaper::iterateThroughFontStyles(TextRange textRange,
     };
 
     for (auto& block : styleSpan) {
+#ifdef ENABLE_TEXT_ENHANCE
+        BlockRange blockRange = generateBlockRange(block, textRange);
+#else
         BlockRange blockRange(std::max(block.fRange.start, textRange.start), std::min(block.fRange.end, textRange.end));
+#endif
         if (blockRange.empty()) {
             continue;
         }
@@ -557,12 +557,11 @@ void OneLineShaper::iterateThroughFontStyles(TextRange textRange,
 
 void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                                        const TypefaceVisitor& visitor) {
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
         textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
 #else
-    std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
-        textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
+    std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
 #endif
 
     for (const auto& typeface : typefaces) {
@@ -614,7 +613,7 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                 }
 
                 SkASSERT(codepoint != -1 || emojiStart != -1);
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
                 std::shared_ptr<RSTypeface> typeface;
 #else
                 sk_sp<SkTypeface> typeface = nullptr;
@@ -623,21 +622,22 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                     // First try to find in in a cache
                     FontKey fontKey(codepoint, textStyle.getFontStyle(), textStyle.getLocale());
                     auto found = fFallbackFonts.find(fontKey);
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
                     if (found != fFallbackFonts.end()) {
                         typeface = found->second;
+                    }
 #else
                     if (found != nullptr) {
                         typeface = *found;
-#endif
                     }
+#endif
                     if (typeface == nullptr) {
                         typeface = fParagraph->fFontCollection->defaultFallback(
                                                     codepoint,
                                                     textStyle.getFontStyle(),
                                                     textStyle.getLocale());
                         if (typeface != nullptr) {
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
                             fFallbackFonts.emplace(fontKey, typeface);
 #else
                             fFallbackFonts.set(fontKey, typeface);
@@ -645,7 +645,7 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                         }
                     }
                 } else {
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifndef ENABLE_TEXT_ENHANCE
                     typeface = fParagraph->fFontCollection->defaultEmojiFallback(
                                                 emojiStart,
                                                 textStyle.getFontStyle(),
@@ -660,7 +660,7 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                 }
 
                 // Check if we already tried this font on this text range
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
                 if (!alreadyTriedTypefaces.contains(typeface->GetUniqueID())) {
                     alreadyTriedTypefaces.add(typeface->GetUniqueID());
 #else
@@ -720,7 +720,7 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
                 auto start = std::max(bidiRegion.start, placeholder.fTextBefore.start);
                 auto end = std::min(bidiRegion.end, placeholder.fTextBefore.end);
 #ifdef ENABLE_TEXT_ENHANCE
-				if (fParagraph->fParagraphStyle.getMaxLines() == 1
+                if (fParagraph->fParagraphStyle.getMaxLines() == 1
                     && fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE
                     && !fParagraph->getEllipsisState()) {
                     end = fParagraph->fText.size();
@@ -751,7 +751,7 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
             continue;
         }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
         std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
             placeholder.fTextStyle.getFontFamilies(),
             placeholder.fTextStyle.getFontStyle(),
@@ -814,12 +814,12 @@ bool OneLineShaper::shape() {
             (TextRange textRange, SkSpan<Block> styleSpan, SkScalar& advanceX, TextIndex textStart, uint8_t defaultBidiLevel) {
 
         // Set up the shaper and shape the next
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
         auto shaper = SkShapers::HB::ShapeDontWrapOrReorder(fParagraph->fUnicode,
             RSFontMgr::CreateDefaultFontMgr());
 #else
         auto shaper = SkShapers::HB::ShapeDontWrapOrReorder(fParagraph->fUnicode,
-            SkFontMgr::RefEmpty());  // no fallback
+                                                            SkFontMgr::RefEmpty());  // no fallback
 #endif
 		if (shaper == nullptr) {
             // For instance, loadICU does not work. We have to stop the process
@@ -839,7 +839,7 @@ bool OneLineShaper::shape() {
             fCurrentText = block.fRange;
             fUnresolvedBlocks.emplace_back(RunBlock(block.fRange));
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
             auto typefaceVisitor = [&](std::shared_ptr<RSTypeface> typeface) {
                 // Create one more font to try
                 RSFont font(std::move(typeface), block.fStyle.getFontSize(), 1, 0);
@@ -853,7 +853,8 @@ bool OneLineShaper::shape() {
                 font.setEdging(SkFont::Edging::kAntiAlias);
                 font.setHinting(SkFontHinting::kSlight);
                 font.setSubpixel(true);
-#endif // ENABLE_DRAWING_ADAPTER
+                font.setBaselineSnap(false);
+#endif // ENABLE_TEXT_ENHANCE
 
 
 #ifdef ENABLE_TEXT_ENHANCE
@@ -861,7 +862,7 @@ bool OneLineShaper::shape() {
 #endif
                 // Apply fake bold and/or italic settings to the font if the
                 // typeface's attributes do not match the intended font style.
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
                 int wantedWeight = block.fStyle.getFontStyle().GetWeight();
                 bool isCustomSymbol = block.fStyle.isCustomSymbol();
                 bool fakeBold =

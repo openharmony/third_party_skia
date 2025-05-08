@@ -30,12 +30,11 @@ void draw_line_as_rect(ParagraphPainter* painter, SkScalar x, SkScalar y, SkScal
 const float kDoubleDecorationSpacing = 3.0f;
 }  // namespace
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 SkScalar Decorations::calculateThickness(const TextStyle& textStyle, const TextLine::ClipContext& context) {
     calculateThickness(textStyle, const_cast<RSFont&>(context.run->font()).GetTypeface());
     return fThickness;
 }
-#endif
 
 void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, const TextLine::ClipContext& context, SkScalar baseline) {
     if (textStyle.getDecorationType() == TextDecoration::kNoDecoration) {
@@ -43,87 +42,54 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
     }
 
     // Get thickness and position
-#ifdef ENABLE_DRAWING_ADAPTER
     calculateThickness(textStyle, const_cast<RSFont&>(context.run->font()).GetTypeface());
-#else
-    calculateThickness(textStyle, context.run->font().refTypeface());
-#endif
 
     for (auto decoration : AllTextDecorations) {
         if ((textStyle.getDecorationType() & decoration) == 0) {
             continue;
         }
 
-#ifdef ENABLE_TEXT_ENHANCE
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
                           : context.run->correctAscent(), textStyle.getDecorationStyle(),
                           textStyle.getBaselineShift(), textStyle.getFontSize());
-#else
-        calculatePosition(decoration,
-                          decoration == TextDecoration::kOverline
-                          ? context.run->correctAscent() - context.run->ascent()
-                          : context.run->correctAscent());
-#endif
 
         calculatePaint(textStyle);
 
         auto width = context.clip.width();
-#ifdef ENABLE_TEXT_ENHANCE
         if (context.fIsTrimTrailingSpaceWidth) {
             width -= context.fTrailingSpaceWidth;
         }
-#endif
 
         SkScalar x = context.clip.left();
-#ifdef ENABLE_TEXT_ENHANCE
         SkScalar y = (TextDecoration::kUnderline == decoration) ?
             fPosition : (context.clip.top() + fPosition);
-#else
-        SkScalar y = context.clip.top() + fPosition;
-#endif
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
                         textStyle.getDecorationType() == TextDecoration::kUnderline;
 
         switch (textStyle.getDecorationStyle()) {
           case TextDecorationStyle::kWavy: {
-#ifdef ENABLE_DRAWING_ADAPTER
               if (drawGaps) {
-                calculateAvoidanceWaves(textStyle, context.clip);
-                fPath.Offset(x, y);
-                painter->drawPath(fPath, fDecorStyle);
-                break;
+                  calculateAvoidanceWaves(textStyle, context.clip);
+                  fPath.Offset(x, y);
+                  painter->drawPath(fPath, fDecorStyle);
+                  break;
               }
-#endif
               calculateWaves(textStyle, context.clip);
-#ifdef ENABLE_DRAWING_ADAPTER
               fPath.Offset(x, y);
-#else
-              fPath.offset(x, y);
-#endif
               painter->drawPath(fPath, fDecorStyle);
               break;
           }
           case TextDecorationStyle::kDouble: {
-#ifdef ENABLE_TEXT_ENHANCE
               SkScalar bottom = y + kDoubleDecorationSpacing * fThickness / 2.0;
-#else
-              SkScalar bottom = y + kDoubleDecorationSpacing;
-#endif
               if (drawGaps) {
                   SkScalar left = x - context.fTextShift;
                   painter->translate(context.fTextShift, 0);
-#ifdef ENABLE_TEXT_ENHANCE
                   calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, fThickness, textStyle);
                   painter->drawPath(fPath, fDecorStyle);
                   calculateGaps(context, SkRect::MakeXYWH(left, bottom, width, fThickness), baseline,
                       fThickness, textStyle);
-#else
-                  calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, fThickness);
-                  painter->drawPath(fPath, fDecorStyle);
-                  calculateGaps(context, SkRect::MakeXYWH(left, bottom, width, fThickness), baseline, fThickness);
-#endif
                   painter->drawPath(fPath, fDecorStyle);
               } else {
                   draw_line_as_rect(painter, x,      y, width, fDecorStyle);
@@ -136,11 +102,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
               if (drawGaps) {
                   SkScalar left = x - context.fTextShift;
                   painter->translate(context.fTextShift, 0);
-#ifdef ENABLE_TEXT_ENHANCE
                   calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, fThickness, textStyle);
-#else
-                  calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, 0);
-#endif
                   painter->drawPath(fPath, fDecorStyle);
               } else {
                   painter->drawLine(x, y, x + width, y, fDecorStyle);
@@ -150,12 +112,8 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
               if (drawGaps) {
                   SkScalar left = x - context.fTextShift;
                   painter->translate(context.fTextShift, 0);
-#ifdef ENABLE_TEXT_ENHANCE
                   SkRect rect = SkRect::MakeXYWH(left, y, width, fThickness);
                   calculateGaps(context, rect, baseline, fThickness, textStyle);
-#else
-                  calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, fThickness);
-#endif
                   painter->drawPath(fPath, fDecorStyle);
               } else {
                   draw_line_as_rect(painter, x, y, width, fDecorStyle);
@@ -165,10 +123,85 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         }
     }
 }
+#else
+void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, const TextLine::ClipContext& context, SkScalar baseline) {
+    if (textStyle.getDecorationType() == TextDecoration::kNoDecoration) {
+        return;
+    }
 
-#ifdef ENABLE_DRAWING_ADAPTER
-static RSDrawing::Paint::PaintStyle ConvertDrawingStyle(SkPaint::Style skStyle)
-{
+    // Get thickness and position
+    calculateThickness(textStyle, context.run->font().refTypeface());
+
+    for (auto decoration : AllTextDecorations) {
+        if ((textStyle.getDecorationType() & decoration) == 0) {
+            continue;
+        }
+
+        calculatePosition(decoration,
+                          decoration == TextDecoration::kOverline
+                          ? context.run->correctAscent() - context.run->ascent()
+                          : context.run->correctAscent());
+
+        calculatePaint(textStyle);
+
+        auto width = context.clip.width();
+        SkScalar x = context.clip.left();
+        SkScalar y = context.clip.top() + fPosition;
+
+        bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
+                        textStyle.getDecorationType() == TextDecoration::kUnderline;
+
+        switch (textStyle.getDecorationStyle()) {
+          case TextDecorationStyle::kWavy: {
+              calculateWaves(textStyle, context.clip);
+              fPath.offset(x, y);
+              painter->drawPath(fPath, fDecorStyle);
+              break;
+          }
+          case TextDecorationStyle::kDouble: {
+              SkScalar bottom = y + kDoubleDecorationSpacing;
+              if (drawGaps) {
+                  SkScalar left = x - context.fTextShift;
+                  painter->translate(context.fTextShift, 0);
+                  calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, fThickness);
+                  painter->drawPath(fPath, fDecorStyle);
+                  calculateGaps(context, SkRect::MakeXYWH(left, bottom, width, fThickness), baseline, fThickness);
+                  painter->drawPath(fPath, fDecorStyle);
+              } else {
+                  draw_line_as_rect(painter, x,      y, width, fDecorStyle);
+                  draw_line_as_rect(painter, x, bottom, width, fDecorStyle);
+              }
+              break;
+          }
+          case TextDecorationStyle::kDashed:
+          case TextDecorationStyle::kDotted:
+              if (drawGaps) {
+                  SkScalar left = x - context.fTextShift;
+                  painter->translate(context.fTextShift, 0);
+                  calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, 0);
+                  painter->drawPath(fPath, fDecorStyle);
+              } else {
+                  painter->drawLine(x, y, x + width, y, fDecorStyle);
+              }
+              break;
+          case TextDecorationStyle::kSolid:
+              if (drawGaps) {
+                  SkScalar left = x - context.fTextShift;
+                  painter->translate(context.fTextShift, 0);
+                  calculateGaps(context, SkRect::MakeXYWH(left, y, width, fThickness), baseline, fThickness);
+                  painter->drawPath(fPath, fDecorStyle);
+              } else {
+                  draw_line_as_rect(painter, x, y, width, fDecorStyle);
+              }
+              break;
+          default:break;
+        }
+    }
+}
+#endif
+
+#ifdef ENABLE_TEXT_ENHANCE
+static RSDrawing::Paint::PaintStyle ConvertDrawingStyle(SkPaint::Style skStyle) {
     if (PAINT_STYLE.find(skStyle) != PAINT_STYLE.end()) {
         return PAINT_STYLE.at(skStyle);
     } else {
@@ -176,8 +209,7 @@ static RSDrawing::Paint::PaintStyle ConvertDrawingStyle(SkPaint::Style skStyle)
     }
 }
 
-static RSDrawing::Paint ConvertDecorStyle(const ParagraphPainter::DecorationStyle& decorStyle)
-{
+static RSDrawing::Paint ConvertDecorStyle(const ParagraphPainter::DecorationStyle& decorStyle) {
     const SkPaint& decorPaint = decorStyle.skPaint();
     RSDrawing::Paint paint;
     paint.SetStyle(ConvertDrawingStyle(decorPaint.getStyle()));
@@ -318,22 +350,24 @@ void Decorations::calculateAvoidanceWaves(const TextStyle& textStyle, SkRect cli
 #endif
 
 // This is how flutter calculates the thickness
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface) {
-#else
-void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface) {
-#endif
-
     textStyle.setTypeface(std::move(typeface));
     textStyle.getFontMetrics(&fFontMetrics);
-#ifdef ENABLE_TEXT_ENHANCE
     if (textStyle.getDecoration().fType == TextDecoration::kUnderline &&
         !SkScalarNearlyZero(fThickness)) {
         return;
     }
 
     fThickness = textStyle.getFontSize() * UNDER_LINE_THICKNESS_RATIO;
+    fThickness *= textStyle.getDecorationThicknessMultiplier();
+}
 #else
+void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface) {
+
+    textStyle.setTypeface(std::move(typeface));
+    textStyle.getFontMetrics(&fFontMetrics);
+
     fThickness = textStyle.getFontSize() / 14.0f;
 
     if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kUnderlineThicknessIsValid_Flag) &&
@@ -347,9 +381,9 @@ void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> type
             fThickness = fFontMetrics.fStrikeoutThickness;
         }
     }
-#endif
     fThickness *= textStyle.getDecorationThicknessMultiplier();
 }
+#endif
 
 // This is how flutter calculates the positioning
 #ifdef ENABLE_TEXT_ENHANCE
@@ -428,34 +462,20 @@ void Decorations::calculatePaint(const TextStyle& textStyle) {
     fDecorStyle = ParagraphPainter::DecorationStyle(color, fThickness, dashPathEffect);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
 void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
 
-#ifdef ENABLE_DRAWING_ADAPTER
     fPath.Reset();
-#else
-    fPath.reset();
-#endif
     int wave_count = 0;
     SkScalar x_start = 0;
     SkScalar quarterWave = fThickness;
-#ifdef ENABLE_DRAWING_ADAPTER
     fPath.MoveTo(0, 0);
-#else
-    fPath.moveTo(0, 0);
-#endif
 
     while (x_start + quarterWave * 2 < clip.width()) {
-#ifdef ENABLE_DRAWING_ADAPTER
         fPath.RQuadTo(quarterWave,
                      wave_count % 2 != 0 ? quarterWave : -quarterWave,
                      quarterWave * 2,
                      0);
-#else
-        fPath.rQuadTo(quarterWave,
-                     wave_count % 2 != 0 ? quarterWave : -quarterWave,
-                     quarterWave * 2,
-                     0);
-#endif
         x_start += quarterWave * 2;
         ++wave_count;
     }
@@ -468,13 +488,38 @@ void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
         double x2 = remaining;
         double y2 = (remaining - remaining * remaining / (quarterWave * 2)) *
                     (wave_count % 2 == 0 ? -1 : 1);
-#ifdef ENABLE_DRAWING_ADAPTER
         fPath.RQuadTo(x1, y1, x2, y2);
-#else
-        fPath.rQuadTo(x1, y1, x2, y2);
-#endif
     }
 }
+#else
+void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
+
+    fPath.reset();
+    int wave_count = 0;
+    SkScalar x_start = 0;
+    SkScalar quarterWave = fThickness;
+    fPath.moveTo(0, 0);
+    while (x_start + quarterWave * 2 < clip.width()) {
+        fPath.rQuadTo(quarterWave,
+                     wave_count % 2 != 0 ? quarterWave : -quarterWave,
+                     quarterWave * 2,
+                     0);
+        x_start += quarterWave * 2;
+        ++wave_count;
+    }
+
+    // The rest of the wave
+    auto remaining = clip.width() - x_start;
+    if (remaining > 0) {
+        double x1 = remaining / 2;
+        double y1 = remaining / 2 * (wave_count % 2 == 0 ? -1 : 1);
+        double x2 = remaining;
+        double y2 = (remaining - remaining * remaining / (quarterWave * 2)) *
+                    (wave_count % 2 == 0 ? -1 : 1);
+        fPath.rQuadTo(x1, y1, x2, y2);
+    }
+}
+#endif
 
 }  // namespace textlayout
 }  // namespace skia

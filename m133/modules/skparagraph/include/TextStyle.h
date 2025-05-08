@@ -14,9 +14,9 @@
 #include "modules/skparagraph/include/FontArguments.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
 #include "modules/skparagraph/include/TextShadow.h"
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 #include "drawing.h"
-#endif // ENABLE_DRAWING_ADAPTER
+#endif // ENABLE_TEXT_ENHANCE
 // TODO: Make it external so the other platforms (Android) could use it
 #define DEFAULT_FONT_FAMILY "sans-serif"
 
@@ -31,6 +31,14 @@ static inline bool nearlyZero(SkScalar x, SkScalar tolerance = SK_ScalarNearlyZe
 }
 
 static inline bool nearlyEqual(SkScalar x, SkScalar y, SkScalar tolerance = SK_ScalarNearlyZero) {
+#ifdef ENABLE_TEXT_ENHANCE
+    if (SkIsNaN(x) && SkIsNaN(y)) {
+        // Generally NaN has no equality, but it will break the invariant of the hashtable
+        // in ParagraphCache, resulting in errors. This fix is only a backstop for
+        // this condition, other functions may still be unreliable in the presence of NaN.
+        return true;
+    }
+#endif
     if (SkIsFinite(x, y)) {
         return SkScalarNearlyEqual(x, y, tolerance);
     }
@@ -135,8 +143,8 @@ struct PlaceholderStyle {
 
     bool equals(const PlaceholderStyle&) const;
 
-    SkScalar fWidth{0};
-    SkScalar fHeight{0};
+    SkScalar fWidth = 0;
+    SkScalar fHeight = 0;
     PlaceholderAlignment fAlignment = PlaceholderAlignment::kBaseline;
     TextBaseline fBaseline = TextBaseline::kAlphabetic;
     // Distance from the top edge of the rect to the baseline position. This
@@ -147,7 +155,7 @@ struct PlaceholderStyle {
     // small or negative values will cause the rect to be positioned underneath
     // the line. When baseline == height, the bottom edge of the rect will rest on
     // the alphabetic baseline.
-    SkScalar fBaselineOffset{0};
+    SkScalar fBaselineOffset = 0;
 };
 
 #ifdef ENABLE_TEXT_ENHANCE
@@ -158,8 +166,7 @@ struct RectStyle {
     SkScalar rightBottomRadius{0.0f};
     SkScalar leftBottomRadius{0.0f};
 
-    bool operator ==(const RectStyle& rhs) const
-    {
+    bool operator ==(const RectStyle& rhs) const {
         return color == rhs.color &&
             leftTopRadius == rhs.leftTopRadius &&
             rightTopRadius == rhs.rightTopRadius &&
@@ -167,8 +174,7 @@ struct RectStyle {
             leftBottomRadius == rhs.leftBottomRadius;
     }
 
-    bool operator !=(const RectStyle& rhs) const
-    {
+    bool operator !=(const RectStyle& rhs) const {
         return !(color == rhs.color &&
             leftTopRadius == rhs.leftTopRadius &&
             rightTopRadius == rhs.rightTopRadius &&
@@ -254,7 +260,7 @@ public:
     void setDecorationThicknessMultiplier(SkScalar m) { fDecoration.fThicknessMultiplier = m; }
 
     // Weight/Width/Slant
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     RSFontStyle getFontStyle() const { return fFontStyle; }
     void setFontStyle(RSFontStyle fontStyle) { fFontStyle = fontStyle; }
 #else
@@ -312,7 +318,7 @@ public:
     void setWordSpacing(SkScalar wordSpacing) { fWordSpacing = wordSpacing; }
     SkScalar getWordSpacing() const { return fWordSpacing; }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     RSTypeface* getTypeface() const { return fTypeface.get(); }
     std::shared_ptr<RSTypeface> refTypeface() const { return fTypeface; }
     void setTypeface(std::shared_ptr<RSTypeface> typeface) { fTypeface = std::move(typeface); }
@@ -328,7 +334,7 @@ public:
     TextBaseline getTextBaseline() const { return fTextBaseline; }
     void setTextBaseline(TextBaseline baseline) { fTextBaseline = baseline; }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     void getFontMetrics(RSFontMetrics* metrics) const;
 #else
     void getFontMetrics(SkFontMetrics* metrics) const;
@@ -352,10 +358,10 @@ private:
 
     Decoration fDecoration = {
             TextDecoration::kNoDecoration,
-            // TODO: switch back to kGaps when (if) switching flutter to skparagraph
 #ifdef ENABLE_TEXT_ENHANCE
             TextDecorationMode::kGaps,
 #else
+            // TODO: switch back to kGaps when (if) switching flutter to skparagraph
             TextDecorationMode::kThrough,
 #endif
             // It does not make sense to draw a transparent object, so we use this as a default
@@ -364,7 +370,7 @@ private:
             // Thickness is applied as a multiplier to the default thickness of the font.
             1.0f};
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     RSFontStyle fFontStyle;
 #else
     SkFontStyle fFontStyle;
@@ -375,18 +381,18 @@ private:
     SkScalar fFontSize = 14.0;
     SkScalar fHeight = 1.0;
     bool fHeightOverride = false;
-    SkScalar fBaselineShift{0.0f};
+    SkScalar fBaselineShift = 0.0f;
     // true: half leading.
     // false: scale ascent/descent with fHeight.
     bool fHalfLeading = false;
     SkString fLocale = {};
+    SkScalar fLetterSpacing = 0.0;
+    SkScalar fWordSpacing = 0.0;
 #ifdef ENABLE_TEXT_ENHANCE
     RectStyle fBackgroundRect = {0, 0.0f, 0.0f, 0.0f, 0.0f};
     SkColor fStyleId = {0};
     size_t fTextStyleUid = {0};
 #endif
-    SkScalar fLetterSpacing{0.0};
-    SkScalar fWordSpacing{0.0};
 
     TextBaseline fTextBaseline = TextBaseline::kAlphabetic;
 
@@ -400,13 +406,11 @@ private:
 
 #ifdef ENABLE_TEXT_ENHANCE
     bool fIsCustomSymbol{false};
-#endif
-#ifdef ENABLE_DRAWING_ADAPTER
     std::shared_ptr<RSTypeface> fTypeface;
 #else
     sk_sp<SkTypeface> fTypeface;
 #endif
-    bool fIsPlaceholder{false};
+    bool fIsPlaceholder = false;
 
     std::vector<FontFeature> fFontFeatures;
 
