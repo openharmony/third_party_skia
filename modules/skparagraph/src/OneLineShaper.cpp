@@ -6,7 +6,7 @@
 #include "src/utils/SkUTF.h"
 #ifdef OHOS_SUPPORT
 #include "include/TextGlobalConfig.h"
-#include "utils/text_trace.h"
+#include "trace.h"
 #endif
 
 #include <algorithm>

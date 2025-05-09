@@ -20,7 +20,7 @@
 #include "modules/skparagraph/src/TextLine.h"
 #include "modules/skparagraph/src/TextWrapper.h"
 #ifdef OHOS_SUPPORT
-#include "utils/text_trace.h"
+#include "trace.h"
 #endif
 #include "src/utils/SkUTF.h"
 #include <math.h>

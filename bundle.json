@@ -36,7 +36,9 @@
                 "jsoncpp",
                 "egl",
                 "opengles",
-                "faultloggerd"
+                "faultloggerd",
+                "icu",
+                "graphic_2d"
             ],
             "third_party": [
                 "vulkan-headers"
@@ -66,9 +68,11 @@
                     "name": "//third_party/skia/third_party/expat:expat"
                 },
                 {
+                    "name": "//third_party/skia/modules/skparagraph:skia_paragraph_ohos"
+                },
+                {
                     "name": "//third_party/skia:sksl_ext_static"
                 }
-
             ],
             "test": []
         }
