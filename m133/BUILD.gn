@@ -1503,6 +1503,7 @@ optional("png_decode_libpng") {
   deps = [ "${skia_third_party_dir}/libpng" ]
   sources = [ "src/codec/SkIcoCodec.cpp" ] + skia_codec_png_base +
             skia_codec_libpng_srcs
+  defines = [ "ICO_CODEC_HW_HIGH_QUALITY_DECODE" ]
 }
 
 optional("png_encode") {
