@@ -182,11 +182,6 @@ gm_sources = [
   "$_gm/filterfastbounds.cpp",
   "$_gm/filterindiabox.cpp",
   "$_gm/flippity.cpp",
-  "$_gm/fontcache.cpp",
-  "$_gm/fontmgr.cpp",
-  "$_gm/fontregen.cpp",
-  "$_gm/fontscaler.cpp",
-  "$_gm/fontscalerdistortable.cpp",
   "$_gm/gammatext.cpp",
   "$_gm/getpostextpath.cpp",
   "$_gm/giantbitmap.cpp",
@@ -267,7 +262,6 @@ gm_sources = [
   "$_gm/mesh.cpp",
   "$_gm/mipmap.cpp",
   "$_gm/mirrortile.cpp",
-  "$_gm/mixedtextblobs.cpp",
   "$_gm/mixercolorfilter.cpp",
   "$_gm/modecolorfilters.cpp",
   "$_gm/morphology.cpp",
@@ -401,7 +395,6 @@ gm_sources = [
   "$_gm/tinybitmap.cpp",
   "$_gm/transparency.cpp",
   "$_gm/trickycubicstrokes.cpp",
-  "$_gm/typeface.cpp",
   "$_gm/unpremul.cpp",
   "$_gm/userfont.cpp",
   "$_gm/variedtext.cpp",
@@ -417,6 +410,16 @@ gm_sources = [
   "$_gm/xfermodes3.cpp",
   "$_gm/ycbcrimage.cpp",
   "$_gm/yuv420_odd_dim.cpp",
+]
+
+gm_font_sources = [
+  "$_gm/typeface.cpp",
+  "$_gm/fontmgr.cpp",
+  "$_gm/mixedtextblobs.cpp",
+  "$_gm/fontcache.cpp",
+  "$_gm/fontregen.cpp",
+  "$_gm/fontscaler.cpp",
+  "$_gm/fontscalerdistortable.cpp",
 ]
 
 gl_gm_sources = [ "$_gm/rectangletexture.cpp" ]
