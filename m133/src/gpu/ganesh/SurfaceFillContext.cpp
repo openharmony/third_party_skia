@@ -13,6 +13,7 @@
 #include "include/private/base/SkAssert.h"
 #include "include/private/base/SkPoint_impl.h"
 #include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "include/gpu/ganesh/GrDirectContext.h"
 #include "src/core/SkTraceEvent.h"
 #include "src/gpu/Swizzle.h"
 #include "src/gpu/ganesh/GrAppliedClip.h"
@@ -176,6 +177,10 @@ void SurfaceFillContext::ClearToGrPaint(std::array<float, 4> color, GrPaint* pai
 }
 
 void SurfaceFillContext::addOp(GrOp::Owner op) {
+    auto direct = fContext->priv().asDirectContext();
+    if (direct && op) {
+        op->setGrOpTag(direct->getCurrentGrResourceTag());
+    }
     GrDrawingManager* drawingMgr = this->drawingManager();
     this->getOpsTask()->addOp(drawingMgr,
                               std::move(op),

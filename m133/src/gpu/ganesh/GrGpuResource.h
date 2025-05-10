@@ -120,6 +120,91 @@ private:
     using INHERITED = SkNoncopyable;
 };
 
+struct GrGpuResourceTag {
+    GrGpuResourceTag() : fPid(0), fTid(0), fWid(0), fFid(0)
+    {
+        isGrGpuResourceTagValid = false;
+    }
+
+    GrGpuResourceTag(uint32_t pid, uint32_t tid, uint32_t wid, uint32_t fid)
+        : fPid(pid), fTid(tid), fWid(wid), fFid(fid)
+    {
+        isGrGpuResourceTagValid = fPid || fTid || fWid || fFid;
+    }
+
+    bool operator< (const GrGpuResourceTag& tag) const {
+        if (fPid != tag.fPid) {
+            return fPid < tag.fPid;
+        }
+        if (fTid != tag.fTid) {
+            return fTid < tag.fTid;
+        }
+        if (fWid != tag.fWid) {
+            return fWid < tag.fWid;
+        }
+        if (fFid != tag.fFid) {
+            return fFid < tag.fFid;
+        }
+        return false;
+    }
+
+    bool operator== (const GrGpuResourceTag& tag) const {
+        return (fPid == tag.fPid) && (fTid == tag.fTid) && (fWid == tag.fWid) && (fFid == tag.fFid);
+    }
+
+    std::string toString() const {
+        return "[" + std::to_string(fPid) + "," + std::to_string(fTid) + ","
+            + std::to_string(fWid) + "," + std::to_string(fFid) + "]";
+    }
+
+    bool isGrTagValid() const {
+        return isGrGpuResourceTagValid;
+    }
+
+    bool filter(GrGpuResourceTag& tag) const {
+        if (!isGrTagValid()) {
+            return !tag.isGrTagValid();
+        }
+        if (fPid && fPid != tag.fPid) {
+            return false;
+        }
+        if (fTid && fTid != tag.fTid) {
+            return false;
+        }
+        if (fWid && fWid != tag.fWid) {
+            return false;
+        }
+        if (fFid && fFid != tag.fFid) {
+            return false;
+        }
+        return true;
+    }
+
+    bool filter(GrGpuResourceTag&& tag) const {
+        if (!isGrTagValid()) {
+            return !tag.isGrTagValid();
+        }
+        if (fPid && fPid != tag.fPid) {
+            return false;
+        }
+        if (fTid && fTid != tag.fTid) {
+            return false;
+        }
+        if (fWid && fWid != tag.fWid) {
+            return false;
+        }
+        if (fFid && fFid != tag.fFid) {
+            return false;
+        }
+        return true;
+    }
+    uint32_t fPid;
+    uint32_t fTid;
+    uint32_t fWid;
+    uint32_t fFid;
+    bool isGrGpuResourceTagValid;
+};
+
 /**
  * Base class for objects that can be kept in the GrResourceCache.
  */
@@ -235,6 +320,18 @@ public:
 
     static uint32_t CreateUniqueID();
 
+    /**
+     * Set the resource tag.
+     */
+        void setResourceTag(const GrGpuResourceTag tag) { fGrResourceTag = tag; }
+
+    /**
+     * Get the resource tag.
+     *
+     * @return all GrGpuResourceTags.
+     */
+    GrGpuResourceTag getResourceTag() const { return fGrResourceTag; }
+
 #if defined(GPU_TEST_UTILS)
     virtual const GrSurface* asSurface() const { return nullptr; }
 #endif
@@ -340,6 +437,7 @@ private:
     GrBudgetedType fBudgetedType = GrBudgetedType::kUnbudgetedUncacheable;
     bool fRefsWrappedObjects = false;
     const UniqueID fUniqueID;
+    GrGpuResourceTag fGrResourceTag;
     std::string fLabel;
 
     using INHERITED = GrIORef<GrGpuResource>;

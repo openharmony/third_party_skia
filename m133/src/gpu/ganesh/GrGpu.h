@@ -12,6 +12,7 @@
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSpan.h"
+#include "include/gpu/ganesh/GrDirectContext.h"
 #include "include/core/SkTypes.h"
 #include "include/gpu/GpuTypes.h"
 #include "include/gpu/ganesh/GrBackendSurface.h"
@@ -74,6 +75,19 @@ public:
 
     GrDirectContext* getContext() { return fContext; }
     const GrDirectContext* getContext() const { return fContext; }
+
+void setCurrentGrResourceTag(const GrGpuResourceTag& tag) {
+    if (fContext) {
+        fContext->setCurrentGrResourceTag(tag);
+    }
+}
+
+void popGrResourceTag()
+{
+    if (fContext) {
+        fContext->popGrResourceTag();
+    }
+}
 
     /**
      * Gets the capabilities of the draw target.

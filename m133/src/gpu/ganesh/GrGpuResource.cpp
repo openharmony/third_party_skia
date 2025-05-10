@@ -27,6 +27,10 @@ static inline GrResourceCache* get_resource_cache(GrGpu* gpu) {
 GrGpuResource::GrGpuResource(GrGpu* gpu, std::string_view label)
         : fGpu(gpu), fUniqueID(CreateUniqueID()), fLabel(label) {
     SkDEBUGCODE(fCacheArrayIndex = -1);
+    auto cache = get_resource_cache(fGpu);
+    if (cache) {
+        fGrResourceTag = cache->resourceAccess().getCurrentGrResourceTag();
+    }
 }
 
 void GrGpuResource::registerWithCache(skgpu::Budgeted budgeted) {
