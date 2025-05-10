@@ -1743,6 +1743,13 @@
 
         limit = (FT_UShort)gloader->current.num_subglyphs;
 
+        /* Fix CVE-2025-27363 */
+        if ( limit < 0 )
+        {
+          error = FT_THROW( Invalid_Argument );
+          goto Exit;
+        }
+
         /* construct an outline structure for              */
         /* communication with `TT_Vary_Apply_Glyph_Deltas' */
         if ( FT_QNEW_ARRAY( outline.points, limit + 4 ) ||
