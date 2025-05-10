@@ -3243,7 +3243,6 @@ if (skia_enable_tools) {
 
   if (!is_win) {
     source_set("skqp_lib") {  # Not a skia_source_set
-      branch_protector_ret = "pac_ret"
       check_includes = false
       testonly = true
       public_configs = [ ":skia_private" ]
