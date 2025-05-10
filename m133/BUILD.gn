@@ -2272,7 +2272,6 @@ if (skia_enable_tools) {
       sources += [ "tools/gpu/vk/VkTestUtils.cpp" ]
       sources += [ "tools/gpu/vk/VkYcbcrSamplerHelper.h" ]
       sources += [ "tools/gpu/vk/VkYcbcrSamplerHelper.cpp" ]
-      all_dependent_configs += [ ":vulkan_memory_allocator" ]
     }
     if (skia_use_metal) {
       sources += [ "tools/gpu/mtl/MtlTestContext.mm" ]
@@ -2970,8 +2969,6 @@ if (skia_enable_tools) {
     if (skia_use_libpng_decode) {
       test_app("skqp") {
         sources = [ "tools/skqp/src/skqp_main.cpp" ]
-        include_dirs = [ "//" ]
-        lib_dirs = []
         deps = [ ":skqp_lib" ]
       }
     }
@@ -3284,14 +3281,6 @@ if (skia_enable_tools) {
           "tools/viewer/MSKPSlide.h",
         ]
       }
-      if (skia_use_vulkan) {
-        deps += [
-          "${skia_third_party_dir}/externals/spirv-tools:spvtools",
-
-          #spvtools depends on this but doesn't deps it in.
-          "${skia_third_party_dir}/externals/spirv-tools:spvtools_val",
-        ]
-      }
     }
   }
 
@@ -3299,11 +3288,11 @@ if (skia_enable_tools) {
     test_app("VulkanBasic") {
       # Bots and even devs may not have Vulkan headers, so put
       # include/third_party/vulkan on our path so they're always available.
-      all_dependent_configs = [
+      configs = [
         ":use_skia_vulkan_headers",
         ":vulkan_memory_allocator",
       ]
-
+      external_deps = [ "vulkan-headers:vulkan_headers" ]
       sources = [ "example/VulkanBasic.cpp" ]
       sources += [ "tools/gpu/vk/VkTestMemoryAllocator.h" ]
       sources += [ "tools/gpu/vk/VkTestMemoryAllocator.cpp" ]
