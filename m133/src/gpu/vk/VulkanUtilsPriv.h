@@ -71,6 +71,9 @@ static constexpr uint32_t VkFormatChannels(VkFormat vkFormat) {
         case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:  return kRGB_SkColorChannelFlags;
         case VK_FORMAT_BC1_RGB_UNORM_BLOCK:      return kRGB_SkColorChannelFlags;
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:     return kRGBA_SkColorChannelFlags;
+        case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:     return kRGBA_SkColorChannelFlags;
+        case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:     return kRGBA_SkColorChannelFlags;
+        case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:     return kRGBA_SkColorChannelFlags;
         case VK_FORMAT_R16_UNORM:                return kRed_SkColorChannelFlag;
         case VK_FORMAT_R16G16_UNORM:             return kRG_SkColorChannelFlags;
         case VK_FORMAT_R16G16B16A16_UNORM:       return kRGBA_SkColorChannelFlags;
@@ -103,6 +106,9 @@ static constexpr size_t VkFormatBytesPerBlock(VkFormat vkFormat) {
         case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:   return 8;
         case VK_FORMAT_BC1_RGB_UNORM_BLOCK:       return 8;
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:      return 8;
+        case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:      return 16; // astc block bytes
+        case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:      return 16; // astc block bytes
+        case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:      return 16; // astc block bytes
         case VK_FORMAT_R16_UNORM:                 return 2;
         case VK_FORMAT_R16G16_UNORM:              return 4;
         case VK_FORMAT_R16G16B16A16_UNORM:        return 8;
@@ -128,6 +134,9 @@ static constexpr SkTextureCompressionType VkFormatToCompressionType(VkFormat vkF
         case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK: return SkTextureCompressionType::kETC2_RGB8_UNORM;
         case VK_FORMAT_BC1_RGB_UNORM_BLOCK:     return SkTextureCompressionType::kBC1_RGB8_UNORM;
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:    return SkTextureCompressionType::kBC1_RGBA8_UNORM;
+        case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:    return SkTextureCompressionType::kASTC_RGBA8_4x4;
+        case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:    return SkTextureCompressionType::kASTC_RGBA8_6x6;
+        case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:    return SkTextureCompressionType::kASTC_RGBA8_8x8;
         default:                                return SkTextureCompressionType::kNone;
     }
 }
@@ -206,6 +215,9 @@ static constexpr bool VkFormatIsCompressed(VkFormat vkFormat) {
         case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:
         case VK_FORMAT_BC1_RGB_UNORM_BLOCK:
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
+        case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:
+        case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:
+        case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:
             return true;
         default:
             return false;
@@ -263,6 +275,9 @@ static constexpr const char* VkFormatToStr(VkFormat vkFormat) {
         case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:  return "ETC2_R8G8B8_UNORM_BLOCK";
         case VK_FORMAT_BC1_RGB_UNORM_BLOCK:      return "BC1_RGB_UNORM_BLOCK";
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:     return "BC1_RGBA_UNORM_BLOCK";
+        case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:     return "ASTC_4x4_UNORM_BLOCK";
+        case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:     return "ASTC_6x6_UNORM_BLOCK";
+        case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:     return "ASTC_8x8_UNORM_BLOCK";
         case VK_FORMAT_R16_UNORM:                return "R16_UNORM";
         case VK_FORMAT_R16G16_UNORM:             return "R16G16_UNORM";
         case VK_FORMAT_R16G16B16A16_UNORM:       return "R16G16B16A16_UNORM";

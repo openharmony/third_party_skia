@@ -100,6 +100,9 @@ static constexpr GrColorFormatDesc GrVkFormatDesc(VkFormat vkFormat) {
         case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK: return GrColorFormatDesc::MakeInvalid();
         case VK_FORMAT_BC1_RGB_UNORM_BLOCK:     return GrColorFormatDesc::MakeInvalid();
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:    return GrColorFormatDesc::MakeInvalid();
+        case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:    return GrColorFormatDesc::MakeInvalid();
+        case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:    return GrColorFormatDesc::MakeInvalid();
+        case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:    return GrColorFormatDesc::MakeInvalid();
 
         // This type only describes color channels.
         case VK_FORMAT_S8_UINT:            return GrColorFormatDesc::MakeInvalid();

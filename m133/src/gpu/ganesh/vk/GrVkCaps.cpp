@@ -113,6 +113,7 @@ enum class FormatCompatibilityClass {
     kBC1_RGB_8_16_1,
     kBC1_RGBA_8_16,
     kETC2_RGB_8_16,
+    kASTC_RGBA_8_16,
 };
 }  // anonymous namespace
 
@@ -157,6 +158,11 @@ static FormatCompatibilityClass format_compatibility_class(VkFormat format) {
 
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
             return FormatCompatibilityClass::kBC1_RGBA_8_16;
+
+        case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:
+        case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:
+        case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:
+            return FormatCompatibilityClass::kASTC_RGBA_8_16;
 
         default:
             SK_ABORT("Unsupported VkFormat");
@@ -827,6 +833,9 @@ static constexpr VkFormat kVkFormats[] = {
     VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16,
     VK_FORMAT_R16G16B16A16_UNORM,
     VK_FORMAT_R16G16_SFLOAT,
+    VK_FORMAT_ASTC_4x4_UNORM_BLOCK,
+    VK_FORMAT_ASTC_6x6_UNORM_BLOCK,
+    VK_FORMAT_ASTC_8x8_UNORM_BLOCK,
 };
 
 void GrVkCaps::setColorType(GrColorType colorType, std::initializer_list<VkFormat> formats) {
@@ -1435,6 +1444,33 @@ void GrVkCaps::initFormatTable(const GrContextOptions& contextOptions,
         // No supported GrColorTypes.
     }
 
+    // Format: VK_FORMAT_ASTC_4x4_UNORM_BLOCK
+    {
+        constexpr VkFormat format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
+        auto& info = this->getFormatInfo(format);
+        info.init(interface, physDev, properties, format);
+        // Setting this to texel block size
+        // No supported GrColorTypes.
+    }
+
+    // Format: VK_FORMAT_ASTC_6x6_UNORM_BLOCK
+    {
+        constexpr VkFormat format = VK_FORMAT_ASTC_6x6_UNORM_BLOCK;
+        auto& info = this->getFormatInfo(format);
+        info.init(interface, physDev, properties, format);
+        // Setting this to texel block size
+        // No supported GrColorTypes.
+    }
+
+    // Format: VK_FORMAT_ASTC_8x8_UNORM_BLOCK
+    {
+        constexpr VkFormat format = VK_FORMAT_ASTC_8x8_UNORM_BLOCK;
+        auto& info = this->getFormatInfo(format);
+        info.init(interface, physDev, properties, format);
+        // Setting this to texel block size
+        // No supported GrColorTypes.
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Map GrColorTypes (used for creating GrSurfaces) to VkFormats. The order in which the formats
     // are passed into the setColorType function indicates the priority in selecting which format
@@ -1855,6 +1891,21 @@ GrBackendFormat GrVkCaps::getBackendFormatFromCompressionType(
                 return GrBackendFormats::MakeVk(VK_FORMAT_BC1_RGBA_UNORM_BLOCK);
             }
             return {};
+        case SkTextureCompressionType::kASTC_RGBA8_4x4:
+            if (this->isVkFormatTexturable(VK_FORMAT_ASTC_4x4_UNORM_BLOCK)) {
+                return GrBackendFormat::MakeVk(VK_FORMAT_ASTC_4x4_UNORM_BLOCK);
+            }
+            return {};
+        case SkTextureCompressionType::kASTC_RGBA8_6x6:
+            if (this->isVkFormatTexturable(VK_FORMAT_ASTC_6x6_UNORM_BLOCK)) {
+                return GrBackendFormat::MakeVk(VK_FORMAT_ASTC_6x6_UNORM_BLOCK);
+            }
+            return {};
+        case SkTextureCompressionType::kASTC_RGBA8_8x8:
+            if (this->isVkFormatTexturable(VK_FORMAT_ASTC_8x8_UNORM_BLOCK)) {
+                return GrBackendFormat::MakeVk(VK_FORMAT_ASTC_8x8_UNORM_BLOCK);
+            }
+            return {};
     }
 
     SkUNREACHABLE;
@@ -2176,6 +2227,9 @@ std::vector<GrTest::TestFormatColorTypeCombination> GrVkCaps::getTestingCombinat
         { GrColorType::kRGB_888x,      GrBackendFormats::MakeVk(VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK)},
         { GrColorType::kRGB_888x,         GrBackendFormats::MakeVk(VK_FORMAT_BC1_RGB_UNORM_BLOCK) },
         { GrColorType::kRGBA_8888,        GrBackendFormats::MakeVk(VK_FORMAT_BC1_RGBA_UNORM_BLOCK)},
+        { GrColorType::kRGBA_8888,        GrBackendFormat::MakeVk(VK_FORMAT_ASTC_4x4_UNORM_BLOCK) },
+        { GrColorType::kRGBA_8888,        GrBackendFormat::MakeVk(VK_FORMAT_ASTC_6x6_UNORM_BLOCK) },
+        { GrColorType::kRGBA_8888,        GrBackendFormat::MakeVk(VK_FORMAT_ASTC_8x8_UNORM_BLOCK) },
     };
 
     return combos;

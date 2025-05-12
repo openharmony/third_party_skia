@@ -314,10 +314,13 @@ sk_sp<SkImage> TextureFromCompressedTextureData(GrDirectContext* direct,
 
     SkColorType colorType = skgpu::CompressionTypeToSkColorType(type);
 
+    // modify for support astc texture format
+    SkAlphaType alphaType = skgpu::CompressionTypeToSkAlphaType(type);
+
     return sk_make_sp<SkImage_Ganesh>(sk_ref_sp(direct),
                                       kNeedNewImageUniqueID,
                                       std::move(view),
-                                      SkColorInfo(colorType, kOpaque_SkAlphaType, colorSpace));
+                                      SkColorInfo(colorType, alphaType, colorSpace));
 }
 
 sk_sp<SkImage> PromiseTextureFrom(sk_sp<GrContextThreadSafeProxy> threadSafeProxy,
