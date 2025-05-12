@@ -150,6 +150,10 @@ config("skia_private") {
   ]
 
   defines = [ "SK_GAMMA_APPLY_TO_A8" ]
+  if (target_cpu == "x86_64" || current_os == "windows" ||
+      current_os == "mac" || current_os == "linux" || current_os == "ios") {
+    cflags_cc += [ "-Wno-psabi" ]
+  }
   if (skia_use_fixed_gamma_text) {
     defines += [
       "SK_GAMMA_EXPONENT=1.4",
@@ -1061,9 +1065,7 @@ optional("gpu") {
       sources += skia_android_gl_sources
 
       # this lib is required to link against AHardwareBuffer
-      if (defined(ndk_api) && ndk_api >= 26) {
-        libs += [ "android" ]
-      }
+      libs += [ "android" ]
     } else if (skia_use_egl || is_ohos) {
       if (skia_use_epoxy_egl) {
         sources += [ "src/gpu/ganesh/gl/epoxy/GrGLMakeEpoxyEGLInterface.cpp" ]
