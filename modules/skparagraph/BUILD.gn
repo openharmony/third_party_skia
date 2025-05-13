@@ -100,6 +100,7 @@ ohos_static_library("skia_paragraph_ohos") {
   if (is_arkui_x) {
     deps += [
       "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog_${target_os}",
+      "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
       "//third_party/bounds_checking_function:libsec_static",
       "//third_party/icu/icu4c:static_icuuc",
       "//third_party/skia:skia_$platform",
