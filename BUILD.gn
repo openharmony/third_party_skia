@@ -57,6 +57,8 @@ config("skia_wno") {
           "-Wno-error=backend-plugin",
           "-Wno-profile-instr-out-of-date",
           "-Wno-profile-instr-unprofiled",
+          "-mllvm",
+          "-enable-partial-inlining",
         ]
       }
       if (skia_feature_product == "pc" && target_cpu == "arm64" &&
@@ -1931,6 +1933,7 @@ if (use_oh_skia) {
           "-Wl,-mllvm,-vectorizer-min-trip-count=4",
           "-Wl,--aarch64-inline-plt",
           "-Wl,-mllvm,-tail-dup-profile-hot-percentile-override=999990",
+          "-Wl,-mllvm,-enable-partial-inlining",
         ]
         if (skia_feature_enable_codemerge) {
           ldflags += [
