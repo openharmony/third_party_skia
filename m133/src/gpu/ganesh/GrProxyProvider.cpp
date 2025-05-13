@@ -726,8 +726,6 @@ sk_sp<GrTextureProxy> GrProxyProvider::wrapRenderableBackendTexture(
     // Make sure we match how we created the proxy with skgpu::Budgeted::kNo
     SkASSERT(GrBudgetedType::kBudgeted != tex->resourcePriv().budgetedType());
 
-    return sk_sp<GrTextureProxy>(new GrTextureRenderTargetProxy(
-            std::move(tex), UseAllocator::kNo, this->isDDLProvider()));
     return assignTagToProxy(sk_sp<GrTextureProxy>(new GrTextureRenderTargetProxy(std::move(tex), UseAllocator::kNo,
                                                                 this->isDDLProvider())));
 }
