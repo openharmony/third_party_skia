@@ -250,7 +250,6 @@ public:
     sk_sp<SkPicture> getPicture() { return fPicture; }
 
     SkScalar widthWithTrailingSpaces() { return fMaxWidthWithTrailingSpaces; }
-    SkScalar getMaxWidth() { return fOldMaxWidth; }
 
     void resetContext();
     void resolveStrut();
@@ -417,8 +416,6 @@ private:
     SkTArray<size_t, true> fClustersIndexFromCodeUnit;
     std::vector<size_t> fWords;
     std::vector<SkScalar> fIndents;
-    std::vector<TextCutRecord> rtlTextSize;
-    std::vector<TextCutRecord> ltrTextSize;
     std::vector<SkUnicode::BidiRegion> fBidiRegions;
     // These two arrays are used in measuring methods (getRectsForRange, getGlyphPositionAtCoordinate)
     // They are filled lazily whenever they need and cached
@@ -440,8 +437,6 @@ private:
     SkScalar fOldWidth;
     SkScalar fOldHeight;
     SkScalar fMaxWidthWithTrailingSpaces;
-    SkScalar fOldMaxWidth;
-    SkScalar allTextWidth;
     std::shared_ptr<SkUnicode> fUnicode;
     bool fHasLineBreaks;
     bool fHasWhitespacesInside;
