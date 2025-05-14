@@ -290,6 +290,10 @@ void formatTarget(std::vector<uint16_t>& target)
     while (EXCLUDED_WORD_ENDING_CHARS.find(target.back()) != EXCLUDED_WORD_ENDING_CHARS.end()) {
         target.pop_back();
     }
+    if (target.empty()) {
+        // nothing to be hyphenated
+        return;
+    }
     target.insert(target.cbegin(), '.');
     target.push_back('.');
 
@@ -484,6 +488,10 @@ size_t getLanguagespecificTrailingBounds(const std::string& locale)
 inline void formatResult(std::vector<uint8_t>& result, const size_t& leadingHyphmins, const size_t& trailingHyphmins,
                          std::vector<uint8_t>& offsets)
 {
+    if (result.size() < leadingHyphmins || result.size() <= trailingHyphmins) {
+        // Not meeting the requirements
+        return;
+    }
     for (size_t i = 0; i < leadingHyphmins; i++) {
         result[i] = 0;
     }
@@ -542,12 +550,14 @@ std::vector<uint8_t> Hyphenator::findBreakPositions(const SkString& locale, cons
         }
 
         formatTarget(word);
-        // Bulgarian pattern file tells only the positions where
-        // breaking is not allowed, we need to initialize defaults to allow breaking
-        const uint8_t defaultValue = (dummy == "bg") ? 1 : 0; // 0: break is not allowed, 1: break level 1
-        result.resize(word.size(), defaultValue);
-        findBreaks(hyphenatorData, word, result);
-        formatResult(result, leadingHyphmins, trailingHyphmins, offsets);
+        if (word.size() > 3) { // 3: At least four characters, like '.ab.'
+            // Bulgarian pattern file tells only the positions where
+            // breaking is not allowed, we need to initialize defaults to allow breaking
+            const uint8_t defaultValue = (dummy == "bg") ? 1 : 0; // 0: break is not allowed, 1: break level 1
+            result.resize(word.size(), defaultValue);
+            findBreaks(hyphenatorData, word, result);
+            formatResult(result, leadingHyphmins, trailingHyphmins, offsets);
+        }
     }
     return result;
 }
