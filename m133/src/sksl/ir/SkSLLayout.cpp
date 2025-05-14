@@ -79,6 +79,11 @@ std::string Layout::paddedDescription() const {
     if (fFlags & LayoutFlag::kColor) {
         result += separator() + "color";
     }
+#ifdef SKSL_EXT
+    if (fFlags & LayoutFlag::kConstantId) {
+        result += separator() + "constant_id";
+    }
+#endif
     if (fLocalSizeX >= 0) {
         result += separator() + "local_size_x = " + std::to_string(fLocalSizeX);
     }
@@ -129,6 +134,9 @@ bool Layout::checkPermittedLayout(const Context& context,
         { LayoutFlag::kLocalSizeX,               "local_size_x"},
         { LayoutFlag::kLocalSizeY,               "local_size_y"},
         { LayoutFlag::kLocalSizeZ,               "local_size_z"},
+#ifdef SKSL_EXT
+        { LayoutFlag::kConstantId,               "constant_id"},
+#endif
     };
 
     bool success = true;
@@ -156,10 +164,12 @@ bool Layout::checkPermittedLayout(const Context& context,
         permittedLayoutFlags &= ~LayoutFlag::kTexture;
         permittedLayoutFlags &= ~LayoutFlag::kSampler;
     }
+#ifndef SKSL_EXT
     // The `push_constant` flag is only allowed when targeting Vulkan or WebGPU.
     if (!(layoutFlags & (LayoutFlag::kVulkan | LayoutFlag::kWebGPU))) {
         permittedLayoutFlags &= ~LayoutFlag::kPushConstant;
     }
+#endif
     // The `set` flag is not allowed when explicitly targeting Metal.
     if (layoutFlags & LayoutFlag::kMetal) {
         permittedLayoutFlags &= ~LayoutFlag::kSet;
@@ -189,6 +199,9 @@ bool Layout::operator==(const Layout& other) const {
            fIndex                == other.fIndex &&
            fSet                  == other.fSet &&
            fBuiltin              == other.fBuiltin &&
+#ifdef SKSL_EXT
+           fConstantId           == other.fConstantId &&
+#endif
            fInputAttachmentIndex == other.fInputAttachmentIndex &&
            fLocalSizeX           == other.fLocalSizeX &&
            fLocalSizeY           == other.fLocalSizeY &&

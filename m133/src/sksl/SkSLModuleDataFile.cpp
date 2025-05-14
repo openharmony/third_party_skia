@@ -12,10 +12,15 @@
 #include "src/utils/SkOSPath.h"
 
 #include <fstream>
-
+#ifdef SKSL_EXT
+#include "src/sksl/sksl_ext.sksl.h"
+#endif
 namespace SkSL {
 
 std::string GetModuleData(ModuleType /*name*/, const char* filename) {
+#ifdef SKSL_EXT
+    return extModuleData[filename];
+#endif
     std::string exePath = SkGetExecutablePath();
     SkString exeDir = SkOSPath::Dirname(exePath.c_str());
     SkString modulePath = SkOSPath::Join(exeDir.c_str(), filename);
