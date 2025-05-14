@@ -1100,7 +1100,12 @@ void GrGLCaps::initGLSL(const GrGLContextInfo& ctxInfo, const GrGLInterface* gli
     }
 
     if (GR_IS_GR_GL(standard)) {
+        // GL 330 version enable VertexID and Inf in mac platform
+#ifdef SK_GL_ENABLE_330_MAC
+        shaderCaps->fVertexIDSupport = ctxInfo.glslGeneration() >= SkSL::GLSLGeneration::k300es;
+#else
         shaderCaps->fVertexIDSupport = true;
+#endif
     } else if (GR_IS_GR_GL_ES(standard) || GR_IS_GR_WEBGL(standard)) {
         shaderCaps->fVertexIDSupport = ctxInfo.glslGeneration() >= SkSL::GLSLGeneration::k300es;
     }
@@ -1121,7 +1126,12 @@ void GrGLCaps::initGLSL(const GrGLContextInfo& ctxInfo, const GrGLInterface* gli
     }
 
     if (GR_IS_GR_GL(standard)) {
+#ifdef SK_GL_ENABLE_330_MAC
+        shaderCaps->fInfinitySupport = (ctxInfo.glslGeneration() >= SkSL::GLSLGeneration::k300es);
         shaderCaps->fNonconstantArrayIndexSupport = true;
+#else
+        shaderCaps->fNonconstantArrayIndexSupport = true;
+#endif
     } else if (GR_IS_GR_GL_ES(standard) || GR_IS_GR_WEBGL(standard)) {
         shaderCaps->fNonconstantArrayIndexSupport =
                 (ctxInfo.glslGeneration() >= SkSL::GLSLGeneration::k300es);
