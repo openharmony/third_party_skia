@@ -1096,6 +1096,9 @@ SkSL::Layout Parser::layout() {
             {"local_size_x",                SkSL::LayoutFlag::kLocalSizeX},
             {"local_size_y",                SkSL::LayoutFlag::kLocalSizeY},
             {"local_size_z",                SkSL::LayoutFlag::kLocalSizeZ},
+#ifdef SKSL_EXT
+            {"constant_id",                 SkSL::LayoutFlag::kConstantId},
+#endif
     });
 
     Layout result;
@@ -1154,6 +1157,11 @@ SkSL::Layout Parser::layout() {
                     case SkSL::LayoutFlag::kLocalSizeZ:
                         result.fLocalSizeZ = this->layoutInt();
                         break;
+#ifdef SKSL_EXT
+                    case SkSL::LayoutFlag::kConstantId:
+                        result.fConstantId = this->layoutInt();
+                        break;
+#endif
                     default:
                         break;
                 }

@@ -4719,4 +4719,48 @@ ohos_static_library("sksl_ext_static") {
       sources += skia_no_slug_srcs
     }
   }
+  ohos_static_library("sksl_ext_static") {
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+    
+    public_configs = [ ":skia_config" ]
+    defines = [
+      "SKSL_STANDALONE",
+      "SK_DISABLE_TRACING",
+      "SK_COMPILE_WITH_GN",
+      "SKSL_EXT",
+    ]
+    sources = []
+    if (is_ohos) {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_ohos.cpp" ]
+      external_deps = [
+          "hilog:libhilog"
+      ]
+    } else if (is_android) {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_android.cpp" ]
+    } else if (is_win) {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_win.cpp" ]
+    } else {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_stdio.cpp" ]
+    }
+    sources += skslc_deps
+    sources += skia_sksl_codegen_sources
+    sources += skia_sksl_core_sources
+    sources += skia_sksl_pipeline_sources
+    libs = []
+    if (is_win) {
+      sources += [ "${skia_root_dir}/src/utils/SkGetExecutablePath_win.cpp" ]
+    } else if (is_mac || is_ios) {
+      sources += [ "${skia_root_dir}/src/utils/SkGetExecutablePath_mac.cpp" ]
+    } else if (is_linux || is_android) {
+      sources += [ "${skia_root_dir}/src/utils/SkGetExecutablePath_linux.cpp" ]
+    }
+    if (is_win) {
+      sources += skia_ports_windows_sources
+    } else {
+      sources += [ "${skia_root_dir}/src/ports/SkOSFile_posix.cpp" ]
+      libs += [ "dl" ]
+    }
+    include_dirs = [ "${skia_root_dir}" ]
+  }
 }
