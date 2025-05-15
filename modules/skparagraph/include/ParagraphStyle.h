@@ -136,6 +136,7 @@ struct ParagraphStyle {
                this->fTextTab == rhs.fTextTab &&
                this->fParagraphSpacing == rhs.fParagraphSpacing &&
                this->fIsEndAddParagraphSpacing == rhs.fIsEndAddParagraphSpacing &&
+               this->fIsTrailingSpaceOptimized == rhs.fIsTrailingSpaceOptimized &&
 #endif
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
     }
@@ -203,6 +204,11 @@ struct ParagraphStyle {
     {
         fIsEndAddParagraphSpacing = isEndAddParagraphSpacing;
     }
+    bool getTrailingSpaceOptimized() const { return fIsTrailingSpaceOptimized; }
+    void setTrailingSpaceOptimized(bool isTrailingSpaceOptimized)
+    {
+        fIsTrailingSpaceOptimized = isTrailingSpaceOptimized;
+    }
 #endif
 private:
     StrutStyle fStrutStyle;
@@ -221,8 +227,9 @@ private:
     SkScalar fTextSplitRatio = 0.5f;
 #ifdef OHOS_SUPPORT
     TextTabs fTextTab;
-    SkScalar fParagraphSpacing { 0.0f };
-    bool fIsEndAddParagraphSpacing { false };
+    SkScalar fParagraphSpacing{0.0f};
+    bool fIsEndAddParagraphSpacing{false};
+    bool fIsTrailingSpaceOptimized{false};
 #endif
 };
 }  // namespace textlayout
