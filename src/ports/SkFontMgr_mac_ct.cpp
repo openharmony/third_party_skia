@@ -458,7 +458,7 @@ public:
             return;
         }
         SkString fontDir(path.c_str());
-        path = path + "/HMSymbolVF.ttf";
+        path += "/HMSymbolVF.ttf";
         sk_sp<SkTypeface> typeface = onMakeFromFile(path.c_str(), 0);
         if (!typeface) {
             return;
@@ -470,8 +470,14 @@ public:
         HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol("hm_symbol_config_next.json", fontDir);
         SkUniqueCFRef<CFDataRef> cfData =
             SkUniqueCFRef<CFDataRef>(CFDataCreate(kCFAllocatorDefault, fontData->bytes(), fontData->size()));
+        if (!cfData) {
+            return;
+        }
         SkUniqueCFRef<CGDataProviderRef> dataProvider =
             SkUniqueCFRef<CGDataProviderRef>(CGDataProviderCreateWithCFData(cfData.get()));
+        if (!dataProvider) {
+            return;
+        }
         SkUniqueCFRef<CGFontRef> cgFont = SkUniqueCFRef<CGFontRef>(CGFontCreateWithDataProvider(dataProvider.get()));
         if (!cgFont) {
             return;
