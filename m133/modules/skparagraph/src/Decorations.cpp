@@ -123,6 +123,172 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         }
     }
 }
+
+static RSDrawing::Paint::PaintStyle ConvertDrawingStyle(SkPaint::Style skStyle) {
+    if (PAINT_STYLE.find(skStyle) != PAINT_STYLE.end()) {
+        return PAINT_STYLE.at(skStyle);
+    } else {
+        return RSDrawing::Paint::PaintStyle::PAINT_NONE;
+    }
+}
+
+static RSDrawing::Paint ConvertDecorStyle(const ParagraphPainter::DecorationStyle& decorStyle) {
+    const SkPaint& decorPaint = decorStyle.skPaint();
+    RSDrawing::Paint paint;
+    paint.SetStyle(ConvertDrawingStyle(decorPaint.getStyle()));
+    paint.SetAntiAlias(decorPaint.isAntiAlias());
+    paint.SetColor(decorPaint.getColor());
+    paint.SetWidth(decorPaint.getStrokeWidth());
+    if (decorStyle.getDashPathEffect().has_value()) {
+        auto dashPathEffect = decorStyle.getDashPathEffect().value();
+        RSDrawing::scalar intervals[] = {dashPathEffect.fOnLength, dashPathEffect.fOffLength,
+            dashPathEffect.fOnLength, dashPathEffect.fOffLength};
+        size_t count = sizeof(intervals) / sizeof(intervals[0]);
+        auto pathEffect1 = RSDrawing::PathEffect::CreateDashPathEffect(intervals, count, 0.0f);
+        auto pathEffect2 = RSDrawing::PathEffect::CreateDiscretePathEffect(0, 0);
+        auto pathEffect = RSDrawing::PathEffect::CreateComposePathEffect(*pathEffect1.get(), *pathEffect2.get());
+        paint.SetPathEffect(pathEffect);
+    }
+    return paint;
+}
+
+void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRect& rect,
+    SkScalar baseline, SkScalar halo, const TextStyle& textStyle) {
+    // Create a special text blob for decorations
+    RSTextBlobBuilder builder;
+    context.run->copyTo(builder, SkToU32(context.pos), context.size);
+    auto blob = builder.Make();
+    if (!blob) {
+        // There is no text really
+        return;
+    }
+    SkScalar top = textStyle.getHeight() != 0 ? this->fDecorationContext.textBlobTop + baseline : rect.fTop;
+    // Since we do not shift down the text by {baseline}
+    // (it now happens on drawTextBlob but we do not draw text here)
+    // we have to shift up the bounds to compensate
+    // This baseline thing ends with getIntercepts
+    const SkScalar bounds[2] = {top - baseline, top + halo - baseline};
+    RSDrawing::Paint paint = ConvertDecorStyle(fDecorStyle);
+    auto count = blob->GetIntercepts(bounds, nullptr, &paint);
+    skia_private::TArray<SkScalar> intersections(count);
+    intersections.resize(count);
+    blob->GetIntercepts(bounds, intersections.data(), &paint);
+
+    RSPath path;
+    auto start = rect.fLeft;
+    path.MoveTo(rect.fLeft, rect.fTop);
+    for (int i = 0; i < intersections.size(); i += 2) {
+        auto end = intersections[i] - halo;
+        if (end - start >= halo) {
+            start = intersections[i + 1] + halo;
+            path.LineTo(end, rect.fTop);
+            path.MoveTo(start, rect.fTop);
+        } else {
+            start = intersections[i + 1] + halo;
+            path.MoveTo(start, rect.fTop);
+        }
+    }
+    if (!intersections.empty() && (rect.fRight - start > halo)) {
+        path.LineTo(rect.fRight, rect.fTop);
+    }
+
+    if (intersections.empty()) {
+        path.LineTo(rect.fRight, rect.fTop);
+    }
+    fPath = path;
+}
+
+void Decorations::calculateAvoidanceWaves(const TextStyle& textStyle, SkRect clip) {
+    fPath.Reset();
+    int wave_count = 0;
+    const int step = 2;
+    const float zer = 0.01;
+    SkScalar x_start = 0;
+    SkScalar quarterWave = fThickness;
+    if (quarterWave <= zer) {
+        return;
+    }
+    fPath.MoveTo(0, 0);
+    while (x_start + quarterWave * step < clip.width()) {
+        fPath.RQuadTo(quarterWave,
+            wave_count % step != 0 ? quarterWave : -quarterWave,
+            quarterWave * step, 0);
+        x_start += quarterWave * step;
+        ++wave_count;
+    }
+
+    // The rest of the wave
+    auto remaining = clip.width() - x_start;
+    if (remaining > 0) {
+        double x1 = remaining / step;
+        double y1 = remaining / step * (wave_count % step == 0 ? -1 : 1);
+        double x2 = remaining;
+        double y2 = (remaining - remaining * remaining / (quarterWave * step)) *
+                    (wave_count % step == 0 ? -1 : 1);
+        fPath.RQuadTo(x1, y1, x2, y2);
+    }
+}
+
+void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface) {
+    textStyle.setTypeface(std::move(typeface));
+    textStyle.getFontMetrics(&fFontMetrics);
+    if (textStyle.getDecoration().fType == TextDecoration::kUnderline &&
+        !SkScalarNearlyZero(fThickness)) {
+        return;
+    }
+
+    fThickness = textStyle.getFontSize() * UNDER_LINE_THICKNESS_RATIO;
+    fThickness *= textStyle.getDecorationThicknessMultiplier();
+}
+
+void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
+    const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift, const SkScalar& fontSize) {
+    switch (decoration) {
+      case TextDecoration::kUnderline:
+          fPosition = fDecorationContext.underlinePosition;
+          break;
+      case TextDecoration::kOverline:
+          fPosition = (textDecorationStyle == TextDecorationStyle::kWavy ? fThickness : fThickness / 2.0f) - ascent;
+          break;
+      case TextDecoration::kLineThrough: {
+          fPosition = LINE_THROUGH_TOP * fontSize;
+          fPosition -= ascent;
+          fPosition += textBaselineShift;
+          break;
+      }
+      default:SkASSERT(false);
+          break;
+    }
+}
+
+void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
+
+    fPath.Reset();
+    int wave_count = 0;
+    SkScalar x_start = 0;
+    SkScalar quarterWave = fThickness;
+    fPath.MoveTo(0, 0);
+
+    while (x_start + quarterWave * 2 < clip.width()) {
+        fPath.RQuadTo(quarterWave,
+                     wave_count % 2 != 0 ? quarterWave : -quarterWave,
+                     quarterWave * 2,
+                     0);
+        x_start += quarterWave * 2;
+        ++wave_count;
+    }
+
+    // The rest of the wave
+    auto remaining = clip.width() - x_start;
+    if (remaining > 0) {
+        double x1 = remaining / 2;
+        double y1 = remaining / 2 * (wave_count % 2 == 0 ? -1 : 1);
+        double x2 = remaining;
+        double y2 = (remaining - remaining * remaining / (quarterWave * 2)) *
+                    (wave_count % 2 == 0 ? -1 : 1);
+        fPath.RQuadTo(x1, y1, x2, y2);
+    }
+}
 #else
 void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, const TextLine::ClipContext& context, SkScalar baseline) {
     if (textStyle.getDecorationType() == TextDecoration::kNoDecoration) {
@@ -198,84 +364,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         }
     }
 }
-#endif
 
-#ifdef ENABLE_TEXT_ENHANCE
-static RSDrawing::Paint::PaintStyle ConvertDrawingStyle(SkPaint::Style skStyle) {
-    if (PAINT_STYLE.find(skStyle) != PAINT_STYLE.end()) {
-        return PAINT_STYLE.at(skStyle);
-    } else {
-        return RSDrawing::Paint::PaintStyle::PAINT_NONE;
-    }
-}
-
-static RSDrawing::Paint ConvertDecorStyle(const ParagraphPainter::DecorationStyle& decorStyle) {
-    const SkPaint& decorPaint = decorStyle.skPaint();
-    RSDrawing::Paint paint;
-    paint.SetStyle(ConvertDrawingStyle(decorPaint.getStyle()));
-    paint.SetAntiAlias(decorPaint.isAntiAlias());
-    paint.SetColor(decorPaint.getColor());
-    paint.SetWidth(decorPaint.getStrokeWidth());
-    if (decorStyle.getDashPathEffect().has_value()) {
-        auto dashPathEffect = decorStyle.getDashPathEffect().value();
-        RSDrawing::scalar intervals[] = {dashPathEffect.fOnLength, dashPathEffect.fOffLength,
-            dashPathEffect.fOnLength, dashPathEffect.fOffLength};
-        size_t count = sizeof(intervals) / sizeof(intervals[0]);
-        auto pathEffect1 = RSDrawing::PathEffect::CreateDashPathEffect(intervals, count, 0.0f);
-        auto pathEffect2 = RSDrawing::PathEffect::CreateDiscretePathEffect(0, 0);
-        auto pathEffect = RSDrawing::PathEffect::CreateComposePathEffect(*pathEffect1.get(), *pathEffect2.get());
-        paint.SetPathEffect(pathEffect);
-    }
-    return paint;
-}
-
-void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRect& rect,
-    SkScalar baseline, SkScalar halo, const TextStyle& textStyle) {
-    // Create a special text blob for decorations
-    RSTextBlobBuilder builder;
-    context.run->copyTo(builder, SkToU32(context.pos), context.size);
-    auto blob = builder.Make();
-    if (!blob) {
-        // There is no text really
-        return;
-    }
-    SkScalar top = textStyle.getHeight() != 0 ? this->fDecorationContext.textBlobTop + baseline : rect.fTop;
-    // Since we do not shift down the text by {baseline}
-    // (it now happens on drawTextBlob but we do not draw text here)
-    // we have to shift up the bounds to compensate
-    // This baseline thing ends with getIntercepts
-    const SkScalar bounds[2] = {top - baseline, top + halo - baseline};
-    RSDrawing::Paint paint = ConvertDecorStyle(fDecorStyle);
-    auto count = blob->GetIntercepts(bounds, nullptr, &paint);
-    skia_private::TArray<SkScalar> intersections(count);
-    intersections.resize(count);
-    blob->GetIntercepts(bounds, intersections.data(), &paint);
-
-    RSPath path;
-    auto start = rect.fLeft;
-    path.MoveTo(rect.fLeft, rect.fTop);
-    for (int i = 0; i < intersections.size(); i += 2) {
-        auto end = intersections[i] - halo;
-        if (end - start >= halo) {
-            start = intersections[i + 1] + halo;
-            path.LineTo(end, rect.fTop);
-            path.MoveTo(start, rect.fTop);
-        } else {
-            start = intersections[i + 1] + halo;
-            path.MoveTo(start, rect.fTop);
-        }
-    }
-    if (!intersections.empty() && (rect.fRight - start > halo)) {
-        path.LineTo(rect.fRight, rect.fTop);
-    }
-
-    if (intersections.empty()) {
-        path.LineTo(rect.fRight, rect.fTop);
-    }
-    fPath = path;
-}
-
-#else
 void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRect& rect,
                                 SkScalar baseline, SkScalar halo) {
     // Create a special text blob for decorations
@@ -314,55 +403,7 @@ void Decorations::calculateGaps(const TextLine::ClipContext& context, const SkRe
     }
     fPath = path.detach();
 }
-#endif
 
-#ifdef ENABLE_TEXT_ENHANCE
-void Decorations::calculateAvoidanceWaves(const TextStyle& textStyle, SkRect clip) {
-    fPath.Reset();
-    int wave_count = 0;
-    const int step = 2;
-    const float zer = 0.01;
-    SkScalar x_start = 0;
-    SkScalar quarterWave = fThickness;
-    if (quarterWave <= zer) {
-        return;
-    }
-    fPath.MoveTo(0, 0);
-    while (x_start + quarterWave * step < clip.width()) {
-        fPath.RQuadTo(quarterWave,
-            wave_count % step != 0 ? quarterWave : -quarterWave,
-            quarterWave * step, 0);
-        x_start += quarterWave * step;
-        ++wave_count;
-    }
-
-    // The rest of the wave
-    auto remaining = clip.width() - x_start;
-    if (remaining > 0) {
-        double x1 = remaining / step;
-        double y1 = remaining / step * (wave_count % step == 0 ? -1 : 1);
-        double x2 = remaining;
-        double y2 = (remaining - remaining * remaining / (quarterWave * step)) *
-                    (wave_count % step == 0 ? -1 : 1);
-        fPath.RQuadTo(x1, y1, x2, y2);
-    }
-}
-#endif
-
-// This is how flutter calculates the thickness
-#ifdef ENABLE_TEXT_ENHANCE
-void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface) {
-    textStyle.setTypeface(std::move(typeface));
-    textStyle.getFontMetrics(&fFontMetrics);
-    if (textStyle.getDecoration().fType == TextDecoration::kUnderline &&
-        !SkScalarNearlyZero(fThickness)) {
-        return;
-    }
-
-    fThickness = textStyle.getFontSize() * UNDER_LINE_THICKNESS_RATIO;
-    fThickness *= textStyle.getDecorationThicknessMultiplier();
-}
-#else
 void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> typeface) {
 
     textStyle.setTypeface(std::move(typeface));
@@ -383,30 +424,7 @@ void Decorations::calculateThickness(TextStyle textStyle, sk_sp<SkTypeface> type
     }
     fThickness *= textStyle.getDecorationThicknessMultiplier();
 }
-#endif
 
-// This is how flutter calculates the positioning
-#ifdef ENABLE_TEXT_ENHANCE
-void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
-    const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift, const SkScalar& fontSize) {
-    switch (decoration) {
-      case TextDecoration::kUnderline:
-          fPosition = fDecorationContext.underlinePosition;
-          break;
-      case TextDecoration::kOverline:
-          fPosition = (textDecorationStyle == TextDecorationStyle::kWavy ? fThickness : fThickness / 2.0f) - ascent;
-          break;
-      case TextDecoration::kLineThrough: {
-          fPosition = LINE_THROUGH_TOP * fontSize;
-          fPosition -= ascent;
-          fPosition += textBaselineShift;
-          break;
-      }
-      default:SkASSERT(false);
-          break;
-    }
-}
-#else
 void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent) {
     switch (decoration) {
       case TextDecoration::kUnderline:
@@ -430,6 +448,34 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent) 
       }
       default:SkASSERT(false);
           break;
+    }
+}
+
+void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
+
+    fPath.reset();
+    int wave_count = 0;
+    SkScalar x_start = 0;
+    SkScalar quarterWave = fThickness;
+    fPath.moveTo(0, 0);
+    while (x_start + quarterWave * 2 < clip.width()) {
+        fPath.rQuadTo(quarterWave,
+                     wave_count % 2 != 0 ? quarterWave : -quarterWave,
+                     quarterWave * 2,
+                     0);
+        x_start += quarterWave * 2;
+        ++wave_count;
+    }
+
+    // The rest of the wave
+    auto remaining = clip.width() - x_start;
+    if (remaining > 0) {
+        double x1 = remaining / 2;
+        double y1 = remaining / 2 * (wave_count % 2 == 0 ? -1 : 1);
+        double x2 = remaining;
+        double y2 = (remaining - remaining * remaining / (quarterWave * 2)) *
+                    (wave_count % 2 == 0 ? -1 : 1);
+        fPath.rQuadTo(x1, y1, x2, y2);
     }
 }
 #endif
@@ -461,65 +507,6 @@ void Decorations::calculatePaint(const TextStyle& textStyle) {
 
     fDecorStyle = ParagraphPainter::DecorationStyle(color, fThickness, dashPathEffect);
 }
-
-#ifdef ENABLE_TEXT_ENHANCE
-void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
-
-    fPath.Reset();
-    int wave_count = 0;
-    SkScalar x_start = 0;
-    SkScalar quarterWave = fThickness;
-    fPath.MoveTo(0, 0);
-
-    while (x_start + quarterWave * 2 < clip.width()) {
-        fPath.RQuadTo(quarterWave,
-                     wave_count % 2 != 0 ? quarterWave : -quarterWave,
-                     quarterWave * 2,
-                     0);
-        x_start += quarterWave * 2;
-        ++wave_count;
-    }
-
-    // The rest of the wave
-    auto remaining = clip.width() - x_start;
-    if (remaining > 0) {
-        double x1 = remaining / 2;
-        double y1 = remaining / 2 * (wave_count % 2 == 0 ? -1 : 1);
-        double x2 = remaining;
-        double y2 = (remaining - remaining * remaining / (quarterWave * 2)) *
-                    (wave_count % 2 == 0 ? -1 : 1);
-        fPath.RQuadTo(x1, y1, x2, y2);
-    }
-}
-#else
-void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
-
-    fPath.reset();
-    int wave_count = 0;
-    SkScalar x_start = 0;
-    SkScalar quarterWave = fThickness;
-    fPath.moveTo(0, 0);
-    while (x_start + quarterWave * 2 < clip.width()) {
-        fPath.rQuadTo(quarterWave,
-                     wave_count % 2 != 0 ? quarterWave : -quarterWave,
-                     quarterWave * 2,
-                     0);
-        x_start += quarterWave * 2;
-        ++wave_count;
-    }
-
-    // The rest of the wave
-    auto remaining = clip.width() - x_start;
-    if (remaining > 0) {
-        double x1 = remaining / 2;
-        double y1 = remaining / 2 * (wave_count % 2 == 0 ? -1 : 1);
-        double x2 = remaining;
-        double y2 = (remaining - remaining * remaining / (quarterWave * 2)) *
-                    (wave_count % 2 == 0 ? -1 : 1);
-        fPath.rQuadTo(x1, y1, x2, y2);
-    }
-}
-#endif
 
 }  // namespace textlayout
 }  // namespace skia

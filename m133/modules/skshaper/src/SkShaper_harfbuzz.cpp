@@ -121,7 +121,7 @@ unsigned skhb_nominal_glyphs(hb_font_t *hb_font, void *font_data,
     AutoSTMalloc<256, SkGlyphID> glyph(count);
 #ifdef ENABLE_TEXT_ENHANCE
     font.TextToGlyphs(unicode.get(), count * sizeof(SkUnichar), RSDrawing::TextEncoding::UTF32,
-                        glyph.get(), count);
+                      glyph.get(), count);
 #else
     font.textToGlyphs(unicode.get(), count * sizeof(SkUnichar), SkTextEncoding::kUTF32,
                         glyph.get(), count);
