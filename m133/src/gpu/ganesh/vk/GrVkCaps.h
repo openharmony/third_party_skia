@@ -310,6 +310,7 @@ private:
         kIntel_VkVendor = 32902,
         kNvidia_VkVendor = 4318,
         kQualcomm_VkVendor = 20803,
+        kHisi_VkVendor = 6629,
     };
 
     enum class IntelGPUType {
