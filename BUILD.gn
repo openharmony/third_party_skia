@@ -511,12 +511,26 @@ optional("fontmgr_android") {
     ":typeface_freetype",
     "${skia_third_party_dir}/expat",
   ]
+  if (is_arkui_x) {
+    defines = [ "CROSS_PLATFORM" ]
+    deps += [
+      "//third_party/bounds_checking_function:libsec_static",
+      "//third_party/jsoncpp:jsoncpp_static",
+    ]
+    include_dirs = [
+      "//third_party/jsoncpp/include",
+      "//third_party/skia/src/ports/skia_ohos",
+    ]
+  }
   public = [ "include/ports/SkFontMgr_android.h" ]
   sources = [
     "src/ports/SkFontMgr_android.cpp",
     "src/ports/SkFontMgr_android_parser.cpp",
     "src/ports/SkFontMgr_android_parser.h",
   ]
+  if (is_arkui_x) {
+      sources += [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
+  }
   sources_for_tests = [ "tests/FontMgrAndroidParserTest.cpp" ]
 }
 optional("fontmgr_android_factory") {
@@ -698,7 +712,17 @@ optional("fontmgr_fuchsia") {
 
 optional("fontmgr_mac_ct") {
   enabled = skia_use_fonthost_mac
-
+  if (is_arkui_x) {
+    deps = [
+      "//third_party/bounds_checking_function:libsec_static",
+      "//third_party/jsoncpp:jsoncpp_static",
+    ]
+    defines = [ "CROSS_PLATFORM" ]
+    include_dirs = [
+      "//third_party/jsoncpp/include",
+      "//third_party/skia/src/ports/skia_ohos",
+    ]
+  }
   public = [
     "include/ports/SkFontMgr_mac_ct.h",
     "include/ports/SkTypeface_mac.h",
@@ -710,6 +734,12 @@ optional("fontmgr_mac_ct") {
     "src/ports/SkTypeface_mac_ct.cpp",
     "src/ports/SkTypeface_mac_ct.h",
   ]
+  if (is_arkui_x) {
+    sources += [
+      "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp",
+      "src/ports/SkFontMgr_android_parser.cpp",
+    ]
+  }
   if (use_oh_skia && !is_arkui_x) {
     # Use hos font
     sources += [

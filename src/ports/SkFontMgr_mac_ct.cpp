@@ -34,6 +34,9 @@
 #include "include/private/SkTemplates.h"
 #include "include/private/SkTo.h"
 #include "src/core/SkFontDescriptor.h"
+#if defined(CROSS_PLATFORM)
+#include "src/ports/skia_ohos/HmSymbolConfig_ohos.h"
+#endif
 #include "src/ports/SkTypeface_mac_ct.h"
 #include "src/utils/SkUTF.h"
 
@@ -448,7 +451,39 @@ public:
         , fCount(fNames ? SkToInt(CFArrayGetCount(fNames.get())) : 0)
         , fFontCollection(fontCollection ? (CTFontCollectionRef)CFRetain(fontCollection)
                                          : CTFontCollectionCreateFromAvailableFonts(nullptr))
-    {}
+    {
+#if defined(CROSS_PLATFORM)
+        std::string path = SkFontMgr::containerFontPath;
+        if (!path.empty()) {
+            SkString fontDir(path.c_str());
+            path = path + "/HMSymbolVF.ttf";
+            sk_sp<SkTypeface> typeface = onMakeFromFile(path.c_str(),0);
+            if (typeface) {
+                printf("Successfully loaded font from path: %s\n", path.c_str());
+                sk_sp<SkData> fontData = SkData::MakeFromFileName(path.c_str());
+                if (fontData) {
+                    HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol("hm_symbol_config_next.json", fontDir);
+                    SkUniqueCFRef<CFDataRef> cfData = SkUniqueCFRef<CFDataRef>(CFDataCreate(kCFAllocatorDefault, fontData->bytes(), fontData->size()));
+                    SkUniqueCFRef<CGDataProviderRef> dataProvider = SkUniqueCFRef<CGDataProviderRef>(CGDataProviderCreateWithCFData(cfData.get()));
+                    SkUniqueCFRef<CGFontRef> cgFont = SkUniqueCFRef<CGFontRef>(CGFontCreateWithDataProvider(dataProvider.get()));
+                    if (cgFont) {
+                        CFErrorRef error = nullptr;
+                        if (!CTFontManagerRegisterGraphicsFont(cgFont.get(), &error)) {
+                            if (error) {
+                                CFStringRef errorDescription = CFErrorCopyDescription(error);
+                                char buffer[256];
+                                CFStringGetCString(errorDescription, buffer, sizeof(buffer), kCFStringEncodingUTF8);
+                                printf("Failed to register font: %s\n", buffer);
+                                CFRelease(errorDescription);
+                                CFRelease(error);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+#endif
+    }
 
 protected:
     int onCountFamilies() const override {
