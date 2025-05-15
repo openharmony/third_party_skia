@@ -453,7 +453,7 @@ public:
                                          : CTFontCollectionCreateFromAvailableFonts(nullptr))
     {
 #if defined(CROSS_PLATFORM)
-        std::string path = SkFontMgr::containerFontPath;
+        std::string path(SkFontMgr::containerFontPath);
         if (path.empty()) {
             return;
         }
@@ -482,16 +482,7 @@ public:
         if (!cgFont) {
             return;
         }
-        CFErrorRef error = nullptr;
-        if (!CTFontManagerRegisterGraphicsFont(cgFont.get(), &error)) {
-            if (error) {
-                CFStringRef errorDescription = CFErrorCopyDescription(error);
-                char buffer[256];
-                CFStringGetCString(errorDescription, buffer, sizeof(buffer), kCFStringEncodingUTF8);
-                CFRelease(errorDescription);
-                CFRelease(error);
-            }
-        }
+        CTFontManagerRegisterGraphicsFont(cgFont.get(), nullptr);
 #endif
     }
 
