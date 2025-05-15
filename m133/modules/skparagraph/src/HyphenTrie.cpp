@@ -17,8 +17,7 @@
 
 namespace skia {
 namespace textlayout {
-void HyphenTrie::insert(const std::string& key, const std::string& value)
-{
+void HyphenTrie::insert(const std::string& key, const std::string& value) {
     std::shared_ptr<TrieNode> node = root;
     for (char c : key) {
         if (node->children.count(c) == 0) {
@@ -29,8 +28,7 @@ void HyphenTrie::insert(const std::string& key, const std::string& value)
     node->value = value;
 }
 
-std::string HyphenTrie::findPartialMatch(const std::string& keyPart)
-{
+std::string HyphenTrie::findPartialMatch(const std::string& keyPart) {
     std::shared_ptr<TrieNode> node = root;
     for (char c : keyPart) {
         if (node->children.find(c) == node->children.end()) {
@@ -41,8 +39,7 @@ std::string HyphenTrie::findPartialMatch(const std::string& keyPart)
     return collectValues(node);
 }
 
-std::string HyphenTrie::collectValues(const std::shared_ptr<TrieNode>& node)
-{
+std::string HyphenTrie::collectValues(const std::shared_ptr<TrieNode>& node) {
     if (node == nullptr) {
         return "";
     }

@@ -21,14 +21,9 @@ namespace textlayout {
 
 class ParagraphBuilder {
 protected:
-#ifndef ENABLE_TEXT_ENHANCE
     ParagraphBuilder() {}
-#endif
 
 public:
-#ifdef ENABLE_TEXT_ENHANCE
-    ParagraphBuilder(const ParagraphStyle&, sk_sp<FontCollection>) { }
-#endif
     virtual ~ParagraphBuilder() = default;
 
     // Push a style to the stack. The corresponding text added with AddText will
@@ -90,8 +85,6 @@ public:
 
     virtual void SetUnicode(sk_sp<SkUnicode> unicode) = 0;
 #endif
-
-
     // Resets this builder to its initial state, discarding any text, styles, placeholders that have
     // been added, but keeping the initial ParagraphStyle.
     virtual void Reset() = 0;

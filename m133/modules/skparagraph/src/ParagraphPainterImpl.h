@@ -12,7 +12,7 @@ class CanvasParagraphPainter : public ParagraphPainter {
 public:
     CanvasParagraphPainter(SkCanvas* canvas);
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     void drawTextBlob(
         const std::shared_ptr<RSTextBlob>& blob, SkScalar x, SkScalar y, const SkPaintOrID& paint) override {}
     void drawTextShadow(
@@ -26,7 +26,7 @@ public:
     void drawRRect(const SkRRect& rrect, const SkColor color) override;
 #endif
     void drawFilledRect(const SkRect& rect, const DecorationStyle& decorStyle) override;
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     void drawPath(const RSPath& path, const DecorationStyle& decorStyle) override {}
 #else
     void drawPath(const SkPath& path, const DecorationStyle& decorStyle) override;

@@ -76,7 +76,7 @@ private:
         Everything
     };
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     using TypefaceVisitor = std::function<Resolved(std::shared_ptr<RSTypeface> typeface)>;
 #else
     using TypefaceVisitor = std::function<Resolved(sk_sp<SkTypeface> typeface)>;
@@ -150,7 +150,7 @@ private:
 
         FontKey() {}
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
         FontKey(SkUnichar unicode, RSFontStyle fontStyle, SkString locale)
             : fUnicode(unicode), fFontStyle(fontStyle), fLocale(locale) { }
 #else
@@ -158,7 +158,7 @@ private:
             : fUnicode(unicode), fFontStyle(fontStyle), fLocale(std::move(locale)) { }
 #endif
         SkUnichar fUnicode;
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
         RSFontStyle fFontStyle;
 #else
         SkFontStyle fFontStyle;
@@ -172,7 +172,7 @@ private:
         };
     };
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     std::unordered_map<FontKey, std::shared_ptr<RSTypeface>, FontKey::Hasher> fFallbackFonts;
 #else
     skia_private::THashMap<FontKey, sk_sp<SkTypeface>, FontKey::Hasher> fFallbackFonts;

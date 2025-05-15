@@ -216,13 +216,13 @@ bool TextTabAlign::rightAlignProcessCluster(TextWrapper::TextStretch& words, Tex
 
 bool TextTabAlign::centerAlignProcessTabBlockEnd(TextWrapper::TextStretch& words, TextWrapper::TextStretch& clusters)
 {
-    if ((fTabPosition * fTabIndex + ((fTabEndPos - fTabStartPos) / 2)) > fMaxWidth) {
+    if ((fTabPosition * fTabIndex + ((fTabEndPos - fTabStartPos) / POSITION_COEFFICIENT)) > fMaxWidth) {
         return true;
     }
 
     if ((fTabBlockEnd != fTabCluster) &&
-        ((fTabPosition * fTabIndex) > (fTabStartPos + ((fTabEndPos - fTabStartPos) / 2)))) {
-        fTabShift = fTabPosition * fTabIndex - (fTabStartPos + ((fTabEndPos - fTabStartPos) / 2));
+        ((fTabPosition * fTabIndex) > (fTabStartPos + ((fTabEndPos - fTabStartPos) / POSITION_COEFFICIENT)))) {
+        fTabShift = fTabPosition * fTabIndex - (fTabStartPos + ((fTabEndPos - fTabStartPos) / POSITION_COEFFICIENT));
         expendTabCluster(fTabShift);
         words.shiftWidth(fTabShift);
     }
@@ -269,7 +269,7 @@ bool TextTabAlign::centerAlignProcessEndofWord(TextWrapper::TextStretch& words, 
     }
 
     SkScalar tabEndPosTmp = words.width() + clusters.width() + totalFakeSpacing;
-    if ((fTabPosition * fTabIndex + ((tabEndPosTmp - fTabStartPos) / 2)) > fMaxWidth) {
+    if ((fTabPosition * fTabIndex + ((tabEndPosTmp - fTabStartPos) / POSITION_COEFFICIENT)) > fMaxWidth) {
         centerAlignProcessTabBlockEnd(words, clusters);
         return true;
     }
@@ -308,7 +308,7 @@ bool TextTabAlign::centerAlignProcessCluster(TextWrapper::TextStretch& words, Te
     }
 
     SkScalar tabEndPosTmp = words.width() + clusters.width() + totalFakeSpacing;
-    if (((tabEndPosTmp - fTabStartPos) / 2) > (fMaxWidth - fTabPosition * fTabIndex)) {
+    if (((tabEndPosTmp - fTabStartPos) / POSITION_COEFFICIENT) > (fMaxWidth - fTabPosition * fTabIndex)) {
         centerAlignProcessTabBlockEnd(words, clusters);
         return true;
     }

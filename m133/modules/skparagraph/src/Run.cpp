@@ -60,7 +60,6 @@ const std::unordered_set<std::string> FONT_PADDING_NOT_EFFECT_FAMILY = {
     "HM Symbol",
 };
 
-#ifdef ENABLE_DRAWING_ADAPTER
 FontCompressionStatus getFontCompressionStatus(const RSFont& font)
 {
     auto typeface = font.GetTypeface();
@@ -76,34 +75,8 @@ std::string getFamilyNameFromFont(const RSFont& font)
     auto typeface = font.GetTypeface();
     return typeface == nullptr ? "" : typeface->GetFamilyName();
 }
-#else
-FontCompressionStatus getFontCompressionStatus(const SkFont& font)
-{
-    auto typeface = font.refTypeface();
-    if (typeface == nullptr) {
-        return FontCompressionStatus::UNDEFINED;
-    }
-    return (typeface->IsCustomTypeface() && !typeface->IsThemeTypeface())
-                   ? FontCompressionStatus::UNCOMPRESSED
-                   : FontCompressionStatus::COMPRESSED;
-}
-std::string getFamilyNameFromFont(const SkFont& font)
-{
-    auto typeface = font.refTypeface();
-    if (typeface == nullptr) {
-        return "";
-    }
-    SkString familyName;
-    typeface->getFamilyName(&familyName);
-    return std::string(familyName.c_str(), familyName.size());
-}
-#endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
 const ScaleParam& findCompressionConfigWithFont(const RSFont& font)
-#else
-const ScaleParam& findCompressionConfigWithFont(const SkFont& font)
-#endif
 {
     auto fontCompressionStatus = getFontCompressionStatus(font);
     if (fontCompressionStatus != FontCompressionStatus::COMPRESSED) {
@@ -120,11 +93,7 @@ const ScaleParam& findCompressionConfigWithFont(const SkFont& font)
     return iter->second;
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
 void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font)
-#else
-void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
-#endif
 {
     if (metrics == nullptr) {
         return;
@@ -134,11 +103,7 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
     if (typeface == nullptr || fontCompressionStatus == FontCompressionStatus::UNDEFINED) {
         return;
     }
-#ifdef ENABLE_DRAWING_ADAPTER
     SkScalar fontSize = font.GetSize();
-#else
-    SkScalar fontSize = font.getSize();
-#endif
     if (!FontCollection::IsAdapterTextHeightEnabled()) {
         if (fontCompressionStatus == FontCompressionStatus::COMPRESSED &&
             (!SkScalarNearlyZero(findCompressionConfigWithFont(font).fontScale) ||
@@ -164,15 +129,9 @@ void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font)
     }
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
 void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op)
 {
     SkScalar fontSize = font.GetSize();
-#else
-void scaleFontWithCompressionConfig(SkFont& font, ScaleOP op)
-{
-    SkScalar fontSize = font.getSize();
-#endif
     auto config = findCompressionConfigWithFont(font);
     if (SkScalarNearlyZero(config.fontScale)) {
         return;
@@ -187,11 +146,7 @@ void scaleFontWithCompressionConfig(SkFont& font, ScaleOP op)
     default:
         return;
     }
-#ifdef ENABLE_DRAWING_ADAPTER
     font.SetSize(fontSize);
-#else
-    font.setSize(fontSize);
-#endif
 }
 #endif
 
@@ -230,8 +185,6 @@ Run::Run(ParagraphImpl* owner,
 #ifdef ENABLE_TEXT_ENHANCE
     fHalfLetterspacings.push_back_n(info.glyphCount + 1);
     std::fill(fHalfLetterspacings.begin(), fHalfLetterspacings.end(), 0.0);
-#endif
-#ifdef ENABLE_DRAWING_ADAPTER
     info.fFont.GetMetrics(&fFontMetrics);
 #else
     info.fFont.getMetrics(&fFontMetrics);
@@ -262,7 +215,7 @@ void Run::calculateMetrics() {
     if (SkScalarNearlyZero(fHeightMultiplier)) {
         return;
     }
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     const auto runHeight = fHeightMultiplier * fFont.GetSize();
 #else
     const auto runHeight = fHeightMultiplier * fFont.getSize();
@@ -286,7 +239,7 @@ SkShaper::RunHandler::Buffer Run::newRunBuffer() {
     return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset};
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 void Run::copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const {
     SkASSERT(pos + size <= this->size());
     const auto& blobBuffer = builder.AllocRunPos(fFont, SkToInt(size));
@@ -356,11 +309,6 @@ void Run::copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const {
         if (!fJustificationShifts.empty()) {
             point.fX += fJustificationShifts[i + pos].fX;
         }
-#ifdef ENABLE_TEXT_ENHANCE
-        if (!fAutoSpacings.empty()) {
-            point.fX += fAutoSpacings[i + pos].fX;
-        }
-#endif
         point += fOffsets[i + pos];
         blobBuffer.points()[i] = point;
     }
@@ -481,6 +429,7 @@ SkScalar Run::addSpacesEvenly(SkScalar space, Cluster* cluster) {
 
     return shift;
 }
+
 #else
 SkScalar Run::addSpacesEvenly(SkScalar space, Cluster* cluster) {
     // Offset all the glyphs in the cluster
@@ -537,7 +486,6 @@ bool Run::isTrailingSpaceIncluded(const ClusterRange& fTextLineClusterRange,
            fTextLineGhostClusterRange.end <= this->clusterRange().end &&
            fTextLineGhostClusterRange.end > this->clusterRange().start;
 }
-#endif
 
 void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
 
@@ -560,13 +508,8 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
     fFontMetrics.fLeading = 0;
     switch (placeholderStyle->fAlignment) {
         case PlaceholderAlignment::kBaseline:
-#ifdef ENABLE_TEXT_ENHANCE
             fFontMetrics.fAscent = baselineAdjustment - height - offset;
             fFontMetrics.fDescent = baselineAdjustment - offset;
-#else
-            fFontMetrics.fAscent = baselineAdjustment - offset;
-            fFontMetrics.fDescent = baselineAdjustment + height - offset;
-#endif
             break;
 
         case PlaceholderAlignment::kAboveBaseline:
@@ -580,29 +523,19 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
             break;
 
         case PlaceholderAlignment::kTop:
-#ifdef ENABLE_TEXT_ENHANCE
             fFontMetrics.fAscent = endlineMetrics->ascent();
-#endif
             fFontMetrics.fDescent = height + fFontMetrics.fAscent;
             break;
 
         case PlaceholderAlignment::kBottom:
-#ifdef ENABLE_TEXT_ENHANCE
             fFontMetrics.fDescent = endlineMetrics->descent();
-#endif
             fFontMetrics.fAscent = fFontMetrics.fDescent - height;
             break;
 
         case PlaceholderAlignment::kMiddle:
-#ifdef ENABLE_TEXT_ENHANCE
             auto mid = (endlineMetrics->ascent() + endlineMetrics->descent()) / PARAM_TWO;
             fFontMetrics.fDescent = mid + height / PARAM_TWO;
             fFontMetrics.fAscent = mid - height / PARAM_TWO;
-#else
-            auto mid = (-fFontMetrics.fDescent - fFontMetrics.fAscent)/2.0;
-            fFontMetrics.fDescent = height/2.0 - mid;
-            fFontMetrics.fAscent =  - height/2.0 - mid;
-#endif
             break;
     }
 
@@ -611,6 +544,63 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
     // Make sure the placeholder can fit the line
     endlineMetrics->add(this);
 }
+#else
+void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
+
+    SkASSERT(isPlaceholder());
+    auto placeholderStyle = this->placeholderStyle();
+    // Difference between the placeholder baseline and the line bottom
+    SkScalar baselineAdjustment = 0;
+    switch (placeholderStyle->fBaseline) {
+        case TextBaseline::kAlphabetic:
+            break;
+
+        case TextBaseline::kIdeographic:
+            baselineAdjustment = endlineMetrics->deltaBaselines() / 2;
+            break;
+    }
+
+    auto height = placeholderStyle->fHeight;
+    auto offset = placeholderStyle->fBaselineOffset;
+
+    fFontMetrics.fLeading = 0;
+    switch (placeholderStyle->fAlignment) {
+        case PlaceholderAlignment::kBaseline:
+            fFontMetrics.fAscent = baselineAdjustment - offset;
+            fFontMetrics.fDescent = baselineAdjustment + height - offset;
+            break;
+
+        case PlaceholderAlignment::kAboveBaseline:
+            fFontMetrics.fAscent = baselineAdjustment - height;
+            fFontMetrics.fDescent = baselineAdjustment;
+            break;
+
+        case PlaceholderAlignment::kBelowBaseline:
+            fFontMetrics.fAscent = baselineAdjustment;
+            fFontMetrics.fDescent = baselineAdjustment + height;
+            break;
+
+        case PlaceholderAlignment::kTop:
+            fFontMetrics.fDescent = height + fFontMetrics.fAscent;
+            break;
+
+        case PlaceholderAlignment::kBottom:
+            fFontMetrics.fAscent = fFontMetrics.fDescent - height;
+            break;
+
+        case PlaceholderAlignment::kMiddle:
+            auto mid = (-fFontMetrics.fDescent - fFontMetrics.fAscent)/2.0;
+            fFontMetrics.fDescent = height/2.0 - mid;
+            fFontMetrics.fAscent =  - height/2.0 - mid;
+            break;
+    }
+
+    this->calculateMetrics();
+
+    // Make sure the placeholder can fit the line
+    endlineMetrics->add(this);
+}
+#endif
 
 SkScalar Cluster::sizeToChar(TextIndex ch) const {
     if (ch < fTextRange.start || ch >= fTextRange.end) {
@@ -700,7 +690,7 @@ Run& Cluster::run() const {
     return fOwner->run(fRunIndex);
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 RSFont Cluster::font() const {
 #else
 SkFont Cluster::font() const {

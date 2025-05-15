@@ -16,27 +16,17 @@ void TypefaceFontProvider::onGetFamilyName(int index, SkString* familyName) cons
     familyName->set(fFamilyNames[index]);
 }
 
-#ifdef ENABLE_TEXT_ENHANCE
-SkFontStyleSet* TypefaceFontProvider::onMatchFamily(const char familyName[]) const {
-    auto found = fRegisteredFamilies.find(SkString(familyName));
-    if (found) {
-      return SkRef((*found).get());
-    }
-    return nullptr;
-}
-#else
 sk_sp<SkFontStyleSet> TypefaceFontProvider::onMatchFamily(const char familyName[]) const {
     auto found = fRegisteredFamilies.find(SkString(familyName));
     return found ? *found : nullptr;
 }
-#endif
 
-#ifndef ENABLE_TEXT_ENHANCE
 sk_sp<SkFontStyleSet> TypefaceFontProvider::onCreateStyleSet(int index) const {
     SkASSERT(index < fRegisteredFamilies.count());
     auto found = fRegisteredFamilies.find(fFamilyNames[index]);
     return found ? *found : nullptr;
 }
+
 sk_sp<SkTypeface> TypefaceFontProvider::onMatchFamilyStyle(const char familyName[], const SkFontStyle& pattern) const {
     sk_sp<SkFontStyleSet> sset(this->matchFamily(familyName));
     if (sset) {
@@ -45,7 +35,6 @@ sk_sp<SkTypeface> TypefaceFontProvider::onMatchFamilyStyle(const char familyName
 
     return nullptr;
 }
-#endif
 
 size_t TypefaceFontProvider::registerTypeface(sk_sp<SkTypeface> typeface) {
     if (typeface == nullptr) {
@@ -123,16 +112,6 @@ void TypefaceFontStyleSet::getStyle(int index, SkFontStyle* style, SkString* nam
     }
 }
 
-#ifdef ENABLE_TEXT_ENHANCE
-SkTypeface* TypefaceFontStyleSet::createTypeface(int index) {
-    SkASSERT(index < fStyles.size());
-    return SkRef(fStyles[index].get());
-}
-
-SkTypeface* TypefaceFontStyleSet::matchStyle(const SkFontStyle& pattern) {
-    return this->matchStyleCSS3(pattern);
-}
-#else
 sk_sp<SkTypeface> TypefaceFontStyleSet::createTypeface(int index) {
     SkASSERT(index < fStyles.size());
     return fStyles[index];
@@ -141,7 +120,6 @@ sk_sp<SkTypeface> TypefaceFontStyleSet::createTypeface(int index) {
 sk_sp<SkTypeface> TypefaceFontStyleSet::matchStyle(const SkFontStyle& pattern) {
     return this->matchStyleCSS3(pattern);
 }
-#endif
 
 void TypefaceFontStyleSet::appendTypeface(sk_sp<SkTypeface> typeface) {
     if (typeface.get() != nullptr) {

@@ -7,18 +7,17 @@
 #include "modules/skshaper/include/SkShaper_harfbuzz.h"
 
 namespace {
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifndef ENABLE_TEXT_ENHANCE
 #if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
     const char* kColorEmojiFontMac = "Apple Color Emoji";
 #else
     const char* kColorEmojiLocale = "und-Zsye";
 #endif
-#endif // ENABLE_DRAWING_ADAPTER
+#endif // ENABLE_TEXT_ENHANCE
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 std::shared_ptr<RSTypeface> RSLegacyMakeTypeface(
-    std::shared_ptr<RSFontMgr> fontMgr, const char familyName[], RSFontStyle style)
-{
+    std::shared_ptr<RSFontMgr> fontMgr, const char familyName[], RSFontStyle style) {
     RSTypeface* typeface = fontMgr->MatchFamilyStyle(familyName, style);
     if (typeface == nullptr && familyName != nullptr) {
         typeface = fontMgr->MatchFamilyStyle(nullptr, style);
@@ -29,10 +28,8 @@ std::shared_ptr<RSTypeface> RSLegacyMakeTypeface(
     }
     return nullptr;
 }
-#endif
 
 constexpr int MAX_VARTYPEFACE_SIZE = 32;
-#ifdef ENABLE_TEXT_ENHANCE
 std::unordered_map<uint32_t, std::shared_ptr<RSTypeface>> g_faceTypeCache(MAX_VARTYPEFACE_SIZE);
 #endif
 }
@@ -52,7 +49,7 @@ size_t FontCollection::FamilyKey::Hasher::operator()(const FontCollection::Famil
     for (const SkString& family : key.fFamilyNames) {
         hash ^= std::hash<std::string>()(family.c_str());
     }
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     return hash ^
            std::hash<uint32_t>()(key.fFontStyle.GetWeight()) ^
            std::hash<uint32_t>()(static_cast<uint32_t>(key.fFontStyle.GetSlant())) ^
@@ -66,15 +63,17 @@ size_t FontCollection::FamilyKey::Hasher::operator()(const FontCollection::Famil
 }
 
 FontCollection::FontCollection()
-    : fEnableFontFallback(true),
-    fDefaultFamilyNames({SkString(DEFAULT_FONT_FAMILY)}) {}
+        : fEnableFontFallback(true)
+        , fDefaultFamilyNames({SkString(DEFAULT_FONT_FAMILY)}) { }
 
 size_t FontCollection::getFontManagersCount() const {
+#ifdef ENABLE_TEXT_ENHANCE
     std::shared_lock<std::shared_mutex> readLock(mutex_);
+#endif
     return this->getFontManagerOrder().size();
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 void FontCollection::setAssetFontManager(std::shared_ptr<RSFontMgr> font_manager) {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fAssetFontManager = font_manager;
@@ -118,13 +117,13 @@ void FontCollection::setTestFontManager(sk_sp<SkFontMgr> font_manager) {
 }
 
 void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager,
-    const char defaultFamilyName[]) {
+                                           const char defaultFamilyName[]) {
     fDefaultFontManager = std::move(fontManager);
     fDefaultFamilyNames.emplace_back(defaultFamilyName);
 }
 
 void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager,
-    const std::vector<SkString>& defaultFamilyNames) {
+                                           const std::vector<SkString>& defaultFamilyNames) {
     fDefaultFontManager = std::move(fontManager);
     fDefaultFamilyNames = defaultFamilyNames;
 }
@@ -135,7 +134,7 @@ void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager) {
 #endif
 
 // Return the available font managers in the order they should be queried.
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 std::vector<std::shared_ptr<RSFontMgr>> FontCollection::getFontManagerOrder() const {
     std::vector<std::shared_ptr<RSFontMgr>> order;
 #else
@@ -157,22 +156,42 @@ std::vector<sk_sp<SkFontMgr>> FontCollection::getFontManagerOrder() const {
     return order;
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(
-    const std::vector<SkString>& familyNames, RSFontStyle fontStyle)
-{
+    const std::vector<SkString>& familyNames, RSFontStyle fontStyle) {
 #else
-std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(
-    const std::vector<SkString>& familyNames, SkFontStyle fontStyle) 
-{
+std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames, SkFontStyle fontStyle) {
 #endif
     return findTypefaces(familyNames, fontStyle, std::nullopt);
 }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
+void FontCollection::updateTypefacesMatch(std::vector<std::shared_ptr<RSTypeface>>& typefaces,
+    RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs) {
+    std::shared_ptr<RSTypeface> match;
+    for (const auto& familyName : fDefaultFamilyNames) {
+        match = matchTypeface(familyName, fontStyle);
+        if (match) {
+            match = CloneTypeface(match, fontArgs);
+            typefaces.emplace_back(std::move(match));
+        }
+    }
+
+    if (!typefaces.empty()) {
+        return;
+    }
+
+    for (const auto& manager : this->getFontManagerOrder()) {
+        match = RSLegacyMakeTypeface(manager, nullptr, fontStyle);
+        if (match) {
+            typefaces.emplace_back(std::move(match));
+            break;
+        }
+    }
+}
+
 std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames,
-    RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs)
-{
+    RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs) {
     // Look inside the font collections cache first
     FamilyKey familyKey(familyNames, fontStyle, fontArgs);
     {
@@ -193,24 +212,7 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
     }
 
     if (typefaces.empty()) {
-        std::shared_ptr<RSTypeface> match;
-        for (const auto& familyName : fDefaultFamilyNames) {
-            match = matchTypeface(familyName, fontStyle);
-            if (match) {
-                match = CloneTypeface(match, fontArgs);
-                typefaces.emplace_back(std::move(match));
-            }
-        }
-
-        if (typefaces.empty()) {
-            for (const auto& manager : this->getFontManagerOrder()) {
-                match = RSLegacyMakeTypeface(manager, nullptr, fontStyle);
-                if (match) {
-                    typefaces.emplace_back(std::move(match));
-                    break;
-                }
-            }
-        }
+        FontCollection::updateTypefacesMatch(typefaces, fontStyle, fontArgs);
     }
 
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
@@ -264,7 +266,7 @@ std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<S
 }
 #endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 std::shared_ptr<RSTypeface> FontCollection::matchTypeface(const SkString& familyName, RSFontStyle fontStyle) {
     for (const auto& manager : this->getFontManagerOrder()) {
         std::shared_ptr<RSFontStyleSet> set(manager->MatchFamily(familyName.c_str()));
@@ -299,10 +301,9 @@ sk_sp<SkTypeface> FontCollection::matchTypeface(const SkString& familyName, SkFo
 #endif
 
 // Find ANY font in available font managers that resolves the unicode codepoint
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 std::shared_ptr<RSTypeface> FontCollection::defaultFallback(
-    SkUnichar unicode, RSFontStyle fontStyle, const SkString& locale)
-{
+    SkUnichar unicode, RSFontStyle fontStyle, const SkString& locale) {
     std::shared_lock<std::shared_mutex> readLock(mutex_);
     for (const auto& manager : this->getFontManagerOrder()) {
         std::vector<const char*> bcp47;
@@ -339,7 +340,7 @@ sk_sp<SkTypeface> FontCollection::defaultFallback(SkUnichar unicode,
 #endif
 
 
-#ifndef ENABLE_DRAWING_ADAPTER
+#ifndef ENABLE_TEXT_ENHANCE
 // Find ANY font in available font managers that resolves this emojiStart
 sk_sp<SkTypeface> FontCollection::defaultEmojiFallback(SkUnichar emojiStart,
                                                        SkFontStyle fontStyle,
@@ -373,7 +374,7 @@ sk_sp<SkTypeface> FontCollection::defaultEmojiFallback(SkUnichar emojiStart,
 }
 #endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 std::shared_ptr<RSTypeface> FontCollection::defaultFallback() {
     std::shared_lock<std::shared_mutex> readLock(mutex_);
     if (fDefaultFontManager == nullptr) {
@@ -404,7 +405,7 @@ sk_sp<SkTypeface> FontCollection::defaultFallback() {
 }
 #endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
 class SkLRUCacheMgr {
 public:
     SkLRUCacheMgr(SkLRUCache<uint32_t, std::shared_ptr<RSTypeface>>& lruCache, SkMutex& mutex)
@@ -445,32 +446,16 @@ static SkLRUCacheMgr GetLRUCacheInstance() {
     static SkLRUCache<uint32_t, std::shared_ptr<RSTypeface>> gFaceCache(MAX_VARTYPEFACE_SIZE);
     return SkLRUCacheMgr(gFaceCache, gFaceCacheMutex);
 }
-#endif
 
-#ifdef ENABLE_DRAWING_ADAPTER
 std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSTypeface> typeface,
-    const std::optional<FontArguments>& fontArgs)
-{
-#else
-sk_sp<SkTypeface> FontCollection::CloneTypeface(sk_sp<SkTypeface> typeface,
-    const std::optional<FontArguments>& fontArgs)
-{
-#endif
-#ifdef ENABLE_DRAWING_ADAPTER
+    const std::optional<FontArguments>& fontArgs) {
     if (!typeface || !fontArgs || typeface->IsCustomTypeface()) {
-#else
-    if (!typeface || !fontArgs || typeface->isCustomTypeface()) {
-#endif
         return typeface;
     }
 
     size_t hash = 0;
     hash ^= std::hash<FontArguments>()(fontArgs.value());
-#ifdef ENABLE_DRAWING_ADAPTER
     hash ^= std::hash<uint32_t>()(typeface->GetUniqueID());
-#else
-    hash ^= std::hash<uint32_t>()(typeface->uniqueID());
-#endif
 
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     auto cached = GetLRUCacheInstance().find(hash);
@@ -485,24 +470,29 @@ sk_sp<SkTypeface> FontCollection::CloneTypeface(sk_sp<SkTypeface> typeface,
         return varTypeface;
     }
 }
-
+#endif
 
 void FontCollection::disableFontFallback() {
+#ifdef ENABLE_TEXT_ENHANCE
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
+#endif
     fEnableFontFallback = false;
 }
 
 void FontCollection::enableFontFallback() {
+#ifdef ENABLE_TEXT_ENHANCE
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
+#endif
     fEnableFontFallback = true;
 }
 
 void FontCollection::clearCaches() {
+#ifdef ENABLE_TEXT_ENHANCE
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fParagraphCache.reset();
-#ifdef ENABLE_DRAWING_ADAPTER
     fTypefaces.clear();
 #else
+    fParagraphCache.reset();
     fTypefaces.reset();
 #endif
     SkShapers::HB::PurgeCaches();

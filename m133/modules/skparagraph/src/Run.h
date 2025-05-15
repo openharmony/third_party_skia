@@ -24,7 +24,9 @@ class SkTextBlobBuilder;
 
 namespace skia {
 namespace textlayout {
+#ifdef ENABLE_TEXT_ENHANCE
 constexpr int PARAM_64 = 64;
+#endif
 
 class Cluster;
 class InternalLineMetrics;
@@ -53,6 +55,7 @@ class DirText {
     size_t end;
 };
 
+#ifdef ENABLE_TEXT_ENHANCE
 enum class RoundRectType {
     NONE,
     LEFT_ONLY,
@@ -68,12 +71,8 @@ enum class ScaleOP {
     DECOMPRESS,
 };
 
-#ifdef ENABLE_DRAWING_ADAPTER
 void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op);
 void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font);
-#else
-void scaleFontWithCompressionConfig(SkFont& font, ScaleOP op);
-void metricsIncludeFontPadding(SkFontMetrics* metrics, const SkFont& font);
 #endif
 
 class Run {
@@ -101,9 +100,6 @@ public:
     SkScalar posX(size_t index) const { return fPositions[index].fX; }
 #endif
     void addX(size_t index, SkScalar shift) { fPositions[index].fX += shift; }
-#ifdef ENABLE_TEXT_ENHANCE
-    SkScalar halfLetterspacing(size_t index) const { return fHalfLetterspacings[index]; }
-#endif
     SkScalar posY(size_t index) const { return fPositions[index].fY; }
     size_t size() const { return fGlyphs.size(); }
     void setWidth(SkScalar width) { fAdvance.fX = width; }
@@ -112,9 +108,6 @@ public:
         fOffset.fX += shiftX;
         fOffset.fY += shiftY;
     }
-#ifdef ENABLE_TEXT_ENHANCE
-    SkScalar fAdvanceX() const { return fAdvance.fX; }
-#endif
     SkVector advance() const {
         return SkVector::Make(fAdvance.fX, fFontMetrics.fDescent - fFontMetrics.fAscent + fFontMetrics.fLeading);
     }
@@ -125,7 +118,7 @@ public:
     SkScalar correctAscent() const { return fCorrectAscent + fBaselineShift; }
     SkScalar correctDescent() const { return fCorrectDescent + fBaselineShift; }
     SkScalar correctLeading() const { return fCorrectLeading; }
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     const RSFont& font() const { return fFont; }
 #else
     const SkFont& font() const { return fFont; }
@@ -156,21 +149,11 @@ public:
     SkRect clip() const {
         return SkRect::MakeXYWH(fOffset.fX, fOffset.fY, fAdvance.fX, fAdvance.fY);
     }
-#ifdef ENABLE_TEXT_ENHANCE
-    const skia_private::STArray<PARAM_64, SkPoint, true>& getAutoSpacings() const {
-        return fAutoSpacings;
-    }
-#endif
     void addSpacesAtTheEnd(SkScalar space, Cluster* cluster);
     SkScalar addSpacesEvenly(SkScalar space, Cluster* cluster);
     SkScalar addSpacesEvenly(SkScalar space);
     void shift(const Cluster* cluster, SkScalar offset);
     void extend(const Cluster* cluster, SkScalar offset);
-#ifdef ENABLE_TEXT_ENHANCE
-    void extendClusterWidth(Cluster* cluster, SkScalar space);
-    bool isTrailingSpaceIncluded(const ClusterRange& fTextLineClusterRange,
-        const ClusterRange& fTextLineGhostClusterRange) const;
-#endif
     SkScalar calculateHeight(LineMetricStyle ascentStyle, LineMetricStyle descentStyle) const {
         auto ascent = ascentStyle == LineMetricStyle::Typographic ? this->ascent()
                                     : this->correctAscent();
@@ -180,7 +163,7 @@ public:
     }
     SkScalar calculateWidth(size_t start, size_t end, bool clip) const;
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     void copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const;
     void copyTo(RSTextBlobBuilder& builder,
                 const RSPath* path,
@@ -195,11 +178,6 @@ public:
 
     template<typename Visitor>
     void iterateThroughClustersInTextOrder(Visitor visitor);
-
-#ifdef ENABLE_TEXT_ENHANCE
-    template<typename Visitor>
-    void iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor visitor);
-#endif
 
     using ClusterVisitor = std::function<void(Cluster* cluster)>;
     void iterateThroughClusters(const ClusterVisitor& visitor);
@@ -225,13 +203,24 @@ public:
     void resetJustificationShifts() {
         fJustificationShifts.clear();
     }
+
+    bool isResolved() const;
+
 #ifdef ENABLE_TEXT_ENHANCE
+    bool isTrailingSpaceIncluded(const ClusterRange& fTextLineClusterRange,
+        const ClusterRange& fTextLineGhostClusterRange) const;
+    SkScalar halfLetterspacing(size_t index) const { return fHalfLetterspacings[index]; }
+    SkScalar fAdvanceX() const { return fAdvance.fX; }
+    const skia_private::STArray<PARAM_64, SkPoint, true>& getAutoSpacings() const {
+        return fAutoSpacings;
+    }
+    void extendClusterWidth(Cluster* cluster, SkScalar space);
+    template<typename Visitor>
+    void iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor visitor);
     void resetAutoSpacing() {
         fAutoSpacings.clear();
     }
-#endif
-    bool isResolved() const;
-#ifdef ENABLE_TEXT_ENHANCE
+
     RoundRectType getRoundRectType() const { return fRoundRectType; }
     void setRoundRectType(RoundRectType type) { fRoundRectType = type; }
 
@@ -258,7 +247,7 @@ private:
     TextRange fTextRange;
     ClusterRange fClusterRange;
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     RSFont fFont;
 #else
     SkFont fFont;
@@ -290,8 +279,6 @@ private:
     skia_private::STArray<PARAM_64, SkPoint, true> fAutoSpacings; // For auto spacing
                                                                    // (current and prev spacings)
     skia_private::STArray<PARAM_64, SkScalar, true> fHalfLetterspacings; // For letterspacing
-#endif
-#ifdef ENABLE_DRAWING_ADAPTER
     RSFontMetrics fFontMetrics;
 #else
     SkFontMetrics fFontMetrics;
@@ -465,6 +452,9 @@ public:
     bool needAutoSpacing() const { return fNeedAutoSpacing; }
     void enableHyphenBreak() { fHyphenBreak = true; }
     bool isHyphenBreak() const { return fHyphenBreak; }
+    SkScalar getFontSize() const {
+        return font().GetSize();
+    }
 #endif
 
     bool isSoftBreak() const;
@@ -486,7 +476,7 @@ public:
 
     Run* runOrNull() const;
     Run& run() const;
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     RSFont font() const;
 #else
     SkFont font() const;
@@ -503,11 +493,7 @@ public:
     bool startsIn(TextRange text) const {
         return fTextRange.start >= text.start && fTextRange.start < text.end;
     }
-#ifdef ENABLE_DRAWING_ADAPTER
-    SkScalar getFontSize() const {
-        return font().GetSize();
-    }
-#endif
+
 private:
 
     friend ParagraphImpl;
@@ -527,7 +513,7 @@ private:
     bool fIsIntraWordBreak;
     bool fIsHardBreak;
     bool fIsIdeographic;
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     bool fIsTabulation;
     bool fIsPunctuation{false};
     bool fIsEllipsis{false};
@@ -569,7 +555,7 @@ public:
         fForceStrut = false;
     }
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     InternalLineMetrics(const RSFont& font, bool forceStrut) {
         RSFontMetrics metrics;
         auto compressFont = font;

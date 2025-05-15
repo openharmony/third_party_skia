@@ -9,8 +9,8 @@
 #include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/Metrics.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
-#include "modules/skparagraph/include/RunBase.h"
 #ifdef ENABLE_TEXT_ENHANCE
+#include "modules/skparagraph/include/RunBase.h"
 #include "modules/skparagraph/include/TextLineBase.h"
 #include "include/ParagraphStyle.h"
 #endif
@@ -218,9 +218,6 @@ public:
         SkScalar width, WordBreakType wordBreakType);
     void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
-#endif
-
-#ifdef ENABLE_DRAWING_ADAPTER
     void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
 #endif
 
@@ -259,13 +256,10 @@ public:
 
     std::unique_ptr<Run> shapeEllipsis(const SkString& ellipsis, const Cluster* cluster);
 
-#ifdef ENABLE_DRAWING_ADAPTER
+#ifdef ENABLE_TEXT_ENHANCE
     std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const;
     double getTypographicBounds(double* ascent, double* descent, double* leading) const;
     RSRect getImageBounds() const;
-#endif
-
-#ifdef ENABLE_TEXT_ENHANCE
     int32_t getStringIndexForPosition(SkPoint point) const;
     size_t getGlyphCount() const;
     bool endsWithOnlyHardBreak() const;
@@ -306,9 +300,6 @@ private:
                          TextRange textRange,
                          const TextStyle& style,
                          const ClipContext& context) const;
-#ifdef ENABLE_TEXT_ENHANCE
-    void paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y, const Run* run) const;
-#endif
     void paintShadow(ParagraphPainter* painter,
                      SkScalar x,
                      SkScalar y,
@@ -324,6 +315,7 @@ private:
 
     void shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
 #ifdef ENABLE_TEXT_ENHANCE
+    void paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y, const Run* run) const;
     void spacingCluster(const Cluster* cluster, SkScalar spacing, SkScalar prevSpacing);
     bool hasBackgroundRect(const RoundRectAttr& attr);
     void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
@@ -349,18 +341,14 @@ private:
     SkScalar fShift;                    // Let right
     SkScalar fWidthWithSpaces;
     std::unique_ptr<Run> fEllipsis;     // In case the line ends with the ellipsis
-#ifdef ENABLE_TEXT_ENHANCE
-    TextRange fTextRangeReplacedByEllipsis;     // text range replaced by ellipsis
-#endif
     InternalLineMetrics fSizes;                 // Line metrics as a max of all run metrics and struts
     InternalLineMetrics fMaxRunMetrics;         // No struts - need it for GetRectForRange(max height)
-#ifdef ENABLE_TEXT_ENHANCE
-    size_t fEllipsisIndex = EMPTY_INDEX;
-#endif
     bool fHasBackground;
     bool fHasShadows;
     bool fHasDecorations;
 #ifdef ENABLE_TEXT_ENHANCE
+    size_t fEllipsisIndex = EMPTY_INDEX;
+    TextRange fTextRangeReplacedByEllipsis;     // text range replaced by ellipsis
     bool fIsArcText;
     bool fArcTextState;
     bool fLastClipRunLtr;
@@ -371,12 +359,11 @@ private:
 
     struct TextBlobRecord {
         void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
+
 #ifdef ENABLE_TEXT_ENHANCE
         void paint(ParagraphPainter* painter);
-#endif
-
-#ifdef ENABLE_DRAWING_ADAPTER
         std::shared_ptr<RSTextBlob> fBlob;
+        size_t fVisitor_Size;
 #else
         sk_sp<SkTextBlob> fBlob;
 #endif
@@ -389,9 +376,6 @@ private:
         // Extra fields only used for the (experimental) visitor
         const Run* fVisitor_Run;
         size_t     fVisitor_Pos;
-#ifdef ENABLE_TEXT_ENHANCE
-        size_t     fVisitor_Size;
-#endif
     };
     bool fTextBlobCachePopulated;
 #ifdef ENABLE_TEXT_ENHANCE
