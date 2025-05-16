@@ -694,10 +694,10 @@ SkRect TextLine::extendHeight(const ClipContext& context) const {
     return result;
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
 void TextLine::buildTextBlob(TextRange textRange,
                              const TextStyle& style,
                              const ClipContext& context) {
-#ifdef ENABLE_TEXT_ENHANCE
     if (context.run->placeholderStyle() != nullptr) {
         return;
     }
@@ -753,6 +753,9 @@ void TextLine::buildTextBlob(TextRange textRange,
     }
 }
 #else
+void TextLine::buildTextBlob(TextRange textRange,
+                             const TextStyle& style,
+                             const ClipContext& context) {
     if (context.run->placeholderStyle() != nullptr) {
         return;
     }

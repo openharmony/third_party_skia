@@ -314,9 +314,7 @@ public:
         SkFont fFont;
         TextRange fTextRange;
     };
-#endif
 
-#ifndef ENABLE_TEXT_ENHANCE
     /** Returns the font used to shape the text at the given UTF-16 offset.
      *
      * @param codeUnitIndex   a UTF-16 offset in the paragraph
