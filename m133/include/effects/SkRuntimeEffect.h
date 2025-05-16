@@ -127,6 +127,10 @@ public:
         // painted.)
         bool forceUnoptimized = false;
 
+        // Advanced Filter: It indicates whether AF is enabled
+        // The value will pass to ProgramSettings::fUseAF.
+        bool useAF = false;
+
     private:
         friend class SkRuntimeEffect;
         friend class SkRuntimeEffectPriv;
@@ -266,6 +270,9 @@ public:
     bool allowColorFilter()   const { return (fFlags & kAllowColorFilter_Flag);   }
     bool allowBlender()       const { return (fFlags & kAllowBlender_Flag);       }
 
+    // Advanced Filter: get AF state
+    bool getAF() const;
+    
     static void RegisterFlattenables();
     ~SkRuntimeEffect() override;
 

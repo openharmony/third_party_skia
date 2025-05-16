@@ -22,7 +22,7 @@ static SkScalar compute_z(SkScalar x, SkScalar y, const SkPoint3& params) {
 bool GetSpotShadowTransform(const SkPoint3& lightPos, SkScalar lightRadius,
                             const SkMatrix& ctm, const SkPoint3& zPlaneParams,
                             const SkRect& pathBounds, bool directional,
-                            SkMatrix* shadowTransform, SkScalar* radius) {
+                            SkMatrix* shadowTransform, SkScalar* radius, bool isLimitElevation) {
     auto heightFunc = [zPlaneParams] (SkScalar x, SkScalar y) {
         return zPlaneParams.fX*x + zPlaneParams.fY*y + zPlaneParams.fZ;
     };
@@ -39,7 +39,7 @@ bool GetSpotShadowTransform(const SkPoint3& lightPos, SkScalar lightRadius,
         } else {
             SkDrawShadowMetrics::GetSpotParams(occluderHeight, lightPos.fX, lightPos.fY,
                                                lightPos.fZ, lightRadius, radius,
-                                               &scale, &translate);
+                                               &scale, &translate, isLimitElevation);
         }
         shadowTransform->setScaleTranslate(scale, scale, translate.fX, translate.fY);
         shadowTransform->preConcat(ctm);
@@ -70,6 +70,9 @@ bool GetSpotShadowTransform(const SkPoint3& lightPos, SkScalar lightRadius,
                 return false;
             }
             SkScalar zRatio = pts3D[i].fZ / dz;
+            if (isLimitElevation) {
+                zRatio = 0.0f;
+            }
             pts3D[i].fX -= (lightPos.fX - pts3D[i].fX)*zRatio;
             pts3D[i].fY -= (lightPos.fY - pts3D[i].fY)*zRatio;
             pts3D[i].fZ = SK_Scalar1;
@@ -157,7 +160,7 @@ void GetLocalBounds(const SkPath& path, const SkDrawShadowRec& rec, const SkMatr
             ctm.mapPoints(&devLightPos, 1);
             SkDrawShadowMetrics::GetSpotParams(occluderZ, devLightPos.fX, devLightPos.fY,
                                                rec.fLightPos.fZ, rec.fLightRadius,
-                                               &spotBlur, &spotScale, &spotOffset);
+                                               &spotBlur, &spotScale, &spotOffset, rec.isLimitElevation);
         }
     } else {
         SkScalar devToSrcScale = SkScalarInvert(ctm.getMinScale());
@@ -179,7 +182,7 @@ void GetLocalBounds(const SkPath& path, const SkDrawShadowRec& rec, const SkMatr
         } else {
             SkDrawShadowMetrics::GetSpotParams(occluderZ, rec.fLightPos.fX, rec.fLightPos.fY,
                                                rec.fLightPos.fZ, rec.fLightRadius,
-                                               &spotBlur, &spotScale, &spotOffset);
+                                               &spotBlur, &spotScale, &spotOffset, rec.isLimitElevation);
         }
 
         // convert spot blur to local space

@@ -18,6 +18,7 @@
 #include "include/gpu/GpuTypes.h"
 #include "include/private/SkColorData.h"
 #include "src/gpu/Blend.h"
+#include "src/gpu/ganesh/GrCaps.h"
 #include "src/gpu/SkBackingFit.h"
 #include "src/gpu/ganesh/GrColor.h"
 #include "src/gpu/ganesh/GrSamplerState.h"
@@ -27,6 +28,7 @@
 #include <string_view>
 #include <tuple>
 
+class GrCaps;
 class GrColorInfo;
 class GrFragmentProcessor;
 class GrPaint;
@@ -211,5 +213,12 @@ sk_sp<SkIDChangeListener> GrMakeUniqueKeyInvalidationListener(skgpu::UniqueKey*,
 static inline bool GrValidCubicResampler(SkCubicResampler cubic) {
     return cubic.B >= 0 && cubic.C >= 0;
 }
+
+#ifdef SKIA_OHOS
+#ifndef SK_IGNORE_GPU_DITHER
+std::unique_ptr<GrFragmentProcessor> make_dither_effect(GrRecordingContext* rContext,
+    std::unique_ptr<GrFragmentProcessor> inputFP, float range, const GrCaps* caps);
+#endif
+#endif // SKIA_OHOS
 
 #endif

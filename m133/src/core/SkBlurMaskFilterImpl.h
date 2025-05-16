@@ -45,6 +45,20 @@ public:
     SkScalar sigma() const {return fSigma;}
     bool ignoreXform() const { return !fRespectCTM; }
 
+#ifdef SKIA_OHOS
+    bool directFilterRRectMaskGPU(GrRecordingContext* context,
+                                  skgpu::ganesh::SurfaceDrawContext* sdc,
+                                  GrPaint&& paint,
+                                  const GrClip* clip,
+                                  const SkMatrix& viewMatrix,
+                                  const GrStyledShape& shape,
+                                  const SkRRect& srcRRect) const override;
+
+    bool quick_check_gpu_draw(const SkMatrix& viewMatrix,
+                              SkIRect& devSpaceShapeBounds) const override;
+
+#endif // SKIA_OHOS
+
 private:
     FilterReturn filterRectsToNine(const SkRect[], int count, const SkMatrix&,
                                    const SkIRect& clipBounds,

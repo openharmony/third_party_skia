@@ -14,8 +14,10 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkStrokeRec.h"
 #include "include/private/base/SkNoncopyable.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
 #include "src/base/SkTLazy.h"
 #include "src/core/SkMask.h"
+#include "src/gpu/ganesh/GrSurfaceProxyView.h"
 
 class GrClip;
 struct GrFPArgs;
@@ -48,6 +50,25 @@ public:
         when its filterMask() method is called.
     */
     virtual SkMask::Format getFormat() const = 0;
+
+#ifdef SKIA_OHOS
+    /**
+     *  Try to directly render a rounded rect SDFshadow into the target.  Returns
+     *  true if drawing was successful.  If false is returned then paint is unmodified.
+     */
+    virtual bool directFilterRRectMaskGPU(GrRecordingContext* context,
+                                          skgpu::ganesh::SurfaceDrawContext* sdc,
+                                          GrPaint&& paint,
+                                          const GrClip* clip,
+                                          const SkMatrix& viewMatrix,
+                                          const GrStyledShape& shape,
+                                          const SkRRect& srcRRect) const;
+    /**
+     *  According to the advice in skia, We prefer to blur paths with small blur radii on the CPU.
+     */
+    virtual bool quick_check_gpu_draw(const SkMatrix& viewMatrix,
+                                      SkIRect& devSpaceShapeBounds) const;
+#endif // SKIA_OHOS
 
     /** Create a new mask by filter the src mask.
         If src.fImage == null, then do not allocate or create the dst image

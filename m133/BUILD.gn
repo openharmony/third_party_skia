@@ -85,6 +85,12 @@ config("skia_public") {
     "USE_M133_SKIA",
   ]
   cflags_objcc = []
+  if (is_ohos && (target_cpu == "arm" || target_cpu == "arm64")) {
+    defines += [
+      "SKIA_OHOS",
+      "SKIA_OHOS_SHADER_REDUCE",
+    ]
+  }
   if (is_component_build) {
     defines += [ "SKIA_DLL" ]
   }

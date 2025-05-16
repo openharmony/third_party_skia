@@ -9,6 +9,7 @@
 #define SKSL_CONTEXT
 
 #include "include/private/base/SkAssert.h"
+#include "src/sksl/SkSLProgramSettings.h"
 
 namespace SkSL {
 

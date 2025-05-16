@@ -40,6 +40,15 @@
 #include "src/core/SkRasterClip.h"
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkResourceCache.h"
+#ifdef SKIA_OHOS
+#include "src/core/SkBlurEngine.h"
+#include "src/core/SkRuntimeEffectPriv.h"
+#include "src/core/SkSDFFilter.h"
+#include "src/gpu/ganesh/effects/GrSkSLFP.h"
+#include "src/gpu/ganesh/effects/GrMatrixEffect.h"
+#include "src/gpu/ganesh/GrRecordingContextPriv.h"
+#include "src/gpu/ganesh/SkGr.h"
+#endif
 #include "src/core/SkWriteBuffer.h"
 
 #include <algorithm>
@@ -106,6 +115,113 @@ SkScalar SkBlurMaskFilterImpl::computeXformedSigma(const SkMatrix& ctm) const {
     return std::min(xformedSigma, kMaxBlurSigma);
 }
 
+#ifdef SKIA_OHOS
+static std::unique_ptr<GrFragmentProcessor> make_simple_rrect_sdf(GrRecordingContext* context,
+                                                                  GrPaint& paint,
+                                                                  float sdfRadius,
+                                                                  const SkRRect& srcRRect)
+{
+    SkPMColor4f origColor = paint.getColor4f();
+    SkV2 wh = {srcRRect.width(), srcRRect.height()};
+    SkVector rr = srcRRect.getSimpleRadii();
+    float r = rr.x();
+
+    static auto effect = SkMakeRuntimeEffect(SkRuntimeEffect::MakeForShader, R"(
+        uniform half sdfRadius;
+        uniform vec2 wh;
+        uniform half r;
+        uniform half4 origColor;
+
+        half4 main(float2 pos) {
+            vec2 a = vec2(wh.x / 2, wh.y / 2);
+            vec2 q = abs(pos)-a + r;
+            float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+            float alpha = smoothstep(sdfRadius / 2, -sdfRadius / 2, d);
+            return half4(alpha) * origColor;
+        }
+    )");
+
+    std::unique_ptr<GrFragmentProcessor> fp =
+            GrSkSLFP::Make(effect, "SimpleRRectSDF", nullptr,
+                           origColor.isOpaque() ? GrSkSLFP::OptFlags::kPreservesOpaqueInput
+                                                : GrSkSLFP::OptFlags::kNone,
+                           "sdfRadius", sdfRadius, "wh", wh, "r", r, "origColor", origColor);
+
+    if (!fp) {
+        return nullptr;
+    }
+
+    SkMatrix matrix;
+    matrix.setTranslateX(- srcRRect.rect().fLeft - srcRRect.width() * SK_ScalarHalf);
+    matrix.setTranslateY(- srcRRect.rect().fTop - srcRRect.height() * SK_ScalarHalf);
+
+    auto paintFP = GrMatrixEffect::Make(matrix, std::move(fp));
+
+#ifndef SK_IGNORE_GPU_DITHER
+    // add dither effect to reduce color discontinuity
+    constexpr float ditherRange = 1.f / 255.f;
+    paintFP = make_dither_effect(context, std::move(paintFP), ditherRange, context->priv().caps());
+#endif
+
+    return paintFP;
+}
+
+
+static std::unique_ptr<GrFragmentProcessor> make_complex_rrect_sdf(GrRecordingContext* context,
+                                                                   GrPaint& paint,
+                                                                   float sdfRadius,
+                                                                   const SkRRect& srcRRect)
+{
+    SkPMColor4f origColor = paint.getColor4f();
+    SkV2 wh = {srcRRect.width(), srcRRect.height()};
+    SkVector rr = srcRRect.getSimpleRadii();
+    SkVector rr3 = srcRRect.radii(SkRRect::Corner::kLowerLeft_Corner);
+    float r = rr.x();
+    float r3 = rr3.x();
+
+    static auto effect = SkMakeRuntimeEffect(SkRuntimeEffect::MakeForShader, R"(
+        uniform half sdfRadius;
+        uniform vec2 wh;
+        uniform half r0;
+        uniform half r3;
+        uniform half4 origColor;
+
+        half4 main(float2 pos) {
+            vec2 a = vec2(wh.x / 2, wh.y / 2);
+            half r = (pos.y < 0.0) ? r0 : r3;
+            vec2 q = abs(pos) - a + r;
+            float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+            float alpha = smoothstep(sdfRadius / 2, -sdfRadius / 2, d);
+            return half4(alpha) * origColor;
+        }
+    )");
+
+    std::unique_ptr<GrFragmentProcessor> fp =
+            GrSkSLFP::Make(effect, "ComplexRRectSDF", nullptr,
+                           origColor.isOpaque() ? GrSkSLFP::OptFlags::kPreservesOpaqueInput
+                                                : GrSkSLFP::OptFlags::kNone,
+                           "sdfRadius", sdfRadius, "wh", wh, "r0", r, "r3", r3, "origColor", origColor);
+
+    if (!fp) {
+        return nullptr;
+    }
+
+    SkMatrix matrix;
+    matrix.setTranslateX(- srcRRect.rect().fLeft - srcRRect.width() * SK_ScalarHalf);
+    matrix.setTranslateY(- srcRRect.rect().fTop - srcRRect.height() * SK_ScalarHalf);
+
+    auto paintFP = GrMatrixEffect::Make(matrix, std::move(fp));
+
+#ifndef SK_IGNORE_GPU_DITHER
+    // add dither effect to reduce color discontinuity
+    constexpr float ditherRange = 1.f / 255.f;
+    paintFP = make_dither_effect(context, std::move(paintFP), ditherRange, context->priv().caps());
+#endif
+
+    return paintFP;
+}
+#endif // SKIA_OHOS
+
 bool SkBlurMaskFilterImpl::filterMask(SkMaskBuilder* dst, const SkMask& src,
                                       const SkMatrix& matrix,
                                       SkIPoint* margin) const {
@@ -130,6 +246,72 @@ bool SkBlurMaskFilterImpl::filterRRectMask(SkMaskBuilder* dst, const SkRRect& r,
 
     return SkBlurMask::BlurRRect(sigma, dst, r, fBlurStyle, margin, createMode);
 }
+
+#ifdef SKIA_OHOS
+bool SkBlurMaskFilterImpl::directFilterRRectMaskGPU(GrRecordingContext* context,
+                                                    skgpu::ganesh::SurfaceDrawContext* sdc,
+                                                    GrPaint&& paint,
+                                                    const GrClip* clip,
+                                                    const SkMatrix& viewMatrix,
+                                                    const GrStyledShape& shape,
+                                                    const SkRRect& srcRRect) const
+{
+    SkASSERT(sdc);
+
+    if (fBlurStyle != kNormal_SkBlurStyle) {
+        return false;
+    }
+
+    if (!shape.style().isSimpleFill()) {
+        return false;
+    }
+
+    SkScalar xformedSigma = this->computeXformedSigma(viewMatrix);
+    if (SkBlurEngine::IsEffectivelyIdentity(xformedSigma)) {
+        sdc->drawShape(clip, std::move(paint), GrAA::kYes, viewMatrix, GrStyledShape(shape));
+        return true;
+    }
+
+    std::unique_ptr<GrFragmentProcessor> fp;
+
+    SkRRect devRRect;
+    srcRRect.transform(viewMatrix, &devRRect);
+
+    constexpr float kSigma_Factor = 3.f;
+    float sdfRadius = kSigma_Factor * fSigma;
+    if (SDFBlur::isSimpleRRectSDF(srcRRect)) {
+        fp = make_simple_rrect_sdf(context, paint, sdfRadius, srcRRect);
+    } else if (SDFBlur::isComplexRRectSDF(srcRRect)) {
+        fp = make_complex_rrect_sdf(context, paint, sdfRadius, srcRRect);
+    } else {
+        return false;
+    }
+
+    if (!fp) {
+        return false;
+    }
+
+    if (!this->ignoreXform()) {
+        SkRect srcProxyRect = srcRRect.rect();
+        srcProxyRect.outset(3.0f*fSigma, 3.0f*fSigma);
+        paint.setColorFragmentProcessor(std::move(fp));
+        sdc->drawRect(clip, std::move(paint), GrAA::kNo, viewMatrix, srcProxyRect);
+    } else {
+        SkMatrix inverse;
+        if (!viewMatrix.invert(&inverse)) {
+            return false;
+        }
+
+        SkIRect proxyBounds;
+        float extra = 3.f * SkScalarCeilToScalar(xformedSigma - 1 / 6.0f);
+        devRRect.rect().makeOutset(extra, extra).roundOut(&proxyBounds);
+ 
+        paint.setColorFragmentProcessor(std::move(fp));
+        sdc->fillPixelsWithLocalMatrix(clip, std::move(paint), proxyBounds, inverse);
+    }
+     return true;
+ }
+#endif // SKIA_OHOS
 
 static bool prepare_to_draw_into_mask(const SkRect& bounds, SkMaskBuilder* mask) {
     SkASSERT(mask != nullptr);
@@ -541,3 +723,21 @@ sk_sp<SkMaskFilter> SkMaskFilter::MakeBlur(SkBlurStyle style, SkScalar sigma, bo
     }
     return nullptr;
 }
+
+#ifdef SKIA_OHOS
+bool SkBlurMaskFilterImpl::quick_check_gpu_draw(const SkMatrix& viewMatrix,
+                                                SkIRect& devSpaceShapeBounds) const {
+    SkScalar xformedSigma = this->computeXformedSigma(viewMatrix);
+
+    // According to the advice in skia, We prefer to blur paths with small blur radii on the CPU.
+    static const SkScalar SKIA_MIN_GPU_BLUR_SIZE = SkIntToScalar(64);
+    static const SkScalar SKIA_GPU_BLUR_SIGMA = SkIntToScalar(32);
+
+    if (devSpaceShapeBounds.width() <= SKIA_MIN_GPU_BLUR_SIZE &&
+        devSpaceShapeBounds.height() <= SKIA_MIN_GPU_BLUR_SIZE &&
+        xformedSigma <= SKIA_GPU_BLUR_SIGMA) {
+        return false;
+    }
+    return true;
+}
+#endif // SKIA_OHOS
