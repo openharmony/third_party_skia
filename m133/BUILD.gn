@@ -2886,7 +2886,6 @@ if (skia_enable_tools) {
       "modules/sksg:tests",
       "modules/skshaper",
       "modules/skunicode:tests",
-      "modules/svg:tests",
       "${skia_third_party_dir}/libpng",
       "${skia_third_party_dir}/libwebp",
       "${skia_third_party_dir}/zlib",
@@ -2895,6 +2894,7 @@ if (skia_enable_tools) {
       deps += [
         "modules/skparagraph:tests",
         "modules/skshaper:tests",
+        "modules/svg:tests",
       ]
     }
   }
@@ -2991,9 +2991,11 @@ if (skia_enable_tools) {
         ":trace",
         "modules/skottie",
         "modules/skottie:utils",
-        "modules/skshaper",
         "modules/skunicode",
       ]
+      if (gm_test_enable_font) {
+        deps += [ "modules/skshaper", ]
+      }
       if (skia_use_libpng_decode) {
         deps += [ "modules/svg" ]
       }
