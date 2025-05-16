@@ -75,6 +75,8 @@ public:
     bool isUniformMatrix() const { return fKind == Kind::kUniformMatrix; }
     bool isFragCoord()     const { return fKind == Kind::kFragCoord; }
 
+    void setKind(Kind kind) { fKind = kind; }
+
 private:
     Kind fKind = Kind::kNone;
     bool fHasPerspective = false;  // Only valid if fKind is kUniformMatrix

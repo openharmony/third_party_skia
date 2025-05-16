@@ -1007,7 +1007,7 @@ class SkSpotShadowTessellator : public SkBaseShadowTessellator {
 public:
     SkSpotShadowTessellator(const SkPath& path, const SkMatrix& ctm,
                             const SkPoint3& zPlaneParams, const SkPoint3& lightPos,
-                            SkScalar lightRadius, bool transparent, bool directional);
+                            SkScalar lightRadius, bool transparent, bool directional, bool isLimitElevation = false);
 
 private:
     bool computeClipAndPathPolygons(const SkPath& path, const SkMatrix& ctm,
@@ -1020,7 +1020,7 @@ private:
 SkSpotShadowTessellator::SkSpotShadowTessellator(const SkPath& path, const SkMatrix& ctm,
                                                  const SkPoint3& zPlaneParams,
                                                  const SkPoint3& lightPos, SkScalar lightRadius,
-                                                 bool transparent, bool directional)
+                                                 bool transparent, bool directional, bool isLimitElevation)
     : INHERITED(zPlaneParams, path.getBounds(), transparent) {
 
     // Compute the blur radius, scale and translation for the spot shadow.
@@ -1028,7 +1028,7 @@ SkSpotShadowTessellator::SkSpotShadowTessellator(const SkPath& path, const SkMat
     SkScalar outset;
     if (!SkDrawShadowMetrics::GetSpotShadowTransform(lightPos, lightRadius, ctm, zPlaneParams,
                                                      path.getBounds(), directional,
-                                                     &shadowTransform, &outset)) {
+                                                     &shadowTransform, &outset, isLimitElevation)) {
         return;
     }
     SkScalar inset = outset;
@@ -1176,14 +1176,14 @@ sk_sp<SkVertices> SkShadowTessellator::MakeAmbient(const SkPath& path, const SkM
 sk_sp<SkVertices> SkShadowTessellator::MakeSpot(const SkPath& path, const SkMatrix& ctm,
                                                 const SkPoint3& zPlane, const SkPoint3& lightPos,
                                                 SkScalar lightRadius,  bool transparent,
-                                                bool directional) {
+                                                bool directional, bool isLimitElevation) {
     if (!ctm.mapRect(path.getBounds()).isFinite() || !zPlane.isFinite() ||
         !lightPos.isFinite() || !(lightPos.fZ >= SK_ScalarNearlyZero) ||
         !SkIsFinite(lightRadius) || !(lightRadius >= SK_ScalarNearlyZero)) {
         return nullptr;
     }
     SkSpotShadowTessellator spotTess(path, ctm, zPlane, lightPos, lightRadius, transparent,
-                                     directional);
+                                     directional, isLimitElevation);
     return spotTess.releaseVertices();
 }
 

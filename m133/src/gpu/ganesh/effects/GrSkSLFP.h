@@ -69,6 +69,12 @@ UNIFORM_TYPE(kInt2,     SkISize);
 
 class GrSkSLFP : public GrFragmentProcessor {
 public:
+    // Advanced Filter: Overwrite parent's method, check if AF is enabled from fEffect
+    virtual bool isAFEnabled() const override
+    {
+        return fEffect != nullptr ? fEffect->getAF() : false;
+    }
+
     template <typename T> struct GrSpecializedUniform {
         bool specialize;
         T value;

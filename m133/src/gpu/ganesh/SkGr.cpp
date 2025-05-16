@@ -297,11 +297,19 @@ static inline bool blender_requires_shader(const SkBlender* blender) {
 
 
 #ifndef SK_IGNORE_GPU_DITHER
+#ifdef SKIA_OHOS
+ std::unique_ptr<GrFragmentProcessor> make_dither_effect(
+     GrRecordingContext* rContext,
+     std::unique_ptr<GrFragmentProcessor> inputFP,
+     float range,
+     const GrCaps* caps) {
+#else
 static std::unique_ptr<GrFragmentProcessor> make_dither_effect(
         GrRecordingContext* rContext,
         std::unique_ptr<GrFragmentProcessor> inputFP,
         float range,
         const GrCaps* caps) {
+#endif // SKIA_OHOS
     if (range == 0 || inputFP == nullptr) {
         return inputFP;
     }
