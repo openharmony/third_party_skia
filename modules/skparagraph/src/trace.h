@@ -16,7 +16,7 @@
  #ifndef TEXT_TRACE_H
  #define TEXT_TRACE_H
  
- #ifdef OHOS_TEXT_ENABLE
+ #ifdef ENABLE_OHOS_ENHANCE
  #include "hitrace_meter.h"
  #include "parameters.h"
 namespace OHOS::Rosen {
@@ -26,7 +26,7 @@ namespace OHOS::Rosen {
  #endif
  
  namespace OHOS::Rosen {
- #ifdef OHOS_TEXT_ENABLE
+ #ifdef ENABLE_OHOS_ENHANCE
  enum class TextTraceLevel {
      TEXT_TRACE_LEVEL_DEFAULT,
      TEXT_TRACE_LEVEL_LOW,

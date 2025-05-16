@@ -17,7 +17,7 @@
 #define TEXT_PARAMETER_DEFINED
 
 #ifdef OHOS_SUPPORT
-#ifdef OHOS_TEXT_ENABLE
+#ifdef ENABLE_OHOS_ENHANCE
 #include "parameters.h"
 #endif
 
@@ -27,7 +27,7 @@ class TextParameter {
 public:
     static bool GetAutoSpacingEnable()
     {
-#ifdef OHOS_TEXT_ENABLE
+#ifdef ENABLE_OHOS_ENHANCE
         static bool autoSpacingEnable = OHOS::system::GetBoolParameter("persist.sys.text.autospacing.enable", false);
         return autoSpacingEnable;
 #else
@@ -37,7 +37,7 @@ public:
     static uint32_t GetUnicodeSizeLimitForParagraphCache()
     {
         const uint32_t unicodeSizeDefaultLimit = 16000;
-#ifdef OHOS_TEXT_ENABLE
+#ifdef ENABLE_OHOS_ENHANCE
         static uint32_t unicodeSizeLimit = OHOS::system::GetUintParameter(
             "persist.sys.text.paragraph_cache.unicode_size_limit", unicodeSizeDefaultLimit);
         return unicodeSizeLimit;
