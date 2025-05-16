@@ -288,7 +288,6 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     TEXT_TRACE_FUNC();
 #endif
     fLineNumber = 1;
-    allTextWidth = 0;
     fLayoutRawWidth = rawWidth;
     // TODO: This rounding is done to match Flutter tests. Must be removed...
     auto floorWidth = rawWidth;
@@ -2220,8 +2219,6 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
 
     paragraph->fWords = this->fWords;
     paragraph->fIndents = this->fIndents;
-    paragraph->rtlTextSize = this->rtlTextSize;
-    paragraph->ltrTextSize = this->ltrTextSize;
     paragraph->fBidiRegions = this->fBidiRegions;
 
     paragraph->fUTF8IndexForUTF16Index = this->fUTF8IndexForUTF16Index;
@@ -2241,8 +2238,6 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fOldWidth = this->fOldWidth;
     paragraph->fOldHeight = this->fOldHeight;
     paragraph->fMaxWidthWithTrailingSpaces = this->fMaxWidthWithTrailingSpaces;
-    paragraph->fOldMaxWidth = this->fOldMaxWidth;
-    paragraph->allTextWidth = this->allTextWidth;
 
     paragraph->fUnicode = this->fUnicode;
     paragraph->fHasLineBreaks = this->fHasLineBreaks;

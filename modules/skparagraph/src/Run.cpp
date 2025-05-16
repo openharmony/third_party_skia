@@ -520,6 +520,15 @@ void Run::extendClusterWidth(Cluster* cluster, SkScalar space) {
         fPositions[pos].fX += space;
     }
 }
+
+// Checks if the current line contains trailing spaces and current run is at the end of the line
+bool Run::isTrailingSpaceIncluded(const ClusterRange& fTextLineClusterRange,
+    const ClusterRange& fTextLineGhostClusterRange) const {
+    return fTextLineGhostClusterRange.width() > 0 && this->clusterRange().width() > 0 &&
+           fTextLineClusterRange.width() > 0 && fTextLineGhostClusterRange.end != fTextLineClusterRange.end &&
+           fTextLineGhostClusterRange.end <= this->clusterRange().end &&
+           fTextLineGhostClusterRange.end > this->clusterRange().start;
+}
 #endif
 
 void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {

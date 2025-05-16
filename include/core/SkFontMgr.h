@@ -63,7 +63,7 @@ public:
     SkFontStyleSet* createStyleSet(int index) const;
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
-    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
+    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX) or defined(CROSS_PLATFORM)
     /**
      * OHOS_Container font base path. It is empty when using OpenHarmony fonts.
      */
@@ -157,7 +157,7 @@ public:
     static sk_sp<SkFontMgr> RefEmpty();
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
-    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
+    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX) or defined(CROSS_PLATFORM)
     /** Set the runtimeOS and container font base path */
     static void SetFontMgrConfig(const std::string runtime, const std::string containerFontBasePath)
     {
