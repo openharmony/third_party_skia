@@ -16,8 +16,10 @@
 #ifndef TEXT_GLOBAL_CONFIG_H
 #define TEXT_GLOBAL_CONFIG_H
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 namespace skia {
 namespace textlayout {
@@ -27,15 +29,17 @@ class TextGlobalConfig {
 public:
     static bool IsTargetApiVersion(uint32_t targetVersion);
 
-    static void SetTargetVersion(uint32_t targetVersion)
-    {
-        bundleApiVersion_ = targetVersion;
-    };
+    static void SetTargetVersion(uint32_t targetVersion) { bundleApiVersion_ = targetVersion; };
+
+    static void SetNoGlyphShow(uint32_t noGlyphShow);
+
+    static bool NoGlyphShowUseTofu(const std::string& family = "notdef");
 
 private:
     static uint32_t bundleApiVersion_;
+    static std::atomic<bool> noGlyphShowTofu_;
 };
-} // namespace textlayout
-} // namespace skia
+}  // namespace textlayout
+}  // namespace skia
 
-#endif // TEXT_GLOBAL_CONFIG_H
+#endif  // TEXT_GLOBAL_CONFIG_H

@@ -17,9 +17,21 @@
 namespace skia {
 namespace textlayout {
 uint32_t TextGlobalConfig::bundleApiVersion_{0};
+std::atomic<bool> TextGlobalConfig::noGlyphShowTofu_{false};
+
 bool TextGlobalConfig::IsTargetApiVersion(uint32_t targetVersion)
 {
     return bundleApiVersion_ >= targetVersion;
 }
-} // namespace textlayout
-} // namespace skia
+
+void TextGlobalConfig::SetNoGlyphShow(uint32_t noGlyphShow)
+{
+    noGlyphShowTofu_.store(noGlyphShow);
+};
+
+bool TextGlobalConfig::NoGlyphShowUseTofu(const std::string& family)
+{
+    return noGlyphShowTofu_.load() && family == "notdef";
+};
+}  // namespace textlayout
+}  // namespace skia
