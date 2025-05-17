@@ -471,7 +471,7 @@ private:
         kBoldItalic = 0x03
     };
     static SkFontStyle FromOldStyle(Style oldStyle);
-    static SkTypeface* GetDefaultTypeface(Style style = SkTypeface::kNormal);
+    static sk_sp<SkTypeface> GetDefaultTypeface(Style style = SkTypeface::kNormal);
 #endif
     friend class SkFontPriv;         // getGlyphToUnicodeMap
 
@@ -482,8 +482,8 @@ private:
     mutable SkOnce      fBoundsOnce;
     bool                fIsFixedPitch;
 #ifdef ENABLE_TEXT_ENHANCE
-    bool                fIsCustom = false;
-    bool                fIsTheme = false;
+    bool                fIsCustom{false};
+    bool                fIsTheme{false};
 #endif
     using INHERITED = SkWeakRefCnt;
 };
