@@ -200,7 +200,7 @@ SkFontStyle SkTypeface::FromOldStyle(Style oldStyle) {
                                                         : SkFontStyle::kUpright_Slant);
 }
 
-SkTypeface* SkTypeface::GetDefaultTypeface(Style style) {
+sk_sp<SkTypeface> SkTypeface::GetDefaultTypeface(Style style) {
     constexpr int kStyleCount = 4;
     static SkOnce once[kStyleCount];
     static sk_sp<SkTypeface> defaults[kStyleCount];
@@ -210,11 +210,11 @@ SkTypeface* SkTypeface::GetDefaultTypeface(Style style) {
         auto t = fm->legacyMakeTypeface(nullptr, FromOldStyle(style));
         defaults[style] = t ? t : SkEmptyTypeface::Make();
     });
-    return defaults[style].get();
+    return defaults[style];
 }
 
 sk_sp<SkTypeface> SkTypeface::MakeDefault() {
-    return sk_ref_sp(GetDefaultTypeface());
+    return GetDefaultTypeface();
 }
 
 std::vector<sk_sp<SkTypeface>> SkTypeface::GetSystemFonts() {
