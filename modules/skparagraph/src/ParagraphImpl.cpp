@@ -451,6 +451,9 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     for (auto& line : fLines) {
+#ifdef OHOS_SUPPORT
+        line.updateTextLinePaintAttributes();
+#endif
         line.paint(painter, x, y);
     }
 }
@@ -1167,9 +1170,6 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
             line.setLineOffsetX(0);
         }
         line.format(effectiveAlign, noIndentWidth, this->paragraphStyle().getEllipsisMod());
-#ifdef OHOS_SUPPORT
-        line.updateTextLinePaintAttributes();
-#endif
     }
 }
 
