@@ -41,6 +41,12 @@ private:
                 return SkTextureCompressionType::kBC1_RGB8_UNORM;
             case GrGLFormat::kCOMPRESSED_RGBA8_BC1:
                 return SkTextureCompressionType::kBC1_RGBA8_UNORM;
+                case GrGLFormat::kCOMPRESSED_ASTC_RGBA8_4x4:
+                return SkTextureCompressionType::kASTC_RGBA8_4x4;
+            case GrGLFormat::kCOMPRESSED_ASTC_RGBA8_6x6:
+                return SkTextureCompressionType::kASTC_RGBA8_6x6;
+            case GrGLFormat::kCOMPRESSED_ASTC_RGBA8_8x8:
+                return SkTextureCompressionType::kASTC_RGBA8_8x8;
             default:
                 return SkTextureCompressionType::kNone;
         }

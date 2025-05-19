@@ -242,7 +242,11 @@ public:
     // maxPages is also limited by being crammed into the glyph uvs.
     // maxPlots is also limited by the fPlotAlreadyUpdated bitfield in
     // GrDrawOpAtlas::BulkUseTokenUpdater.
+#ifdef SK_ENABLE_SMALL_PAGE
+    inline static constexpr auto kMaxMultitexturePages = 16;
+#else
     inline static constexpr auto kMaxMultitexturePages = 4;
+#endif
     inline static constexpr int kMaxPlots = 32;
 
     PlotLocator(uint32_t pageIdx, uint32_t plotIdx, uint64_t generation)
@@ -307,7 +311,11 @@ public:
     uint64_t genID() const { return fPlotLocator.genID(); }
 
     SkIPoint topLeft() const {
+#ifdef SK_ENABLE_SMALL_PAGE
+        return {fUVs[0] & 0x3FFF, fUVs[1] & 0x3FFF};
+#else
         return {fUVs[0] & 0x1FFF, fUVs[1]};
+#endif
     }
 
     SkPoint widthHeight() const {
@@ -336,19 +344,41 @@ public:
 
     void updatePlotLocator(PlotLocator p) {
         fPlotLocator = p;
+#ifdef SK_ENABLE_SMALL_PAGE
+        SkASSERT(fPlotLocator.pageIndex() <= 15);
+        // package pageIndex(max value is 16, 4bit)
+        // high 2bit save in x-axis(fUVs[0],fUVs[2]),low 2bit save in y-axis(fUVs[1],fUVs[3])
+        uint16_t page = fPlotLocator.pageIndex() << 12;
+        fUVs[0] = (fUVs[0] & 0x3FFF) | (page & 0xC000);
+        fUVs[1] = (fUVs[1] & 0x3FFF) | ((page << 2) & 0xC000);
+        fUVs[2] = (fUVs[2] & 0x3FFF) | (page & 0xC000);
+        fUVs[3] = (fUVs[3] & 0x3FFF) | ((page << 2) & 0xC000);
+#else
         SkASSERT(fPlotLocator.pageIndex() <= 3);
         uint16_t page = fPlotLocator.pageIndex() << 13;
         fUVs[0] = (fUVs[0] & 0x1FFF) | page;
         fUVs[2] = (fUVs[2] & 0x1FFF) | page;
+#endif
     }
 
     void updateRect(skgpu::IRect16 rect) {
+#ifdef SK_ENABLE_SMALL_PAGE
+        SkASSERT(rect.fLeft <= rect.fRight);
+        SkASSERT(rect.fRight <= 0x3FFF);
+        SkASSERT(rect.fTop <= rect.fBottom);
+        SkASSERT(rect.fBottom <= 0x3FFF);
+        fUVs[0] = (fUVs[0] & 0xC000) | rect.fLeft;
+        fUVs[1] = (fUVs[1] & 0xC000) | rect.fTop;
+        fUVs[2] = (fUVs[2] & 0xC000) | rect.fRight;
+        fUVs[3] = (fUVs[3] & 0xC000) | rect.fBottom;
+#else
         SkASSERT(rect.fLeft <= rect.fRight);
         SkASSERT(rect.fRight <= 0x1FFF);
         fUVs[0] = (fUVs[0] & 0xE000) | rect.fLeft;
         fUVs[1] = rect.fTop;
         fUVs[2] = (fUVs[2] & 0xE000) | rect.fRight;
         fUVs[3] = rect.fBottom;
+#endif
     }
 
 private:

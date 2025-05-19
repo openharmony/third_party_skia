@@ -69,12 +69,22 @@ bool SmallPathAtlasMgr::initAtlas(GrProxyProvider* proxyProvider, const GrCaps* 
 
     GrDrawOpAtlasConfig atlasConfig(caps->maxTextureSize(), kMaxAtlasTextureBytes);
     SkISize size = atlasConfig.atlasDimensions(MaskFormat::kA8);
+#ifdef SK_ENABLE_SMALL_PAGE
+    int pageNum = 4; // The maximum number of texture pages in the original skia code is 4
+    if (atlasConfig.getARGBDimensions().width() > 512) {
+        // reset atlasConfig to suit small page.
+        pageNum = atlasConfig.resetAsSmallPage();
+    }
+#endif
     fAtlas = GrDrawOpAtlas::Make(proxyProvider, format,
                                  GrColorTypeToSkColorType(atlasColorType),
                                  GrColorTypeBytesPerPixel(atlasColorType),
                                  size.width(), size.height(),
                                  kPlotWidth, kPlotHeight, this,
                                  GrDrawOpAtlas::AllowMultitexturing::kYes,
+#ifdef SK_ENABLE_SMALL_PAGE
+                                 pageNum,
+#endif
                                  this,
                                  /*label=*/"SmallPathAtlas");
 

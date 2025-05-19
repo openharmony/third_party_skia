@@ -3234,6 +3234,51 @@ void GrGLCaps::initFormatTable(const GrGLContextInfo& ctxInfo, const GrGLInterfa
         // There are no support GrColorTypes for this format
     }
 
+    // Format: COMPRESSED_ASTC_RGB8_4x4
+    {
+        FormatInfo& info = this->getFormatInfo(GrGLFormat::kCOMPRESSED_ASTC_RGBA8_4x4);
+        info.fFormatType = FormatType::kNormalizedFixedPoint;
+        info.fDefaultExternalFormat = GR_GL_RGB;
+        info.fInternalFormatForTexImageOrStorage = GR_GL_COMPRESSED_RGBA_ASTC_4x4;
+        if (GR_IS_GR_GL_ES(standard)) {
+            if (ctxInfo.hasExtension("GL_OES_texture_compression_astc")) {
+                info.fFlags = FormatInfo::kTexturable_Flag;
+            }
+        } // No GL or WebGL support
+
+        // There are no support GrColorTypes for this format
+    }
+
+    // Format: COMPRESSED_ASTC_RGB8_6x6
+    {
+        FormatInfo& info = this->getFormatInfo(GrGLFormat::kCOMPRESSED_ASTC_RGBA8_6x6);
+        info.fFormatType = FormatType::kNormalizedFixedPoint;
+        info.fDefaultExternalFormat = GR_GL_RGB;
+        info.fInternalFormatForTexImageOrStorage = GR_GL_COMPRESSED_RGBA_ASTC_6x6;
+        if (GR_IS_GR_GL_ES(standard)) {
+            if (ctxInfo.hasExtension("GL_OES_texture_compression_astc")) {
+                info.fFlags = FormatInfo::kTexturable_Flag;
+            }
+        } // No GL or WebGL support
+
+        // There are no support GrColorTypes for this format
+    }
+
+    // Format: COMPRESSED_ASTC_RGB8_8x8
+    {
+        FormatInfo& info = this->getFormatInfo(GrGLFormat::kCOMPRESSED_ASTC_RGBA8_8x8);
+        info.fFormatType = FormatType::kNormalizedFixedPoint;
+        info.fDefaultExternalFormat = GR_GL_RGB;
+        info.fInternalFormatForTexImageOrStorage = GR_GL_COMPRESSED_RGBA_ASTC_8x8;
+        if (GR_IS_GR_GL_ES(standard)) {
+            if (ctxInfo.hasExtension("GL_OES_texture_compression_astc")) {
+                info.fFlags = FormatInfo::kTexturable_Flag;
+            }
+        } // No GL or WebGL support
+
+        // There are no support GrColorTypes for this format
+    }
+
     // Format: R16
     {
         FormatInfo& info = this->getFormatInfo(GrGLFormat::kR16);
@@ -5216,6 +5261,24 @@ GrBackendFormat GrGLCaps::getBackendFormatFromCompressionType(
                                                 GR_GL_TEXTURE_2D);
             }
             return {};
+        case SkTextureCompressionType::kASTC_RGBA8_4x4:
+            if (this->isFormatTexturable(GrGLFormat::kCOMPRESSED_ASTC_RGBA8_4x4)) {
+                return GrBackendFormats::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_4x4,
+                                               GR_GL_TEXTURE_2D);
+            }
+            return {};
+        case SkTextureCompressionType::kASTC_RGBA8_6x6:
+            if (this->isFormatTexturable(GrGLFormat::kCOMPRESSED_ASTC_RGBA8_6x6)) {
+                return GrBackendFormats::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_6x6,
+                                               GR_GL_TEXTURE_2D);
+            }
+            return {};
+        case SkTextureCompressionType::kASTC_RGBA8_8x8:
+            if (this->isFormatTexturable(GrGLFormat::kCOMPRESSED_ASTC_RGBA8_8x8)) {
+                return GrBackendFormats::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_8x8,
+                                               GR_GL_TEXTURE_2D);
+            }
+            return {};
     }
 
     SkUNREACHABLE;
@@ -5301,6 +5364,12 @@ std::vector<GrTest::TestFormatColorTypeCombination> GrGLCaps::getTestingCombinat
           GrBackendFormats::MakeGL(GR_GL_COMPRESSED_RGB8_ETC2, GR_GL_TEXTURE_2D) },
         { GrColorType::kRGB_888x,
           GrBackendFormats::MakeGL(GR_GL_COMPRESSED_ETC1_RGB8, GR_GL_TEXTURE_2D) },
+        { GrColorType::kRGBA_8888,
+          GrBackendFormats::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_4x4, GR_GL_TEXTURE_2D) },
+        { GrColorType::kRGBA_8888,
+          GrBackendFormats::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_6x6, GR_GL_TEXTURE_2D) },
+        { GrColorType::kRGBA_8888,
+          GrBackendFormats::MakeGL(GR_GL_COMPRESSED_RGBA_ASTC_8x8, GR_GL_TEXTURE_2D) },
         { GrColorType::kRGB_888x,
           GrBackendFormats::MakeGL(GR_GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GR_GL_TEXTURE_2D) },
         { GrColorType::kRGBA_8888,

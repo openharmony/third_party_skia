@@ -21,10 +21,13 @@ struct SkISize;
 
 static constexpr bool SkTextureCompressionTypeIsOpaque(SkTextureCompressionType compression) {
     switch (compression) {
-        case SkTextureCompressionType::kNone:            return true;
-        case SkTextureCompressionType::kETC2_RGB8_UNORM: return true;
-        case SkTextureCompressionType::kBC1_RGB8_UNORM:  return true;
-        case SkTextureCompressionType::kBC1_RGBA8_UNORM: return false;
+        case SkTextureCompressionType::kNone:             return true;
+        case SkTextureCompressionType::kETC2_RGB8_UNORM:  return true;
+        case SkTextureCompressionType::kBC1_RGB8_UNORM:   return true;
+        case SkTextureCompressionType::kBC1_RGBA8_UNORM:  return false;
+        case SkTextureCompressionType::kASTC_RGBA8_4x4:   return false;
+        case SkTextureCompressionType::kASTC_RGBA8_6x6:   return false;
+        case SkTextureCompressionType::kASTC_RGBA8_8x8:   return false;
     }
 
     SkUNREACHABLE;
