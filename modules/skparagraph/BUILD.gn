@@ -115,7 +115,7 @@ ohos_static_library("skia_paragraph_ohos") {
   }
 
   if (current_os == "ohos") {
-    defines += [ "OHOS_TEXT_ENABLE" ]
+    defines += [ "ENABLE_OHOS_ENHANCE" ]
     external_deps += [
       "hitrace:hitrace_meter",
       "init:libbegetutil",
