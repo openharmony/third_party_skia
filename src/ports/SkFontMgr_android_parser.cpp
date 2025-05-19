@@ -17,6 +17,9 @@
 #include "src/core/SkOSFile.h"
 #include "src/core/SkTSearch.h"
 #include "src/ports/SkFontMgr_android_parser.h"
+#if defined(CROSS_PLATFORM)
+#include "src/ports/skia_ohos/HmSymbolConfig_ohos.h"
+#endif
 
 #include <expat.h>
 
@@ -29,6 +32,9 @@
 #define OLD_SYSTEM_FONTS_FILE "/system/etc/system_fonts.xml"
 #define FALLBACK_FONTS_FILE "/system/etc/fallback_fonts.xml"
 #define VENDOR_FONTS_FILE "/vendor/etc/fallback_fonts.xml"
+#if defined(CROSS_PLATFORM)
+#define SK_FONT_CONFIG_FILE_NAME "hwsymbol.xml"
+#endif
 
 #define LOCALE_FALLBACK_FONTS_SYSTEM_DIR "/system/etc"
 #define LOCALE_FALLBACK_FONTS_VENDOR_DIR "/vendor/etc"
@@ -37,6 +43,9 @@
 
 #ifndef SK_FONT_FILE_PREFIX
 #    define SK_FONT_FILE_PREFIX "/fonts/"
+#endif
+#if defined(CROSS_PLATFORM)
+std::string SkFontMgr::containerFontPath = "";
 #endif
 
 /**
@@ -812,6 +821,21 @@ void SkFontMgr_Android_Parser::GetSystemFontFamilies(SkTDArray<FontFamily*>& fon
     mixin_vendor_fallback_font_families(fallbackFonts, basePath);
     fontFamilies.append(fallbackFonts.count(), fallbackFonts.begin());
 }
+
+#if defined(CROSS_PLATFORM)
+void SkFontMgr_Android_Parser::GetSystemFontFamiliesForSymbol(SkTDArray<FontFamily*>& fontFamilies)
+{
+    std::string containerFontBasePath = SkFontMgr::containerFontPath;
+    if (containerFontBasePath.empty()) {
+        return;
+    }
+    SkString basePath(containerFontBasePath.c_str());
+    std::string lmpSystemFontsFile = containerFontBasePath.append(SK_FONT_CONFIG_FILE_NAME);
+    HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol("hm_symbol_config_next.json", basePath);
+    append_system_font_families(fontFamilies, basePath);
+    parse_config_file(lmpSystemFontsFile.c_str(), fontFamilies, basePath, false);
+}
+#endif
 
 void SkFontMgr_Android_Parser::GetCustomFontFamilies(SkTDArray<FontFamily*>& fontFamilies,
                                                      const SkString& basePath,

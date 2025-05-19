@@ -29,6 +29,9 @@
 #include <algorithm>
 #include <limits>
 
+#if defined(CROSS_PLATFORM)
+std::string SkFontMgr::runtimeOS = "";
+#endif
 constexpr char ORIGIN_MY_LOCALE[] = "my-Qaag";
 constexpr char ANDROID_MY_LOCALE[] = "und-Qaag";
 
@@ -308,6 +311,9 @@ public:
             SkFontMgr_Android_Parser::GetCustomFontFamilies(
                 families, base, custom->fFontsXml, custom->fFallbackFontsXml);
         }
+#if defined(CROSS_PLATFORM)
+        SkFontMgr_Android_Parser::GetSystemFontFamiliesForSymbol(families);
+#endif
         this->buildNameToFamilyMap(families, custom ? custom->fIsolated : false);
         this->findDefaultStyleSet();
         families.deleteAll();
