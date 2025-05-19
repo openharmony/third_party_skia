@@ -144,8 +144,8 @@ public:
                       InternalLineMetrics sizes);
 
     SkSpan<const char> text() const { return SkSpan<const char>(fText.c_str(), fText.size()); }
-    std::vector<SkUnichar> convertUtf8ToUnicode(const SkString& utf8);
 #ifdef OHOS_SUPPORT
+    std::vector<SkUnichar> convertUtf8ToUnicode(const SkString& utf8);
     std::unique_ptr<Paragraph> createCroppedCopy(
             size_t startIndex, size_t count = std::numeric_limits<size_t>::max()) override;
     void initUnicodeText() override;
@@ -270,6 +270,7 @@ public:
         UtfEncodeType encodeType) override;
     SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
     SkTArray<Block, true>& exportTextStyles() override { return fTextStyles; }
+    bool preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth);
 #endif
 
     void visit(const Visitor&) override;

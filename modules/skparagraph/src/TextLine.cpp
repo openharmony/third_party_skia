@@ -577,12 +577,12 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
 
 #ifdef OHOS_SUPPORT
 SkScalar TextLine::autoSpacing() {
-    if (!TextParameter::GetAutoSpacingEnable()) {
+    if ((!TextParameter::GetAutoSpacingEnable()) && (!fOwner->paragraphStyle().getEnableAutoSpace())) {
         return 0;
     }
     SkScalar spacing = 0.0;
-    auto prevCluster = fOwner->cluster(fClusterRange.start);
-    for (auto clusterIndex = fClusterRange.start + 1; clusterIndex < fClusterRange.end; ++clusterIndex) {
+    auto prevCluster = fOwner->cluster(fGhostClusterRange.start);
+    for (auto clusterIndex = fGhostClusterRange.start + 1; clusterIndex < fGhostClusterRange.end; ++clusterIndex) {
         auto prevSpacing = spacing;
         auto& cluster = fOwner->cluster(clusterIndex);
         spacing += cluster.needAutoSpacing() ? prevCluster.getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;

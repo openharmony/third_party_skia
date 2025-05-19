@@ -68,6 +68,7 @@ TextRange textRangeMergeBtoA(const TextRange& a, const TextRange& b) {
     return TextRange(std::min(a.start, b.start), std::max(a.end, b.end));
 }
 
+#ifdef OHOS_SUPPORT
 std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
 {
     fUnicodeIndexForUTF8Index.reset();
@@ -86,7 +87,6 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
     return result;
 }
 
-#ifdef OHOS_SUPPORT
 bool ParagraphImpl::needCreateMiddleEllipsis()
 {
     if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
@@ -319,8 +319,9 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     } else {
         // Nothing changed case: we can reuse the data from the last layout
     }
-
+#ifdef OHOS_SUPPORT
     this->fUnicodeText = convertUtf8ToUnicode(fText);
+#endif
     auto paragraphCache = fFontCollection->getParagraphCache();
 
     if (fState < kShaped) {
@@ -387,7 +388,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         if (!fHasLineBreaks &&
             !fHasWhitespacesInside &&
             fPlaceholders.size() == 1 &&
-            (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= floorWidth - this->detectIndents(0))) {
+            (fRuns.size() == 1 && preCalculateSingleRunAutoSpaceWidth(floorWidth))) {
             positionShapedTextIntoLine(floorWidth);
         } else if (!paragraphCache->GetStoredLayout(*this)) {
             breakShapedTextIntoLines(floorWidth);
@@ -617,9 +618,51 @@ static const std::vector<SkRange<SkUnichar>> CJK_UNICODE_SET = {
 };
 
 static const std::vector<SkRange<SkUnichar>> WESTERN_UNICODE_SET = {
-    SkRange<SkUnichar>(0x0030, 0x0039),
-    SkRange<SkUnichar>(0x0041, 0x005A),
+    SkRange<SkUnichar>(0x0030, 0x0039), // Number
+    SkRange<SkUnichar>(0x0041, 0x005A), // Base Latin
     SkRange<SkUnichar>(0x0061, 0x007A),
+    SkRange<SkUnichar>(0x00C0, 0x00FF), // Latin Extended-1: À-ÿ
+    SkRange<SkUnichar>(0x0100, 0x017F), // Latin Extended-A: Ā-ſ
+    SkRange<SkUnichar>(0x018F, 0x0192), // Latin Extended-B (specific ranges)
+    SkRange<SkUnichar>(0x01A0, 0x01A1),
+    SkRange<SkUnichar>(0x01AF, 0x01B0),
+    SkRange<SkUnichar>(0x01CD, 0x01DC),
+    SkRange<SkUnichar>(0x01E5, 0x01E5),
+    SkRange<SkUnichar>(0x01E7, 0x01E7),
+    SkRange<SkUnichar>(0x01E9, 0x01E9),
+    SkRange<SkUnichar>(0x01EF, 0x01F0),
+    SkRange<SkUnichar>(0x01F9, 0x01FF),
+    SkRange<SkUnichar>(0x0218, 0x0219),
+    SkRange<SkUnichar>(0x021A, 0x021B),
+    SkRange<SkUnichar>(0x021F, 0x021F),
+    SkRange<SkUnichar>(0x0237, 0x0237),
+    SkRange<SkUnichar>(0x0386, 0x0386), // Greek and Coptic
+    SkRange<SkUnichar>(0x0388, 0x038A),
+    SkRange<SkUnichar>(0x038C, 0x038C),
+    SkRange<SkUnichar>(0x038E, 0x038F),
+    SkRange<SkUnichar>(0x0390, 0x03A1),
+    SkRange<SkUnichar>(0x03A3, 0x03CE),
+    SkRange<SkUnichar>(0x03D1, 0x03D2),
+    SkRange<SkUnichar>(0x03D6, 0x03D6),
+    SkRange<SkUnichar>(0x0400, 0x045F), // Cyrillic
+    SkRange<SkUnichar>(0x0462, 0x0463),
+    SkRange<SkUnichar>(0x046B, 0x046B),
+    SkRange<SkUnichar>(0x0472, 0x0475),
+    SkRange<SkUnichar>(0x0490, 0x0493),
+    SkRange<SkUnichar>(0x0497, 0x0497),
+    SkRange<SkUnichar>(0x049A, 0x049D),
+    SkRange<SkUnichar>(0x04A2, 0x04A3),
+    SkRange<SkUnichar>(0x04AE, 0x04B3),
+    SkRange<SkUnichar>(0x04B8, 0x04BB),
+    SkRange<SkUnichar>(0x04CA, 0x04CA),
+    SkRange<SkUnichar>(0x04D8, 0x04D9),
+    SkRange<SkUnichar>(0x04E8, 0x04E9),
+    SkRange<SkUnichar>(0x1E00, 0x1E01), // Latin Extended Additional
+    SkRange<SkUnichar>(0x1E3E, 0x1E3F),
+    SkRange<SkUnichar>(0x1E80, 0x1E85),
+    SkRange<SkUnichar>(0x1EA0, 0x1EF9),
+    SkRange<SkUnichar>(0x1F45, 0x1F45), // Greek Extended
+    SkRange<SkUnichar>(0x1F4D, 0x1F4D)
 };
 
 constexpr SkUnichar COPYRIGHT_UNICODE = 0x00A9;
@@ -631,9 +674,6 @@ struct UnicodeIdentifier {
     const std::vector<SkRange<SkUnichar>>& fUnicodeSet;
     explicit UnicodeIdentifier(const std::vector<SkRange<SkUnichar>>& unicodeSet) : fUnicodeSet(unicodeSet) {}
     bool exist(SkUnichar c) const {
-        if (!TextParameter::GetAutoSpacingEnable()) {
-            return false;
-        }
         auto pos = std::upper_bound(fUnicodeSet.begin(), fUnicodeSet.end(), SkRange<SkUnichar>(c, c), cmp);
         if (pos == fUnicodeSet.begin()) {
             return false;
@@ -646,20 +686,21 @@ struct UnicodeIdentifier {
 static const UnicodeIdentifier CJK_IDENTIFIER(CJK_UNICODE_SET);
 static const UnicodeIdentifier WESTERN_IDENTIFIER(WESTERN_UNICODE_SET);
 
-static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(SkUnichar unicode)
+static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(ParagraphImpl& paragraph, SkUnichar unicode)
 {
+    bool enableAutoSpaceFlag = paragraph.paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
+    if (!enableAutoSpaceFlag) {
+        return Cluster::AutoSpacingFlag::NoFlag;
+    }
     if (WESTERN_IDENTIFIER.exist(unicode)) {
         return Cluster::AutoSpacingFlag::Western;
     }
-
     if (CJK_IDENTIFIER.exist(unicode)) {
         return Cluster::AutoSpacingFlag::CJK;
     }
-
     if (unicode == COPYRIGHT_UNICODE) {
         return Cluster::AutoSpacingFlag::Copyright;
     }
-
     return Cluster::AutoSpacingFlag::NoFlag;
 }
 #endif
@@ -725,7 +766,7 @@ Cluster::Cluster(ParagraphImpl* owner,
         unicode = fOwner->unicodeText()[unicodeStart];
     }
 
-    auto curAutoSpacingFlag = recognizeUnicodeAutoSpacingFlag(unicode);
+    auto curAutoSpacingFlag = recognizeUnicodeAutoSpacingFlag(*fOwner, unicode);
     auto lastAutoSpacingFlag = fOwner->getLastAutoSpacingFlag();
     fNeedAutoSpacing = curAutoSpacingFlag != Cluster::AutoSpacingFlag::NoFlag &&
         curAutoSpacingFlag != lastAutoSpacingFlag && lastAutoSpacingFlag != Cluster::AutoSpacingFlag::NoFlag;
@@ -998,9 +1039,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
 }
 
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
-#ifdef OHOS_SUPPORT
     TEXT_TRACE_FUNC();
-#endif
     resetAutoSpacing();
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
@@ -1023,12 +1062,12 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 // TODO: Take in account clipped edges
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines,
                     clusters, clustersWithGhosts, widthWithSpaces, metrics);
+                line.autoSpacing();
                 if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
                     line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
                 } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
-#ifdef OHOS_SUPPORT
                 else if (needCreateMiddleEllipsis()) {
                     line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
                 } else if (textWrapper.brokeLineWithHyphen()
@@ -1037,9 +1076,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                                && (this->fUnicodeText[clusters.end - 1] == 0xad))) { // 0xad represents a soft hyphen
                     line.setBreakWithHyphen(true);
                 }
-#endif
-                auto spacing = line.autoSpacing();
-                auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces()) + spacing;
+                auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces());
                 fLongestLine = std::max(fLongestLine, longestLine);
                 fLongestLineWithIndent = std::max(fLongestLineWithIndent, longestLine + indent);
             });
@@ -1737,6 +1774,23 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
         line.setTextBlobCachePopulated(false);
     }
     return unresolvedPaintID;
+}
+
+bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
+{
+    SkScalar singleRunWidth = fRuns[0].fAdvance.fX;
+    bool enableAutoSpace = paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
+    if (!enableAutoSpace) {
+        return singleRunWidth <= floorWidth - this->detectIndents(0);
+    }
+    SkScalar totalFakeSpacing = 0.0f;
+    ClusterIndex endOfClusters = fClusters.size();
+    for (size_t cluster = 1; cluster < endOfClusters; ++cluster) {
+        totalFakeSpacing += (fClusters[cluster].needAutoSpacing())
+            ? fClusters[cluster - 1].getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
+    }
+    singleRunWidth += totalFakeSpacing;
+    return singleRunWidth <= floorWidth - this->detectIndents(0);
 }
 #endif
 

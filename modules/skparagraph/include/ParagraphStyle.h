@@ -137,6 +137,7 @@ struct ParagraphStyle {
                this->fParagraphSpacing == rhs.fParagraphSpacing &&
                this->fIsEndAddParagraphSpacing == rhs.fIsEndAddParagraphSpacing &&
                this->fIsTrailingSpaceOptimized == rhs.fIsTrailingSpaceOptimized &&
+               this->fEnableAutoSpace == rhs.fEnableAutoSpace &&
 #endif
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
     }
@@ -209,6 +210,11 @@ struct ParagraphStyle {
     {
         fIsTrailingSpaceOptimized = isTrailingSpaceOptimized;
     }
+    bool getEnableAutoSpace() const { return fEnableAutoSpace; }
+    void setEnableAutoSpace(bool enableAutoSpace)
+    {
+        fEnableAutoSpace = enableAutoSpace;
+    }
 #endif
 private:
     StrutStyle fStrutStyle;
@@ -230,6 +236,7 @@ private:
     SkScalar fParagraphSpacing{0.0f};
     bool fIsEndAddParagraphSpacing{false};
     bool fIsTrailingSpaceOptimized{false};
+    bool fEnableAutoSpace{false};
 #endif
 };
 }  // namespace textlayout
