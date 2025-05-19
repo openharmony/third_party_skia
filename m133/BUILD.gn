@@ -1471,7 +1471,7 @@ optional("jpeg_decode") {
   enabled = skia_use_libjpeg_turbo_decode
   public_defines = [ "SK_CODEC_DECODES_JPEG" ]
 
-  deps = [ "${skia_third_party_dir}/libjpeg-turbo:libjpeg" ]
+  deps = [ "${skia_third_party_dir}/libjpeg-turbo:libjpegm133" ]
   sources = [
     "src/codec/SkJpegCodec.cpp",
     "src/codec/SkJpegDecoderMgr.cpp",
@@ -1495,7 +1495,7 @@ optional("jpeg_encode") {
   enabled = skia_use_libjpeg_turbo_encode && !skia_use_ndk_images
   public_defines = [ "SK_CODEC_ENCODES_JPEG" ]
 
-  deps = [ "${skia_third_party_dir}/libjpeg-turbo:libjpeg" ]
+  deps = [ "${skia_third_party_dir}/libjpeg-turbo:libjpegm133" ]
   public = skia_encode_jpeg_public
   sources = skia_encode_jpeg_srcs
 
@@ -1645,8 +1645,8 @@ optional("raw") {
 
   deps = [
     "${skia_third_party_dir}/dng_sdk",
-    "${skia_third_party_dir}/libjpeg-turbo:libjpeg",
-    "${skia_third_party_dir}/piex",
+    "${skia_third_party_dir}/libjpeg-turbo:libjpegm133",
+    "${skia_third_party_dir}/piex:piexm133",
   ]
 
   # SkRawCodec catches any exceptions thrown by dng_sdk, insulating the rest of
@@ -1881,7 +1881,7 @@ optional("webp_decode") {
   enabled = skia_use_libwebp_decode
   public_defines = [ "SK_CODEC_DECODES_WEBP" ]
 
-  deps = [ "${skia_third_party_dir}/libwebp" ]
+  deps = [ "${skia_third_party_dir}/libwebp:libwebpm133" ]
   sources = [ "src/codec/SkWebpCodec.cpp" ]
 }
 
@@ -1890,7 +1890,7 @@ optional("webp_encode") {
   public_defines = [ "SK_CODEC_ENCODES_WEBP" ]
   public = skia_encode_webp_public
 
-  deps = [ "${skia_third_party_dir}/libwebp" ]
+  deps = [ "${skia_third_party_dir}/libwebp:libwebpm133" ]
   sources = skia_encode_webp_srcs
 }
 
@@ -2888,7 +2888,7 @@ if (skia_enable_tools) {
       "modules/skunicode:tests",
       "modules/svg:tests",
       "${skia_third_party_dir}/libpng",
-      "${skia_third_party_dir}/libwebp",
+      "${skia_third_party_dir}/libwebp:libwebpm133",
       "${skia_third_party_dir}/zlib",
     ]
     if (gm_test_enable_font) {
