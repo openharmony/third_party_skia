@@ -192,7 +192,7 @@ size_t GrVkTextureRenderTarget::onGpuMemorySize() const {
 void GrVkTextureRenderTarget::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
     SkString resourceName = this->getResourceName();
     resourceName.append("/texture_renderbuffer");
-    if (textureImage()->isBorrowed()) {
+    if (textureImage()->isBorrowed() && !textureImage()->isRealAlloc()) {
         this->dumpMemoryStatisticsPriv(traceMemoryDump, resourceName, "External RenderTarget",
             this->gpuMemorySize());
     } else {
