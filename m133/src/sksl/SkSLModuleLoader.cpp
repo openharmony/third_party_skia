@@ -234,9 +234,11 @@ void ModuleLoader::addPublicTypeAliases(const SkSL::Module* module) {
 
     // Hide all the private symbols by aliasing them all to "invalid". This will prevent code from
     // using built-in names like `sampler2D` as variable names.
+#ifndef SKSL_EXT
     for (BuiltinTypePtr privateType : kPrivateTypes) {
         symbols->inject(Type::MakeAliasType((types.*privateType)->name(), *types.fInvalid));
     }
+#endif
 }
 
 const Module* ModuleLoader::loadPublicModule(SkSL::Compiler* compiler) {
@@ -280,6 +282,9 @@ const Module* ModuleLoader::loadGPUModule(SkSL::Compiler* compiler) {
                                                       ProgramKind::kFragment,
                                                       MODULE_DATA(sksl_gpu),
                                                       sharedModule);
+#ifdef SKSL_EXT
+        this->addPublicTypeAliases(fModuleLoader.fGPUModule.get());
+#endif
     }
     return fModuleLoader.fGPUModule.get();
 }

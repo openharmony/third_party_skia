@@ -355,7 +355,9 @@ public:
             case TypeKind::kAtomic:
             case TypeKind::kBlender:
             case TypeKind::kColorFilter:
+#ifndef SKSL_EXT
             case TypeKind::kSampler:
+#endif
             case TypeKind::kSeparateSampler:
             case TypeKind::kShader:
             case TypeKind::kTexture:
@@ -564,7 +566,12 @@ public:
     }
 
     bool hasPrecision() const {
+#ifdef SKSL_EXT
+        return this->componentType().isNumber() ||
+               this->componentType().isSampler();
+#else
         return this->componentType().isNumber() || this->isSampler();
+#endif
     }
 
     bool highPrecision() const {
