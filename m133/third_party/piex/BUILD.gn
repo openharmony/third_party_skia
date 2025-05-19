@@ -8,7 +8,7 @@ declare_args() {
 
 import("../third_party.gni")
 
-third_party("piex") {
+third_party("piexm133") {
   public_include_dirs = [ "../externals/piex" ]
 
   defines = [ "BREAK_IF_DEBUGGING_AND_OUT_OF_RANGE" ]

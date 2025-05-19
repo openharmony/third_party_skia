@@ -27,7 +27,7 @@ if (skia_use_system_libjpeg_turbo2) {
     public_external_deps = [ "libjpeg-turbo:turbojpeg" ]
   }
 } else {
-  third_party("libjpeg") {
+  third_party("libjpegm133") {
     if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64") &&
         enhanced_opt) {
       configs = [ ":libjpeg-turbo-inline" ]
