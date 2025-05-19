@@ -1381,6 +1381,9 @@ optional("gpu") {
     if (is_android) {
       sources += skia_gpu_vk_android_private
     }
+    if (skia_vk_enable_partialrender) {
+      public_defines += [ "SK_VK_PARTIALRENDER" ]
+    }
   }
 
   if (skia_use_direct3d) {
