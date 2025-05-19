@@ -76,6 +76,7 @@ const char ANIMATION_INDEX[] = "animation_index";
 const char COMMON_SUB_TYPE[] = "common_sub_type";
 const char ANIMATION_SETTINGS[] = "animation_settings";
 const char PROPERTIES[] = "properties";
+const char SLOPE[] = "slope";
 
 const int NO_ERROR = 0; // no error
 const int ERROR_CONFIG_NOT_FOUND = 1; // the configuration document is not found
@@ -91,13 +92,16 @@ static const std::map<std::string, AnimationType> ANIMATIONS_TYPES = {
     {"variable_color", AnimationType::VARIABLE_COLOR_TYPE},
     {"pulse", AnimationType::PULSE_TYPE},
     {"replace_appear", AnimationType::REPLACE_APPEAR_TYPE},
-    {"replace_disappear", AnimationType::REPLACE_DISAPPEAR_TYPE}};
+    {"replace_disappear", AnimationType::REPLACE_DISAPPEAR_TYPE},
+    {"disable", AnimationType::DISABLE_TYPE}
+};
 
 static const std::map<std::string, CurveType> CURVE_TYPES = {
     {"spring", CurveType::SPRING},
     {"linear", CurveType::LINEAR},
     {"friction", CurveType::FRICTION},
-    {"sharp", CurveType::SHARP}};
+    {"sharp", CurveType::SHARP}
+};
 
 /* To get the display text of an error
  * \param err the id of an error
@@ -857,6 +861,15 @@ void HmSymbolConfig_OHOS::ParseAnimationSetting(const Json::Value& root, Animati
 
     if (root.isMember(GROUP_SETTINGS) && root[GROUP_SETTINGS].isArray()) {
         ParseGroupSettings(root[GROUP_SETTINGS], animationSetting.groupSettings);
+    }
+
+    if (root.isMember(COMMON_SUB_TYPE) && root[COMMON_SUB_TYPE].isString()) {
+        const std::string subTypeStr = root[COMMON_SUB_TYPE].asString();
+        ParseSymbolCommonSubType(subTypeStr, animationSetting.commonSubType);
+    }
+
+    if (root.isMember(SLOPE) && root[SLOPE].isDouble()) {
+        animationSetting.slope = root[SLOPE].asDouble();
     }
 }
 
