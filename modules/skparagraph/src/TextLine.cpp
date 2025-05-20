@@ -577,7 +577,7 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
 
 #ifdef OHOS_SUPPORT
 SkScalar TextLine::autoSpacing() {
-    if ((!TextParameter::GetAutoSpacingEnable()) && (!fOwner->paragraphStyle().getEnableAutoSpace())) {
+    if (!fOwner->isAutoSpaceEnabled()) {
         return 0;
     }
     SkScalar spacing = 0.0;

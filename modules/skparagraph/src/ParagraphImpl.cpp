@@ -688,8 +688,7 @@ static const UnicodeIdentifier WESTERN_IDENTIFIER(WESTERN_UNICODE_SET);
 
 static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(ParagraphImpl& paragraph, SkUnichar unicode)
 {
-    bool enableAutoSpaceFlag = paragraph.paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
-    if (!enableAutoSpaceFlag) {
+    if (!paragraph.isAutoSpaceEnabled()) {
         return Cluster::AutoSpacingFlag::NoFlag;
     }
     if (WESTERN_IDENTIFIER.exist(unicode)) {
@@ -1776,11 +1775,15 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
     return unresolvedPaintID;
 }
 
+bool ParagraphImpl::isAutoSpaceEnabled() const
+{
+    return paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
+}
+
 bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
 {
     SkScalar singleRunWidth = fRuns[0].fAdvance.fX;
-    bool enableAutoSpace = paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
-    if (!enableAutoSpace) {
+    if (!isAutoSpaceEnabled()) {
         return singleRunWidth <= floorWidth - this->detectIndents(0);
     }
     SkScalar totalFakeSpacing = 0.0f;
