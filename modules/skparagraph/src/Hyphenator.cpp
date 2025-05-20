@@ -289,10 +289,10 @@ void formatTarget(std::vector<uint16_t>& target)
 {
     while (EXCLUDED_WORD_ENDING_CHARS.find(target.back()) != EXCLUDED_WORD_ENDING_CHARS.end()) {
         target.pop_back();
-    }
-    if (target.empty()) {
-        // nothing to be hyphenated
-        return;
+        if (target.empty()) {
+            // nothing to be hyphenated
+            return;
+        }
     }
     target.insert(target.cbegin(), '.');
     target.push_back('.');
