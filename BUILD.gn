@@ -4558,6 +4558,7 @@ ohos_static_library("sksl_ext_static") {
       "${skia_root_dir}:crabbyavif",
       "${skia_root_dir}:heif",
       "${skia_root_dir}:hsw",
+      "${skia_root_dir}:fontmgr_factory",
       "${skia_root_dir}:jpeg_decode",
       "${skia_root_dir}:jpegxl_decode",
       "${skia_root_dir}:lasx",
