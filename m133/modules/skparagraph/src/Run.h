@@ -517,7 +517,7 @@ private:
     bool fIsTabulation;
     bool fIsPunctuation{false};
     bool fIsEllipsis{false};
-    bool fNeedAutoSpacing; // depend on last cluster flag
+    bool fNeedAutoSpacing{false}; // depend on last cluster flag
     bool fHyphenBreak{false};
 #endif
 };

@@ -33,6 +33,11 @@ enum InternalState {
   kFormatted = 6,
   kDrawn = 7
 };
+
+enum UtfEncodeType {
+    kUtf8,
+    kUtf16
+};
 #endif
 
 class ParagraphPainter;
@@ -89,7 +94,8 @@ public:
 
     virtual TextRange getEllipsisTextRange() = 0;
 
-    virtual std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) = 0;
+    virtual std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color,
+        UtfEncodeType encodeType) = 0;
 #endif
 
     bool didExceedMaxLines() { return fExceededMaxLines; }
