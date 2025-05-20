@@ -546,6 +546,10 @@ optional("fontmgr_symbol_load") {
   sources = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
 }
 
+group("fontmgr_factory") {
+  public_deps = [ skia_fontmgr_factory ]
+}
+
 optional("fontmgr_custom") {
   enabled =
       skia_enable_fontmgr_custom_directory ||
@@ -566,6 +570,18 @@ optional("fontmgr_custom_directory") {
   sources = skia_ports_fontmgr_directory_sources
 }
 
+optional("fontmgr_custom_directory_factory") {
+  enabled = skia_enable_fontmgr_custom_directory
+  deps = [ ":fontmgr_custom_directory" ]
+  sources = [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
+  if (use_linux) {
+    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
+  }
+  if (is_arkui_x) {
+    sources -= [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
+  }
+}
+
 optional("fontmgr_custom_embedded") {
   enabled = skia_enable_fontmgr_custom_embedded
   public_defines = [ "SK_FONTMGR_FREETYPE_EMBEDDED_AVAILABLE" ]
@@ -575,6 +591,12 @@ optional("fontmgr_custom_embedded") {
   ]
   public = skia_ports_fontmgr_embedded_public
   sources = skia_ports_fontmgr_embedded_sources
+}
+
+optional("fontmgr_custom_embedded_factory") {
+  enabled = skia_enable_fontmgr_custom_embedded
+  deps = [ ":fontmgr_custom_embedded" ]
+  sources = [ "src/ports/SkFontMgr_custom_embedded_factory.cpp" ]
 }
 
 optional("fontmgr_custom_empty") {
@@ -588,13 +610,23 @@ optional("fontmgr_custom_empty") {
   sources = skia_ports_fontmgr_empty_sources
 }
 
+optional("fontmgr_custom_empty_factory") {
+  enabled = skia_enable_fontmgr_custom_empty
+  deps = [ ":fontmgr_custom_empty" ]
+  sources = [ "src/ports/SkFontMgr_custom_empty_factory.cpp" ]
+}
+
 skia_source_set("typeface_proxy") {
   configs = [ ":skia_public" ]
   sources = skia_ports_typeface_proxy_sources
 }
 
 optional("fontmgr_fontconfig") {
-  enabled = skia_enable_fontmgr_fontconfig
+  if (use_oh_skia) {
+    enabled = false
+  } else {
+    enabled = skia_enable_fontmgr_fontconfig
+  }
   public_defines = [ "SK_FONTMGR_FONTCONFIG_AVAILABLE" ]
 
   # The public header includes fontconfig.h and uses FcConfig*
@@ -664,6 +696,18 @@ optional("fontmgr_mac_ct") {
   sources = skia_ports_fontmgr_coretext_sources
   sources_for_tests = [ "tests/TypefaceMacTest.cpp" ]
 
+  if (use_oh_skia) {
+    # Use hos font
+    sources += [
+      "${skia_root_dir}/src/ports/SkFontMgr_config_parser.cpp",
+      "${skia_root_dir}/src/ports/SkFontMgr_config_parser.h",
+      "${skia_root_dir}/src/ports/SkFontMgr_preview.cpp",
+      "${skia_root_dir}/src/ports/SkFontMgr_preview.h",
+    ]
+
+    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+  }
+
   if (is_mac) {
     frameworks = [
       # AppKit symbols NSFontWeightXXX may be dlsym'ed.
@@ -682,6 +726,50 @@ optional("fontmgr_mac_ct") {
       "UIKit.framework",
     ]
   }
+}
+
+optional("fontmgr_mac_ct_factory") {
+  enabled = skia_use_fonthost_mac
+  deps = [ ":fontmgr_mac_ct" ]
+  sources = [ "src/ports/SkFontMgr_mac_ct_factory.cpp" ]
+  defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+  if (is_arkui_x) {
+    defines += [ "USE_DEFAULT_FONT" ]
+  }
+}
+
+optional("fontmgr_empty_factory") {
+  if (use_oh_skia) {
+    enabled = false
+  } else {
+    enabled = true
+  }
+  sources = [ "src/ports/SkFontMgr_empty_factory.cpp" ]
+}
+
+optional("fontmgr_android_factory") {
+  enabled = skia_enable_fontmgr_android
+  deps = [ ":fontmgr_android" ]
+  sources = [ "src/ports/SkFontMgr_android_factory.cpp" ]
+}
+
+optional("fontmgr_win_factory") {
+  enabled = skia_enable_fontmgr_win
+  deps = [ ":fontmgr_win" ]
+  sources = [ "src/ports/SkFontMgr_win_dw_factory.cpp" ]
+  defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
+}
+
+
+optional("fontmgr_fontconfig_factory") {
+  if (use_oh_skia) {
+    enabled = false
+  } else {
+    enabled = skia_enable_fontmgr_fontconfig
+  }
+
+  deps = [ ":fontmgr_fontconfig" ]
+  sources = [ "src/ports/SkFontMgr_fontconfig_factory.cpp" ]
 }
 
 optional("fontmgr_win") {
@@ -708,6 +796,17 @@ optional("fontmgr_win") {
     } else {
       include_dirs = [ "${skia_dwritecore_sdk}/include" ]
     }
+  }
+  if (use_oh_skia) {
+    # Use hos font
+    sources += [
+      "${skia_root_dir}/src/ports/SkFontMgr_config_parser.cpp",
+      "${skia_root_dir}/src/ports/SkFontMgr_config_parser.h",
+      "${skia_root_dir}/src/ports/SkFontMgr_preview.cpp",
+      "${skia_root_dir}/src/ports/SkFontMgr_preview.h",
+    ]
+
+    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
   }
 }
 
@@ -751,6 +850,7 @@ if (use_oh_skia && !is_arkui_x) {
     sources = [
       "src/ports/skia_ohos/FontConfig_ohos.cpp",
       "src/ports/skia_ohos/SkFontMgr_ohos.cpp",
+      "src/ports/skia_ohos/SkFontMgr_ohos_factory.cpp",
       "src/ports/skia_ohos/SkFontStyleSet_ohos.cpp",
       "src/ports/skia_ohos/SkTypeface_ohos.cpp",
     ]

@@ -10,6 +10,10 @@
 
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
+#if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
+    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
+#include <string>
+#endif
 
 #include <memory>
 
@@ -53,6 +57,17 @@ public:
     void getFamilyName(int index, SkString* familyName) const;
     sk_sp<SkFontStyleSet> createStyleSet(int index) const;
 
+#if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
+    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
+    /**
+     * OHOS_Container font base path. It is empty when using OpenHarmony fonts.
+     */
+    static std::string containerFontPath;
+    /**
+     * Indicate the runtimeOS of preview(OHOS_Container and OHOS)
+     */
+    static std::string runtimeOS;
+#endif
     /**
      *  The caller must call unref() on the returned object.
      *  Never returns NULL; will return an empty set if the name is not found.
@@ -142,6 +157,16 @@ public:
     /* Returns an empty font manager without any typeface dependencies */
     static sk_sp<SkFontMgr> RefEmpty();
 
+#if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
+    defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX)
+    /** Set the runtimeOS and container font base path */
+    static void SetFontMgrConfig(const std::string runtime, const std::string containerFontBasePath)
+    {
+        containerFontPath = containerFontBasePath;
+        runtimeOS = runtime;
+    }
+#endif
+
 #ifdef ENABLE_TEXT_ENHANCE
     /**
      *  Adding a base class interface function to a subclass, generally doesn't go here
@@ -188,6 +213,11 @@ protected:
 #ifdef ENABLE_TEXT_ENHANCE
     virtual std::vector<sk_sp<SkTypeface>> onGetSystemFonts() const;
 #endif
+
+private:
+
+    /** Implemented by porting layer to return the default factory. */
+    static sk_sp<SkFontMgr> Factory();
 };
 
 #endif
