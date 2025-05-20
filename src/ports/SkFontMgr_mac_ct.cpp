@@ -34,6 +34,9 @@
 #include "include/private/SkTemplates.h"
 #include "include/private/SkTo.h"
 #include "src/core/SkFontDescriptor.h"
+#if defined(CROSS_PLATFORM)
+#include "src/ports/skia_ohos/HmSymbolConfig_ohos.h"
+#endif
 #include "src/ports/SkTypeface_mac_ct.h"
 #include "src/utils/SkUTF.h"
 
@@ -448,7 +451,40 @@ public:
         , fCount(fNames ? SkToInt(CFArrayGetCount(fNames.get())) : 0)
         , fFontCollection(fontCollection ? (CTFontCollectionRef)CFRetain(fontCollection)
                                          : CTFontCollectionCreateFromAvailableFonts(nullptr))
-    {}
+    {
+#if defined(CROSS_PLATFORM)
+        std::string path(SkFontMgr::containerFontPath);
+        if (path.empty()) {
+            return;
+        }
+        SkString fontDir(path.c_str());
+        path += "/HMSymbolVF.ttf";
+        sk_sp<SkTypeface> typeface = onMakeFromFile(path.c_str(), 0);
+        if (!typeface) {
+            return;
+        }
+        sk_sp<SkData> fontData = SkData::MakeFromFileName(path.c_str());
+        if (!fontData) {
+            return;
+        }
+        HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol("hm_symbol_config_next.json", fontDir);
+        SkUniqueCFRef<CFDataRef> cfData =
+            SkUniqueCFRef<CFDataRef>(CFDataCreate(kCFAllocatorDefault, fontData->bytes(), fontData->size()));
+        if (!cfData) {
+            return;
+        }
+        SkUniqueCFRef<CGDataProviderRef> dataProvider =
+            SkUniqueCFRef<CGDataProviderRef>(CGDataProviderCreateWithCFData(cfData.get()));
+        if (!dataProvider) {
+            return;
+        }
+        SkUniqueCFRef<CGFontRef> cgFont = SkUniqueCFRef<CGFontRef>(CGFontCreateWithDataProvider(dataProvider.get()));
+        if (!cgFont) {
+            return;
+        }
+        CTFontManagerRegisterGraphicsFont(cgFont.get(), nullptr);
+#endif
+    }
 
 protected:
     int onCountFamilies() const override {
