@@ -53,6 +53,9 @@
 #include "src/core/SkMaskFilterBase.h"
 #include "src/core/SkRRectPriv.h"
 #include "src/core/SkRuntimeEffectPriv.h"
+#ifdef SKIA_OHOS
+#include "src/core/SkSDFFilter.h"
+#endif
 #include "src/core/SkTraceEvent.h"
 #include "src/gpu/BlurUtils.h"
 #include "src/gpu/ResourceKey.h"
@@ -509,13 +512,14 @@ static std::unique_ptr<GrFragmentProcessor> make_circle_blur(GrRecordingContext*
 
     static const SkRuntimeEffect* effect = SkMakeRuntimeEffect(SkRuntimeEffect::MakeForShader,
         "uniform shader blurProfile;"
-        "uniform half4 circleData;"
+        "uniform float4 circleData;"
 
         "half4 main(float2 xy) {"
             // We just want to compute "(length(vec) - circleData.z + 0.5) * circleData.w" but need
             // to rearrange to avoid passing large values to length() that would overflow.
-            "half2 vec = half2((sk_FragCoord.xy - circleData.xy) * circleData.w);"
-            "half dist = length(vec) + (0.5 - circleData.z) * circleData.w;"
+            "half4 halfCircleData = circleData;"
+            "half2 vec = (sk_FragCoord.xy - halfCircleData.xy) * circleData.w;"
+            "half dist = length(vec) + (0.5 - halfCircleData.z) * halfCircleData.w;"
             "return blurProfile.eval(half2(dist, 0.5)).aaaa;"
         "}"
     );
@@ -1193,10 +1197,17 @@ static bool compute_key_and_clip_bounds(skgpu::UniqueKey* maskKey,
         SkFixed fracX = SkScalarToFixed(SkScalarFraction(tx)) & 0x0000FF00;
         SkFixed fracY = SkScalarToFixed(SkScalarFraction(ty)) & 0x0000FF00;
 
+#ifdef SKIA_OHOS
+        builder[0] = SkFloat2Bits(roundf(sx * 100) / 100.f);
+        builder[1] = SkFloat2Bits(roundf(sy * 100) / 100.f);
+        builder[2] = SkFloat2Bits(roundf(kx * 100) / 100.f);
+        builder[3] = SkFloat2Bits(roundf(ky * 100) / 100.f);
+#else
         builder[0] = SkFloat2Bits(sx);
         builder[1] = SkFloat2Bits(sy);
         builder[2] = SkFloat2Bits(kx);
         builder[3] = SkFloat2Bits(ky);
+#endif // SKIA_OHOS
         // Distinguish between hairline and filled paths. For hairlines, we also need to include
         // the cap. (SW grows hairlines by 0.5 pixel with round and square caps). Note that
         // stroke-and-fill of hairlines is turned into pure fill by SkStrokeRec, so this covers
@@ -1210,7 +1221,11 @@ static bool compute_key_and_clip_bounds(skgpu::UniqueKey* maskKey,
         SkAssertResult(as_MFB(maskFilter)->asABlur(&rec));
 
         builder[5] = rec.fStyle;  // TODO: we could put this with the other style bits
+#ifdef SKIA_OHOS
+        builder[6] = SkFloat2Bits(roundf(rec.fSigma * 100) / 100.f);
+#else
         builder[6] = SkFloat2Bits(rec.fSigma);
+#endif // SKIA_OHOS
         shape.writeUnstyledKey(&builder[7]);
     }
 #endif
@@ -1399,6 +1414,27 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
         shape = tmpShape.get();
     }
 
+#ifdef SKIA_OHOS
+    SkIRect devSpaceShapeBounds;
+    if (get_unclipped_shape_dev_bounds(*shape, viewMatrix, &devSpaceShapeBounds) &&
+        maskFilter->quick_check_gpu_draw(viewMatrix, devSpaceShapeBounds)) {
+        SkRRect srcRRect;
+        bool inverted;
+        bool canUseSDFShadow = SDFBlur::GetSDFBlurEnabled() &&
+                               shape->asRRect(&srcRRect, nullptr, nullptr, &inverted) && !inverted &&
+                               (paint.numTotalFragmentProcessors() == 0);
+        if (canUseSDFShadow &&
+            maskFilter->directFilterRRectMaskGPU(rContext, sdc, std::move(paint), clip, viewMatrix, *shape, srcRRect)) {
+            return;
+        }
+    }
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    if (SDFBlur::GetSDFBlurDebugTraceEnabled()) {
+        HITRACE_OHOS_NAME_ALWAYS("directFilterRRectMaskGPU doSDF fail!");
+    }
+#endif // SKIA_OHOS_FOR_OHOS_TRACE
+#endif // SKIA_OHOS
+
     if (direct_filter_mask(rContext, maskFilter, sdc, std::move(paint), clip, viewMatrix, *shape)) {
         // the mask filter was able to draw itself directly, so there's nothing
         // left to do.
@@ -1410,6 +1446,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
     bool inverseFilled = shape->inverseFilled() &&
                          !GrIsStrokeHairlineOrEquivalent(shape->style(), viewMatrix, nullptr);
 
+    SkMatrix matrixTrans = SkMatrix::I().Translate(viewMatrix.getTranslateX(), viewMatrix.getTranslateY());
     SkIRect unclippedDevShapeBounds, devClipBounds;
     if (!get_shape_and_clip_bounds(sdc, clip, *shape, viewMatrix,
                                    &unclippedDevShapeBounds, &devClipBounds)) {
@@ -1435,12 +1472,12 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
 
     if (auto dContext = rContext->asDirectContext()) {
         filteredMaskView = hw_create_filtered_mask(dContext, sdc,
-                                                   viewMatrix, *shape, maskFilter,
+                                                   viewMatrix,
+                                                   *shape, maskFilter,
                                                    unclippedDevShapeBounds, boundsForClip,
                                                    &maskRect, &maskKey);
         if (filteredMaskView) {
-            if (draw_mask(sdc, clip, viewMatrix, maskRect, std::move(paint),
-                          std::move(filteredMaskView))) {
+            if (draw_mask(sdc, clip, viewMatrix, maskRect, std::move(paint), std::move(filteredMaskView))) {
                 // This path is completely drawn
                 return;
             }
@@ -1454,8 +1491,7 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
                                                unclippedDevShapeBounds, boundsForClip,
                                                &maskRect, &maskKey);
     if (filteredMaskView) {
-        if (draw_mask(sdc, clip, viewMatrix, maskRect, std::move(paint),
-                      std::move(filteredMaskView))) {
+        if (draw_mask(sdc, clip, viewMatrix, maskRect, std::move(paint), std::move(filteredMaskView))) {
             return;
         }
         assert_alive(paint);

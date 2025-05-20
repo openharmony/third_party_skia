@@ -33,6 +33,22 @@
 #include <algorithm>
 #include <string>
 
+// Advanced Filter
+bool GrFragmentProcessor::checkAFRecursively() const
+{
+    if (isAFEnabled()) {
+        return true;
+    }
+
+    for (int i = 0; i < numChildProcessors(); ++i) {
+        const GrFragmentProcessor* fChildFp = childProcessor(i);
+        if (fChildFp != nullptr && fChildFp->checkAFRecursively()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool GrFragmentProcessor::isEqual(const GrFragmentProcessor& that) const {
     if (this->classID() != that.classID()) {
         return false;
@@ -705,6 +721,52 @@ GrFPResult GrFragmentProcessor::Circle(std::unique_ptr<GrFragmentProcessor> inpu
     return GrFPSuccess(GrBlendFragmentProcessor::Make<SkBlendMode::kModulate>(std::move(inputFP),
                                                                               std::move(circleFP)));
 }
+
+
+#ifdef SKIA_OHOS
+GrFPResult GrFragmentProcessor::CircleSDF(std::unique_ptr<GrFragmentProcessor> inputFP,
+    GrClipEdgeType edgeType, SkPoint center, float radius)
+{
+    if (radius < .5f && GrClipEdgeTypeIsInverseFill(edgeType)) {
+        return GrFPFailure(std::move(inputFP));
+    }
+
+    static auto effect = SkMakeRuntimeEffect(SkRuntimeEffect::MakeForShader, CLIP_EDGE_SKSL R"(
+        uniform int edgeType;
+        uniform float4 circle;
+
+        half4 main(float2 xy, half4 inColor) {
+            float2 localXY = (sk_FragCoord.xy - circle.xy) / (circle.z - 0.5);
+            float dfLocalD_recip = (circle.z - 0.5) / (2.0 * (abs(localXY.x) + abs(localXY.y)));
+            half d = 0;
+            if (edgeType == kInverseFillBW || edgeType == kInverseFillAA) {
+                d = (dot(localXY, localXY) - 1.0) * dfLocalD_recip - 0.5;
+            } else {
+                d = 0.5 - (dot(localXY, localXY) - 1.0) * dfLocalD_recip;
+            }
+            if (edgeType == kFillAA || edgeType == kInverseFillAA) {
+                return saturate(d) * inColor;
+            } else {
+                return d > 0.5 ? inColor : half4(0);
+            }
+        }
+    )");
+    // Avoid inf * 0 in the shader.
+    SkScalar effectiveRadius = radius;
+    if (GrClipEdgeTypeIsInverseFill(edgeType)) {
+        effectiveRadius -= 0.5f;
+        effectiveRadius = std::max(0.001f, effectiveRadius);
+    } else {
+        effectiveRadius += 0.5f;
+    }
+    SkV4 circle = {center.fX, center.fY, effectiveRadius, SkScalarInvert(effectiveRadius)};
+
+    return GrFPSuccess(GrSkSLFP::Make(effect, "CircleSDF", std::move(inputFP),
+                                      GrSkSLFP::OptFlags::kCompatibleWithCoverageAsAlpha,
+                                      "edgeType", GrSkSLFP::Specialize(static_cast<int>(edgeType)),
+                                      "circle", circle));
+}
+#endif
 
 GrFPResult GrFragmentProcessor::Ellipse(std::unique_ptr<GrFragmentProcessor> inputFP,
                                         GrClipEdgeType edgeType,

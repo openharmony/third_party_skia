@@ -77,6 +77,9 @@ struct ProgramSettings {
     // investigating memory corruption. (This controls behavior of the SkSL compiler, not the code
     // we generate.)
     bool fUseMemoryPool = true;
+    // Advanced Filter: It's a flag for skia to passthrough uv coord from vert stage to frag stage
+    // It's the same value with SkRuntimeEffect::fUseAF
+    bool fUseAF = false;
 };
 
 /**
