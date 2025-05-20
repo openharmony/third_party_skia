@@ -121,6 +121,7 @@ public:
 
 #ifdef ENABLE_TEXT_ENHANCE
     static std::vector<sk_sp<SkTypeface>> GetSystemFonts();
+    void getFontPath(SkString* path) const;
 #endif
 
     /**
@@ -344,6 +345,8 @@ public:
     void setIsCustomTypeface(bool isCustom);
     bool isThemeTypeface() const;
     void setIsThemeTypeface(bool isTheme);
+    uint32_t GetHash() const;
+    void SetHash(uint32_t hash);
 #endif
     // PRIVATE / EXPERIMENTAL -- do not call
     void filterRec(SkScalerContextRec* rec) const {
@@ -472,6 +475,7 @@ private:
     };
     static SkFontStyle FromOldStyle(Style oldStyle);
     static sk_sp<SkTypeface> GetDefaultTypeface(Style style = SkTypeface::kNormal);
+    mutable uint32_t hash_{0};
 #endif
     friend class SkFontPriv;         // getGlyphToUnicodeMap
 
