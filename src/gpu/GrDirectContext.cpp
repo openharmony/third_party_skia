@@ -377,6 +377,15 @@ void GrDirectContext::registerVulkanErrorCallback(const std::function<void()>& v
     vulkanErrorCallback_ = vulkanErrorCallback;
 }
 
+void GrDirectContext::processVulkanError()
+{
+    if(vulkanErrorCallback_) {
+        vulkanErrorCallback_();
+    } else {
+        SK_LOGE("checkVkResult vulkanErrorCallback_ nullptr");
+    }
+}
+
 void GrDirectContext::purgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<int>& exitedPidSet,
         const std::set<int>& protectedPidSet)
 {
