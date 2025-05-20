@@ -2777,6 +2777,20 @@ bool GrVkGpu::checkVkResult(VkResult result) {
             this->setOOMed();
             return false;
         default:
+            if (result == VK_HUAWEI_GPU_ERROR_RECOVER) {
+                SK_LOGE("report VK_HUAWEI_GPU_ERROR_RECOVER");
+                auto context = getContext();
+                if (context) {
+                    if (context->vulkanErrorCallback_) {
+                        context->vulkanErrorCallback_();
+                    } else {
+                        SK_LOGE("checkVkResult vulkanErrorCallback_ nullptr");
+                    }
+                } else {
+                    SK_LOGE("checkVkResult context nullptr");
+                }
+                return true;
+            }
             return false;
     }
 }
