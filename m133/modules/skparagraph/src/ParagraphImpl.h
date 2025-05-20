@@ -199,9 +199,11 @@ public:
     SkScalar getMaxWidth() { return fOldMaxWidth; }
     void positionShapedTextIntoLine(SkScalar maxWidth);
     void buildClusterPlaceholder(Run& run, size_t runIndex);
-    std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color) override;
+    std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color,
+        UtfEncodeType encodeType) override;
     SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
     skia_private::TArray<Block, true>& exportTextStyles() override { return fTextStyles; }
+    bool preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth);
     void setIndents(const std::vector<SkScalar>& indents) override;
     SkScalar detectIndents(size_t index) override;
     SkScalar getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); }

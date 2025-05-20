@@ -638,12 +638,12 @@ void TextLine::format(TextAlign align, SkScalar maxWidth) {
 
 #ifdef ENABLE_TEXT_ENHANCE
 SkScalar TextLine::autoSpacing() {
-    if (!TextParameter::GetAutoSpacingEnable()) {
+    if (!TextParameter::GetAutoSpacingEnable() && (!fOwner->paragraphStyle().getEnableAutoSpace())) {
         return 0;
     }
     SkScalar spacing = 0.0;
-    auto prevCluster = fOwner->cluster(fClusterRange.start);
-    for (auto clusterIndex = fClusterRange.start + 1; clusterIndex < fClusterRange.end;
+    auto prevCluster = fOwner->cluster(fGhostClusterRange.start);
+    for (auto clusterIndex = fGhostClusterRange.start + 1; clusterIndex < fGhostClusterRange.end;
          ++clusterIndex) {
         auto prevSpacing = spacing;
         auto& cluster = fOwner->cluster(clusterIndex);
@@ -775,7 +775,6 @@ void TextLine::buildTextBlob(TextRange textRange,
     SkTextBlobBuilder builder;
     context.run->copyTo(builder, SkToU32(context.pos), context.size);
     record.fClippingNeeded = context.clippingNeeded;
-
     if (context.clippingNeeded) {
         record.fClipRect = extendHeight(context).makeOffset(this->offset());
     } else {
@@ -1857,7 +1856,7 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
             auto block = fOwner->styles().begin() + index;
 #ifdef ENABLE_TEXT_ENHANCE
             TextRange intersect = intersected(
-                block->fRange, TextRange(run->textRange().start - 1, run->textRange().end));
+                    block->fRange, TextRange(run->textRange().start - 1, run->textRange().end));
             if (intersect.width() > 0) {
                 visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
                 return run->advance().fX;
