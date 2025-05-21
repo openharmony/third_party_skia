@@ -270,6 +270,7 @@ public:
     }
 
 #ifdef OHOS_SUPPORT
+    SkScalar usingAutoSpaceWidth(const Cluster* cluster) const;
     std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
         const std::string& ellipsisStr);
     double getTypographicBounds(double* ascent, double* descent, double* leading) const;
