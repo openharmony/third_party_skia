@@ -21,6 +21,12 @@
 
 namespace skia {
 namespace textlayout {
+#ifdef OHOS_SUPPORT
+const SkScalar TEXT_BADGE_FONT_SIZE_SCALE = 0.65;
+const SkScalar TEXT_BADGE_HEIGHT_SCALE = 2.0;
+const SkScalar SUPERSCRIPT_BASELINE_SHIFT_SCALE = -0.7;
+const SkScalar SUBSCRIPT_BASELINE_SHIFT_SCALE = 0.2;
+#endif
 
 static inline bool nearlyZero(SkScalar x, SkScalar tolerance = SK_ScalarNearlyZero) {
     if (SkScalarIsFinite(x)) {
@@ -181,6 +187,14 @@ struct RectStyle {
     }
 };
 
+#ifdef OHOS_SUPPORT
+enum class TextBadgeType {
+    BADGE_NONE,
+    SUPERSCRIPT,
+    SUBSCRIPT,
+};
+#endif
+
 class TextStyle {
 public:
     TextStyle() = default;
@@ -289,13 +303,16 @@ public:
 
 #ifdef OHOS_SUPPORT
     void setFontFamilies(std::vector<SkString> families);
+
+    SkScalar getBaselineShift() const { return fBaselineShift + getBadgeBaseLineShift(); }
 #else
     void setFontFamilies(std::vector<SkString> families) {
         fFontFamilies = std::move(families);
     }
-#endif
 
     SkScalar getBaselineShift() const { return fBaselineShift; }
+#endif
+
     void setBaselineShift(SkScalar baselineShift) { fBaselineShift = baselineShift; }
 
     void setHeight(SkScalar height) { fHeight = height; }
@@ -350,8 +367,17 @@ public:
     void setBackgroundRect(RectStyle rect) { fBackgroundRect = rect; }
 
 #ifdef OHOS_SUPPORT
-    bool isCustomSymbol() const {return fIsCustomSymbol;}
-    void setCustomSymbol(bool state) {fIsCustomSymbol = state;}
+    bool isCustomSymbol() const { return fIsCustomSymbol; }
+
+    void setCustomSymbol(bool state) { fIsCustomSymbol = state; }
+
+    TextBadgeType getTextBadgeType() const { return fBadgeType; }
+
+    void setTextBadgeType(TextBadgeType badgeType) { fBadgeType = badgeType; }
+
+    SkScalar getBadgeBaseLineShift() const;
+
+    SkScalar getCorrectFontSize() const;
 #endif
 
 private:
@@ -415,6 +441,10 @@ private:
     std::vector<FontFeature> fFontFeatures;
 
     std::optional<FontArguments> fFontArguments;
+
+#ifdef OHOS_SUPPORT
+    TextBadgeType fBadgeType{TextBadgeType::BADGE_NONE};
+#endif
 };
 
 typedef size_t TextIndex;

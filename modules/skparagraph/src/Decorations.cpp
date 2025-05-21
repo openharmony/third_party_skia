@@ -51,7 +51,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
                           : context.run->correctAscent(), textStyle.getDecorationStyle(),
-                          textStyle.getBaselineShift(), textStyle.getFontSize());
+                          textStyle.getBaselineShift(), textStyle.getCorrectFontSize());
 #else
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline

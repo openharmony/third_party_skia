@@ -494,9 +494,17 @@ public:
         return fTextRange.start >= text.start && fTextRange.start < text.end;
     }
 
+#ifdef OHOS_SUPPORT
     SkScalar getFontSize() const {
         return font().GetSize();
     }
+
+    TextBadgeType getBadgeType() const { return fBadgeType; }
+
+    void setBadgeType(TextBadgeType badgeType) {
+        fBadgeType = badgeType;
+    }
+#endif
 
 private:
 
@@ -523,6 +531,7 @@ private:
     bool fIsEllipsis{false};
     bool fNeedAutoSpacing{false}; // depend on last cluster flag
     bool fHyphenBreak{false};
+    TextBadgeType fBadgeType{TextBadgeType::BADGE_NONE};
 #endif
 };
 
