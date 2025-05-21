@@ -1041,7 +1041,7 @@ SpvId SPIRVCodeGenerator::writeSpecialIntrinsic(const FunctionCall& c, SpecialIn
     const ExpressionArray& arguments = c.arguments();
     const Type& callType = c.type();
 #ifdef SKSL_EXT
-    SpvId result = this->nextId(&callType);
+    SpvId result = this->nextId(kind == kMix_SpecialIntrinsic ? nullptr : &callType);
 #else
     SpvId result = this->nextId(nullptr);
 #endif
