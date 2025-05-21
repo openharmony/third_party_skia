@@ -673,6 +673,9 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     for (auto& line : fLines) {
+#ifdef ENABLE_TEXT_ENHANCE
+        line.updateTextLinePaintAttributes();
+#endif
         line.paint(painter, x, y);
     }
 }
@@ -1285,7 +1288,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto advance = run.advance();
     auto textRange = TextRange(0, this->text().size());
     auto textExcludingSpaces = TextRange(0, fTrailingSpaces);
-    InternalLineMetrics metrics(this->strutForceHeight());
+    InternalLineMetrics metrics(strutForceHeight() && strutEnabled());
     metrics.add(&run);
     auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent;
     auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;

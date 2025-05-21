@@ -282,6 +282,7 @@ public:
     void justifyUpdateRtlWidth(const SkScalar maxWidth, const SkScalar textLen);
     void setBreakWithHyphen(bool breakWithHyphen);
     bool getBreakWithHyphen() const;
+    void updateTextLinePaintAttributes();
 #endif
 private:
 #ifdef ENABLE_TEXT_ENHANCE

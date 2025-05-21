@@ -224,6 +224,7 @@ public:
     }
     void scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
     bool middleEllipsisDeal();
+	const SkString& getText() const { return fText; }
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }

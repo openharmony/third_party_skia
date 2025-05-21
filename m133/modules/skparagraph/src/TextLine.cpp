@@ -341,7 +341,12 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 
     this->ensureTextBlobCachePopulated();
-
+#ifdef ENABLE_TEXT_ENHANCE
+    const SkString& text = fOwner->getText();
+    if (text.size() == 1 && std::isdigit(text.c_str()[0])) {
+        TEXT_LOGI_LIMIT3_MIN("paint single-digit text %{public}s", fOwner->getText().c_str());
+    }
+#endif
     for (auto& record : fTextBlobCache) {
         record.paint(painter, x, y);
     }
@@ -3144,6 +3149,24 @@ TextLine TextLine::CloneSelf()
     textLine.fEllipsisIndex = this->fEllipsisIndex;
     textLine.fLastClipRunLtr = this->fLastClipRunLtr;
     return textLine;
+}
+void TextLine::updateTextLinePaintAttributes() {
+    fHasBackground = false;
+    fHasDecorations = false;
+    fHasShadows = false;
+    for (BlockIndex index = fBlockRange.start; index < fBlockRange.end; ++index) {
+        auto textStyleBlock = fOwner->styles().begin() + index;
+        if (textStyleBlock->fStyle.hasBackground()) {
+            fHasBackground = true;
+        }
+        if (textStyleBlock->fStyle.getDecorationType() != TextDecoration::kNoDecoration &&
+            textStyleBlock->fStyle.getDecorationThicknessMultiplier() > 0) {
+            fHasDecorations = true;
+        }
+        if (textStyleBlock->fStyle.getShadowNumber() > 0) {
+            fHasShadows = true;
+        }
+    }
 }
 #endif
 }  // namespace textlayout
