@@ -903,7 +903,7 @@ public:
     // OH ISSUE: suppress release window
     void setGpuCacheSuppressWindowSwitch(bool enabled);
     void suppressGpuCacheBelowCertainRatio(const std::function<bool(void)>& nextFrameHasArrived);
-    std::function<void()> vulkanErrorCallback_;
+    void processVulkanError();
 
 protected:
     GrDirectContext(GrBackendApi backend, const GrContextOptions& options);
@@ -950,6 +950,7 @@ private:
     std::unique_ptr<GrAtlasManager> fAtlasManager;
 
     std::unique_ptr<skgpu::v1::SmallPathAtlasMgr> fSmallPathAtlasMgr;
+    std::function<void()> vulkanErrorCallback_;
 
     friend class GrDirectContextPriv;
 

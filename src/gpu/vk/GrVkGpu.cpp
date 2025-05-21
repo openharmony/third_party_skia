@@ -2725,7 +2725,8 @@ void GrVkGpu::endRenderPass(GrRenderTarget* target, GrSurfaceOrigin origin,
 }
 
 bool GrVkGpu::checkVkResult(VkResult result) {
-    switch (result) {
+    int32_t numResult = static_cast<int32_t>(result); 
+    switch (numResult) {
         case VK_SUCCESS:
             return true;
         case VK_ERROR_DEVICE_LOST:
@@ -2762,11 +2763,7 @@ bool GrVkGpu::checkVkResult(VkResult result) {
             {
                 auto context = getContext();
                 if (context) {
-                    if (context->vulkanErrorCallback_) {
-                        context->vulkanErrorCallback_();
-                    } else {
-                        SK_LOGE("checkVkResult vulkanErrorCallback_ nullptr");
-                    }
+                    context->processVulkanError();
                 } else {
                     SK_LOGE("checkVkResult context nullptr");
                 }
@@ -2776,21 +2773,18 @@ bool GrVkGpu::checkVkResult(VkResult result) {
         case VK_ERROR_OUT_OF_HOST_MEMORY:
             this->setOOMed();
             return false;
-        default:
-            if (result == VK_HUAWEI_GPU_ERROR_RECOVER) {
+        case VK_HUAWEI_GPU_ERROR_RECOVER:
+            {
                 SK_LOGE("report VK_HUAWEI_GPU_ERROR_RECOVER");
                 auto context = getContext();
                 if (context) {
-                    if (context->vulkanErrorCallback_) {
-                        context->vulkanErrorCallback_();
-                    } else {
-                        SK_LOGE("checkVkResult vulkanErrorCallback_ nullptr");
-                    }
+                    context->processVulkanError();
                 } else {
                     SK_LOGE("checkVkResult context nullptr");
                 }
                 return true;
             }
+        default:
             return false;
     }
 }
