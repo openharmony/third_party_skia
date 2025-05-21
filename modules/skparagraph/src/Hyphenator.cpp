@@ -28,6 +28,7 @@
 
 #include "include/Hyphenator.h"
 #include "log.h"
+#include "trace.h"
 
 namespace skia {
 namespace textlayout {
@@ -516,6 +517,7 @@ inline void formatResult(std::vector<uint8_t>& result, const size_t& leadingHyph
 std::vector<uint8_t> Hyphenator::findBreakPositions(const SkString& locale, const SkString& text, size_t startPos,
                                                     size_t endPos)
 {
+    TEXT_TRACE_FUNC();
     TEXT_LOGD("Find break pos:%{public}zu %{public}zu %{public}zu", text.size(), startPos, endPos);
     const std::string dummy(locale.c_str());
     auto hyphenatorData = getHyphenatorData(dummy);

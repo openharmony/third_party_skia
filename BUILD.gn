@@ -921,8 +921,14 @@ if (use_oh_skia && !is_arkui_x) {
     } else if (use_linux) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
     } else if (is_ohos) {
-      external_deps += [ "init:libbegetutil" ]
-      defines = [ "SK_BUILD_FONT_MGR_FOR_OHOS" ]
+      external_deps += [
+        "hitrace:hitrace_meter",
+        "init:libbegetutil",
+      ]
+      defines = [
+        "SK_BUILD_FONT_MGR_FOR_OHOS",
+        "OHOS_TEXT_ENABLE",
+      ]
     }
   }
 }
