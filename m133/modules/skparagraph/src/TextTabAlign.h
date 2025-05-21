@@ -128,7 +128,7 @@ private:
     static TextTabFuncs fTextTabFuncsTable[textAlignCount];
     TextTabFuncs* fTextTabFuncs{nullptr};
 };
-constexpr int POSITION_COEFFICIENT = 2;
+constexpr uint32_t POSITION_COEFFICIENT = 2;
 }  // namespace textlayout
 }  // namespace skia
 

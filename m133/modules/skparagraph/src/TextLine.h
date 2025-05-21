@@ -12,7 +12,7 @@
 #ifdef ENABLE_TEXT_ENHANCE
 #include "modules/skparagraph/include/RunBase.h"
 #include "modules/skparagraph/include/TextLineBase.h"
-#include "include/ParagraphStyle.h"
+#include "modules/skparagraph/include/ParagraphStyle.h"
 #endif
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/src/Run.h"

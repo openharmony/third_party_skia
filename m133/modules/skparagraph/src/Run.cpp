@@ -286,6 +286,9 @@ void Run::copyTo(RSTextBlobBuilder& builder,
         if (!fJustificationShifts.empty()) {
             x += fJustificationShifts[i + pos].fX;
         }
+        if (!fAutoSpacings.empty()) {
+            x += fAutoSpacings[i + pos].fX;
+        }
         RSPoint rsPos;
         RSPoint rsTan;
         if (!path->GetPositionAndTangent(x, rsPos, rsTan, false)) {
