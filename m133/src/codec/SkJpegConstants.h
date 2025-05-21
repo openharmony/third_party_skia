@@ -65,4 +65,17 @@ static constexpr uint8_t kISOGainmapSig[] = {'u', 'r', 'n', ':', 'i', 's', 'o', 
                                              'd', ':', 'i', 's', 'o', ':', 't', 's', ':', '2',
                                              '1', '4', '9', '6', ':', '-', '1', '\0'};
 
+static constexpr uint32_t kApp3Marker = kJpegMarkerAPP0 + 3;
+static constexpr uint32_t kApp4Marker = kJpegMarkerAPP0 + 4;
+static constexpr uint32_t kApp5Marker = kJpegMarkerAPP0 + 5;
+static constexpr uint32_t kApp6Marker = kJpegMarkerAPP0 + 6;
+static constexpr uint32_t kApp7Marker = kJpegMarkerAPP0 + 7;
+static constexpr uint32_t kApp8Marker = kJpegMarkerAPP0 + 8;
+static constexpr uint32_t kApp9Marker = kJpegMarkerAPP0 + 9;
+static constexpr uint32_t kApp10Marker = kJpegMarkerAPP0 + 10;
+static constexpr uint32_t kApp11Marker = kJpegMarkerAPP0 + 11;
+static constexpr uint32_t kApp12Marker = kJpegMarkerAPP0 + 12;
+static constexpr uint32_t kApp13Marker = kJpegMarkerAPP0 + 13;
+static constexpr uint32_t kApp14Marker = kJpegMarkerAPP0 + 14;
+static constexpr uint32_t kApp15Marker = kJpegMarkerAPP0 + 15;
 #endif
