@@ -26,7 +26,7 @@ bool TextGlobalConfig::IsTargetApiVersion(uint32_t targetVersion)
 
 void TextGlobalConfig::SetNoGlyphShow(uint32_t noGlyphShow)
 {
-    noGlyphShowTofu_.store(noGlyphShow);
+    noGlyphShowTofu_.store(noGlyphShow == 1);
 };
 
 bool TextGlobalConfig::NoGlyphShowUseTofu(const std::string& family)
