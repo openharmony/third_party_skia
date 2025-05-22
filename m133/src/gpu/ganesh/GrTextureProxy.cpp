@@ -141,6 +141,12 @@ sk_sp<GrSurface> GrTextureProxy::createSurface(GrResourceProvider* resourceProvi
         return nullptr;
     }
 
+    if (fUserCacheTaget) {
+        if (!(surface->getUniqueKey().isValid()) && !(surface->resourcePriv().getScratchKey().isValid())) {
+            surface->resourcePriv().userRegisterResource();
+        }
+    }
+
     SkASSERT(!surface->asRenderTarget());
     SkASSERT(surface->asTexture());
     return surface;
