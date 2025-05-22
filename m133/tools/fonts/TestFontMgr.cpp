@@ -43,15 +43,6 @@ public:
         }
     }
 
-#ifdef ENABLE_TEXT_ENHANCE
-    SkTypeface* createTypeface(int index) override {
-        return SkRef(fTypefaces[index].fTypeface.get());
-    }
-
-    SkTypeface* matchStyle(const SkFontStyle& pattern) override {
-        return this->matchStyleCSS3(pattern);
-    }
-#else
     sk_sp<SkTypeface> createTypeface(int index) override {
         return fTypefaces[index].fTypeface;
     }
@@ -59,7 +50,6 @@ public:
     sk_sp<SkTypeface> matchStyle(const SkFontStyle& pattern) override {
         return this->matchStyleCSS3(pattern);
     }
-#endif // ENABLE_TEXT_ENHANCE
 
     SkString getFamilyName() { return fFamilyName; }
 
@@ -104,23 +94,12 @@ public:
         *familyName = fFamilies[index]->getFamilyName();
     }
 
-#ifdef ENABLE_TEXT_ENHANCE
-    SkFontStyleSet* onCreateStyleSet(int index) const override {
-        sk_sp<SkFontStyleSet> ref = fFamilies[index];
-        return ref.release();
-    }
-#else
     sk_sp<SkFontStyleSet> onCreateStyleSet(int index) const override {
         sk_sp<SkFontStyleSet> ref = fFamilies[index];
         return ref;
     }
-#endif // ENABLE_TEXT_ENHANCE
 
-#ifdef ENABLE_TEXT_ENHANCE
-    SkFontStyleSet* onMatchFamily(const char familyName[]) const override {
-#else
     sk_sp<SkFontStyleSet> onMatchFamily(const char familyName[]) const override {
-#endif
         if (familyName) {
             if (strstr(familyName, "ono")) {
                 return this->createStyleSet(0);
@@ -143,21 +122,13 @@ public:
         return nullptr;
     }
 
-#ifdef ENABLE_TEXT_ENHANCE
-    SkTypeface* onMatchFamilyStyle(const char         familyName[],
-#else
     sk_sp<SkTypeface> onMatchFamilyStyle(const char         familyName[],
-#endif // ENABLE_TEXT_ENHANCE
                                    const SkFontStyle& style) const override {
         sk_sp<SkFontStyleSet> styleSet(this->matchFamily(familyName));
         return styleSet->matchStyle(style);
     }
 
-#ifdef ENABLE_TEXT_ENHANCE
-    SkTypeface* onMatchFamilyStyleCharacter(const char         familyName[],
-#else
     sk_sp<SkTypeface> onMatchFamilyStyleCharacter(const char         familyName[],
-#endif // ENABLE_TEXT_ENHANCE
                                                   const SkFontStyle& style,
                                                   const char*        bcp47[],
                                                   int                bcp47Count,
