@@ -412,6 +412,7 @@ private:
     void removeScratchKey();
     void makeBudgeted();
     void makeUnbudgeted();
+    void userRegisterResource();
 
 #ifdef SK_DEBUG
     friend class GrGpu;  // for assert in GrGpu to access getGpu

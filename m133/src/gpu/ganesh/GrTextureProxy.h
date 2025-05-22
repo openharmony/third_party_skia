@@ -111,6 +111,9 @@ public:
     GrTextureProxyPriv texPriv();
     const GrTextureProxyPriv texPriv() const;  // NOLINT(readability-const-return-type)
 
+    void setUserCacheTarget(const bool cacheFlag) { fUserCacheTaget = cacheFlag; }
+    bool getUserCacheTarget() const { return fUserCacheTaget; }
+
     SkDEBUGCODE(GrDDLProvider creatingProvider() const { return fCreatingProvider; })
 
 protected:
@@ -194,6 +197,7 @@ private:
     SkDEBUGCODE(const GrMipmapStatus fInitialMipmapStatus;)
 
     bool             fSyncTargetKey = true;  // Should target's unique key be sync'ed with ours.
+    bool             fUserCacheTaget = false;
 
     // For GrTextureProxies created in a DDL recording thread it is possible for the uniqueKey
     // to be cleared on the backing GrTexture while the uniqueKey remains on the proxy.
