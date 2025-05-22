@@ -51,6 +51,12 @@
 #include <cstring>
 #include <vector>
 
+#ifdef ENABLE_TEXT_ENHANCE
+#include <mutex>
+#include "src/core/SkChecksum.h"
+#include "src/core/SkLRUCache.h"
+#endif
+
 using namespace skia_private;
 
 SkTypeface::SkTypeface(const SkFontStyle& style, bool isFixedPitch)
@@ -140,6 +146,58 @@ protected:
     }
 };
 
+#ifdef ENABLE_TEXT_ENHANCE
+constexpr int MAX_VARFONT_CACHE_SIZE = 64;
+
+class SkVarFontCache {
+public:
+    SkVarFontCache() : fLRUCache(MAX_VARFONT_CACHE_SIZE) {}
+
+    static SkVarFontCache& Instance()
+    {
+        static SkVarFontCache cache;
+        return cache;
+    }
+
+    sk_sp<SkTypeface> GetVarFont(sk_sp<SkTypeface> typeface, const SkFontArguments& args)
+    {
+        if (!typeface) {
+            return nullptr;
+        }
+
+        size_t hash = 0;
+        hash ^= std::hash<uint32_t>()(typeface->uniqueID());
+        uint32_t typefaceHash = typeface->GetHash();
+        hash ^= std::hash<uint32_t>()(typefaceHash);
+        hash ^= std::hash<int>()(args.getCollectionIndex());
+        const auto& positions = args.getVariationDesignPosition();
+        for (int i = 0; i < positions.coordinateCount; i++) {
+            const auto& coord = positions.coordinates[i];
+            hash ^= std::hash<SkFourByteTag>()(coord.axis);
+            hash ^= std::hash<float>()(coord.value);
+        }
+
+        std::lock_guard<std::mutex> lock(fMutex);
+        auto cached = fLRUCache.find(hash);
+        if (!cached) {
+            int ttcIndex = args.getCollectionIndex();
+            auto varTypeface = SkFontMgr::RefDefault()->makeFromStream(typeface->openStream(&ttcIndex), args);
+            if (!varTypeface) {
+                return typeface;
+            } else {
+                fLRUCache.insert(hash, varTypeface);
+                return varTypeface;
+            }
+        }
+
+        return *cached;
+    }
+
+private:
+    SkLRUCache<uint32_t, sk_sp<SkTypeface>> fLRUCache;
+    std::mutex fMutex;
+};
+#endif
 }  // namespace
 
 sk_sp<SkTypeface> SkTypeface::MakeEmpty() {
@@ -219,6 +277,26 @@ sk_sp<SkTypeface> SkTypeface::MakeDefault() {
 
 std::vector<sk_sp<SkTypeface>> SkTypeface::GetSystemFonts() {
     return SkFontMgr::RefDefault()->getSystemFonts();
+}
+
+uint32_t SkTypeface::GetHash() const
+{
+    if (hash_ != 0) {
+        return hash_;
+    }
+    auto skData = serialize(SkTypeface::SerializeBehavior::kDontIncludeData);
+    if (skData == nullptr) {
+        return hash_;
+    }
+    std::unique_ptr<SkStreamAsset> ttfStream = openExistingStream(0);
+    uint32_t seed = ttfStream.get() != nullptr ? ttfStream->getLength() : 0;
+    hash_ = SkChecksum::Hash32(skData->data(), skData->size(), seed);
+    return hash_;
+}
+
+void SkTypeface::SetHash(uint32_t hash)
+{
+    hash_ = hash;
 }
 #endif
 
@@ -514,6 +592,12 @@ bool SkTypeface::isThemeTypeface() const {
 
 void SkTypeface::setIsThemeTypeface(bool isTheme) {
     fIsTheme = isTheme;
+}
+
+void SkTypeface::getFontPath(SkString* path) const
+{
+    SkASSERT(path);
+    this->onGetFontPath(path);
 }
 #endif
 
