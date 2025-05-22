@@ -1065,22 +1065,16 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
     // (we have to walk through the styles in the same order, too)
     // Not breaking the iteration on every run!
     SkScalar shift = 0;
-#ifndef ENABLE_TEXT_ENHANCE
     bool soFarWhitespacesOnly = true;
     bool wordSpacingPending = false;
     Cluster* lastSpaceCluster = nullptr;
-#endif
     for (auto& run : fRuns) {
 
         // Skip placeholder runs
         if (run.isPlaceholder()) {
             continue;
         }
-#ifdef ENABLE_TEXT_ENHANCE
-        bool soFarWhitespacesOnly = true;
-        bool wordSpacingPending = false;
-        Cluster* lastSpaceCluster = nullptr;
-#endif
+
         run.iterateThroughClusters([this, &run, &shift, &soFarWhitespacesOnly, &wordSpacingPending, &lastSpaceCluster](Cluster* cluster) {
             // Shift the cluster (shift collected from the previous clusters)
             run.shift(cluster, shift);
@@ -1103,9 +1097,6 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                     }
                 } else if (wordSpacingPending) {
                     SkScalar spacing = currentStyle->fStyle.getWordSpacing();
-#ifdef ENABLE_TEXT_ENHANCE
-                    run.addSpacesAtTheEnd(spacing, lastSpaceCluster);
-#else
                     if (cluster->fRunIndex != lastSpaceCluster->fRunIndex) {
                         // If the last space cluster belongs to the previous run
                         // we have to extend that cluster and that run
@@ -1114,7 +1105,6 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                     } else {
                         run.addSpacesAtTheEnd(spacing, lastSpaceCluster);
                     }
-#endif
                     run.shift(cluster, spacing);
                     shift += spacing;
                     wordSpacingPending = false;
@@ -2484,7 +2474,8 @@ bool ParagraphImpl::getClosestUTF16GlyphInfoAt(SkScalar dx, SkScalar dy, GlyphIn
 RSFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const
 {
     for (auto& run : fRuns) {
-        if (run.textRange().contains({codeUnitIndex, codeUnitIndex})) {
+        const auto textRange = run.textRange();
+        if (textRange.start <= codeUnitIndex && codeUnitIndex < textRange.end) {
             return run.font();
         }
     }
