@@ -1180,42 +1180,11 @@ void ParagraphImpl::buildClusterPlaceholder(Run& run, size_t runIndex)
         });
     }
 }
+#endif
 
 // Clusters in the order of the input text
 void ParagraphImpl::buildClusterTable()
 {
-    // It's possible that one grapheme includes few runs; we cannot handle it
-    // so we break graphemes by the runs instead
-    // It's not the ideal solution and has to be revisited later
-    int cluster_count = 1;
-    for (auto& run : fRuns) {
-        cluster_count += run.isPlaceholder() ? 1 : run.size();
-        fCodeUnitProperties[run.fTextRange.start] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
-        fCodeUnitProperties[run.fTextRange.start] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
-    }
-    if (!fRuns.empty()) {
-        fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
-        fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
-    }
-    fClusters.reserve_exact(fClusters.size() + cluster_count);
-
-    // Walk through all the run in the direction of input text
-    for (auto& run : fRuns) {
-        auto runIndex = run.index();
-        auto runStart = fClusters.size();
-        buildClusterPlaceholder(run, runIndex);
-
-        fCodeUnitProperties[run.textRange().start] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
-
-        run.setClusterRange(runStart, fClusters.size());
-        fMaxIntrinsicWidth += run.advance().fX;
-    }
-    fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
-    fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
-}
-#else
-// Clusters in the order of the input text
-void ParagraphImpl::buildClusterTable() {
     // It's possible that one grapheme includes few runs; we cannot handle it
     // so we break graphemes by the runs instead
     // It's not the ideal solution and has to be revisited later
@@ -1246,17 +1215,29 @@ void ParagraphImpl::buildClusterTable() {
             fCodeUnitProperties[run.textRange().end] |= SkUnicode::CodeUnitFlags::kSoftLineBreakBefore;
         } else {
             // Walk through the glyph in the direction of input text
+#ifdef ENABLE_TEXT_ENHANCE
+            run.iterateThroughClustersInTextOrder([&run, runIndex, this](size_t glyphStart,
+                                                                   size_t glyphEnd,
+                                                                   size_t charStart,
+                                                                   size_t charEnd,
+                                                                   SkScalar width,
+                                                                   SkScalar height) {
+#else
             run.iterateThroughClustersInTextOrder([runIndex, this](size_t glyphStart,
                                                                    size_t glyphEnd,
                                                                    size_t charStart,
                                                                    size_t charEnd,
                                                                    SkScalar width,
                                                                    SkScalar height) {
+#endif
                 SkASSERT(charEnd >= charStart);
                 // Add info to cluster indexes table (text -> cluster)
                 for (auto i = charStart; i < charEnd; ++i) {
                   fClustersIndexFromCodeUnit[i] = fClusters.size();
                 }
+#ifdef ENABLE_TEXT_ENHANCE
+                middleEllipsisAddText(charStart, charEnd, allTextWidth, width, run.leftToRight());
+#endif
                 SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
                 fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
                 fCodeUnitProperties[charStart] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
@@ -1270,7 +1251,6 @@ void ParagraphImpl::buildClusterTable() {
     fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
     fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
 }
-#endif
 
 bool ParagraphImpl::shapeTextIntoEndlessLine() {
 #ifdef ENABLE_TEXT_ENHANCE
