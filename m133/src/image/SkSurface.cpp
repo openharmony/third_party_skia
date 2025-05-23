@@ -257,9 +257,3 @@ void SkSurface::clearDrawingArea() {
     GrVkDrawAreaManager::getInstance().clearSurface(this);
 }
 #endif
-
-#ifdef SK_VK_PARTIALRENDER
-void SkSurface::setDrawingArea(const std::vector<SkIRect>& rects) {
-    GrVkDrawAreaManager::getInstance().bindDrawingArea(this, rects);
-}
-#endif
