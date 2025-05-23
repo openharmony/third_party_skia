@@ -89,6 +89,10 @@ private:
     void splitUnresolvedBlockAndStageResolvedSubBlock(
         std::deque<RunBlock>& stagedUnresolvedBlocks, const RunBlock& unresolvedBlock);
     void shapeUnresolvedTextSeparatelyFromUnresolvedBlock(const TextStyle& textStyle, const TypefaceVisitor& visitor);
+    void matchResolvedFontsFindTypeface(const TextStyle& textStyle, std::shared_ptr<RSTypeface>& typeface,
+        SkUnichar& unicode);
+    void matchResolvedFontsByUnicode(const TextStyle& textStyle, const TypefaceVisitor& visitor,
+        std::vector<RunBlock>& hopelessBlocks);
 #endif
 
 #ifdef SK_DEBUG
