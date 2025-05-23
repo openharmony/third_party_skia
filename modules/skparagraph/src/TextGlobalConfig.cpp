@@ -31,7 +31,7 @@ void TextGlobalConfig::SetNoGlyphShow(uint32_t noGlyphShow)
 
 bool TextGlobalConfig::NoGlyphShowUseTofu(const std::string& family)
 {
-    return noGlyphShowTofu_.load() && family == "notdef";
+    return noGlyphShowTofu_.load() && family == NOTDEF_FAMILY;
 };
 }  // namespace textlayout
 }  // namespace skia

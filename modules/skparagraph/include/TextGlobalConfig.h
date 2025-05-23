@@ -24,6 +24,7 @@
 namespace skia {
 namespace textlayout {
 constexpr uint32_t SINCE_API20_VERSION = 20;
+constexpr const char* NOTDEF_FAMILY = "notdef";
 
 class TextGlobalConfig {
 public:
@@ -33,7 +34,7 @@ public:
 
     static void SetNoGlyphShow(uint32_t noGlyphShow);
 
-    static bool NoGlyphShowUseTofu(const std::string& family = "notdef");
+    static bool NoGlyphShowUseTofu(const std::string& family = NOTDEF_FAMILY);
 
 private:
     static uint32_t bundleApiVersion_;

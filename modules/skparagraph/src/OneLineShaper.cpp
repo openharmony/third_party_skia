@@ -667,7 +667,7 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
         }
     }
     if (TextGlobalConfig::NoGlyphShowUseTofu()) {
-        std::shared_ptr<RSTypeface> notdef = RSTypeface::MakeFromName("notdef", textStyle.getFontStyle());
+        std::shared_ptr<RSTypeface> notdef = RSTypeface::MakeFromName(NOTDEF_FAMILY, textStyle.getFontStyle());
         if (notdef != nullptr) {
             visitor(notdef);
         }
