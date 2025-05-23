@@ -8,6 +8,7 @@
 #ifndef skgpu_GpuTypesPriv_DEFINED
 #define skgpu_GpuTypesPriv_DEFINED
 
+#include "include/core/SkAlphaType.h"
 #include "include/core/SkColorType.h"
 #include "include/core/SkTextureCompressionType.h"
 #include "include/gpu/GpuTypes.h"
