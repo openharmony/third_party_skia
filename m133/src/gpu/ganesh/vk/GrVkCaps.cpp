@@ -1457,7 +1457,7 @@ void GrVkCaps::initFormatTable(const GrContextOptions& contextOptions,
     {
         constexpr VkFormat format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
         auto& info = this->getFormatInfo(format);
-        info.init(interface, physDev, properties, format);
+        info.init(contextOptions, interface, physDev, properties, format);
         // Setting this to texel block size
         // No supported GrColorTypes.
     }
@@ -1466,7 +1466,7 @@ void GrVkCaps::initFormatTable(const GrContextOptions& contextOptions,
     {
         constexpr VkFormat format = VK_FORMAT_ASTC_6x6_UNORM_BLOCK;
         auto& info = this->getFormatInfo(format);
-        info.init(interface, physDev, properties, format);
+        info.init(contextOptions, interface, physDev, properties, format);
         // Setting this to texel block size
         // No supported GrColorTypes.
     }
@@ -1475,7 +1475,7 @@ void GrVkCaps::initFormatTable(const GrContextOptions& contextOptions,
     {
         constexpr VkFormat format = VK_FORMAT_ASTC_8x8_UNORM_BLOCK;
         auto& info = this->getFormatInfo(format);
-        info.init(interface, physDev, properties, format);
+        info.init(contextOptions, interface, physDev, properties, format);
         // Setting this to texel block size
         // No supported GrColorTypes.
     }
@@ -1902,17 +1902,17 @@ GrBackendFormat GrVkCaps::getBackendFormatFromCompressionType(
             return {};
         case SkTextureCompressionType::kASTC_RGBA8_4x4:
             if (this->isVkFormatTexturable(VK_FORMAT_ASTC_4x4_UNORM_BLOCK)) {
-                return GrBackendFormat::MakeVk(VK_FORMAT_ASTC_4x4_UNORM_BLOCK);
+                return GrBackendFormats::MakeVk(VK_FORMAT_ASTC_4x4_UNORM_BLOCK);
             }
             return {};
         case SkTextureCompressionType::kASTC_RGBA8_6x6:
             if (this->isVkFormatTexturable(VK_FORMAT_ASTC_6x6_UNORM_BLOCK)) {
-                return GrBackendFormat::MakeVk(VK_FORMAT_ASTC_6x6_UNORM_BLOCK);
+                return GrBackendFormats::MakeVk(VK_FORMAT_ASTC_6x6_UNORM_BLOCK);
             }
             return {};
         case SkTextureCompressionType::kASTC_RGBA8_8x8:
             if (this->isVkFormatTexturable(VK_FORMAT_ASTC_8x8_UNORM_BLOCK)) {
-                return GrBackendFormat::MakeVk(VK_FORMAT_ASTC_8x8_UNORM_BLOCK);
+                return GrBackendFormats::MakeVk(VK_FORMAT_ASTC_8x8_UNORM_BLOCK);
             }
             return {};
     }
@@ -2236,9 +2236,9 @@ std::vector<GrTest::TestFormatColorTypeCombination> GrVkCaps::getTestingCombinat
         { GrColorType::kRGB_888x,      GrBackendFormats::MakeVk(VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK)},
         { GrColorType::kRGB_888x,         GrBackendFormats::MakeVk(VK_FORMAT_BC1_RGB_UNORM_BLOCK) },
         { GrColorType::kRGBA_8888,        GrBackendFormats::MakeVk(VK_FORMAT_BC1_RGBA_UNORM_BLOCK)},
-        { GrColorType::kRGBA_8888,        GrBackendFormat::MakeVk(VK_FORMAT_ASTC_4x4_UNORM_BLOCK) },
-        { GrColorType::kRGBA_8888,        GrBackendFormat::MakeVk(VK_FORMAT_ASTC_6x6_UNORM_BLOCK) },
-        { GrColorType::kRGBA_8888,        GrBackendFormat::MakeVk(VK_FORMAT_ASTC_8x8_UNORM_BLOCK) },
+        { GrColorType::kRGBA_8888,        GrBackendFormats::MakeVk(VK_FORMAT_ASTC_4x4_UNORM_BLOCK) },
+        { GrColorType::kRGBA_8888,        GrBackendFormats::MakeVk(VK_FORMAT_ASTC_6x6_UNORM_BLOCK) },
+        { GrColorType::kRGBA_8888,        GrBackendFormats::MakeVk(VK_FORMAT_ASTC_8x8_UNORM_BLOCK) },
     };
 
     return combos;
