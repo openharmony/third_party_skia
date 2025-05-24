@@ -14,7 +14,6 @@
  */
 
 #include "HmSymbolConfig_ohos.h"
-#include "trace.h"
 
 #include <functional>
 #include <fstream>
@@ -266,7 +265,6 @@ int HmSymbolConfig_OHOS::CheckConfigFile(const char* fname, Json::Value& root)
 
 int HmSymbolConfig_OHOS::ParseConfigOfHmSymbol(const char* fname, SkString fontDir)
 {
-    TEXT_TRACE_FUNC();
     std::lock_guard<std::mutex> lock(hmSymbolMut_);
     if (GetInit()) {
         return NO_ERROR;

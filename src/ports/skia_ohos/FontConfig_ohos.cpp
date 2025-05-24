@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "FontConfig_ohos.h"
-#include "trace.h"
+
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -594,7 +594,6 @@ bool FontConfig_OHOS::judgeFileExist()
 
 int FontConfig_OHOS::checkProductFile(const char* fname)
 {
-    TEXT_TRACE_FUNC();
     std::lock_guard<std::mutex> lock(fFontMutex);
     int err = parseConfig(PRODUCT_DEFAULT_CONFIG);
     if (err != NO_ERROR || !judgeFileExist()) {
