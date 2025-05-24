@@ -14,6 +14,8 @@
 #include <cstdint>
 #include <cstring>
 
+#define VK_CALL(GPU, X) GR_VK_CALL((GPU)->vkInterface(), X)
+
 namespace skgpu {
 
 using BufferUsage = VulkanMemoryAllocator::BufferUsage;
@@ -72,7 +74,9 @@ bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
                                            OH_NativeBuffer *nativeBuffer,
                                            VkBuffer buffer,
                                            GrVkAlloc* alloc) {
-    HITRACE_OHOS_NAME_ALWAYS("ImportAndBindBufferMemory");
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "ImportAndBindBufferMemory");
+#endif
     VkDevice device = gpu->device();
     VkMemoryRequirements memReqs{};
     VK_CALL(gpu, GetBufferMemoryRequirements(device, buffer, &memReqs));
@@ -125,7 +129,7 @@ bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
 }
 
 void VulkanMemory::FreeBufferMemory(VulkanMemoryAllocator* allocator, const VulkanAlloc& alloc) {
-    allocator->freeMemory(alloc.fBackendMemory);
+    allocator->freeMemory(alloc.fBackendMemory); //524！遗留问题
 }
 
 bool VulkanMemory::AllocImageMemory(VulkanMemoryAllocator* allocator,

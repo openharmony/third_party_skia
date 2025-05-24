@@ -43,7 +43,7 @@ public:
     /**
      *  Returns the ptr to OH_NativeBuffer.
      */
-     OH_NativeBuffer* getNativeBuffer() { return fNativeBuffer; }
+    OH_NativeBuffer* getNativeBuffer() { return fNativeBuffer; }
 
     /**
      *  Like data(), returns a read-only ptr into the data, but in this case
@@ -160,7 +160,7 @@ public:
      *  Create a new dataref from an OH_NativeBuffer.
      *  Returns NULL on failure.
      */
-     static sk_sp<SkData> MakeFromOHNativeBuffer(OH_NativeBuffer* nativeBuffer, size_t size);
+    static sk_sp<SkData> MakeFromOHNativeBuffer(OH_NativeBuffer* nativeBuffer, size_t size);
 
     /**
      *  Attempt to read size bytes into a SkData. If the read succeeds, return the data,
@@ -183,10 +183,10 @@ public:
 
 private:
     friend class SkNVRefCnt<SkData>;
-    ReleaseProc fReleaseProc;
-    void*       fReleaseProcContext;
-    const void* fPtr;
-    size_t      fSize;
+    ReleaseProc         fReleaseProc;
+    void*               fReleaseProcContext;
+    const void*         fPtr;
+    size_t              fSize;
     OH_NativeBuffer*    fNativeBuffer;
 
     SkData(const void* ptr, size_t size, ReleaseProc, void* context);

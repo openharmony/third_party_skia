@@ -211,6 +211,14 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
     VkBuffer buffer;
     GrVkAlloc alloc;
 
+    // The only time we don't require mappable buffers is when we have a static access pattern and
+    // we're on a device where gpu only memory has faster reads on the gpu than memory that is also
+    // mappable on the cpu. Protected memory always uses mappable buffers.
+    bool requiresMappable = gpu->protectedContext() ||
+                            accessPattern == kDynamic_GrAccessPattern ||
+                            accessPattern == kStream_GrAccessPattern ||
+                            !gpu->vkCaps().gpuOnlyBuffersMorePerformant();
+
     // create the buffer object
     VkBufferCreateInfo bufInfo{};
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -236,11 +244,8 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
             bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             break;
     }
-
-    bool requiresMappable = gpu->protectedContext() ||
-                            accessPattern == kDynamic_GrAccessPattern ||
-                            accessPattern == kStream_GrAccessPattern ||
-                            !gpu->vkCaps().gpuOnlyBuffersMorePerformant();
+    // We may not always get a mappable buffer for non dynamic access buffers. Thus we set the
+    // transfer dst usage bit in case we need to do a copy to write data.
     if (!requiresMappable) {
         bufInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     }
