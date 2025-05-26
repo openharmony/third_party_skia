@@ -17,6 +17,10 @@
 
 class SkStream;
 
+extern "C" {
+    typedef struct OH_NativeBuffer OH_NativeBuffer;
+}
+
 /**
  *  SkData holds an immutable data buffer. Not only is the data immutable,
  *  but the actual ptr that is returned (by data() or bytes()) is guaranteed
@@ -186,6 +190,7 @@ private:
     OH_NativeBuffer*    fNativeBuffer;
 
     SkData(const void* ptr, size_t size, ReleaseProc, void* context);
+    SkData(const void* ptr, size_t size, OH_NativeBuffer* nativeBuffer, ReleaseProc, void* context);
     explicit SkData(size_t size);   // inplace new/delete
     ~SkData();
 

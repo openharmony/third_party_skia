@@ -209,7 +209,7 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
     SkASSERT(nativeBuffer);
 
     VkBuffer buffer;
-    GrVkAlloc alloc;
+    skgpu::VulkanAlloc alloc;
 
     // The only time we don't require mappable buffers is when we have a static access pattern and
     // we're on a device where gpu only memory has faster reads on the gpu than memory that is also
@@ -259,12 +259,14 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
         return nullptr;
     }
 
-    if (!GrVkMemory::ImportAndBindBufferMemory(gpu, nativeBuffer, buffer, &alloc)) {
+    if (!skgpu::VulkanMemory::ImportAndBindBufferMemory(gpu, nativeBuffer, buffer, &alloc)) {
         VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
         return nullptr;
     }
 
-    return sk_sp<GrVkBuffer>(new GrVkBuffer(gpu, bufferSize, bufferType, accessPattern, buffer, alloc, nullptr));
+    return sk_sp<GrVkBuffer>(new GrVkBuffer(
+            gpu, bufferSize, bufferType, accessPattern, buffer, alloc, nullptr,
+            /*label=*/"MakeVkBufferFromOHNativeBuffer"));
 }
 
 void GrVkBuffer::vkMap(size_t readOffset, size_t readSize) {

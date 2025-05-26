@@ -90,6 +90,8 @@ using namespace skia_private;
 #define VK_CALL(X) GR_VK_CALL(this->vkInterface(), X)
 #define VK_CALL_RET(RET, X) GR_VK_CALL_RESULT(this, RET, X)
 
+constexpr uint8_t ASTC_HEADER_SIZE = 16;
+
 std::unique_ptr<GrGpu> GrVkGpu::Make(const skgpu::VulkanBackendContext& backendContext,
                                      const GrContextOptions& options,
                                      GrDirectContext* direct) {
@@ -919,8 +921,8 @@ static size_t fill_in_compressed_regions(GrStagingBufferManager* stagingBufferMa
     return bufferSize;
 }
 
-static size_t fill_in_compressed_regions(SkTArray<VkBufferImageCopy>* regions,
-                                         SkTArray<size_t>* individualMipOffsets,
+static size_t fill_in_compressed_regions(TArray<VkBufferImageCopy>* regions,
+                                         TArray<size_t>* individualMipOffsets,
                                          SkTextureCompressionType compression,
                                          SkISize dimensions,
                                          skgpu::Mipmapped mipmapped) {
@@ -931,9 +933,9 @@ static size_t fill_in_compressed_regions(SkTArray<VkBufferImageCopy>* regions,
         numMipLevels = SkMipmap::ComputeLevelCount(dimensions.width(), dimensions.height()) + 1;
     }
 
-    regions->reserve_back(numMipLevels);
+    regions->reserve_exact(regions->size() + numMipLevels);
 
-    individualMipOffsets->reserve_back(numMipLevels);
+    individualMipOffsets->reserve_exact(individualMipOffsets->size() + numMipLevels);
 
     size_t bufferSize = SkCompressedDataSize(compression,
                                              dimensions,
@@ -944,7 +946,7 @@ static size_t fill_in_compressed_regions(SkTArray<VkBufferImageCopy>* regions,
     for (int i = 0; i < numMipLevels; ++i) {
         VkBufferImageCopy &region = regions->push_back();
         region.bufferOffset = (*individualMipOffsets)[i] + ASTC_HEADER_SIZE;
-        SkISize revisedDimensions = GrCompressedDimensions(compression, dimensions);
+        SkISize revisedDimensions = skgpu::CompressedDimensions(compression, dimensions);
         region.bufferRowLength = revisedDimensions.width();
         region.bufferImageHeight = revisedDimensions.height();
         region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, SkToU32(i), 0, 1};
@@ -1164,8 +1166,8 @@ bool GrVkGpu::uploadTexDataCompressed(GrVkImage* uploadTexture,
     SkASSERT(uploadTexture->imageFormat() == vkFormat);
     SkASSERT(this->vkCaps().isVkFormatTexturable(vkFormat));
 
-    SkTArray<VkBufferImageCopy> regions;
-    SkTArray<size_t> individualMipOffsets;
+    TArray<VkBufferImageCopy> regions;
+    TArray<size_t> individualMipOffsets;
     SkDEBUGCODE(size_t combinedBufferSize =) fill_in_compressed_regions(&regions,
                                                                         &individualMipOffsets,
                                                                         compression,
@@ -1192,7 +1194,7 @@ bool GrVkGpu::uploadTexDataCompressed(GrVkImage* uploadTexture,
                                                     vkBuffer->vkBuffer(),
                                                     uploadTexture,
                                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                                    regions.count(),
+                                                    regions.size(),
                                                     regions.begin());
     this->takeOwnershipOfBuffer(std::move(vkBuffer));
 
@@ -1315,8 +1317,8 @@ sk_sp<GrTexture> GrVkGpu::onCreateCompressedTexture(SkISize dimensions,
                                                     OH_NativeBuffer* nativeBuffer,
                                                     size_t bufferSize) {
     VkFormat pixelFormat;
-    SkAssertResult(format.asVkFormat(&pixelFormat));
-    SkASSERT(GrVkFormatIsCompressed(pixelFormat));
+    SkAssertResult(GrBackendFormats::AsVkFormat(format, &pixelFormat));
+    SkASSERT(skgpu::VkFormatIsCompressed(pixelFormat));
 
     int numMipLevels = 1;
     if (mipMapped == skgpu::Mipmapped::kYes) {
@@ -1327,7 +1329,8 @@ sk_sp<GrTexture> GrVkGpu::onCreateCompressedTexture(SkISize dimensions,
                                                                    : GrMipmapStatus::kNotAllocated;
 
     auto tex = GrVkTexture::MakeNewTexture(this, budgeted, dimensions, pixelFormat,
-                                           numMipLevels, isProtected, mipmapStatus);
+                                           numMipLevels, isProtected, mipmapStatus,
+                                           /*label=*/"VkGpu_CreateCompressedTextureFromOHNativeBuffer");
     if (!tex) {
         return nullptr;
     }

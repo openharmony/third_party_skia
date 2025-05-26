@@ -9,6 +9,7 @@
 #include "include/gpu/GpuTypes.h"
 #include "include/gpu/vk/VulkanMemoryAllocator.h"
 #include "include/gpu/vk/VulkanTypes.h"
+#include "src/gpu/ganesh/vk/GrVkUtil.h"
 #include "src/gpu/vk/VulkanMemory.h"
 
 #include <cstdint>
@@ -19,6 +20,26 @@
 namespace skgpu {
 
 using BufferUsage = VulkanMemoryAllocator::BufferUsage;
+
+static bool FindMemoryType(GrVkGpu *gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t &typeIndex)
+{
+    VkPhysicalDevice physicalDevice = gpu->physicalDevice();
+    VkPhysicalDeviceMemoryProperties memProperties{};
+    VK_CALL(gpu, GetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties));
+
+    bool hasFound = false;
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount && !hasFound; ++i) {
+        if (typeFilter & (1 << i)) {
+            uint32_t supportedFlags = memProperties.memoryTypes[i].propertyFlags & properties;
+            if (supportedFlags == properties) {
+                typeIndex = i;
+                hasFound = true;
+            }
+        }
+    }
+
+    return hasFound;
+}
 
 bool VulkanMemory::AllocBufferMemory(VulkanMemoryAllocator* allocator,
                                      VkBuffer buffer,
@@ -50,10 +71,10 @@ bool VulkanMemory::AllocBufferMemory(VulkanMemoryAllocator* allocator,
     return true;
 }
 
-bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
+bool VulkanMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
                                            OH_NativeBuffer *nativeBuffer,
                                            VkBuffer buffer,
-                                           GrVkAlloc* alloc) {
+                                           VulkanAlloc* alloc) {
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
     HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "ImportAndBindBufferMemory");
 #endif
@@ -109,7 +130,6 @@ bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
 }
 
 void VulkanMemory::FreeBufferMemory(VulkanMemoryAllocator* allocator, const VulkanAlloc& alloc) {
-    SkASSERT(alloc.fBackendMemory);
     allocator->freeMemory(alloc.fBackendMemory);
 }
 

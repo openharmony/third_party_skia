@@ -1671,6 +1671,17 @@ sk_sp<GrTexture> GrGLGpu::onCreateCompressedTexture(SkISize dimensions,
     return tex;
 }
 
+sk_sp<GrTexture> GrGLGpu::onCreateCompressedTexture(SkISize dimensions,
+                                                const GrBackendFormat& format,
+                                                skgpu::Budgeted budgeted,
+                                                skgpu::Mipmapped mipMapped,
+                                                GrProtected isProtected,
+                                                OH_NativeBuffer* nativeBuffer,
+                                                size_t bufferSize) {
+    SkASSERT(!"unimplemented");
+    return nullptr;
+}
+
 GrBackendTexture GrGLGpu::onCreateCompressedBackendTexture(SkISize dimensions,
                                                            const GrBackendFormat& format,
                                                            skgpu::Mipmapped mipmapped,
