@@ -328,6 +328,12 @@ void SkTypeface::serialize(SkWStream* wstream, SerializeBehavior behavior) const
     }
 
     bool shouldSerializeData = false;
+
+#ifdef ARKUI_X_ENABLE
+    // Prohibiting serializes typeface when arkui-x use custom's font
+    isLocalData = false;
+#endif
+
     switch (behavior) {
         case SerializeBehavior::kDoIncludeData:      shouldSerializeData = true;        break;
         case SerializeBehavior::kDontIncludeData:    shouldSerializeData = false;       break;
