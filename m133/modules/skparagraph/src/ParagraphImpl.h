@@ -207,7 +207,6 @@ public:
     void setIndents(const std::vector<SkScalar>& indents) override;
     SkScalar detectIndents(size_t index) override;
     SkScalar getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); }
-    bool &getEllipsisState() { return isMiddleEllipsis; }
     std::vector<std::unique_ptr<TextLineBase>> GetTextLines() override;
     std::unique_ptr<Paragraph> CloneSelf() override;
     uint32_t& hash() {
@@ -224,8 +223,6 @@ public:
             run.resetAutoSpacing();
         }
     }
-    void scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
-    bool middleEllipsisDeal();
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }
@@ -338,6 +335,9 @@ public:
     }
     sk_sp<SkUnicode> getUnicode() { return fUnicode; }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    bool needCreateMiddleEllipsis();
+#endif
 private:
     friend class ParagraphBuilder;
     friend class ParagraphCacheKey;
@@ -349,18 +349,6 @@ private:
     void computeEmptyMetrics();
 #ifdef ENABLE_TEXT_ENHANCE
     friend struct TextWrapScorer;
-    void middleEllipsisLtrDeal(size_t& end, size_t& charbegin, size_t& charend);
-    void middleEllipsisRtlDeal(size_t& end, size_t& charbegin, size_t& charend);
-    void middleEllipsisAddText(size_t charStart,
-                               size_t charEnd,
-                               SkScalar& allTextWidth,
-                               SkScalar width,
-                               bool isLeftToRight);
-    SkScalar resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex);
-    void scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
-    void scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end);
-    void prepareForMiddleEllipsis(SkScalar rawWidth);
-    bool shapeForMiddleEllipsis(SkScalar rawWidth);
     TextRange resetRangeWithDeletedRange(const TextRange& sourceRange,
         const TextRange& deletedRange, const size_t& ellSize);
     void resetTextStyleRange(const TextRange& deletedRange);
@@ -448,7 +436,6 @@ private:
     std::vector<TextCutRecord> ltrTextSize;
     std::vector<SkUnichar> fUnicodeText;
     skia_private::TArray<size_t, true> fUnicodeIndexForUTF8Index;
-    bool isMiddleEllipsis;
     SkScalar fOldMaxWidth;
     SkScalar allTextWidth;
     SkScalar fLayoutRawWidth{0};

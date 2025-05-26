@@ -35,6 +35,16 @@ struct DecorationContext {
     SkScalar underlinePosition{0.0f};
     SkScalar textBlobTop{0.0f};
 };
+
+struct IterateRunsContext {
+    size_t runIndex{0};
+    SkScalar width{0};
+    SkScalar runOffset{0};
+    SkScalar totalWidth{0};
+    bool isAlreadyUseEllipsis{false};
+    TextRange lineIntersection;
+    EllipsisModal ellipsisMode{EllipsisModal::NONE};
+};
 #endif
 class TextLine {
 public:
@@ -165,8 +175,7 @@ public:
             const Run* run, SkScalar runOffset, TextRange textRange, SkScalar* width)>;
 
 #ifdef ENABLE_TEXT_ENHANCE
-    bool processEllipsisRun(bool& isAlreadyUseEllipsis,
-                            SkScalar& runOffset,
+    bool processEllipsisRun(IterateRunsContext& context,
                             EllipsisReadStrategy ellipsisReadStrategy,
                             const RunVisitor& visitor,
                             SkScalar& runWidthInLine) const;
@@ -178,6 +187,8 @@ public:
     void iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
                                   bool includingGhostSpaces,
                                   const RunVisitor& runVisitor) const;
+    void handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
+                                  EllipsisReadStrategy& ellipsisReadStrategy, const RunVisitor& runVisitor) const;
 #else
     void iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& runVisitor) const;
 #endif
@@ -219,6 +230,8 @@ public:
     void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType);
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
     void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
+    void createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis);
+    void middleEllipsisUpdateLine(ClusterIndex& indexS, ClusterIndex& indexE, SkScalar width);
 #endif
 
     // For testing internal structures
@@ -289,6 +302,8 @@ private:
         int styleId;
         RectStyle roundRectStyle;
         SkRect rect;
+        const Run* run;
+        RoundRectType fRoundRectType = RoundRectType::NONE;
     };
 #endif
     void justify(SkScalar maxWidth);
@@ -315,7 +330,7 @@ private:
 
     void shiftCluster(const Cluster* cluster, SkScalar shift, SkScalar prevShift);
 #ifdef ENABLE_TEXT_ENHANCE
-    void paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y, const Run* run) const;
+    void paintRoundRect(ParagraphPainter* painter, SkScalar x, SkScalar y) const;
     void spacingCluster(const Cluster* cluster, SkScalar spacing, SkScalar prevSpacing);
     bool hasBackgroundRect(const RoundRectAttr& attr);
     void computeRoundRect(int& index, int& preIndex, std::vector<Run*>& groupRuns, Run* run);
@@ -380,7 +395,7 @@ private:
     bool fTextBlobCachePopulated;
 #ifdef ENABLE_TEXT_ENHANCE
     DecorationContext fDecorationContext;
-    std::vector<RoundRectAttr> roundRectAttrs = {};
+    std::vector<RoundRectAttr> fRoundRectAttrs = {};
     bool fIsTextLineEllipsisHeadModal = false;
 #endif
 public:
