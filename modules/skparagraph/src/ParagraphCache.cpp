@@ -134,7 +134,7 @@ uint32_t ParagraphCacheKey::mix(uint32_t hash, uint32_t data) {
 
 uint32_t ParagraphCacheKey::computeHash(const ParagraphImpl* paragraph) const {
     uint32_t hash = 0;
-    hash = mix(hash, SkGoodHash()(TextGlobalConfig::NoGlyphShowUseTofu()));
+    hash = mix(hash, SkGoodHash()(TextGlobalConfig::UndefinedGlyphDisplayUseTofu()));
     for (auto& ph : fPlaceholders) {
         if (ph.fRange.width() == 0) {
             continue;

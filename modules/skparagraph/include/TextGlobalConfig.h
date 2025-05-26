@@ -32,13 +32,13 @@ public:
 
     static void SetTargetVersion(uint32_t targetVersion) { bundleApiVersion_ = targetVersion; };
 
-    static void SetNoGlyphShow(uint32_t noGlyphShow);
+    static void SetUndefinedGlyphDisplay(uint32_t undefinedGlyphDisplay);
 
-    static bool NoGlyphShowUseTofu(const std::string& family = NOTDEF_FAMILY);
+    static bool UndefinedGlyphDisplayUseTofu(const std::string& family = NOTDEF_FAMILY);
 
 private:
     static uint32_t bundleApiVersion_;
-    static std::atomic<bool> noGlyphShowTofu_;
+    static std::atomic<bool> undefinedGlyphDisplayTofu_;
 };
 }  // namespace textlayout
 }  // namespace skia

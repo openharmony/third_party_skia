@@ -17,21 +17,21 @@
 namespace skia {
 namespace textlayout {
 uint32_t TextGlobalConfig::bundleApiVersion_{0};
-std::atomic<bool> TextGlobalConfig::noGlyphShowTofu_{false};
+std::atomic<bool> TextGlobalConfig::undefinedGlyphDisplayTofu_{false};
 
 bool TextGlobalConfig::IsTargetApiVersion(uint32_t targetVersion)
 {
     return bundleApiVersion_ >= targetVersion;
 }
 
-void TextGlobalConfig::SetNoGlyphShow(uint32_t noGlyphShow)
+void TextGlobalConfig::SetUndefinedGlyphDisplay(uint32_t undefinedGlyphDisplay)
 {
-    noGlyphShowTofu_.store(noGlyphShow == 1);
+    undefinedGlyphDisplayTofu_.store(undefinedGlyphDisplay == 1);
 };
 
-bool TextGlobalConfig::NoGlyphShowUseTofu(const std::string& family)
+bool TextGlobalConfig::UndefinedGlyphDisplayUseTofu(const std::string& family)
 {
-    return noGlyphShowTofu_.load() && family == NOTDEF_FAMILY;
+    return undefinedGlyphDisplayTofu_.load() && family == NOTDEF_FAMILY;
 };
 }  // namespace textlayout
 }  // namespace skia
