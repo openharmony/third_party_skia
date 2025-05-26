@@ -22,15 +22,6 @@ SkData::SkData(const void* ptr, size_t size, ReleaseProc proc, void* context)
     , fReleaseProcContext(context)
     , fPtr(ptr)
     , fSize(size)
-    , fNativeBuffer(nullptr)
-{}
-
-SkData::SkData(const void* ptr, size_t size, OH_NativeBuffer* nativeBuffer, ReleaseProc proc, void* context)
-    : fReleaseProc(proc)
-    , fReleaseProcContext(context)
-    , fPtr(ptr)
-    , fSize(size)
-    , fNativeBuffer(nativeBuffer)
 {}
 
 /** This constructor means we are inline with our fPtr's contents.
@@ -41,7 +32,6 @@ SkData::SkData(size_t size)
     , fReleaseProcContext(nullptr)
     , fPtr((const char*)(this + 1))
     , fSize(size)
-    , fNativeBuffer(nullptr)
 {}
 
 SkData::~SkData() {
@@ -172,10 +162,6 @@ sk_sp<SkData> SkData::MakeFromFD(int fd) {
         return nullptr;
     }
     return SkData::MakeWithProc(addr, size, sk_mmap_releaseproc, reinterpret_cast<void*>(size));
-}
-
-sk_sp<SkData> SkData::MakeFromOHNativeBuffer(OH_NativeBuffer* nativeBuffer, size_t size) {
-    return sk_sp<SkData>(new SkData(nullptr, size, nativeBuffer, nullptr, nullptr));
 }
 
 // assumes context is a SkData
