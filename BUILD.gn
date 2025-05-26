@@ -1571,10 +1571,14 @@ optional("typeface_freetype") {
   }
 
   deps = [ "${skia_third_party_dir}/freetype2" ]
-  if (defined(external_deps)) {
-    external_deps += [ "bounds_checking_function:libsec_shared" ]
+  if (is_arkui_x) {
+    deps += [ "//third_party/bounds_checking_function:libsec_static" ]
   } else {
-    external_deps = [ "bounds_checking_function:libsec_shared" ]
+    if (defined(external_deps)) {
+      external_deps += [ "bounds_checking_function:libsec_shared" ]
+    } else {
+      external_deps = [ "bounds_checking_function:libsec_shared" ]
+    }
   }
 
   sources = [
