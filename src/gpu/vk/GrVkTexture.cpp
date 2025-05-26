@@ -16,7 +16,6 @@
 #include "src/gpu/vk/GrVkUtil.h"
 
 #include "include/gpu/vk/GrVkTypes.h"
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
 
@@ -90,8 +89,6 @@ sk_sp<GrVkTexture> GrVkTexture::MakeNewTexture(GrVkGpu* gpu, SkBudgeted budgeted
                                                VkFormat format, uint32_t mipLevels,
                                                GrProtected isProtected,
                                                GrMipmapStatus mipmapStatus) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRVKTEXTURE_MAKENEWTEXTURE);
     sk_sp<GrVkImage> texture = GrVkImage::MakeTexture(
             gpu, dimensions, format, mipLevels, GrRenderable::kNo, /*numSamples=*/1, budgeted,
             isProtected);
@@ -107,8 +104,6 @@ sk_sp<GrVkTexture> GrVkTexture::MakeWrappedTexture(
         GrVkGpu* gpu, SkISize dimensions, GrWrapOwnership wrapOwnership, GrWrapCacheable cacheable,
         GrIOType ioType, const GrVkImageInfo& info,
         sk_sp<GrBackendSurfaceMutableStateImpl> mutableState) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRVKTEXTURE_MAKEWRAPPEDTEXTURE);
     // Adopted textures require both image and allocation because we're responsible for freeing
     SkASSERT(VK_NULL_HANDLE != info.fImage &&
              (kBorrow_GrWrapOwnership == wrapOwnership || VK_NULL_HANDLE != info.fAlloc.fMemory));

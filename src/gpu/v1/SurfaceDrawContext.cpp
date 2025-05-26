@@ -13,7 +13,6 @@
 #include "include/gpu/GrBackendSemaphore.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrRecordingContext.h"
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
 #include "include/private/GrImageContext.h"
 #include "include/private/SkShadowFlags.h"
@@ -1157,8 +1156,6 @@ bool SurfaceDrawContext::drawFastShadow(const GrClip* clip,
                                         const SkMatrix& viewMatrix,
                                         const SkPath& path,
                                         const SkDrawShadowRec& rec) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_SURFACEDRAWCONTEXT_DRAWFASTSHADOW);
     ASSERT_SINGLE_OWNER
     if (fContext->abandoned()) {
         return true;
