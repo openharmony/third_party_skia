@@ -90,8 +90,6 @@ using namespace skia_private;
 #define VK_CALL(X) GR_VK_CALL(this->vkInterface(), X)
 #define VK_CALL_RET(RET, X) GR_VK_CALL_RESULT(this, RET, X)
 
-constexpr uint8_t ASTC_HEADER_SIZE = 16;
-
 std::unique_ptr<GrGpu> GrVkGpu::Make(const skgpu::VulkanBackendContext& backendContext,
                                      const GrContextOptions& options,
                                      GrDirectContext* direct) {

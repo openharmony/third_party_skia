@@ -299,13 +299,6 @@ private:
                                                GrProtected,
                                                const void* data,
                                                size_t dataSize) override;
-    sk_sp<GrTexture> onCreateCompressedTexture(SkISize dimensions,
-                                               const GrBackendFormat&,
-                                               skgpu::Budgeted,
-                                               skgpu::Mipmapped,
-                                               GrProtected,
-                                               OH_NativeBuffer* nativeBuffer,
-                                               size_t bufferSize) override;
 
     sk_sp<GrTexture> onWrapBackendTexture(const GrBackendTexture&,
                                           GrWrapOwnership,
@@ -439,9 +432,6 @@ private:
                                  skgpu::Mipmapped mipmapped,
                                  const void* data,
                                  size_t dataSize);
-    bool uploadTexDataCompressed(GrVkImage* tex, SkTextureCompressionType compression,
-                                 VkFormat vkFormat, SkISize dimensions, skgpu::Mipmapped mipMapped,
-                                 OH_NativeBuffer* nativeBuffer, size_t bufferSize);
     void resolveImage(GrSurface* dst, GrVkRenderTarget* src, const SkIRect& srcRect,
                       const SkIPoint& dstPoint);
 

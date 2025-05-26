@@ -167,17 +167,6 @@ sk_sp<GrTexture> GrMockGpu::onCreateCompressedTexture(SkISize dimensions,
             /*label=*/"MockGpu_CreateCompressedTexture"));
 }
 
-sk_sp<GrTexture> GrMockGpu::onCreateCompressedTexture(SkISize dimensions,
-                                                const GrBackendFormat& format,
-                                                skgpu::Budgeted budgeted,
-                                                skgpu::Mipmapped mipMapped,
-                                                GrProtected isProtected,
-                                                OH_NativeBuffer* nativeBuffer,
-                                                size_t bufferSize) {
-    SkASSERT(!"unimplemented");
-    return nullptr;
-}
-
 sk_sp<GrTexture> GrMockGpu::onWrapBackendTexture(const GrBackendTexture& tex,
                                                  GrWrapOwnership ownership,
                                                  GrWrapCacheable wrapType,

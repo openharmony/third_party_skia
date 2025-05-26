@@ -20,26 +20,6 @@ namespace skgpu {
 
 using BufferUsage = VulkanMemoryAllocator::BufferUsage;
 
-static bool FindMemoryType(GrVkGpu *gpu, uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t &typeIndex)
-{
-    VkPhysicalDevice physicalDevice = gpu->physicalDevice();
-    VkPhysicalDeviceMemoryProperties memProperties{};
-    VK_CALL(gpu, GetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties));
-
-    bool hasFound = false;
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount && !hasFound; ++i) {
-        if (typeFilter & (1 << i)) {
-            uint32_t supportedFlags = memProperties.memoryTypes[i].propertyFlags & properties;
-            if (supportedFlags == properties) {
-                typeIndex = i;
-                hasFound = true;
-            }
-        }
-    }
-
-    return hasFound;
-}
-
 bool VulkanMemory::AllocBufferMemory(VulkanMemoryAllocator* allocator,
                                      VkBuffer buffer,
                                      skgpu::Protected isProtected,
@@ -129,7 +109,8 @@ bool GrVkMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
 }
 
 void VulkanMemory::FreeBufferMemory(VulkanMemoryAllocator* allocator, const VulkanAlloc& alloc) {
-    allocator->freeMemory(alloc.fBackendMemory); //524！遗留问题
+    SkASSERT(alloc.fBackendMemory);
+    allocator->freeMemory(alloc.fBackendMemory);
 }
 
 bool VulkanMemory::AllocImageMemory(VulkanMemoryAllocator* allocator,
