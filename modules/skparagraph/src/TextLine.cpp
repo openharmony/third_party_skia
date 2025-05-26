@@ -1681,7 +1681,7 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
                 result.fTrailingSpaceWidth = spacesWidth() < 0 ? 0 : spacesWidth();
                 if (!run->leftToRight() && (fGhostClusterRange.width() > 0 &&
                     fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak())) {
-                    result.fTrailingSpaceWidth += fOwner->cluster(fGhostClusterRange.end - 1).width();///////////////////
+                    result.fTrailingSpaceWidth += fOwner->cluster(fGhostClusterRange.end - 1).width();
                 }
                 result.fIsTrimTrailingSpaceWidth = true;
             }
@@ -2263,7 +2263,7 @@ void TextLine::getRectsForRange(TextRange textRange0,
             }
 
             clip.offset(this->offset());
-            if (trailingSpaces.width() > 0) {///////////////
+            if (trailingSpaces.width() > 0) {
                 trailingSpaces.offset(this->offset());
             }
 
@@ -2301,7 +2301,7 @@ void TextLine::getRectsForRange(TextRange textRange0,
             if (!merge(clip)) {
                 boxes.emplace_back(clip, context.run->getTextDirection());
             }
-            if (!nearlyZero(trailingSpaces.width()) && !merge(trailingSpaces)) {/////////////
+            if (!nearlyZero(trailingSpaces.width()) && !merge(trailingSpaces)) {
                 boxes.emplace_back(trailingSpaces, paragraphStyle.getTextDirection());
             }
 
