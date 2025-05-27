@@ -130,7 +130,18 @@ bool VulkanMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
 }
 
 void VulkanMemory::FreeBufferMemory(VulkanMemoryAllocator* allocator, const VulkanAlloc& alloc) {
+    SkASSERT(alloc.fBackendMemory);
     allocator->freeMemory(alloc.fBackendMemory);
+}
+
+void VulkanMemory::FreeBufferMemory(const GrVkGpu* gpu, const VulkanAlloc& alloc) {
+    if (alloc.fIsExternalMemory) {
+        VK_CALL(gpu, FreeMemory(gpu->device(), alloc.fMemory, nullptr));
+    } else {
+        SkASSERT(alloc.fBackendMemory);
+        VulkanMemoryAllocator* allocator = gpu->memoryAllocator();
+        allocator->freeMemory(alloc.fBackendMemory);
+    }
 }
 
 bool VulkanMemory::AllocImageMemory(VulkanMemoryAllocator* allocator,
