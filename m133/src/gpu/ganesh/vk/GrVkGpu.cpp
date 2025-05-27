@@ -926,6 +926,7 @@ static size_t fill_in_compressed_regions(TArray<VkBufferImageCopy>* regions,
                                          SkTextureCompressionType compression,
                                          SkISize dimensions,
                                          skgpu::Mipmapped mipmapped) {
+    SkASSERT(regions);
     SkASSERT(compression != SkTextureCompressionType::kNone);
 
     int numMipLevels = 1;
@@ -1151,7 +1152,8 @@ bool GrVkGpu::uploadTexDataCompressed(GrVkImage* uploadTexture,
     if (!this->currentCommandBuffer()) {
         return false;
     }
-    SkASSERT(data);
+    SkASSERT(uploadTexture);
+    SkASSERT(nativeBuffer);
     SkASSERT(!uploadTexture->isLinearTiled());
 
     // For now the assumption is that our rect is the entire texture.
