@@ -56,9 +56,9 @@ void OneLineShaper::commitRunBuffer(const RunInfo&) {
         if (fCurrentRun->textRange() == unresolved.fText) {
             // Nothing was resolved; preserve the initial run if it makes sense
             auto& front = fUnresolvedBlocks.front();
-            bool useTofu = unresolved.fRun && unresolved.fRun->fFont.GetTypeface() &&
-                           TextGlobalConfig::UndefinedGlyphDisplayUseTofu(
-                                   unresolved.fRun->fFont.GetTypeface()->GetFamilyName());
+            bool useTofu =
+                unresolved.fRun && unresolved.fRun->fFont.GetTypeface() &&
+                TextGlobalConfig::UndefinedGlyphDisplayUseTofu(unresolved.fRun->fFont.GetTypeface()->GetFamilyName());
             if (front.fRun != nullptr && !useTofu) {
                 unresolved.fRun = front.fRun;
                 unresolved.fGlyphs = front.fGlyphs;
