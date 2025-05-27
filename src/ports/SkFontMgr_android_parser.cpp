@@ -831,7 +831,7 @@ void SkFontMgr_Android_Parser::GetSystemFontFamiliesForSymbol(SkTDArray<FontFami
     }
     SkString basePath(containerFontBasePath.c_str());
     std::string lmpSystemFontsFile = containerFontBasePath.append(SK_FONT_CONFIG_FILE_NAME);
-    HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol("hm_symbol_config_next.json", basePath);
+    skia::text::HmSymbolConfig_OHOS::LoadSymbolConfig("hm_symbol_config_next.json", basePath);
     append_system_font_families(fontFamilies, basePath);
     parse_config_file(lmpSystemFontsFile.c_str(), fontFamilies, basePath, false);
 }

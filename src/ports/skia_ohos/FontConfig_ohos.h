@@ -36,6 +36,7 @@ enum {
     ERROR_FAMILY_NOT_FOUND,            // the family name is not found in the system
     ERROR_NO_AVAILABLE_FAMILY,         // no available family in the system
     ERROR_DIR_NOT_FOUND,               // the directory is not exist
+    ERROR_CONFIG_FUN_NOT_DEFINED,      // the symbol load config func is not register
 
     ERROR_TYPE_COUNT,
 };

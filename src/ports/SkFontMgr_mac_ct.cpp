@@ -467,7 +467,7 @@ public:
         if (!fontData) {
             return;
         }
-        HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol("hm_symbol_config_next.json", fontDir);
+        skia::text::HmSymbolConfig_OHOS::LoadSymbolConfig("hm_symbol_config_next.json", fontDir);
         SkUniqueCFRef<CFDataRef> cfData =
             SkUniqueCFRef<CFDataRef>(CFDataCreate(kCFAllocatorDefault, fontData->bytes(), fontData->size()));
         if (!cfData) {
