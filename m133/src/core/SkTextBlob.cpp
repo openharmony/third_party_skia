@@ -1017,6 +1017,9 @@ bool SkTextBlob::Iter::experimentalNext(ExperimentalRun* rec) {
 
 void GetPointsForTextBlob(const SkTextBlob* blob, std::vector<SkPoint>& points)
 {
+    if (blob == nullptr) {
+        return;
+    }
     SkTextBlobRunIterator run(blob);
     if (!run.done()) {
         const auto glyphCount = run.glyphCount();
