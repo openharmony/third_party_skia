@@ -927,16 +927,16 @@ static size_t fill_in_compressed_regions(TArray<VkBufferImageCopy>* regions,
                                          SkISize dimensions,
                                          skgpu::Mipmapped mipmapped) {
     SkASSERT(regions);
+    SkASSERT(individualMipOffsets);
     SkASSERT(compression != SkTextureCompressionType::kNone);
 
-    int numMipLevels = 1;
+    int mipmapLevelCount = 1;
     if (mipmapped == skgpu::Mipmapped::kYes) {
-        numMipLevels = SkMipmap::ComputeLevelCount(dimensions.width(), dimensions.height()) + 1;
+        mipmapLevelCount = SkMipmap::ComputeLevelCount(dimensions.width(), dimensions.height()) + 1;
     }
 
-    regions->reserve_exact(regions->size() + numMipLevels);
-
-    individualMipOffsets->reserve_exact(individualMipOffsets->size() + numMipLevels);
+    regions->reserve_exact(regions->size() + mipmapLevelCount);
+    individualMipOffsets->reserve_exact(individualMipOffsets->size() + mipmapLevelCount);
 
     size_t bufferSize = SkCompressedDataSize(compression,
                                              dimensions,
@@ -944,17 +944,22 @@ static size_t fill_in_compressed_regions(TArray<VkBufferImageCopy>* regions,
                                              mipmapped == skgpu::Mipmapped::kYes);
     SkASSERT(individualMipOffsets->count() == numMipLevels);
 
-    for (int i = 0; i < numMipLevels; ++i) {
-        VkBufferImageCopy &region = regions->push_back();
-        region.bufferOffset = (*individualMipOffsets)[i] + ASTC_HEADER_SIZE;
-        SkISize revisedDimensions = skgpu::CompressedDimensions(compression, dimensions);
-        region.bufferRowLength = revisedDimensions.width();
-        region.bufferImageHeight = revisedDimensions.height();
+    for (int i = 0; i < mipmapLevelCount; ++i) {
+        VkBufferImageCopy& region = regions->push_back();
+        region.bufferOffset = (*individualMipOffsets)[i];
+        if (compression == SkTextureCompressionType::kASTC_RGBA8_4x4 ||
+            compression == SkTextureCompressionType::kASTC_RGBA8_6x6 ||
+            compression == SkTextureCompressionType::kASTC_RGBA8_8x8) {
+            region.bufferOffset += ASTC_HEADER_SIZE;
+        }
+        SkISize compressedDimensions = skgpu::CompressedDimensions(compression, dimensions);
+        region.bufferRowLength = compressedDimensions.width();
+        region.bufferImageHeight = compressedDimensions.height();
         region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, SkToU32(i), 0, 1};
         region.imageOffset = {0, 0, 0};
-        region.imageExtent = {SkToU32(dimensions.width()),
-                              SkToU32(dimensions.height()), 1};
-
+        region.imageExtent.width = SkToU32(dimensions.width());
+        region.imageExtent.height = SkToU32(dimensions.height());
+        region.imageExtent.depth = 1;
         dimensions = {std::max(1, dimensions.width() / 2),
                       std::max(1, dimensions.height() / 2)};
     }
@@ -1156,48 +1161,33 @@ bool GrVkGpu::uploadTexDataCompressed(GrVkImage* uploadTexture,
     SkASSERT(nativeBuffer);
     SkASSERT(!uploadTexture->isLinearTiled());
 
-    // For now the assumption is that our rect is the entire texture.
-    // Compressed textures are read-only so this should be a reasonable assumption.
-    SkASSERT(dimensions.fWidth == uploadTexture->width() &&
-             dimensions.fHeight == uploadTexture->height());
-
-    if (dimensions.fWidth == 0 || dimensions.fHeight  == 0) {
+    if (dimensions.width() == 0 || dimensions.height() == 0) {
         return false;
     }
+    SkASSERT(dimensions.width() == uploadTexture->width() && dimensions.height() == uploadTexture->height());
 
     SkASSERT(uploadTexture->imageFormat() == vkFormat);
     SkASSERT(this->vkCaps().isVkFormatTexturable(vkFormat));
 
     TArray<VkBufferImageCopy> regions;
     TArray<size_t> individualMipOffsets;
-    SkDEBUGCODE(size_t combinedBufferSize =) fill_in_compressed_regions(&regions,
-                                                                        &individualMipOffsets,
-                                                                        compression,
-                                                                        dimensions,
-                                                                        mipMapped);
+    SkDEBUGCODE(size_t combinedBufferSize =) fill_in_compressed_regions(&regions, &individualMipOffsets,
+                                                                        compression, dimensions, mipMapped);
     SkASSERT(bufferSize == combinedBufferSize);
 
     // Import external memory.
-    sk_sp<GrVkBuffer> vkBuffer = GrVkBuffer::MakeFromOHNativeBuffer(this,
-                                                                    nativeBuffer,
-                                                                    bufferSize,
+    sk_sp<GrVkBuffer> vkBuffer = GrVkBuffer::MakeFromOHNativeBuffer(this, nativeBuffer, bufferSize,
                                                                     GrGpuBufferType::kXferCpuToGpu,
                                                                     kDynamic_GrAccessPattern);
 
-    // Change layout of our target so it can be copied to
-    uploadTexture->setImageLayout(this,
-                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                  VK_ACCESS_TRANSFER_WRITE_BIT,
-                                  VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                  false);
+    // Change image layout so it can be copied to.
+    uploadTexture->setImageLayout(this, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                  VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, false);
 
     // Copy the buffer to the image.
-    this->currentCommandBuffer()->copyBufferToImage(this,
-                                                    vkBuffer->vkBuffer(),
-                                                    uploadTexture,
+    this->currentCommandBuffer()->copyBufferToImage(this, vkBuffer->vkBuffer(), uploadTexture,
                                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                                    regions.size(),
-                                                    regions.begin());
+                                                    regions.size(), regions.begin());
     this->takeOwnershipOfBuffer(std::move(vkBuffer));
 
     return true;
@@ -1322,28 +1312,27 @@ sk_sp<GrTexture> GrVkGpu::onCreateCompressedTexture(SkISize dimensions,
     SkAssertResult(GrBackendFormats::AsVkFormat(format, &pixelFormat));
     SkASSERT(skgpu::VkFormatIsCompressed(pixelFormat));
 
-    int numMipLevels = 1;
+    int mipmapLevelCount = 1;
+    GrMipmapStatus mipmapStatus = GrMipmapStatus::kNotAllocated;
     if (mipMapped == skgpu::Mipmapped::kYes) {
-        numMipLevels = SkMipmap::ComputeLevelCount(dimensions.width(), dimensions.height()) + 1;
+        mipmapLevelCount = SkMipmap::ComputeLevelCount(dimensions.width(), dimensions.height()) + 1;
+        mipmapStatus = GrMipmapStatus::kValid;
     }
 
-    GrMipmapStatus mipmapStatus = (mipMapped == skgpu::Mipmapped::kYes) ? GrMipmapStatus::kValid
-                                                                   : GrMipmapStatus::kNotAllocated;
-
-    auto tex = GrVkTexture::MakeNewTexture(this, budgeted, dimensions, pixelFormat,
-                                           numMipLevels, isProtected, mipmapStatus,
-                                           /*label=*/"VkGpu_CreateCompressedTextureFromOHNativeBuffer");
-    if (!tex) {
+    sk_sp<GrVkTexture> texture = GrVkTexture::MakeNewTexture(
+        this, budgeted, dimensions, pixelFormat, mipmapLevelCount,
+        isProtected, mipmapStatus, /*label=*/"VkGpu_CreateCompressedTextureFromOHNativeBuffer");
+    if (!texture) {
         return nullptr;
     }
 
     SkTextureCompressionType compression = GrBackendFormatToCompressionType(format);
-    if (!this->uploadTexDataCompressed(tex->textureImage(), compression, pixelFormat,
+    if (!this->uploadTexDataCompressed(texture->textureImage(), compression, pixelFormat,
                                        dimensions, mipMapped, nativeBuffer, bufferSize)) {
         return nullptr;
     }
 
-    return std::move(tex);
+    return std::move(texture);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
