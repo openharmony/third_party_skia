@@ -109,6 +109,17 @@ public:
 
 #ifdef ENABLE_TEXT_ENHANCE
     static sk_sp<SkTypeface> MakeDefault();
+
+    /** Creates a new reference to the typeface that most closely matches the
+        requested familyName and fontStyle. This method allows extended font
+        face specifiers as in the SkFontStyle type. Will never return null.
+
+        @param familyName  May be NULL. The name of the font family.
+        @param fontStyle   The style of the typeface.
+        @return reference to the closest-matching typeface. Call must call
+              unref() when they are done.
+    */
+    static sk_sp<SkTypeface> MakeFromName(const char familyName[], SkFontStyle fontStyle);
 #endif
 
     /** Return a new typeface based on this typeface but parameterized as specified in the
@@ -154,6 +165,15 @@ public:
      */
 
     static sk_sp<SkTypeface> MakeDeserialize(SkStream*, sk_sp<SkFontMgr> lastResortMgr);
+
+#ifdef ENABLE_TEXT_ENHANCE
+    /** Given the data previously written by serialize(), return a new instance
+        of a typeface referring to the same font. If that font is not available,
+        return nullptr.
+        Does not affect ownership of SkStream.
+     */
+    static sk_sp<SkTypeface> MakeDeserialize(SkStream*);
+#endif
 
     /**
      *  Given an array of UTF32 character codes, return their corresponding glyph IDs.
