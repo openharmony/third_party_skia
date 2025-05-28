@@ -135,7 +135,7 @@ public:
     size_t clusterIndex(size_t pos) const { return fClusterIndexes[pos]; }
     size_t globalClusterIndex(size_t pos) const { return fClusterStart + fClusterIndexes[pos]; }
     SkScalar positionX(size_t pos) const;
-
+    SkScalar usingAutoSpaceWidth(const Cluster& cluster) const;
     TextRange textRange() const { return fTextRange; }
     ClusterRange clusterRange() const { return fClusterRange; }
 

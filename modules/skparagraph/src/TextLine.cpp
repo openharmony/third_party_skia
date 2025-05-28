@@ -1028,18 +1028,7 @@ SkScalar TextLine::usingAutoSpaceWidth(const Cluster* cluster) const
     if (cluster == nullptr) {
         return 0.0f;
     }
-    if (!fOwner->isAutoSpaceEnabled()) {
-        return cluster->width();
-    }
-    auto& run = cluster->run();
-    auto start = cluster->startPos();
-    auto end = cluster->endPos();
-    auto correction = 0.0f;
-    if (end > start && !run.getAutoSpacings().empty()) {
-        correction = run.getAutoSpacings()[end - 1].fX - run.getAutoSpacings()[start].fY;
-    }
-
-    return cluster->width() + std::max(0.0f, correction);
+    return fOwner->clusterUsingAutoSpaceWidth(cluster);
 }
 
 void TextLine::ellipsisNotFitProcess(EllipsisModal ellipsisModal) {

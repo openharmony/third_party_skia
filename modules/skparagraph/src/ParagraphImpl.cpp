@@ -1780,6 +1780,25 @@ bool ParagraphImpl::isAutoSpaceEnabled() const
     return paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
 }
 
+SkScalar ParagraphImpl::clusterUsingAutoSpaceWidth(const Cluster* cluster) const
+{
+    if (cluster == nullptr) {
+        return 0.0f;
+    }
+    if(!isAutoSpaceEnabled()){
+        return cluster->width();
+    }
+    auto& run = cluster->run();
+    auto start = cluster->startPos();
+    auto end = cluster->endPos();
+    auto correction = 0.0f;
+    if (end > start && !run.getAutoSpacings().empty()) {
+        correction = run.getAutoSpacings()[end - 1].fX - run.getAutoSpacings()[start].fY;
+    }
+
+    return cluster->width() + std::max(0.0f, correction);
+}
+
 bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
 {
     SkScalar singleRunWidth = fRuns[0].fAdvance.fX;

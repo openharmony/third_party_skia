@@ -285,6 +285,10 @@ SkShaper::RunHandler::Buffer Run::newRunBuffer() {
     return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset};
 }
 
+SkScalar Run::usingAutoSpaceWidth(const Cluster& cluster) const
+{
+    return fOwner->clusterUsingAutoSpaceWidth(&cluster);
+}
 #ifndef USE_SKIA_TXT
 void Run::copyTo(SkTextBlobBuilder& builder, size_t pos, size_t size) const {
     SkASSERT(pos + size <= this->size());
