@@ -19,6 +19,7 @@
 #include "src/gpu/ganesh/GrSurfaceProxy.h"
 #include "src/gpu/ganesh/GrSurfaceProxyPriv.h"
 #include "src/gpu/ganesh/GrTexture.h"  // IWYU pragma: keep
+#include "src/gpu/ganesh/GrTextureProxy.h"
 
 #include <cstddef>
 #include <limits>
