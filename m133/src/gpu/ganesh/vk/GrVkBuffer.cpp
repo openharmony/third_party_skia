@@ -179,7 +179,11 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
                                                  alloc.fMemory,
                                                  alloc.fOffset));
     if (err) {
-        skgpu::VulkanMemory::FreeBufferMemory(allocator, alloc);
+        if (alloc.fIsExternalMemory) {
+            skgpu::VulkanMemory::FreeBufferMemory(gpu, alloc);
+        } else {
+            skgpu::VulkanMemory::FreeBufferMemory(allocator, alloc);
+        }
         VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
         return nullptr;
     }
@@ -190,7 +194,11 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
         uniformDescSet = make_uniform_desc_set(gpu, buffer, size);
         if (!uniformDescSet) {
             VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
-            skgpu::VulkanMemory::FreeBufferMemory(allocator, alloc);
+            if (alloc.fIsExternalMemory) {
+                skgpu::VulkanMemory::FreeBufferMemory(gpu, alloc);
+            } else {
+                skgpu::VulkanMemory::FreeBufferMemory(allocator, alloc);
+            }
             return nullptr;
         }
     }
@@ -389,7 +397,11 @@ void GrVkBuffer::vkRelease() {
     VK_CALL(this->getVkGpu(), DestroyBuffer(this->getVkGpu()->device(), fBuffer, nullptr));
     fBuffer = VK_NULL_HANDLE;
 
-    skgpu::VulkanMemory::FreeBufferMemory(this->getVkGpu()->memoryAllocator(), fAlloc);
+    if (fAlloc.fIsExternalMemory) {
+        skgpu::VulkanMemory::FreeBufferMemory(this->getVkGpu(), fAlloc);
+    } else {
+        skgpu::VulkanMemory::FreeBufferMemory(this->getVkGpu()->memoryAllocator(), fAlloc);
+    }
     fAlloc.fMemory = VK_NULL_HANDLE;
     fAlloc.fBackendMemory = 0;
 }
