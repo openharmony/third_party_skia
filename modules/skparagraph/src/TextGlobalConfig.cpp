@@ -19,6 +19,8 @@ namespace textlayout {
 uint32_t TextGlobalConfig::bundleApiVersion_{0};
 std::atomic<bool> TextGlobalConfig::undefinedGlyphDisplayTofu_{false};
 
+constexpr uint32_t UNDEFINED_GLYPH_USE_TOFU = 1;
+
 bool TextGlobalConfig::IsTargetApiVersion(uint32_t targetVersion)
 {
     return bundleApiVersion_ >= targetVersion;
@@ -26,7 +28,7 @@ bool TextGlobalConfig::IsTargetApiVersion(uint32_t targetVersion)
 
 void TextGlobalConfig::SetUndefinedGlyphDisplay(uint32_t undefinedGlyphDisplay)
 {
-    undefinedGlyphDisplayTofu_.store(undefinedGlyphDisplay == 1);
+    undefinedGlyphDisplayTofu_.store(undefinedGlyphDisplay == UNDEFINED_GLYPH_USE_TOFU);
 };
 
 bool TextGlobalConfig::UndefinedGlyphDisplayUseTofu(const std::string& family)

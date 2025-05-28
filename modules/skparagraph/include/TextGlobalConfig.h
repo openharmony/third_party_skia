@@ -30,7 +30,10 @@ class TextGlobalConfig {
 public:
     static bool IsTargetApiVersion(uint32_t targetVersion);
 
-    static void SetTargetVersion(uint32_t targetVersion) { bundleApiVersion_ = targetVersion; };
+    static void SetTargetVersion(uint32_t targetVersion) 
+    {
+        bundleApiVersion_ = targetVersion;
+    }
 
     static void SetUndefinedGlyphDisplay(uint32_t undefinedGlyphDisplay);
 
