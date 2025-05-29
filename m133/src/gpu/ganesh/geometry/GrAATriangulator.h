@@ -24,7 +24,7 @@ class SkPath;
 struct SkRect;
 
 // Triangulates the given path in device space with a mesh of alpha ramps for antialiasing.
-class GrAATriangulator : private GrTriangulator {
+class SK_API GrAATriangulator : private GrTriangulator {
 public:
     static int PathToAATriangles(const SkPath& path, SkScalar tolerance, const SkRect& clipBounds,
                                  GrEagerVertexAllocator* vertexAllocator) {

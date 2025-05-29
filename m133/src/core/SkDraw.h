@@ -35,7 +35,7 @@ struct SkRect;
 
 
 // defaults to use SkBlitter::Choose()
-class SkDraw : public SkDrawBase {
+class SK_API SkDraw : public SkDrawBase {
 public:
     SkDraw();
 
