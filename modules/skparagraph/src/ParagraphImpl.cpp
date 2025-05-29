@@ -1792,6 +1792,21 @@ bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
     singleRunWidth += totalFakeSpacing;
     return singleRunWidth <= floorWidth - this->detectIndents(0);
 }
+
+vector<TextBlobRecordInfo> ParagraphImpl::getTextBlobRecordInfo()
+{
+    vector<TextBlobRecordInfo> textBlobRecordInfos;
+    for (auto& line : fLines) {
+        for (auto& block : line.fTextBlobCache) {
+            TextBlobRecordInfo recordInfo;
+            recordInfo.fBlob = block.fBlob;
+            recordInfo.fOffset = block.fOffset;
+            recordInfo.fPaint = block.fPaint;
+            textBlobRecordInfos.emplace_back(recordInfo);
+        }
+    }
+    return textBlobRecordInfos;
+}
 #endif
 
 SkTArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {

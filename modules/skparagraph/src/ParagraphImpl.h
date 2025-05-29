@@ -243,6 +243,7 @@ public:
 #ifdef OHOS_SUPPORT
     void setState(InternalState state) override;
     InternalState getState() const override { return state(); }
+    vector<TextBlobRecordInfo> getTextBlobRecordInfo() override;
 #else
     void setState(InternalState state);
 #endif

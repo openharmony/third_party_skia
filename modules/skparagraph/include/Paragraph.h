@@ -81,6 +81,8 @@ public:
     virtual void setState(InternalState state) = 0;
 
     virtual InternalState getState() const = 0;
+
+    virtual std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() = 0;
 #endif
 
     virtual void layout(SkScalar width) = 0;
