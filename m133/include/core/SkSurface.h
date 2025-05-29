@@ -647,6 +647,12 @@ public:
     */
     bool characterize(GrSurfaceCharacterization* characterization) const;
 
+#ifdef SK_VK_PARTIALRENDER
+    void setDrawingArea(const std::vector<SkIRect>& rects);
+
+    void clearDrawingArea();
+#endif
+
 protected:
     SkSurface(int width, int height, const SkSurfaceProps* surfaceProps);
     SkSurface(const SkImageInfo& imageInfo, const SkSurfaceProps* surfaceProps);
