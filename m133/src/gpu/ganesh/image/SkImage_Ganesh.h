@@ -101,6 +101,7 @@ public:
 
     void generatingSurfaceIsDeleted() override;
 
+    void hintCacheGpuResource() override;
     // From SkImage_GaneshBase.h
     GrSemaphoresSubmitted flush(GrDirectContext*, const GrFlushInfo&) const override;
 
