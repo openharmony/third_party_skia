@@ -523,7 +523,7 @@ DEF_TEST(Encode_PngOptions, r) {
     sk_sp<SkData> data1 = dst1.detachAsData();
     sk_sp<SkData> data2 = dst2.detachAsData();
     REPORTER_ASSERT(r, data0->size() < data1->size());
-    REPORTER_ASSERT(r, data1->size() < data2->size());
+    REPORTER_ASSERT(r, data1->size() > data2->size());
 
     SkBitmap bm0, bm1, bm2;
     SkImages::DeferredFromEncodedData(data0)->asLegacyBitmap(&bm0);
