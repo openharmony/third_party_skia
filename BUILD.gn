@@ -4393,7 +4393,7 @@ ohos_static_library("sksl_ext_static") {
   sources += skia_sksl_gpu_sources
   include_dirs = [ "." ]
 }
-} else {
+} else { # skia_use_m133
   skia_component("skia") {
   }
   import("${skia_modules_dir}/skcms/skcms.gni")
