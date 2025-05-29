@@ -30,7 +30,7 @@ class TextGlobalConfig {
 public:
     static bool IsTargetApiVersion(uint32_t targetVersion);
 
-    static void SetTargetVersion(uint32_t targetVersion) 
+    static void SetTargetVersion(uint32_t targetVersion)
     {
         bundleApiVersion_ = targetVersion;
     }
