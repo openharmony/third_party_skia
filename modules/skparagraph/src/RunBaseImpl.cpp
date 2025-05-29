@@ -204,7 +204,7 @@ std::vector<RSPoint> RunBaseImpl::getAdvances(uint32_t start, uint32_t length) c
         return {};
     }
     SkSpan<const SkPoint> advanceSpan = fVisitorRun->advances();
-    SkSpan<const SkPoint> runAdvancesSpan = positionSpan.subspan(fVisitorPos + start, actualLength);
+    SkSpan<const SkPoint> runAdvancesSpan = advanceSpan.subspan(fVisitorPos + start, actualLength);
     std::vector<RSPoint> advances;
     for (size_t i = 0; i < runAdvancesSpan.size(); i++) {
         advances.emplace_back(runAdvancesSpan[i].fX, runAdvancesSpan[i].fY);

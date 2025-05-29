@@ -232,7 +232,7 @@ Run::Run(ParagraphImpl* owner,
     fOffsets.push_back_n(info.glyphCount + 1);
     fClusterIndexes.push_back_n(info.glyphCount + 1);
 #ifdef OHOS_SUPPORT
-    fAdvances.push_back_n(info.glyphCount + 1)
+    fAdvances.push_back_n(info.glyphCount + 1);
 #endif
     fHalfLetterspacings.push_back_n(info.glyphCount + 1);
     std::fill(fHalfLetterspacings.begin(), fHalfLetterspacings.end(), 0.0);
