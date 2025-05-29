@@ -151,6 +151,14 @@ private:
                                                const void* data,
                                                size_t dataSize) override;
 
+    sk_sp<GrTexture> onCreateCompressedTexture(SkISize dimensions,
+                                               const GrBackendFormat&,
+                                               skgpu::Budgeted,
+                                               skgpu::Mipmapped,
+                                               GrProtected,
+                                               OH_NativeBuffer* nativeBuffer,
+                                               size_t bufferSize) override;
+
     sk_sp<GrTexture> onWrapBackendTexture(const GrBackendTexture&,
                                           GrWrapOwnership,
                                           GrWrapCacheable,
