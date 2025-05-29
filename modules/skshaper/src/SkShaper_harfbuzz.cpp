@@ -700,6 +700,11 @@ void append(SkShaper::RunHandler* handler, const SkShaper::RunHandler::RunInfo& 
         if (buffer.clusters) {
             buffer.clusters[i] = glyph.fCluster;
         }
+#ifdef OHOS_SUPPORT
+        if (buffer.advances) {
+            buffer.advances[i] = glyph.fAdvance;
+        }
+#endif
         advance += glyph.fAdvance;
     }
     handler->commitRunBuffer(runInfo);

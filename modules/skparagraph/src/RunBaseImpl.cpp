@@ -194,6 +194,32 @@ std::vector<RSPoint> RunBaseImpl::getPositions(int64_t start, int64_t length) co
     return positions;
 }
 
+std::vector<RSPoint> RunBaseImpl::getAdvances(uint32_t start, uint32_t length) const
+{
+    if (!fVisitorRun) {
+        return {};
+    }
+    uint64_t actualLength = calculateActualLength(start, length);
+    if (actualLength == 0) {
+        return {};
+    }
+    SkSpan<const SkPoint> advanceSpan = fVisitorRun->advances();
+    SkSpan<const SkPoint> runAdvancesSpan = positionSpan.subspan(fVisitorPos + start, actualLength);
+    std::vector<RSPoint> advances;
+    for (size_t i = 0; i < runAdvancesSpan.size(); i++) {
+        advances.emplace_back(runAdvancesSpan[i].fX, runAdvancesSpan[i].fY);
+    }
+    return advances;
+}
+
+TextDirection RunBaseImpl::getTextDirection() const
+{
+    if (!fVisitorRun) {
+        return {};
+    }
+    return fVisitorRun->getTextDirection();
+}
+
 void RunBaseImpl::getStringRange(uint64_t* location, uint64_t* length) const
 {
     if (location == nullptr || length == nullptr) {
