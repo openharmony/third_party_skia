@@ -58,7 +58,7 @@ void OneLineShaper::commitRunBuffer(const RunInfo&) {
             auto& front = fUnresolvedBlocks.front();
 #ifdef OHOS_SUPPORT
             bool useTofu =
-                unresolved.fRun && unresolved.fRun->fFont.GetTypeface() &&
+                unresolved.fRun != nullptr && unresolved.fRun->fFont.GetTypeface() != nullptr &&
                 TextGlobalConfig::UndefinedGlyphDisplayUseTofu(unresolved.fRun->fFont.GetTypeface()->GetFamilyName());
             if (front.fRun != nullptr && !useTofu) {
                 unresolved.fRun = front.fRun;
