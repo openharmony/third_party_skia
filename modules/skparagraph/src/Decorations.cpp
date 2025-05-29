@@ -337,7 +337,11 @@ void Decorations::calculatePaint(const TextStyle& textStyle) {
 }
 
 void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
-
+#ifdef OHOS_SUPPORT
+    if (SkScalarNearlyZero(fThickness) || fThickness < 0) {
+        return;
+    }
+#endif  
 #ifndef USE_SKIA_TXT
     fPath.reset();
 #else
