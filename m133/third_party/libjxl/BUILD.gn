@@ -6,8 +6,8 @@ import("../third_party.gni")
 
 third_party("libjxl") {
   deps = [
-    "//third_party/brotli",
-    "//third_party/highway",
+    "${skia_third_party_dir}/brotli",
+    "${skia_third_party_dir}/highway",
   ]
 
   public_include_dirs = [

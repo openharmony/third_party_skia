@@ -47,7 +47,11 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
 
   component("skunicode_core") {
     check_includes = false
-    deps = [ "../..:skia" ]
+    if (!use_oh_skia) {
+      deps = [ "../..:skia" ]
+    } else {
+      include_dirs = [ "${skia_root_dir}" ]
+    }
     configs += [
       ":module",
       "../../:skia_private",
@@ -59,10 +63,15 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
   if (skia_use_icu) {
     component("skunicode_icu") {
       check_includes = false
-      deps = [
-        ":skunicode_core",
-        "../..:skia",
-      ]
+      if (!use_oh_skia) {
+        deps = [
+          ":skunicode_core",
+          "../..:skia",
+        ]
+      } else {
+        deps = [ ":skunicode_core" ]
+        include_dirs = [ "${skia_root_dir}" ]
+      }
       configs += [
         ":module",
         "../../:skia_private",
@@ -84,10 +93,10 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
       if (skia_use_runtime_icu && (is_android || is_linux)) {
         sources += skia_unicode_runtime_icu_sources
         defines += [ "SK_UNICODE_RUNTIME_ICU_AVAILABLE" ]
-        deps += [ "//third_party/icu:headers" ]
+        deps += [ "${skia_third_party_dir}/icu:headers" ]
       } else {
         sources += skia_unicode_builtin_icu_sources
-        deps += [ "//third_party/icu" ]
+        deps += [ "${skia_third_party_dir}/icu" ]
       }
     }
   }
@@ -171,7 +180,7 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
 
       sources = skia_unicode_icu4x_sources
 
-      deps += [ "//third_party/icu4x" ]
+      deps += [ "${skia_third_party_dir}/icu4x" ]
     }
   }
 

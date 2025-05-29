@@ -4,16 +4,21 @@
 # found in the LICENSE file.
 
 import("../zlib/zlib.gni")
+import("../../gn/platform.gni")
 
 declare_args() {
   # TODO: build from source all the time for testing?
-  skia_use_system_freetype2 =
-      (is_official_build || !(is_android || sanitize == "MSAN")) &&
-      !is_fuchsia && !is_wasm
+  if (skia_use_system_lib) {
+    skia_use_system_freetype2 = true
+  } else {
+    skia_use_system_freetype2 =
+        (is_official_build || !(is_android || sanitize_skia == "MSAN")) &&
+        !is_fuchsia && !is_wasm
+  }
   skia_system_freetype2_include_path = "/usr/include/freetype2"
   skia_system_freetype2_lib = "freetype"
 
-  skia_use_freetype_woff2 = is_wasm
+  skia_use_freetype_woff2 = false
   skia_use_freetype_svg = true
   skia_use_freetype_zlib = true
   skia_use_freetype_zlib_bundled = !skia_use_system_zlib
@@ -22,9 +27,8 @@ declare_args() {
 import("../third_party.gni")
 
 if (skia_use_system_freetype2) {
-  system("freetype2") {
-    include_dirs = [ skia_system_freetype2_include_path ]
-    libs = [ skia_system_freetype2_lib ]
+  source_set("freetype2") {
+    public_external_deps = [ "freetype:freetype_static" ]
   }
 } else {
   third_party("freetype2") {
@@ -32,7 +36,7 @@ if (skia_use_system_freetype2) {
         [ "SK_FREETYPE_MINIMUM_RUNTIME_VERSION_IS_BUILD_VERSION=1" ]
     public_include_dirs = [ "include" ]
 
-    deps = [ "//third_party/libpng" ]
+    deps = [ "${skia_third_party_dir}/libpng" ]
 
     defines = [ "FT2_BUILD_LIBRARY" ]
     if (target_cpu == "wasm") {
@@ -53,13 +57,13 @@ if (skia_use_system_freetype2) {
     if (skia_use_freetype_zlib) {
       public_defines += [ "FT_CONFIG_OPTION_USE_ZLIB" ]
       if (!skia_use_freetype_zlib_bundled) {
-        deps += [ "//third_party/zlib" ]
+        deps += [ "${skia_third_party_dir}/zlib" ]
         public_defines += [ "FT_CONFIG_OPTION_SYSTEM_ZLIB" ]
       }
     }
 
     if (skia_use_freetype_woff2) {
-      deps += [ "//third_party/brotli" ]
+      deps += [ "${skia_third_party_dir}/brotli" ]
       public_defines += [ "FT_CONFIG_OPTION_USE_BROTLI" ]
     }
 

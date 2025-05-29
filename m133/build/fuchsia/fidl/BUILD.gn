@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 assert(is_fuchsia)
-import("//build/fuchsia/sdk.gni")
+import("${skia_root_dir}/build/fuchsia/sdk.gni")
 
 #
 # Generate gn targets for fidl libraries in the Fuchsia SDK.

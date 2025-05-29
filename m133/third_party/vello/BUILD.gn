@@ -13,7 +13,7 @@ import("../third_party.gni")
 # Pre-compiled shader dependencies:
 #
 #   The vello_shaders crate bundles compute shaders that are pre-compiled into a target format based
-#   on the GPU backend. This is driven by build arguments defined in //gn/skia.gni.
+#   on the GPU backend. This is driven by build arguments defined in ${skia_root_dir}/gn/skia.gni.
 
 if (skia_enable_vello_shaders) {
   bazel_args = []
@@ -48,7 +48,7 @@ if (skia_enable_vello_shaders) {
       "$root_out_dir/third_party/vello/src/lib.rs.h",
     ]
     args = [
-             "//third_party/vello:vello_ffi",
+             "${skia_third_party_dir}/vello:vello_ffi",
              rebase_path("//bazel-bin/third_party/vello/libvello_ffi.a",
                          root_build_dir),
 
@@ -69,7 +69,7 @@ if (skia_enable_vello_shaders) {
     ]
     outputs = [ "$root_out_dir/libvello_rust.a" ]
     args = [
-             "//third_party/vello:vello_rust",
+             "${skia_third_party_dir}/vello:vello_rust",
              rebase_path("//bazel-bin/third_party/vello/libvello_rust.a",
                          root_build_dir),
            ] + bazel_args
