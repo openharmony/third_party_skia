@@ -79,8 +79,8 @@ void SurfaceFillContext::addDrawOp(GrOp::Owner owner) {
     SkASSERT(!op->usesStencil());
     SkASSERT(!analysis.requiresDstTexture());
 #ifdef SKIA_OHOS
-    HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "SurfaceFillContext::addDrawOp - %s, id: %u",
-        op->name(), op->uniqueID());
+    HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "SurfaceFillContext::addDrawOp - %s",
+        op->name());
 #endif
     SkRect bounds = owner->bounds();
     // We shouldn't have coverage AA or hairline draws in fill contexts.
