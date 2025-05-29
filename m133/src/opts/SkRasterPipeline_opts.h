@@ -20,6 +20,7 @@
 #include "src/sksl/tracing/SkSLTraceHook.h"
 
 #include <cstdint>
+#include <cmath>
 #include <type_traits>
 
 // Every function in this file should be marked static and inline using SI.
@@ -1944,7 +1945,13 @@ SI F asin_(F x) {
     const float c1 = -0.2121144f;
     const float c0 = 1.5707288f;
     F poly = mad(x, mad(x, mad(x, c3, c2), c1), c0);
-    x = nmad(sqrt_(1 - x), poly, SK_FloatPI/2);
+
+    F sqrt_result = { 0.0f };
+    for (int32_t i = 0; i < 4; ++i) { // 4 is a 4-element vector
+        sqrt_result[i] = std::sqrt(1.0f - x[i]);
+    }
+
+    x = nmad(sqrt_result, poly, SK_FloatPI/2);
     x = if_then_else(neg, -x, x);
     return x;
 }
