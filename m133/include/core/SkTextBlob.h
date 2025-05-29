@@ -516,4 +516,6 @@ private:
     RunBuffer              fCurrentRunBuffer;
 };
 
+SK_API void GetPointsForTextBlob(const SkTextBlob* blob, std::vector<SkPoint>& points);
+
 #endif // SkTextBlob_DEFINED
