@@ -48,6 +48,10 @@
 #include "src/gpu/ganesh/image/SkImage_Ganesh.h"
 #include "src/image/SkImage_Base.h"
 
+#ifdef SK_VK_PARTIALRENDER
+#include "src/gpu/vk/GrVkDrawAreaManager.h"
+#endif
+
 #ifdef SK_IN_RENDERENGINE
 #include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "include/gpu/ganesh/gl/GrGLTypes.h"
@@ -69,6 +73,9 @@ SkSurface_Ganesh::SkSurface_Ganesh(sk_sp<skgpu::ganesh::Device> device)
 }
 
 SkSurface_Ganesh::~SkSurface_Ganesh() {
+#ifdef SK_VK_PARTIALRENDER
+    GrVkDrawAreaManager::getInstance().clearSurface(this);
+#endif
     if (this->hasCachedImage()) {
         as_IB(this->refCachedImage())->generatingSurfaceIsDeleted();
     }

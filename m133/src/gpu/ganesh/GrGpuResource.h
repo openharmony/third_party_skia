@@ -123,7 +123,7 @@ private:
 /**
  * Base class for objects that can be kept in the GrResourceCache.
  */
-class GrGpuResource : public GrIORef<GrGpuResource> {
+class SK_API GrGpuResource : public GrIORef<GrGpuResource> {
 public:
     /**
      * Tests whether a object has been abandoned or released. All objects will
@@ -315,6 +315,7 @@ private:
     void removeScratchKey();
     void makeBudgeted();
     void makeUnbudgeted();
+    void userRegisterResource();
 
 #ifdef SK_DEBUG
     friend class GrGpu;  // for assert in GrGpu to access getGpu

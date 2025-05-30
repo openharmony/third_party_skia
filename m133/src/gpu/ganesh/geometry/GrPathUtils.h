@@ -69,7 +69,7 @@ uint32_t generateCubicPoints(const SkPoint& p0,
 
 // A 2x3 matrix that goes from the 2d space coordinates to UV space where u^2-v = 0 specifies the
 // quad. The matrix is determined by the control points of the quadratic.
-class QuadUVMatrix {
+class SK_API QuadUVMatrix {
 public:
     QuadUVMatrix() {}
     // Initialize the matrix from the control pts
@@ -120,7 +120,7 @@ void getConicKLM(const SkPoint p[3], const SkScalar weight, SkMatrix* klm);
 // Converts a cubic into a sequence of quads. If working in device space use tolScale = 1, otherwise
 // set based on stretchiness of the matrix. The result is sets of 3 points in quads. This will
 // preserve the starting and ending tangent vectors (modulo FP precision).
-void convertCubicToQuads(const SkPoint p[4],
+void SK_API convertCubicToQuads(const SkPoint p[4],
                          SkScalar tolScale,
                          skia_private::TArray<SkPoint, true>* quads);
 

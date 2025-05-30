@@ -47,7 +47,7 @@ enum class Budgeted : bool;
 enum class Mipmapped : bool;
 }
 
-class GrSurfaceProxy : public SkNVRefCnt<GrSurfaceProxy> {
+class SK_API GrSurfaceProxy : public SkNVRefCnt<GrSurfaceProxy> {
 public:
     virtual ~GrSurfaceProxy();
 

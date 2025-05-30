@@ -29,7 +29,7 @@
  * Luma is used to specify a linear luminance value [0.0, 1.0].
  * Luminance is used to specify a luminance value in an arbitrary color space [0.0, 1.0].
  */
-class SkColorSpaceLuminance : SkNoncopyable {
+class SK_API SkColorSpaceLuminance : SkNoncopyable {
 public:
     virtual ~SkColorSpaceLuminance() { }
 
@@ -85,8 +85,8 @@ template<> /*static*/ inline U8CPU sk_t_scale255<8>(U8CPU base) {
 
 template <int R_LUM_BITS, int G_LUM_BITS, int B_LUM_BITS> class SkTMaskPreBlend;
 
-void SkTMaskGamma_build_correcting_lut(uint8_t* table, U8CPU srcI, SkScalar contrast,
-                                       const SkColorSpaceLuminance& dstConvert, SkScalar dstGamma);
+void SK_API SkTMaskGamma_build_correcting_lut(uint8_t* table, U8CPU srcI, SkScalar contrast,
+                                              const SkColorSpaceLuminance& dstConvert, SkScalar dstGamma);
 
 /**
  * A regular mask contains linear alpha values. A gamma correcting mask

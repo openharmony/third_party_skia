@@ -19,6 +19,7 @@
 #include "src/gpu/ganesh/GrSurfaceProxy.h"
 #include "src/gpu/ganesh/GrSurfaceProxyPriv.h"
 #include "src/gpu/ganesh/GrTexture.h"  // IWYU pragma: keep
+#include "src/gpu/ganesh/GrTextureProxy.h"
 
 #include <cstddef>
 #include <limits>
@@ -122,6 +123,14 @@ static bool can_proxy_use_scratch(const GrCaps& caps, GrSurfaceProxy* proxy) {
     return caps.reuseScratchTextures() || proxy->asRenderTargetProxy();
 }
 
+static bool user_cache_proxy(GrSurfaceProxy* proxy) {
+    GrTextureProxy* texProxy = proxy->asTextureProxy();
+    if (texProxy) {
+        return texProxy->getUserCacheTarget();
+    }
+    return false;
+}
+
 GrResourceAllocator::Register::Register(GrSurfaceProxy* originatingProxy,
                                         skgpu::ScratchKey scratchKey,
                                         GrResourceProvider* provider)
@@ -132,7 +141,8 @@ GrResourceAllocator::Register::Register(GrSurfaceProxy* originatingProxy,
     SkASSERT(!originatingProxy->isLazy());
     SkDEBUGCODE(fUniqueID = CreateUniqueID();)
     if (fScratchKey.isValid()) {
-        if (can_proxy_use_scratch(*provider->caps(), originatingProxy)) {
+        if (can_proxy_use_scratch(*provider->caps(), originatingProxy) ||
+            user_cache_proxy(originatingProxy)) {
             fExistingSurface = provider->findAndRefScratchTexture(
                     fScratchKey, /*label=*/"ResourceAllocatorRegister");
         }

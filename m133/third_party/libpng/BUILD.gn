@@ -27,7 +27,15 @@ if (skia_use_system_libpng) {
     ]
 
     defines = [ "PNG_SET_OPTION_SUPPORTED" ]
-    deps = [ "${skia_third_party_dir}/zlib" ]
+    if (use_oh_skia) {
+      external_deps = [ "zlib:libz" ]
+    } else {
+      if (skia_feature_zlib != "") {
+        external_deps = [ skia_feature_zlib ]
+      } else {
+        deps = [ "${skia_third_party_dir}/zlib" ]
+      }
+    }
     sources = [
       "../externals/libpng/png.c",
       "../externals/libpng/pngerror.c",

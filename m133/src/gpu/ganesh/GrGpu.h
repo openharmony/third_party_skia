@@ -67,7 +67,7 @@ struct GrTimerQuery {
     uint32_t query;
 };
 
-class GrGpu {
+class SK_API GrGpu {
 public:
     GrGpu(GrDirectContext* direct);
     virtual ~GrGpu();
