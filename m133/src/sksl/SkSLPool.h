@@ -10,6 +10,7 @@
 
 #include <cstddef>
 #include <memory>
+#include "include/core/SkTypes.h"
 
 namespace SkSL {
 
@@ -22,7 +23,7 @@ class MemoryPool;
  * All allocated memory must be released back to the pool before it can be destroyed or recycled.
  */
 
-class Pool {
+class SK_API Pool {
 public:
     ~Pool();
 
