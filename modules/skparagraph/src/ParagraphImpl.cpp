@@ -1793,9 +1793,9 @@ bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
     return singleRunWidth <= floorWidth - this->detectIndents(0);
 }
 
-vector<TextBlobRecordInfo> ParagraphImpl::getTextBlobRecordInfo()
+std::vector<TextBlobRecordInfo> ParagraphImpl::getTextBlobRecordInfo()
 {
-    vector<TextBlobRecordInfo> textBlobRecordInfos;
+    std::vector<TextBlobRecordInfo> textBlobRecordInfos;
     for (auto& line : fLines) {
         for (auto& block : line.fTextBlobCache) {
             TextBlobRecordInfo recordInfo;

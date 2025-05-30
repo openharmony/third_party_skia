@@ -243,7 +243,7 @@ public:
 #ifdef OHOS_SUPPORT
     void setState(InternalState state) override;
     InternalState getState() const override { return state(); }
-    vector<TextBlobRecordInfo> getTextBlobRecordInfo() override;
+    std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() override;
     bool hasEnabledTextEffect() const override { return fTextEffectState; }
     void setTextEffectState(bool state) override { fTextEffectState = state; }
 #else
