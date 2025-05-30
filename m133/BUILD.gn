@@ -1478,8 +1478,17 @@ optional("pdf") {
   enabled = skia_use_zlib && skia_enable_pdf && skia_use_libjpeg_turbo_decode &&
             skia_use_libjpeg_turbo_encode
   public_defines = [ "SK_SUPPORT_PDF" ]
-
-  deps = [ "${skia_third_party_dir}/zlib" ]
+  deps = []
+  external_deps = []
+  if (use_oh_skia) {
+    external_deps += [ "zlib:libz" ]
+  } else {
+    if (skia_feature_zlib != "") {
+      external_deps += [ skia_feature_zlib ]
+    } else {
+      deps += [ "${skia_third_party_dir}/zlib" ]
+    }
+  }
   public = skia_pdf_public
   sources = skia_pdf_sources
   sources_when_disabled = [ "src/pdf/SkDocument_PDF_None.cpp" ]
