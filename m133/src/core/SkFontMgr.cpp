@@ -23,18 +23,30 @@ public:
     void getStyle(int, SkFontStyle*, SkString*) override {
         SkDEBUGFAIL("SkFontStyleSet::getStyle called on empty set");
     }
+#ifdef ENABLE_TEXT_ENHANCE
+    SkTypeface* createTypeface(int index) override {
+#else
     sk_sp<SkTypeface> createTypeface(int index) override {
+#endif
         SkDEBUGFAIL("SkFontStyleSet::createTypeface called on empty set");
         return nullptr;
     }
+#ifdef ENABLE_TEXT_ENHANCE
+    SkTypeface* matchStyle(const SkFontStyle&) override {
+#else
     sk_sp<SkTypeface> matchStyle(const SkFontStyle&) override {
+#endif
         return nullptr;
     }
 };
 
+#ifdef ENABLE_TEXT_ENHANCE
+SkFontStyleSet* SkFontStyleSet::CreateEmpty() { return new SkEmptyFontStyleSet; }
+#else
 sk_sp<SkFontStyleSet> SkFontStyleSet::CreateEmpty() {
     return sk_sp<SkFontStyleSet>(new SkEmptyFontStyleSet);
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -46,6 +58,26 @@ protected:
     void onGetFamilyName(int index, SkString* familyName) const override {
         SkDEBUGFAIL("onGetFamilyName called with bad index");
     }
+#ifdef ENABLE_TEXT_ENHANCE
+    SkFontStyleSet* onCreateStyleSet(int index) const override {
+        SkDEBUGFAIL("onCreateStyleSet called with bad index");
+        return nullptr;
+    }
+    SkFontStyleSet* onMatchFamily(const char[]) const override {
+        return SkFontStyleSet::CreateEmpty();
+    }
+
+    SkTypeface* onMatchFamilyStyle(const char[], const SkFontStyle&) const override {
+        return nullptr;
+    }
+    SkTypeface* onMatchFamilyStyleCharacter(const char familyName[],
+                                            const SkFontStyle& style,
+                                            const char* bcp47[],
+                                            int bcp47Count,
+                                            SkUnichar character) const override {
+        return nullptr;
+    }
+#else
     sk_sp<SkFontStyleSet> onCreateStyleSet(int index) const override {
         SkDEBUGFAIL("onCreateStyleSet called with bad index");
         return nullptr;
@@ -64,6 +96,7 @@ protected:
                                                   SkUnichar character) const override {
         return nullptr;
     }
+#endif
 
     sk_sp<SkTypeface> onMakeFromData(sk_sp<SkData>, int) const override {
         return nullptr;
@@ -83,12 +116,21 @@ protected:
     }
 };
 
+#ifdef ENABLE_TEXT_ENHANCE
+static SkFontStyleSet* emptyOnNull(SkFontStyleSet* fsset) {
+    if (nullptr == fsset) {
+        fsset = SkFontStyleSet::CreateEmpty();
+    }
+    return fsset;
+}
+#else
 static sk_sp<SkFontStyleSet> emptyOnNull(sk_sp<SkFontStyleSet>&& fsset) {
     if (!fsset) {
         fsset = SkFontStyleSet::CreateEmpty();
     }
     return std::move(fsset);
 }
+#endif
 
 int SkFontMgr::countFamilies() const {
     return this->onCountFamilies();
@@ -98,6 +140,26 @@ void SkFontMgr::getFamilyName(int index, SkString* familyName) const {
     this->onGetFamilyName(index, familyName);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+SkFontStyleSet* SkFontMgr::createStyleSet(int index) const {
+    return emptyOnNull(this->onCreateStyleSet(index));
+}
+
+SkFontStyleSet* SkFontMgr::matchFamily(const char familyName[]) const {
+    return emptyOnNull(this->onMatchFamily(familyName));
+}
+
+SkTypeface* SkFontMgr::matchFamilyStyle(const char familyName[],
+                                        const SkFontStyle& fs) const {
+    return this->onMatchFamilyStyle(familyName, fs);
+}
+
+SkTypeface* SkFontMgr::matchFamilyStyleCharacter(const char familyName[], const SkFontStyle& style,
+                                                 const char* bcp47[], int bcp47Count,
+                                                 SkUnichar character) const {
+    return this->onMatchFamilyStyleCharacter(familyName, style, bcp47, bcp47Count, character);
+}
+#else
 sk_sp<SkFontStyleSet> SkFontMgr::createStyleSet(int index) const {
     return emptyOnNull(this->onCreateStyleSet(index));
 }
@@ -116,6 +178,7 @@ sk_sp<SkTypeface> SkFontMgr::matchFamilyStyleCharacter(const char familyName[], 
                                                  SkUnichar character) const {
     return this->onMatchFamilyStyleCharacter(familyName, style, bcp47, bcp47Count, character);
 }
+#endif
 
 sk_sp<SkTypeface> SkFontMgr::makeFromData(sk_sp<SkData> data, int ttcIndex) const {
     if (nullptr == data) {
@@ -151,6 +214,18 @@ sk_sp<SkTypeface> SkFontMgr::legacyMakeTypeface(const char familyName[], SkFontS
     return this->onLegacyMakeTypeface(familyName, style);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+std::vector<sk_sp<SkTypeface>> SkFontMgr::getSystemFonts()
+{
+    return this->onGetSystemFonts();
+}
+
+std::vector<sk_sp<SkTypeface>> SkFontMgr::onGetSystemFonts() const
+{
+    return {};
+}
+#endif
+
 sk_sp<SkFontMgr> SkFontMgr::RefEmpty() {
     static sk_sp<SkFontMgr> singleton(new SkEmptyFontMgr);
     return singleton;
@@ -181,7 +256,11 @@ sk_sp<SkFontMgr> SkFontMgr::RefEmpty() {
 * If pattern.weight is 500, 400 is checked first
 *   and then the rule for pattern.weight < 400 is used.
 */
+#ifdef ENABLE_TEXT_ENHANCE
+SkTypeface* SkFontStyleSet::matchStyleCSS3(const SkFontStyle& pattern) {
+#else
 sk_sp<SkTypeface> SkFontStyleSet::matchStyleCSS3(const SkFontStyle& pattern) {
+#endif
     int count = this->count();
     if (0 == count) {
         return nullptr;

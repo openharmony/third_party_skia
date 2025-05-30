@@ -8,6 +8,9 @@
 #ifndef SKFONTSCANNER_FREE_TYPE_PRIV_H_
 #define SKFONTSCANNER_FREE_TYPE_PRIV_H_
 
+#ifdef ENABLE_TEXT_ENHANCE
+#include "include/core/SkFontMgr.h"
+#endif
 #include "include/core/SkFontScanner.h"
 #include "include/core/SkTypeface.h"
 #include "include/core/SkTypes.h"
@@ -31,6 +34,19 @@ public:
     sk_sp<SkTypeface> MakeFromStream(std::unique_ptr<SkStreamAsset> stream,
                                      const SkFontArguments& args) const override;
     SkTypeface::FactoryId getFactoryId() const override;
+#ifdef ENABLE_TEXT_ENHANCE
+    bool scanFont(SkStreamAsset* stream, int ttcIndex,
+                  SkString* name, SkFontStyle* style, bool* isFixedPitch,
+                  AxisDefinitions* axes) const;
+    struct FontInfo {
+        int index;
+        SkString& familyName;
+        SkFontStyle& style;
+        bool& isFixedWidth;
+    };
+    bool scanFont(SkStreamAsset* stream, FontInfo& info, std::array<uint32_t, 4>& range) const;
+    bool GetTypefaceFullname(SkStreamAsset* stream, int ttcIndex, SkByteArray& fullname) const;
+#endif
     static void computeAxisValues(
             const AxisDefinitions& axisDefinitions,
             const SkFontArguments::VariationPosition currentPosition,

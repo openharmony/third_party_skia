@@ -42,7 +42,12 @@ void SkOrderedFontMgr::onGetFamilyName(int index, SkString* familyName) const {
     }
 }
 
-sk_sp<SkFontStyleSet> SkOrderedFontMgr::onCreateStyleSet(int index) const {
+#ifdef ENABLE_TEXT_ENHANCE
+SkFontStyleSet* SkOrderedFontMgr::onCreateStyleSet(int index) const
+#else
+sk_sp<SkFontStyleSet> SkOrderedFontMgr::onCreateStyleSet(int index) const
+#endif
+{
     for (const auto& fm : fList) {
         const int count = fm->countFamilies();
         if (index < count) {
@@ -53,7 +58,12 @@ sk_sp<SkFontStyleSet> SkOrderedFontMgr::onCreateStyleSet(int index) const {
     return nullptr;
 }
 
-sk_sp<SkFontStyleSet> SkOrderedFontMgr::onMatchFamily(const char familyName[]) const {
+#ifdef ENABLE_TEXT_ENHANCE
+SkFontStyleSet* SkOrderedFontMgr::onMatchFamily(const char familyName[]) const
+#else
+sk_sp<SkFontStyleSet> SkOrderedFontMgr::onMatchFamily(const char familyName[]) const
+#endif
+{
     for (const auto& fm : fList) {
         if (auto fs = fm->matchFamily(familyName)) {
             return fs;
@@ -62,8 +72,14 @@ sk_sp<SkFontStyleSet> SkOrderedFontMgr::onMatchFamily(const char familyName[]) c
     return nullptr;
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+SkTypeface* SkOrderedFontMgr::onMatchFamilyStyle(const char family[],
+                                                 const SkFontStyle& style) const
+#else
 sk_sp<SkTypeface> SkOrderedFontMgr::onMatchFamilyStyle(const char family[],
-                                                       const SkFontStyle& style) const {
+                                                       const SkFontStyle& style) const
+#endif
+{
     for (const auto& fm : fList) {
         if (auto tf = fm->matchFamilyStyle(family, style)) {
             return tf;
@@ -72,10 +88,17 @@ sk_sp<SkTypeface> SkOrderedFontMgr::onMatchFamilyStyle(const char family[],
     return nullptr;
 }
 
-sk_sp<SkTypeface> SkOrderedFontMgr::onMatchFamilyStyleCharacter(
-    const char familyName[], const SkFontStyle& style,
-    const char* bcp47[], int bcp47Count,
-    SkUnichar uni) const
+#ifdef ENABLE_TEXT_ENHANCE
+SkTypeface* SkOrderedFontMgr::onMatchFamilyStyleCharacter(const char familyName[],
+                                                          const SkFontStyle& style,
+                                                          const char* bcp47[], int bcp47Count,
+                                                          SkUnichar uni) const
+#else
+sk_sp<SkTypeface> SkOrderedFontMgr::onMatchFamilyStyleCharacter(const char familyName[],
+                                                                const SkFontStyle& style,
+                                                                const char* bcp47[], int bcp47Count,
+                                                                SkUnichar uni) const
+#endif
 {
     for (const auto& fm : fList) {
         if (auto tf = fm->matchFamilyStyleCharacter(familyName, style, bcp47, bcp47Count, uni)) {
