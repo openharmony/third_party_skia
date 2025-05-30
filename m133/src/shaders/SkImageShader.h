@@ -25,7 +25,7 @@ class SkWriteBuffer;
 enum class SkTileMode;
 struct SkStageRec;
 
-class SkImageShader : public SkShaderBase {
+class SK_API SkImageShader : public SkShaderBase {
 public:
     static sk_sp<SkShader> Make(sk_sp<SkImage>,
                                 SkTileMode tmx,

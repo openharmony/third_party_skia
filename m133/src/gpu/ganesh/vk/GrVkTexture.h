@@ -35,7 +35,7 @@ class MutableTextureState;
 enum class Budgeted : bool;
 }  // namespace skgpu
 
-class GrVkTexture : public GrTexture {
+class SK_API GrVkTexture : public GrTexture {
 public:
     static sk_sp<GrVkTexture> MakeNewTexture(GrVkGpu*,
                                              skgpu::Budgeted budgeted,
@@ -73,6 +73,8 @@ public:
     const GrVkDescriptorSet* cachedSingleDescSet(GrSamplerState);
 
     void addDescriptorSetToCache(const GrVkDescriptorSet*, GrSamplerState);
+
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const override;
 
 protected:
     GrVkTexture(GrVkGpu*,

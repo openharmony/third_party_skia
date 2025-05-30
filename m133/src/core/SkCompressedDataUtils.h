@@ -33,8 +33,8 @@ static constexpr bool SkTextureCompressionTypeIsOpaque(SkTextureCompressionType 
     SkUNREACHABLE;
 }
 
-size_t SkCompressedDataSize(SkTextureCompressionType, SkISize baseDimensions,
-                            skia_private::TArray<size_t>* individualMipOffsets, bool mipmapped);
+size_t SK_API SkCompressedDataSize(SkTextureCompressionType, SkISize baseDimensions,
+                                   skia_private::TArray<size_t>* individualMipOffsets, bool mipmapped);
 size_t SkCompressedBlockSize(SkTextureCompressionType type);
 
 /**

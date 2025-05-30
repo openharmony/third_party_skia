@@ -19,7 +19,7 @@ enum SkBlurStyle : int;
 struct SkIPoint;
 struct SkRect;
 
-class SkBlurMask {
+class SK_API SkBlurMask {
 public:
     [[nodiscard]] static bool BlurRect(SkScalar sigma, SkMaskBuilder *dst, const SkRect &src,
                                        SkBlurStyle, SkIPoint *margin = nullptr,

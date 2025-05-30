@@ -291,6 +291,8 @@ sk_sp<SkImage> TextureFromCompressedTextureData(GrDirectContext* direct,
                                                 skgpu::Mipmapped mipmapped,
                                                 GrProtected isProtected,
                                                 sk_sp<SkColorSpace> colorSpace) {
+                                                GrProtected isProtected,
+                                                sk_sp<SkColorSpace> colorSpace) {
     if (!direct || !data) {
         return nullptr;
     }

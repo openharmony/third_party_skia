@@ -36,7 +36,7 @@ class GrVkGpu;
 class GrVkImageView;
 struct SkISize;
 
-class GrVkImage : public GrAttachment {
+class SK_API GrVkImage : public GrAttachment {
 private:
     class Resource;
 
