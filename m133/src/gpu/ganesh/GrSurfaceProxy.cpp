@@ -155,6 +155,10 @@ sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceP
         return nullptr;
     }
 
+    if (fGrProxyTag.isGrTagValid()) {
+        surface->setResourceTag(fGrProxyTag);
+    }
+
     return surface;
 }
 
