@@ -437,7 +437,7 @@ void GrVkCaps::init(const GrContextOptions& contextOptions,
     // we do expect this to be a big win on tilers.
     //
     // On ARM devices we are seeing an average perf win of around 50%-60% across the board.
-    if (kARM_VkVendor == properties.vendorID) {
+    if (kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) {
         // We currently don't see any Vulkan devices that expose a memory type that supports
         // both lazy allocated and protected memory. So for simplicity we just disable the
         // use of memoryless attachments when using protected memory. In the future, if we ever
@@ -541,7 +541,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
     }
 
     // On Mali galaxy s7 we see lots of rendering issues when we suballocate VkImages.
-    if (kARM_VkVendor == properties.vendorID && androidAPIVersion <= 28) {
+    if ((kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) && androidAPIVersion <= 28) {
         fShouldAlwaysUseDedicatedImageMemory = true;
     }
 
@@ -582,6 +582,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
     // This also occurs on swiftshader: b/303705884
     if (properties.vendorID == kQualcomm_VkVendor ||
         properties.vendorID == kARM_VkVendor ||
+        properties.vendorID == kHisi_VkVendor ||
         (properties.vendorID == kGoogle_VkVendor &&
          properties.deviceID == kSwiftshader_DeviceID)) {
         fMustLoadFullImageWithDiscardableMSAA = true;
@@ -602,6 +603,10 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
 
     if (kARM_VkVendor == properties.vendorID) {
         fAvoidWritePixelsFastPath = true; // bugs.skia.org/8064
+    }
+
+    if (kHisi_VkVendor == properties.vendorID) {
+        fAvoidWritePixelsFastPath = false; // bugs.skia.org/8064
     }
 
     // AMD advertises support for MAX_UINT vertex input attributes, but in reality only supports 32.
@@ -634,7 +639,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
 
     // On ARM indirect draws are broken on Android 9 and earlier. This was tested on a P30 and
     // Mate 20x running android 9.
-    if (properties.vendorID == kARM_VkVendor && androidAPIVersion <= 28) {
+    if ((properties.vendorID == kARM_VkVendor || kHisi_VkVendor == properties.vendorID) && androidAPIVersion <= 28) {
         fNativeDrawIndirectSupport = false;
     }
 
@@ -728,7 +733,7 @@ void GrVkCaps::initGrCaps(const skgpu::VulkanInterface* vkInterface,
         }
     }
 
-    if (kARM_VkVendor == properties.vendorID) {
+    if (kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) {
         fShouldCollapseSrcOverToSrcWhenAble = true;
     }
 }
@@ -749,6 +754,10 @@ void GrVkCaps::initShaderCaps(const VkPhysicalDeviceProperties& properties,
     shaderCaps->fPreferFlatInterpolation = kQualcomm_VkVendor != properties.vendorID;
 
     shaderCaps->fSampleMaskSupport = true;
+
+    // ARM GPUs calculate `matrix * vector` in SPIR-V at full precision, even when the inputs are
+    // RelaxedPrecision. Rewriting the multiply as a sum of vector*scalar fixes this. (skia:11769)
+    shaderCaps->fRewriteMatrixVectorMultiply = (kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID);
 
     shaderCaps->fShaderDerivativeSupport = true;
     shaderCaps->fExplicitTextureLodSupport = true;
