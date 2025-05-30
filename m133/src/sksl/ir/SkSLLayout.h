@@ -57,6 +57,9 @@ enum class LayoutFlag : int {
     kLocalSizeX                 = 1 << 20,
     kLocalSizeY                 = 1 << 21,
     kLocalSizeZ                 = 1 << 22,
+#ifdef SKSL_EXT
+    kConstantId                 = 1 << 23,
+#endif
 };
 
 }  // namespace SkSL
@@ -128,6 +131,9 @@ struct Layout {
     int fLocalSizeX = -1;
     int fLocalSizeY = -1;
     int fLocalSizeZ = -1;
+#ifdef SKSL_EXT
+    int fConstantId = -1;
+#endif
 };
 
 }  // namespace SkSL

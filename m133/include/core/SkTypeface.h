@@ -115,6 +115,10 @@ public:
     */
     sk_sp<SkTypeface> makeClone(const SkFontArguments&) const;
 
+#ifdef ENABLE_TEXT_ENHANCE
+    static std::vector<sk_sp<SkTypeface>> GetSystemFonts();
+#endif
+
     /**
      *  A typeface can serialize just a descriptor (names, etc.), or it can also include the
      *  actual font data (which can be large). This enum controls how serialize() decides what
@@ -413,6 +417,11 @@ protected:
      *  This name may or may not be produced by the family name iterator.
      */
     virtual void onGetFamilyName(SkString* familyName) const = 0;
+
+#ifdef ENABLE_TEXT_ENHANCE
+    virtual void onGetFontPath(SkString* path) const { path->reset(); }
+#endif
+
     virtual bool onGetPostScriptName(SkString*) const = 0;
     virtual int onGetResourceName(SkString* resourceName) const; // TODO: = 0;
 
