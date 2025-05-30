@@ -266,6 +266,13 @@ bool GrAtlasManager::initAtlas(MaskFormat format) {
     if (fAtlases[index] == nullptr) {
         SkColorType colorType = MaskFormatToColorType(format);
         GrColorType grColorType = SkColorTypeToGrColorType(colorType);
+#ifdef SK_ENABLE_SMALL_PAGE
+        int pageNum = fAtlasConfig.getPageNums();
+        if ((format == MaskFormat::kA8) && (fAtlasConfig.getARGBDimensions().width() > 512)) {
+            // reset fAtlasConfig to suit small page.
+            pageNum = fAtlasConfig.resetAsSmallPage();
+        }
+#endif
         SkISize atlasDimensions = fAtlasConfig.atlasDimensions(format);
         SkISize plotDimensions = fAtlasConfig.plotDimensions(format);
 
@@ -279,6 +286,9 @@ bool GrAtlasManager::initAtlas(MaskFormat format) {
                                               plotDimensions.width(), plotDimensions.height(),
                                               this,
                                               fAllowMultitexturing,
+#ifdef SK_ENABLE_SMALL_PAGE
+                                              pageNum,
+#endif
                                               nullptr,
                                               /*label=*/"TextAtlas");
         if (!fAtlases[index]) {
@@ -318,6 +328,9 @@ std::tuple<bool, int> GlyphVector::regenerateAtlasForGanesh(
             SkASSERT(gpuGlyph != nullptr);
 
             if (!atlasManager->hasGlyph(maskFormat, gpuGlyph)) {
+#if defined(SK_ENABLE_SMALL_PAGE) || defined(SK_DEBUG_ATLAS_HIT_RATE)
+                atlasManager->incAtlasMissCount();
+#endif
                 const SkGlyph& skGlyph = *metricsAndImages.glyph(gpuGlyph->fPackedID);
                 auto code = atlasManager->addGlyphToAtlas(
                         skGlyph, gpuGlyph, srcPadding, target->resourceProvider(), uploadTarget);
@@ -326,6 +339,11 @@ std::tuple<bool, int> GlyphVector::regenerateAtlasForGanesh(
                     break;
                 }
             }
+#if defined(SK_ENABLE_SMALL_PAGE) || defined(SK_DEBUG_ATLAS_HIT_RATE)
+            else {
+                atlasManager->incAtlasHitCount();
+            }
+#endif
             atlasManager->addGlyphToBulkAndSetUseToken(
                     &fBulkUseUpdater, maskFormat, gpuGlyph,
                     tokenTracker->nextDrawToken());

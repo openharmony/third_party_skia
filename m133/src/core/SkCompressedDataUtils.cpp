@@ -242,10 +242,13 @@ bool SkDecompress(sk_sp<SkData> data,
 
     const uint8_t* bytes = data->bytes();
     switch (compressionType) {
-        case Type::kNone:            return false;
-        case Type::kETC2_RGB8_UNORM: return decompress_etc1(dimensions, bytes, dst);
-        case Type::kBC1_RGB8_UNORM:  return decompress_bc1(dimensions, bytes, true, dst);
-        case Type::kBC1_RGBA8_UNORM: return decompress_bc1(dimensions, bytes, false, dst);
+        case Type::kNone:             return false;
+        case Type::kETC2_RGB8_UNORM:  return decompress_etc1(dimensions, bytes, dst);
+        case Type::kBC1_RGB8_UNORM:   return decompress_bc1(dimensions, bytes, true, dst);
+        case Type::kBC1_RGBA8_UNORM:  return decompress_bc1(dimensions, bytes, false, dst);
+        case Type::kASTC_RGBA8_4x4: return true;
+        case Type::kASTC_RGBA8_6x6: return true;
+        case Type::kASTC_RGBA8_8x8: return true;
     }
 
     SkUNREACHABLE;
@@ -282,12 +285,40 @@ size_t SkCompressedDataSize(SkTextureCompressionType type, SkISize dimensions,
             }
             break;
         }
+        case SkTextureCompressionType::kASTC_RGBA8_4x4: {
+            // The evil number 16 here is the size of each ASTC block, which is constant for the ASTC 4x4 format,
+            // while the ASTC 4x4 format also explain the evil number 4.0f above
+            totalSize = std::ceil(dimensions.width() / 4.0f) * std::ceil(dimensions.height() / 4.0f) * 16;
+            if (individualMipOffsets) {
+                individualMipOffsets->push_back(0);
+            }
+            break;
+        }
+        case SkTextureCompressionType::kASTC_RGBA8_6x6: {
+            // The evil number 16 here is the size of each ASTC block, which is constant for the ASTC 4x4 format,
+            // while the ASTC 6x6 format also explain the evil number 6.0f above
+            totalSize = std::ceil(dimensions.width() / 6.0f) * std::ceil(dimensions.height() / 6.0f) * 16;
+            if (individualMipOffsets) {
+                individualMipOffsets->push_back(0);
+            }
+            break;
+        }
+        case SkTextureCompressionType::kASTC_RGBA8_8x8: {
+            // The evil number 16 here is the size of each ASTC block, which is constant for the ASTC 4x4 format,
+            // while the ASTC 8x8 format also explain the evil number 8.0f above
+            totalSize = std::ceil(dimensions.width() / 8.0f) * std::ceil(dimensions.height() / 8.0f) * 16;
+            if (individualMipOffsets) {
+                individualMipOffsets->push_back(0);
+            }
+            break;
+        }
     }
 
     return totalSize;
 }
 
 size_t SkCompressedBlockSize(SkTextureCompressionType type) {
+    size_t astcBlockSize = 16; // The constant size of ASTC format
     switch (type) {
         case SkTextureCompressionType::kNone:
             return 0;
@@ -296,6 +327,10 @@ size_t SkCompressedBlockSize(SkTextureCompressionType type) {
         case SkTextureCompressionType::kBC1_RGB8_UNORM:
         case SkTextureCompressionType::kBC1_RGBA8_UNORM:
             return sizeof(BC1Block);
+            case SkTextureCompressionType::kASTC_RGBA8_4x4:
+            case SkTextureCompressionType::kASTC_RGBA8_6x6:
+            case SkTextureCompressionType::kASTC_RGBA8_8x8:
+            return astcBlockSize;
     }
     SkUNREACHABLE;
 }

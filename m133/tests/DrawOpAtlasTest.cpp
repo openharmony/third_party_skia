@@ -147,6 +147,9 @@ DEF_GANESH_TEST_FOR_RENDERING_CONTEXTS(BasicDrawOpAtlas,
                                                 kAtlasSize/kNumPlots, kAtlasSize/kNumPlots,
                                                 &counter,
                                                 GrDrawOpAtlas::AllowMultitexturing::kYes,
+#ifdef SK_ENABLE_SMALL_PAGE
+                                                4,
+#endif
                                                 &evictor,
                                                 /*label=*/"BasicDrawOpAtlasTest");
     check(reporter, atlas.get(), 0, 0);
@@ -260,18 +263,33 @@ DEF_GANESH_TEST(GrDrawOpAtlasConfig_Basic, reporter, options, CtsEnforcement::kA
     // 1/2 MB
     test_atlas_config(reporter, 65536, 512 * 1024, MaskFormat::kARGB,
                       { 512, 256 }, { 256, 256 });
+#ifdef SK_ENABLE_SMALL_PAGE
+    test_atlas_config(reporter, 65536, 512 * 1024, MaskFormat::kA8,
+                    { 1024, 512 }, { 512, 256 });
+#else
     test_atlas_config(reporter, 65536, 512 * 1024, MaskFormat::kA8,
                       { 1024, 512 }, { 256, 256 });
+#endif
     // 1 MB
     test_atlas_config(reporter, 65536, 1024 * 1024, MaskFormat::kARGB,
                       { 512, 512 }, { 256, 256 });
+#ifdef SK_ENABLE_SMALL_PAGE
+        test_atlas_config(reporter, 65536, 1024 * 1024, MaskFormat::kA8,
+                        { 1024, 1024 }, { 512, 512 });
+#else
     test_atlas_config(reporter, 65536, 1024 * 1024, MaskFormat::kA8,
                       { 1024, 1024 }, { 256, 256 });
+#endif
     // 2 MB
     test_atlas_config(reporter, 65536, 2 * 1024 * 1024, MaskFormat::kARGB,
                       { 1024, 512 }, { 256, 256 });
+#ifdef SK_ENABLE_SMALL_PAGE
+    test_atlas_config(reporter, 65536, 2 * 1024 * 1024, MaskFormat::kA8,
+                      { 2048, 1024 }, { 512, 512 });
+#else
     test_atlas_config(reporter, 65536, 2 * 1024 * 1024, MaskFormat::kA8,
                       { 2048, 1024 }, { 512, 256 });
+#endif
     // 4 MB
     test_atlas_config(reporter, 65536, 4 * 1024 * 1024, MaskFormat::kARGB,
                       { 1024, 1024 }, { 256, 256 });
@@ -291,14 +309,24 @@ DEF_GANESH_TEST(GrDrawOpAtlasConfig_Basic, reporter, options, CtsEnforcement::kA
     // 4MB, restricted texture size
     test_atlas_config(reporter, 1024, 8 * 1024 * 1024, MaskFormat::kARGB,
                       { 1024, 1024 }, { 256, 256 });
+#ifdef SK_ENABLE_SMALL_PAGE
+    test_atlas_config(reporter, 1024, 8 * 1024 * 1024, MaskFormat::kA8,
+                    { 1024, 1024 }, { 512, 512 });
+#else
     test_atlas_config(reporter, 1024, 8 * 1024 * 1024, MaskFormat::kA8,
                       { 1024, 1024 }, { 256, 256 });
+#endif
 
     // 3 MB (should be same as 2 MB)
     test_atlas_config(reporter, 65536, 3 * 1024 * 1024, MaskFormat::kARGB,
                       { 1024, 512 }, { 256, 256 });
+#ifdef SK_ENABLE_SMALL_PAGE
+    test_atlas_config(reporter, 65536, 3 * 1024 * 1024, MaskFormat::kA8,
+                    { 2048, 1024 }, { 512, 512 });
+#else
     test_atlas_config(reporter, 65536, 3 * 1024 * 1024, MaskFormat::kA8,
                       { 2048, 1024 }, { 512, 256 });
+#endif
 
     // minimum size
     test_atlas_config(reporter, 65536, 0, MaskFormat::kARGB,

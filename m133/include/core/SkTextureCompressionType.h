@@ -23,7 +23,10 @@ enum class SkTextureCompressionType {
 
     kBC1_RGB8_UNORM,
     kBC1_RGBA8_UNORM,
-    kLast = kBC1_RGBA8_UNORM,
+    kASTC_RGBA8_4x4,
+    kASTC_RGBA8_6x6,
+    kASTC_RGBA8_8x8,
+    kLast = kASTC_RGBA8_8x8,
     kETC1_RGB8 = kETC2_RGB8_UNORM,
 };
 

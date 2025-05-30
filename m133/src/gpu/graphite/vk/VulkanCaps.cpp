@@ -330,6 +330,12 @@ VkFormat format_from_compression(SkTextureCompressionType compression) {
             return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
         case SkTextureCompressionType::kBC1_RGBA8_UNORM:
             return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+        case SkTextureCompressionType::kASTC_RGBA8_4x4:
+            return VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
+        case SkTextureCompressionType::kASTC_RGBA8_6x6:
+            return VK_FORMAT_ASTC_6x6_UNORM_BLOCK;
+        case SkTextureCompressionType::kASTC_RGBA8_8x8:
+            return VK_FORMAT_ASTC_8x8_UNORM_BLOCK;
         default:
             return VK_FORMAT_UNDEFINED;
     }
