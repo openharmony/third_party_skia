@@ -41,7 +41,7 @@ struct SkPathVerbAnalysis {
     bool     valid;
 };
 
-class SkPathPriv {
+class SK_API SkPathPriv {
 public:
     static SkPathVerbAnalysis AnalyzeVerbs(const uint8_t verbs[], int count);
 
