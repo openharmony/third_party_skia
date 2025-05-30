@@ -2114,7 +2114,7 @@ group("modules") {
 }
 
 config("use_skia_vulkan_headers") {
-  include_dirs = [ "include/third_party/vulkan" ]
+  include_dirs = [ "//third_party/vulkan_headers/include" ]
   defines = [ "SK_USE_INTERNAL_VULKAN_HEADERS" ]
 }
 
