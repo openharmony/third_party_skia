@@ -77,6 +77,9 @@ bool GrCompileVkShaderModule(GrVkGpu* gpu,
                              const SkSL::ProgramSettings& settings,
                              std::string* outSPIRV,
                              SkSL::Program::Interface* outInterface) {
+#ifndef SKIA_OHOS_DEBUG
+    SKIA_OHOS_TRACE_PRIV("skia.shaders", "OHOS_CompileSpriV");
+#endif
     TRACE_EVENT0("skia.shaders", "CompileVkShaderModule");
     skgpu::ShaderErrorHandler* errorHandler = gpu->getContext()->priv().getShaderErrorHandler();
     if (!skgpu::SkSLToSPIRV(gpu->vkCaps().shaderCaps(),

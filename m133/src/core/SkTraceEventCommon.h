@@ -582,6 +582,11 @@ namespace skia_private {
 
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this does nothing.
+
+// print ohos trace without SKIA_OHOS_DEBUG macro
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) \
+    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
+
 #define TRACE_EVENT0(category_group, name) \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
 
