@@ -20,7 +20,7 @@ namespace sk_gpu_test {
 
 // A test-only Vulkan memory allocator. Based on
 // https://skia.googlesource.com/skia/+/c3fbd20fbc7d3662dd31a0e4139226d2951d1ae4/src/gpu/vk/VulkanAMDMemoryAllocator.h.
-class VkTestMemoryAllocator : public skgpu::VulkanMemoryAllocator {
+class SK_API VkTestMemoryAllocator : public skgpu::VulkanMemoryAllocator {
 public:
     static sk_sp<VulkanMemoryAllocator> Make(VkInstance instance,
                                              VkPhysicalDevice physicalDevice,

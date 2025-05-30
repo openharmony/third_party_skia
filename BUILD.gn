@@ -4641,7 +4641,10 @@ ohos_static_library("sksl_ext_static") {
         }
       }
     } else {
-      sources += [ "${skia_root_dir}/src/ports/SkOSFile_posix.cpp" ]
+      sources += [
+        "${skia_root_dir}/src/ports/SkOSFile_posix.cpp",
+        "${skia_root_dir}/tools/library/LoadDynamicLibrary_posix.cpp",
+      ]
       if (is_ios) {
         sources += [ "${skia_root_dir}/src/ports/SkOSFile_ios.h" ]
       }
