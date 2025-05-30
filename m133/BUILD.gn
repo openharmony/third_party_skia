@@ -1096,6 +1096,7 @@ optional("gpu_shared") {
   public_defines = []
   public_deps = []
   frameworks = []
+  public_external_deps = []
 
   sources = skia_shared_gpu_sources
   sources += skia_sksl_pipeline_sources
@@ -1138,6 +1139,7 @@ optional("gpu_shared") {
     public_defines += [ "SK_VULKAN" ]
     sources += skia_shared_vk_sources
     configs += [ ":use_skia_vulkan_headers" ]
+    public_external_deps += [ "vulkan-headers:vulkan_headers" ]
     if (skia_enable_vulkan_debug_layers) {
       public_defines += [ "SK_ENABLE_VK_LAYERS" ]
     }
