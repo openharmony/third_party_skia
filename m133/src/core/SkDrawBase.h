@@ -37,7 +37,7 @@ struct SkIRect;
 struct SkPoint;
 struct SkRect;
 
-class SkDrawBase : public SkGlyphRunListPainterCPU::BitmapDevicePainter {
+class SK_API SkDrawBase : public SkGlyphRunListPainterCPU::BitmapDevicePainter {
 public:
     SkDrawBase();
 

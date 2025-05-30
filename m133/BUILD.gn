@@ -121,6 +121,9 @@ config("skia_public") {
   if (skia_use_safe_libcxx) {
     defines += [ "_LIBCPP_ENABLE_ASSERTIONS=1" ]
   }
+  if (is_skia_dev_build && !is_wasm) {
+    defines += [ "GPU_TEST_UTILS=1" ]
+  }
 
   # Some older versions of the Clang toolchain change the visibility of
   # symbols decorated with API_AVAILABLE macro to be visible. Users of such
@@ -155,15 +158,12 @@ config("skia_private") {
   defines = [ "SK_GAMMA_APPLY_TO_A8" ]
   if (skia_use_fixed_gamma_text) {
     defines += [
-      "SK_GAMMA_EXPONENT=1.4",
+      "SK_GAMMA_EXPONENT=1.0",
       "SK_GAMMA_CONTRAST=0.0",
     ]
   }
   if (is_skia_dev_build && !is_wasm) {
-    defines += [
-      "SK_ALLOW_STATIC_GLOBAL_INITIALIZERS=1",
-      "GPU_TEST_UTILS=1",
-    ]
+    defines += [ "SK_ALLOW_STATIC_GLOBAL_INITIALIZERS=1" ]
   }
   libs = []
   lib_dirs = []
@@ -1096,6 +1096,7 @@ optional("gpu_shared") {
   public_defines = []
   public_deps = []
   frameworks = []
+  public_external_deps = []
 
   sources = skia_shared_gpu_sources
   sources += skia_sksl_pipeline_sources
@@ -1138,6 +1139,7 @@ optional("gpu_shared") {
     public_defines += [ "SK_VULKAN" ]
     sources += skia_shared_vk_sources
     configs += [ ":use_skia_vulkan_headers" ]
+    public_external_deps += [ "vulkan-headers:vulkan_headers" ]
     if (skia_enable_vulkan_debug_layers) {
       public_defines += [ "SK_ENABLE_VK_LAYERS" ]
     }

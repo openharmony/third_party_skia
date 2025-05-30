@@ -28,6 +28,7 @@
 #endif
 #endif
 
+#include "src/gpu/vk/vulkan_header_ext_huawei.h"
 // IWYU pragma: end_exports
 
 #endif

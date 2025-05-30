@@ -22,6 +22,9 @@
 #include "src/gpu/ganesh/vk/GrVkPipeline.h"
 #include "src/gpu/ganesh/vk/GrVkRenderPass.h"
 #include "src/gpu/ganesh/vk/GrVkUtil.h"
+#ifdef SK_VK_PARTIALRENDER
+#include "src/gpu/vk/vulkan_header_ext_huawei.h"
+#endif
 
 #ifdef SK_VK_PARTIALRENDER
 #include "src/gpu/vk/GrVkDrawAreaManager.h"
