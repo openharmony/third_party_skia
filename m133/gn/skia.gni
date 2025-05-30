@@ -131,6 +131,7 @@ declare_args() {
     skia_gl_standard = ""
   }
 
+  skia_vk_enable_partialrender = false
   if (is_fuchsia) {
     skia_use_vulkan = true
   } else {

@@ -4742,10 +4742,10 @@ ohos_static_library("sksl_ext_static") {
       sources += [ "${skia_root_dir}/src/ports/SkDebug_stdio.cpp" ]
     }
 
-    if (skia_enable_spirv_validation) {
-      deps += [ "${skia_third_party_dir}/externals/spirv-tools:spvtools_val" ]
-      defines += [ "SK_ENABLE_SPIRV_VALIDATION" ]
-    }
+    #if (skia_enable_spirv_validation) {
+    #  deps += [ "${skia_third_party_dir}/externals/spirv-tools:spvtools_val" ]
+    #  defines += [ "SK_ENABLE_SPIRV_VALIDATION" ]
+    #}
 
     if (skia_include_multiframe_procs) {
       sources += [ "${skia_root_dir}/tools/SkSharingProc.cpp" ]
