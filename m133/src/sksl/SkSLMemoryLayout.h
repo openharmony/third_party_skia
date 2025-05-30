@@ -195,6 +195,11 @@ public:
                        (0 == alignment % this->alignment(*type.fields()[0].fType)));
                 return (total + alignment - 1) & ~(alignment - 1);
             }
+#ifdef SKSL_EXT
+            case Type::TypeKind::kSampler: {
+                return 0;
+            }
+#endif
             default:
                 SK_ABORT("cannot determine size of type '%s'", type.displayName().c_str());
         }
@@ -222,7 +227,11 @@ public:
                         type.fields().begin(), type.fields().end(), [this](const Field& f) {
                             return this->isSupported(*f.fType);
                         });
-
+#ifdef SKSL_EXT
+            case Type::TypeKind::kSampler: {
+                return true;
+            }
+#endif
             default:
                 return false;
         }

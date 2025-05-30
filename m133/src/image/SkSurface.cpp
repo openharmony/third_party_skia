@@ -24,6 +24,10 @@
 #include "src/core/SkSurfacePriv.h"
 #include "src/image/SkSurface_Base.h"
 
+#ifdef SK_VK_PARTIALRENDER
+#include "src/gpu/vk/GrVkDrawAreaManager.h"
+#endif
+
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -243,3 +247,13 @@ bool SkSurface::characterize(GrSurfaceCharacterization* characterization) const 
 bool SkSurface::isCompatible(const GrSurfaceCharacterization& characterization) const {
     return asConstSB(this)->onIsCompatible(characterization);
 }
+
+#ifdef SK_VK_PARTIALRENDER
+void SkSurface::setDrawingArea(const std::vector<SkIRect>& rects) {
+    GrVkDrawAreaManager::getInstance().bindDrawingArea(this, rects);
+}
+ 
+void SkSurface::clearDrawingArea() {
+    GrVkDrawAreaManager::getInstance().clearSurface(this);
+}
+#endif

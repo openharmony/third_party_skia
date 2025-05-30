@@ -17,4 +17,6 @@ skia_xml_sources = [
   "$_src/xml/SkXMLParser.h",
   "$_src/xml/SkXMLWriter.cpp",
   "$_src/xml/SkXMLWriter.h",
+  "$_src/xml/SkDOMParser.h",
+  "$_src/xml/SkDOMParser.cpp",
 ]

@@ -107,6 +107,9 @@ std::unique_ptr<Variable> Variable::Convert(const Context& context,
                                "out location=0, index=0 is reserved for sk_FragColor");
     }
     if (type->isUnsizedArray() && storage != Variable::Storage::kInterfaceBlock
+#ifdef SKSL_EXT
+                               && storage != Variable::Storage::kGlobal
+#endif
                                && storage != Variable::Storage::kParameter) {
         context.fErrors->error(pos, "unsized arrays are not permitted here");
     }

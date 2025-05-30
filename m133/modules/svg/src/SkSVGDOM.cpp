@@ -52,6 +52,7 @@
 #include "modules/svg/include/SkSVGTypes.h"
 #include "modules/svg/include/SkSVGUse.h"
 #include "modules/svg/include/SkSVGValue.h"
+#include "modules/svg/include/SkSVGXMLDOM.h"
 #include "src/base/SkTSearch.h"
 #include "src/core/SkTraceEvent.h"
 #include "src/xml/SkDOM.h"
@@ -421,7 +422,7 @@ SkSVGDOM::Builder& SkSVGDOM::Builder::setTextShapingFactory(sk_sp<SkShapers::Fac
 
 sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str) const {
     TRACE_EVENT0("skia", TRACE_FUNC);
-    SkDOM xmlDom;
+    SkSVGXMLDOM xmlDom;
     if (!xmlDom.build(str)) {
         return nullptr;
     }
@@ -445,6 +446,38 @@ sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str) const {
 
     return sk_sp<SkSVGDOM>(new SkSVGDOM(sk_sp<SkSVGSVG>(static_cast<SkSVGSVG*>(root.release())),
                                         std::move(fFontMgr),
+                                        std::move(resource_provider),
+                                        std::move(mapper),
+                                        std::move(factory)));
+}
+
+
+sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str, uint64_t svgColor) const {
+    TRACE_EVENT0("skia", TRACE_FUNC);
+    SkSVGXMLDOM xmlDom;
+    if (!xmlDom.build(str, svgColor)) {
+        return nullptr;
+    }
+
+    SkSVGIDMapper mapper;
+    ConstructionContext ctx(&mapper);
+
+    auto root = construct_svg_node(xmlDom, ctx, xmlDom.getRootNode());
+    if (!root || root->tag() != SkSVGTag::kSvg) {
+        return nullptr;
+    }
+
+    class NullResourceProvider final : public skresources::ResourceProvider {
+        sk_sp<SkData> load(const char[], const char[]) const override { return nullptr; }
+    };
+
+    auto resource_provider = fResourceProvider ? fResourceProvider
+                                               : sk_make_sp<NullResourceProvider>();
+
+    auto factory = fTextShapingFactory ? fTextShapingFactory : SkShapers::Primitive::Factory();
+
+    return sk_sp<SkSVGDOM>(new SkSVGDOM(sk_sp<SkSVGSVG>(static_cast<SkSVGSVG*>(root.release())),
+                                        std::move(fFontMgr), 
                                         std::move(resource_provider),
                                         std::move(mapper),
                                         std::move(factory)));
