@@ -184,7 +184,7 @@ public:
     void iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
                                   bool includingGhostSpaces,
                                   const RunVisitor& runVisitor) const;
-    void handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
+    bool handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
                                   EllipsisReadStrategy& ellipsisReadStrategy, const RunVisitor& runVisitor) const;
 #else
     void iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& runVisitor) const;
