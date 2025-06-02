@@ -426,6 +426,17 @@ sk_sp<GrTexture> GrD3DGpu::onCreateCompressedTexture(SkISize dimensions,
     return std::move(d3dTex);
 }
 
+sk_sp<GrTexture> GrD3DGpu::onCreateCompressedTexture(SkISize dimensions,
+                                                const GrBackendFormat& format,
+                                                skgpu::Budgeted budgeted,
+                                                skgpu::Mipmapped mipMapped,
+                                                GrProtected isProtected,
+                                                OH_NativeBuffer* nativeBuffer,
+                                                size_t bufferSize) {
+    SkASSERT(!"unimplemented");
+    return nullptr;
+}
+
 static int get_surface_sample_cnt(GrSurface* surf) {
     if (const GrRenderTarget* rt = surf->asRenderTarget()) {
         return rt->numSamples();

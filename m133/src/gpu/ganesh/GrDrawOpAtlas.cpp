@@ -373,7 +373,7 @@ void GrDrawOpAtlas::compactRadicals(skgpu::AtlasToken startTokenForNextFlush) {
 #endif
 
 void GrDrawOpAtlas::compact(AtlasToken startTokenForNextFlush) {
-    #ifdef SK_ENABLE_SMALL_PAGE
+#ifdef SK_ENABLE_SMALL_PAGE
     int threshold;
     if (this->fUseRadicalsCompact) {
         threshold = 1;
@@ -654,7 +654,7 @@ int GrDrawOpAtlasConfig::resetAsSmallPage() {
     fARGBDimensions.set(512, 512);
     int calculatedNums = static_cast<int>(maxBytes / (fARGBDimensions.width() * fARGBDimensions.height()));
     fPageNums = calculatedNums;
-    return calculatedNums;return maxBytes / (fARGBDimensions.width() * fARGBDimensions.height());
+    return calculatedNums;
 }
 #endif
 

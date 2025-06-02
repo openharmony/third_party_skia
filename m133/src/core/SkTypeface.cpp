@@ -313,6 +313,17 @@ void SkTypeface::SetHash(uint32_t hash)
 {
     hash_ = hash;
 }
+
+sk_sp<SkTypeface> SkTypeface::MakeFromStream(std::unique_ptr<SkStreamAsset> stream, int index) {
+    if (!stream) {
+        return nullptr;
+    }
+    return SkFontMgr::RefDefault()->makeFromStream(std::move(stream), index);
+}
+
+sk_sp<SkTypeface> SkTypeface::MakeFromFile(const char path[], int index) {
+    return SkFontMgr::RefDefault()->makeFromFile(path, index);
+}
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////

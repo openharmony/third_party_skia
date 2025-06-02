@@ -179,7 +179,11 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
                                                  alloc.fMemory,
                                                  alloc.fOffset));
     if (err) {
-        skgpu::VulkanMemory::FreeBufferMemory(allocator, alloc);
+        if (alloc.fIsExternalMemory) {
+            skgpu::VulkanMemory::FreeBufferMemory(gpu, alloc);
+        } else {
+            skgpu::VulkanMemory::FreeBufferMemory(allocator, alloc);
+        }
         VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
         return nullptr;
     }
@@ -190,7 +194,11 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
         uniformDescSet = make_uniform_desc_set(gpu, buffer, size);
         if (!uniformDescSet) {
             VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
-            skgpu::VulkanMemory::FreeBufferMemory(allocator, alloc);
+            if (alloc.fIsExternalMemory) {
+                skgpu::VulkanMemory::FreeBufferMemory(gpu, alloc);
+            } else {
+                skgpu::VulkanMemory::FreeBufferMemory(allocator, alloc);
+            }
             return nullptr;
         }
     }
@@ -198,6 +206,70 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
     return sk_sp<GrVkBuffer>(new GrVkBuffer(
             gpu, size, bufferType, accessPattern, buffer, alloc, uniformDescSet,
             /*label=*/"MakeVkBuffer"));
+}
+
+sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
+                                                     OH_NativeBuffer *nativeBuffer,
+                                                     size_t bufferSize,
+                                                     GrGpuBufferType bufferType,
+                                                     GrAccessPattern accessPattern) {
+    SkASSERT(gpu);
+    SkASSERT(nativeBuffer);
+
+    VkBuffer buffer;
+    skgpu::VulkanAlloc alloc;
+
+    // create the buffer object
+    VkBufferCreateInfo bufInfo{};
+    bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufInfo.flags = 0;
+    bufInfo.size = bufferSize;
+    switch (bufferType) {
+        case GrGpuBufferType::kVertex:
+            bufInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            break;
+        case GrGpuBufferType::kIndex:
+            bufInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            break;
+        case GrGpuBufferType::kDrawIndirect:
+            bufInfo.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+            break;
+        case GrGpuBufferType::kUniform:
+            bufInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            break;
+        case GrGpuBufferType::kXferCpuToGpu:
+            bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            break;
+        case GrGpuBufferType::kXferGpuToCpu:
+            bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            break;
+    }
+
+    bool requiresMappable = gpu->protectedContext() ||
+                        accessPattern == kDynamic_GrAccessPattern ||
+                        accessPattern == kStream_GrAccessPattern ||
+                        !gpu->vkCaps().gpuOnlyBuffersMorePerformant();
+    if (!requiresMappable) {
+        bufInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
+
+    bufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufInfo.queueFamilyIndexCount = 0;
+    bufInfo.pQueueFamilyIndices = nullptr;
+
+    VkResult err = VK_CALL(gpu, CreateBuffer(gpu->device(), &bufInfo, nullptr, &buffer));
+    if (err) {
+        return nullptr;
+    }
+
+    if (!skgpu::VulkanMemory::ImportAndBindBufferMemory(gpu, nativeBuffer, buffer, &alloc)) {
+        VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
+        return nullptr;
+    }
+
+    return sk_sp<GrVkBuffer>(new GrVkBuffer(
+            gpu, bufferSize, bufferType, accessPattern, buffer, alloc, nullptr,
+            /*label=*/"MakeVkBufferFromOHNativeBuffer"));
 }
 
 void GrVkBuffer::vkMap(size_t readOffset, size_t readSize) {
@@ -325,7 +397,11 @@ void GrVkBuffer::vkRelease() {
     VK_CALL(this->getVkGpu(), DestroyBuffer(this->getVkGpu()->device(), fBuffer, nullptr));
     fBuffer = VK_NULL_HANDLE;
 
-    skgpu::VulkanMemory::FreeBufferMemory(this->getVkGpu()->memoryAllocator(), fAlloc);
+    if (fAlloc.fIsExternalMemory) {
+        skgpu::VulkanMemory::FreeBufferMemory(this->getVkGpu(), fAlloc);
+    } else {
+        skgpu::VulkanMemory::FreeBufferMemory(this->getVkGpu()->memoryAllocator(), fAlloc);
+    }
     fAlloc.fMemory = VK_NULL_HANDLE;
     fAlloc.fBackendMemory = 0;
 }
