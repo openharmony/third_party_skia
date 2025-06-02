@@ -28,17 +28,17 @@ public:
 protected:
     int onCountFamilies() const override;
     void onGetFamilyName(int index, SkString* familyName) const override;
-    SkFontStyleSet* onCreateStyleSet(int index)const override;
+    sk_sp<SkFontStyleSet> onCreateStyleSet(int index)const override;
 
-    SkFontStyleSet* onMatchFamily(const char familyName[]) const override;
+    sk_sp<SkFontStyleSet> onMatchFamily(const char familyName[]) const override;
 
-    SkTypeface* onMatchFamilyStyle(const char familyName[],
+    sk_sp<SkTypeface> onMatchFamilyStyle(const char familyName[],
                                            const SkFontStyle& style) const override;
-    SkTypeface* onMatchFamilyStyleCharacter(const char familyName[], const SkFontStyle& style,
+    sk_sp<SkTypeface> onMatchFamilyStyleCharacter(const char familyName[], const SkFontStyle& style,
                                                     const char* bcp47[], int bcp47Count,
                                                     SkUnichar character) const override;
 
-    SkTypeface* onMatchFaceStyle(const SkTypeface* typeface,
+    sk_sp<SkTypeface> onMatchFaceStyle(const SkTypeface* typeface,
                                          const SkFontStyle& style) const override;
 
     sk_sp<SkTypeface> onMakeFromData(sk_sp<SkData> data, int ttcIndex) const override;
@@ -60,10 +60,10 @@ private:
     static int compareLangs(const std::string& langs, const char* bcp47[], int bcp47Count);
     sk_sp<SkTypeface> makeTypeface(std::unique_ptr<SkStreamAsset> stream,
                                     const SkFontArguments& args, const char path[]) const;
-    SkTypeface* findTypeface(const SkFontStyle& style,
-                             const char* bcp47[], int bcp47Count,
-                             SkUnichar character) const;
-    SkTypeface* findSpecialTypeface(SkUnichar character, const SkFontStyle& style) const;
+    sk_sp<SkTypeface> findTypeface(const SkFontStyle& style,
+                                   const char* bcp47[], int bcp47Count,
+                                   SkUnichar character) const;
+    sk_sp<SkTypeface> findSpecialTypeface(SkUnichar character, const SkFontStyle& style) const;
 };
 
 SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS(const char* path);

@@ -33,6 +33,10 @@
 
 #include <memory>
 #include <utility>
+#ifdef ENABLE_TEXT_ENHANCE
+#include <algorithm>
+#include "modules/skparagraph/src/ParagraphLineFetcherImpl.h"
+#endif
 
 namespace skia {
 namespace textlayout {
@@ -107,6 +111,7 @@ ParagraphBuilderImpl::ParagraphBuilderImpl(
     SkASSERT(fFontCollection);
     startStyledBlock();
 }
+
 
 ParagraphBuilderImpl::~ParagraphBuilderImpl() = default;
 
@@ -253,6 +258,17 @@ std::unique_ptr<Paragraph> ParagraphBuilderImpl::Build() {
     return std::make_unique<ParagraphImpl>(
             fUtf8, fParagraphStyle, fStyledBlocks, fPlaceholders, fFontCollection, fUnicode);
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+std::unique_ptr<ParagraphLineFetcher> ParagraphBuilderImpl::buildLineFetcher() {
+    if (fUtf8.isEmpty()) {
+        return nullptr;
+    }
+    fParagraphStyle.setMaxLines(1);
+    fParagraphStyle.setTextAlign(TextAlign::kLeft);
+    return std::make_unique<ParagraphLineFetcherImpl>(Build());
+}
+#endif
 
 SkSpan<char> ParagraphBuilderImpl::getText() {
     this->finalize();

@@ -9,7 +9,14 @@ namespace skia {
 namespace textlayout {
 
 StrutStyle::StrutStyle() {
+#ifdef ENABLE_TEXT_ENHANCE
+    fFontStyle = RSFontStyle(
+        RSFontStyle::NORMAL_WEIGHT,
+        RSFontStyle::NORMAL_WIDTH,
+        RSFontStyle::UPRIGHT_SLANT);
+#else
     fFontStyle = SkFontStyle::Normal();
+#endif
     fFontSize = 14;
     fHeight = 1;
     fLeading = -1;

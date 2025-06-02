@@ -21,8 +21,8 @@ public:
     ~SkFontStyleSet_OHOS() override = default;
     int count() override;
     void getStyle(int index, SkFontStyle* style, SkString* styleName) override;
-    SkTypeface* createTypeface(int index) override;
-    SkTypeface* matchStyle(const SkFontStyle& pattern) override;
+    sk_sp<SkTypeface> createTypeface(int index) override;
+    sk_sp<SkTypeface> matchStyle(const SkFontStyle& pattern) override;
 private:
     std::shared_ptr<FontConfig_OHOS> fontConfig_ = nullptr; // the object of FontConfig_OHOS
     int styleIndex = 0; // the index of the font style set

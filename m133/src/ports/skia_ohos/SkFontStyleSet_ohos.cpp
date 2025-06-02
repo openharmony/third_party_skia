@@ -39,7 +39,7 @@ void SkFontStyleSet_OHOS::getStyle(int index, SkFontStyle* style, SkString* styl
         return;
     }
 
-    SkTypeface* typeface = fontConfig_->getTypeface(styleIndex, index, isFallback);
+    sk_sp<SkTypeface> typeface = fontConfig_->getTypeface(styleIndex, index, isFallback);
     if (typeface == nullptr) {
         return;
     }
@@ -78,13 +78,13 @@ void SkFontStyleSet_OHOS::getStyle(int index, SkFontStyle* style, SkString* styl
  * \n      Return null, if the 'index' is out of range
  * \note The caller must call unref() on the returned object if it's not null
  */
-SkTypeface* SkFontStyleSet_OHOS::createTypeface(int index)
+sk_sp<SkTypeface> SkFontStyleSet_OHOS::createTypeface(int index)
 {
     if (index < 0 || index >= this->count()) {
         return nullptr;
     }
     if (fontConfig_) {
-        return SkSafeRef(fontConfig_->getTypeface(styleIndex, index, isFallback));
+        return fontConfig_->getTypeface(styleIndex, index, isFallback);
     }
     return nullptr;
 }
@@ -94,10 +94,10 @@ SkTypeface* SkFontStyleSet_OHOS::createTypeface(int index)
  * \return the object of a typeface which is the closest matching to 'pattern'
  * \note The caller must call unref() on the returned object
  */
-SkTypeface* SkFontStyleSet_OHOS::matchStyle(const SkFontStyle& pattern)
+sk_sp<SkTypeface> SkFontStyleSet_OHOS::matchStyle(const SkFontStyle& pattern)
 {
     if (fontConfig_) {
-        return SkSafeRef(fontConfig_->getTypeface(styleIndex, pattern, isFallback));
+        return fontConfig_->getTypeface(styleIndex, pattern, isFallback);
     }
     return nullptr;
 }

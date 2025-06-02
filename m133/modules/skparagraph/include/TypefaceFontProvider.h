@@ -12,6 +12,11 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#ifdef ENABLE_TEXT_ENHANCE
+#include "include/core/SkFontMgr.h"
+#include "include/core/SkStream.h"
+#include "include/core/SkString.h"
+#endif
 
 namespace skia {
 namespace textlayout {
@@ -28,6 +33,9 @@ public:
     SkString getFamilyName() const { return fFamilyName; }
     SkString getAlias() const { return fAlias; }
     void appendTypeface(sk_sp<SkTypeface> typeface);
+#ifdef ENABLE_TEXT_ENHANCE
+    void clearTypefaces();
+#endif
 
 private:
     skia_private::TArray<sk_sp<SkTypeface>> fStyles;
@@ -45,7 +53,6 @@ public:
     void onGetFamilyName(int index, SkString* familyName) const override;
 
     sk_sp<SkFontStyleSet> onMatchFamily(const char familyName[]) const override;
-
     sk_sp<SkFontStyleSet> onCreateStyleSet(int) const override;
     sk_sp<SkTypeface> onMatchFamilyStyle(const char familyName[], const SkFontStyle& pattern) const override;
     sk_sp<SkTypeface> onMatchFamilyStyleCharacter(const char[], const SkFontStyle&,
@@ -66,7 +73,13 @@ public:
         return nullptr;
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    sk_sp<SkTypeface> onLegacyMakeTypeface(const char[], SkFontStyle) const override {
+        return nullptr;
+    }
+#else
     sk_sp<SkTypeface> onLegacyMakeTypeface(const char[], SkFontStyle) const override;
+#endif
 
 private:
     skia_private::THashMap<SkString, sk_sp<TypefaceFontStyleSet>> fRegisteredFamilies;
