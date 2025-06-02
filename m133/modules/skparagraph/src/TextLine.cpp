@@ -246,14 +246,14 @@ TextLine::TextLine(ParagraphImpl* owner,
     fEllipsisIndex = EMPTY_INDEX;
     fHyphenIndex = EMPTY_INDEX;
     fLastClipRunLtr = false;
-#endif
-
+#else
     for (auto cluster = &start; cluster <= &end; ++cluster) {
         if (!cluster->run().isPlaceholder()) {
             fShift += cluster->getHalfLetterSpacing();
             break;
         }
     }
+#endif
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
