@@ -109,6 +109,18 @@ public:
 
 #ifdef ENABLE_TEXT_ENHANCE
     static sk_sp<SkTypeface> MakeDefault();
+
+    /** Return a new typeface given a file. If the file does not exist, or is
+        not a valid font file, returns nullptr.
+    */
+    static sk_sp<SkTypeface> MakeFromFile(const char path[], int index = 0);
+
+    /** Return a new typeface given a stream. If the stream is
+        not a valid font file, returns nullptr. Ownership of the stream is
+        transferred, so the caller must not reference it again.
+    */
+    static sk_sp<SkTypeface> MakeFromStream(std::unique_ptr<SkStreamAsset> stream, int index = 0);
+
 #endif
 
     /** Return a new typeface based on this typeface but parameterized as specified in the

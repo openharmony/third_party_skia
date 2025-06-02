@@ -2598,7 +2598,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                 auto clusterEnd8 = context.run->globalClusterIndex(found + 1);
                 auto graphemes = fOwner->countSurroundingGraphemes({clusterIndex8, clusterEnd8});
 #ifdef ENABLE_TEXT_ENHANCE
-                SkScalar center = (context.clip.right() + context.clip.left()) / 2;
+                SkScalar center = glyphemePosLeft + glyphemesWidth * fOwner->getTextSplitRatio();
 #else
                 SkScalar center = glyphemePosLeft + glyphemesWidth / 2;
 #endif

@@ -57,7 +57,11 @@ SkFont::SkFont(sk_sp<SkTypeface> face, SkScalar size, SkScalar scaleX, SkScalar 
     , fEdging(static_cast<unsigned>(kDefault_Edging))
     , fHinting(static_cast<unsigned>(kDefault_Hinting)) {
     if (!fTypeface) {
+#ifdef ENABLE_TEXT_ENHANCE
+        fTypeface = SkTypeface::MakeDefault();
+#else
         fTypeface = SkTypeface::MakeEmpty();
+#endif
     }
 }
 
