@@ -336,11 +336,6 @@ public:
     virtual std::vector<FontInfo> getFonts() const = 0;
 
 #ifdef ENABLE_TEXT_ENHANCE
-    struct TextCutRecord {
-        size_t charbegin;
-        size_t charOver;
-        SkScalar phraseWidth;
-    };
     virtual RSFont getFontAt(TextIndex codeUnitIndex) const = 0;
 
     virtual void setIndents(const std::vector<SkScalar>& indents) = 0;

@@ -6,6 +6,7 @@
 #include "src/base/SkUTF.h"
 #ifdef ENABLE_TEXT_ENHANCE
 #include "src/Run.h"
+#include "include/TextGlobalConfig.h"
 #include "utils/text_trace.h"
 #endif
 
@@ -490,11 +491,6 @@ void OneLineShaper::sortOutGlyphs(std::function<void(GlyphRange)>&& sortOutUnres
 BlockRange OneLineShaper::generateBlockRange(const Block& block, const TextRange& textRange) {
     size_t start = std::max(block.fRange.start, textRange.start);
     size_t end = std::min(block.fRange.end, textRange.end);
-    if (fParagraph->fParagraphStyle.getMaxLines() == 1 &&
-        fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
-        !fParagraph->getEllipsisState()) {
-        end = fParagraph->fText.size();
-    }
     return BlockRange(start, end);
 }
 #endif
@@ -803,14 +799,6 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
                 SkUnicode::BidiRegion& bidiRegion = fParagraph->fBidiRegions[bidiIndex];
                 auto start = std::max(bidiRegion.start, placeholder.fTextBefore.start);
                 auto end = std::min(bidiRegion.end, placeholder.fTextBefore.end);
-#ifdef ENABLE_TEXT_ENHANCE
-                if (fParagraph->fParagraphStyle.getMaxLines() == 1
-                    && fParagraph->fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE
-                    && !fParagraph->getEllipsisState()) {
-                    end = fParagraph->fText.size();
-                }
-#endif // ENABLE_TEXT_ENHANCE
-
                 // Set up the iterators (the style iterator points to a bigger region that it could
                 TextRange textRange(start, end);
                 auto blockRange = fParagraph->findAllBlocks(textRange);

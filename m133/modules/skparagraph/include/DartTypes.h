@@ -68,6 +68,7 @@ enum class EllipsisModal {
     HEAD = 0,
     MIDDLE = 1,
     TAIL = 2,
+    NONE = 3,
 };
 #endif
 
