@@ -446,11 +446,17 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 }
 
 void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     CanvasParagraphPainter painter(canvas);
     paint(&painter, x, y);
 }
 
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     for (auto& line : fLines) {
 #ifdef OHOS_SUPPORT
         line.updateTextLinePaintAttributes();
@@ -460,6 +466,9 @@ void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 }
 
 void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) {
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     auto& style = fTextStyles[0].fStyle;
     float align = 0.0f;
     switch (paragraphStyle().getTextAlign()) {
@@ -793,7 +802,9 @@ SkScalar Run::calculateWidth(size_t start, size_t end, bool clip) const {
 // In some cases we apply spacing to glyphs first and then build the cluster table, in some we do
 // the opposite - just to optimize the most common case.
 void ParagraphImpl::applySpacingAndBuildClusterTable() {
-
+#ifdef OHOS_SUPPORT
+    TEXT_TRACE_FUNC();
+#endif
     // Check all text styles to see what we have to do (if anything)
     size_t letterSpacingStyles = 0;
     bool hasWordSpacing = false;
