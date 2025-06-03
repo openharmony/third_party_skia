@@ -98,6 +98,20 @@ SkCodec::Result SkJpegCodec::ReadHeader(
         jpeg_save_markers(dinfo, kExifMarker, 0xFFFF);
         jpeg_save_markers(dinfo, kICCMarker, 0xFFFF);
         jpeg_save_markers(dinfo, kMpfMarker, 0xFFFF);
+        jpeg_save_markers(dinfo, kJpegMarkerAPP0, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp3Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp4Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp5Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp6Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp7Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp8Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp9Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp10Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp11Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp12Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp13Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp14Marker, 0xFFFF);
+        jpeg_save_markers(dinfo, kApp15Marker, 0xFFFF);
     }
 
     // Read the jpeg header

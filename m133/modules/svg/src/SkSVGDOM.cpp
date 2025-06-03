@@ -52,6 +52,7 @@
 #include "modules/svg/include/SkSVGTypes.h"
 #include "modules/svg/include/SkSVGUse.h"
 #include "modules/svg/include/SkSVGValue.h"
+#include "modules/svg/include/SkSVGXMLDOM.h"
 #include "src/base/SkTSearch.h"
 #include "src/core/SkTraceEvent.h"
 #include "src/xml/SkDOM.h"
@@ -421,7 +422,7 @@ SkSVGDOM::Builder& SkSVGDOM::Builder::setTextShapingFactory(sk_sp<SkShapers::Fac
 
 sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str) const {
     TRACE_EVENT0("skia", TRACE_FUNC);
-    SkDOM xmlDom;
+    SkSVGXMLDOM xmlDom;
     if (!xmlDom.build(str)) {
         return nullptr;
     }
@@ -450,6 +451,38 @@ sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str) const {
                                         std::move(factory)));
 }
 
+
+sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str, uint64_t svgColor) const {
+    TRACE_EVENT0("skia", TRACE_FUNC);
+    SkSVGXMLDOM xmlDom;
+    if (!xmlDom.build(str, svgColor)) {
+        return nullptr;
+    }
+
+    SkSVGIDMapper mapper;
+    ConstructionContext ctx(&mapper);
+
+    auto root = construct_svg_node(xmlDom, ctx, xmlDom.getRootNode());
+    if (!root || root->tag() != SkSVGTag::kSvg) {
+        return nullptr;
+    }
+
+    class NullResourceProvider final : public skresources::ResourceProvider {
+        sk_sp<SkData> load(const char[], const char[]) const override { return nullptr; }
+    };
+
+    auto resource_provider = fResourceProvider ? fResourceProvider
+                                               : sk_make_sp<NullResourceProvider>();
+
+    auto factory = fTextShapingFactory ? fTextShapingFactory : SkShapers::Primitive::Factory();
+
+    return sk_sp<SkSVGDOM>(new SkSVGDOM(sk_sp<SkSVGSVG>(static_cast<SkSVGSVG*>(root.release())),
+                                        std::move(fFontMgr), 
+                                        std::move(resource_provider),
+                                        std::move(mapper),
+                                        std::move(factory)));
+}
+
 SkSVGDOM::SkSVGDOM(sk_sp<SkSVGSVG> root,
                    sk_sp<SkFontMgr> fmgr,
                    sk_sp<skresources::ResourceProvider> rp,
@@ -460,6 +493,7 @@ SkSVGDOM::SkSVGDOM(sk_sp<SkSVGSVG> root,
         , fTextShapingFactory(std::move(fact))
         , fResourceProvider(std::move(rp))
         , fIDMapper(std::move(mapper))
+        , fSVGResizePercentage(DEFAULT_RESIZE_PERCENTAGE)
         , fContainerSize(fRoot->intrinsicSize(SkSVGLengthContext(SkSize::Make(0, 0)))) {
     SkASSERT(fResourceProvider);
     SkASSERT(fTextShapingFactory);
@@ -468,7 +502,7 @@ SkSVGDOM::SkSVGDOM(sk_sp<SkSVGSVG> root,
 void SkSVGDOM::render(SkCanvas* canvas) const {
     TRACE_EVENT0("skia", TRACE_FUNC);
     if (fRoot) {
-        SkSVGLengthContext       lctx(fContainerSize);
+        SkSVGLengthContext       lctx(fContainerSize, fSVGResizePercentage);
         SkSVGPresentationContext pctx;
         fRoot->render(SkSVGRenderContext(canvas,
                                          fFontMgr,
@@ -496,6 +530,13 @@ void SkSVGDOM::renderNode(SkCanvas* canvas, SkSVGPresentationContext& pctx, cons
                                              fTextShapingFactory),
                           SkSVGIRI(SkSVGIRI::Type::kLocal, SkSVGStringType(id)));
     }
+}
+
+void SkSVGDOM::setResizePercentage(float resizePercentage)
+{
+    fSVGResizePercentage *= resizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    fContainerSize.fWidth *= fSVGResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
+    fContainerSize.fHeight *= fSVGResizePercentage / DEFAULT_RESIZE_PERCENTAGE;
 }
 
 const SkSize& SkSVGDOM::containerSize() const {

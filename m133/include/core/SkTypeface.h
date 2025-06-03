@@ -107,6 +107,10 @@ public:
     /** Returns a non-null typeface which contains no glyphs. */
     static sk_sp<SkTypeface> MakeEmpty();
 
+#ifdef ENABLE_TEXT_ENHANCE
+    static sk_sp<SkTypeface> MakeDefault();
+#endif
+
     /** Return a new typeface based on this typeface but parameterized as specified in the
         SkFontArguments. If the SkFontArguments does not supply an argument for a parameter
         in the font then the value from this typeface will be used as the value for that
@@ -114,6 +118,10 @@ public:
         this typeface may be ref'ed and returned. May return nullptr on failure.
     */
     sk_sp<SkTypeface> makeClone(const SkFontArguments&) const;
+
+#ifdef ENABLE_TEXT_ENHANCE
+    static std::vector<sk_sp<SkTypeface>> GetSystemFonts();
+#endif
 
     /**
      *  A typeface can serialize just a descriptor (names, etc.), or it can also include the
@@ -331,6 +339,12 @@ public:
      */
     SkRect getBounds() const;
 
+#ifdef ENABLE_TEXT_ENHANCE
+    bool isCustomTypeface() const;
+    void setIsCustomTypeface(bool isCustom);
+    bool isThemeTypeface() const;
+    void setIsThemeTypeface(bool isTheme);
+#endif
     // PRIVATE / EXPERIMENTAL -- do not call
     void filterRec(SkScalerContextRec* rec) const {
         this->onFilterRec(rec);
@@ -413,6 +427,11 @@ protected:
      *  This name may or may not be produced by the family name iterator.
      */
     virtual void onGetFamilyName(SkString* familyName) const = 0;
+
+#ifdef ENABLE_TEXT_ENHANCE
+    virtual void onGetFontPath(SkString* path) const { path->reset(); }
+#endif
+
     virtual bool onGetPostScriptName(SkString*) const = 0;
     virtual int onGetResourceName(SkString* resourceName) const; // TODO: = 0;
 
@@ -443,6 +462,17 @@ private:
     friend class SkPDFFont;          // getAdvancedMetrics
     friend class SkTypeface_proxy;
 
+#ifdef ENABLE_TEXT_ENHANCE
+    enum Style {
+        kNormal = 0,
+        kBold   = 0x01,
+        kItalic = 0x02,
+        // helpers
+        kBoldItalic = 0x03
+    };
+    static SkFontStyle FromOldStyle(Style oldStyle);
+    static sk_sp<SkTypeface> GetDefaultTypeface(Style style = SkTypeface::kNormal);
+#endif
     friend class SkFontPriv;         // getGlyphToUnicodeMap
 
 private:
@@ -451,7 +481,10 @@ private:
     mutable SkRect      fBounds;
     mutable SkOnce      fBoundsOnce;
     bool                fIsFixedPitch;
-
+#ifdef ENABLE_TEXT_ENHANCE
+    bool                fIsCustom{false};
+    bool                fIsTheme{false};
+#endif
     using INHERITED = SkWeakRefCnt;
 };
 #endif

@@ -3,11 +3,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/ohos.gni")
 import("gn/codec.gni")
 import("gn/fuchsia_defines.gni")
 import("gn/shared_sources.gni")
 import("gn/skia.gni")
 import("gn/toolchain/wasm.gni")
+import("../build_overrides/skia.gni")
+import("//build/templates/cxx/prebuilt.gni")
+import("gn/effects.gni")
 
 if (defined(is_mingw) && is_mingw == true) {
   is_win = true
@@ -76,6 +80,8 @@ config("skia_public") {
   defines = [
     "SK_CODEC_DECODES_BMP",
     "SK_CODEC_DECODES_WBMP",
+    "ENABLE_TEXT_ENHANCE",
+    "USE_M133_SKIA",
   ]
   cflags_objcc = []
   if (is_component_build) {
@@ -118,10 +124,22 @@ config("skia_public") {
   if (skia_use_safe_libcxx) {
     defines += [ "_LIBCPP_ENABLE_ASSERTIONS=1" ]
   }
+  if (ace_enable_skia_small_page_texture && is_ohos) {
+    defines += [ "SK_ENABLE_SMALL_PAGE" ]
+  }
+  if (ace_enable_skia_small_page_texture) {
+    defines += [ "SK_ENABLE_SMALL_PAGE" ]
+  }
+  if (is_skia_dev_build && !is_wasm) {
+    defines += [ "GPU_TEST_UTILS=1" ]
+  }
 
   # Some older versions of the Clang toolchain change the visibility of
   # symbols decorated with API_AVAILABLE macro to be visible. Users of such
   # toolchains suppress the use of this macro till toolchain updates are made.
+  if (is_mac) {
+    defines += [ "SK_GL_ENABLE_330_MAC" ]
+  }
   if (is_mac || is_ios) {
     if (skia_enable_api_available_macro) {
       defines += [ "SK_ENABLE_API_AVAILABLE" ]
@@ -133,16 +151,19 @@ config("skia_public") {
   if (is_win) {
     defines += [ "SK_BUILD_FOR_WIN" ]
   }
+
+  # OH ISSUE: jpeg optimize
+  if (target_platform == "pc") {
+    defines += [ "TURBO_JPEG_HUFF_DECODE_OPT" ]
+    defines += [ "TURBO_PNG_MULTY_LINE_OPT" ]
+  }
 }
 
 # Skia internal APIs, used by Skia itself and a few test tools.
 config("skia_private") {
   # visibility = [ "./*" ]
 
-  cflags = [
-    "-Wno-format",
-    "-fvisibility=hidden",
-  ]
+  cflags = [ "-Wno-format" ]
 
   cflags_cc = [
     "-Wno-array-parameter",
@@ -150,17 +171,18 @@ config("skia_private") {
   ]
 
   defines = [ "SK_GAMMA_APPLY_TO_A8" ]
+  if (target_cpu == "x86_64" || current_os == "windows" ||
+      current_os == "mac" || current_os == "linux" || current_os == "ios") {
+    cflags_cc += [ "-Wno-psabi" ]
+  }
   if (skia_use_fixed_gamma_text) {
     defines += [
-      "SK_GAMMA_EXPONENT=1.4",
+      "SK_GAMMA_EXPONENT=1.0",
       "SK_GAMMA_CONTRAST=0.0",
     ]
   }
   if (is_skia_dev_build && !is_wasm) {
-    defines += [
-      "SK_ALLOW_STATIC_GLOBAL_INITIALIZERS=1",
-      "GPU_TEST_UTILS=1",
-    ]
+    defines += [ "SK_ALLOW_STATIC_GLOBAL_INITIALIZERS=1" ]
   }
   libs = []
   lib_dirs = []
@@ -225,6 +247,81 @@ template("opts") {
 
 is_x86 = current_cpu == "x64" || current_cpu == "x86"
 is_loong64 = current_cpu == "loong64"
+opts("none") {
+  enabled = !is_x86 && current_cpu != "arm" && current_cpu != "arm64"
+  sources = skia_opts.none_sources
+  cflags = []
+}
+
+opts("armv7") {
+  enabled = current_cpu == "arm"
+  sources = skia_opts.armv7_sources + skia_opts.neon_sources
+  cflags = []
+}
+
+opts("arm64") {
+  enabled = current_cpu == "arm64"
+  sources = skia_opts.arm64_sources
+  cflags = []
+}
+
+opts("crc32") {
+  enabled = current_cpu == "arm64"
+  sources = skia_opts.crc32_sources
+  cflags = [ "-march=armv8-a+crc" ]
+}
+opts("sse2") {
+  enabled = is_x86
+  sources = skia_opts.sse2_sources
+  if (!is_clang && is_win) {
+    defines = [ "SK_CPU_SSE_LEVEL=SK_CPU_SSE_LEVEL_SSE2" ]
+  } else {
+    cflags = [ "-msse2" ]
+  }
+}
+
+opts("ssse3") {
+  enabled = is_x86
+  sources = skia_opts.ssse3_sources
+  if (!is_clang && is_win) {
+    defines = [ "SK_CPU_SSE_LEVEL=SK_CPU_SSE_LEVEL_SSSE3" ]
+  } else {
+    cflags = [ "-mssse3" ]
+  }
+}
+
+opts("sse41") {
+  enabled = is_x86
+  sources = skia_opts.sse41_sources
+  if (!is_clang && is_win) {
+    defines = [ "SK_CPU_SSE_LEVEL=SK_CPU_SSE_LEVEL_SSE41" ]
+  } else {
+    cflags = [ "-msse4.1" ]
+  }
+}
+
+opts("sse42") {
+  enabled = is_x86
+  sources = skia_opts.sse42_sources
+  if (!is_clang && is_win) {
+    defines = [ "SK_CPU_SSE_LEVEL=SK_CPU_SSE_LEVEL_SSE42" ]
+  } else {
+    cflags = [ "-msse4.2" ]
+  }
+}
+
+opts("avx") {
+  enabled = is_x86
+  sources = skia_opts.avx_sources
+  if (is_win && !is_mingw) {
+    cflags = [ "/arch:AVX" ]
+  } else {
+    cflags = [ "-mavx" ]
+    if (is_mac && is_debug) {
+      cflags += [ "-fno-stack-check" ]  # Work around skia:9709
+    }
+  }
+}
 
 opts("hsw") {
   enabled = is_x86
@@ -250,6 +347,26 @@ opts("lasx") {
   enabled = is_loong64
   sources = skia_opts.lasx_sources
   cflags = [ "-mlasx" ]
+}
+
+config("harfbuzz_config") {
+  include_dirs = [ "${skia_root_dir}/third_party/externals/harfbuzz/src" ]
+
+  defines = [
+    "HAVE_ICU",
+    "HAVE_ICU_BUILTIN",
+    "HAVE_OT",
+    "HAVE_CONFIG_OVERRIDE_H",
+    "HB_NO_FALLBACK_SHAPE",
+    "HB_NO_WIN1256",
+  ]
+}
+
+config("icu_config") {
+  include_dirs = [ "${skia_third_party_dir}/externals/icu/source/common" ]
+  if (is_arkui_x) {
+    include_dirs = [ "//third_party/icu/icu4c/source/common" ]
+  }
 }
 
 # Any feature of Skia that requires third-party code should be optional and use this template.
@@ -393,6 +510,46 @@ optional("fontmgr_android_ndk") {
   sources = skia_ports_fontmgr_android_ndk_sources
 }
 
+optional("fontmgr_symbol_load") {
+  enabled = skia_enable_fontmgr_ohos || skia_enable_fontmgr_win ||
+            skia_use_fonthost_mac
+  include_dirs = [
+    "${skia_root_dir}/include/private",
+    "${skia_root_dir}/include/core",
+    "${skia_root_dir}/src/core",
+    "${skia_root_dir}/src/ports",
+    "${skia_root_dir}/src/ports/skia_ohos",
+  ]
+  deps = [
+    ":typeface_freetype",
+    "${skia_third_party_dir}/expat",
+  ]
+  if (is_arkui_x) {
+    deps += [
+      "//third_party/bounds_checking_function:libsec_static",
+      "//third_party/jsoncpp:jsoncpp_static",
+    ]
+  } else {
+    external_deps = [ "jsoncpp:jsoncpp" ]
+    if (is_component_build) {
+      external_deps += [ "bounds_checking_function:libsec_shared" ]
+    } else {
+      external_deps += [ "bounds_checking_function:libsec_static" ]
+    }
+  }
+
+  deps += [
+    ":ohos_font_file_map.json",
+    ":ohos_fontconfig.json",
+    ":ohos_fontconfig_old.json",
+  ]
+  if (skia_feature_product == "wearable") {
+    deps += [ ":ohos_fontconfig_wearable.json" ]
+  }
+  public = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.h" ]
+  sources = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
+}
+
 optional("fontmgr_custom") {
   enabled =
       skia_enable_fontmgr_custom_directory ||
@@ -466,7 +623,11 @@ skia_source_set("fontscanner_tests") {
 }
 
 optional("fontmgr_FontConfigInterface") {
-  enabled = skia_enable_fontmgr_FontConfigInterface
+  if (use_oh_skia) {
+    enabled = false
+  } else {
+    enabled = skia_enable_fontmgr_FontConfigInterface
+  }
   public_defines = [ "SK_FONTMGR_FCI_AVAILABLE" ]
   deps = [
     ":typeface_freetype",
@@ -554,6 +715,99 @@ optional("fontmgr_win") {
       ]
     } else {
       include_dirs = [ "${skia_dwritecore_sdk}/include" ]
+    }
+  }
+}
+
+if (use_oh_skia && !is_arkui_x) {
+  ohos_prebuilt_etc("ohos_fontconfig.json") {
+    source =
+        "${skia_root_dir}/src/ports/skia_ohos/config/fontconfig_ohos.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_fontconfig_old.json") {
+    source = "${skia_root_dir}/src/ports/skia_ohos/config/fontconfig.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_font_file_map.json") {
+    source = "${skia_root_dir}/src/ports/skia_ohos/config/font_file_map.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  ohos_prebuilt_etc("ohos_fontconfig_wearable.json") {
+    source = "${skia_root_dir}/src/ports/skia_ohos/config/fontconfig_ohos_wearable.json"
+    output = "fontconfig_ohos.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
+  optional("fontmgr_ohos") {
+    enabled = skia_enable_fontmgr_ohos
+
+    public = [
+      "src/ports/skia_ohos/FontConfig_ohos.h",
+      "src/ports/skia_ohos/FontInfo_ohos.h",
+      "src/ports/skia_ohos/SkFontMgr_ohos.h",
+      "src/ports/skia_ohos/SkFontStyleSet_ohos.h",
+      "src/ports/skia_ohos/SkTypeface_ohos.h",
+    ]
+    sources = [
+      "src/ports/skia_ohos/FontConfig_ohos.cpp",
+      "src/ports/skia_ohos/SkFontMgr_ohos.cpp",
+      "src/ports/skia_ohos/SkFontStyleSet_ohos.cpp",
+      "src/ports/skia_ohos/SkTypeface_ohos.cpp",
+    ]
+
+    include_dirs = [
+      "${skia_root_dir}/include/private",
+      "${skia_root_dir}/include/private/base",
+      "${skia_root_dir}/include/core",
+      "${skia_root_dir}/src/core",
+      "${skia_root_dir}/src/ports",
+      "${skia_root_dir}/src/ports/skia_ohos",
+    ]
+
+    deps = [
+      ":fontmgr_symbol_load",
+      ":typeface_freetype",
+      "${skia_third_party_dir}/expat",
+    ]
+    external_deps = [ "jsoncpp:jsoncpp" ]
+    if (is_component_build) {
+      external_deps += [ "bounds_checking_function:libsec_shared" ]
+    } else {
+      external_deps += [ "bounds_checking_function:libsec_static" ]
+    }
+
+    deps += [
+      ":ohos_font_file_map.json",
+      ":ohos_fontconfig.json",
+      ":ohos_fontconfig_old.json",
+    ]
+    if (skia_feature_product == "wearable") {
+      deps += [ ":ohos_fontconfig_wearable.json" ]
+    }
+
+    if (skia_feature_wuji_enable) {
+      deps += [ "$ace_graphic_ext:ohos_fonts_wuji" ]
+    } else if (skia_enable_standard_fonts) {
+      deps += []
+    }
+
+    if (use_mingw_win) {
+      defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
+    } else if (use_mac) {
+      defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+    } else if (use_linux) {
+      defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
+    } else if (is_ohos) {
+      external_deps += [ "init:libbegetutil" ]
+      defines = [ "SK_BUILD_FONT_MGR_FOR_OHOS" ]
     }
   }
 }
@@ -960,6 +1214,7 @@ optional("gpu_shared") {
   public_defines = []
   public_deps = []
   frameworks = []
+  public_external_deps = []
 
   sources = skia_shared_gpu_sources
   sources += skia_sksl_pipeline_sources
@@ -1002,12 +1257,16 @@ optional("gpu_shared") {
     public_defines += [ "SK_VULKAN" ]
     sources += skia_shared_vk_sources
     configs += [ ":use_skia_vulkan_headers" ]
+    public_external_deps += [ "vulkan-headers:vulkan_headers" ]
     if (skia_enable_vulkan_debug_layers) {
       public_defines += [ "SK_ENABLE_VK_LAYERS" ]
     }
     if (skia_use_vma) {
       sources += skia_vma_sources
       public_deps += [ "src/gpu/vk/vulkanmemoryallocator" ]
+    }
+    if (skia_vk_enable_partialrender) {
+      public_defines += [ "SK_VK_PARTIALRENDER" ]
     }
   }
 
@@ -1061,9 +1320,7 @@ optional("gpu") {
       sources += skia_android_gl_sources
 
       # this lib is required to link against AHardwareBuffer
-      if (defined(ndk_api) && ndk_api >= 26) {
-        libs += [ "android" ]
-      }
+      libs += [ "android" ]
     } else if (skia_use_egl || is_ohos) {
       if (skia_use_epoxy_egl) {
         sources += [ "src/gpu/ganesh/gl/epoxy/GrGLMakeEpoxyEGLInterface.cpp" ]
@@ -1331,8 +1588,17 @@ optional("pdf") {
   enabled = skia_use_zlib && skia_enable_pdf && skia_use_libjpeg_turbo_decode &&
             skia_use_libjpeg_turbo_encode
   public_defines = [ "SK_SUPPORT_PDF" ]
-
-  deps = [ "${skia_third_party_dir}/zlib" ]
+  deps = []
+  external_deps = []
+  if (use_oh_skia) {
+    external_deps += [ "zlib:libz" ]
+  } else {
+    if (skia_feature_zlib != "") {
+      external_deps += [ skia_feature_zlib ]
+    } else {
+      deps += [ "${skia_third_party_dir}/zlib" ]
+    }
+  }
   public = skia_pdf_public
   sources = skia_pdf_sources
   sources_when_disabled = [ "src/pdf/SkDocument_PDF_None.cpp" ]
@@ -1364,6 +1630,7 @@ optional("png_decode_libpng") {
   deps = [ "${skia_third_party_dir}/libpng" ]
   sources = [ "src/codec/SkIcoCodec.cpp" ] + skia_codec_png_base +
             skia_codec_libpng_srcs
+  defines = [ "ICO_CODEC_HW_HIGH_QUALITY_DECODE" ]
 }
 
 optional("png_encode") {
@@ -1404,6 +1671,12 @@ optional("typeface_freetype") {
 
   public_defines = [ "SK_TYPEFACE_FACTORY_FREETYPE" ]
   deps = [ "${skia_third_party_dir}/freetype2" ]
+  if (defined(external_deps)) {
+    external_deps += [ "bounds_checking_function:libsec_shared" ]
+  } else {
+    external_deps = [ "bounds_checking_function:libsec_shared" ]
+  }
+
   sources = skia_ports_freetype_sources
   sources_for_tests = [ "tests/FontScanner_FreeTypeTest.cpp" ]
 }

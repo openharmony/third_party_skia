@@ -40,6 +40,9 @@ bool GrVkFormatIsSupported(VkFormat format) {
         case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:
         case VK_FORMAT_BC1_RGB_UNORM_BLOCK:
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
+        case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:
+        case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:
+        case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:
         case VK_FORMAT_R16G16B16A16_SFLOAT:
         case VK_FORMAT_R16_SFLOAT:
         case VK_FORMAT_R16_UNORM:
@@ -74,6 +77,9 @@ bool GrCompileVkShaderModule(GrVkGpu* gpu,
                              const SkSL::ProgramSettings& settings,
                              std::string* outSPIRV,
                              SkSL::Program::Interface* outInterface) {
+#ifndef SKIA_OHOS_DEBUG
+    SKIA_OHOS_TRACE_PRIV("skia.shaders", "OHOS_CompileSpriV");
+#endif
     TRACE_EVENT0("skia.shaders", "CompileVkShaderModule");
     skgpu::ShaderErrorHandler* errorHandler = gpu->getContext()->priv().getShaderErrorHandler();
     if (!skgpu::SkSLToSPIRV(gpu->vkCaps().shaderCaps(),

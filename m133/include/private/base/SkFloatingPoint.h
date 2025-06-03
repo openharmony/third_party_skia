@@ -42,6 +42,13 @@ static inline constexpr bool SkIsNaN(T x) {
     return x != x;
 }
 
+// warning: comparing floating point with == or != is unsafe
+// storing and comparing against same constants ok.
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
 // Subtracting a value from itself will result in zero, except for NAN or ±Inf, which make NAN.
 // Multiplying a group of values against zero will result in zero for each product, except for
 // NAN or ±Inf, which will result in NAN and continue resulting in NAN for the rest of the elements.

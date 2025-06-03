@@ -98,9 +98,9 @@ protected:
             , fMipmapped(mipmapped)
             , fMemoryless(memoryless) {}
 
-private:
-    size_t onGpuMemorySize() const final;
+    virtual size_t onGpuMemorySize() const override;
 
+private:
     void onSetLabel() override{}
 
     void computeScratchKey(skgpu::ScratchKey*) const final;

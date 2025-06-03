@@ -23,7 +23,7 @@ bool stoi(std::string_view s, SKSL_INT* value);
 
 namespace String {
 
-std::string printf(const char* fmt, ...) SK_PRINTF_LIKE(1, 2);
+SK_API std::string printf(const char* fmt, ...) SK_PRINTF_LIKE(1, 2);
 void appendf(std::string* str, const char* fmt, ...) SK_PRINTF_LIKE(2, 3);
 void vappendf(std::string* str, const char* fmt, va_list va) SK_PRINTF_LIKE(2, 0);
 

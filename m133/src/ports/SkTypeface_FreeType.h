@@ -30,7 +30,7 @@ typedef struct FT_StreamRec_* FT_Stream;
 typedef signed long FT_Pos;
 typedef struct FT_BBox_ FT_BBox;
 
-class SkTypeface_FreeType : public SkTypeface {
+class SK_API SkTypeface_FreeType : public SkTypeface {
 public:
     /** Fetch units/EM from "head" table if needed (ie for bitmap fonts) */
     static int GetUnitsPerEm(FT_Face face);

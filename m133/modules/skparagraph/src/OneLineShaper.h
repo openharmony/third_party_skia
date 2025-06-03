@@ -76,8 +76,21 @@ private:
         Everything
     };
 
+#ifdef ENABLE_TEXT_ENHANCE
+    using TypefaceVisitor = std::function<Resolved(std::shared_ptr<RSTypeface> typeface)>;
+#else
     using TypefaceVisitor = std::function<Resolved(sk_sp<SkTypeface> typeface)>;
+#endif
     void matchResolvedFonts(const TextStyle& textStyle, const TypefaceVisitor& visitor);
+
+#ifdef ENABLE_TEXT_ENHANCE
+    bool isUnresolvedCombineGlyphRange(std::shared_ptr<Run> run, size_t glyphStart, size_t glyphEnd,
+        size_t charStart) const;
+    void splitUnresolvedBlockAndStageResolvedSubBlock(
+        std::deque<RunBlock>& stagedUnresolvedBlocks, const RunBlock& unresolvedBlock);
+    void shapeUnresolvedTextSeparatelyFromUnresolvedBlock(const TextStyle& textStyle, const TypefaceVisitor& visitor);
+#endif
+
 #ifdef SK_DEBUG
     void printState();
 #endif
@@ -102,6 +115,9 @@ private:
 
     void commitRunBuffer(const RunInfo&) override;
 
+#ifdef ENABLE_TEXT_ENHANCE
+    void adjustRange(GlyphRange& glyphs, TextRange& textRange);
+#endif
     TextRange clusteredText(GlyphRange& glyphs);
     ClusterIndex clusterIndex(GlyphIndex glyph) {
         return fCurrentText.start + fCurrentRun->fClusterIndexes[glyph];
@@ -111,6 +127,9 @@ private:
     void sortOutGlyphs(std::function<void(GlyphRange)>&& sortOutUnresolvedBLock);
     ClusterRange normalizeTextRange(GlyphRange glyphRange);
     void fillGaps(size_t);
+#ifdef ENABLE_TEXT_ENHANCE
+	BlockRange generateBlockRange(const Block& block, const TextRange& textRange);
+#endif
 
     ParagraphImpl* fParagraph;
     TextRange fCurrentText;
@@ -131,10 +150,19 @@ private:
 
         FontKey() {}
 
+#ifdef ENABLE_TEXT_ENHANCE
+        FontKey(SkUnichar unicode, RSFontStyle fontStyle, SkString locale)
+            : fUnicode(unicode), fFontStyle(fontStyle), fLocale(locale) { }
+#else
         FontKey(SkUnichar unicode, SkFontStyle fontStyle, SkString locale)
             : fUnicode(unicode), fFontStyle(fontStyle), fLocale(std::move(locale)) { }
+#endif
         SkUnichar fUnicode;
+#ifdef ENABLE_TEXT_ENHANCE
+        RSFontStyle fFontStyle;
+#else
         SkFontStyle fFontStyle;
+#endif
         SkString fLocale;
 
         bool operator==(const FontKey& other) const;
@@ -144,7 +172,11 @@ private:
         };
     };
 
+#ifdef ENABLE_TEXT_ENHANCE
+    std::unordered_map<FontKey, std::shared_ptr<RSTypeface>, FontKey::Hasher> fFallbackFonts;
+#else
     skia_private::THashMap<FontKey, sk_sp<SkTypeface>, FontKey::Hasher> fFallbackFonts;
+#endif
 };
 
 }  // namespace textlayout

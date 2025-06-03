@@ -310,6 +310,7 @@ private:
         kIntel_VkVendor = 32902,
         kNvidia_VkVendor = 4318,
         kQualcomm_VkVendor = 20803,
+        kHisi_VkVendor = 6629,
     };
 
     enum class IntelGPUType {
@@ -450,7 +451,7 @@ private:
         std::unique_ptr<ColorTypeInfo[]> fColorTypeInfos;
         int fColorTypeInfoCount = 0;
     };
-    static const size_t kNumVkFormats = 25;
+    static const size_t kNumVkFormats = 28;
     FormatInfo fFormatTable[kNumVkFormats];
 
     FormatInfo& getFormatInfo(VkFormat);

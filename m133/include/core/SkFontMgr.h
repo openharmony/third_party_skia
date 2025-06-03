@@ -13,6 +13,20 @@
 
 #include <memory>
 
+#ifdef ENABLE_TEXT_ENHANCE
+#include <vector>
+enum FontCheckCode {
+    SUCCESSED                  = 0, /** no error */
+    ERROR_PARSE_CONFIG_FAILED  = 1, /** failed to parse the JSON configuration file */
+    ERROR_TYPE_OTHER           = 2  /** other reasons, such as empty input parameters or other internal reasons */
+};
+
+struct SkByteArray {
+    std::unique_ptr<uint8_t[]> strData = nullptr; // A byte array in UTF-16BE encoding
+    uint32_t strLen = 0;
+};
+#endif
+
 class SkData;
 class SkFontStyle;
 class SkStreamAsset;
@@ -112,8 +126,39 @@ public:
 
     sk_sp<SkTypeface> legacyMakeTypeface(const char familyName[], SkFontStyle style) const;
 
+    /** Return the default fontmgr. */
+    static sk_sp<SkFontMgr> RefDefault();
+#ifdef ENABLE_TEXT_ENHANCE
+    // this method is never called -- will be removed
+    virtual sk_sp<SkTypeface> onMatchFaceStyle(const SkTypeface*,
+                                               const SkFontStyle&) const {
+        return nullptr;
+    }
+
+    std::vector<sk_sp<SkTypeface>> getSystemFonts();
+#endif
+
     /* Returns an empty font manager without any typeface dependencies */
     static sk_sp<SkFontMgr> RefEmpty();
+
+#ifdef ENABLE_TEXT_ENHANCE
+    /**
+     *  Adding a base class interface function to a subclass, generally doesn't go here
+     *  0 means valid
+     */
+    virtual int GetFontFullName(int fontFd, std::vector<SkByteArray> &fullnameVec)
+    {
+        return ERROR_TYPE_OTHER;
+    }
+    /**
+     *  Adding a base class interface function to a subclass, generally doesn't go here
+     *  0 means success
+     */
+    virtual int ParseInstallFontConfig(const std::string& configPath, std::vector<std::string>& fontPathVec)
+    {
+        return ERROR_PARSE_CONFIG_FAILED;
+    }
+#endif
 
 protected:
     virtual int onCountFamilies() const = 0;
@@ -138,6 +183,10 @@ protected:
     virtual sk_sp<SkTypeface> onMakeFromFile(const char path[], int ttcIndex) const = 0;
 
     virtual sk_sp<SkTypeface> onLegacyMakeTypeface(const char familyName[], SkFontStyle) const = 0;
+
+#ifdef ENABLE_TEXT_ENHANCE
+    virtual std::vector<sk_sp<SkTypeface>> onGetSystemFonts() const;
+#endif
 };
 
 #endif

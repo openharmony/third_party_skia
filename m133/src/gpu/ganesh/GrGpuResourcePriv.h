@@ -77,6 +77,7 @@ public:
         return fResource->hasRef() || !fResource->hasNoCommandBufferUsages();
     }
 
+    void userRegisterResource() { fResource->userRegisterResource(); }
 protected:
     ResourcePriv(GrGpuResource* resource) : fResource(resource) {   }
     ResourcePriv(const ResourcePriv& that) : fResource(that.fResource) {}

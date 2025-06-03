@@ -113,6 +113,7 @@ enum class FormatCompatibilityClass {
     kBC1_RGB_8_16_1,
     kBC1_RGBA_8_16,
     kETC2_RGB_8_16,
+    kASTC_RGBA_8_16,
 };
 }  // anonymous namespace
 
@@ -157,6 +158,11 @@ static FormatCompatibilityClass format_compatibility_class(VkFormat format) {
 
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
             return FormatCompatibilityClass::kBC1_RGBA_8_16;
+
+        case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:
+        case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:
+        case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:
+            return FormatCompatibilityClass::kASTC_RGBA_8_16;
 
         default:
             SK_ABORT("Unsupported VkFormat");
@@ -431,7 +437,7 @@ void GrVkCaps::init(const GrContextOptions& contextOptions,
     // we do expect this to be a big win on tilers.
     //
     // On ARM devices we are seeing an average perf win of around 50%-60% across the board.
-    if (kARM_VkVendor == properties.vendorID) {
+    if (kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) {
         // We currently don't see any Vulkan devices that expose a memory type that supports
         // both lazy allocated and protected memory. So for simplicity we just disable the
         // use of memoryless attachments when using protected memory. In the future, if we ever
@@ -535,7 +541,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
     }
 
     // On Mali galaxy s7 we see lots of rendering issues when we suballocate VkImages.
-    if (kARM_VkVendor == properties.vendorID && androidAPIVersion <= 28) {
+    if ((kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) && androidAPIVersion <= 28) {
         fShouldAlwaysUseDedicatedImageMemory = true;
     }
 
@@ -576,6 +582,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
     // This also occurs on swiftshader: b/303705884
     if (properties.vendorID == kQualcomm_VkVendor ||
         properties.vendorID == kARM_VkVendor ||
+        properties.vendorID == kHisi_VkVendor ||
         (properties.vendorID == kGoogle_VkVendor &&
          properties.deviceID == kSwiftshader_DeviceID)) {
         fMustLoadFullImageWithDiscardableMSAA = true;
@@ -596,6 +603,10 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
 
     if (kARM_VkVendor == properties.vendorID) {
         fAvoidWritePixelsFastPath = true; // bugs.skia.org/8064
+    }
+
+    if (kHisi_VkVendor == properties.vendorID) {
+        fAvoidWritePixelsFastPath = false; // bugs.skia.org/8064
     }
 
     // AMD advertises support for MAX_UINT vertex input attributes, but in reality only supports 32.
@@ -628,7 +639,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
 
     // On ARM indirect draws are broken on Android 9 and earlier. This was tested on a P30 and
     // Mate 20x running android 9.
-    if (properties.vendorID == kARM_VkVendor && androidAPIVersion <= 28) {
+    if ((properties.vendorID == kARM_VkVendor || kHisi_VkVendor == properties.vendorID) && androidAPIVersion <= 28) {
         fNativeDrawIndirectSupport = false;
     }
 
@@ -722,7 +733,7 @@ void GrVkCaps::initGrCaps(const skgpu::VulkanInterface* vkInterface,
         }
     }
 
-    if (kARM_VkVendor == properties.vendorID) {
+    if (kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) {
         fShouldCollapseSrcOverToSrcWhenAble = true;
     }
 }
@@ -743,6 +754,10 @@ void GrVkCaps::initShaderCaps(const VkPhysicalDeviceProperties& properties,
     shaderCaps->fPreferFlatInterpolation = kQualcomm_VkVendor != properties.vendorID;
 
     shaderCaps->fSampleMaskSupport = true;
+
+    // ARM GPUs calculate `matrix * vector` in SPIR-V at full precision, even when the inputs are
+    // RelaxedPrecision. Rewriting the multiply as a sum of vector*scalar fixes this. (skia:11769)
+    shaderCaps->fRewriteMatrixVectorMultiply = (kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID);
 
     shaderCaps->fShaderDerivativeSupport = true;
     shaderCaps->fExplicitTextureLodSupport = true;
@@ -827,6 +842,9 @@ static constexpr VkFormat kVkFormats[] = {
     VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16,
     VK_FORMAT_R16G16B16A16_UNORM,
     VK_FORMAT_R16G16_SFLOAT,
+    VK_FORMAT_ASTC_4x4_UNORM_BLOCK,
+    VK_FORMAT_ASTC_6x6_UNORM_BLOCK,
+    VK_FORMAT_ASTC_8x8_UNORM_BLOCK,
 };
 
 void GrVkCaps::setColorType(GrColorType colorType, std::initializer_list<VkFormat> formats) {
@@ -1435,6 +1453,33 @@ void GrVkCaps::initFormatTable(const GrContextOptions& contextOptions,
         // No supported GrColorTypes.
     }
 
+    // Format: VK_FORMAT_ASTC_4x4_UNORM_BLOCK
+    {
+        constexpr VkFormat format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
+        auto& info = this->getFormatInfo(format);
+        info.init(contextOptions, interface, physDev, properties, format);
+        // Setting this to texel block size
+        // No supported GrColorTypes.
+    }
+
+    // Format: VK_FORMAT_ASTC_6x6_UNORM_BLOCK
+    {
+        constexpr VkFormat format = VK_FORMAT_ASTC_6x6_UNORM_BLOCK;
+        auto& info = this->getFormatInfo(format);
+        info.init(contextOptions, interface, physDev, properties, format);
+        // Setting this to texel block size
+        // No supported GrColorTypes.
+    }
+
+    // Format: VK_FORMAT_ASTC_8x8_UNORM_BLOCK
+    {
+        constexpr VkFormat format = VK_FORMAT_ASTC_8x8_UNORM_BLOCK;
+        auto& info = this->getFormatInfo(format);
+        info.init(contextOptions, interface, physDev, properties, format);
+        // Setting this to texel block size
+        // No supported GrColorTypes.
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Map GrColorTypes (used for creating GrSurfaces) to VkFormats. The order in which the formats
     // are passed into the setColorType function indicates the priority in selecting which format
@@ -1855,6 +1900,21 @@ GrBackendFormat GrVkCaps::getBackendFormatFromCompressionType(
                 return GrBackendFormats::MakeVk(VK_FORMAT_BC1_RGBA_UNORM_BLOCK);
             }
             return {};
+        case SkTextureCompressionType::kASTC_RGBA8_4x4:
+            if (this->isVkFormatTexturable(VK_FORMAT_ASTC_4x4_UNORM_BLOCK)) {
+                return GrBackendFormats::MakeVk(VK_FORMAT_ASTC_4x4_UNORM_BLOCK);
+            }
+            return {};
+        case SkTextureCompressionType::kASTC_RGBA8_6x6:
+            if (this->isVkFormatTexturable(VK_FORMAT_ASTC_6x6_UNORM_BLOCK)) {
+                return GrBackendFormats::MakeVk(VK_FORMAT_ASTC_6x6_UNORM_BLOCK);
+            }
+            return {};
+        case SkTextureCompressionType::kASTC_RGBA8_8x8:
+            if (this->isVkFormatTexturable(VK_FORMAT_ASTC_8x8_UNORM_BLOCK)) {
+                return GrBackendFormats::MakeVk(VK_FORMAT_ASTC_8x8_UNORM_BLOCK);
+            }
+            return {};
     }
 
     SkUNREACHABLE;
@@ -2176,6 +2236,9 @@ std::vector<GrTest::TestFormatColorTypeCombination> GrVkCaps::getTestingCombinat
         { GrColorType::kRGB_888x,      GrBackendFormats::MakeVk(VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK)},
         { GrColorType::kRGB_888x,         GrBackendFormats::MakeVk(VK_FORMAT_BC1_RGB_UNORM_BLOCK) },
         { GrColorType::kRGBA_8888,        GrBackendFormats::MakeVk(VK_FORMAT_BC1_RGBA_UNORM_BLOCK)},
+        { GrColorType::kRGBA_8888,        GrBackendFormats::MakeVk(VK_FORMAT_ASTC_4x4_UNORM_BLOCK) },
+        { GrColorType::kRGBA_8888,        GrBackendFormats::MakeVk(VK_FORMAT_ASTC_6x6_UNORM_BLOCK) },
+        { GrColorType::kRGBA_8888,        GrBackendFormats::MakeVk(VK_FORMAT_ASTC_8x8_UNORM_BLOCK) },
     };
 
     return combos;

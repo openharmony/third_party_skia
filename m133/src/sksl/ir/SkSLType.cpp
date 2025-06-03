@@ -955,8 +955,10 @@ CoercionCost Type::coercionCost(const Type& other) const {
     if (this->isNumber() && other.isNumber()) {
         if (this->isLiteral() && this->isInteger()) {
             return CoercionCost::Free();
+#ifndef SKSL_EXT
         } else if (this->numberKind() != other.numberKind()) {
             return CoercionCost::Impossible();
+#endif
         } else if (other.priority() >= this->priority()) {
             return CoercionCost::Normal(other.priority() - this->priority());
         } else {

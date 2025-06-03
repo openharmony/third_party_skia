@@ -16,7 +16,7 @@
 
 #include <cstdint>
 
-class SkBidiICUFactory : public SkBidiFactory {
+class SKUNICODE_API SkBidiICUFactory : public SkBidiFactory {
 public:
     const char* errorName(UErrorCode status) const override;
     SkBidiFactory::BidiCloseCallback bidi_close_callback() const override;

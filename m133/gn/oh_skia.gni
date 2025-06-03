@@ -17,6 +17,7 @@ declare_args() {
   skia_feature_product = "default"
   skia_feature_enable_pgo = false
   skia_feature_pgo_path = ""
+  skia_feature_wuji_enable = false
 }
 
 skia_common_defines = [
@@ -82,3 +83,11 @@ declare_args() {
   skia_feature_zlib = ""
   skia_use_system_lib = false
 }
+
+use_mingw_win = "${current_os}_${current_cpu}" == "mingw_x86_64"
+use_mac = "${current_os}_${current_cpu}" == "mac_x64" ||
+          "${current_os}_${current_cpu}" == "mac_arm64"
+use_ios = "${current_os}_${current_cpu}" == "ios_x64" ||
+          "${current_os}_${current_cpu}" == "ios_arm64"
+use_linux = "${current_os}_${current_cpu}" == "linux_x64" ||
+            "${current_os}_${current_cpu}" == "linux_arm64"

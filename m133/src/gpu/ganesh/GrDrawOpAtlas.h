@@ -88,6 +88,9 @@ public:
                                                int plotWidth, int plotHeight,
                                                skgpu::AtlasGenerationCounter* generationCounter,
                                                AllowMultitexturing allowMultitexturing,
+#ifdef SK_ENABLE_SMALL_PAGE
+                                               int atlasPageNum,
+#endif
                                                skgpu::PlotEvictionCallback* evictor,
                                                std::string_view label);
 
@@ -161,6 +164,9 @@ public:
         }
     }
 
+#ifdef SK_ENABLE_SMALL_PAGE
+    void setRadicalsCompactFlag(bool isRadicals) { fUseRadicalsCompact = isRadicals; }
+#endif
     void compact(skgpu::AtlasToken startTokenForNextFlush);
 
     void instantiate(GrOnFlushResourceProvider*);
@@ -175,7 +181,11 @@ private:
     GrDrawOpAtlas(GrProxyProvider*, const GrBackendFormat& format, SkColorType, size_t bpp,
                   int width, int height, int plotWidth, int plotHeight,
                   skgpu::AtlasGenerationCounter* generationCounter,
+#ifdef SK_ENABLE_SMALL_PAGE
+                  AllowMultitexturing allowMultitexturing, int atlasPageNum, std::string_view label);
+#else
                   AllowMultitexturing allowMultitexturing, std::string_view label);
+#endif
 
     inline bool updatePlot(GrDeferredUploadTarget*, skgpu::AtlasLocator*, skgpu::Plot*);
 
@@ -201,6 +211,9 @@ private:
     bool createPages(GrProxyProvider*, skgpu::AtlasGenerationCounter*);
     bool activateNewPage(GrResourceProvider*);
     void deactivateLastPage();
+#ifdef SK_ENABLE_SMALL_PAGE
+    void compactRadicals(skgpu::AtlasToken startTokenForNextFlush);
+#endif
 
     void processEviction(skgpu::PlotLocator);
     inline void processEvictionAndResetRects(skgpu::Plot* plot) {
@@ -247,6 +260,10 @@ private:
 
     uint32_t fNumActivePages;
 
+#ifdef SK_ENABLE_SMALL_PAGE
+    bool fUseRadicalsCompact = false;
+#endif
+
     SkDEBUGCODE(void validate(const skgpu::AtlasLocator& atlasLocator) const;)
 };
 
@@ -266,6 +283,11 @@ public:
 
     SkISize atlasDimensions(skgpu::MaskFormat type) const;
     SkISize plotDimensions(skgpu::MaskFormat type) const;
+#ifdef SK_ENABLE_SMALL_PAGE
+    SkISize getARGBDimensions(){ return fARGBDimensions; }
+    int resetAsSmallPage();
+    int getPageNums() { return fPageNums; };
+#endif
 
 private:
     // On some systems texture coordinates are represented using half-precision floating point
@@ -276,6 +298,9 @@ private:
 
     SkISize fARGBDimensions;
     int     fMaxTextureSize;
+#ifdef SK_ENABLE_SMALL_PAGE
+    int     fPageNums = 4; // The maximum number of texture pages in the original skia code is 4
+#endif
 };
 
 #endif

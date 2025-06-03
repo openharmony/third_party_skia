@@ -8,6 +8,7 @@
 #ifndef skgpu_GpuTypesPriv_DEFINED
 #define skgpu_GpuTypesPriv_DEFINED
 
+#include "include/core/SkAlphaType.h"
 #include "include/core/SkColorType.h"
 #include "include/core/SkTextureCompressionType.h"
 #include "include/gpu/GpuTypes.h"
@@ -36,10 +37,30 @@ using StdSteadyClock = std::chrono::steady_clock;
 // an SkColorType even for CompressedTypes so we need some conversion.
 static constexpr SkColorType CompressionTypeToSkColorType(SkTextureCompressionType compression) {
     switch (compression) {
-        case SkTextureCompressionType::kNone:            return kUnknown_SkColorType;
-        case SkTextureCompressionType::kETC2_RGB8_UNORM: return kRGB_888x_SkColorType;
-        case SkTextureCompressionType::kBC1_RGB8_UNORM:  return kRGB_888x_SkColorType;
-        case SkTextureCompressionType::kBC1_RGBA8_UNORM: return kRGBA_8888_SkColorType;
+        case SkTextureCompressionType::kNone:             return kUnknown_SkColorType;
+        case SkTextureCompressionType::kETC2_RGB8_UNORM:  return kRGB_888x_SkColorType;
+        case SkTextureCompressionType::kBC1_RGB8_UNORM:   return kRGB_888x_SkColorType;
+        case SkTextureCompressionType::kBC1_RGBA8_UNORM:  return kRGBA_8888_SkColorType;
+        case SkTextureCompressionType::kASTC_RGBA8_4x4:   return kRGBA_8888_SkColorType;
+        case SkTextureCompressionType::kASTC_RGBA8_6x6:   return kRGBA_8888_SkColorType;
+        case SkTextureCompressionType::kASTC_RGBA8_8x8:   return kRGBA_8888_SkColorType;
+    }
+
+    SkUNREACHABLE;
+}
+
+// modify for support astc texture format
+static constexpr SkAlphaType CompressionTypeToSkAlphaType(SkTextureCompressionType compression) {
+    switch (compression) {
+        case SkTextureCompressionType::kNone:
+        case SkTextureCompressionType::kETC2_RGB8_UNORM:
+        case SkTextureCompressionType::kBC1_RGB8_UNORM:
+        case SkTextureCompressionType::kBC1_RGBA8_UNORM:
+            return kOpaque_SkAlphaType;
+        case SkTextureCompressionType::kASTC_RGBA8_4x4:
+        case SkTextureCompressionType::kASTC_RGBA8_6x6:
+        case SkTextureCompressionType::kASTC_RGBA8_8x8:
+            return kPremul_SkAlphaType;
     }
 
     SkUNREACHABLE;
@@ -47,10 +68,13 @@ static constexpr SkColorType CompressionTypeToSkColorType(SkTextureCompressionTy
 
 static constexpr const char* CompressionTypeToStr(SkTextureCompressionType compression) {
     switch (compression) {
-        case SkTextureCompressionType::kNone:            return "kNone";
-        case SkTextureCompressionType::kETC2_RGB8_UNORM: return "kETC2_RGB8_UNORM";
-        case SkTextureCompressionType::kBC1_RGB8_UNORM:  return "kBC1_RGB8_UNORM";
-        case SkTextureCompressionType::kBC1_RGBA8_UNORM: return "kBC1_RGBA8_UNORM";
+        case SkTextureCompressionType::kNone:             return "kNone";
+        case SkTextureCompressionType::kETC2_RGB8_UNORM:  return "kETC2_RGB8_UNORM";
+        case SkTextureCompressionType::kBC1_RGB8_UNORM:   return "kBC1_RGB8_UNORM";
+        case SkTextureCompressionType::kBC1_RGBA8_UNORM:  return "kBC1_RGBA8_UNORM";
+        case SkTextureCompressionType::kASTC_RGBA8_4x4:   return "kASTC_RGBA8_4x4";
+        case SkTextureCompressionType::kASTC_RGBA8_6x6:   return "kASTC_RGBA8_6x6";
+        case SkTextureCompressionType::kASTC_RGBA8_8x8:   return "kASTC_RGBA8_8x8";
     }
     SkUNREACHABLE;
 }

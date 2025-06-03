@@ -8,6 +8,10 @@
 #ifndef GrDirectContext_DEFINED
 #define GrDirectContext_DEFINED
 
+#include <set>
+
+#include "src/gpu/ganesh/GrGpuResource.h"
+
 #include "include/core/SkColor.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
@@ -255,6 +259,7 @@ public:
      *                               resource types.
      */
     void purgeUnlockedResources(size_t bytesToPurge, bool preferScratchResources);
+    void purgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GrGpuResourceTag& tag);
 
     /**
      * This entry point is intended for instances where an app has been backgrounded or
@@ -512,6 +517,7 @@ public:
     /** Enumerates all cached GPU resources and dumps their memory to traceMemoryDump. */
     // Chrome is using this!
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
+    void dumpMemoryStatisticsByTag(SkTraceMemoryDump* traceMemoryDump, GrGpuResourceTag& tag) const;
 
     bool supportsDistanceFieldText() const;
 
@@ -925,6 +931,36 @@ public:
     // Provides access to functions that aren't part of the public API.
     GrDirectContextPriv priv();
     const GrDirectContextPriv priv() const;  // NOLINT(readability-const-return-type)
+
+    /**
+     * Set current resource tag for gpu cache recycle.
+     */
+    void setCurrentGrResourceTag(const GrGpuResourceTag& tag);
+
+    /**
+     * Pop resource tag.
+     */
+    void popGrResourceTag();
+
+
+    /**
+     * Get current resource tag for gpu cache recycle.
+     *
+     * @return all GrGpuResourceTags.
+     */
+    GrGpuResourceTag getCurrentGrResourceTag() const;
+
+    /**
+     * Releases GrGpuResource objects and removes them from the cache by tag.
+     */
+    void releaseByTag(const GrGpuResourceTag& tag);
+
+    /**
+     * Get all GrGpuResource tag.
+     *
+     * @return all GrGpuResourceTags.
+     */
+    std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const;
 
 protected:
     GrDirectContext(GrBackendApi backend,

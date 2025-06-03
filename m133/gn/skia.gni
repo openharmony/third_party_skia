@@ -27,15 +27,16 @@ declare_args() {
   skia_enable_optimize_size = false
   skia_enable_pdf = !is_wasm
   skia_enable_precompile = true
+  skia_enable_sksl = true
   skia_enable_skottie = !is_component_build
-  skia_enable_svg = !is_component_build
+  skia_enable_svg = !is_skia_component_build
   skia_enable_tools = is_skia_dev_build
   skia_disable_tracing = is_official_build
   skia_enable_vello_shaders = false
   skia_disable_vma_stl_shared_mutex = false
   skia_enable_winuwp = false
   skia_generate_workarounds = false
-  skia_include_multiframe_procs = false
+  skia_include_multiframe_procs = true
   skia_lex = false
   skia_print_sksl_shaders = false
   skia_print_native_shaders = false
@@ -98,6 +99,7 @@ declare_args() {
   skia_enable_gpu = true
   skia_enable_graphite = false
   skia_use_zlib = true
+  skia_enable_standard_fonts = true
 
   if (is_ios) {
     skia_ios_identity = ".*Google.*"
@@ -134,6 +136,7 @@ declare_args() {
     skia_gl_standard = ""
   }
 
+  skia_vk_enable_partialrender = false
   if (is_fuchsia) {
     skia_use_vulkan = true
   } else {
@@ -148,6 +151,9 @@ declare_args() {
 
   skia_build_fuzzers = is_clang && is_linux && target_cpu == "x64"
   skia_use_libfuzzer_defaults = true
+
+  # TODO: move to ace feature gni when ace feature is ready
+  ace_enable_skia_small_page_texture = true
 }
 
 declare_args() {
@@ -166,6 +172,9 @@ declare_args() {
 declare_args() {
   skia_enable_fontmgr_android = skia_use_expat && skia_use_freetype
   skia_enable_fontmgr_android_ndk = is_android && skia_use_freetype
+  if (use_oh_skia) {
+    skia_enable_fontmgr_ohos = true
+  }
   skia_enable_fontmgr_custom_directory =
       skia_use_freetype && !is_fuchsia && !is_wasm
   skia_enable_fontmgr_custom_embedded = skia_use_freetype && !is_fuchsia

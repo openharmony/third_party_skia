@@ -72,11 +72,10 @@ sk_sp<SkTypeface> SkOrderedFontMgr::onMatchFamilyStyle(const char family[],
     return nullptr;
 }
 
-sk_sp<SkTypeface> SkOrderedFontMgr::onMatchFamilyStyleCharacter(
-    const char familyName[], const SkFontStyle& style,
-    const char* bcp47[], int bcp47Count,
-    SkUnichar uni) const
-{
+sk_sp<SkTypeface> SkOrderedFontMgr::onMatchFamilyStyleCharacter(const char familyName[],
+                                                                const SkFontStyle& style,
+                                                                const char* bcp47[], int bcp47Count,
+                                                                SkUnichar uni) const {
     for (const auto& fm : fList) {
         if (auto tf = fm->matchFamilyStyleCharacter(familyName, style, bcp47, bcp47Count, uni)) {
             return tf;

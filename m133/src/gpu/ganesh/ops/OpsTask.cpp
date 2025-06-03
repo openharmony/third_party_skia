@@ -526,9 +526,15 @@ void OpsTask::onPrepare(GrOpFlushState* flushState) {
 
     flushState->setSampledProxyArray(&fSampledProxies);
     GrSurfaceProxyView dstView(sk_ref_sp(this->target(0)), fTargetOrigin, fTargetSwizzle);
+    auto grGpu = flushState->gpu();
     // Loop over the ops that haven't yet been prepared.
+    GrGpuResourceTag tag;
     for (const auto& chain : fOpChains) {
         if (chain.shouldExecute()) {
+            tag = chain.head()->getGrOpTag();
+            if (grGpu && tag.isGrTagValid()) {
+                grGpu->setCurrentGrResourceTag(tag);
+            }
             GrOpFlushState::OpArgs opArgs(chain.head(),
                                           dstView,
                                           fUsesMSAASurface,
@@ -547,6 +553,9 @@ void OpsTask::onPrepare(GrOpFlushState* flushState) {
             // GrOp::prePrepare may or may not have been called at this point
             chain.head()->prepare(flushState);
             flushState->setOpArgs(nullptr);
+            if (grGpu && tag.isGrTagValid()) {
+                grGpu->popGrResourceTag();
+            }
         }
     }
     flushState->setSampledProxyArray(nullptr);
@@ -648,11 +657,17 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
 
     GrSurfaceProxyView dstView(sk_ref_sp(this->target(0)), fTargetOrigin, fTargetSwizzle);
 
+    auto grGpu = flushState->gpu();
     // Draw all the generated geometry.
+    GrGpuResourceTag tag;
     for (const auto& chain : fOpChains) {
         if (!chain.shouldExecute()) {
             continue;
         }
+        tag = chain.head()->getGrOpTag();
+            if (grGpu && tag.isGrTagValid()) {
+                grGpu->setCurrentGrResourceTag(tag);
+            }
 
         GrOpFlushState::OpArgs opArgs(chain.head(),
                                       dstView,
@@ -665,6 +680,9 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
         flushState->setOpArgs(&opArgs);
         chain.head()->execute(flushState, chain.bounds());
         flushState->setOpArgs(nullptr);
+        if (grGpu && tag.isGrTagValid()) {
+                grGpu->popGrResourceTag();
+            }
     }
 
     renderPass->end();

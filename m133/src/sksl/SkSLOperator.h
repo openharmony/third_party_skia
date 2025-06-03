@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <string_view>
+#include "include/core/SkTypes.h"
 
 namespace SkSL {
 
@@ -76,7 +77,7 @@ enum class OperatorPrecedence : uint8_t {
     kStatement      = 18,        // a standalone expression-statement
 };
 
-class Operator {
+class SK_API Operator {
 public:
     using Kind = OperatorKind;
 
