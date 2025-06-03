@@ -31,6 +31,8 @@
 #include <limits>
 
 using namespace skia_private;
+constexpr char ORIGIN_MY_LOCALE[] = "my-Qaag";
+constexpr char ANDROID_MY_LOCALE[] = "und-Qaag";
 
 class SkData;
 
@@ -348,6 +350,10 @@ protected:
             const SkFontStyle& style, bool elegant,
             const SkString& langTag, SkUnichar character)
     {
+        SkString localeLangTag = langTag;
+        if (localeLangTag.find(ORIGIN_MY_LOCALE) >= 0) {
+            localeLangTag = ANDROID_MY_LOCALE;
+        }
         for (int i = 0; i < fallbackNameToFamilyMap.size(); ++i) {
             SkFontStyleSet_Android* family = fallbackNameToFamilyMap[i].styleSet;
             if (familyName != family->fFallbackFor) {
@@ -355,9 +361,9 @@ protected:
             }
             sk_sp<SkTypeface_AndroidSystem> face(family->matchAStyle(style));
 
-            if (!langTag.isEmpty() &&
-                std::none_of(face->fLang.begin(), face->fLang.end(), [&](const SkLanguage& lang){
-                    return lang.getTag().startsWith(langTag.c_str());
+            if (!localeLangTag.isEmpty() &&
+                std::none_of(face->fLang.begin(), face->fLang.end(), [&](const SkLanguage& lang) {
+                    return lang.getTag().startsWith(localeLangTag.c_str());
                 }))
             {
                 continue;

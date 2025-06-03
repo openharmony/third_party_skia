@@ -2134,6 +2134,10 @@ skia_component("skia") {
 
   defines = []
   libs = []
+  
+  if (is_arkui_x) {
+      defines += [ "ARKUI_X_ENABLE" ]
+  }
 
   if (skia_build_for_debugger) {
     defines += [ "SK_BUILD_FOR_DEBUGGER" ]
