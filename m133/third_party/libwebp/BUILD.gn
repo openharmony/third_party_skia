@@ -49,7 +49,7 @@ if (skia_use_system_libwebp2) {
     }
   }
 
-  third_party("libwebp") {
+  third_party("libwebpm133") {
     public_include_dirs = [
       "../externals/libwebp/src",
       "../externals/libwebp",
