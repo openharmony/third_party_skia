@@ -170,6 +170,7 @@ sk_sp<SkFontMgr> SkFontMgr::RefEmpty() {
     return singleton;
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
 sk_sp<SkFontMgr> SkFontMgr::RefDefault() {
     static SkOnce once;
     static sk_sp<SkFontMgr> singleton;
@@ -180,6 +181,8 @@ sk_sp<SkFontMgr> SkFontMgr::RefDefault() {
     });
     return singleton;
 }
+#endif
+
 /**
 * Width has the greatest priority.
 * If the value of pattern.width is 5 (normal) or less,
