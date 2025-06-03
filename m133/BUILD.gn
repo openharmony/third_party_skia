@@ -2998,9 +2998,11 @@ if (skia_enable_tools) {
         ":trace",
         "modules/skottie",
         "modules/skottie:utils",
-        "modules/skshaper",
         "modules/skunicode",
       ]
+      if (gm_test_enable_font) {
+        deps += [ "modules/skshaper", ]
+      }
       if (skia_use_libpng_decode) {
         deps += [ "modules/svg" ]
       }
