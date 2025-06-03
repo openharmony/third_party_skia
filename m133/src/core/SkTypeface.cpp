@@ -279,6 +279,21 @@ std::vector<sk_sp<SkTypeface>> SkTypeface::GetSystemFonts() {
     return SkFontMgr::RefDefault()->getSystemFonts();
 }
 
+sk_sp<SkTypeface> SkTypeface::MakeFromName(const char name[],
+                                           SkFontStyle fontStyle) {
+    if (nullptr == name && (fontStyle.slant() == SkFontStyle::kItalic_Slant ||
+                            fontStyle.slant() == SkFontStyle::kUpright_Slant) &&
+                           (fontStyle.weight() == SkFontStyle::kBold_Weight ||
+                            fontStyle.weight() == SkFontStyle::kNormal_Weight)) {
+        return GetDefaultTypeface(static_cast<SkTypeface::Style>(
+            (fontStyle.slant() == SkFontStyle::kItalic_Slant ? SkTypeface::kItalic :
+                                                               SkTypeface::kNormal) |
+            (fontStyle.weight() == SkFontStyle::kBold_Weight ? SkTypeface::kBold :
+                                                               SkTypeface::kNormal)));
+    }
+    return SkFontMgr::RefDefault()->legacyMakeTypeface(name, fontStyle);
+}
+
 uint32_t SkTypeface::GetHash() const
 {
     if (hash_ != 0) {
@@ -399,6 +414,42 @@ sk_sp<SkTypeface> SkTypeface::MakeDeserialize(SkStream* stream, sk_sp<SkFontMgr>
     }
     return SkEmptyTypeface::Make();
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+sk_sp<SkTypeface> SkTypeface::MakeDeserialize(SkStream* stream) {
+    SkFontDescriptor desc;
+    if (!SkFontDescriptor::Deserialize(stream, &desc)) {
+        return nullptr;
+    }
+
+    if (desc.hasStream()) {
+        if (auto tf = SkCustomTypefaceBuilder::Deserialize(desc.dupStream().get())) {
+            return tf;
+        }
+    }
+
+    if (desc.hasStream()) {
+        SkFontArguments args;
+        args.setCollectionIndex(desc.getCollectionIndex());
+        args.setVariationDesignPosition({desc.getVariation(), desc.getVariationCoordinateCount()});
+        sk_sp<SkFontMgr> defaultFm = SkFontMgr::RefDefault();
+        sk_sp<SkTypeface> typeface = defaultFm->makeFromStream(desc.detachStream(), args);
+        if (typeface) {
+            return typeface;
+        }
+    }
+
+    auto typeface = SkTypeface::MakeFromName(desc.getFamilyName(), desc.getStyle());
+    if (desc.getVariationCoordinateCount() > 0 && typeface) {
+        SkFontArguments args;
+        args.setCollectionIndex(desc.getCollectionIndex());
+        args.setVariationDesignPosition({desc.getVariation(), desc.getVariationCoordinateCount()});
+        typeface = SkVarFontCache::Instance().GetVarFont(typeface, args);
+    }
+
+    return typeface;
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
