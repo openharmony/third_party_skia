@@ -196,7 +196,6 @@ public:
     }
     WordBreakType getWordBreakType() const;
     LineBreakStrategy getLineBreakStrategy() const;
-    SkScalar getMaxWidth() { return fOldMaxWidth; }
     void positionShapedTextIntoLine(SkScalar maxWidth);
     void buildClusterPlaceholder(Run& run, size_t runIndex);
     std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color,
@@ -432,12 +431,8 @@ private:
 
 #ifdef ENABLE_TEXT_ENHANCE
     std::vector<SkScalar> fIndents;
-    std::vector<TextCutRecord> rtlTextSize;
-    std::vector<TextCutRecord> ltrTextSize;
     std::vector<SkUnichar> fUnicodeText;
     skia_private::TArray<size_t, true> fUnicodeIndexForUTF8Index;
-    SkScalar fOldMaxWidth;
-    SkScalar allTextWidth;
     SkScalar fLayoutRawWidth{0};
 
     size_t fLineNumber{0};
