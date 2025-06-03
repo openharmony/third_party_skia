@@ -14,7 +14,12 @@
 #include <unordered_set>
 
 using namespace skia_private;
-
+#ifdef ENABLE_TEXT_ENHANCE
+static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
+    SkUnichar val = SkUTF::NextUTF8(ptr, end);
+    return val < 0 ? 0xFFFD : val;
+}
+#endif
 namespace skia {
 namespace textlayout {
 #ifdef ENABLE_TEXT_ENHANCE
@@ -654,7 +659,7 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
         // Some unresolved subblocks might be resolved with different fallback fonts
         std::vector<RunBlock> hopelessBlocks;
         while (!fUnresolvedBlocks.empty()) {
-            matchResolvedFonts(textStyle, visitor, hopelessBlocks);
+            matchResolvedFontsByUnicode(textStyle, visitor, hopelessBlocks);
         }
 
         // Return hopeless blocks back
