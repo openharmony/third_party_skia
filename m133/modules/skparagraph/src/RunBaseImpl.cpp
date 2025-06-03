@@ -281,7 +281,7 @@ float RunBaseImpl::getTypographicBounds(float* ascent, float* descent, float* le
         *leading = 0.0;
         return 0.0;
     }
-    *ascent = std::abs(fVisitorRun->ascent());
+    *ascent = fVisitorRun->ascent();
     *descent = fVisitorRun->descent();
     *leading = fVisitorRun->leading();
     return fClipRect.width() + calculateTrailSpacesWidth();
