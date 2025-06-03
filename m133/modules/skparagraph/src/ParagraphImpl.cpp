@@ -1003,9 +1003,6 @@ void ParagraphImpl::buildClusterTable()
                 for (auto i = charStart; i < charEnd; ++i) {
                   fClustersIndexFromCodeUnit[i] = fClusters.size();
                 }
-#ifdef ENABLE_TEXT_ENHANCE
-                middleEllipsisAddText(charStart, charEnd, allTextWidth, width, run.leftToRight());
-#endif
                 SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
                 fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
                 fCodeUnitProperties[charStart] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
