@@ -4550,6 +4550,7 @@ ohos_static_library("sksl_ext_static") {
 
     if (is_arkui_x) {
       deps -= [ ":fontmgr_ohos" ]
+      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
     }
 
     public = skia_core_public
