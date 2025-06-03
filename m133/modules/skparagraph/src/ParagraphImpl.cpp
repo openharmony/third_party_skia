@@ -468,6 +468,9 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     for (auto& line : fLines) {
+#ifdef ENABLE_TEXT_ENHANCE
+        line.updateTextLinePaintAttributes();
+#endif
         line.paint(painter, x, y);
     }
 }
@@ -860,22 +863,16 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
     // (we have to walk through the styles in the same order, too)
     // Not breaking the iteration on every run!
     SkScalar shift = 0;
-#ifndef ENABLE_TEXT_ENHANCE
     bool soFarWhitespacesOnly = true;
     bool wordSpacingPending = false;
     Cluster* lastSpaceCluster = nullptr;
-#endif
     for (auto& run : fRuns) {
 
         // Skip placeholder runs
         if (run.isPlaceholder()) {
             continue;
         }
-#ifdef ENABLE_TEXT_ENHANCE
-        bool soFarWhitespacesOnly = true;
-        bool wordSpacingPending = false;
-        Cluster* lastSpaceCluster = nullptr;
-#endif
+
         run.iterateThroughClusters([this, &run, &shift, &soFarWhitespacesOnly, &wordSpacingPending, &lastSpaceCluster](Cluster* cluster) {
             // Shift the cluster (shift collected from the previous clusters)
             run.shift(cluster, shift);
@@ -898,9 +895,6 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                     }
                 } else if (wordSpacingPending) {
                     SkScalar spacing = currentStyle->fStyle.getWordSpacing();
-#ifdef ENABLE_TEXT_ENHANCE
-                    run.addSpacesAtTheEnd(spacing, lastSpaceCluster);
-#else
                     if (cluster->fRunIndex != lastSpaceCluster->fRunIndex) {
                         // If the last space cluster belongs to the previous run
                         // we have to extend that cluster and that run
@@ -909,7 +903,6 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                     } else {
                         run.addSpacesAtTheEnd(spacing, lastSpaceCluster);
                     }
-#endif
                     run.shift(cluster, spacing);
                     shift += spacing;
                     wordSpacingPending = false;
@@ -955,42 +948,11 @@ void ParagraphImpl::buildClusterPlaceholder(Run& run, size_t runIndex)
         });
     }
 }
+#endif
 
 // Clusters in the order of the input text
 void ParagraphImpl::buildClusterTable()
 {
-    // It's possible that one grapheme includes few runs; we cannot handle it
-    // so we break graphemes by the runs instead
-    // It's not the ideal solution and has to be revisited later
-    int cluster_count = 1;
-    for (auto& run : fRuns) {
-        cluster_count += run.isPlaceholder() ? 1 : run.size();
-        fCodeUnitProperties[run.fTextRange.start] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
-        fCodeUnitProperties[run.fTextRange.start] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
-    }
-    if (!fRuns.empty()) {
-        fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
-        fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
-    }
-    fClusters.reserve_exact(fClusters.size() + cluster_count);
-
-    // Walk through all the run in the direction of input text
-    for (auto& run : fRuns) {
-        auto runIndex = run.index();
-        auto runStart = fClusters.size();
-        buildClusterPlaceholder(run, runIndex);
-
-        fCodeUnitProperties[run.textRange().start] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
-
-        run.setClusterRange(runStart, fClusters.size());
-        fMaxIntrinsicWidth += run.advance().fX;
-    }
-    fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
-    fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
-}
-#else
-// Clusters in the order of the input text
-void ParagraphImpl::buildClusterTable() {
     // It's possible that one grapheme includes few runs; we cannot handle it
     // so we break graphemes by the runs instead
     // It's not the ideal solution and has to be revisited later
@@ -1021,17 +983,29 @@ void ParagraphImpl::buildClusterTable() {
             fCodeUnitProperties[run.textRange().end] |= SkUnicode::CodeUnitFlags::kSoftLineBreakBefore;
         } else {
             // Walk through the glyph in the direction of input text
+#ifdef ENABLE_TEXT_ENHANCE
+            run.iterateThroughClustersInTextOrder([&run, runIndex, this](size_t glyphStart,
+                                                                   size_t glyphEnd,
+                                                                   size_t charStart,
+                                                                   size_t charEnd,
+                                                                   SkScalar width,
+                                                                   SkScalar height) {
+#else
             run.iterateThroughClustersInTextOrder([runIndex, this](size_t glyphStart,
                                                                    size_t glyphEnd,
                                                                    size_t charStart,
                                                                    size_t charEnd,
                                                                    SkScalar width,
                                                                    SkScalar height) {
+#endif
                 SkASSERT(charEnd >= charStart);
                 // Add info to cluster indexes table (text -> cluster)
                 for (auto i = charStart; i < charEnd; ++i) {
                   fClustersIndexFromCodeUnit[i] = fClusters.size();
                 }
+#ifdef ENABLE_TEXT_ENHANCE
+                middleEllipsisAddText(charStart, charEnd, allTextWidth, width, run.leftToRight());
+#endif
                 SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
                 fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
                 fCodeUnitProperties[charStart] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
@@ -1045,7 +1019,6 @@ void ParagraphImpl::buildClusterTable() {
     fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
     fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
 }
-#endif
 
 bool ParagraphImpl::shapeTextIntoEndlessLine() {
 #ifdef ENABLE_TEXT_ENHANCE
@@ -1100,7 +1073,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto advance = run.advance();
     auto textRange = TextRange(0, this->text().size());
     auto textExcludingSpaces = TextRange(0, fTrailingSpaces);
-    InternalLineMetrics metrics(this->strutForceHeight());
+    InternalLineMetrics metrics(strutForceHeight() && strutEnabled());
     metrics.add(&run);
     auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent;
     auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
@@ -2261,7 +2234,8 @@ bool ParagraphImpl::getClosestUTF16GlyphInfoAt(SkScalar dx, SkScalar dy, GlyphIn
 RSFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const
 {
     for (auto& run : fRuns) {
-        if (run.textRange().contains({codeUnitIndex, codeUnitIndex})) {
+        const auto textRange = run.textRange();
+        if (textRange.start <= codeUnitIndex && codeUnitIndex < textRange.end) {
             return run.font();
         }
     }

@@ -551,14 +551,118 @@ void OneLineShaper::iterateThroughFontStyles(TextRange textRange,
 #endif
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+void OneLineShaper::matchResolvedFontsFindTypeface(const TextStyle& textStyle, std::shared_ptr<RSTypeface>& typeface,
+    SkUnichar& unicode) {
+    FontKey fontKey(unicode, textStyle.getFontStyle(), textStyle.getLocale());
+    auto found = fFallbackFonts.find(fontKey);
+    if (found != fFallbackFonts.end()) {
+        typeface = found->second;
+    } else {
+        typeface = fParagraph->fFontCollection->defaultFallback(
+            unicode, textStyle.getFontStyle(), textStyle.getLocale());
+        if (typeface == nullptr) {
+            // There is no fallback font for this character, so move on to the next character.
+            return;
+        }
+        fFallbackFonts.emplace(fontKey, typeface);
+    }
+}
+
+void OneLineShaper::matchResolvedFontsByUnicode(const TextStyle& textStyle, const TypefaceVisitor& visitor,
+    std::vector<RunBlock>& hopelessBlocks) {
+    auto unresolvedRange = fUnresolvedBlocks.front().fText;
+    auto unresolvedText = fParagraph->text(unresolvedRange);
+    const char* ch = unresolvedText.begin();
+    // We have the global cache for all already found typefaces for SkUnichar
+    // but we still need to keep track of all SkUnichars used in this unresolved block
+    THashSet<SkUnichar> alreadyTriedCodepoints;
+    THashSet<SkTypefaceID> alreadyTriedTypefaces;
+    while (true) {
+        if (ch == unresolvedText.end()) {
+            // Not a single codepoint could be resolved but we finished the block
+            hopelessBlocks.push_back(fUnresolvedBlocks.front());
+            fUnresolvedBlocks.pop_front();
+            break;
+        }
+        // See if we can switch to the next DIFFERENT codepoint
+        SkUnichar unicode = -1;
+        while (ch != unresolvedText.end()) {
+            unicode = nextUtf8Unit(&ch, unresolvedText.end());
+            if (!alreadyTriedCodepoints.contains(unicode)) {
+                alreadyTriedCodepoints.add(unicode);
+                break;
+            }
+        }
+        SkASSERT(unicode != -1);
+        std::shared_ptr<RSTypeface> typeface;
+
+        matchResolvedFontsFindTypeface(textStyle, typeface, unicode);
+        if (typeface == nullptr) {
+            continue;
+        }
+
+        // Check if we already tried this font on this text range
+        if (!alreadyTriedTypefaces.contains(typeface->GetUniqueID())) {
+            alreadyTriedTypefaces.add(typeface->GetUniqueID());
+        } else {
+            continue;
+        }
+
+        if (typeface && textStyle.getFontArguments()) {
+            typeface = fParagraph->fFontCollection->CloneTypeface(typeface, textStyle.getFontArguments());
+        }
+
+        auto resolvedBlocksBefore = fResolvedBlocks.size();
+        auto resolved = visitor(typeface);
+        if (resolved == Resolved::Everything) {
+            if (hopelessBlocks.empty()) {
+                // Resolved everything, no need to try another font
+                return;
+            } else if (resolvedBlocksBefore < fResolvedBlocks.size()) {
+                // There are some resolved blocks
+                resolved = Resolved::Something;
+            } else {
+                // All blocks are hopeless
+                resolved = Resolved::Nothing;
+            }
+        }
+
+        if (resolved == Resolved::Something) {
+            // Resolved something, no need to try another codepoint
+            break;
+        }
+    }
+}
 void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                                        const TypefaceVisitor& visitor) {
-#ifdef ENABLE_TEXT_ENHANCE
     std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
         textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
+    for (const auto& typeface : typefaces) {
+        if (visitor(typeface) == Resolved::Everything) {
+            // Resolved everything
+            return;
+        }
+    }
+
+    if (fParagraph->fFontCollection->fontFallbackEnabled()) {
+        // Give fallback a clue
+        // Some unresolved subblocks might be resolved with different fallback fonts
+        std::vector<RunBlock> hopelessBlocks;
+        while (!fUnresolvedBlocks.empty()) {
+            matchResolvedFonts(textStyle, visitor, hopelessBlocks);
+        }
+
+        // Return hopeless blocks back
+        for (auto& block : hopelessBlocks) {
+            fUnresolvedBlocks.emplace_front(block);
+        }
+    }
+}
 #else
+void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
+                                       const TypefaceVisitor& visitor) {
     std::vector<sk_sp<SkTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
-#endif
 
     for (const auto& typeface : typefaces) {
         if (visitor(typeface) == Resolved::Everything) {
@@ -609,44 +713,29 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                 }
 
                 SkASSERT(codepoint != -1 || emojiStart != -1);
-#ifdef ENABLE_TEXT_ENHANCE
-                std::shared_ptr<RSTypeface> typeface;
-#else
+
                 sk_sp<SkTypeface> typeface = nullptr;
-#endif
                 if (emojiStart == -1) {
                     // First try to find in in a cache
                     FontKey fontKey(codepoint, textStyle.getFontStyle(), textStyle.getLocale());
                     auto found = fFallbackFonts.find(fontKey);
-#ifdef ENABLE_TEXT_ENHANCE
-                    if (found != fFallbackFonts.end()) {
-                        typeface = found->second;
-                    }
-#else
                     if (found != nullptr) {
                         typeface = *found;
                     }
-#endif
                     if (typeface == nullptr) {
                         typeface = fParagraph->fFontCollection->defaultFallback(
                                                     codepoint,
                                                     textStyle.getFontStyle(),
                                                     textStyle.getLocale());
                         if (typeface != nullptr) {
-#ifdef ENABLE_TEXT_ENHANCE
-                            fFallbackFonts.emplace(fontKey, typeface);
-#else
                             fFallbackFonts.set(fontKey, typeface);
-#endif
                         }
                     }
                 } else {
-#ifndef ENABLE_TEXT_ENHANCE
                     typeface = fParagraph->fFontCollection->defaultEmojiFallback(
                                                 emojiStart,
                                                 textStyle.getFontStyle(),
                                                 textStyle.getLocale());
-#endif
                 }
 
                 if (typeface == nullptr) {
@@ -656,22 +745,11 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                 }
 
                 // Check if we already tried this font on this text range
-#ifdef ENABLE_TEXT_ENHANCE
-                if (!alreadyTriedTypefaces.contains(typeface->GetUniqueID())) {
-                    alreadyTriedTypefaces.add(typeface->GetUniqueID());
-#else
                 if (!alreadyTriedTypefaces.contains(typeface->uniqueID())) {
                     alreadyTriedTypefaces.add(typeface->uniqueID());
-#endif
                 } else {
                     continue;
                 }
-				
-#ifdef ENABLE_TEXT_ENHANCE
-                if (typeface && textStyle.getFontArguments()) {
-                    typeface = fParagraph->fFontCollection->CloneTypeface(typeface, textStyle.getFontArguments());
-                }
-#endif // ENABLE_TEXT_ENHANCE
 
                 auto resolvedBlocksBefore = fResolvedBlocks.size();
                 auto resolved = visitor(typeface);
@@ -701,6 +779,7 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
         }
     }
 }
+#endif
 
 bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
 

@@ -24,6 +24,10 @@
 #include "src/core/SkSurfacePriv.h"
 #include "src/image/SkSurface_Base.h"
 
+#ifdef SK_VK_PARTIALRENDER
+#include "src/gpu/vk/GrVkDrawAreaManager.h"
+#endif
+
 #include <cstddef>
 #include <cstdint>
 #include <utility>

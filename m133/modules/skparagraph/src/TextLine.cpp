@@ -260,14 +260,14 @@ TextLine::TextLine(ParagraphImpl* owner,
     fEllipsisIndex = EMPTY_INDEX;
     fHyphenIndex = EMPTY_INDEX;
     fLastClipRunLtr = false;
-#endif
-
+#else
     for (auto cluster = &start; cluster <= &end; ++cluster) {
         if (!cluster->run().isPlaceholder()) {
             fShift += cluster->getHalfLetterSpacing();
             break;
         }
     }
+#endif
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
@@ -345,7 +345,12 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     }
 
     this->ensureTextBlobCachePopulated();
-
+#ifdef ENABLE_TEXT_ENHANCE
+    const SkString& text = fOwner->getText();
+    if (text.size() == 1 && std::isdigit(text.c_str()[0])) {
+        TEXT_LOGI_LIMIT3_MIN("paint single-digit text %{public}s", fOwner->getText().c_str());
+    }
+#endif
     for (auto& record : fTextBlobCache) {
         record.paint(painter, x, y);
     }
@@ -1513,21 +1518,14 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
                 fOwner->getUnicode(), fallback ? fallback : SkFontMgr::RefEmpty());
 #endif
 
-#ifdef ENABLE_TEXT_ENHANCE
-        shaper->shape(str.c_str(),
-                      str.size(),
-                      font,
-                      true,
-                      std::numeric_limits<SkScalar>::max(),
-                      &handler);
-        auto run = handler.run();
-        run->fTextRange = TextRange(0, str.size());
-        run->fOwner = fOwner;
-        return run;
-#else
         const SkBidiIterator::Level defaultLevel = SkBidiIterator::kLTR;
+#ifdef ENABLE_TEXT_ENHANCE
+        const char* utf8 = str.c_str();
+        size_t utf8Bytes = str.size();
+#else
         const char* utf8 = ellipsis.c_str();
         size_t utf8Bytes = ellipsis.size();
+#endif
 
         std::unique_ptr<SkShaper::BiDiRunIterator> bidi = SkShapers::unicode::BidiRunIterator(
                 fOwner->getUnicode(), utf8, utf8Bytes, defaultLevel);
@@ -1541,8 +1539,13 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
                 SkShapers::HB::ScriptRunIterator(utf8, utf8Bytes);
         SkASSERT(script);
 
+#ifdef ENABLE_TEXT_ENHANCE
+        std::unique_ptr<SkShaper::FontRunIterator> fontRuns = SkShaper::MakeFontMgrRunIterator(
+                utf8, utf8Bytes, font, RSFontMgr::CreateDefaultFontMgr());
+#else
         std::unique_ptr<SkShaper::FontRunIterator> fontRuns = SkShaper::MakeFontMgrRunIterator(
                 utf8, utf8Bytes, font, fallback ? fallback : SkFontMgr::RefEmpty());
+#endif
         SkASSERT(fontRuns);
 
         shaper->shape(utf8,
@@ -1556,10 +1559,13 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
                       std::numeric_limits<SkScalar>::max(),
                       &handler);
         auto ellipsisRun = handler.run();
+#ifdef ENABLE_TEXT_ENHANCE
+        ellipsisRun->fTextRange = TextRange(0, str.size());
+#else
         ellipsisRun->fTextRange = TextRange(0, ellipsis.size());
+#endif
         ellipsisRun->fOwner = fOwner;
         return ellipsisRun;
-#endif
     };
 #ifdef ENABLE_TEXT_ENHANCE
     // Check all allowed fonts
@@ -2701,7 +2707,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                 auto clusterEnd8 = context.run->globalClusterIndex(found + 1);
                 auto graphemes = fOwner->countSurroundingGraphemes({clusterIndex8, clusterEnd8});
 #ifdef ENABLE_TEXT_ENHANCE
-                SkScalar center = (context.clip.right() + context.clip.left()) / 2;
+                SkScalar center = glyphemePosLeft + glyphemesWidth * fOwner->getTextSplitRatio();
 #else
                 SkScalar center = glyphemePosLeft + glyphemesWidth / 2;
 #endif
@@ -3246,6 +3252,24 @@ TextLine TextLine::CloneSelf()
     textLine.fEllipsisIndex = this->fEllipsisIndex;
     textLine.fLastClipRunLtr = this->fLastClipRunLtr;
     return textLine;
+}
+void TextLine::updateTextLinePaintAttributes() {
+    fHasBackground = false;
+    fHasDecorations = false;
+    fHasShadows = false;
+    for (BlockIndex index = fBlockRange.start; index < fBlockRange.end; ++index) {
+        auto textStyleBlock = fOwner->styles().begin() + index;
+        if (textStyleBlock->fStyle.hasBackground()) {
+            fHasBackground = true;
+        }
+        if (textStyleBlock->fStyle.getDecorationType() != TextDecoration::kNoDecoration &&
+            textStyleBlock->fStyle.getDecorationThicknessMultiplier() > 0) {
+            fHasDecorations = true;
+        }
+        if (textStyleBlock->fStyle.getShadowNumber() > 0) {
+            fHasShadows = true;
+        }
+    }
 }
 #endif
 }  // namespace textlayout

@@ -222,6 +222,7 @@ public:
             run.resetAutoSpacing();
         }
     }
+	const SkString& getText() const { return fText; }
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }

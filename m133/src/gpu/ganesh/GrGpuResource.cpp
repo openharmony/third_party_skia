@@ -211,8 +211,7 @@ void GrGpuResource::makeUnbudgeted() {
     }
 }
 
-void GrGpuResource::userRegisterResource()
-{
+void GrGpuResource::userRegisterResource() {
     if (this->wasDestroyed()) {
         return;
     }
