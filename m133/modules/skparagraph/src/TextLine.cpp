@@ -2129,7 +2129,9 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
             }
         }
         if (context.ellipsisMode == EllipsisModal::MIDDLE) {
-            handleMiddleEllipsisMode(run, context, ellipsisReadStrategy, visitor);
+            if (!handleMiddleEllipsisMode(run, context, ellipsisReadStrategy, visitor)) {
+                return;
+            }
         } else {
             if (!visitor(run, context.runOffset, context.lineIntersection, &context.width)) {
                 return;
@@ -2164,14 +2166,14 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
     }
 }
 
-void TextLine::handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
+bool TextLine::handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
                                         EllipsisReadStrategy& ellipsisReadStrategy, const RunVisitor& visitor) const {
     std::pair<TextRange, TextRange> cutRanges =
         intervalDifference(run->leftToRight(), context.lineIntersection, fTextRangeReplacedByEllipsis);
 
     if (cutRanges.first.start != EMPTY_RANGE.start) {
         if (!visitor(run, context.runOffset, cutRanges.first, &context.width)) {
-            return;
+            return false;
         }
         context.runOffset += context.width;
         context.totalWidth += context.width;
@@ -2180,7 +2182,7 @@ void TextLine::handleMiddleEllipsisMode(const Run* run, IterateRunsContext& cont
     if ((cutRanges.first.start != EMPTY_RANGE.start || cutRanges.second.start != EMPTY_RANGE.start)
         && !context.isAlreadyUseEllipsis && fEllipsisIndex == context.runIndex) {
         if (!processEllipsisRun(context, ellipsisReadStrategy, visitor, context.width)) {
-            return;
+            return false;
         }
         context.runOffset += context.width;
         context.totalWidth += context.width;
@@ -2188,11 +2190,12 @@ void TextLine::handleMiddleEllipsisMode(const Run* run, IterateRunsContext& cont
 
     if (cutRanges.second.start != EMPTY_RANGE.start) {
         if (!visitor(run, context.runOffset, cutRanges.second, &context.width)) {
-            return;
+            return false;
         }
         context.runOffset += context.width;
         context.totalWidth += context.width;
     }
+    return true;
 }
 #else
 void TextLine::iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& visitor) const {
