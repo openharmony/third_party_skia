@@ -184,7 +184,7 @@ public:
      */
     void prepare(GrOpFlushState* state) {
 #ifdef SKIA_OHOS
-        HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "prepare: %s, id: %u", name(), uniqueID());
+        HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "prepare: %s", name());
 #else
         TRACE_EVENT0("skia.gpu", name());
 #endif
@@ -194,7 +194,7 @@ public:
     /** Issues the op's commands to GrGpu. */
     void execute(GrOpFlushState* state, const SkRect& chainBounds) {
 #ifdef SKIA_OHOS
-        HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "execute: %s, id: %u", name(), uniqueID());
+        HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "execute: %s", name());
 #else
         TRACE_EVENT0("skia.gpu", name());
 #endif

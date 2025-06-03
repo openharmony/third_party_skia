@@ -16,6 +16,8 @@
 #include <utility>
 
 struct SkFontArguments;
+class SkFontMgr_OHOS;
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_OHOS();
 
 class SkEmptyFontStyleSet : public SkFontStyleSet {
 public:
@@ -151,11 +153,33 @@ sk_sp<SkTypeface> SkFontMgr::legacyMakeTypeface(const char familyName[], SkFontS
     return this->onLegacyMakeTypeface(familyName, style);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+std::vector<sk_sp<SkTypeface>> SkFontMgr::getSystemFonts()
+{
+    return this->onGetSystemFonts();
+}
+
+std::vector<sk_sp<SkTypeface>> SkFontMgr::onGetSystemFonts() const
+{
+    return {};
+}
+#endif
+
 sk_sp<SkFontMgr> SkFontMgr::RefEmpty() {
     static sk_sp<SkFontMgr> singleton(new SkEmptyFontMgr);
     return singleton;
 }
 
+sk_sp<SkFontMgr> SkFontMgr::RefDefault() {
+    static SkOnce once;
+    static sk_sp<SkFontMgr> singleton;
+
+    once([]{
+        sk_sp<SkFontMgr> fm = SkFontMgr_New_OHOS();
+        singleton = fm ? std::move(fm) : sk_make_sp<SkEmptyFontMgr>();
+    });
+    return singleton;
+}
 /**
 * Width has the greatest priority.
 * If the value of pattern.width is 5 (normal) or less,

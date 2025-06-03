@@ -2,9 +2,32 @@
 #include "include/core/SkColor.h"
 #include "include/core/SkFontStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
+#ifdef ENABLE_TEXT_ENHANCE
+#include "modules/skparagraph/src/Run.h"
+#endif
 
 namespace skia {
 namespace textlayout {
+
+#ifdef ENABLE_TEXT_ENHANCE
+struct SkStringHash {
+    size_t operator()(const SkString& s) const {
+        size_t hash = 0;
+        for (size_t i = 0; i < s.size(); ++i) {
+            hash ^= std::hash<char>()(s.c_str()[i]);
+        }
+        return hash;
+    }
+};
+
+const std::unordered_map<SkString, SkString, SkStringHash> GENERIC_FAMILY_NAME_MAP = {
+    { SkString{"HarmonyOS Sans"}, SkString{"HarmonyOS-Sans"} },
+    { SkString{"HarmonyOS Sans Condensed"}, SkString{"HarmonyOS-Sans-Condensed"} },
+    { SkString{"HarmonyOS Sans Digit"}, SkString{"HarmonyOS-Sans-Digit"} },
+    { SkString{"Noto Serif"}, SkString{"serif"} },
+    { SkString{"Noto Sans Mono"}, SkString{"monospace"} }
+};
+#endif
 
 const std::vector<SkString>* TextStyle::kDefaultFontFamilies =
         new std::vector<SkString>{SkString(DEFAULT_FONT_FAMILY)};
@@ -25,6 +48,11 @@ TextStyle TextStyle::cloneForPlaceholder() {
     result.fHalfLeading = fHalfLeading;
     result.fBaselineShift = fBaselineShift;
     result.fFontArguments = fFontArguments;
+#ifdef ENABLE_TEXT_ENHANCE
+    result.fBackgroundRect = fBackgroundRect;
+    result.fStyleId = fStyleId;
+    result.fTextStyleUid = fTextStyleUid;
+#endif
     return result;
 }
 
@@ -95,7 +123,11 @@ bool TextStyle::equals(const TextStyle& other) const {
     if (fFontArguments != other.fFontArguments) {
         return false;
     }
-
+#ifdef ENABLE_TEXT_ENHANCE
+    if (fStyleId != other.fStyleId || fBackgroundRect != other.fBackgroundRect) {
+        return false;
+    }
+#endif
     return true;
 }
 
@@ -111,7 +143,13 @@ bool TextStyle::equalsByFonts(const TextStyle& that) const {
            nearlyEqual(fHeight, that.fHeight) &&
            nearlyEqual(fBaselineShift, that.fBaselineShift) &&
            nearlyEqual(fFontSize, that.fFontSize) &&
+#ifdef ENABLE_TEXT_ENHANCE
+           fLocale == that.fLocale &&
+           fStyleId == that.fStyleId &&
+           fBackgroundRect == that.fBackgroundRect;
+#else
            fLocale == that.fLocale;
+#endif
 }
 
 bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) const {
@@ -157,19 +195,40 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
                    fHeight == other.fHeight &&
                    fHalfLeading == other.fHalfLeading &&
                    fBaselineShift == other.fBaselineShift &&
+#ifdef ENABLE_TEXT_ENHANCE
+                   fFontArguments == other.fFontArguments &&
+                   fStyleId == other.fStyleId &&
+                   fBackgroundRect == other.fBackgroundRect;
+#else
                    fFontArguments == other.fFontArguments;
+#endif
         default:
             SkASSERT(false);
             return false;
     }
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+void TextStyle::getFontMetrics(RSFontMetrics* metrics) const {
+#else
 void TextStyle::getFontMetrics(SkFontMetrics* metrics) const {
+#endif
+#ifdef ENABLE_TEXT_ENHANCE
+    RSFont font(fTypeface, fFontSize, 1, 0);
+    font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
+    font.SetHinting(RSDrawing::FontHinting::SLIGHT);
+    font.SetSubpixel(true);
+    auto compressFont = font;
+    scaleFontWithCompressionConfig(compressFont, ScaleOP::COMPRESS);
+    compressFont.GetMetrics(metrics);
+    metricsIncludeFontPadding(metrics, font);
+#else
     SkFont font(fTypeface, fFontSize);
     font.setEdging(SkFont::Edging::kAntiAlias);
     font.setSubpixel(true);
     font.setHinting(SkFontHinting::kSlight);
     font.getMetrics(metrics);
+#endif
     if (fHeightOverride) {
         auto multiplier = fHeight * fFontSize;
         auto height = metrics->fDescent - metrics->fAscent + metrics->fLeading;
@@ -202,6 +261,17 @@ bool PlaceholderStyle::equals(const PlaceholderStyle& other) const {
            (fAlignment != PlaceholderAlignment::kBaseline ||
             nearlyEqual(fBaselineOffset, other.fBaselineOffset));
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+void TextStyle::setFontFamilies(std::vector<SkString> families) {
+    std::for_each(families.begin(), families.end(), [](SkString& familyName) {
+        if (GENERIC_FAMILY_NAME_MAP.count(familyName)) {
+            familyName = GENERIC_FAMILY_NAME_MAP.at(familyName);
+        }
+    });
+    fFontFamilies = std::move(families);
+}
+#endif
 
 }  // namespace textlayout
 }  // namespace skia

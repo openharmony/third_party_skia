@@ -16,7 +16,7 @@
 
 // A list of every intrinsic supported by SkSL.
 // Using an X-Macro (https://en.wikipedia.org/wiki/X_Macro) to manage the list.
-#define SKSL_INTRINSIC_LIST          \
+#define SKSL_INTRINSIC_LIST_BASE     \
     SKSL_INTRINSIC(abs)              \
     SKSL_INTRINSIC(acosh)            \
     SKSL_INTRINSIC(acos)             \
@@ -120,6 +120,14 @@
     SKSL_INTRINSIC(unpackUnorm4x8)   \
     SKSL_INTRINSIC(workgroupBarrier)
 
+#ifdef SKSL_EXT
+#define SKSL_INTRINSIC_LIST          \
+    SKSL_INTRINSIC_LIST_BASE         \
+    SKSL_INTRINSIC(textureSize)      \
+    SKSL_INTRINSIC(nonuniformEXT)
+#else // SKSL_EXT
+#define SKSL_INTRINSIC_LIST SKSL_INTRINSIC_LIST_BASE
+#endif // SKSL_EXT
 namespace SkSL {
 
 // The `IntrinsicKind` enum holds every intrinsic supported by SkSL.

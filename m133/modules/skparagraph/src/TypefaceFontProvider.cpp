@@ -53,16 +53,31 @@ size_t TypefaceFontProvider::registerTypeface(sk_sp<SkTypeface> typeface, const 
     }
 
     auto found = fRegisteredFamilies.find(familyName);
+#ifdef ENABLE_TEXT_ENHANCE
+    if (typeface != nullptr) {
+#endif
     if (found == nullptr) {
         found = fRegisteredFamilies.set(familyName, sk_make_sp<TypefaceFontStyleSet>(familyName));
         fFamilyNames.emplace_back(familyName);
     }
 
     (*found)->appendTypeface(std::move(typeface));
-
+#ifdef ENABLE_TEXT_ENHANCE
+    } else if (found != nullptr) {
+        (*found)->clearTypefaces();
+        fRegisteredFamilies.remove(familyName);
+        for (size_t i = 0; i < fFamilyNames.size(); i++) {
+            if (fFamilyNames[i] == familyName) {
+                fFamilyNames.removeShuffle(i);
+                break;
+			}
+		}
+	}
+#endif
     return 1;
 }
 
+#ifndef ENABLE_TEXT_ENHANCE
 sk_sp<SkTypeface> TypefaceFontProvider::onLegacyMakeTypeface(const char familyName[],
                                                              SkFontStyle style) const {
     if (familyName) {
@@ -80,6 +95,7 @@ sk_sp<SkTypeface> TypefaceFontProvider::onLegacyMakeTypeface(const char familyNa
     }
     return defaultFamily->matchStyle(style);
 }
+#endif
 
 TypefaceFontStyleSet::TypefaceFontStyleSet(const SkString& familyName)
         : fFamilyName(familyName) {}
@@ -110,6 +126,12 @@ void TypefaceFontStyleSet::appendTypeface(sk_sp<SkTypeface> typeface) {
         fStyles.emplace_back(std::move(typeface));
     }
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+void TypefaceFontStyleSet::clearTypefaces() {
+    fStyles.clear();
+}
+#endif
 
 }  // namespace textlayout
 }  // namespace skia

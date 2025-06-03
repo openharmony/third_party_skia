@@ -14,7 +14,9 @@
 #include "modules/skparagraph/include/FontArguments.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
 #include "modules/skparagraph/include/TextShadow.h"
-
+#ifdef ENABLE_TEXT_ENHANCE
+#include "drawing.h"
+#endif // ENABLE_TEXT_ENHANCE
 // TODO: Make it external so the other platforms (Android) could use it
 #define DEFAULT_FONT_FAMILY "sans-serif"
 
@@ -29,6 +31,14 @@ static inline bool nearlyZero(SkScalar x, SkScalar tolerance = SK_ScalarNearlyZe
 }
 
 static inline bool nearlyEqual(SkScalar x, SkScalar y, SkScalar tolerance = SK_ScalarNearlyZero) {
+#ifdef ENABLE_TEXT_ENHANCE
+    if (SkIsNaN(x) && SkIsNaN(y)) {
+        // Generally NaN has no equality, but it will break the invariant of the hashtable
+        // in ParagraphCache, resulting in errors. This fix is only a backstop for
+        // this condition, other functions may still be unreliable in the presence of NaN.
+        return true;
+    }
+#endif
     if (SkIsFinite(x, y)) {
         return SkScalarNearlyEqual(x, y, tolerance);
     }
@@ -148,6 +158,32 @@ struct PlaceholderStyle {
     SkScalar fBaselineOffset = 0;
 };
 
+#ifdef ENABLE_TEXT_ENHANCE
+struct RectStyle {
+    SkColor color{0};
+    SkScalar leftTopRadius{0.0f};
+    SkScalar rightTopRadius{0.0f};
+    SkScalar rightBottomRadius{0.0f};
+    SkScalar leftBottomRadius{0.0f};
+
+    bool operator ==(const RectStyle& rhs) const {
+        return color == rhs.color &&
+            leftTopRadius == rhs.leftTopRadius &&
+            rightTopRadius == rhs.rightTopRadius &&
+            rightBottomRadius == rhs.rightBottomRadius &&
+            leftBottomRadius == rhs.leftBottomRadius;
+    }
+
+    bool operator !=(const RectStyle& rhs) const {
+        return !(color == rhs.color &&
+            leftTopRadius == rhs.leftTopRadius &&
+            rightTopRadius == rhs.rightTopRadius &&
+            rightBottomRadius == rhs.rightBottomRadius &&
+            leftBottomRadius == rhs.leftBottomRadius);
+    }
+};
+#endif
+
 class TextStyle {
 public:
     TextStyle() = default;
@@ -224,8 +260,13 @@ public:
     void setDecorationThicknessMultiplier(SkScalar m) { fDecoration.fThicknessMultiplier = m; }
 
     // Weight/Width/Slant
+#ifdef ENABLE_TEXT_ENHANCE
+    RSFontStyle getFontStyle() const { return fFontStyle; }
+    void setFontStyle(RSFontStyle fontStyle) { fFontStyle = fontStyle; }
+#else
     SkFontStyle getFontStyle() const { return fFontStyle; }
     void setFontStyle(SkFontStyle fontStyle) { fFontStyle = fontStyle; }
+#endif
 
     // Shadows
     size_t getShadowNumber() const { return fTextShadows.size(); }
@@ -250,9 +291,14 @@ public:
     void setFontSize(SkScalar size) { fFontSize = size; }
 
     const std::vector<SkString>& getFontFamilies() const { return fFontFamilies; }
+
+#ifdef ENABLE_TEXT_ENHANCE
+    void setFontFamilies(std::vector<SkString> families);
+#else
     void setFontFamilies(std::vector<SkString> families) {
         fFontFamilies = std::move(families);
     }
+#endif
 
     SkScalar getBaselineShift() const { return fBaselineShift; }
     void setBaselineShift(SkScalar baselineShift) { fBaselineShift = baselineShift; }
@@ -272,9 +318,15 @@ public:
     void setWordSpacing(SkScalar wordSpacing) { fWordSpacing = wordSpacing; }
     SkScalar getWordSpacing() const { return fWordSpacing; }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    RSTypeface* getTypeface() const { return fTypeface.get(); }
+    std::shared_ptr<RSTypeface> refTypeface() const { return fTypeface; }
+    void setTypeface(std::shared_ptr<RSTypeface> typeface) { fTypeface = std::move(typeface); }
+#else
     SkTypeface* getTypeface() const { return fTypeface.get(); }
     sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
     void setTypeface(sk_sp<SkTypeface> typeface) { fTypeface = std::move(typeface); }
+#endif
 
     SkString getLocale() const { return fLocale; }
     void setLocale(const SkString& locale) { fLocale = locale; }
@@ -282,25 +334,47 @@ public:
     TextBaseline getTextBaseline() const { return fTextBaseline; }
     void setTextBaseline(TextBaseline baseline) { fTextBaseline = baseline; }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    void getFontMetrics(RSFontMetrics* metrics) const;
+#else
     void getFontMetrics(SkFontMetrics* metrics) const;
+#endif
 
     bool isPlaceholder() const { return fIsPlaceholder; }
     void setPlaceholder() { fIsPlaceholder = true; }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    int getStyleId() const { return fStyleId; }
+    void setStyleId(int styleId) { fStyleId = static_cast<SkColor>(styleId); }
+    size_t getTextStyleUid() const { return fTextStyleUid; }
+    void setTextStyleUid(size_t textStyleUid) { fTextStyleUid = textStyleUid; }
+    RectStyle getBackgroundRect() const { return fBackgroundRect; }
+    void setBackgroundRect(RectStyle rect) { fBackgroundRect = rect; }
+    bool isCustomSymbol() const {return fIsCustomSymbol;}
+    void setCustomSymbol(bool state) {fIsCustomSymbol = state;}
+#endif
 private:
     static const std::vector<SkString>* kDefaultFontFamilies;
 
     Decoration fDecoration = {
             TextDecoration::kNoDecoration,
+#ifdef ENABLE_TEXT_ENHANCE
+            TextDecorationMode::kGaps,
+#else
             // TODO: switch back to kGaps when (if) switching flutter to skparagraph
             TextDecorationMode::kThrough,
+#endif
             // It does not make sense to draw a transparent object, so we use this as a default
             // value to indicate no decoration color was set.
             SK_ColorTRANSPARENT, TextDecorationStyle::kSolid,
             // Thickness is applied as a multiplier to the default thickness of the font.
             1.0f};
 
+#ifdef ENABLE_TEXT_ENHANCE
+    RSFontStyle fFontStyle;
+#else
     SkFontStyle fFontStyle;
+#endif
 
     std::vector<SkString> fFontFamilies = *kDefaultFontFamilies;
 
@@ -314,6 +388,11 @@ private:
     SkString fLocale = {};
     SkScalar fLetterSpacing = 0.0;
     SkScalar fWordSpacing = 0.0;
+#ifdef ENABLE_TEXT_ENHANCE
+    RectStyle fBackgroundRect = {0, 0.0f, 0.0f, 0.0f, 0.0f};
+    SkColor fStyleId = {0};
+    size_t fTextStyleUid = {0};
+#endif
 
     TextBaseline fTextBaseline = TextBaseline::kAlphabetic;
 
@@ -325,7 +404,12 @@ private:
 
     std::vector<TextShadow> fTextShadows;
 
+#ifdef ENABLE_TEXT_ENHANCE
+    bool fIsCustomSymbol{false};
+    std::shared_ptr<RSTypeface> fTypeface;
+#else
     sk_sp<SkTypeface> fTypeface;
+#endif
     bool fIsPlaceholder = false;
 
     std::vector<FontFeature> fFontFeatures;

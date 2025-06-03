@@ -149,6 +149,8 @@
  *  TODO: consider updating these for consistency
  */
 
+#define SK_DUMP_STATS //OPEN DUMP
+
 #if !defined(GR_CACHE_STATS)
   #if defined(SK_DEBUG) || defined(SK_DUMP_STATS)
       #define GR_CACHE_STATS  1

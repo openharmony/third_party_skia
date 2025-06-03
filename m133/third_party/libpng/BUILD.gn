@@ -27,7 +27,15 @@ if (skia_use_system_libpng) {
     ]
 
     defines = [ "PNG_SET_OPTION_SUPPORTED" ]
-    deps = [ "${skia_third_party_dir}/zlib" ]
+    if (use_oh_skia) {
+      external_deps = [ "zlib:libz" ]
+    } else {
+      if (skia_feature_zlib != "") {
+        external_deps = [ skia_feature_zlib ]
+      } else {
+        deps = [ "${skia_third_party_dir}/zlib" ]
+      }
+    }
     sources = [
       "../externals/libpng/png.c",
       "../externals/libpng/pngerror.c",
@@ -52,6 +60,10 @@ if (skia_use_system_libpng) {
         "../externals/libpng/arm/filter_neon_intrinsics.c",
         "../externals/libpng/arm/palette_neon_intrinsics.c",
       ]
+      if (target_platform == "pc" || target_platform == "phone") {
+        # OH ISSUE: png optimize
+        defines += [ "PNG_OPT_ENABLE" ]
+      }
     }
 
     if (current_cpu == "x86" || current_cpu == "x64") {

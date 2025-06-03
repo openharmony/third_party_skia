@@ -12,6 +12,7 @@
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSpan.h"
+#include "include/gpu/ganesh/GrDirectContext.h"
 #include "include/core/SkTypes.h"
 #include "include/gpu/GpuTypes.h"
 #include "include/gpu/ganesh/GrBackendSurface.h"
@@ -67,13 +68,26 @@ struct GrTimerQuery {
     uint32_t query;
 };
 
-class GrGpu {
+class SK_API GrGpu {
 public:
     GrGpu(GrDirectContext* direct);
     virtual ~GrGpu();
 
     GrDirectContext* getContext() { return fContext; }
     const GrDirectContext* getContext() const { return fContext; }
+
+void setCurrentGrResourceTag(const GrGpuResourceTag& tag) {
+    if (fContext) {
+        fContext->setCurrentGrResourceTag(tag);
+    }
+}
+
+void popGrResourceTag()
+{
+    if (fContext) {
+        fContext->popGrResourceTag();
+    }
+}
 
     /**
      * Gets the capabilities of the draw target.
@@ -179,6 +193,14 @@ public:
                                              GrProtected isProtected,
                                              const void* data,
                                              size_t dataSize);
+
+    sk_sp<GrTexture> createCompressedTexture(SkISize dimensions,
+                                             const GrBackendFormat& format,
+                                             skgpu::Budgeted budgeted,
+                                             skgpu::Mipmapped mipMapped,
+                                             GrProtected isProtected,
+                                             OH_NativeBuffer* nativeBuffer,
+                                             size_t bufferSize);
 
     /**
      * Implements GrResourceProvider::wrapBackendTexture
@@ -769,6 +791,13 @@ private:
                                                        GrProtected,
                                                        const void* data,
                                                        size_t dataSize) = 0;
+    virtual sk_sp<GrTexture> onCreateCompressedTexture(SkISize dimensions,
+                                                       const GrBackendFormat&,
+                                                       skgpu::Budgeted,
+                                                       skgpu::Mipmapped,
+                                                       GrProtected,
+                                                       OH_NativeBuffer* nativeBuffer,
+                                                       size_t bufferSize) = 0;
     virtual sk_sp<GrTexture> onWrapBackendTexture(const GrBackendTexture&,
                                                   GrWrapOwnership,
                                                   GrWrapCacheable,

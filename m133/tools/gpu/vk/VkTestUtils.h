@@ -22,12 +22,12 @@ class VulkanExtensions;
 }
 
 namespace sk_gpu_test {
-    bool LoadVkLibraryAndGetProcAddrFuncs(PFN_vkGetInstanceProcAddr*);
+    bool SK_API LoadVkLibraryAndGetProcAddrFuncs(PFN_vkGetInstanceProcAddr*);
 
     using CanPresentFn = std::function<bool(VkInstance, VkPhysicalDevice,
                                             uint32_t queueFamilyIndex)>;
 
-    bool CreateVkBackendContext(PFN_vkGetInstanceProcAddr getInstProc,
+    bool SK_API CreateVkBackendContext(PFN_vkGetInstanceProcAddr getInstProc,
                                 skgpu::VulkanBackendContext* ctx,
                                 skgpu::VulkanExtensions*,
                                 VkPhysicalDeviceFeatures2*,
@@ -36,7 +36,7 @@ namespace sk_gpu_test {
                                 const CanPresentFn& canPresent = CanPresentFn(),
                                 bool isProtected = false);
 
-    void FreeVulkanFeaturesStructs(const VkPhysicalDeviceFeatures2*);
+    void SK_API FreeVulkanFeaturesStructs(const VkPhysicalDeviceFeatures2*);
 
 }  // namespace sk_gpu_test
 

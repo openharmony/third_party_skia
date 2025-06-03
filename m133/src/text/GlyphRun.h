@@ -33,7 +33,7 @@ struct SkRSXform;
 namespace sktext {
 class GlyphRunBuilder;
 
-class GlyphRun {
+class SK_API GlyphRun {
 public:
     GlyphRun(const SkFont& font,
              SkSpan<const SkPoint> positions,
@@ -66,7 +66,7 @@ private:
     SkFont fFont;
 };
 
-class GlyphRunList {
+class SK_API GlyphRunList {
     SkSpan<const GlyphRun> fGlyphRuns;
 
 public:
@@ -134,7 +134,7 @@ private:
     GlyphRunBuilder* const fBuilder;
 };
 
-class GlyphRunBuilder {
+class SK_API GlyphRunBuilder {
 public:
     GlyphRunList makeGlyphRunList(const GlyphRun& run, const SkPaint& paint, SkPoint origin);
     const GlyphRunList& textToGlyphRunList(const SkFont& font,

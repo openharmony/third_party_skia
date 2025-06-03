@@ -404,6 +404,17 @@ void SkImage_Ganesh::onAsyncRescaleAndReadPixelsYUV420(SkYUVColorSpace yuvColorS
 
 void SkImage_Ganesh::generatingSurfaceIsDeleted() { fChooser.makeVolatileProxyStable(); }
 
+void SkImage_Ganesh::hintCacheGpuResource() {
+    auto dContext = fContext->asDirectContext();
+    if (!dContext) {
+        return;
+    }
+    GrTextureProxy* texProxy = this->makeView(dContext).asTextureProxy();
+    if (texProxy) {
+        texProxy->setUserCacheTarget(true);
+    }
+}
+
 std::tuple<GrSurfaceProxyView, GrColorType> SkImage_Ganesh::asView(
         GrRecordingContext* recordingContext,
         skgpu::Mipmapped mipmapped,

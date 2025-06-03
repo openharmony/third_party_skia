@@ -10,6 +10,7 @@
 
 #include "include/gpu/vk/VulkanMemoryAllocator.h"
 #include "include/private/gpu/vk/SkiaVulkan.h"
+#include "src/gpu/ganesh/vk/GrVkGpu.h"
 
 #include <functional>
 
@@ -30,6 +31,8 @@ namespace VulkanMemory {
 
     void FreeBufferMemory(VulkanMemoryAllocator*, const VulkanAlloc& alloc);
 
+    void FreeBufferMemory(const GrVkGpu* gpu, const VulkanAlloc& alloc);
+
     bool AllocImageMemory(VulkanMemoryAllocator*,
                           VkImage image,
                           skgpu::Protected isProtected,
@@ -39,6 +42,11 @@ namespace VulkanMemory {
                           VulkanAlloc* alloc);
 
     void FreeImageMemory(VulkanMemoryAllocator*, const VulkanAlloc& alloc);
+
+    bool ImportAndBindBufferMemory(GrVkGpu* gpu,
+                                   OH_NativeBuffer *nativeBuffer,
+                                   VkBuffer buffer,
+                                   VulkanAlloc* alloc);
 
     // Maps the entire skgpu::VulkanAlloc and returns a pointer to the start of the allocation.
     // Underneath the hood, we may map more than the range of the skgpu::VulkanAlloc (e.g. the

@@ -27,7 +27,7 @@ enum class OperatorPrecedence : uint8_t;
 /**
  * Abstract supertype of all expressions.
  */
-class Expression : public IRNode {
+class SK_API Expression : public IRNode {
 public:
     using Kind = ExpressionKind;
 

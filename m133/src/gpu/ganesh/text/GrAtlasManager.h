@@ -66,6 +66,21 @@ public:
 
     bool hasGlyph(skgpu::MaskFormat, sktext::gpu::Glyph*);
 
+#if defined(SK_ENABLE_SMALL_PAGE) || defined(SK_DEBUG_ATLAS_HIT_RATE)
+    void incAtlasHitCount() { fAtlasHitCount++; }
+    void incAtlasMissCount() { fAtlasMissCount++; }
+    float atlasHitRate() {
+        if (fAtlasHitCount + fAtlasMissCount == 0) {
+            return 0;
+        }
+        return (float)fAtlasHitCount / (fAtlasHitCount + fAtlasMissCount);
+    }
+    void resetHitCount() {
+        fAtlasHitCount = 0;
+        fAtlasMissCount = 0;
+    }
+#endif
+
     GrDrawOpAtlas::ErrorCode addGlyphToAtlas(const SkGlyph&,
                                              sktext::gpu::Glyph*,
                                              int srcPadding,
@@ -116,8 +131,29 @@ public:
     }
 
     void postFlush(skgpu::AtlasToken startTokenForNextFlush) override {
+#if defined(SK_ENABLE_SMALL_PAGE) || defined(SK_DEBUG_ATLAS_HIT_RATE)
+        bool isRadicals = false;
+        static int count = 0;
+        count++;
+        if (count == 5) {
+            float hitRate = atlasHitRate();
+            if (!(fabs(hitRate-0) <= 1.0e-6)) {
+#ifdef SK_DEBUG_ATLAS_HIT_RATE
+                SkDebugf("----- last 5 flush AtlasHitRate = %{public}6.2f.", hitRate);
+#endif
+                if (hitRate < 0.2) {
+                    isRadicals = true;
+                }
+            }
+            resetHitCount();
+            count = 0;
+        }
+#endif
         for (int i = 0; i < skgpu::kMaskFormatCount; ++i) {
             if (fAtlases[i]) {
+#ifdef SK_ENABLE_SMALL_PAGE
+                fAtlases[i]->setRadicalsCompactFlag(isRadicals);
+#endif
                 fAtlases[i]->compact(startTokenForNextFlush);
             }
         }
@@ -165,6 +201,10 @@ private:
     sk_sp<const GrCaps> fCaps;
     GrDrawOpAtlasConfig fAtlasConfig;
 
+#if defined(SK_ENABLE_SMALL_PAGE) || defined(SK_DEBUG_ATLAS_HIT_RATE)
+    int fAtlasHitCount = 0;
+    int fAtlasMissCount = 0;
+#endif
     using INHERITED = GrOnFlushCallbackObject;
 };
 

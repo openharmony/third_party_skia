@@ -469,6 +469,39 @@ class SkUnicode_icu : public SkUnicode {
         return property == U_LB_LINE_FEED || property == U_LB_MANDATORY_BREAK;
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    static bool isPunctuation(SkUnichar unichar)
+    {
+        if (sk_u_ispunct(unichar)) {
+            return true;
+        }
+        static constexpr std::array<std::pair<SkUnichar, SkUnichar>, 13> ranges{{
+                {0x0021, 0x002F},  // ASCII punctuation (e.g., ! " # $ % & ' ( ) * + , - . /)
+                {0x003A, 0x0040},  // ASCII punctuation (e.g., : ; < = > ? @)
+                {0x005B, 0x0060},  // ASCII punctuation (e.g., [ \ ] ^ _ `)
+                {0x007B, 0x007E},  // ASCII punctuation (e.g., { | } ~)
+                {0x2000, 0x206F},  // Common punctuation (Chinese & English)
+                {0xFF00, 0xFFEF},  // Full-width characters and symbols
+                {0x2E00, 0x2E7F},  // Supplemental punctuation (e.g., ancient)
+                {0x3001, 0x3003},  // CJK punctuation (e.g., Chinese comma)
+                {0xFF01, 0xFF0F},  // Full-width ASCII punctuation (0x21-0x2F)
+                {0xFF1A, 0xFF20},  // Full-width ASCII punctuation (0x3A-0x40)
+                {0xFF3B, 0xFF40},  // Full-width ASCII punctuation (0x5B-0x60)
+                {0xFF5B, 0xFF65},  // Other full-width punctuation (e.g., quotes)
+        }};
+        for (auto range : ranges) {
+            if (range.first <= unichar && unichar <= range.second) {
+                return true;
+            }
+        }
+        return false;
+    }
+    static bool isEllipsis(SkUnichar unichar) { return (unichar == 0x2026 || unichar == 0x002E); }
+    static bool isGraphemeExtend(SkUnichar unichar) {
+        return sk_u_hasBinaryProperty(unichar, UCHAR_GRAPHEME_EXTEND);
+    }
+#endif
+
 public:
     ~SkUnicode_icu() override { }
     std::unique_ptr<SkBidiIterator> makeBidiIterator(const uint16_t text[], int count,
@@ -568,6 +601,72 @@ public:
         return true;
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    void processPunctuationAndEllipsis(skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results,
+        int i, SkUnichar unichar) {
+        if (SkUnicode_icu::isPunctuation(unichar)) {
+            results->at(i) |= SkUnicode::kPunctuation;
+        }
+        if (SkUnicode_icu::isEllipsis(unichar)) {
+            results->at(i) |= SkUnicode::kEllipsis;
+        }
+    }
+
+    bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs,
+                              TArray<SkUnicode::CodeUnitFlags, true>* results) override {
+        results->clear();
+        results->push_back_n(utf8Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
+
+        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kLines, nullptr,
+                                        [&](int pos, int status) {
+            (*results)[pos] |= status == UBRK_LINE_HARD ? CodeUnitFlags::kHardLineBreakBefore :
+                CodeUnitFlags::kSoftLineBreakBefore;
+        });
+
+        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kGraphemes, nullptr,
+                                        [&](int pos, int status) {
+            (*results)[pos] |= CodeUnitFlags::kGraphemeStart;
+        });
+
+        const char* current = utf8;
+        const char* end = utf8 + utf8Units;
+        while (current < end) {
+            auto before = current - utf8;
+            SkUnichar unichar = SkUTF::NextUTF8(&current, end);
+            if (unichar < 0) unichar = 0xFFFD;
+            auto after = current - utf8;
+            if (replaceTabs && this->isTabulation(unichar)) {
+                results->at(before) |= SkUnicode::kTabulation;
+                if (replaceTabs) {
+                    unichar = ' ';
+                    utf8[before] = ' ';
+                }
+            }
+            for (auto i = before; i < after; ++i) {
+                if (this->isSpace(unichar)) {
+                    results->at(i) |= SkUnicode::kPartOfIntraWordBreak;
+                }
+                if (this->isWhitespace(unichar)) {
+                    results->at(i) |= SkUnicode::kPartOfWhiteSpaceBreak;
+                }
+                if (this->isControl(unichar)) {
+                    results->at(i) |= SkUnicode::kControl;
+                }
+                if (this->isIdeographic(unichar)) {
+                    results->at(i) |= SkUnicode::kIdeographic;
+                }
+                processPunctuationAndEllipsis(results, i, unichar);
+            }
+
+            if (SkUnicode_icu::isGraphemeExtend(unichar)) {
+                // Current unichar is a combining one.
+                results->at(before) |= SkUnicode::kCombine;
+            }
+        }
+
+        return true;
+    }
+#else
     bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs,
                               TArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->clear();
@@ -617,6 +716,7 @@ public:
 
         return true;
     }
+#endif
 
     bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs,
                           TArray<SkUnicode::CodeUnitFlags, true>* results) override {

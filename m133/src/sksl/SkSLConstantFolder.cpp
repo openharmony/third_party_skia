@@ -448,6 +448,11 @@ const Expression* ConstantFolder::GetConstantValueOrNull(const Expression& inExp
         if (!var.modifierFlags().isConst()) {
             return nullptr;
         }
+#ifdef SKSL_EXT
+        if (var.layout().fFlags & SkSL::LayoutFlag::kConstantId) {
+            return nullptr;
+        }
+#endif
         expr = var.initialValue();
         if (!expr) {
             // Generally, const variables must have initial values. However, function parameters are

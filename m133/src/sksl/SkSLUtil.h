@@ -165,7 +165,7 @@ struct ShaderCaps {
 };
 
 // Various sets of caps for use in tests
-class ShaderCapsFactory {
+class SK_API ShaderCapsFactory {
 public:
     static const ShaderCaps* Default() {
         static const SkSL::ShaderCaps* sCaps = [] {

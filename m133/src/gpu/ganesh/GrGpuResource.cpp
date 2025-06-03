@@ -27,6 +27,10 @@ static inline GrResourceCache* get_resource_cache(GrGpu* gpu) {
 GrGpuResource::GrGpuResource(GrGpu* gpu, std::string_view label)
         : fGpu(gpu), fUniqueID(CreateUniqueID()), fLabel(label) {
     SkDEBUGCODE(fCacheArrayIndex = -1);
+    auto cache = get_resource_cache(fGpu);
+    if (cache) {
+        fGrResourceTag = cache->resourceAccess().getCurrentGrResourceTag();
+    }
 }
 
 void GrGpuResource::registerWithCache(skgpu::Budgeted budgeted) {
@@ -204,6 +208,18 @@ void GrGpuResource::makeUnbudgeted() {
         !fUniqueKey.isValid()) {
         fBudgetedType = GrBudgetedType::kUnbudgetedUncacheable;
         get_resource_cache(fGpu)->resourceAccess().didChangeBudgetStatus(this);
+    }
+}
+
+void GrGpuResource::userRegisterResource() {
+    if (this->wasDestroyed()) {
+        return;
+    }
+    SkASSERT(!fScratchKey.isValid());
+    SkASSERT(!fUniqueKey.isValid());
+    if (fCacheArrayIndex >= 0 && fBudgetedType == GrBudgetedType::kUnbudgetedUncacheable) {
+        this->computeScratchKey(&fScratchKey);
+        makeBudgeted();
     }
 }
 

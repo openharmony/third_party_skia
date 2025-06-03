@@ -9,6 +9,9 @@
 #include <vector>
 #include "modules/skparagraph/include/FontCollection.h"
 #include "modules/skparagraph/include/Paragraph.h"
+#ifdef ENABLE_TEXT_ENHANCE
+#include "modules/skparagraph/include/ParagraphLineFetcher.h"
+#endif
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skunicode/include/SkUnicode.h"
@@ -58,6 +61,9 @@ public:
     // Constructs a SkParagraph object that can be used to layout and paint the text to a SkCanvas.
     virtual std::unique_ptr<Paragraph> Build() = 0;
 
+#ifdef ENABLE_TEXT_ENHANCE
+    virtual std::unique_ptr<ParagraphLineFetcher> buildLineFetcher() = 0;
+#endif
     virtual SkSpan<char> getText() = 0;
     virtual const ParagraphStyle& getParagraphStyle() const = 0;
 
@@ -79,7 +85,6 @@ public:
 
     virtual void SetUnicode(sk_sp<SkUnicode> unicode) = 0;
 #endif
-
     // Resets this builder to its initial state, discarding any text, styles, placeholders that have
     // been added, but keeping the initial ParagraphStyle.
     virtual void Reset() = 0;
