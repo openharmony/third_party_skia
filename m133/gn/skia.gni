@@ -117,6 +117,10 @@ declare_args() {
 }
 
 declare_args() {
+  gm_test_enable_font = false
+}
+
+declare_args() {
   # This is now a no-op. TODO(kjlubick) remove after Flutter stops using this.
   skia_enable_sksl_tracing = false
 }
@@ -200,8 +204,8 @@ declare_args() {
 assert(!skia_use_dawn || skia_enable_graphite)  # Dawn is Graphite-only
 
 # Our tools require static linking (they use non-exported symbols), and the Ganesh backend.
-skia_enable_tools =
-    skia_enable_tools && !is_component_build && skia_enable_ganesh
+skia_enable_tools = true # TODO: 133.`is_component_build` is false (//build/config/BUILDCONFIG.gn is set to false and Skia's BUILDCONFIG.gn is not used)
+    #skia_enable_tools && !is_component_build && skia_enable_ganesh
 
 if (skia_enable_optimize_size) {
   assert(

@@ -7,6 +7,7 @@
 
 #include "gm/gm.h"
 #include "include/core/SkCanvas.h"
+#include "include/core/SkColorSpace.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkTextureCompressionType.h"
 #include "include/gpu/ganesh/GrDirectContext.h"
