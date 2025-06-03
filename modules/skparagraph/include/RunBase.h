@@ -16,7 +16,9 @@
 #ifndef SKPARAGRAPH_INCLUDE_RUN_BASE_H
 #define SKPARAGRAPH_INCLUDE_RUN_BASE_H
 
+#ifdef OHOS_SUPPORT
 #include "modules/skparagraph/include/DartTypes.h"
+#endif
 #include "modules/skparagraph/include/ParagraphPainter.h"
 
 namespace skia {

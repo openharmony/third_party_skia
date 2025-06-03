@@ -215,7 +215,7 @@ Run::Run(ParagraphImpl* owner,
     , fOffsets(fGlyphData->offsets)
     , fClusterIndexes(fGlyphData->clusterIndexes)
 #ifdef OHOS_SUPPORT
-    , fAdvances(fGlyphData->advances)
+    , fGlyphAdvances(fGlyphData->advances)
 #endif
     , fHeightMultiplier(heightMultiplier)
     , fUseHalfLeading(useHalfLeading)
@@ -232,7 +232,7 @@ Run::Run(ParagraphImpl* owner,
     fOffsets.push_back_n(info.glyphCount + 1);
     fClusterIndexes.push_back_n(info.glyphCount + 1);
 #ifdef OHOS_SUPPORT
-    fAdvances.push_back_n(info.glyphCount + 1);
+    fGlyphAdvances.push_back_n(info.glyphCount + 1);
 #endif
     fHalfLetterspacings.push_back_n(info.glyphCount + 1);
     std::fill(fHalfLetterspacings.begin(), fHalfLetterspacings.end(), 0.0);
@@ -257,7 +257,7 @@ Run::Run(ParagraphImpl* owner,
     fOffsets[info.glyphCount] = {0, 0};
     fClusterIndexes[info.glyphCount] = this->leftToRight() ? info.utf8Range.end() : info.utf8Range.begin();
 #ifdef OHOS_SUPPORT
-    fAdvances[info.glyphCount] = {0, 0};
+    fGlyphAdvances[info.glyphCount] = {0, 0};
 #endif
     fEllipsis = false;
     fPlaceholderIndex = std::numeric_limits<size_t>::max();
@@ -310,7 +310,7 @@ void Run::calculateMetrics() {
 
 SkShaper::RunHandler::Buffer Run::newRunBuffer() {
 #ifdef OHOS_SUPPORT
-    return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset, fAdvances.data()};
+    return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset, fGlyphAdvances.data()};
 #else
     return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset};
 #endif

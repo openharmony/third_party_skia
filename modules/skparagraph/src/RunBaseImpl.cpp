@@ -196,7 +196,7 @@ std::vector<RSPoint> RunBaseImpl::getPositions(int64_t start, int64_t length) co
 
 std::vector<RSPoint> RunBaseImpl::getAdvances(uint32_t start, uint32_t length) const
 {
-    if (!fVisitorRun) {
+    if (fVisitorRun == nullptr) {
         return {};
     }
     uint64_t actualLength = calculateActualLength(start, length);
@@ -214,7 +214,7 @@ std::vector<RSPoint> RunBaseImpl::getAdvances(uint32_t start, uint32_t length) c
 
 TextDirection RunBaseImpl::getTextDirection() const
 {
-    if (!fVisitorRun) {
+    if (fVisitorRun == nullptr) {
         return {};
     }
     return fVisitorRun->getTextDirection();

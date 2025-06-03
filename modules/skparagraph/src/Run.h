@@ -213,7 +213,7 @@ public:
     }
 #ifdef OHOS_SUPPORT
     SkSpan<const SkPoint> advances() const {
-        return SkSpan<const SkPoint>(fAdvances.begin(), fAdvances.size());
+        return SkSpan<const SkPoint>(fGlyphAdvances.begin(), fGlyphAdvances.size());
     }
 #endif
     void commit() { }
@@ -280,7 +280,7 @@ private:
     SkSTArray<64, SkPoint, true>& fOffsets;
     SkSTArray<64, uint32_t, true>& fClusterIndexes;
 #ifdef OHOS_SUPPORT
-    SkSTArray<PARAM_64, SkPoint, true>& fAdvances;
+    SkSTArray<PARAM_64, SkPoint, true>& fGlyphAdvances;
 #endif
     SkSTArray<64, SkPoint, true> fJustificationShifts; // For justification
                                                                    // (current and prev shifts)
