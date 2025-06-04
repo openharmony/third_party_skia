@@ -31,6 +31,7 @@ enum AnimationType {
     PULSE_TYPE = 6,
     REPLACE_APPEAR_TYPE = 7,
     REPLACE_DISAPPEAR_TYPE = 8,
+    DISABLE_TYPE = 9,
 };
 
 enum CurveType {
@@ -85,6 +86,8 @@ using GroupSetting = struct GroupSetting {
 using AnimationSetting = struct AnimationSetting {
     std::vector<AnimationType> animationTypes;
     std::vector<GroupSetting> groupSettings;
+    CommonSubType commonSubType = CommonSubType::DOWN;
+    double slope = 0.0;
 };
 
 using RenderGroup = struct RenderGroup {

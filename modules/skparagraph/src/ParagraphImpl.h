@@ -243,6 +243,9 @@ public:
 #ifdef OHOS_SUPPORT
     void setState(InternalState state) override;
     InternalState getState() const override { return state(); }
+    std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() override;
+    bool hasEnabledTextEffect() const override { return fTextEffectState; }
+    void setTextEffectState(bool state) override { fTextEffectState = state; }
 #else
     void setState(InternalState state);
 #endif
@@ -271,6 +274,8 @@ public:
     SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
     SkTArray<Block, true>& exportTextStyles() override { return fTextStyles; }
     bool preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth);
+    bool isAutoSpaceEnabled() const;
+    SkScalar clusterUsingAutoSpaceWidth(const Cluster& cluster) const;
 #endif
 
     void visit(const Visitor&) override;
@@ -452,6 +457,7 @@ private:
     std::optional<SkRect> fPaintRegion;
     // just for building cluster table, record the last built unicode autospacing flag;
     Cluster::AutoSpacingFlag fLastAutoSpacingFlag;
+    bool fTextEffectState{false};
 #endif
 };
 }  // namespace textlayout

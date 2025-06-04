@@ -81,6 +81,12 @@ public:
     virtual void setState(InternalState state) = 0;
 
     virtual InternalState getState() const = 0;
+
+    virtual std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() = 0;
+
+    virtual bool hasEnabledTextEffect() const = 0;
+
+    virtual void setTextEffectState(bool state) = 0;
 #endif
 
     virtual void layout(SkScalar width) = 0;

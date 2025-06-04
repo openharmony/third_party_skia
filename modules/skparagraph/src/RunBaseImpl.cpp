@@ -259,7 +259,7 @@ SkRect RunBaseImpl::getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan,
         joinRect.Join(glyphBounds);
         auto& cluster = fVisitorRun->owner()->cluster(fVisitorGlobalPos + i);
         // Calculates the width of the glyph with the beginning and end of the line removed
-        runNotWhiteSpaceWidth += cluster.width();
+        runNotWhiteSpaceWidth += fVisitorRun->usingAutoSpaceWidth(cluster);
     }
 #ifndef USE_SKIA_TXT
     // If the first glyph of run is a blank glyph, you need to add startWhitespaceWidth
@@ -313,7 +313,7 @@ RSRect RunBaseImpl::getImageBounds() const
         if (!cluster.isWhitespaceBreak()) {
             break;
         }
-        startWhiteSpaceWidth += cluster.width();
+        startWhiteSpaceWidth += fVisitorRun->usingAutoSpaceWidth(cluster);
         ++startNotWhiteSpaceIndex;
     }
     SkRect rect = getAllGlyphRectInfo(runGlyphIdSpan, startNotWhiteSpaceIndex, startWhiteSpaceWidth, endWhiteSpaceNum, endAdvance);
@@ -350,7 +350,7 @@ float RunBaseImpl::calculateTrailSpacesWidth() const
         if (cluster.isHardBreak()) {
             break;
         }
-        spaceWidth += cluster.width();
+        spaceWidth += fVisitorRun->usingAutoSpaceWidth(cluster);
     }
 
     return spaceWidth;

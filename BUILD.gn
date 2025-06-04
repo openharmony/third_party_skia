@@ -4,6 +4,19 @@
 # found in the LICENSE file.
 
 import("//build/ohos.gni")
+import("build_overrides/skia.gni")
+
+if (skia_use_m133) {
+  import("m133/gn/codec.gni")
+  import("m133/gn/fuchsia_defines.gni")
+  import("m133/gn/shared_sources.gni")
+  import("m133/gn/skia.gni")
+  import("m133/gn/toolchain/wasm.gni")
+  if (is_arkui_x) {
+    import("//foundation/arkui/ace_engine/ace_config.gni")
+  }
+}
+if (!skia_use_m133) {
 import("gn/flutter_defines.gni")
 import("gn/fuchsia_defines.gni")
 import("gn/shared_sources.gni")
@@ -1718,16 +1731,16 @@ skia_component("skia") {
 if (use_oh_skia) {
   config("skia_config") {
     include_dirs = [
-      "//third_party/skia",
-      "//third_party/skia/include/core",
-      "//third_party/skia/src/core",
+      "${skia_root_dir}",
+      "${skia_root_dir}/include/core",
+      "${skia_root_dir}/src/core",
     ]
 
     defines = skia_common_defines
   }
 
   config("harfbuzz_config") {
-    include_dirs = [ "//third_party/skia/third_party/externals/harfbuzz/src" ]
+    include_dirs = [ "${skia_root_dir}/third_party/externals/harfbuzz/src" ]
 
     defines = [
       "HAVE_ICU",
@@ -4379,4 +4392,429 @@ ohos_static_library("sksl_ext_static") {
   sources += skia_sksl_sources_ext
   sources += skia_sksl_gpu_sources
   include_dirs = [ "." ]
+}
+} else { # skia_use_m133
+  skia_component("skia") {
+  }
+  import("${skia_modules_dir}/skcms/skcms.gni")
+  static_library("skcms") {
+    cflags = []
+    if (!is_win || is_clang) {
+      cflags += [ "-std=c11" ]
+    }
+    if (target_cpu != "x64" || target_os == "android") {
+      defines = [
+        "SKCMS_DISABLE_HSW",
+        "SKCMS_DISABLE_SKX",
+      ]
+    }
+    public = skcms_public_headers
+    sources = skcms_public + skcms_TransformBaseline
+    deps = [
+      "${skia_modules_dir}/skcms:skcms_TransformHsw",
+      "${skia_modules_dir}/skcms:skcms_TransformSkx",
+    ]
+  }
+  config("skia_config") {
+    include_dirs = [
+      "${skia_root_dir}",
+      "${skia_root_dir}/include/core",
+      "${skia_root_dir}/src/core",
+    ]
+
+    defines = skia_common_defines
+  }
+
+  template("make_skia_deps") {
+    forward_variables_from(invoker, "*")
+    ohos_source_set("skia_$platform") {
+      branch_protector_ret = "pac_ret"
+      part_name = "skia"
+      subsystem_name = "thirdparty"
+      license_file = "${skia_root_dir}/LICENSE"
+      public_configs = [
+        ":skia_config",
+        #":harfbuzz_config",
+        #":icu_config",
+      ]
+
+      if (is_arkui_x) {
+        public_deps = [ ":skia_canvaskit_static" ]
+      } else {
+        public_deps = [ ":skia_canvaskit" ]
+      }
+    }
+  }
+
+  if (is_arkui_x) {
+    foreach(item, ace_platforms) {
+      make_skia_deps(item.name) {
+        platform = item.name
+        config = {
+        }
+
+        if (defined(item.config)) {
+          config = item.config
+        }
+      }
+    }
+  }
+
+  skia_library_configs = [
+    "${skia_root_dir}:skia_public",
+    "${skia_root_dir}:skia_private",
+    "${skia_root_dir}:skia_library",
+  ]
+
+  config("skia_canvaskit_link_config") {
+    if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
+      ldflags = [
+        "-Wl,--lto-O2",
+        "-Wl,-mllvm",
+        "-Wl,-wholeprogramdevirt-check=fallback",
+        "-Wl,-Bsymbolic",
+      ]
+
+      if (skia_feature_enable_pgo && enable_enhanced_opt) {
+        ldflags += [
+          "-Wl,-mllvm,-vectorization-bonus-factor=4",
+          "-Wl,-mllvm,-vectorizer-min-trip-count=4",
+        ]
+      }
+    }
+  }
+
+  ohos_shared_library("skia_canvaskit") {
+    branch_protector_ret = "pac_ret"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+
+    public_configs = [
+      "${skia_root_dir}:skia_public",
+      ":skia_config",
+      "${skia_root_dir}:harfbuzz_config",
+      "${skia_root_dir}:icu_config",
+    ]
+    configs = skia_library_configs
+    if (enhanced_opt) {
+      configs += [ ":skia_canvaskit_link_config" ]
+    }
+    deps = [
+      "${skia_root_dir}:fontmgr_FontConfigInterface",
+      "${skia_root_dir}:fontmgr_android",
+      "${skia_root_dir}:fontmgr_android_ndk",
+      "${skia_root_dir}:fontmgr_custom_directory",
+      "${skia_root_dir}:fontmgr_custom_embedded",
+      "${skia_root_dir}:fontmgr_custom_empty",
+      "${skia_root_dir}:fontmgr_fontations_empty",
+      "${skia_root_dir}:fontmgr_fontconfig",
+      "${skia_root_dir}:fontmgr_fuchsia",
+      "${skia_root_dir}:fontmgr_mac_ct",
+      "${skia_root_dir}:fontmgr_ohos",
+      "${skia_root_dir}:fontmgr_win",
+      "${skia_root_dir}:fontmgr_win_gdi",
+      "${skia_root_dir}:gpu",
+      "${skia_root_dir}:graphite",
+      "${skia_root_dir}:jpeg_encode",
+      "${skia_root_dir}:pdf",
+      "${skia_root_dir}:png_encode",
+      "${skia_root_dir}:webp_encode",
+      "${skia_root_dir}:xps",
+    ]
+    deps += [
+      "${skia_root_dir}:android_utils",
+      "${skia_root_dir}:avif",
+      "${skia_root_dir}:crabbyavif",
+      "${skia_root_dir}:heif",
+      "${skia_root_dir}:hsw",
+      "${skia_root_dir}:jpeg_decode",
+      "${skia_root_dir}:jpegxl_decode",
+      "${skia_root_dir}:lasx",
+      "${skia_root_dir}:minify_sksl",
+      "${skia_root_dir}:ndk_images",
+      "${skia_root_dir}:png_decode_libpng",
+      "${skia_root_dir}:png_decode_rust",
+      "${skia_root_dir}:raw",
+      "${skia_root_dir}:skx",
+      "${skia_root_dir}:typeface_fontations",
+      "${skia_root_dir}:vello",
+      "${skia_root_dir}:webp_decode",
+      "${skia_root_dir}:wuffs",
+      "${skia_root_dir}:xml",
+      "${skia_modules_dir}/skcms",
+      "${skia_modules_dir}/svg",
+      "${skia_modules_dir}/skshaper",
+      "${skia_modules_dir}/skunicode",
+      "${skia_modules_dir}/skresources",
+    ]
+
+    if (is_arkui_x) {
+      deps -= [ ":fontmgr_ohos" ]
+      deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+    }
+
+    public = skia_core_public
+    public += skia_codec_public
+    public += skia_utils_public
+    public += skia_effects_public
+    public += skia_effects_imagefilter_public
+
+    sources = []
+    sources += skia_core_sources
+    sources += skia_utils_private
+    sources += skia_utils_chromium
+    sources += skia_effects_sources
+    sources += skia_colorfilters_sources
+    sources += skia_effects_imagefilter_sources
+    sources += skia_codec_shared
+    sources += skia_codec_decode_bmp
+    sources += skia_encode_srcs
+    sources += skia_sksl_core_sources
+    sources += skia_sksl_core_module_sources
+    sources += skia_sksl_tracing_sources
+    sources += skia_ports_sources
+    sources += [
+      "${skia_root_dir}/src/android/SkAndroidFrameworkUtils.cpp",
+      "${skia_root_dir}/src/android/SkAnimatedImage.cpp",
+      "${skia_root_dir}/src/codec/SkAndroidCodec.cpp",
+      "${skia_root_dir}/src/codec/SkAndroidCodecAdapter.cpp",
+      "${skia_root_dir}/src/codec/SkSampledCodec.cpp",
+      "${skia_root_dir}/src/ports/SkDiscardableMemory_none.cpp",
+      "${skia_root_dir}/src/ports/SkMemory_malloc.cpp",
+      "${skia_root_dir}/src/sfnt/SkOTTable_name.cpp",
+      "${skia_root_dir}/src/sfnt/SkOTUtils.cpp",
+    ]
+
+    libs = []
+
+    defines = skia_common_defines
+    cflags = skia_common_cflags
+
+    if (skia_build_for_debugger) {
+      defines += [ "SK_BUILD_FOR_DEBUGGER" ]
+    }
+
+    if (skia_use_no_jpeg_encode) {
+      sources += skia_no_encode_jpeg_srcs
+    }
+    if (skia_use_no_png_encode) {
+      sources += skia_no_encode_png_srcs
+    }
+    if (skia_use_no_webp_encode) {
+      sources += skia_no_encode_webp_srcs
+    }
+
+    if (is_win) {
+      sources += skia_ports_windows_sources +[
+                  # "${skia_root_dir}/src/ports/SkDebug_win.cpp",
+                  "${skia_root_dir}/src/ports/SkImageGeneratorWIC.cpp",
+                ]
+      libs += [
+        # "Ole32.lib",
+        # "OleAut32.lib",
+      ]
+
+      if (!skia_enable_winuwp) {
+        libs += [
+          # "FontSub.lib",
+          # "User32.lib",
+          # "Usp10.lib",
+        ]
+      }
+      libs += [
+        "kernel32",
+        "gdi32",
+        "fontsub",
+        "ole32",
+        "oleaut32",
+        "psapi",
+        "user32",
+        "usp10",
+        "uuid",
+        "windowscodecs",
+      ]
+      if (is_component_build) {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_shared" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_shared" ]
+        }
+      } else {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_static" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_static" ]
+        }
+      }
+    } else {
+      sources += [
+        "${skia_root_dir}/src/ports/SkOSFile_posix.cpp",
+        "${skia_root_dir}/tools/library/LoadDynamicLibrary_posix.cpp",
+      ]
+      if (is_ios) {
+        sources += [ "${skia_root_dir}/src/ports/SkOSFile_ios.h" ]
+      }
+      libs += [ "dl" ]
+    }
+
+    if (is_ohos) {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_ohos.cpp" ]
+      external_deps = [
+        "bounds_checking_function:libsec_shared",
+        "hilog:libhilog",
+        "hitrace:hitrace_meter",
+        "init:libbegetutil",
+      ]
+      defines += [ "SK_ENABLE_SDF_BLUR_SWITCH" ]
+      defines += [ "SK_ENABLE_PATH_COMPLEXITY_DFX" ]
+      defines += [ "SK_ENABLE_OHOS_CODEC" ]
+    }
+
+    if (is_android) {
+      deps += [ "${skia_third_party_dir}/expat" ]
+      if (defined(ndk) && ndk != "") {
+        deps += [ "${skia_third_party_dir}/cpu-features" ]
+      }
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_android.cpp" ]
+      libs += [
+        "EGL",
+        "GLESv2",
+        "log",
+      ]
+    }
+
+    if (is_linux || is_wasm) {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_stdio.cpp" ]
+      if (skia_use_egl) {
+        libs += [ "GLESv2" ]
+      }
+      if (is_component_build) {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_shared" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_shared" ]
+        }
+      } else {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_static" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_static" ]
+        }
+      }
+    }
+
+    if (is_mac) {
+      public += [ "${skia_root_dir}/include/ports/SkCFObject.h" ]
+      sources += [
+        "${skia_root_dir}/src/ports/SkDebug_stdio.cpp",
+        "${skia_root_dir}/src/ports/SkImageGeneratorCG.cpp",
+      ]
+      frameworks = [
+        "ApplicationServices.framework",
+        "OpenGL.framework",
+      ]
+      if (is_component_build) {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_shared" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_shared" ]
+        }
+      } else {
+        if (defined(external_deps)) {
+          external_deps += [ "bounds_checking_function:libsec_static" ]
+        } else {
+          external_deps = [ "bounds_checking_function:libsec_static" ]
+        }
+      }
+      libs += [
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreText.framework/Versions/A/CoreText.tbd",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation.tbd",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics.tbd",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO.tbd",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices.tbd",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL.tbd",
+      ]
+    }
+
+    if (is_ios) {
+      public += [ "${skia_root_dir}/include/ports/SkCFObject.h" ]
+      sources += [
+        "${skia_root_dir}/src/ports/SkDebug_stdio.cpp",
+        "${skia_root_dir}/src/ports/SkImageGeneratorCG.cpp",
+      ]
+      frameworks = [
+        "CoreFoundation.framework",
+        "ImageIO.framework",
+        "MobileCoreServices.framework",
+      ]
+    }
+
+    if (is_fuchsia) {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_stdio.cpp" ]
+    }
+
+    #if (skia_enable_spirv_validation) {
+    #  deps += [ "${skia_third_party_dir}/externals/spirv-tools:spvtools_val" ]
+    #  defines += [ "SK_ENABLE_SPIRV_VALIDATION" ]
+    #}
+
+    if (skia_include_multiframe_procs) {
+      sources += [ "${skia_root_dir}/tools/SkSharingProc.cpp" ]
+    }
+
+    # Overrides TRACE_EVENT0..2 macros (etc) to map to Perfetto's tracing macros.
+    # Currently only supported in Android framework.
+    if (skia_android_framework_use_perfetto) {
+      defines += [ "SK_ANDROID_FRAMEWORK_USE_PERFETTO" ]
+      sources += [ "${skia_root_dir}/src/android/SkAndroidFrameworkPerfettoStaticStorage.cpp" ]
+    }
+
+    if (!skia_enable_ganesh && !skia_enable_graphite) {
+      sources += skia_no_slug_srcs
+    }
+  }
+  ohos_static_library("sksl_ext_static") {
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+    
+    public_configs = [ ":skia_config" ]
+    defines = [
+      "SKSL_STANDALONE",
+      "SK_DISABLE_TRACING",
+      "SK_COMPILE_WITH_GN",
+      "SKSL_EXT",
+    ]
+    sources = []
+    if (is_ohos) {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_ohos.cpp" ]
+      external_deps = [
+          "hilog:libhilog"
+      ]
+    } else if (is_android) {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_android.cpp" ]
+    } else if (is_win) {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_win.cpp" ]
+    } else {
+      sources += [ "${skia_root_dir}/src/ports/SkDebug_stdio.cpp" ]
+    }
+    sources += skslc_deps
+    sources += skia_sksl_codegen_sources
+    sources += skia_sksl_core_sources
+    sources += skia_sksl_pipeline_sources
+    libs = []
+    if (is_win) {
+      sources += [ "${skia_root_dir}/src/utils/SkGetExecutablePath_win.cpp" ]
+    } else if (is_mac || is_ios) {
+      sources += [ "${skia_root_dir}/src/utils/SkGetExecutablePath_mac.cpp" ]
+    } else if (is_linux || is_android) {
+      sources += [ "${skia_root_dir}/src/utils/SkGetExecutablePath_linux.cpp" ]
+    }
+    if (is_win) {
+      sources += skia_ports_windows_sources
+    } else {
+      sources += [ "${skia_root_dir}/src/ports/SkOSFile_posix.cpp" ]
+      libs += [ "dl" ]
+    }
+    include_dirs = [ "${skia_root_dir}" ]
+  }
 }
