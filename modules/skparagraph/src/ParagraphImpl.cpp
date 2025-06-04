@@ -697,8 +697,7 @@ static const UnicodeIdentifier WESTERN_IDENTIFIER(WESTERN_UNICODE_SET);
 
 static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(ParagraphImpl& paragraph, SkUnichar unicode)
 {
-    bool enableAutoSpaceFlag = paragraph.paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
-    if (!enableAutoSpaceFlag) {
+    if (!paragraph.isAutoSpaceEnabled()) {
         return Cluster::AutoSpacingFlag::NoFlag;
     }
     if (WESTERN_IDENTIFIER.exist(unicode)) {
@@ -1787,11 +1786,31 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
     return unresolvedPaintID;
 }
 
+bool ParagraphImpl::isAutoSpaceEnabled() const
+{
+    return paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
+}
+
+SkScalar ParagraphImpl::clusterUsingAutoSpaceWidth(const Cluster& cluster) const
+{
+    if(!isAutoSpaceEnabled()){
+        return cluster.width();
+    }
+    Run& run = cluster.run();
+    size_t start = cluster.startPos();
+    size_t end = cluster.endPos();
+    float correction = 0.0f;
+    if (end > start && !run.getAutoSpacings().empty()) {
+        correction = run.getAutoSpacings()[end - 1].fX - run.getAutoSpacings()[start].fY;
+    }
+
+    return cluster.width() + std::max(0.0f, correction);
+}
+
 bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
 {
     SkScalar singleRunWidth = fRuns[0].fAdvance.fX;
-    bool enableAutoSpace = paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
-    if (!enableAutoSpace) {
+    if (!isAutoSpaceEnabled()) {
         return singleRunWidth <= floorWidth - this->detectIndents(0);
     }
     SkScalar totalFakeSpacing = 0.0f;

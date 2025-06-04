@@ -274,6 +274,8 @@ public:
     SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
     SkTArray<Block, true>& exportTextStyles() override { return fTextStyles; }
     bool preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth);
+    bool isAutoSpaceEnabled() const;
+    SkScalar clusterUsingAutoSpaceWidth(const Cluster& cluster) const;
 #endif
 
     void visit(const Visitor&) override;
