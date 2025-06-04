@@ -29,7 +29,7 @@
 #include <utility>
 
 #ifdef ENABLE_TEXT_ENHANCE
-#include "utils/text_trace.h"
+#include "trace.h"
 #include "log.h"
 #include "include/TextGlobalConfig.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
