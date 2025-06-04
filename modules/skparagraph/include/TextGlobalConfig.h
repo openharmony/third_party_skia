@@ -16,12 +16,15 @@
 #ifndef TEXT_GLOBAL_CONFIG_H
 #define TEXT_GLOBAL_CONFIG_H
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 namespace skia {
 namespace textlayout {
 constexpr uint32_t SINCE_API20_VERSION = 20;
+constexpr const char* NOTDEF_FAMILY = "notdef";
 
 class TextGlobalConfig {
 public:
@@ -30,12 +33,17 @@ public:
     static void SetTargetVersion(uint32_t targetVersion)
     {
         bundleApiVersion_ = targetVersion;
-    };
+    }
+
+    static void SetUndefinedGlyphDisplay(uint32_t undefinedGlyphDisplay);
+
+    static bool UndefinedGlyphDisplayUseTofu(const std::string& family = NOTDEF_FAMILY);
 
 private:
     static uint32_t bundleApiVersion_;
+    static std::atomic<bool> undefinedGlyphDisplayTofu_;
 };
-} // namespace textlayout
-} // namespace skia
+}  // namespace textlayout
+}  // namespace skia
 
-#endif // TEXT_GLOBAL_CONFIG_H
+#endif  // TEXT_GLOBAL_CONFIG_H
