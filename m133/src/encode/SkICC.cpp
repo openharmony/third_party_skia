@@ -819,3 +819,142 @@ sk_sp<SkData> SkWriteICCProfile(const skcms_TransferFunction& fn, const skcms_Ma
     std::string description = get_desc_string(fn, toXYZD50);
     return SkWriteICCProfile(&profile, description.c_str());
 }
+
+sk_sp<SkData> SkWriteICCProfileWithCicp(const skcms_TransferFunction& fn, const skcms_Matrix3x3& toXYZD50,
+                                        const skcms_CICP& cicp) {
+    skcms_ICCProfile profile;
+    memset(&profile, 0, sizeof(profile));
+    std::vector<uint16_t> trc_table;
+    std::vector<uint16_t> a2b_grid;
+
+    profile.data_color_space = skcms_Signature_RGB;
+    profile.pcs = skcms_Signature_XYZ;
+
+    // Populate toXYZD50.
+    {
+        profile.has_toXYZD50 = true;
+        profile.toXYZD50 = toXYZD50;
+    }
+
+    // Populate the analytic TRC for sRGB-like curves.
+    if (skcms_TransferFunction_isSRGBish(&fn)) {
+        profile.has_trc = true;
+        profile.trc[0].table_entries = 0;
+        profile.trc[0].parametric = fn;
+        memcpy(&profile.trc[1], &profile.trc[0], sizeof(profile.trc[0]));
+        memcpy(&profile.trc[2], &profile.trc[0], sizeof(profile.trc[0]));
+    }
+
+    // Populate A2B (PQ and HLG only).
+    if (skcms_TransferFunction_isPQish(&fn) || skcms_TransferFunction_isHLGish(&fn)) {
+        // Populate a 1D curve to perform per-channel conversion to linear and tone mapping.
+        constexpr uint32_t kTrcTableSize = 65;
+        trc_table.resize(kTrcTableSize);
+        for (uint32_t i = 0; i < kTrcTableSize; ++i) {
+            float x = i / (kTrcTableSize - 1.f);
+            x = hdr_trfn_eval(fn, x);
+            x *= tone_map_gain(x);
+            trc_table[i] = SkEndian_SwapBE16(float_to_uInt16Number(x, kOne16CurveType));
+        }
+
+        // Populate the grid with a 3D LUT to do cross-channel tone mapping.
+        constexpr uint32_t kGridSize = 11;
+        a2b_grid.resize(kGridSize * kGridSize * kGridSize * kNumChannels);
+        size_t a2b_grid_index = 0;
+        for (uint32_t r_index = 0; r_index < kGridSize; ++r_index) {
+            for (uint32_t g_index = 0; g_index < kGridSize; ++g_index) {
+                for (uint32_t b_index = 0; b_index < kGridSize; ++b_index) {
+                    float rgb[3] = {
+                            r_index / (kGridSize - 1.f),
+                            g_index / (kGridSize - 1.f),
+                            b_index / (kGridSize - 1.f),
+                    };
+
+                    // Un-apply the per-channel tone mapping.
+                    for (auto& c : rgb) {
+                        c = tone_map_inverse(c);
+                    }
+
+                    // For HLG, mix the channels according to the OOTF.
+                    if (skcms_TransferFunction_isHLGish(&fn)) {
+                        // Scale to [0, 1].
+                        for (auto& c : rgb) {
+                            c /= kToneMapInputMax;
+                        }
+
+                        // Un-apply the per-channel OOTF.
+                        for (auto& c : rgb) {
+                            c = std::pow(c, 1 / 1.2);
+                        }
+
+                        // Re-apply the cross-channel OOTF.
+                        float Y = 0.2627f * rgb[0] + 0.6780f * rgb[1] + 0.0593f * rgb[2];
+                        for (auto& c : rgb) {
+                            c *= std::pow(Y, 0.2);
+                        }
+
+                        // Scale back up to 1.0 being 1,000/203.
+                        for (auto& c : rgb) {
+                            c *= kToneMapInputMax;
+                        }
+                    }
+
+                    // Apply tone mapping to take 1,000/203 to 1.0.
+                    {
+                        float max_rgb = std::max(std::max(rgb[0], rgb[1]), rgb[2]);
+                        for (auto& c : rgb) {
+                            c *= tone_map_gain(0.5 * (c + max_rgb));
+                            c = std::min(c, 1.f);
+                        }
+                    }
+
+                    // Write the result to the LUT.
+                    for (const auto& c : rgb) {
+                        a2b_grid[a2b_grid_index++] =
+                                SkEndian_SwapBE16(float_to_uInt16Number(c, kOne16XYZ));
+                    }
+                }
+            }
+        }
+
+        // Populate A2B as this tone mapping.
+        profile.has_A2B = true;
+        profile.A2B.input_channels = kNumChannels;
+        profile.A2B.output_channels = kNumChannels;
+        profile.A2B.matrix_channels = kNumChannels;
+        for (size_t i = 0; i < kNumChannels; ++i) {
+            profile.A2B.grid_points[i] = kGridSize;
+            // Set the input curve to convert to linear pre-OOTF space.
+            profile.A2B.input_curves[i].table_entries = kTrcTableSize;
+            profile.A2B.input_curves[i].table_16 = reinterpret_cast<uint8_t*>(trc_table.data());
+            // The output and matrix curves are the identity.
+            profile.A2B.output_curves[i].parametric = SkNamedTransferFn::kLinear;
+            profile.A2B.matrix_curves[i].parametric = SkNamedTransferFn::kLinear;
+            // Set the matrix to convert from the primaries to XYZD50.
+            for (size_t j = 0; j < 3; ++j) {
+                profile.A2B.matrix.vals[i][j] = toXYZD50.vals[i][j];
+            }
+            profile.A2B.matrix.vals[i][3] = 0.f;
+        }
+        profile.A2B.grid_16 = reinterpret_cast<const uint8_t*>(a2b_grid.data());
+
+        // Populate B2A as the identity.
+        profile.has_B2A = true;
+        profile.B2A.input_channels = kNumChannels;
+        for (size_t i = 0; i < 3; ++i) {
+            profile.B2A.input_curves[i].parametric = SkNamedTransferFn::kLinear;
+        }
+    }
+
+    // Populate CICP.
+    profile.has_CICP = true;
+    profile.CICP.color_primaries = cicp.color_primaries;
+    profile.CICP.transfer_characteristics = cicp.transfer_characteristics;
+    profile.CICP.matrix_coefficients = cicp.matrix_coefficients;
+    profile.CICP.video_full_range_flag = cicp.video_full_range_flag;
+    SkASSERT(profile.CICP.color_primaries);
+    SkASSERT(profile.CICP.transfer_characteristics);
+
+    std::string description = get_desc_string(fn, toXYZD50);
+    return SkWriteICCProfile(&profile, description.c_str());
+}
