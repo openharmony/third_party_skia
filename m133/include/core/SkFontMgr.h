@@ -126,8 +126,6 @@ public:
 
     sk_sp<SkTypeface> legacyMakeTypeface(const char familyName[], SkFontStyle style) const;
 
-    /** Return the default fontmgr. */
-    static sk_sp<SkFontMgr> RefDefault();
 #ifdef ENABLE_TEXT_ENHANCE
     // this method is never called -- will be removed
     virtual sk_sp<SkTypeface> onMatchFaceStyle(const SkTypeface*,
@@ -136,6 +134,9 @@ public:
     }
 
     std::vector<sk_sp<SkTypeface>> getSystemFonts();
+
+    /** Return the default fontmgr. */
+    static sk_sp<SkFontMgr> RefDefault();
 #endif
 
     /* Returns an empty font manager without any typeface dependencies */

@@ -286,6 +286,9 @@ void Run::copyTo(RSTextBlobBuilder& builder,
         if (!fJustificationShifts.empty()) {
             x += fJustificationShifts[i + pos].fX;
         }
+        if (!fAutoSpacings.empty()) {
+            x += fAutoSpacings[i + pos].fX;
+        }
         RSPoint rsPos;
         RSPoint rsTan;
         if (!path->GetPositionAndTangent(x, rsPos, rsTan, false)) {
@@ -707,5 +710,15 @@ bool Cluster::isSoftBreak() const {
 bool Cluster::isGraphemeBreak() const {
     return fOwner->codeUnitHasProperty(fTextRange.end, SkUnicode::CodeUnitFlags::kGraphemeStart);
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+bool Cluster::isStartCombineBreak() const {
+    return fOwner->codeUnitHasProperty(fTextRange.start, SkUnicode::CodeUnitFlags::kCombine);
+}
+
+bool Cluster::isEndCombineBreak() const {
+    return fOwner->codeUnitHasProperty(fTextRange.end, SkUnicode::CodeUnitFlags::kCombine);
+}
+#endif
 }  // namespace textlayout
 }  // namespace skia

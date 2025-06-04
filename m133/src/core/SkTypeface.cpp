@@ -51,6 +51,12 @@
 #include <cstring>
 #include <vector>
 
+#ifdef ENABLE_TEXT_ENHANCE
+#include <mutex>
+#include "src/core/SkChecksum.h"
+#include "src/core/SkLRUCache.h"
+#endif
+
 using namespace skia_private;
 
 SkTypeface::SkTypeface(const SkFontStyle& style, bool isFixedPitch)
@@ -140,6 +146,58 @@ protected:
     }
 };
 
+#ifdef ENABLE_TEXT_ENHANCE
+constexpr int MAX_VARFONT_CACHE_SIZE = 64;
+
+class SkVarFontCache {
+public:
+    SkVarFontCache() : fLRUCache(MAX_VARFONT_CACHE_SIZE) {}
+
+    static SkVarFontCache& Instance()
+    {
+        static SkVarFontCache cache;
+        return cache;
+    }
+
+    sk_sp<SkTypeface> GetVarFont(sk_sp<SkTypeface> typeface, const SkFontArguments& args)
+    {
+        if (!typeface) {
+            return nullptr;
+        }
+
+        size_t hash = 0;
+        hash ^= std::hash<uint32_t>()(typeface->uniqueID());
+        uint32_t typefaceHash = typeface->GetHash();
+        hash ^= std::hash<uint32_t>()(typefaceHash);
+        hash ^= std::hash<int>()(args.getCollectionIndex());
+        const auto& positions = args.getVariationDesignPosition();
+        for (int i = 0; i < positions.coordinateCount; i++) {
+            const auto& coord = positions.coordinates[i];
+            hash ^= std::hash<SkFourByteTag>()(coord.axis);
+            hash ^= std::hash<float>()(coord.value);
+        }
+
+        std::lock_guard<std::mutex> lock(fMutex);
+        auto cached = fLRUCache.find(hash);
+        if (!cached) {
+            int ttcIndex = args.getCollectionIndex();
+            auto varTypeface = SkFontMgr::RefDefault()->makeFromStream(typeface->openStream(&ttcIndex), args);
+            if (!varTypeface) {
+                return typeface;
+            } else {
+                fLRUCache.insert(hash, varTypeface);
+                return varTypeface;
+            }
+        }
+
+        return *cached;
+    }
+
+private:
+    SkLRUCache<uint32_t, sk_sp<SkTypeface>> fLRUCache;
+    std::mutex fMutex;
+};
+#endif
 }  // namespace
 
 sk_sp<SkTypeface> SkTypeface::MakeEmpty() {
@@ -220,6 +278,52 @@ sk_sp<SkTypeface> SkTypeface::MakeDefault() {
 std::vector<sk_sp<SkTypeface>> SkTypeface::GetSystemFonts() {
     return SkFontMgr::RefDefault()->getSystemFonts();
 }
+
+sk_sp<SkTypeface> SkTypeface::MakeFromName(const char name[],
+                                           SkFontStyle fontStyle) {
+    if (nullptr == name && (fontStyle.slant() == SkFontStyle::kItalic_Slant ||
+                            fontStyle.slant() == SkFontStyle::kUpright_Slant) &&
+                           (fontStyle.weight() == SkFontStyle::kBold_Weight ||
+                            fontStyle.weight() == SkFontStyle::kNormal_Weight)) {
+        return GetDefaultTypeface(static_cast<SkTypeface::Style>(
+            (fontStyle.slant() == SkFontStyle::kItalic_Slant ? SkTypeface::kItalic :
+                                                               SkTypeface::kNormal) |
+            (fontStyle.weight() == SkFontStyle::kBold_Weight ? SkTypeface::kBold :
+                                                               SkTypeface::kNormal)));
+    }
+    return SkFontMgr::RefDefault()->legacyMakeTypeface(name, fontStyle);
+}
+
+uint32_t SkTypeface::GetHash() const
+{
+    if (hash_ != 0) {
+        return hash_;
+    }
+    auto skData = serialize(SkTypeface::SerializeBehavior::kDontIncludeData);
+    if (skData == nullptr) {
+        return hash_;
+    }
+    std::unique_ptr<SkStreamAsset> ttfStream = openExistingStream(0);
+    uint32_t seed = ttfStream.get() != nullptr ? ttfStream->getLength() : 0;
+    hash_ = SkChecksum::Hash32(skData->data(), skData->size(), seed);
+    return hash_;
+}
+
+void SkTypeface::SetHash(uint32_t hash)
+{
+    hash_ = hash;
+}
+
+sk_sp<SkTypeface> SkTypeface::MakeFromStream(std::unique_ptr<SkStreamAsset> stream, int index) {
+    if (!stream) {
+        return nullptr;
+    }
+    return SkFontMgr::RefDefault()->makeFromStream(std::move(stream), index);
+}
+
+sk_sp<SkTypeface> SkTypeface::MakeFromFile(const char path[], int index) {
+    return SkFontMgr::RefDefault()->makeFromFile(path, index);
+}
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -239,6 +343,12 @@ void SkTypeface::serialize(SkWStream* wstream, SerializeBehavior behavior) const
     }
 
     bool shouldSerializeData = false;
+
+#ifdef ARKUI_X_ENABLE
+    // Prohibiting serializes typeface when arkui-x use custom's font
+    isLocalData = false;
+#endif
+
     switch (behavior) {
         case SerializeBehavior::kDoIncludeData:      shouldSerializeData = true;        break;
         case SerializeBehavior::kDontIncludeData:    shouldSerializeData = false;       break;
@@ -310,6 +420,42 @@ sk_sp<SkTypeface> SkTypeface::MakeDeserialize(SkStream* stream, sk_sp<SkFontMgr>
     }
     return SkEmptyTypeface::Make();
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+sk_sp<SkTypeface> SkTypeface::MakeDeserialize(SkStream* stream) {
+    SkFontDescriptor desc;
+    if (!SkFontDescriptor::Deserialize(stream, &desc)) {
+        return nullptr;
+    }
+
+    if (desc.hasStream()) {
+        if (auto tf = SkCustomTypefaceBuilder::Deserialize(desc.dupStream().get())) {
+            return tf;
+        }
+    }
+
+    if (desc.hasStream()) {
+        SkFontArguments args;
+        args.setCollectionIndex(desc.getCollectionIndex());
+        args.setVariationDesignPosition({desc.getVariation(), desc.getVariationCoordinateCount()});
+        sk_sp<SkFontMgr> defaultFm = SkFontMgr::RefDefault();
+        sk_sp<SkTypeface> typeface = defaultFm->makeFromStream(desc.detachStream(), args);
+        if (typeface) {
+            return typeface;
+        }
+    }
+
+    auto typeface = SkTypeface::MakeFromName(desc.getFamilyName(), desc.getStyle());
+    if (desc.getVariationCoordinateCount() > 0 && typeface) {
+        SkFontArguments args;
+        args.setCollectionIndex(desc.getCollectionIndex());
+        args.setVariationDesignPosition({desc.getVariation(), desc.getVariationCoordinateCount()});
+        typeface = SkVarFontCache::Instance().GetVarFont(typeface, args);
+    }
+
+    return typeface;
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -514,6 +660,12 @@ bool SkTypeface::isThemeTypeface() const {
 
 void SkTypeface::setIsThemeTypeface(bool isTheme) {
     fIsTheme = isTheme;
+}
+
+void SkTypeface::getFontPath(SkString* path) const
+{
+    SkASSERT(path);
+    this->onGetFontPath(path);
 }
 #endif
 

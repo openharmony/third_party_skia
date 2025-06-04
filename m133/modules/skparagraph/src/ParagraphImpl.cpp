@@ -31,6 +31,7 @@
 #ifdef ENABLE_TEXT_ENHANCE
 #include "utils/text_trace.h"
 #include "log.h"
+#include "include/TextGlobalConfig.h"
 #include "modules/skparagraph/src/TextLineBaseImpl.h"
 #include "TextParameter.h"
 #endif
@@ -42,7 +43,6 @@ namespace textlayout {
 
 namespace {
 #ifdef ENABLE_TEXT_ENHANCE
-constexpr int PARAM_DOUBLE = 2;
 constexpr ParagraphPainter::PaintID INVALID_PAINT_ID = -1;
 #endif
 
@@ -91,6 +91,15 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
     }
     fUnicodeIndexForUTF8Index.emplace_back(result.size());
     return result;
+}
+
+bool ParagraphImpl::needCreateMiddleEllipsis()
+{
+    if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
+        fParagraphStyle.ellipsized()) {
+        return true;
+    }
+    return false;
 }
 #endif
 
@@ -272,229 +281,17 @@ void ParagraphImpl::resetPlaceholderRange(const TextRange& deletedRange)
         fPlaceholders.emplace_back(ph);
     }
 }
-
-bool ParagraphImpl::middleEllipsisDeal()
-{
-    if (fRuns.empty()) {
-        return false;
-    }
-    isMiddleEllipsis = false;
-
-    size_t end = 0;
-    size_t charbegin = 0;
-    size_t charend = 0;
-    if (fRuns.begin()->leftToRight()) {
-        middleEllipsisLtrDeal(end, charbegin, charend);
-    } else {
-        middleEllipsisRtlDeal(end, charbegin, charend);
-    }
-    if (end != 0) {
-        TextRange deletedRange(charbegin, charend);
-        resetTextStyleRange(deletedRange);
-        resetPlaceholderRange(deletedRange);
-        fEllipsisRange = deletedRange;
-    }
-    // end = 0 means the text does not exceed the width limit
-    return end != 0;
-}
-
-void ParagraphImpl::middleEllipsisLtrDeal(size_t& end,
-                                          size_t& charbegin,
-                                          size_t& charend)
-{
-    const SkString& ell = this->getEllipsis();
-    const char *ellStr = ell.c_str();
-    size_t start = 0;
-    if (ltrTextSize.empty() || ltrTextSize[0].phraseWidth >= fOldMaxWidth) {
-        fText.reset();
-        fText.set(ellStr);
-        end = 1;
-        charend = ell.size();
-    } else {
-        scanTextCutPoint(ltrTextSize, start, end);
-        if (end) {
-            charbegin = ltrTextSize[start].charbegin;
-            charend = ltrTextSize[end].charOver;
-            fText.remove(ltrTextSize[start].charbegin, ltrTextSize[end].charOver - ltrTextSize[start].charbegin);
-            fText.insert(ltrTextSize[start].charbegin, ellStr);
-        }
-    }
-    ltrTextSize.clear();
-}
-
-void ParagraphImpl::middleEllipsisRtlDeal(size_t& end,
-                                          size_t& charbegin,
-                                          size_t& charend)
-{
-    const SkString& ell = this->getEllipsis();
-    const char *ellStr = ell.c_str();
-    size_t start = 0;
-    scanTextCutPoint(rtlTextSize, start, end);
-    if (start < 1 || end + PARAM_DOUBLE >= rtlTextSize.size()) {
-        start = 0;
-        end = 0;
-    }
-    if (end) {
-        charbegin = rtlTextSize[start - 1].charbegin;
-        charend = rtlTextSize[end + PARAM_DOUBLE].charbegin;
-        fText.remove(rtlTextSize[start - 1].charbegin,
-            rtlTextSize[end + PARAM_DOUBLE].charbegin - rtlTextSize[start - 1].charbegin);
-        fText.insert(rtlTextSize[start - 1].charbegin, ellStr);
-    }
-    rtlTextSize.clear();
-}
-
-SkScalar ParagraphImpl::resetEllipsisWidth(SkScalar ellipsisWidth, size_t& lastRunIndex, const size_t textIndex)
-{
-    auto targetCluster = cluster(clusterIndex(textIndex));
-    if (lastRunIndex != targetCluster.runIndex()) {
-        TextLine textLine;
-        textLine.setParagraphImpl(this);
-        auto blockRange = findAllBlocks(TextRange(textIndex, textIndex + 1));
-        textLine.setBlockRange(blockRange);
-        const SkString& ellipsis = this->getEllipsis();
-        std::unique_ptr<Run> ellipsisRun;
-        ellipsisRun = textLine.shapeEllipsis(ellipsis, &targetCluster);
-        lastRunIndex = targetCluster.runIndex();
-        ellipsisWidth = ellipsisRun->fAdvanceX();
-        ellipsisRun.reset();
-    }
-    return ellipsisWidth;
-}
-
-void ParagraphImpl::scanRTLTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end)
-{
-    size_t lastRunIndex = EMPTY_RUN;
-    auto runTimeEllipsisWidth = resetEllipsisWidth(0, lastRunIndex, 0);
-    float measureWidth = runTimeEllipsisWidth;
-    size_t left = 0;
-    size_t right = rawTextSize.size() - 1;
-    while (left < rawTextSize.size() && measureWidth < fOldMaxWidth && left <= right) {
-        measureWidth += rawTextSize[left++].phraseWidth;
-        if (right > left && measureWidth < fOldMaxWidth) {
-            measureWidth += rawTextSize[right--].phraseWidth;
-        }
-        measureWidth -= runTimeEllipsisWidth;
-        runTimeEllipsisWidth = resetEllipsisWidth(runTimeEllipsisWidth, lastRunIndex, left);
-        measureWidth += runTimeEllipsisWidth;
-    }
-
-    if (right < left) {
-        right = left;
-    }
-
-    if (measureWidth >= fOldMaxWidth || fParagraphStyle.getTextOverflower()) {
-        start = left;
-        end = right;
-    } else {
-        start = 0;
-        end = 0;
-    }
-}
-
-void ParagraphImpl::scanLTRTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end)
-{
-    size_t lastRunIndex = EMPTY_RUN;
-    auto runTimeEllipsisWidth = resetEllipsisWidth(0, lastRunIndex, 0);
-    float measureWidth = runTimeEllipsisWidth;
-    size_t begin = 0;
-    size_t last = rawTextSize.size() - 1;
-    bool rightExit = false;
-    while (begin < last && !rightExit && measureWidth < fOldMaxWidth) {
-        measureWidth += rawTextSize[begin++].phraseWidth;
-        if (measureWidth > fOldMaxWidth) {
-            --begin;
-            break;
-        }
-        if (last > begin && measureWidth < fOldMaxWidth) {
-            measureWidth += rawTextSize[last--].phraseWidth;
-            if (measureWidth > fOldMaxWidth) {
-                rightExit = true;
-                ++last;
-            }
-        }
-        measureWidth -= runTimeEllipsisWidth;
-        runTimeEllipsisWidth = resetEllipsisWidth(runTimeEllipsisWidth, lastRunIndex, begin);
-        measureWidth += runTimeEllipsisWidth;
-    }
-
-    if (measureWidth >= fOldMaxWidth || fParagraphStyle.getTextOverflower()) {
-        start = begin;
-        end = last;
-    } else {
-        start = 0;
-        end = 0;
-    }
-}
-
-void ParagraphImpl::scanTextCutPoint(const std::vector<TextCutRecord>& rawTextSize, size_t& start, size_t& end)
-{
-    if (allTextWidth <= fOldMaxWidth || !rawTextSize.size()) {
-        allTextWidth = 0;
-        return;
-    }
-
-    if (fRuns.begin()->leftToRight()) {
-        scanLTRTextCutPoint(rawTextSize, start, end);
-    } else {
-        scanRTLTextCutPoint(rawTextSize, start, end);
-    }
-}
-
-bool ParagraphImpl::shapeForMiddleEllipsis(SkScalar rawWidth)
-{
-    if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE ||
-        !fParagraphStyle.ellipsized()) {
-        return true;
-    }
-    fOldMaxWidth = rawWidth;
-    isMiddleEllipsis = true;
-    allTextWidth = 0;
-    this->computeCodeUnitProperties();
-    this->fRuns.clear();
-    this->fClusters.clear();
-    this->fClustersIndexFromCodeUnit.clear();
-    this->fClustersIndexFromCodeUnit.push_back_n(fText.size() + 1, EMPTY_INDEX);
-    if (!this->shapeTextIntoEndlessLine()) {
-        return false;
-    }
-    return middleEllipsisDeal();
-}
-
-void ParagraphImpl::prepareForMiddleEllipsis(SkScalar rawWidth)
-{
-    if (fParagraphStyle.getMaxLines() != 1 || fParagraphStyle.getEllipsisMod() != EllipsisModal::MIDDLE ||
-        !fParagraphStyle.ellipsized()) {
-        return;
-    }
-    std::shared_ptr<ParagraphImpl> tmpParagraph = std::make_shared<ParagraphImpl>(fText, fParagraphStyle, fTextStyles,
-        fPlaceholders, fFontCollection, fUnicode);
-    if (tmpParagraph->shapeForMiddleEllipsis(rawWidth)) {
-        fText = tmpParagraph->fText;
-        fTextStyles = tmpParagraph->fTextStyles;
-        fPlaceholders = tmpParagraph->fPlaceholders;
-        fEllipsisRange = tmpParagraph->fEllipsisRange;
-    }
-}
 #endif
 
 void ParagraphImpl::layout(SkScalar rawWidth) {
 #ifdef ENABLE_TEXT_ENHANCE
     TEXT_TRACE_FUNC();
     fLineNumber = 1;
-    allTextWidth = 0;
     fLayoutRawWidth = rawWidth;
 #endif
     // TODO: This rounding is done to match Flutter tests. Must be removed...
     auto floorWidth = rawWidth;
 
-#ifdef ENABLE_TEXT_ENHANCE
-    if (fParagraphStyle.getMaxLines() == 1 &&
-        fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE) {
-        fOldMaxWidth = rawWidth;
-        isMiddleEllipsis = true;
-    }
-#endif
     if (getApplyRoundingHack()) {
         floorWidth = SkScalarFloorToScalar(floorWidth);
     }
@@ -524,7 +321,6 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     }
 
 #ifdef ENABLE_TEXT_ENHANCE
-    this->prepareForMiddleEllipsis(rawWidth);
     this->fUnicodeText = convertUtf8ToUnicode(fText);
     auto paragraphCache = fFontCollection->getParagraphCache();
 #endif
@@ -582,8 +378,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 
                 return;
 #ifdef ENABLE_TEXT_ENHANCE
-            } else if (!(fParagraphStyle.getMaxLines() == 1 &&
-                fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE)) {
+            } else {
                 // Add the paragraph to the cache
                 paragraphCache->updateParagraph(this);
             }
@@ -607,7 +402,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         if (!fHasLineBreaks &&
             !fHasWhitespacesInside &&
             fPlaceholders.size() == 1 &&
-            (fRuns.size() == 1 && fRuns[0].fAdvance.fX <= floorWidth - this->detectIndents(0))) {
+            (fRuns.size() == 1 && preCalculateSingleRunAutoSpaceWidth(floorWidth))) {
             positionShapedTextIntoLine(floorWidth);
         } else if (!paragraphCache->GetStoredLayout(*this)) {
             breakShapedTextIntoLines(floorWidth);
@@ -673,6 +468,9 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     for (auto& line : fLines) {
+#ifdef ENABLE_TEXT_ENHANCE
+        line.updateTextLinePaintAttributes();
+#endif
         line.paint(painter, x, y);
     }
 }
@@ -836,9 +634,51 @@ static const std::vector<SkRange<SkUnichar>> CJK_UNICODE_SET = {
 };
 
 static const std::vector<SkRange<SkUnichar>> WESTERN_UNICODE_SET = {
-    SkRange<SkUnichar>(0x0030, 0x0039),
-    SkRange<SkUnichar>(0x0041, 0x005A),
+    SkRange<SkUnichar>(0x0030, 0x0039), // Number
+    SkRange<SkUnichar>(0x0041, 0x005A), // Base Latin
     SkRange<SkUnichar>(0x0061, 0x007A),
+    SkRange<SkUnichar>(0x00C0, 0x00FF), // Latin Extended-1: À-ÿ
+    SkRange<SkUnichar>(0x0100, 0x017F), // Latin Extended-A: Ā-ſ
+    SkRange<SkUnichar>(0x018F, 0x0192), // Latin Extended-B (specific ranges)
+    SkRange<SkUnichar>(0x01A0, 0x01A1),
+    SkRange<SkUnichar>(0x01AF, 0x01B0),
+    SkRange<SkUnichar>(0x01CD, 0x01DC),
+    SkRange<SkUnichar>(0x01E5, 0x01E5),
+    SkRange<SkUnichar>(0x01E7, 0x01E7),
+    SkRange<SkUnichar>(0x01E9, 0x01E9),
+    SkRange<SkUnichar>(0x01EF, 0x01F0),
+    SkRange<SkUnichar>(0x01F9, 0x01FF),
+    SkRange<SkUnichar>(0x0218, 0x0219),
+    SkRange<SkUnichar>(0x021A, 0x021B),
+    SkRange<SkUnichar>(0x021F, 0x021F),
+    SkRange<SkUnichar>(0x0237, 0x0237),
+    SkRange<SkUnichar>(0x0386, 0x0386), // Greek and Coptic
+    SkRange<SkUnichar>(0x0388, 0x038A),
+    SkRange<SkUnichar>(0x038C, 0x038C),
+    SkRange<SkUnichar>(0x038E, 0x038F),
+    SkRange<SkUnichar>(0x0390, 0x03A1),
+    SkRange<SkUnichar>(0x03A3, 0x03CE),
+    SkRange<SkUnichar>(0x03D1, 0x03D2),
+    SkRange<SkUnichar>(0x03D6, 0x03D6),
+    SkRange<SkUnichar>(0x0400, 0x045F), // Cyrillic
+    SkRange<SkUnichar>(0x0462, 0x0463),
+    SkRange<SkUnichar>(0x046B, 0x046B),
+    SkRange<SkUnichar>(0x0472, 0x0475),
+    SkRange<SkUnichar>(0x0490, 0x0493),
+    SkRange<SkUnichar>(0x0497, 0x0497),
+    SkRange<SkUnichar>(0x049A, 0x049D),
+    SkRange<SkUnichar>(0x04A2, 0x04A3),
+    SkRange<SkUnichar>(0x04AE, 0x04B3),
+    SkRange<SkUnichar>(0x04B8, 0x04BB),
+    SkRange<SkUnichar>(0x04CA, 0x04CA),
+    SkRange<SkUnichar>(0x04D8, 0x04D9),
+    SkRange<SkUnichar>(0x04E8, 0x04E9),
+    SkRange<SkUnichar>(0x1E00, 0x1E01), // Latin Extended Additional
+    SkRange<SkUnichar>(0x1E3E, 0x1E3F),
+    SkRange<SkUnichar>(0x1E80, 0x1E85),
+    SkRange<SkUnichar>(0x1EA0, 0x1EF9),
+    SkRange<SkUnichar>(0x1F45, 0x1F45), // Greek Extended
+    SkRange<SkUnichar>(0x1F4D, 0x1F4D)
 };
 
 constexpr SkUnichar COPYRIGHT_UNICODE = 0x00A9;
@@ -850,9 +690,6 @@ struct UnicodeIdentifier {
     const std::vector<SkRange<SkUnichar>>& fUnicodeSet;
     explicit UnicodeIdentifier(const std::vector<SkRange<SkUnichar>>& unicodeSet) : fUnicodeSet(unicodeSet) {}
     bool exist(SkUnichar c) const {
-        if (!TextParameter::GetAutoSpacingEnable()) {
-            return false;
-        }
         auto pos = std::upper_bound(fUnicodeSet.begin(), fUnicodeSet.end(), SkRange<SkUnichar>(c, c), cmp);
         if (pos == fUnicodeSet.begin()) {
             return false;
@@ -865,20 +702,21 @@ struct UnicodeIdentifier {
 static const UnicodeIdentifier CJK_IDENTIFIER(CJK_UNICODE_SET);
 static const UnicodeIdentifier WESTERN_IDENTIFIER(WESTERN_UNICODE_SET);
 
-static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(SkUnichar unicode)
+static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(ParagraphImpl& paragraph, SkUnichar unicode)
 {
+    bool enableAutoSpaceFlag = paragraph.paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
+    if (!enableAutoSpaceFlag) {
+        return Cluster::AutoSpacingFlag::NoFlag;
+    }
     if (WESTERN_IDENTIFIER.exist(unicode)) {
         return Cluster::AutoSpacingFlag::Western;
     }
-
     if (CJK_IDENTIFIER.exist(unicode)) {
         return Cluster::AutoSpacingFlag::CJK;
     }
-
     if (unicode == COPYRIGHT_UNICODE) {
         return Cluster::AutoSpacingFlag::Copyright;
     }
-
     return Cluster::AutoSpacingFlag::NoFlag;
 }
 #endif
@@ -944,7 +782,7 @@ Cluster::Cluster(ParagraphImpl* owner,
         unicode = fOwner->unicodeText()[unicodeStart];
     }
 
-    auto curAutoSpacingFlag = recognizeUnicodeAutoSpacingFlag(unicode);
+    auto curAutoSpacingFlag = recognizeUnicodeAutoSpacingFlag(*fOwner, unicode);
     auto lastAutoSpacingFlag = fOwner->getLastAutoSpacingFlag();
     fNeedAutoSpacing = curAutoSpacingFlag != Cluster::AutoSpacingFlag::NoFlag &&
         curAutoSpacingFlag != lastAutoSpacingFlag && lastAutoSpacingFlag != Cluster::AutoSpacingFlag::NoFlag;
@@ -1025,22 +863,16 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
     // (we have to walk through the styles in the same order, too)
     // Not breaking the iteration on every run!
     SkScalar shift = 0;
-#ifndef ENABLE_TEXT_ENHANCE
     bool soFarWhitespacesOnly = true;
     bool wordSpacingPending = false;
     Cluster* lastSpaceCluster = nullptr;
-#endif
     for (auto& run : fRuns) {
 
         // Skip placeholder runs
         if (run.isPlaceholder()) {
             continue;
         }
-#ifdef ENABLE_TEXT_ENHANCE
-        bool soFarWhitespacesOnly = true;
-        bool wordSpacingPending = false;
-        Cluster* lastSpaceCluster = nullptr;
-#endif
+
         run.iterateThroughClusters([this, &run, &shift, &soFarWhitespacesOnly, &wordSpacingPending, &lastSpaceCluster](Cluster* cluster) {
             // Shift the cluster (shift collected from the previous clusters)
             run.shift(cluster, shift);
@@ -1063,9 +895,6 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                     }
                 } else if (wordSpacingPending) {
                     SkScalar spacing = currentStyle->fStyle.getWordSpacing();
-#ifdef ENABLE_TEXT_ENHANCE
-                    run.addSpacesAtTheEnd(spacing, lastSpaceCluster);
-#else
                     if (cluster->fRunIndex != lastSpaceCluster->fRunIndex) {
                         // If the last space cluster belongs to the previous run
                         // we have to extend that cluster and that run
@@ -1074,7 +903,6 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                     } else {
                         run.addSpacesAtTheEnd(spacing, lastSpaceCluster);
                     }
-#endif
                     run.shift(cluster, spacing);
                     shift += spacing;
                     wordSpacingPending = false;
@@ -1093,25 +921,6 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
-void ParagraphImpl::middleEllipsisAddText(size_t charStart,
-                                          size_t charEnd,
-                                          SkScalar& allTextWidth,
-                                          SkScalar width,
-                                          bool isLeftToRight) {
-    if (isMiddleEllipsis) {
-        TextCutRecord textCount;
-        textCount.charbegin = charStart;
-        textCount.charOver = charEnd;
-        textCount.phraseWidth = width;
-        allTextWidth += width;
-        if (isLeftToRight) {
-            this->ltrTextSize.emplace_back(textCount);
-        } else {
-            this->rtlTextSize.emplace_back(textCount);
-        }
-    }
-}
-
 void ParagraphImpl::buildClusterPlaceholder(Run& run, size_t runIndex)
 {
     if (run.isPlaceholder()) {
@@ -1133,49 +942,17 @@ void ParagraphImpl::buildClusterPlaceholder(Run& run, size_t runIndex)
             for (auto i = charStart; i < charEnd; ++i) {
               fClustersIndexFromCodeUnit[i] = fClusters.size();
             }
-            middleEllipsisAddText(charStart, charEnd, allTextWidth, width, run.leftToRight());
             SkSpan<const char> text(fText.c_str() + charStart, charEnd - charStart);
             fClusters.emplace_back(this, runIndex, glyphStart, glyphEnd, text, width, height);
             fCodeUnitProperties[charStart] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
         });
     }
 }
+#endif
 
 // Clusters in the order of the input text
 void ParagraphImpl::buildClusterTable()
 {
-    // It's possible that one grapheme includes few runs; we cannot handle it
-    // so we break graphemes by the runs instead
-    // It's not the ideal solution and has to be revisited later
-    int cluster_count = 1;
-    for (auto& run : fRuns) {
-        cluster_count += run.isPlaceholder() ? 1 : run.size();
-        fCodeUnitProperties[run.fTextRange.start] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
-        fCodeUnitProperties[run.fTextRange.start] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
-    }
-    if (!fRuns.empty()) {
-        fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGraphemeStart;
-        fCodeUnitProperties[fRuns.back().textRange().end] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
-    }
-    fClusters.reserve_exact(fClusters.size() + cluster_count);
-
-    // Walk through all the run in the direction of input text
-    for (auto& run : fRuns) {
-        auto runIndex = run.index();
-        auto runStart = fClusters.size();
-        buildClusterPlaceholder(run, runIndex);
-
-        fCodeUnitProperties[run.textRange().start] |= SkUnicode::CodeUnitFlags::kGlyphClusterStart;
-
-        run.setClusterRange(runStart, fClusters.size());
-        fMaxIntrinsicWidth += run.advance().fX;
-    }
-    fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
-    fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
-}
-#else
-// Clusters in the order of the input text
-void ParagraphImpl::buildClusterTable() {
     // It's possible that one grapheme includes few runs; we cannot handle it
     // so we break graphemes by the runs instead
     // It's not the ideal solution and has to be revisited later
@@ -1206,12 +983,21 @@ void ParagraphImpl::buildClusterTable() {
             fCodeUnitProperties[run.textRange().end] |= SkUnicode::CodeUnitFlags::kSoftLineBreakBefore;
         } else {
             // Walk through the glyph in the direction of input text
+#ifdef ENABLE_TEXT_ENHANCE
+            run.iterateThroughClustersInTextOrder([&run, runIndex, this](size_t glyphStart,
+                                                                   size_t glyphEnd,
+                                                                   size_t charStart,
+                                                                   size_t charEnd,
+                                                                   SkScalar width,
+                                                                   SkScalar height) {
+#else
             run.iterateThroughClustersInTextOrder([runIndex, this](size_t glyphStart,
                                                                    size_t glyphEnd,
                                                                    size_t charStart,
                                                                    size_t charEnd,
                                                                    SkScalar width,
                                                                    SkScalar height) {
+#endif
                 SkASSERT(charEnd >= charStart);
                 // Add info to cluster indexes table (text -> cluster)
                 for (auto i = charStart; i < charEnd; ++i) {
@@ -1230,7 +1016,6 @@ void ParagraphImpl::buildClusterTable() {
     fClustersIndexFromCodeUnit[fText.size()] = fClusters.size();
     fClusters.emplace_back(this, EMPTY_RUN, 0, 0, this->text({fText.size(), fText.size()}), 0, 0);
 }
-#endif
 
 bool ParagraphImpl::shapeTextIntoEndlessLine() {
 #ifdef ENABLE_TEXT_ENHANCE
@@ -1285,7 +1070,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto advance = run.advance();
     auto textRange = TextRange(0, this->text().size());
     auto textExcludingSpaces = TextRange(0, fTrailingSpaces);
-    InternalLineMetrics metrics(this->strutForceHeight());
+    InternalLineMetrics metrics(strutForceHeight() && strutEnabled());
     metrics.add(&run);
     auto disableFirstAscent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent;
     auto disableLastDescent = this->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
@@ -1354,19 +1139,21 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 // TODO: Take in account clipped edges
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines,
                     clusters, clustersWithGhosts, widthWithSpaces, metrics);
+                line.autoSpacing();
                 if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
                     line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
                 } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
                     line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
                 }
-                else if (textWrapper.brokeLineWithHyphen()
-                         || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
-                             && (clusters.end < this->fUnicodeText.size())
-                             && (this->fUnicodeText[clusters.end - 1] == 0xad))) { // 0xad represents a soft hyphen
+                else if (needCreateMiddleEllipsis()) {
+                    line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
+                } else if (textWrapper.brokeLineWithHyphen()
+                           || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
+                               && (clusters.end < this->fUnicodeText.size())
+                               && (this->fUnicodeText[clusters.end - 1] == 0xad))) { // 0xad represents a soft hyphen
                     line.setBreakWithHyphen(true);
                 }
-                auto spacing = line.autoSpacing();
-                auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces()) + spacing;
+                auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces());
                 fLongestLine = std::max(fLongestLine, longestLine);
                 fLongestLineWithIndent = std::max(fLongestLineWithIndent, longestLine + indent);
             });
@@ -2085,14 +1872,20 @@ ParagraphPainter::PaintID ParagraphImpl::updateTextStyleColorAndForeground(TextS
     return INVALID_PAINT_ID;
 }
 
-std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, size_t to, SkColor color) {
+std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, size_t to, SkColor color,
+    UtfEncodeType encodeType) {
     std::vector<ParagraphPainter::PaintID> unresolvedPaintID;
     if (from >= to) {
         return unresolvedPaintID;
     }
     this->ensureUTF16Mapping();
-    from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[from] : fText.size();
-    to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[to] : fText.size();
+    if (encodeType == UtfEncodeType::kUtf16) {
+        from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? from : fText.size();
+        to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? to : fText.size();
+    } else {
+        from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[from] : fText.size();
+        to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[to] : fText.size();
+    }
     if (from == 0 && to == fText.size()) {
         auto defaultStyle = fParagraphStyle.getTextStyle();
         auto paintID = updateTextStyleColorAndForeground(defaultStyle, color);
@@ -2119,6 +1912,23 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
         line.setTextBlobCachePopulated(false);
     }
     return unresolvedPaintID;
+}
+
+bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
+{
+    SkScalar singleRunWidth = fRuns[0].fAdvance.fX;
+    bool enableAutoSpace = paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
+    if (!enableAutoSpace) {
+        return singleRunWidth <= floorWidth - this->detectIndents(0);
+    }
+    SkScalar totalFakeSpacing = 0.0f;
+    ClusterIndex endOfClusters = fClusters.size();
+    for (size_t cluster = 1; cluster < endOfClusters; ++cluster) {
+        totalFakeSpacing += (fClusters[cluster].needAutoSpacing())
+            ? fClusters[cluster - 1].getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
+        singleRunWidth += totalFakeSpacing;
+    }
+    return singleRunWidth <= floorWidth - this->detectIndents(0);
 }
 #endif
 TArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
@@ -2421,7 +2231,8 @@ bool ParagraphImpl::getClosestUTF16GlyphInfoAt(SkScalar dx, SkScalar dy, GlyphIn
 RSFont ParagraphImpl::getFontAt(TextIndex codeUnitIndex) const
 {
     for (auto& run : fRuns) {
-        if (run.textRange().contains({codeUnitIndex, codeUnitIndex})) {
+        const auto textRange = run.textRange();
+        if (textRange.start <= codeUnitIndex && codeUnitIndex < textRange.end) {
             return run.font();
         }
     }
@@ -2640,14 +2451,11 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
 
     paragraph->fWords = this->fWords;
     paragraph->fIndents = this->fIndents;
-    paragraph->rtlTextSize = this->rtlTextSize;
-    paragraph->ltrTextSize = this->ltrTextSize;
     paragraph->fBidiRegions = this->fBidiRegions;
 
     paragraph->fUTF8IndexForUTF16Index = this->fUTF8IndexForUTF16Index;
     paragraph->fUTF16IndexForUTF8Index = this->fUTF16IndexForUTF8Index;
     paragraph->fUnresolvedGlyphs = this->fUnresolvedGlyphs;
-    paragraph->isMiddleEllipsis = this->isMiddleEllipsis;
     paragraph->fUnresolvedCodepoints = this->fUnresolvedCodepoints;
 
     for (auto& line : this->fLines) {
@@ -2662,8 +2470,6 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fOldWidth = this->fOldWidth;
     paragraph->fOldHeight = this->fOldHeight;
     paragraph->fMaxWidthWithTrailingSpaces = this->fMaxWidthWithTrailingSpaces;
-    paragraph->fOldMaxWidth = this->fOldMaxWidth;
-    paragraph->allTextWidth = this->allTextWidth;
 
     paragraph->fUnicode = this->fUnicode;
     paragraph->fHasLineBreaks = this->fHasLineBreaks;
