@@ -7,8 +7,14 @@
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/src/TextLine.h"
 
+#ifdef OHOS_SUPPORT
+#include "include/ParagraphStyle.h"
+#include "SkScalar.h"
+#endif
+
 namespace skia {
 namespace textlayout {
+const size_t NUMBER_TWO = 2;
 
 class Decorations {
     public:
@@ -23,6 +29,10 @@ class Decorations {
         fDecorationContext = context;
         setThickness(fDecorationContext.thickness);
     }
+#ifdef OHOS_SUPPORT
+    void setVerticalAlignment(TextVerticalAlign verticalAlignment) { fVerticalAlignment = verticalAlignment; }
+    TextVerticalAlign getVerticalAlignment() const { return fVerticalAlignment; }
+#endif
 
     private:
 #ifdef OHOS_SUPPORT
@@ -37,6 +47,8 @@ class Decorations {
     void calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface);
 #endif
 #ifdef OHOS_SUPPORT
+    void updateDecorationPosition(TextDecoration decorationMode, SkScalar baselineShift,
+        const TextLine::ClipContext& context, SkScalar& positionY);
     void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle,
         SkScalar textBaselineShift, const SkScalar& fontSize);
 #else
@@ -61,6 +73,9 @@ class Decorations {
     RSFontMetrics fFontMetrics;
     ParagraphPainter::DecorationStyle fDecorStyle;
     RSPath fPath;
+#endif
+#ifdef OHOS_SUPPORT
+    TextVerticalAlign fVerticalAlignment{TextVerticalAlign::BASELINE};
 #endif
 };
 }  // namespace textlayout

@@ -27,12 +27,14 @@ class SkString;
 
 namespace skia {
 namespace textlayout {
+const size_t BOTTOM_PADDING_FACTOR = 8;
 
 class ParagraphImpl;
 struct DecorationContext {
     SkScalar thickness = 0.0f;
     SkScalar underlinePosition = 0.0f;
     SkScalar textBlobTop = 0.0f;
+    SkScalar lineHeight = 0.0f;
 };
 
 #ifdef OHOS_SUPPORT
@@ -221,6 +223,12 @@ public:
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
     void createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis);
     void middleEllipsisUpdateLine(ClusterIndex& indexS, ClusterIndex& indexE, SkScalar width);
+    bool isLineHeightDominatedBy(const Run& run);
+    SkScalar updateBlobShift(const Run& run, SkScalar verticalShift, bool isReset);
+    void updateBlobAndRunShift(Run& run);
+    void shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign VerticalAlignment);
+    void shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment, const RSRect& groupClustersBounds);
+    void applyVerticalShift();
 #endif
     // For testing internal structures
     void scanStyles(StyleType style, const RunStyleVisitor& visitor);
