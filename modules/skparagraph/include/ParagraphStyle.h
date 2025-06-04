@@ -27,6 +27,12 @@ struct TextTabs {
         return (alignment == other.alignment) && nearlyEqual(location, other.location);
     }
 };
+
+struct TextBlobRecordInfo {
+    std::shared_ptr<RSTextBlob> fBlob{nullptr};
+    SkPoint fOffset{0.0f, 0.0f};
+    ParagraphPainter::SkPaintOrID fPaint;
+};
 #endif
 
 enum class WordBreakType {

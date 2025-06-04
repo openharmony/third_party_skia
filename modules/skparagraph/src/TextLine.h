@@ -184,7 +184,7 @@ public:
     void iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrategy,
                                   bool includingGhostSpaces,
                                   const RunVisitor& runVisitor) const;
-    void handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
+    bool handleMiddleEllipsisMode(const Run* run, IterateRunsContext& context,
                                   EllipsisReadStrategy& ellipsisReadStrategy, const RunVisitor& runVisitor) const;
 #else
     void iterateThroughVisualRuns(bool includingGhostSpaces, const RunVisitor& runVisitor) const;
@@ -270,6 +270,7 @@ public:
     }
 
 #ifdef OHOS_SUPPORT
+    SkScalar usingAutoSpaceWidth(const Cluster* cluster) const;
     std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
         const std::string& ellipsisStr);
     double getTypographicBounds(double* ascent, double* descent, double* leading) const;

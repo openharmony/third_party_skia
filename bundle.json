@@ -38,7 +38,9 @@
                 "opengles",
                 "faultloggerd",
                 "icu",
-                "graphic_2d"
+                "graphic_2d",
+                "libpng",
+                "freetype"
             ],
             "third_party": [
                 "vulkan-headers"
@@ -53,10 +55,19 @@
                     "name": "//third_party/skia/third_party/libjpeg-turbo:libjpeg"
                 },
                 {
+                    "name": "//third_party/skia/m133/third_party/libjpeg-turbo:libjpegm133"
+                },
+                {
                     "name": "//third_party/skia/third_party/piex:piex"
                 },
                 {
+                    "name": "//third_party/skia/m133/third_party/piex:piexm133"
+                },
+                {
                     "name": "//third_party/skia/third_party/libwebp:libwebp"
+                },
+                {
+                    "name": "//third_party/skia/m133/third_party/libwebp:libwebpm133"
                 },
                 {
                     "name": "//third_party/skia:skia_canvaskit"

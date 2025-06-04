@@ -9,14 +9,22 @@
 #define GrVkVulkan_DEFINED
 
 #include "include/core/SkTypes.h"
+#ifdef GRAPHIC_2D_INDEP_BUILD
+#include "vulkan/vulkan_core.h"
+#else
 #include "third_party/vulkan-headers/include/vulkan/vulkan_core.h"
+#endif
 
 #ifdef VK_USE_PLATFORM_OHOS
 #include <vulkan/vulkan_ohos.h>
 #endif
 
 #ifdef SKIA_USE_XEG
+#ifdef GRAPHIC_2D_INDEP_BUILD
+#include "vulkan/vulkan_xeg.h"
+#else
 #include "third_party/vulkan-headers/include/vulkan/vulkan_xeg.h"
+#endif
 #endif
 
 #ifdef SK_BUILD_FOR_ANDROID
