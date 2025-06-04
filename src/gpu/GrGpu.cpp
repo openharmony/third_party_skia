@@ -6,7 +6,6 @@
  */
 
 
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/gpu/GrGpu.h"
 
 #include "include/gpu/GrBackendSemaphore.h"
@@ -105,8 +104,6 @@ sk_sp<GrTexture> GrGpu::createTextureCommon(SkISize dimensions,
                                             GrProtected isProtected,
                                             int mipLevelCount,
                                             uint32_t levelClearMask) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRGPU_CREATETEXTURECOMMON);
     if (this->caps()->isFormatCompressed(format)) {
         // Call GrGpu::createCompressedTexture.
         return nullptr;
@@ -160,8 +157,6 @@ sk_sp<GrTexture> GrGpu::createTexture(SkISize dimensions,
                                       GrMipmapped mipMapped,
                                       SkBudgeted budgeted,
                                       GrProtected isProtected) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRGPU_CREATETEXTURE_1);
     int mipLevelCount = 1;
     if (mipMapped == GrMipmapped::kYes) {
         mipLevelCount =
@@ -195,8 +190,6 @@ sk_sp<GrTexture> GrGpu::createTexture(SkISize dimensions,
                                       GrColorType srcColorType,
                                       const GrMipLevel texels[],
                                       int texelLevelCount) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRGPU_CREATETEXTURE_2);
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
     if (texelLevelCount) {
         if (!validate_texel_levels(dimensions, srcColorType, texels, texelLevelCount,
@@ -328,8 +321,6 @@ sk_sp<GrTexture> GrGpu::wrapBackendTexture(const GrBackendTexture& backendTex,
                                            GrWrapOwnership ownership,
                                            GrWrapCacheable cacheable,
                                            GrIOType ioType) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRGPU_WRAPBACKENDTEXTURE);
     SkASSERT(ioType != kWrite_GrIOType);
     this->handleDirtyContext();
 
@@ -370,8 +361,6 @@ sk_sp<GrTexture> GrGpu::wrapRenderableBackendTexture(const GrBackendTexture& bac
                                                      int sampleCnt,
                                                      GrWrapOwnership ownership,
                                                      GrWrapCacheable cacheable) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRGPU_WRAPRENDERABLEBACKENDTEXTURE);
     this->handleDirtyContext();
     if (sampleCnt < 1) {
         return nullptr;

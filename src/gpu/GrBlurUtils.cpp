@@ -11,7 +11,6 @@
 
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrRecordingContext.h"
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/gpu/GrCaps.h"
 #include "src/gpu/GrDirectContextPriv.h"
 #include "src/gpu/GrFixedClip.h"
@@ -483,8 +482,6 @@ static void draw_shape_with_mask_filter(GrRecordingContext* rContext,
                                         const SkMatrix& viewMatrix,
                                         const SkMaskFilterBase* maskFilter,
                                         const GrStyledShape& origShape) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRBLURUTILS_DRAW_SHAPE_WITH_MASK_FILTER);
     SkASSERT(maskFilter);
 
     const GrStyledShape* shape = &origShape;

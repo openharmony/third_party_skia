@@ -8,7 +8,6 @@
 #include "src/gpu/GrResourceProvider.h"
 
 #include "include/gpu/GrBackendSemaphore.h"
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/private/GrResourceKey.h"
 #include "include/private/GrSingleOwner.h"
 #include "src/core/SkConvertPixels.h"
@@ -52,8 +51,6 @@ sk_sp<GrTexture> GrResourceProvider::createTexture(SkISize dimensions,
                                                    GrMipmapped mipmapped,
                                                    GrProtected isProtected,
                                                    const GrMipLevel texels[]) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRRESOURCEPROVIDER_CREATETEXTURE);
     ASSERT_SINGLE_OWNER
 
     if (this->isAbandoned()) {
@@ -185,8 +182,6 @@ sk_sp<GrTexture> GrResourceProvider::createCompressedTexture(SkISize dimensions,
                                                              GrMipmapped mipmapped,
                                                              GrProtected isProtected,
                                                              SkData* data) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRRESOURCEPROVIDER_CREATECOMPRESSEDTEXTURE);
     ASSERT_SINGLE_OWNER
     if (this->isAbandoned()) {
         return nullptr;
@@ -282,8 +277,6 @@ sk_sp<GrTexture> GrResourceProvider::createApproxTexture(SkISize dimensions,
                                                          GrRenderable renderable,
                                                          int renderTargetSampleCnt,
                                                          GrProtected isProtected) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRRESOURCEPROVIDER_CREATEAPPROXTEXTURE);
     ASSERT_SINGLE_OWNER
 
     if (this->isAbandoned()) {
@@ -382,8 +375,6 @@ sk_sp<GrTexture> GrResourceProvider::wrapRenderableBackendTexture(const GrBacken
                                                                   int sampleCnt,
                                                                   GrWrapOwnership ownership,
                                                                   GrWrapCacheable cacheable) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRRESOURCEPROVIDER_WRAPRENDERABLEBACKENDTEXTURE);
     ASSERT_SINGLE_OWNER
     if (this->isAbandoned()) {
         return nullptr;
@@ -607,8 +598,6 @@ static int num_stencil_samples(const GrRenderTarget* rt, bool useMSAASurface, co
 }
 
 bool GrResourceProvider::attachStencilAttachment(GrRenderTarget* rt, bool useMSAASurface) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRRESOURCEPROVIDER_ATTACHSTENCILATTACHMENT);
     SkASSERT(rt);
     SkASSERT(!this->caps()->avoidStencilBuffers());
 

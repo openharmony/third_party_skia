@@ -12,7 +12,6 @@
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrRecordingContext.h"
 #include "include/gpu/GrYUVABackendTextures.h"
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "include/private/SkImageInfoPriv.h"
 #include "src/core/SkAutoPixmapStorage.h"
 #include "src/core/SkBitmapCache.h"
@@ -391,8 +390,6 @@ static sk_sp<SkImage> new_wrapped_texture_common(GrRecordingContext* rContext,
                                                  sk_sp<SkColorSpace> colorSpace,
                                                  GrWrapOwnership ownership,
                                                  sk_sp<GrRefCntedCallback> releaseHelper) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_SKIMAGE_GPU_NEW_WRAPPED_TEXTURE_COMMON);
     if (!backendTex.isValid() || backendTex.width() <= 0 || backendTex.height() <= 0) {
         return nullptr;
     }
@@ -453,8 +450,6 @@ sk_sp<SkImage> SkImage::MakeFromTexture(GrRecordingContext* rContext,
                                         const GrBackendTexture& tex, GrSurfaceOrigin origin,
                                         SkColorType ct, SkAlphaType at, sk_sp<SkColorSpace> cs,
                                         TextureReleaseProc releaseP, ReleaseContext releaseC) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_SKIMAGE_MAKEFROMTEXTURE);
     auto releaseHelper = GrRefCntedCallback::Make(releaseP, releaseC);
 
     if (!rContext) {
@@ -506,8 +501,6 @@ sk_sp<SkImage> SkImage::MakeTextureFromCompressed(GrDirectContext* direct, sk_sp
                                                   GrMipmapped mipMapped,
                                                   GrProtected isProtected,
                                                   sk_sp<SkColorSpace> colorSpace) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_SKIMAGE_MAKETEXTUREFROMCOMPRESSED);
     if (!direct || !data) {
         return nullptr;
     }

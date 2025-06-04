@@ -5,7 +5,6 @@
  * found in the LICENSE file.
  */
 
-#include "include/gpu/vk/GrVkGraphicCoreTraceInterface.h"
 #include "src/gpu/GrDrawOpAtlas.h"
 
 #include <memory>
@@ -655,8 +654,6 @@ bool GrDrawOpAtlas::createPages(
 }
 
 bool GrDrawOpAtlas::activateNewPage(GrResourceProvider* resourceProvider) {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(GraphicCoreTrace::CoreFunction::
-        SKIA_GRDRAWOPATLAS_ACTIVATENEWPAGE);
     SkASSERT(fNumActivePages < this->maxPages());
 
     if (!fViews[fNumActivePages].proxy()->instantiate(resourceProvider)) {

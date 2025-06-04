@@ -108,7 +108,6 @@ config("skia_public") {
       "SKIA_OHOS_TEXTURE_MEM_MGMT",
       "SKIA_DFX_FOR_OHOS",
       "SKIA_DFX_FOR_RECORD_VKIMAGE",
-      "SKIA_DFX_FOR_GPURESOURCE_CORETRACE",
     ]
     if (skia_feature_product != "wearable") {
       defines += [ "SKIA_OHOS_SINGLE_OWNER" ]
