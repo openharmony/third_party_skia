@@ -324,3 +324,22 @@ sk_sp<SkMaskFilter> SkMaskFilter::Deserialize(const void* data, size_t size,
                                SkFlattenable::Deserialize(
                                kSkMaskFilter_Type, data, size, procs).release()));
 }
+
+#ifdef SKIA_OHOS
+bool SkMaskFilterBase::directFilterRRectMaskGPU(GrRecordingContext* context,
+                                                skgpu::ganesh::SurfaceDrawContext* sdc,
+                                                GrPaint&& paint,
+                                                const GrClip* clip,
+                                                const SkMatrix& viewMatrix,
+                                                const GrStyledShape& shape,
+                                                const SkRRect& srcRRect) const
+{
+    return false;
+}
+
+bool SkMaskFilterBase::quick_check_gpu_draw(const SkMatrix& viewMatrix,
+                                            SkIRect& devSpaceShapeBounds) const
+{
+    return false;
+}
+#endif // SKIA_OHOS

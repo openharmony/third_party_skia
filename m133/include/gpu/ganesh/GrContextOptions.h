@@ -318,6 +318,9 @@ struct SK_API GrContextOptions {
     // Suppress prints for the GrContext.
     bool fSuppressPrints = false;
 
+    // Advanced Filter: Record process name, so that we can get it in other places easily.
+    std::string fProcessName;
+    
 #if defined(GPU_TEST_UTILS)
     /**
      * Private options that are only meant for testing within Skia's tools.

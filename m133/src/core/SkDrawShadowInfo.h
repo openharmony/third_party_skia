@@ -30,6 +30,7 @@ struct SK_API SkDrawShadowRec {
     SkColor     fAmbientColor;
     SkColor     fSpotColor;
     uint32_t    fFlags;
+    bool        isLimitElevation = false;
 };
 
 namespace SkDrawShadowMetrics {
@@ -61,12 +62,24 @@ inline SkScalar SpotBlurRadius(SkScalar occluderZ, SkScalar lightZ, SkScalar lig
 }
 
 inline void GetSpotParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY, SkScalar lightZ,
-                          SkScalar lightRadius,
-                          SkScalar* blurRadius, SkScalar* scale, SkVector* translate) {
+                          SkScalar lightRadius, SkScalar* blurRadius, SkScalar* scale, SkVector* translate,
+                          bool isLimitElevation) {
     SkScalar zRatio = divide_and_pin(occluderZ, lightZ - occluderZ, 0.0f, 0.95f);
     *blurRadius = lightRadius*zRatio;
     *scale = divide_and_pin(lightZ, lightZ - occluderZ, 1.0f, 1.95f);
+
+    if (isLimitElevation) {
+        *scale = 1.0f;
+        zRatio = 0.0f;
+    }
+
     *translate = SkVector::Make(-zRatio * lightX, -zRatio * lightY);
+}
+
+inline void GetSpotParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY, SkScalar lightZ,
+                          SkScalar lightRadius,
+                          SkScalar* blurRadius, SkScalar* scale, SkVector* translate) {
+    GetSpotParams(occluderZ, lightX, lightY, lightZ, lightRadius, blurRadius, scale, translate, false);
 }
 
 inline void GetDirectionalParams(SkScalar occluderZ, SkScalar lightX, SkScalar lightY,
@@ -86,7 +99,7 @@ inline void GetDirectionalParams(SkScalar occluderZ, SkScalar lightX, SkScalar l
 bool GetSpotShadowTransform(const SkPoint3& lightPos, SkScalar lightRadius,
                             const SkMatrix& ctm, const SkPoint3& zPlaneParams,
                             const SkRect& pathBounds, bool directional,
-                            SkMatrix* shadowTransform, SkScalar* radius);
+                            SkMatrix* shadowTransform, SkScalar* radius, bool isLimitElevation = false);
 
 // get bounds prior to the ctm being applied
 void GetLocalBounds(const SkPath&, const SkDrawShadowRec&, const SkMatrix& ctm, SkRect* bounds);

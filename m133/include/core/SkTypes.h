@@ -167,6 +167,10 @@
   #endif
 #endif
 
+#ifdef SKIA_OHOS_SHADER_REDUCE
+    extern SK_API bool SkShaderReduceProperty();
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /** 32 bit integer to hold a unicode value

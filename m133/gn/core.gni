@@ -531,6 +531,8 @@ skia_core_sources = [
   "$_src/core/SkRuntimeBlender.h",
   "$_src/core/SkRuntimeEffect.cpp",
   "$_src/core/SkRuntimeEffectPriv.h",
+  "$_src/core/SkSDFFilter.cpp",
+  "$_src/core/SkSDFFilter.h",
   "$_src/core/SkSLTypeShared.cpp",
   "$_src/core/SkSLTypeShared.h",
   "$_src/core/SkSafeRange.h",

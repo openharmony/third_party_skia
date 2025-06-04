@@ -463,6 +463,7 @@ SkSL::ProgramSettings SkRuntimeEffect::MakeSettings(const Options& options) {
     // we're willing to pay for a slightly longer compile so that we don't waste huge
     // amounts of memory.
     settings.fUseMemoryPool = false;
+    settings.fUseAF = options.useAF;
     return settings;
 }
 
@@ -483,6 +484,15 @@ SkRuntimeEffect::Result SkRuntimeEffect::MakeFromSource(SkString sksl,
     }
 
     return MakeInternal(std::move(program), options, kind);
+}
+
+// Advanced Filter
+bool SkRuntimeEffect::getAF() const
+{
+    if (fBaseProgram == nullptr || fBaseProgram->fConfig == nullptr) {
+        return false;
+    }
+    return fBaseProgram->fConfig->fSettings.fUseAF;
 }
 
 SkRuntimeEffect::Result SkRuntimeEffect::MakeInternal(std::unique_ptr<SkSL::Program> program,
@@ -761,7 +771,7 @@ SkRuntimeEffect::SkRuntimeEffect(std::unique_ptr<SkSL::Program> baseProgram,
     // assert below to trigger, please incorporate your field into `fHash` and update KnownOptions
     // to match the layout of Options.
     struct KnownOptions {
-        bool forceUnoptimized, allowPrivateAccess;
+        bool forceUnoptimized, allowPrivateAccess, useAF;
         uint32_t fStableKey;
         SkSL::Version maxVersionAllowed;
     };
@@ -774,6 +784,8 @@ SkRuntimeEffect::SkRuntimeEffect(std::unique_ptr<SkSL::Program> baseProgram,
                                sizeof(options.fStableKey), fHash);
     fHash = SkChecksum::Hash32(&options.maxVersionAllowed,
                                sizeof(options.maxVersionAllowed), fHash);
+    // Advanced Filter
+    fHash = SkChecksum::Hash32(&options.useAF, sizeof(options.useAF), fHash);
 }
 
 SkRuntimeEffect::~SkRuntimeEffect() = default;
