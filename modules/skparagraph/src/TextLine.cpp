@@ -1028,7 +1028,7 @@ SkScalar TextLine::usingAutoSpaceWidth(const Cluster* cluster) const
     if (cluster == nullptr) {
         return 0.0f;
     }
-    return fOwner->clusterUsingAutoSpaceWidth(cluster);
+    return fOwner->clusterUsingAutoSpaceWidth(*cluster);
 }
 
 void TextLine::ellipsisNotFitProcess(EllipsisModal ellipsisModal) {
