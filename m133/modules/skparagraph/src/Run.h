@@ -112,11 +112,19 @@ public:
         return SkVector::Make(fAdvance.fX, fFontMetrics.fDescent - fFontMetrics.fAscent + fFontMetrics.fLeading);
     }
     SkVector offset() const { return fOffset; }
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar ascent() const { return fFontMetrics.fAscent + fBaselineShift + getVerticalAlignShift(); }
+    SkScalar descent() const { return fFontMetrics.fDescent + fBaselineShift + getVerticalAlignShift(); }
+    SkScalar leading() const { return fFontMetrics.fLeading; }
+    SkScalar correctAscent() const { return fCorrectAscent + fBaselineShift + getVerticalAlignShift(); }
+    SkScalar correctDescent() const { return fCorrectDescent + fBaselineShift + getVerticalAlignShift(); }
+#else
     SkScalar ascent() const { return fFontMetrics.fAscent + fBaselineShift; }
     SkScalar descent() const { return fFontMetrics.fDescent + fBaselineShift; }
     SkScalar leading() const { return fFontMetrics.fLeading; }
     SkScalar correctAscent() const { return fCorrectAscent + fBaselineShift; }
     SkScalar correctDescent() const { return fCorrectDescent + fBaselineShift; }
+#endif
     SkScalar correctLeading() const { return fCorrectLeading; }
 #ifdef ENABLE_TEXT_ENHANCE
     const RSFont& font() const { return fFont; }
@@ -128,7 +136,11 @@ public:
     size_t index() const { return fIndex; }
     SkScalar heightMultiplier() const { return fHeightMultiplier; }
     bool useHalfLeading() const { return fUseHalfLeading; }
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar baselineShift() const { return fBaselineShift + getVerticalAlignShift(); }
+#else
     SkScalar baselineShift() const { return fBaselineShift; }
+#endif
     PlaceholderStyle* placeholderStyle() const;
     bool isPlaceholder() const { return fPlaceholderIndex != std::numeric_limits<size_t>::max(); }
     size_t clusterIndex(size_t pos) const { return fClusterIndexes[pos]; }
@@ -232,6 +244,8 @@ public:
 
     size_t getIndexInLine() const { return indexInLine; }
     void setIndexInLine(size_t index) { indexInLine = index; }
+    SkScalar getVerticalAlignShift() const { return fVerticalAlignShift; }
+    void setVerticalAlignShift(SkScalar verticalAlignShift) { fVerticalAlignShift = verticalAlignShift; }
 #endif
 private:
     friend class ParagraphImpl;
@@ -295,6 +309,7 @@ private:
     SkScalar fMaxRoundRectRadius{0.0f};
     size_t indexInLine;
     SkScalar fCompressionBaselineShift{0.0f};
+    SkScalar fVerticalAlignShift{0.0f};
 #endif
 };
 

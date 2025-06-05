@@ -7,6 +7,11 @@
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/src/TextLine.h"
 
+#ifdef ENABLE_TEXT_ENHANCE
+#include "include/ParagraphStyle.h"
+#include "SkScalar.h"
+#endif
+
 namespace skia {
 namespace textlayout {
 
@@ -22,6 +27,9 @@ class Decorations {
         fDecorationContext = context;
         setThickness(fDecorationContext.thickness);
     }
+
+    void setVerticalAlignment(TextVerticalAlign verticalAlignment) { fVerticalAlignment = verticalAlignment; }
+    TextVerticalAlign getVerticalAlignment() const { return fVerticalAlignment; }
 #endif
 
     private:
@@ -31,6 +39,8 @@ class Decorations {
     constexpr static float LINE_THROUGH_TOP = LINE_THROUGH_OFFSET - 0.5f * UNDER_LINE_THICKNESS_RATIO;
 
     void calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface);
+    void updateDecorationPosition(TextDecoration decorationMode, SkScalar baselineShift,
+        const TextLine::ClipContext& context, SkScalar& positionY);
     void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle,
         SkScalar textBaselineShift, const SkScalar& fontSize);
     void calculateAvoidanceWaves(const TextStyle& textStyle, SkRect clip);
@@ -55,6 +65,9 @@ class Decorations {
 
     SkScalar fThickness;
     SkScalar fPosition;
+#ifdef ENABLE_TEXT_ENHANCE
+    TextVerticalAlign fVerticalAlignment{TextVerticalAlign::BASELINE};
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia

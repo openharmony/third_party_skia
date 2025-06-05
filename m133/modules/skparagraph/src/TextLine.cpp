@@ -292,6 +292,7 @@ void TextLine::paint(ParagraphPainter* painter,
 
 void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 #ifdef ENABLE_TEXT_ENHANCE
+    applyVerticalShift();
     prepareRoundRect();
     paintRoundRect(painter, x, y);
     fIsArcText = false;
@@ -400,6 +401,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
         // 16% of row height wihtout placeholder.
         fDecorationContext.underlinePosition = maxLineHeightWithoutPlaceholder * 0.16 + baseline();
         fDecorationContext.textBlobTop = maxLineHeightWithoutPlaceholder * 0.16;
+        fDecorationContext.lineHeight = sizes().height();
         this->iterateThroughVisualRuns(
                 EllipsisReadStrategy::DEFAULT,
                 true,
@@ -633,6 +635,9 @@ void TextLine::format(TextAlign align, SkScalar maxWidth) {
     } else if (align == TextAlign::kCenter) {
         fShift = delta / 2;
     }
+#ifdef ENABLE_TEXT_ENHANCE
+    applyVerticalShift();
+#endif
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
@@ -919,6 +924,7 @@ void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar 
     Decorations decorations;
 #ifdef ENABLE_TEXT_ENHANCE
     decorations.setDecorationContext(fDecorationContext);
+    decorations.setVerticalAlignment(fOwner->getParagraphStyle().getVerticalAlignment());
 #endif
     SkScalar correctedBaseline = SkScalarFloorToScalar(-this->sizes().rawAscent() + style.getBaselineShift() + 0.5);
     decorations.paint(painter, style, context, correctedBaseline);
@@ -2020,10 +2026,10 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         RectStyle temp;
         if (styleType == StyleType::kBackground && prevStyle->getBackgroundRect() != temp &&
             prevStyle->getHeight() != 0) {
-            clipContext.clip.fTop =
-                    run->fFontMetrics.fAscent + this->baseline() + run->fBaselineShift;
+            clipContext.clip.fTop = run->fFontMetrics.fAscent + this->baseline() + run->fBaselineShift
+                + run->getVerticalAlignShift();
             clipContext.clip.fBottom =
-                    clipContext.clip.fTop + run->fFontMetrics.fDescent - run->fFontMetrics.fAscent;
+                clipContext.clip.fTop + run->fFontMetrics.fDescent - run->fFontMetrics.fAscent;
         }
         computeNextPaintGlyphRange(clipContext, lastGlyphRange, styleType);
         if (clipContext.size != 0) {
@@ -3106,6 +3112,137 @@ std::vector<RSRect> getAllRectInfo(const ClusterRange& range, ParagraphImpl* own
     }
 
     return rectVec;
+}
+
+RSRect getClusterRangeBounds(const ClusterRange& range, ParagraphImpl* owner) {
+    auto rectVec = getAllRectInfo(range, owner);
+    RSRect finalRect{0.0, 0.0, 0.0, 0.0};
+    for (const auto& rect : rectVec) {
+        finalRect.Join(rect);
+    }
+    return finalRect;
+}
+
+bool TextLine::isLineHeightDominatedByRunRun(const Run& run) {
+    return SkScalarNearlyEqual(run.ascent(), sizes().ascent());
+}
+
+void TextLine::updateBlobShift(const Run& run, SkScalar& verticalShift) {
+    Block& block = fOwner->getBlockByRun(run);
+    if (nearlyZero(block.fStyle.getVerticalAlignShift())) {
+        block.fStyle.setVerticalAlignShift(run.getVerticalAlignShift());
+    }
+    verticalShift = std::max(block.fStyle.getVerticalAlignShift(), run.getVerticalAlignShift());
+    block.fStyle.setVerticalAlignShift(verticalShift);
+}
+
+void TextLine::resetBlobShift(const Run& run) {
+    Block& block = fOwner->getBlockByRun(run);
+    block.fStyle.setVerticalAlignShift(0.0);
+}
+
+void TextLine::updateBlobAndRunShift(Run& run) {
+    SkScalar verticalShift{0.0};
+    TextRange textRange = run.textRange();
+    updateBlobShift(run, verticalShift);
+    BlockRange blocksRange = fOwner->findAllBlocks(textRange);
+    Block& block = fOwner->getBlockByRun(run);
+    TextRange range = block.fRange;
+    // Update run's vertical shift by text style
+    for (size_t textIndex = range.start; textIndex < range.end; ++textIndex) {
+        ClusterIndex clusterIndex = fOwner->clusterIndex(textIndex);
+        if (clusterIndex < clusters().start || clusterIndex > run.clusterRange().start) {
+            break;
+        }
+        Run& run = fOwner->runByCluster(clusterIndex);
+        run.setVerticalAlignShift(verticalShift);
+        textIndex = run.textRange().end - 1;
+    }
+}
+
+void TextLine::shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign VerticalAlignment) {
+    if (!run.isPlaceholder() || !fOwner->IsPlaceholderAlignedFollowParagraph(run.fPlaceholderIndex)) {
+        return;
+    }
+
+    PlaceholderAlignment aligment{PlaceholderAlignment::kAboveBaseline};
+    switch (VerticalAlignment) {
+        case TextVerticalAlign::TOP:
+            aligment = PlaceholderAlignment::kTop;
+            break;
+        case TextVerticalAlign::CENTER:
+            aligment = PlaceholderAlignment::kMiddle;
+            break;
+        case TextVerticalAlign::BOTTOM:
+            aligment = PlaceholderAlignment::kBottom;
+            break;
+        default:
+            break;
+    }
+    if (fOwner->setPlaceholderAlignment(run.fPlaceholderIndex, aligment)) {
+        run.updateMetrics(&fSizes);
+    }
+}
+
+void TextLine::shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment,
+    const RSRect& groupClustersBounds) {
+    if (isLineHeightDominatedByRunRun(run) || VerticalAlignment == TextVerticalAlign::BASELINE) {
+        return;
+    }
+    SkScalar shift{0.0f};
+    switch (VerticalAlignment) {
+        case TextVerticalAlign::TOP:
+            shift = sizes().ascent() - run.ascent();
+            break;
+        case TextVerticalAlign::CENTER:
+            // Make the current run distance equal to the line's upper and lower boundaries
+            shift = (sizes().ascent() + sizes().descent() - run.descent() - run.ascent()) / 2;
+            break;
+        case TextVerticalAlign::BOTTOM:
+            shift = (sizes().descent() - groupClustersBounds.GetBottom()) - sizes().height() / BOTTOM_PADDING_FACTOR;
+            if (shift < 0) {
+                shift = 0;
+            }
+            break;
+        default:
+            break;
+    }
+
+    run.setVerticalAlignShift(shift);
+    updateBlobAndRunShift(run);
+}
+
+void TextLine::applyVerticalShift() {
+    TextVerticalAlign VerticalAlignment = fOwner->getParagraphStyle().getVerticalAlignment();
+    if (VerticalAlignment == TextVerticalAlign::BASELINE) {
+        return;
+    }
+
+    ClusterRange clustersRange = clusters();
+    ClusterIndex curClusterIndex = clustersRange.start;
+    // Reset textStyle vertical shift for current line's first run
+    const Run& run = fOwner->runByCluster(curClusterIndex);
+    resetBlobShift(run);
+
+    while (curClusterIndex < clustersRange.end) {
+        Run& run = fOwner->runByCluster(curClusterIndex);
+        ClusterRange groupClusterRange = {std::max(curClusterIndex, run.clusterRange().start),
+            std::min(clustersRange.end, run.clusterRange().end)};
+
+        if (run.isPlaceholder()) {
+            shiftPlaceholderByVerticalAlignMode(run, VerticalAlignment);
+            curClusterIndex = groupClusterRange.end;
+            continue;
+        }
+        // Reset vertical shift because run may cross multiple lines
+        run.setVerticalAlignShift(0);
+
+        // Just for vertical center alignment
+        RSRect groupClustersBounds = getClusterRangeBounds(groupClusterRange, fOwner);
+        shiftTextByVerticalAlignment(run, VerticalAlignment, groupClustersBounds);
+
+        curClusterIndex = groupClusterRange.end;
+    }
 }
 
 RSRect TextLine::getImageBounds() const
