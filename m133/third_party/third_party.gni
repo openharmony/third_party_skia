@@ -79,6 +79,7 @@ template("third_party") {
       }
       configs += [ "../../gn/skia:recover_pointer_overflow" ]
 
+      configs -= [ "//build/config/compiler:thin_archive" ]
       # "*" clobbers the current scope; append to existing configs
       forward_variables_from(invoker,
                              "*",
