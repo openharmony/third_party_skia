@@ -14,9 +14,6 @@
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
 #endif
-#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
-#include "include/gpu/vk/GrVkGraphicCoreTrace.h"
-#endif
 #include "include/private/GrTypesPriv.h"
 #include "include/private/GrVkTypesPriv.h"
 #include "src/gpu/GrAttachment.h"
@@ -217,11 +214,7 @@ public:
     size_t onGpuMemorySize() const override;
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     void dumpVkImageInfo(std::stringstream& dump) const override;
-#endif
     const char* getResourceType() const override { return "VkImage"; }
-
-#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
-    void dumpVkImageCoreTrace(std::stringstream& dump) const override;
 #endif
 #if GR_TEST_UTILS
     void setCurrentQueueFamilyToGraphicsQueue(GrVkGpu* gpu);
@@ -316,9 +309,6 @@ private:
     ParallelDebug::VkImageInvokeRecord* fCaller = ParallelDebug::GenerateVkImageInvokeRecord();
     void dumpVkImageResource(std::stringstream& dump);
     void RecordFreeVkImage(bool isBorrowed) const;
-#endif
-#ifdef SKIA_DFX_FOR_GPURESOURCE_CORETRACE
-    GraphicCoreTrace::GpuResourceDfx* vCaller = GraphicCoreTrace::GenerateGpuResourceDfx();
 #endif
 #ifdef SK_DEBUG
         const GrManagedResource* asVkImageResource() const override { return this; }

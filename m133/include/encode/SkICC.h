@@ -17,9 +17,13 @@ class SkData;
 struct skcms_ICCProfile;
 struct skcms_Matrix3x3;
 struct skcms_TransferFunction;
+struct skcms_CICP;
 
 SK_API sk_sp<SkData> SkWriteICCProfile(const skcms_TransferFunction&,
                                        const skcms_Matrix3x3& toXYZD50);
+
+SK_API sk_sp<SkData> SkWriteICCProfileWithCicp(const skcms_TransferFunction&, const skcms_Matrix3x3& toXYZD50,
+    const skcms_CICP& cicp);
 
 SK_API sk_sp<SkData> SkWriteICCProfile(const skcms_ICCProfile*, const char* description);
 

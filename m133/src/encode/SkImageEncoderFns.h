@@ -226,6 +226,10 @@ static inline sk_sp<SkData> icc_from_color_space(const SkColorSpace* cs,
     if (cs->toXYZD50(&toXYZD50)) {
         skcms_TransferFunction fn;
         cs->transferFn(&fn);
+        skcms_CICP cicp {};
+        if (cs->GetIccCicp(&cicp)) {
+            return SkWriteICCProfileWithCicp(fn, toXYZD50, cicp);
+        }
         return SkWriteICCProfile(fn, toXYZD50);
     }
     return nullptr;
