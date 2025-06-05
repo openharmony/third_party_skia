@@ -31,6 +31,30 @@ const float kDoubleDecorationSpacing = 3.0f;
 }  // namespace
 
 #ifdef ENABLE_TEXT_ENHANCE
+void Decorations::updateDecorationPosition(TextDecoration decorationMode, SkScalar baselineShift,
+    const TextLine::ClipContext& context, SkScalar& positionY) {
+    switch (getVerticalAlignment()) {
+        case TextVerticalAlign::TOP:
+            if (decorationMode == TextDecoration::kOverline) {
+                positionY = context.run->getTopInGroup() - baselineShift;
+            }
+            break;
+        case TextVerticalAlign::CENTER:
+            if (decorationMode == TextDecoration::kLineThrough) {
+                // Line through is in the middle of the line
+                positionY = fDecorationContext.lineHeight / 2 - baselineShift;
+            }
+            break;
+        case TextVerticalAlign::BOTTOM:
+            if (decorationMode == TextDecoration::kUnderline) {
+                positionY = fDecorationContext.lineHeight - baselineShift;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 SkScalar Decorations::calculateThickness(const TextStyle& textStyle, const TextLine::ClipContext& context) {
     calculateThickness(textStyle, const_cast<RSFont&>(context.run->font()).GetTypeface());
     return fThickness;
@@ -65,6 +89,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         SkScalar x = context.clip.left();
         SkScalar y = (TextDecoration::kUnderline == decoration) ?
             fPosition : (context.clip.top() + fPosition);
+        updateDecorationPosition(decoration, textStyle.getBaselineShift(), context, y);
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
                         textStyle.getDecorationType() == TextDecoration::kUnderline;
 
