@@ -33,6 +33,13 @@ struct TextBlobRecordInfo {
     SkPoint fOffset{0.0f, 0.0f};
     ParagraphPainter::SkPaintOrID fPaint;
 };
+
+enum class TextVerticalAlign {
+    BASELINE,
+    BOTTOM,
+    CENTER,
+    TOP,
+};
 #endif
 
 enum class WordBreakType {
@@ -144,6 +151,7 @@ struct ParagraphStyle {
                this->fIsEndAddParagraphSpacing == rhs.fIsEndAddParagraphSpacing &&
                this->fIsTrailingSpaceOptimized == rhs.fIsTrailingSpaceOptimized &&
                this->fEnableAutoSpace == rhs.fEnableAutoSpace &&
+               this->fVerticalAlignment == rhs.fVerticalAlignment &&
 #endif
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
     }
@@ -199,6 +207,8 @@ struct ParagraphStyle {
     void setTextOverflower(bool textOverflowerFlag) { fTextOverflower = textOverflowerFlag; }
 
 #ifdef OHOS_SUPPORT
+    void setVerticalAlignment(TextVerticalAlign verticalAlignment) { fVerticalAlignment = verticalAlignment; }
+    TextVerticalAlign getVerticalAlignment() const { return fVerticalAlignment; }
     const TextTabs& getTextTab() const { return fTextTab; }
     void setTextTab(const TextTabs& textTab) { fTextTab = textTab; }
     SkScalar getParagraphSpacing() const { return fParagraphSpacing; }
@@ -243,6 +253,7 @@ private:
     bool fIsEndAddParagraphSpacing{false};
     bool fIsTrailingSpaceOptimized{false};
     bool fEnableAutoSpace{false};
+    TextVerticalAlign fVerticalAlignment{TextVerticalAlign::BASELINE};
 #endif
 };
 }  // namespace textlayout

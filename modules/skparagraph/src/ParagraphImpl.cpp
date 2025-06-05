@@ -95,6 +95,41 @@ bool ParagraphImpl::needCreateMiddleEllipsis()
     }
     return false;
 }
+
+Placeholder* ParagraphImpl::getPlaceholderByIndex(size_t placeholderIndex)
+{
+    if (fPlaceholders.size() <= placeholderIndex) {
+        LOGE("Failed to get placeholder");
+        return nullptr;
+    }
+    return &fPlaceholders[placeholderIndex];
+}
+
+bool ParagraphImpl::IsPlaceholderAlignedFollowParagraph(size_t placeholderIndex)
+{
+    Placeholder* placeholder = getPlaceholderByIndex(placeholderIndex);
+    if (placeholder == nullptr) {
+        return false;
+    }
+    return placeholder->fStyle.fAlignment == PlaceholderAlignment::kFollow;
+}
+
+bool ParagraphImpl::setPlaceholderAlignment(size_t placeholderIndex, PlaceholderAlignment alignment)
+{
+    Placeholder* placeholder = getPlaceholderByIndex(placeholderIndex);
+    if (placeholder == nullptr) {
+        return false;
+    }
+    placeholder->fStyle.fAlignment = alignment;
+    return true;
+}
+
+Block& ParagraphImpl::getBlockByRun(const Run& run)
+{
+    TextRange textRange = run.textRange();
+    BlockRange blocksRange = findAllBlocks(textRange);
+    return block(blocksRange.start);
+}
 #endif
 
 Paragraph::Paragraph(ParagraphStyle style, sk_sp<FontCollection> fonts)

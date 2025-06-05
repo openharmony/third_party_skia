@@ -177,6 +177,9 @@ uint32_t hash = 0;
 #endif
     }
 
+#ifdef OHOS_SUPPORT
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getVerticalAlignment()));
+#endif
     hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getHeight())));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getTextDirection()));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getReplaceTabCharacters() ? 1 : 0));
