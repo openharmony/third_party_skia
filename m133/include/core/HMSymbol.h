@@ -33,6 +33,8 @@ enum AnimationType {
     PULSE_TYPE = 6,
     REPLACE_APPEAR_TYPE = 7,
     REPLACE_DISAPPEAR_TYPE = 8,
+    QUICK_REPLACE_APPEAR_TYPE = 10,
+    QUICK_REPLACE_DISAPPEAR_TYPE = 11,
 };
 
 enum CurveType {
@@ -104,6 +106,8 @@ enum EffectStrategy {
     PULSE = 6,
     REPLACE_APPEAR = 7,
     REPLACE_DISAPPEAR = 8,
+    QUICK_REPLACE_APPEAR = 10,
+    QUICK_REPLACE_DISAPPEAR = 11,
 };
 
 using SymbolLayers = struct SymbolLayers {

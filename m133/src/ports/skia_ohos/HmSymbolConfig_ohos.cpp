@@ -95,7 +95,10 @@ static const std::map<std::string, AnimationType> ANIMATIONS_TYPES = {
     {"variable_color", AnimationType::VARIABLE_COLOR_TYPE},
     {"pulse", AnimationType::PULSE_TYPE},
     {"replace_appear", AnimationType::REPLACE_APPEAR_TYPE},
-    {"replace_disappear", AnimationType::REPLACE_DISAPPEAR_TYPE}};
+    {"replace_disappear", AnimationType::REPLACE_DISAPPEAR_TYPE},
+    {"quick_replace_appear", AnimationType::QUICK_REPLACE_APPEAR_TYPE},
+    {"quick_replace_disappear", AnimationType::QUICK_REPLACE_DISAPPEAR_TYPE}
+};
 
 static const std::map<std::string, CurveType> CURVE_TYPES = {
     {"spring", CurveType::SPRING},
