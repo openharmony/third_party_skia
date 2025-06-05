@@ -2763,34 +2763,29 @@ RSRect getClusterRangeBounds(const ClusterRange& range, ParagraphImpl* owner) {
     return finalRect;
 }
 
-bool TextLine::isLineHeightDominatedBy(const Run& run) {
+bool TextLine::isLineHeightDominatedByRun(const Run& run) {
     return SkScalarNearlyEqual(run.ascent(), sizes().ascent()) &&
         SkScalarNearlyEqual(run.descent(), sizes().descent());
 }
 
-SkScalar TextLine::updateBlobShift(const Run& run, SkScalar verticalShift, bool isReset) {
-    auto textRange = run.textRange();
-    auto blocksRange = fOwner->findAllBlocks(textRange);
-    Block& block = fOwner->block(blocksRange.start);
-
-    if (isReset) {
-        block.fStyle.setVerticalAlignShift(verticalShift);
-        return verticalShift;
-    }
-
+void TextLine::updateBlobShift(const Run& run, SkScalar& verticalShift) {
+    Block& block = fOwner->getBlockByRun(run);
     if (nearlyZero(block.fStyle.getVerticalAlignShift())) {
         block.fStyle.setVerticalAlignShift(run.getVerticalAlignShift());
     }
     verticalShift = std::max(block.fStyle.getVerticalAlignShift(), run.getVerticalAlignShift());
     block.fStyle.setVerticalAlignShift(verticalShift);
-    return verticalShift;
+}
+
+void TextLine::resetBlobShift(const Run& run) {
+    Block& block = fOwner->getBlockByRun(run);
+    block.fStyle.setVerticalAlignShift(0.0);
 }
 
 void TextLine::updateBlobAndRunShift(Run& run) {
-    SkScalar verticalShift = updateBlobShift(run, 0, false);
-    TextRange textRange = run.textRange();
-    BlockRange blocksRange = fOwner->findAllBlocks(textRange);
-    const Block& block = fOwner->block(blocksRange.start);
+    SkScalar verticalShift{0.0};
+    updateBlobShift(run, verticalShift);
+    Block& block = fOwner->getBlockByRun(run);
     TextRange range = block.fRange;
     // Update run's vertical shift by text style
     for (size_t textIndex = range.start; textIndex < range.end; ++textIndex) {
@@ -2805,14 +2800,12 @@ void TextLine::updateBlobAndRunShift(Run& run) {
 }
 
 void TextLine::shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign VerticalAlignment) {
-    if (!run.isPlaceholder() || !fOwner->IsPlaceholderAlignedWithParagraph(run.fPlaceholderIndex)) {
+    if (!run.isPlaceholder() || !fOwner->IsPlaceholderAlignedFollowParagraph(run.fPlaceholderIndex)) {
         return;
     }
 
     PlaceholderAlignment aligment{PlaceholderAlignment::kAboveBaseline};
     switch (VerticalAlignment) {
-        case TextVerticalAlign::BASELINE:
-            break;
         case TextVerticalAlign::TOP:
             aligment = PlaceholderAlignment::kTop;
             break;
@@ -2822,6 +2815,8 @@ void TextLine::shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign V
         case TextVerticalAlign::BOTTOM:
             aligment = PlaceholderAlignment::kBottom;
             break;
+        default:
+            break;
     }
     if (fOwner->setPlaceholderAlignment(run.fPlaceholderIndex, aligment)) {
         run.updateMetrics(&fSizes);
@@ -2830,7 +2825,7 @@ void TextLine::shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign V
 
 void TextLine::shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment,
     const RSRect& groupClustersBounds) {
-    if (isLineHeightDominatedBy(run) || VerticalAlignment == TextVerticalAlign::BASELINE) {
+    if (isLineHeightDominatedByRun(run) || VerticalAlignment == TextVerticalAlign::BASELINE) {
         return;
     }
     SkScalar shift{0.0f};
@@ -2839,10 +2834,14 @@ void TextLine::shiftTextByVerticalAlignment(Run& run, TextVerticalAlign Vertical
             shift = sizes().ascent() - run.ascent();
             break;
         case TextVerticalAlign::CENTER:
-            shift = (sizes().ascent() + sizes().descent() - run.descent() - run.ascent()) / NUMBER_TWO;
+            // Make the current run distance equal to the line's upper and lower boundaries
+            shift = (sizes().ascent() + sizes().descent() - run.descent() - run.ascent()) / 2;
             break;
         case TextVerticalAlign::BOTTOM:
             shift = (sizes().descent() - groupClustersBounds.GetBottom()) - sizes().height() / BOTTOM_PADDING_FACTOR;
+            if (shift < 0) {
+                shift = 0;
+            }
             break;
         default:
             break;
@@ -2862,7 +2861,7 @@ void TextLine::applyVerticalShift() {
     ClusterIndex curClusterIndex = clustersRange.start;
     // Reset textStyle vertical shift for current line's first run
     const Run& run = fOwner->runByCluster(curClusterIndex);
-    updateBlobShift(run, 0, true);
+    resetBlobShift(run);
 
     while (curClusterIndex < clustersRange.end) {
         Run& run = fOwner->runByCluster(curClusterIndex);

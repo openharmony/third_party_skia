@@ -14,7 +14,6 @@
 
 namespace skia {
 namespace textlayout {
-const size_t NUMBER_TWO = 2;
 
 class Decorations {
     public:

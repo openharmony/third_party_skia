@@ -104,8 +104,8 @@ Placeholder* ParagraphImpl::getPlaceholderByIndex(size_t placeholderIndex)
     }
     return &fPlaceholders[placeholderIndex];
 }
- 
-bool ParagraphImpl::IsPlaceholderAlignedWithParagraph(size_t placeholderIndex)
+
+bool ParagraphImpl::IsPlaceholderAlignedFollowParagraph(size_t placeholderIndex)
 {
     Placeholder* placeholder = getPlaceholderByIndex(placeholderIndex);
     if (!placeholder) {
@@ -113,15 +113,22 @@ bool ParagraphImpl::IsPlaceholderAlignedWithParagraph(size_t placeholderIndex)
     }
     return placeholder->fStyle.fAlignment == PlaceholderAlignment::kFollow;
 }
- 
+
 bool ParagraphImpl::setPlaceholderAlignment(size_t placeholderIndex, PlaceholderAlignment alignment)
 {
     Placeholder* placeholder = getPlaceholderByIndex(placeholderIndex);
-    if (!placeholder) {
+    if (placeholder == nullptr) {
         return false;
     }
     placeholder->fStyle.fAlignment = alignment;
     return true;
+}
+
+Block& ParagraphImpl::getBlockByRun(const Run& run)
+{
+    TextRange textRange = run.textRange();
+    BlockRange blocksRange = findAllBlocks(textRange);
+    return block(blocksRange.start);
 }
 #endif
 

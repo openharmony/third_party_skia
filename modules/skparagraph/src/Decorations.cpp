@@ -40,7 +40,8 @@ void Decorations::updateDecorationPosition(TextDecoration decorationMode, SkScal
             break;
         case TextVerticalAlign::CENTER:
             if (decorationMode == TextDecoration::kLineThrough) {
-                positionY = fDecorationContext.lineHeight / NUMBER_TWO - baselineShift;
+                // Line through is in the middle of the line
+                positionY = fDecorationContext.lineHeight / 2 - baselineShift;
             }
             break;
         case TextVerticalAlign::BOTTOM:

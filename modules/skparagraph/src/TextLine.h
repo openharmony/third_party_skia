@@ -223,8 +223,9 @@ public:
     void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
     void createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis);
     void middleEllipsisUpdateLine(ClusterIndex& indexS, ClusterIndex& indexE, SkScalar width);
-    bool isLineHeightDominatedBy(const Run& run);
-    SkScalar updateBlobShift(const Run& run, SkScalar verticalShift, bool isReset);
+    bool isLineHeightDominatedByRun(const Run& run);
+    void updateBlobShift(const Run& run, SkScalar& verticalShift);
+    void resetBlobShift(const Run& run);
     void updateBlobAndRunShift(Run& run);
     void shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign VerticalAlignment);
     void shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment, const RSRect& groupClustersBounds);
