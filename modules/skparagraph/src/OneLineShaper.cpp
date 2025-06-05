@@ -362,6 +362,9 @@ void OneLineShaper::finish(const Block& block, SkScalar height, SkScalar& advanc
             piece->fClusterIndexes[index] = run->fClusterIndexes[i];
             piece->fPositions[index] = run->fPositions[i] - zero;
             piece->fOffsets[index] = run->fOffsets[i];
+#ifdef OHOS_SUPPORT
+            piece->fGlyphAdvances[index] = run->fGlyphAdvances[i];
+#endif
             piece->addX(index, advanceX);
         }
 

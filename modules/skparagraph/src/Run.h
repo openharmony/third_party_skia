@@ -211,7 +211,11 @@ public:
     SkSpan<const uint32_t> clusterIndexes() const {
         return SkSpan<const uint32_t>(fClusterIndexes.begin(), fClusterIndexes.size());
     }
-
+#ifdef OHOS_SUPPORT
+    SkSpan<const SkPoint> advances() const {
+        return SkSpan<const SkPoint>(fGlyphAdvances.begin(), fGlyphAdvances.size());
+    }
+#endif
     void commit() { }
 
     void resetJustificationShifts() {
@@ -266,13 +270,18 @@ private:
         SkSTArray<64, SkPoint, true> positions;
         SkSTArray<64, SkPoint, true> offsets;
         SkSTArray<64, uint32_t, true> clusterIndexes;
+#ifdef OHOS_SUPPORT
+        SkSTArray<PARAM_64, SkPoint, true> advances;
+#endif
     };
     std::shared_ptr<GlyphData> fGlyphData;
     SkSTArray<64, SkGlyphID, true>& fGlyphs;
     SkSTArray<64, SkPoint, true>& fPositions;
     SkSTArray<64, SkPoint, true>& fOffsets;
     SkSTArray<64, uint32_t, true>& fClusterIndexes;
-
+#ifdef OHOS_SUPPORT
+    SkSTArray<PARAM_64, SkPoint, true>& fGlyphAdvances;
+#endif
     SkSTArray<64, SkPoint, true> fJustificationShifts; // For justification
                                                                    // (current and prev shifts)
     SkSTArray<PARAM_64, SkPoint, true> fAutoSpacings; // For auto spacing
