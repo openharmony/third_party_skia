@@ -215,7 +215,7 @@ std::vector<RSPoint> RunBaseImpl::getAdvances(uint32_t start, uint32_t length) c
 TextDirection RunBaseImpl::getTextDirection() const
 {
     if (fVisitorRun == nullptr) {
-        return {};
+        return TextDirection::kLtr;
     }
     return fVisitorRun->getTextDirection();
 }
