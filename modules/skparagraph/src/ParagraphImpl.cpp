@@ -108,7 +108,7 @@ Placeholder* ParagraphImpl::getPlaceholderByIndex(size_t placeholderIndex)
 bool ParagraphImpl::IsPlaceholderAlignedFollowParagraph(size_t placeholderIndex)
 {
     Placeholder* placeholder = getPlaceholderByIndex(placeholderIndex);
-    if (!placeholder) {
+    if (placeholder == nullptr) {
         return false;
     }
     return placeholder->fStyle.fAlignment == PlaceholderAlignment::kFollow;
