@@ -3123,7 +3123,7 @@ RSRect getClusterRangeBounds(const ClusterRange& range, ParagraphImpl* owner) {
     return finalRect;
 }
 
-bool TextLine::isLineHeightDominatedByRunRun(const Run& run) {
+bool TextLine::isLineHeightDominatedByRun(const Run& run) {
     return SkScalarNearlyEqual(run.ascent(), sizes().ascent());
 }
 
@@ -3143,9 +3143,7 @@ void TextLine::resetBlobShift(const Run& run) {
 
 void TextLine::updateBlobAndRunShift(Run& run) {
     SkScalar verticalShift{0.0};
-    TextRange textRange = run.textRange();
     updateBlobShift(run, verticalShift);
-    BlockRange blocksRange = fOwner->findAllBlocks(textRange);
     Block& block = fOwner->getBlockByRun(run);
     TextRange range = block.fRange;
     // Update run's vertical shift by text style
@@ -3186,7 +3184,7 @@ void TextLine::shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign V
 
 void TextLine::shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment,
     const RSRect& groupClustersBounds) {
-    if (isLineHeightDominatedByRunRun(run) || VerticalAlignment == TextVerticalAlign::BASELINE) {
+    if (isLineHeightDominatedByRun(run) || VerticalAlignment == TextVerticalAlign::BASELINE) {
         return;
     }
     SkScalar shift{0.0f};

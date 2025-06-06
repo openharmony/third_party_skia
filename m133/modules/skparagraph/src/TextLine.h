@@ -243,6 +243,7 @@ public:
     void shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign VerticalAlignment);
     void shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment, const RSRect& groupClustersBounds);
     void applyVerticalShift();
+    void updateBlobAndRunShift(Run& run);
 #endif
 
     // For testing internal structures
