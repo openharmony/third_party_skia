@@ -262,7 +262,9 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
 }
 
 void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
-
+    if (SkScalarNearlyZero(fThickness) || fThickness < 0) {
+        return;
+    }
     fPath.Reset();
     int wave_count = 0;
     SkScalar x_start = 0;
