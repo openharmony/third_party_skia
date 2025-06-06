@@ -642,17 +642,15 @@ void TextLine::format(TextAlign align, SkScalar maxWidth) {
 
 #ifdef ENABLE_TEXT_ENHANCE
 SkScalar TextLine::autoSpacing() {
-    if (!TextParameter::GetAutoSpacingEnable() && (!fOwner->paragraphStyle().getEnableAutoSpace())) {
+    if (!fOwner->isAutoSpaceEnabled()) {
         return 0;
     }
     SkScalar spacing = 0.0;
     auto prevCluster = fOwner->cluster(fGhostClusterRange.start);
-    for (auto clusterIndex = fGhostClusterRange.start + 1; clusterIndex < fGhostClusterRange.end;
-         ++clusterIndex) {
+    for (auto clusterIndex = fGhostClusterRange.start + 1; clusterIndex < fGhostClusterRange.end; ++clusterIndex) {
         auto prevSpacing = spacing;
         auto& cluster = fOwner->cluster(clusterIndex);
-        spacing += cluster.needAutoSpacing() ? prevCluster.getFontSize() / AUTO_SPACING_WIDTH_RATIO
-                                             : 0;
+        spacing += cluster.needAutoSpacing() ? prevCluster.getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
         spacingCluster(&cluster, spacing, prevSpacing);
         prevCluster = cluster;
     }
@@ -1112,6 +1110,14 @@ void TextLine::countWord(int& wordCount, bool& inWord) {
     }
 }
 
+SkScalar TextLine::usingAutoSpaceWidth(const Cluster* cluster) const
+{
+    if (cluster == nullptr) {
+        return 0.0f;
+    }
+    return fOwner->clusterUsingAutoSpaceWidth(*cluster);
+}
+
 void TextLine::ellipsisNotFitProcess(EllipsisModal ellipsisModal) {
     if (fEllipsis) {
         return;
@@ -1159,8 +1165,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     }
 
     bool iterForWord = false;
-    for (auto clusterIndex = fClusterRange.end; clusterIndex > fClusterRange.start;
-         --clusterIndex) {
+    for (auto clusterIndex = fClusterRange.end; clusterIndex > fClusterRange.start; --clusterIndex) {
         auto& cluster = fOwner->cluster(clusterIndex - 1);
         // Shape the ellipsis if the run has changed
         if (lastRun != cluster.runIndex()) {
@@ -1178,7 +1183,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         // See if it fits
         if (ellipsisRun != nullptr && width + ellipsisRun->advance().fX > maxWidth) {
             if (!cluster.isHardBreak()) {
-                width -= cluster.width();
+                width -= usingAutoSpaceWidth(&cluster);
             }
             // Continue if the ellipsis does not fit
             iterForWord = (wordCount != 1 && wordBreakType != WordBreakType::BREAK_ALL &&
@@ -1189,7 +1194,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         }
 
         if (iterForWord && !cluster.isWordBreak()) {
-            width -= cluster.width();
+            width -= usingAutoSpaceWidth(&cluster);
             if (std::floor(width) > 0) {
                 continue;
             }
@@ -1265,7 +1270,7 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         }
         // See if it fits
         if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
-            width -= cluster.width();
+            width -= usingAutoSpaceWidth(&cluster);
             // Continue if the ellipsis does not fit
             if (std::floor(width) > 0) {
                 continue;
@@ -1317,9 +1322,9 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
                 ellipsisRun = this->shapeEllipsis(ellipsis, &startCluster);
                 lastRun = startCluster.runIndex();
             }
-            startWidth += fOwner->cluster(startIndex++).width();
+            startWidth += usingAutoSpaceWidth(&fOwner->cluster(startIndex++));
         } else {
-            endWidth += fOwner->cluster(endIndex--).width();
+            endWidth += usingAutoSpaceWidth(&fOwner->cluster(endIndex--));
             if (fOwner->cluster(endIndex).isStartCombineBreak()) {
                 continue;
             }
@@ -1330,14 +1335,14 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
     }
     // fallback one unit
     if (addStart) {
-        startWidth -= fOwner->cluster(--startIndex).width();
+        startWidth -= usingAutoSpaceWidth(&fOwner->cluster(--startIndex));
         if (lastRun != fOwner->cluster(startIndex).runIndex()) {
             ellipsisRun = this->shapeEllipsis(ellipsis, &fOwner->cluster(startIndex));
         }
     } else {
         Cluster endCluster;
         do {
-            endWidth -= fOwner->cluster(++endIndex).width();
+            endWidth -= usingAutoSpaceWidth(&fOwner->cluster(++endIndex));
             endCluster = fOwner->cluster(endIndex);
         } while (endCluster.isEndCombineBreak());
     }
@@ -2924,7 +2929,7 @@ double TextLine::getOffsetForStringIndex(int32_t index) const
     } else if (indexVal > fGhostClusterRange.start) {
         size_t clusterIndex = fGhostClusterRange.start;
         while (clusterIndex < fGhostClusterRange.end) {
-            offset += fOwner->cluster(clusterIndex).width();
+            offset += usingAutoSpaceWidth(&fOwner->cluster(clusterIndex));
             if (++clusterIndex == indexVal) {
                 break;
             }
@@ -2971,7 +2976,7 @@ std::map<int32_t, double> TextLine::getIndexAndOffsets(bool& isHardBreak) const
     double offset = 0.0;
     for (auto clusterIndex = fGhostClusterRange.start; clusterIndex < fGhostClusterRange.end; ++clusterIndex) {
         auto& cluster = fOwner->cluster(clusterIndex);
-        offset += cluster.width();
+        offset += usingAutoSpaceWidth(&cluster);
         isHardBreak = cluster.isHardBreak();
         if (!isHardBreak) {
             offsetMap[clusterIndex] = offset;
@@ -3066,7 +3071,7 @@ int32_t TextLine::getStringIndexForPosition(SkPoint point) const
     } else if (offset > 0) {
         double curOffset = 0.0;
         for (auto clusterIndex = fGhostClusterRange.start; clusterIndex < fGhostClusterRange.end; ++clusterIndex) {
-            double characterWidth = fOwner->cluster(clusterIndex).width();
+            double characterWidth = usingAutoSpaceWidth(&fOwner->cluster(clusterIndex));
             if (offset <= curOffset + characterWidth / 2) {
                 return index;
             }
@@ -3256,7 +3261,7 @@ RSRect TextLine::getImageBounds() const
         // Full of Spaces.
         return {};
     }
-    SkScalar endAdvance = fOwner->cluster(fGhostClusterRange.end - endWhitespaceCountVal - 1).width();
+    SkScalar endAdvance = usingAutoSpaceWidth(&fOwner->cluster(fGhostClusterRange.end - endWhitespaceCountVal - 1));
 
     // The first space width of the line needs to be added to the x value.
     SkScalar startWhitespaceAdvance = 0.0;

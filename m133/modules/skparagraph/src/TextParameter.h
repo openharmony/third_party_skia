@@ -17,7 +17,9 @@
 #define TEXT_PARAMETER_DEFINED
 
 #ifdef ENABLE_TEXT_ENHANCE
+#ifdef ENABLE_OHOS_ENHANCE
 #include "parameters.h"
+#endif
 
 namespace skia {
 namespace textlayout {
@@ -25,15 +27,23 @@ class TextParameter {
 public:
     static bool GetAutoSpacingEnable()
     {
+#ifdef ENABLE_OHOS_ENHANCE
         static bool autoSpacingEnable = OHOS::system::GetBoolParameter("persist.sys.text.autospacing.enable", false);
         return autoSpacingEnable;
+#else
+        return false;
+#endif
     }
     static uint32_t GetUnicodeSizeLimitForParagraphCache()
     {
         const uint32_t unicodeSizeDefaultLimit = 16000;
+#ifdef ENABLE_OHOS_ENHANCE
         static uint32_t unicodeSizeLimit = OHOS::system::GetUintParameter(
             "persist.sys.text.paragraph_cache.unicode_size_limit", unicodeSizeDefaultLimit);
         return unicodeSizeLimit;
+#else
+        return unicodeSizeDefaultLimit;
+#endif
     }
 };
 }  // namespace textlayout

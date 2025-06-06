@@ -73,7 +73,6 @@ private:
         SkScalar allocatedWidth, size_t prevClusterNotSpaceCount, ClusterLevelsIndices& clusterLevels);
     void distributeRemainingSpace(ClusterLevelsIndices& clusterLevels, SkScalar& middleLevelOffset,
         SkScalar& lowLevelOffset, SkScalar& allocatedWidth);
-    SkScalar usingAutoSpaceWidth(const Cluster* cluster);
     ShiftLevel determineShiftLevelForIdeographic(const Cluster* prevCluster, MiddleLevelInfo& middleLevelInfo);
     ShiftLevel determineShiftLevelForPunctuation(
         const Cluster* cluster, const Cluster* prevCluster, HighLevelInfo& highLevelInfo);

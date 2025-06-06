@@ -251,6 +251,10 @@ SkShaper::RunHandler::Buffer Run::newRunBuffer() {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
+SkScalar Run::usingAutoSpaceWidth(const Cluster& cluster) const
+{
+    return fOwner->clusterUsingAutoSpaceWidth(cluster);
+}
 void Run::copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const {
     SkASSERT(pos + size <= this->size());
     const auto& blobBuffer = builder.AllocRunPos(fFont, SkToInt(size));

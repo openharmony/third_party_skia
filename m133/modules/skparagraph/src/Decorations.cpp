@@ -83,7 +83,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
 
         auto width = context.clip.width();
         if (context.fIsTrimTrailingSpaceWidth) {
-            width -= context.fTrailingSpaceWidth;
+            width = std::max(width - context.fTrailingSpaceWidth, 0.0f);
         }
 
         SkScalar x = context.clip.left();

@@ -222,7 +222,9 @@ public:
             run.resetAutoSpacing();
         }
     }
-	const SkString& getText() const { return fText; }
+    bool isAutoSpaceEnabled() const;
+    SkScalar clusterUsingAutoSpaceWidth(const Cluster& cluster) const;
+    const SkString& getText() const { return fText; }
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }

@@ -7,6 +7,7 @@
 #include "src/base/SkFloatBits.h"
 #ifdef ENABLE_TEXT_ENHANCE
 #include "log.h"
+#include "modules/skparagraph/include/TextGlobalConfig.h"
 #include "src/TextParameter.h"
 #include "trace.h"
 #endif
@@ -171,6 +172,7 @@ void ParagraphCacheKey::computeHashMix(uint32_t& hash) const {
 
 uint32_t ParagraphCacheKey::computeHash() const {
     uint32_t hash = 0;
+    hash = mix(hash, SkGoodHash()(TextGlobalConfig::UndefinedGlyphDisplayUseTofu()));
     for (auto& ph : fPlaceholders) {
         if (ph.fRange.width() == 0) {
             continue;

@@ -294,6 +294,7 @@ public:
     void setTextBlobCachePopulated(const bool textBlobCachePopulated) {
         fTextBlobCachePopulated = textBlobCachePopulated;
     }
+    SkScalar usingAutoSpaceWidth(const Cluster* cluster) const;
     std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
         const std::string& ellipsisStr);
 
