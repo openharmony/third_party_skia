@@ -261,6 +261,9 @@ public:
             SkPoint* offsets;   // optional, if ( offsets) put glyphs[i] at positions[i]+offsets[i]
             uint32_t* clusters; // optional, utf8+clusters[i] starts run which produced glyphs[i]
             SkPoint point;      // offset to add to all positions
+#ifdef ENABLE_TEXT_ENHANCE
+            SkPoint* advances;
+#endif
         };
 
         /** Called when beginning a line. */

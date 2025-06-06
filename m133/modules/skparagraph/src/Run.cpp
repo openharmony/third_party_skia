@@ -168,6 +168,9 @@ Run::Run(ParagraphImpl* owner,
     , fPositions(fGlyphData->positions)
     , fOffsets(fGlyphData->offsets)
     , fClusterIndexes(fGlyphData->clusterIndexes)
+#ifdef ENABLE_TEXT_ENHANCE
+    , fGlyphAdvances(fGlyphData->advances)
+#endif
     , fHeightMultiplier(heightMultiplier)
     , fUseHalfLeading(useHalfLeading)
     , fBaselineShift(baselineShift)
@@ -183,6 +186,7 @@ Run::Run(ParagraphImpl* owner,
     fOffsets.push_back_n(info.glyphCount + 1);
     fClusterIndexes.push_back_n(info.glyphCount + 1);
 #ifdef ENABLE_TEXT_ENHANCE
+    fGlyphAdvances.push_back_n(info.glyphCount + 1);
     fHalfLetterspacings.push_back_n(info.glyphCount + 1);
     std::fill(fHalfLetterspacings.begin(), fHalfLetterspacings.end(), 0.0);
     info.fFont.GetMetrics(&fFontMetrics);
@@ -204,6 +208,9 @@ Run::Run(ParagraphImpl* owner,
     fPositions[info.glyphCount] = fOffset + fAdvance;
     fOffsets[info.glyphCount] = {0, 0};
     fClusterIndexes[info.glyphCount] = this->leftToRight() ? info.utf8Range.end() : info.utf8Range.begin();
+#ifdef ENABLE_TEXT_ENHANCE
+    fGlyphAdvances[info.glyphCount] = {0, 0};
+#endif
     fEllipsis = false;
     fPlaceholderIndex = std::numeric_limits<size_t>::max();
 }
@@ -236,7 +243,11 @@ void Run::calculateMetrics() {
 }
 
 SkShaper::RunHandler::Buffer Run::newRunBuffer() {
+#ifdef ENABLE_TEXT_ENHANCE
+    return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset, fGlyphAdvances.data()};
+#else
     return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset};
+#endif
 }
 
 #ifdef ENABLE_TEXT_ENHANCE

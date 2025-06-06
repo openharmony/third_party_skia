@@ -210,6 +210,12 @@ public:
         return SkSpan<const uint32_t>(fClusterIndexes.begin(), fClusterIndexes.size());
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    SkSpan<const SkPoint> advances() const {
+        return SkSpan<const SkPoint>(fGlyphAdvances.begin(), fGlyphAdvances.size());
+    }
+#endif
+
     void commit() { }
 
     void resetJustificationShifts() {
@@ -277,13 +283,19 @@ private:
         skia_private::STArray<64, SkPoint, true> positions;
         skia_private::STArray<64, SkPoint, true> offsets;
         skia_private::STArray<64, uint32_t, true> clusterIndexes;
+#ifdef ENABLE_TEXT_ENHANCE
+        skia_private::STArray<PARAM_64, SkPoint, true> advances;
+#endif
     };
     std::shared_ptr<GlyphData> fGlyphData;
     skia_private::STArray<64, SkGlyphID, true>& fGlyphs;
     skia_private::STArray<64, SkPoint, true>& fPositions;
     skia_private::STArray<64, SkPoint, true>& fOffsets;
     skia_private::STArray<64, uint32_t, true>& fClusterIndexes;
-
+ 
+#ifdef ENABLE_TEXT_ENHANCE
+    skia_private::STArray<PARAM_64, SkPoint, true>& fGlyphAdvances;
+#endif
     skia_private::STArray<64, SkPoint, true> fJustificationShifts; // For justification
                                                                    // (current and prev shifts)
 #ifdef ENABLE_TEXT_ENHANCE
