@@ -335,7 +335,7 @@ void HmSymbolConfig_OHOS::ParseSymbolAnimations(const Json::Value& root,
             SkDebugf("animation_type is not string!");
             continue;
         }
-        const std::string animationType = root[i][ANIMATION_TYPE].asCString();
+        const std::string animationType = root[i][ANIMATION_TYPE].asString();
         ParseAnimationType(animationType, animationInfo.animationType);
 
         if (!root[i][ANIMATION_PARAMETERS].isArray()) {
@@ -393,7 +393,7 @@ void HmSymbolConfig_OHOS::ParseSymbolAnimationPara(const Json::Value& root, Anim
                     SkDebugf("sub_type is not string!");
                     return;
                 }
-                const char* subTypeStr = root[key].asCString();
+                const std::string subTypeStr = root[key].asString();
                 ParseSymbolCommonSubType(subTypeStr, animationPara.commonSubType);
             }
         },
@@ -418,7 +418,7 @@ void HmSymbolConfig_OHOS::ParseSymbolAnimationPara(const Json::Value& root, Anim
     }
 }
 
-void HmSymbolConfig_OHOS::ParseSymbolCommonSubType(const char* subTypeStr, CommonSubType& commonSubType)
+void HmSymbolConfig_OHOS::ParseSymbolCommonSubType(const std::string& subTypeStr, CommonSubType& commonSubType)
 {
     using SymbolAniSubFuncMap = std::unordered_map<std::string, std::function<void(CommonSubType&)>>;
     SymbolAniSubFuncMap funcMap = {
@@ -439,7 +439,7 @@ void HmSymbolConfig_OHOS::ParseSymbolCommonSubType(const char* subTypeStr, Commo
         funcMap[subTypeStr](commonSubType);
         return;
     }
-    SkDebugf("%{public}s is invalid value!", subTypeStr);
+    SkDebugf("%{public}s is invalid value!", subTypeStr.c_str());
 }
 
 void HmSymbolConfig_OHOS::ParseSymbolGroupParas(const Json::Value& root,
@@ -472,7 +472,7 @@ static void PiecewiseParaCurveCase(const char* key, const Json::Value& root, Pie
         SkDebugf("curve is not string!");
         return;
     }
-    const std::string curveTypeStr = root[key].asCString();
+    const std::string curveTypeStr = root[key].asString();
     auto iter = CURVE_TYPES.find(curveTypeStr);
     if (iter != CURVE_TYPES.end()) {
         piecewiseParameter.curveType = iter->second;
@@ -488,7 +488,9 @@ static void PiecewiseParaDurationCase(const char* key, const Json::Value& root,
         SkDebugf("duration is not numeric!");
         return;
     }
-    piecewiseParameter.duration = static_cast<uint32_t>(root[key].asDouble());
+    if (root[key].isConvertibleTo(Json::uintValue)) {
+        piecewiseParameter.duration = root[key].asUInt();
+    }
 }
 
 static void PiecewiseParaDelayCase(const char* key, const Json::Value& root, PiecewiseParameter& piecewiseParameter)
@@ -497,7 +499,9 @@ static void PiecewiseParaDelayCase(const char* key, const Json::Value& root, Pie
         SkDebugf("delay is not numeric!");
         return;
     }
-    piecewiseParameter.delay = static_cast<int>(root[key].asDouble());
+    if (root[key].isConvertibleTo(Json::intValue)) {
+        piecewiseParameter.delay = root[key].asInt();
+    }
 }
 
 void HmSymbolConfig_OHOS::ParseSymbolPiecewisePara(const Json::Value& root, PiecewiseParameter& piecewiseParameter)
@@ -742,7 +746,7 @@ void HmSymbolConfig_OHOS::ParseRenderModes(const Json::Value& root, std::map<Sym
                 SkDebugf("mode is not string!");
                 continue;
             }
-            std::string modeValue = root[i][MODE].asCString();
+            std::string modeValue = root[i][MODE].asString();
             if (strategeMap.count(modeValue) > 0) {
                 renderingStrategy = strategeMap[modeValue];
             } else {
@@ -774,10 +778,11 @@ void HmSymbolConfig_OHOS::ParseRenderGroups(const Json::Value& root, std::vector
             ParseGroupIndexes(root[i][GROUP_INDEXES], renderGroup.groupInfos);
         }
         if (root[i].isMember(DEFAULT_COLOR) && root[i][DEFAULT_COLOR].isString()) {
-            ParseDefaultColor(root[i][DEFAULT_COLOR].asCString(), renderGroup);
+            const std::string defaultColor = root[i][DEFAULT_COLOR].asString();
+            ParseDefaultColor(defaultColor, renderGroup);
         }
         if (root[i].isMember(FIX_ALPHA) && root[i][FIX_ALPHA].isDouble()) {
-            renderGroup.color.a = root[i][FIX_ALPHA].asFloat();
+            renderGroup.color.a = static_cast<float>(root[i][FIX_ALPHA].asDouble());
         }
         renderGroups.push_back(renderGroup);
     }
@@ -816,18 +821,18 @@ void HmSymbolConfig_OHOS::ParseLayerOrMaskIndexes(const Json::Value& root, std::
     }
 }
 
-void HmSymbolConfig_OHOS::ParseDefaultColor(const char* defaultColorStr, RenderGroup& renderGroup)
+void HmSymbolConfig_OHOS::ParseDefaultColor(const std::string& defaultColorStr, RenderGroup& renderGroup)
 {
     char defaultColorHex[defaultColorHexLen];
     defaultColorHex[0] = '0';
     defaultColorHex[1] = 'X';
-    if (defaultColorStr != nullptr && strlen(defaultColorStr) == defaultColorStrLen) {
+    if (defaultColorStr.length() == defaultColorStrLen) {
         for (unsigned int i = 1; i < defaultColorStrLen; i++) {
             defaultColorHex[i + 1] = defaultColorStr[i];
         }
         defaultColorHex[defaultColorHexLen - 1] = '\0';
     } else {
-        SkDebugf("%{public}s is invalid value!", defaultColorStr);
+        SkDebugf("%{public}s is invalid value!", defaultColorStr.c_str());
         return;
     }
 
@@ -879,7 +884,7 @@ void HmSymbolConfig_OHOS::ParseAnimationTypes(const Json::Value& root, std::vect
             SkDebugf("animation_types is not string!");
             continue;
         }
-        const std::string animationTypeStr = root[i].asCString();
+        const std::string animationTypeStr = root[i].asString();
         AnimationType animationType;
         ParseAnimationType(animationTypeStr, animationType);
         animationTypes.push_back(animationType);
