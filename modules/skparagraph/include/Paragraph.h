@@ -84,9 +84,9 @@ public:
 
     virtual std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() = 0;
 
-    virtual bool hasEnabledTextEffect() const = 0;
+    virtual bool hasSkipTextBlobDrawing() const = 0;
 
-    virtual void setTextEffectState(bool state) = 0;
+    virtual void setSkipTextBlobDrawing(bool state) = 0;
 
     virtual bool isRunCombinated() const = 0;
 #endif
