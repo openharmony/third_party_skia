@@ -22,6 +22,12 @@
 
 namespace skia {
 namespace textlayout {
+#ifdef ENABLE_TEXT_ENHANCE
+const SkScalar TEXT_BADGE_FONT_SIZE_SCALE = 0.65;
+const SkScalar TEXT_BADGE_HEIGHT_SCALE = 2.0;
+const SkScalar SUPERSCRIPT_BASELINE_SHIFT_SCALE = -0.7;
+const SkScalar SUBSCRIPT_BASELINE_SHIFT_SCALE = 0.2;
+#endif
 
 static inline bool nearlyZero(SkScalar x, SkScalar tolerance = SK_ScalarNearlyZero) {
     if (SkIsFinite(x)) {
@@ -182,6 +188,12 @@ struct RectStyle {
             leftBottomRadius == rhs.leftBottomRadius);
     }
 };
+
+enum class TextBadgeType {
+    BADGE_NONE,
+    SUPERSCRIPT,
+    SUBSCRIPT,
+};
 #endif
 
 class TextStyle {
@@ -294,13 +306,15 @@ public:
 
 #ifdef ENABLE_TEXT_ENHANCE
     void setFontFamilies(std::vector<SkString> families);
+
+    SkScalar getBaselineShift() const { return fBaselineShift + getBadgeBaseLineShift(); }
 #else
     void setFontFamilies(std::vector<SkString> families) {
         fFontFamilies = std::move(families);
     }
-#endif
 
     SkScalar getBaselineShift() const { return fBaselineShift; }
+#endif
     void setBaselineShift(SkScalar baselineShift) { fBaselineShift = baselineShift; }
 
     void setHeight(SkScalar height) { fHeight = height; }
@@ -350,8 +364,17 @@ public:
     void setTextStyleUid(size_t textStyleUid) { fTextStyleUid = textStyleUid; }
     RectStyle getBackgroundRect() const { return fBackgroundRect; }
     void setBackgroundRect(RectStyle rect) { fBackgroundRect = rect; }
-    bool isCustomSymbol() const {return fIsCustomSymbol;}
-    void setCustomSymbol(bool state) {fIsCustomSymbol = state;}
+    bool isCustomSymbol() const { return fIsCustomSymbol; }
+
+    void setCustomSymbol(bool state) { fIsCustomSymbol = state; }
+
+    TextBadgeType getTextBadgeType() const { return fBadgeType; }
+
+    void setTextBadgeType(TextBadgeType badgeType) { fBadgeType = badgeType; }
+
+    SkScalar getBadgeBaseLineShift() const;
+
+    SkScalar getCorrectFontSize() const;
 #endif
 private:
     static const std::vector<SkString>* kDefaultFontFamilies;
@@ -415,6 +438,10 @@ private:
     std::vector<FontFeature> fFontFeatures;
 
     std::optional<FontArguments> fFontArguments;
+
+#ifdef ENABLE_TEXT_ENHANCE
+    TextBadgeType fBadgeType{TextBadgeType::BADGE_NONE};
+#endif
 };
 
 typedef size_t TextIndex;

@@ -453,6 +453,12 @@ public:
     SkScalar getFontSize() const {
         return font().GetSize();
     }
+	
+    TextBadgeType getBadgeType() const { return fBadgeType; }
+
+    void setBadgeType(TextBadgeType badgeType) {
+        fBadgeType = badgeType;
+    }
 #endif
 
     bool isSoftBreak() const;
@@ -517,6 +523,7 @@ private:
     bool fIsEllipsis{false};
     bool fNeedAutoSpacing{false}; // depend on last cluster flag
     bool fHyphenBreak{false};
+    TextBadgeType fBadgeType{TextBadgeType::BADGE_NONE};
 #endif
 };
 

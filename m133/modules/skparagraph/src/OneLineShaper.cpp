@@ -7,7 +7,9 @@
 #ifdef ENABLE_TEXT_ENHANCE
 #include "src/Run.h"
 #include "include/TextGlobalConfig.h"
-#include "utils/text_trace.h"
+#include "include/TextStyle.h"
+#include "SkScalar.h"
+#include "trace.h"
 #endif
 
 #include <algorithm>
@@ -914,7 +916,7 @@ bool OneLineShaper::shape() {
 #ifdef ENABLE_TEXT_ENHANCE
             auto typefaceVisitor = [&](std::shared_ptr<RSTypeface> typeface) {
                 // Create one more font to try
-                RSFont font(std::move(typeface), block.fStyle.getFontSize(), 1, 0);
+                RSFont font(std::move(typeface), block.fStyle.getCorrectFontSize(), 1, 0);
                 font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
                 font.SetHinting(RSDrawing::FontHinting::NONE);
                 font.SetSubpixel(true);
