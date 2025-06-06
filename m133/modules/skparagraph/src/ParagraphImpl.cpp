@@ -1927,6 +1927,21 @@ bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
     }
     return singleRunWidth <= floorWidth - this->detectIndents(0);
 }
+
+std::vector<TextBlobRecordInfo> ParagraphImpl::getTextBlobRecordInfo()
+{
+    std::vector<TextBlobRecordInfo> textBlobRecordInfos;
+    for (auto& line : fLines) {
+        for (auto& block : line.fTextBlobCache) {
+            TextBlobRecordInfo recordInfo;
+            recordInfo.fBlob = block.fBlob;
+            recordInfo.fOffset = block.fOffset;
+            recordInfo.fPaint = block.fPaint;
+            textBlobRecordInfos.emplace_back(recordInfo);
+        }
+    }
+    return textBlobRecordInfos;
+}
 #endif
 TArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
     textRange = textRange.intersection({0, fText.size()});
