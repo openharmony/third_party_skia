@@ -27,6 +27,9 @@ class SkString;
 
 namespace skia {
 namespace textlayout {
+#ifdef ENABLE_TEXT_ENHANCE
+const size_t BOTTOM_PADDING_FACTOR = 8;
+#endif
 
 class ParagraphImpl;
 #ifdef ENABLE_TEXT_ENHANCE
@@ -34,6 +37,7 @@ struct DecorationContext {
     SkScalar thickness{0.0f};
     SkScalar underlinePosition{0.0f};
     SkScalar textBlobTop{0.0f};
+    SkScalar lineHeight{0.0f};
 };
 
 struct IterateRunsContext {
@@ -232,6 +236,14 @@ public:
     void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
     void createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis);
     void middleEllipsisUpdateLine(ClusterIndex& indexS, ClusterIndex& indexE, SkScalar width);
+    bool isLineHeightDominatedByRun(const Run& run);
+    SkScalar updateBlobShift(const Run& run, SkScalar verticalShift, bool isReset);
+    void updateBlobShift(const Run& run, SkScalar& verticalShift);
+    void resetBlobShift(const Run& run);
+    void shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign VerticalAlignment);
+    void shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment, const RSRect& groupClustersBounds);
+    void applyVerticalShift();
+    void updateBlobAndRunShift(Run& run);
 #endif
 
     // For testing internal structures

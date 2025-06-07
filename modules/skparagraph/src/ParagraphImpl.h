@@ -330,6 +330,10 @@ public:
 
 #ifdef OHOS_SUPPORT
     bool needCreateMiddleEllipsis();
+    Placeholder* getPlaceholderByIndex(size_t placeholderIndex);
+    bool IsPlaceholderAlignedFollowParagraph(size_t placeholderIndex);
+    bool setPlaceholderAlignment(size_t placeholderIndex, PlaceholderAlignment alignment);
+    Block& getBlockByRun(const Run& run);
 #endif
 #ifndef USE_SKIA_TXT
     bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,

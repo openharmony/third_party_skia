@@ -120,6 +120,11 @@ enum class PlaceholderAlignment {
   /// placeholder is very tall, the extra space will grow equally from
   /// the top and bottom of the line.
   kMiddle,
+
+#ifdef ENABLE_TEXT_ENHANCE
+  // Follow text vertically aligned
+  kFollow,
+#endif
 };
 
 struct FontFeature {
@@ -294,13 +299,17 @@ public:
 
 #ifdef ENABLE_TEXT_ENHANCE
     void setFontFamilies(std::vector<SkString> families);
+    SkScalar getBaselineShift() const { return fBaselineShift + getVerticalAlignShift(); }
+    SkScalar getVerticalAlignShift() const { return fVerticalAlignShift; };
+    void setVerticalAlignShift(SkScalar shift) { fVerticalAlignShift = shift; }
 #else
     void setFontFamilies(std::vector<SkString> families) {
         fFontFamilies = std::move(families);
     }
-#endif
 
     SkScalar getBaselineShift() const { return fBaselineShift; }
+#endif
+
     void setBaselineShift(SkScalar baselineShift) { fBaselineShift = baselineShift; }
 
     void setHeight(SkScalar height) { fHeight = height; }
@@ -391,7 +400,8 @@ private:
 #ifdef ENABLE_TEXT_ENHANCE
     RectStyle fBackgroundRect = {0, 0.0f, 0.0f, 0.0f, 0.0f};
     SkColor fStyleId = {0};
-    size_t fTextStyleUid = {0};
+    size_t fTextStyleUid{0};
+    SkScalar fVerticalAlignShift{0.0f};
 #endif
 
     TextBaseline fTextBaseline = TextBaseline::kAlphabetic;

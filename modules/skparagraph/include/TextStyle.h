@@ -123,6 +123,11 @@ enum class PlaceholderAlignment {
   /// placeholder is very tall, the extra space will grow equally from
   /// the top and bottom of the line.
   kMiddle,
+
+#ifdef OHOS_SUPPORT
+  // Follow text vertically aligned
+  kFollow,
+#endif
 };
 
 struct FontFeature {
@@ -304,7 +309,9 @@ public:
 #ifdef OHOS_SUPPORT
     void setFontFamilies(std::vector<SkString> families);
 
-    SkScalar getBaselineShift() const { return fBaselineShift + getBadgeBaseLineShift(); }
+    SkScalar getBaselineShift() const { return fBaselineShift + getBadgeBaseLineShift() + getVerticalAlignShift(); }
+    SkScalar getVerticalAlignShift() const { return fVerticalAlignShift; };
+    void setVerticalAlignShift(SkScalar shift) { fVerticalAlignShift = shift; }
 #else
     void setFontFamilies(std::vector<SkString> families) {
         fFontFamilies = std::move(families);
@@ -412,7 +419,8 @@ private:
     RectStyle fBackgroundRect = {0, 0.0f, 0.0f, 0.0f, 0.0f};
     SkColor fStyleId = 0;
 #ifdef OHOS_SUPPORT
-    size_t fTextStyleUid = { 0 };
+    size_t fTextStyleUid{0};
+    SkScalar fVerticalAlignShift{0.0f};
 #endif
     SkScalar fLetterSpacing = 0.0;
     SkScalar fWordSpacing = 0.0;

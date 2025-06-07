@@ -7,7 +7,7 @@
 #ifdef ENABLE_TEXT_ENHANCE
 #include "src/Run.h"
 #include "include/TextGlobalConfig.h"
-#include "utils/text_trace.h"
+#include "trace.h"
 #endif
 
 #include <algorithm>
@@ -359,6 +359,9 @@ void OneLineShaper::finish(const Block& block, SkScalar height, SkScalar& advanc
 #endif
             piece->fPositions[index] = run->fPositions[i] - zero;
             piece->fOffsets[index] = run->fOffsets[i];
+#ifdef ENABLE_TEXT_ENHANCE
+            piece->fGlyphAdvances[index] = run->fGlyphAdvances[i];
+#endif
             piece->addX(index, advanceX);
         }
 
