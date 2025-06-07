@@ -56,10 +56,20 @@ void OneLineShaper::commitRunBuffer(const RunInfo&) {
         if (fCurrentRun->textRange() == unresolved.fText) {
             // Nothing was resolved; preserve the initial run if it makes sense
             auto& front = fUnresolvedBlocks.front();
-            if (front.fRun != nullptr) {
-               unresolved.fRun = front.fRun;
-               unresolved.fGlyphs = front.fGlyphs;
+#ifdef OHOS_SUPPORT
+            bool useTofu =
+                unresolved.fRun != nullptr && unresolved.fRun->fFont.GetTypeface() != nullptr &&
+                TextGlobalConfig::UndefinedGlyphDisplayUseTofu(unresolved.fRun->fFont.GetTypeface()->GetFamilyName());
+            if (front.fRun != nullptr && !useTofu) {
+                unresolved.fRun = front.fRun;
+                unresolved.fGlyphs = front.fGlyphs;
             }
+#else
+            if (front.fRun != nullptr) {
+                unresolved.fRun = front.fRun;
+                unresolved.fGlyphs = front.fGlyphs;
+            }
+#endif
             return;
         }
     }
@@ -352,6 +362,9 @@ void OneLineShaper::finish(const Block& block, SkScalar height, SkScalar& advanc
             piece->fClusterIndexes[index] = run->fClusterIndexes[i];
             piece->fPositions[index] = run->fPositions[i] - zero;
             piece->fOffsets[index] = run->fOffsets[i];
+#ifdef OHOS_SUPPORT
+            piece->fGlyphAdvances[index] = run->fGlyphAdvances[i];
+#endif
             piece->addX(index, advanceX);
         }
 
@@ -664,6 +677,14 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
             fUnresolvedBlocks.emplace_front(block);
         }
     }
+#ifdef OHOS_SUPPORT
+    if (TextGlobalConfig::UndefinedGlyphDisplayUseTofu()) {
+        std::shared_ptr<RSTypeface> notdef = RSTypeface::MakeFromName(NOTDEF_FAMILY, textStyle.getFontStyle());
+        if (notdef != nullptr) {
+            visitor(notdef);
+        }
+    }
+#endif
 }
 
 bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {

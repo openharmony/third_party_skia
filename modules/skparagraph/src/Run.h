@@ -113,11 +113,19 @@ public:
         return SkVector::Make(fAdvance.fX, fFontMetrics.fDescent - fFontMetrics.fAscent + fFontMetrics.fLeading);
     }
     SkVector offset() const { return fOffset; }
+#ifdef OHOS_SUPPORT
+    SkScalar ascent() const { return fFontMetrics.fAscent + fBaselineShift + getVerticalAlignShift(); }
+    SkScalar descent() const { return fFontMetrics.fDescent + fBaselineShift + getVerticalAlignShift(); }
+    SkScalar leading() const { return fFontMetrics.fLeading; }
+    SkScalar correctAscent() const { return fCorrectAscent + fBaselineShift + getVerticalAlignShift(); }
+    SkScalar correctDescent() const { return fCorrectDescent + fBaselineShift + getVerticalAlignShift(); }
+#else
     SkScalar ascent() const { return fFontMetrics.fAscent + fBaselineShift; }
     SkScalar descent() const { return fFontMetrics.fDescent + fBaselineShift; }
     SkScalar leading() const { return fFontMetrics.fLeading; }
     SkScalar correctAscent() const { return fCorrectAscent + fBaselineShift; }
     SkScalar correctDescent() const { return fCorrectDescent + fBaselineShift; }
+#endif
     SkScalar correctLeading() const { return fCorrectLeading; }
 #ifndef USE_SKIA_TXT
     const SkFont& font() const { return fFont; }
@@ -129,7 +137,11 @@ public:
     size_t index() const { return fIndex; }
     SkScalar heightMultiplier() const { return fHeightMultiplier; }
     bool useHalfLeading() const { return fUseHalfLeading; }
+#ifdef OHOS_SUPPORT
+    SkScalar baselineShift() const { return fBaselineShift + getVerticalAlignShift(); }
+#else
     SkScalar baselineShift() const { return fBaselineShift; }
+#endif
     PlaceholderStyle* placeholderStyle() const;
     bool isPlaceholder() const { return fPlaceholderIndex != std::numeric_limits<size_t>::max(); }
     size_t clusterIndex(size_t pos) const { return fClusterIndexes[pos]; }
@@ -191,6 +203,8 @@ public:
 #ifdef OHOS_SUPPORT
     template<typename Visitor>
     void iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor visitor);
+    SkScalar getVerticalAlignShift() const { return fVerticalAlignShift; }
+    void setVerticalAlignShift(SkScalar verticalAlignShift) { fVerticalAlignShift = verticalAlignShift; }
 #endif
 
     using ClusterVisitor = std::function<void(Cluster* cluster)>;
@@ -211,7 +225,11 @@ public:
     SkSpan<const uint32_t> clusterIndexes() const {
         return SkSpan<const uint32_t>(fClusterIndexes.begin(), fClusterIndexes.size());
     }
-
+#ifdef OHOS_SUPPORT
+    SkSpan<const SkPoint> advances() const {
+        return SkSpan<const SkPoint>(fGlyphAdvances.begin(), fGlyphAdvances.size());
+    }
+#endif
     void commit() { }
 
     void resetJustificationShifts() {
@@ -266,13 +284,18 @@ private:
         SkSTArray<64, SkPoint, true> positions;
         SkSTArray<64, SkPoint, true> offsets;
         SkSTArray<64, uint32_t, true> clusterIndexes;
+#ifdef OHOS_SUPPORT
+        SkSTArray<PARAM_64, SkPoint, true> advances;
+#endif
     };
     std::shared_ptr<GlyphData> fGlyphData;
     SkSTArray<64, SkGlyphID, true>& fGlyphs;
     SkSTArray<64, SkPoint, true>& fPositions;
     SkSTArray<64, SkPoint, true>& fOffsets;
     SkSTArray<64, uint32_t, true>& fClusterIndexes;
-
+#ifdef OHOS_SUPPORT
+    SkSTArray<PARAM_64, SkPoint, true>& fGlyphAdvances;
+#endif
     SkSTArray<64, SkPoint, true> fJustificationShifts; // For justification
                                                                    // (current and prev shifts)
     SkSTArray<PARAM_64, SkPoint, true> fAutoSpacings; // For auto spacing
@@ -299,7 +322,8 @@ private:
     SkScalar fMaxRoundRectRadius = 0.0f;
     size_t indexInLine;
 #ifdef OHOS_SUPPORT
-    SkScalar fCompressionBaselineShift{ 0.0f };
+    SkScalar fCompressionBaselineShift{0.0f};
+    SkScalar fVerticalAlignShift{0.0f};
 #endif
 };
 

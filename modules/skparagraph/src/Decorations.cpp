@@ -29,6 +29,32 @@ SkScalar Decorations::calculateThickness(const TextStyle& textStyle, const TextL
     return fThickness;
 }
 
+#ifdef OHOS_SUPPORT
+void Decorations::updateDecorationPosition(TextDecoration decorationMode, SkScalar baselineShift,
+    const TextLine::ClipContext& context, SkScalar& positionY) {
+    switch (getVerticalAlignment()) {
+        case TextVerticalAlign::TOP:
+            if (decorationMode == TextDecoration::kOverline) {
+                positionY = context.run->getTopInGroup() - baselineShift;
+            }
+            break;
+        case TextVerticalAlign::CENTER:
+            if (decorationMode == TextDecoration::kLineThrough) {
+                // Line through is in the middle of the line
+                positionY = fDecorationContext.lineHeight / 2 - baselineShift;
+            }
+            break;
+        case TextVerticalAlign::BOTTOM:
+            if (decorationMode == TextDecoration::kUnderline) {
+                positionY = fDecorationContext.lineHeight - baselineShift;
+            }
+            break;
+        default:
+            break;
+    }
+}
+#endif
+
 void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, const TextLine::ClipContext& context, SkScalar baseline) {
     if (textStyle.getDecorationType() == TextDecoration::kNoDecoration) {
         return;
@@ -72,6 +98,9 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         SkScalar x = context.clip.left();
         SkScalar y = (TextDecoration::kUnderline == decoration) ?
             fPosition : (context.clip.top() + fPosition);
+#ifdef OHOS_SUPPORT
+        updateDecorationPosition(decoration, textStyle.getBaselineShift(), context, y);
+#endif
 
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
                         textStyle.getDecorationType() == TextDecoration::kUnderline;
