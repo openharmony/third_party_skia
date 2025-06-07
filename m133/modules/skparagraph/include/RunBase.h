@@ -16,6 +16,7 @@
 #ifndef SKPARAGRAPH_INCLUDE_RUN_BASE_H
 #define SKPARAGRAPH_INCLUDE_RUN_BASE_H
 #ifdef ENABLE_TEXT_ENHANCE
+#include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
 
 namespace skia {
@@ -34,6 +35,8 @@ public:
     virtual void getStringRange(uint64_t* location, uint64_t* length) const = 0;
     virtual std::vector<uint64_t> getStringIndices(int64_t start, int64_t length) const = 0;
     virtual float getTypographicBounds(float* ascent, float* descent, float* leading) const = 0;
+    virtual std::vector<RSPoint> getAdvances(uint32_t start, uint32_t length) const = 0;
+    virtual TextDirection getTextDirection() const = 0;
 
     virtual RSRect getImageBounds() const = 0;
     virtual std::vector<RSPoint> getPositions(int64_t start, int64_t length) const = 0;

@@ -47,6 +47,8 @@ public:
     void getStringRange(uint64_t* location, uint64_t* length) const override;
     std::vector<uint64_t> getStringIndices(int64_t start, int64_t length) const override;
     float getTypographicBounds(float* ascent, float* descent, float* leading) const override;
+    std::vector<RSPoint> getAdvances(uint32_t start, uint32_t length) const override;
+    TextDirection getTextDirection() const override;
     RSRect getImageBounds() const override;
     std::vector<RSPoint> getPositions(int64_t start, int64_t length) const override;
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) override;

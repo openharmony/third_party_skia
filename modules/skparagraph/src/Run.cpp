@@ -606,6 +606,7 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
             fFontMetrics.fDescent = height + fFontMetrics.fAscent;
             break;
 
+        case PlaceholderAlignment::kFollow:
         case PlaceholderAlignment::kBottom:
             fFontMetrics.fDescent = endlineMetrics->descent();
             fFontMetrics.fAscent = fFontMetrics.fDescent - height;

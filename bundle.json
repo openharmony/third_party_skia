@@ -82,6 +82,9 @@
                     "name": "//third_party/skia/modules/skparagraph:skia_paragraph_ohos"
                 },
                 {
+                    "name": "//third_party/skia/m133/modules/skparagraph:skia_paragraph_ohos_new"
+                },
+                {
                     "name": "//third_party/skia:sksl_ext_static"
                 }
             ],

@@ -589,7 +589,7 @@ void SkEdgeClipper::ClipPath(const SkPath& path, const SkRect& clip, bool canCul
                 const SkPoint* quadPts = quadder.computeQuads(e.fPts, iter.conicWeight(), conicTol);
                 for (int i = 0; i < quadder.countQuads(); ++i) {
                     if (clipper.clipQuad(quadPts, clip)) {
-                        consume(&clipper, e.fIsNewContour, ctx);
+                        consume(&clipper, e.fIsNewContour && i == 0, ctx);
                     }
                     quadPts += 2;
                 }

@@ -361,6 +361,9 @@ void OneLineShaper::finish(const Block& block, SkScalar height, SkScalar& advanc
 #endif
             piece->fPositions[index] = run->fPositions[i] - zero;
             piece->fOffsets[index] = run->fOffsets[i];
+#ifdef ENABLE_TEXT_ENHANCE
+            piece->fGlyphAdvances[index] = run->fGlyphAdvances[i];
+#endif
             piece->addX(index, advanceX);
         }
 
