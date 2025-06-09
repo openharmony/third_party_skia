@@ -871,7 +871,7 @@ void HmSymbolConfig_OHOS::ParseAnimationSetting(const Json::Value& root, Animati
 
     if (root.isMember(COMMON_SUB_TYPE) && root[COMMON_SUB_TYPE].isString()) {
         const std::string subTypeStr = root[COMMON_SUB_TYPE].asString();
-        ParseSymbolCommonSubType(subTypeStr, animationSetting.commonSubType);
+        ParseSymbolCommonSubType(subTypeStr.c_str(), animationSetting.commonSubType);
     }
 
     if (root.isMember(SLOPE) && root[SLOPE].isDouble()) {

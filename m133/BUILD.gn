@@ -495,8 +495,12 @@ optional("fontmgr_android") {
   deps = [
     ":typeface_freetype",
     ":typeface_proxy",
-    "${skia_third_party_dir}/expat",
   ]
+  if (use_new_skia) {
+    deps += ["${skia_third_party_dir}/expat:expatm133"]
+  } else {
+    deps += ["${skia_third_party_dir}/expat"]
+  }
   public_defines = [ "SK_FONTMGR_ANDROID_AVAILABLE" ]
   public = skia_ports_fontmgr_android_public
   sources = skia_ports_fontmgr_android_sources
@@ -530,8 +534,12 @@ optional("fontmgr_symbol_load") {
   ]
   deps = [
     ":typeface_freetype",
-    "${skia_third_party_dir}/expat",
   ]
+  if (use_new_skia) {
+    deps += ["${skia_third_party_dir}/expat:expatm133"]
+  } else {
+    deps += ["${skia_third_party_dir}/expat"]
+  }
   if (is_arkui_x) {
     deps += [
       "//third_party/bounds_checking_function:libsec_static",
@@ -783,8 +791,12 @@ if (use_oh_skia && !is_arkui_x) {
     deps = [
       ":fontmgr_symbol_load",
       ":typeface_freetype",
-      "${skia_third_party_dir}/expat",
     ]
+    if (use_new_skia) {
+      deps += ["${skia_third_party_dir}/expat:expatm133"]
+    } else {
+      deps += ["${skia_third_party_dir}/expat"]
+    }
     external_deps = [ "jsoncpp:jsoncpp" ]
     if (is_component_build) {
       external_deps += [ "bounds_checking_function:libsec_shared" ]
@@ -1923,7 +1935,11 @@ optional("xml") {
   enabled = skia_use_expat || skia_use_jpeg_gainmaps
   public_defines = [ "SK_XML" ]
 
-  deps = [ "${skia_third_party_dir}/expat" ]
+  if (use_new_skia) {
+    deps = ["${skia_third_party_dir}/expat:expatm133"]
+  } else {
+    deps = ["${skia_third_party_dir}/expat"]
+  }
   sources = skia_xml_sources + skia_codec_xmp + [
               "src/svg/SkSVGCanvas.cpp",
               "src/svg/SkSVGDevice.cpp",
@@ -2084,7 +2100,11 @@ skia_component("skia") {
   }
 
   if (is_android) {
-    deps += [ "${skia_third_party_dir}/expat" ]
+    if (use_new_skia) {
+      deps += ["${skia_third_party_dir}/expat:expatm133"]
+    } else {
+      deps += ["${skia_third_party_dir}/expat"]
+    }
     if (defined(ndk) && ndk != "") {
       deps += [ "${skia_third_party_dir}/cpu-features" ]
     }
