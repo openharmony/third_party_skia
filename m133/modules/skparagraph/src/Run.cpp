@@ -686,7 +686,7 @@ SkScalar Run::posX(size_t index) const {
     if (index < fPositions.size()) {
         return fPositions[index].fX;
     }
-    LOGE("index:%{public}zu,size:%{public}zu", index, fPositions.size());
+    LOGE("index:%{public}zu,size:%{public}d", index, fPositions.size());
     if (fPositions.empty()) {
         return 0.0f;
     }
