@@ -89,8 +89,12 @@ struct VulkanYcbcrConversionInfo {
     bool operator!=(const VulkanYcbcrConversionInfo& that) const { return !(*this == that); }
 
     bool isValid() const {
+#ifdef TODO_M133_SKIA
+        return fYcbcrModel != VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+#else
         return fYcbcrModel != VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY ||
                fExternalFormat != 0;
+#endif
     }
 
     // Format of the source image. Must be set to VK_FORMAT_UNDEFINED for external images or

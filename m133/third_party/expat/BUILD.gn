@@ -14,7 +14,7 @@ if (skia_use_system_expat) {
     libs = [ "expat" ]
   }
 } else {
-  third_party("expat") {
+  third_party("expatm133") {
     _src = "../externals/expat"
 
     public_defines = [ "XML_STATIC" ]
