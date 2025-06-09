@@ -1505,7 +1505,7 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
         ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), ellipsis);
 #endif
 #ifdef ENABLE_TEXT_ENHANCE
-        RSFont font(typeface, textStyle.getFontSize(), 1, 0);
+        RSFont font(typeface, textStyle.getCorrectFontSize(), 1, 0);
         font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
         font.SetHinting(RSDrawing::FontHinting::SLIGHT);
         font.SetSubpixel(true);

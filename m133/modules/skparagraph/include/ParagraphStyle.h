@@ -30,6 +30,12 @@ struct TextTabs {
     }
 };
 
+struct TextBlobRecordInfo {
+    std::shared_ptr<RSTextBlob> fBlob{nullptr};
+    SkPoint fOffset{0.0f, 0.0f};
+    ParagraphPainter::SkPaintOrID fPaint;
+};
+
 enum class TextVerticalAlign {
     BASELINE,
     BOTTOM,
