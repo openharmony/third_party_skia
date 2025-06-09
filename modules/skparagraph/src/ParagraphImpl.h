@@ -136,6 +136,7 @@ public:
 
 #ifdef OHOS_SUPPORT
     TextRange getEllipsisTextRange() override;
+    bool isRunCombinated() const override { return fRuns.size() < fTextStyles.size(); }
 #endif
 
     TextLine& addLine(SkVector offset, SkVector advance,
