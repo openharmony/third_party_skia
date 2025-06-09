@@ -1015,6 +1015,35 @@ bool SkTextBlob::Iter::experimentalNext(ExperimentalRun* rec) {
     return false;
 }
 
+void GetGlyphIDforTextBlob(const SkTextBlob* blob, std::vector<SkGlyphID>& glyphIds)
+{
+    if (blob == nullptr) {
+        return;
+    }
+    SkTextBlobRunIterator it(blob);
+    if (!it.done()) {
+        size_t runSize = it.glyphCount();
+        auto glyphIDs = it.glyphs();
+        for (size_t i = 0; i < runSize; ++i) {
+            glyphIds.push_back(glyphIDs[i]);
+        }
+    }
+}
+
+SkPath GetPathforTextBlob(const SkGlyphID& glyphId, const SkTextBlob* blob)
+{
+    SkPath path;
+    if (blob == nullptr) {
+        return path;
+    }
+    SkTextBlobRunIterator it(blob);
+    if (!it.done()) {
+        SkFont font = it.font();
+        font.getPath(glyphId, &path);
+    }
+    return path;
+}
+
 void GetPointsForTextBlob(const SkTextBlob* blob, std::vector<SkPoint>& points)
 {
     if (blob == nullptr) {
@@ -1025,7 +1054,7 @@ void GetPointsForTextBlob(const SkTextBlob* blob, std::vector<SkPoint>& points)
         const auto glyphCount = run.glyphCount();
         switch (run.positioning()) {
             case SkTextBlobRunIterator::kFull_Positioning: {
-                for (auto i = 0; i < glyphCount; i++) {
+                for (uint32_t i = 0; i < glyphCount; i++) {
                     const SkPoint* glyphPoints = run.points();
                     const auto* point = glyphPoints + i;
                     points.push_back(*point);
