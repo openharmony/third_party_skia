@@ -90,7 +90,7 @@ config("skia_wno") {
 
 # Skia public API, generally provided by :skia.
 config("skia_public") {
-  include_dirs = [ "${skia_root_dir}" ]
+  include_dirs = [ "." ]
   defines = [
     "NEW_SKIA",
     "OHOS_SUPPORT",
@@ -1459,7 +1459,7 @@ optional("gif") {
                   "trim string")) {
     public_defines = [ "SK_USE_LIBGIFCODEC" ]
     public_include_dirs = [
-      "${skia_root_dir}",
+      ".",
       skia_libgifcodec_path,
     ]
     include_dirs = public_include_dirs
@@ -4375,7 +4375,7 @@ skia_executable("skia_c_api_example") {
 }
 
 config("public_sksl_ext") {
-  include_dirs = [ "${skia_root_dir}" ]
+  include_dirs = [ "." ]
 }
 
 ohos_static_library("sksl_ext_static") {
