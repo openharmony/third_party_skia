@@ -12,7 +12,7 @@ if (skia_enable_svg && skia_use_expat) {
     include_dirs = [ "include" ]
     if (use_oh_skia) {
       include_dirs += [
-        "${skia_root_dir}",
+        "//third_party/skia",
         "${skia_modules_dir}/svg/include",
         "${skia_modules_dir}/skresources/include",
         "${skia_modules_dir}/skshaper/include",

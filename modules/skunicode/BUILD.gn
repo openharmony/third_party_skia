@@ -32,7 +32,7 @@ if (skia_use_icu || skia_use_client_icu) {
     if (!use_oh_skia) {
       deps = [ "../..:skia" ]
     } else {
-      include_dirs = [ "${skia_root_dir}" ]
+      include_dirs = [ "//third_party/skia" ]
       deps = []
     }
     defines = [ "SKUNICODE_IMPLEMENTATION=1" ]
