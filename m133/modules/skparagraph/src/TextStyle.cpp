@@ -191,15 +191,19 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
             return fFontStyle == other.fFontStyle &&
                    fLocale == other.fLocale &&
                    fFontFamilies == other.fFontFamilies &&
-                   fFontSize == other.fFontSize &&
+#ifdef ENABLE_TEXT_ENHANCE
+                   getCorrectFontSize() == other.getCorrectFontSize() &&
                    fHeight == other.fHeight &&
                    fHalfLeading == other.fHalfLeading &&
-                   fBaselineShift == other.fBaselineShift &&
-#ifdef ENABLE_TEXT_ENHANCE
+                   getBaselineShift() == other.getBaselineShift() &&
                    fFontArguments == other.fFontArguments &&
                    fStyleId == other.fStyleId &&
                    fBackgroundRect == other.fBackgroundRect;
 #else
+                   fFontSize == other.fFontSize &&
+                   fHeight == other.fHeight &&
+                   fHalfLeading == other.fHalfLeading &&
+                   fBaselineShift == other.fBaselineShift &&
                    fFontArguments == other.fFontArguments;
 #endif
         default:
@@ -271,6 +275,24 @@ void TextStyle::setFontFamilies(std::vector<SkString> families) {
     });
     fFontFamilies = std::move(families);
 }
+
+SkScalar TextStyle::getBadgeBaseLineShift() const {
+    if (getTextBadgeType() == TextBadgeType::BADGE_NONE) {
+        return 0.0;
+    }
+
+    SkScalar actualFontSize = getFontSize() * TEXT_BADGE_FONT_SIZE_SCALE;
+    return getTextBadgeType() == TextBadgeType::SUPERSCRIPT ? actualFontSize * SUPERSCRIPT_BASELINE_SHIFT_SCALE :
+        actualFontSize * SUBSCRIPT_BASELINE_SHIFT_SCALE;
+}
+
+SkScalar TextStyle::getCorrectFontSize() const {
+    if (getTextBadgeType() == TextBadgeType::BADGE_NONE) {
+        return getFontSize();
+    }
+
+    return getFontSize() * TEXT_BADGE_FONT_SIZE_SCALE;
+};
 #endif
 
 }  // namespace textlayout

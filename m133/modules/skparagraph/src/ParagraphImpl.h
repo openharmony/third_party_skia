@@ -267,6 +267,9 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     void setState(InternalState state) override;
     InternalState getState() const override { return state(); }
+    std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() override;
+    bool hasEnabledTextEffect() const override { return fTextEffectState; }
+    void setTextEffectState(bool state) override { fTextEffectState = state; }
 #else
     void setState(InternalState state);
 #endif
@@ -447,6 +450,7 @@ private:
     std::optional<SkRect> fPaintRegion;
     // just for building cluster table, record the last built unicode autospacing flag;
     Cluster::AutoSpacingFlag fLastAutoSpacingFlag;
+    bool fTextEffectState{false};
 #endif
 };
 }  // namespace textlayout
