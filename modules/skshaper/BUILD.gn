@@ -28,7 +28,7 @@ if (skia_enable_skshaper) {
     if (!use_oh_skia) {
       deps = [ "../..:skia" ]
     } else {
-      include_dirs = [ "//third_party/skia" ]
+      include_dirs = [ "${skia_root_dir}" ]
       deps = []
     }
     defines = [ "SKSHAPER_IMPLEMENTATION=1" ]

@@ -23,7 +23,7 @@ static_library("skresources") {
     "../../experimental/ffmpeg:video_decoder",
   ]
   if (use_oh_skia) {
-    include_dirs = [ "//third_party/skia" ]
+    include_dirs = [ "${skia_root_dir}" ]
     deps -= [ "../..:skia" ]
   }
 }
