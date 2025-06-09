@@ -96,6 +96,12 @@ public:
 
     virtual std::vector<ParagraphPainter::PaintID> updateColor(size_t from, size_t to, SkColor color,
         UtfEncodeType encodeType) = 0;
+
+    virtual std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() = 0;
+
+    virtual bool hasEnabledTextEffect() const = 0;
+
+    virtual void setTextEffectState(bool state) = 0;
 #endif
 
     bool didExceedMaxLines() { return fExceededMaxLines; }

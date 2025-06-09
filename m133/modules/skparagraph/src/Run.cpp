@@ -216,8 +216,26 @@ Run::Run(ParagraphImpl* owner,
 }
 
 void Run::calculateMetrics() {
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar fontMetircsScale = 1.0;
+    if (fOwner != nullptr) {
+        BlockRange blockRange = fOwner->findAllBlocks(fTextRange);
+        const SkSpan<Block>& blocks = fOwner->blocks(blockRange);
+        for (const Block& block: blocks) {
+            if (block.fStyle.getTextBadgeType() == TextBadgeType::BADGE_NONE) {
+                continue;
+            }
+            fontMetircsScale = TEXT_BADGE_HEIGHT_SCALE;
+            break;
+        }
+    }
+    fCorrectAscent = fFontMetrics.fAscent * fontMetircsScale - fFontMetrics.fLeading * 0.5;
+    fCorrectDescent = fFontMetrics.fDescent * fontMetircsScale + fFontMetrics.fLeading * 0.5;
+#else
     fCorrectAscent = fFontMetrics.fAscent - fFontMetrics.fLeading * 0.5;
     fCorrectDescent = fFontMetrics.fDescent + fFontMetrics.fLeading * 0.5;
+#endif
+
     fCorrectLeading = 0;
     if (SkScalarNearlyZero(fHeightMultiplier)) {
         return;

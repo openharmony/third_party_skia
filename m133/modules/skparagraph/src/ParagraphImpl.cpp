@@ -1915,10 +1915,7 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
         return unresolvedPaintID;
     }
     this->ensureUTF16Mapping();
-    if (encodeType == UtfEncodeType::kUtf16) {
-        from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? from : fText.size();
-        to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? to : fText.size();
-    } else {
+    if (encodeType == UtfEncodeType::kUtf8) {
         from = (from < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[from] : fText.size();
         to = (to < SkToSizeT(fUTF8IndexForUTF16Index.size())) ? fUTF8IndexForUTF16Index[to] : fText.size();
     }
@@ -1965,6 +1962,21 @@ bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
         singleRunWidth += totalFakeSpacing;
     }
     return singleRunWidth <= floorWidth - this->detectIndents(0);
+}
+
+std::vector<TextBlobRecordInfo> ParagraphImpl::getTextBlobRecordInfo()
+{
+    std::vector<TextBlobRecordInfo> textBlobRecordInfos;
+    for (auto& line : fLines) {
+        for (auto& block : line.fTextBlobCache) {
+            TextBlobRecordInfo recordInfo;
+            recordInfo.fBlob = block.fBlob;
+            recordInfo.fOffset = block.fOffset;
+            recordInfo.fPaint = block.fPaint;
+            textBlobRecordInfos.emplace_back(recordInfo);
+        }
+    }
+    return textBlobRecordInfos;
 }
 #endif
 TArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
