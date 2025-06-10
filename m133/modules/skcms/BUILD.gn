@@ -82,9 +82,7 @@ arch("skcms_TransformSkx") {
 
 static_library("skcms") {
   cflags = []
-  if (!is_win || is_clang) {
-    cflags += [ "-std=c11" ]
-  }
+
   if (target_cpu != "x64" || target_os == "android") {
     defines = [
       "SKCMS_DISABLE_HSW",

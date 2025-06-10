@@ -45,6 +45,7 @@ config("skia_wno") {
     "-Wno-unused-private-field",
     "-Wno-unused-variable",
     "-Wno-c++17-extensions",
+    "-std=c++17"
   ]
   if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
     cflags += [ "-flto=thin" ]
@@ -176,6 +177,8 @@ config("skia_private") {
   cflags_cc = [
     "-Wno-array-parameter",
     "-fvisibility-inlines-hidden",
+    "-std=c++17",
+    "-Wno-unknown-pragmas",
   ]
 
   defines = [ "SK_GAMMA_APPLY_TO_A8" ]
@@ -253,7 +256,7 @@ template("opts") {
   }
 }
 
-is_x86 = current_cpu == "x64" || current_cpu == "x86"
+is_x86 = current_cpu == "x64" || current_cpu == "x86" || current_cpu == "x86_64"
 is_loong64 = current_cpu == "loong64"
 opts("none") {
   enabled = !is_x86 && current_cpu != "arm" && current_cpu != "arm64"
@@ -318,26 +321,13 @@ opts("sse42") {
   }
 }
 
-opts("avx") {
-  enabled = is_x86
-  sources = skia_opts.avx_sources
-  if (is_win && !is_mingw) {
-    cflags = [ "/arch:AVX" ]
-  } else {
-    cflags = [ "-mavx" ]
-    if (is_mac && is_debug) {
-      cflags += [ "-fno-stack-check" ]  # Work around skia:9709
-    }
-  }
-}
-
 opts("hsw") {
   enabled = is_x86
   sources = skia_opts.hsw_sources
   if (is_win && !is_mingw) {
     cflags = [ "/arch:AVX2" ]
   } else {
-    cflags = [ "-march=haswell" ]
+    cflags = [ "-march=haswell", "-mavx" ]
   }
 }
 
@@ -347,7 +337,7 @@ opts("skx") {
   if (is_win && !is_mingw) {
     cflags = [ "/arch:AVX512" ]
   } else {
-    cflags = [ "-march=skylake-avx512" ]
+    cflags = [ "-march=skylake-avx512", "-mavx" ]
   }
 }
 
@@ -831,6 +821,15 @@ optional("fontmgr_win") {
     ]
 
     defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
+    deps = [
+      ":fontmgr_symbol_load",
+    ]
+    deps += ["${skia_third_party_dir}/expat:expatm133"]
+    if (is_arkui_x) {
+      deps += [ "//third_party/jsoncpp:jsoncpp_static" ]
+    } else {
+      external_deps = [ "jsoncpp:jsoncpp" ]
+    }
   }
 }
 
@@ -1478,10 +1477,7 @@ optional("gpu") {
         "src/gpu/ganesh/gl/win/GrGLMakeNativeInterface_win.cpp",
         "src/gpu/ganesh/gl/win/GrGLMakeWinInterface.cpp",
       ]
-      if (target_cpu != "arm64") {
-        # libs += [ "OpenGL32.lib" ]
-        libs += [ "opengl32" ]
-      }
+      libs += [ "opengl32" ]
     } else {
       sources += [ "src/gpu/ganesh/gl/GrGLMakeNativeInterface_none.cpp" ]
     }

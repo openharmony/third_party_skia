@@ -9,7 +9,9 @@
 
 #include "src/ports/SkFontMgr_preview.h"
 
-#include "src/core/SkTSearch.h"
+#include "src/base/SkTSearch.h"
+#include "include/private/base/SkTDArray.h"
+#include "src/ports/SkFontScanner_FreeType_priv.h"
 
 SkFontMgr_Preview::SkFontMgr_Preview()
 {
@@ -17,61 +19,61 @@ SkFontMgr_Preview::SkFontMgr_Preview()
     SkFontMgr_Config_Parser::GetInstance().GetSystemFontFamilies(families);
     this->buildNameToFamilyMap(families);
     this->findDefaultStyleSet();
-    families.deleteAll();
+    families.reset();
 }
 
 int SkFontMgr_Preview::onCountFamilies() const
 {
-    return fNameToFamilyMap.count();
+    return fNameToFamilyMap.size();
 }
 
 void SkFontMgr_Preview::onGetFamilyName(int index, SkString* familyName) const
 {
-    if (index < 0 || fNameToFamilyMap.count() <= index) {
+    if (index < 0 || fNameToFamilyMap.size() <= index) {
         familyName->reset();
         return;
     }
     familyName->set(fNameToFamilyMap[index].name);
 }
 
-SkFontStyleSet* SkFontMgr_Preview::onCreateStyleSet(int index) const
+sk_sp<SkFontStyleSet> SkFontMgr_Preview::onCreateStyleSet(int index) const
 {
-    if (index < 0 || fNameToFamilyMap.count() <= index) {
+    if (index < 0 || fNameToFamilyMap.size() <= index) {
         return nullptr;
     }
-    return SkRef(fNameToFamilyMap[index].styleSet);
+    return static_cast<sk_sp<SkFontStyleSet>>(SkRef(fNameToFamilyMap[index].styleSet));
 }
 
-SkFontStyleSet* SkFontMgr_Preview::onMatchFamily(const char familyName[]) const
+sk_sp<SkFontStyleSet> SkFontMgr_Preview::onMatchFamily(const char familyName[]) const
 {
     if (!familyName) {
         return nullptr;
     }
     SkAutoAsciiToLC tolc(familyName);
-    for (int i = 0; i < fNameToFamilyMap.count(); ++i) {
+    for (int i = 0; i < fNameToFamilyMap.size(); ++i) {
         if (fNameToFamilyMap[i].name.equals(tolc.lc())) {
-            return SkRef(fNameToFamilyMap[i].styleSet);
+            return static_cast<sk_sp<SkFontStyleSet>>(SkRef(fNameToFamilyMap[i].styleSet));
         }
     }
     // TODO: eventually we should not need to name fallback families.
-    for (int i = 0; i < fFallbackNameToFamilyMap.count(); ++i) {
+    for (int i = 0; i < fFallbackNameToFamilyMap.size(); ++i) {
         if (fFallbackNameToFamilyMap[i].name.equals(tolc.lc())) {
-            return SkRef(fFallbackNameToFamilyMap[i].styleSet);
+            return static_cast<sk_sp<SkFontStyleSet>>(SkRef(fFallbackNameToFamilyMap[i].styleSet));
         }
     }
     return nullptr;
 }
 
-SkTypeface* SkFontMgr_Preview::onMatchFamilyStyle(const char familyName[], const SkFontStyle& style) const
+sk_sp<SkTypeface> SkFontMgr_Preview::onMatchFamilyStyle(const char familyName[], const SkFontStyle& style) const
 {
     sk_sp<SkFontStyleSet> sset(this->matchFamily(familyName));
     return sset->matchStyle(style);
 }
 
-SkTypeface* SkFontMgr_Preview::onMatchFaceStyle(const SkTypeface* typeface, const SkFontStyle& style) const
+sk_sp<SkTypeface> SkFontMgr_Preview::onMatchFaceStyle(const SkTypeface* typeface, const SkFontStyle& style) const
 {
-    for (int i = 0; i < fStyleSets.count(); ++i) {
-        for (int j = 0; j < fStyleSets[i]->fStyles.count(); ++j) {
+    for (int i = 0; i < fStyleSets.size(); ++i) {
+        for (int j = 0; j < fStyleSets[i]->fStyles.size(); ++j) {
             if (fStyleSets[i]->fStyles[j].get() == typeface) {
                 return fStyleSets[i]->matchStyle(style);
             }
@@ -82,16 +84,16 @@ SkTypeface* SkFontMgr_Preview::onMatchFaceStyle(const SkTypeface* typeface, cons
 
 sk_sp<SkTypeface_PreviewSystem> SkFontMgr_Preview::find_family_style_character(
     const SkString& familyName,
-    const SkTArray<NameToFamily, true>& fallbackNameToFamilyMap,
+    const skia_private::TArray<NameToFamily, true>& fallbackNameToFamilyMap,
     const SkFontStyle& style, bool elegant,
     const SkString& langTag, SkUnichar character)
 {
-    for (int i = 0; i < fallbackNameToFamilyMap.count(); ++i) {
+    for (int i = 0; i < fallbackNameToFamilyMap.size(); ++i) {
         SkFontStyleSet_Preview* family = fallbackNameToFamilyMap[i].styleSet;
         if (familyName != family->fFallbackFor) {
             continue;
         }
-        sk_sp<SkTypeface_PreviewSystem> face(family->matchStyle(style));
+        sk_sp<SkTypeface_PreviewSystem> face(static_cast<SkTypeface_PreviewSystem*>(SkRef(family->matchStyle(style).get())));
 
         if (!langTag.isEmpty() &&
             std::none_of(face->fLang.begin(), face->fLang.end(), [&](SkLanguage lang) {
@@ -110,7 +112,7 @@ sk_sp<SkTypeface_PreviewSystem> SkFontMgr_Preview::find_family_style_character(
     return nullptr;
 }
 
-SkTypeface* SkFontMgr_Preview::onMatchFamilyStyleCharacter(const char familyName[],
+sk_sp<SkTypeface> SkFontMgr_Preview::onMatchFamilyStyleCharacter(const char familyName[],
                                                        const SkFontStyle& style,
                                                        const char* bcp47[],
                                                        int bcp47Count,
@@ -132,7 +134,7 @@ SkTypeface* SkFontMgr_Preview::onMatchFamilyStyleCharacter(const char familyName
                                                     style, SkToBool(elegant),
                                                     lang.getTag(), character);
                     if (matchingTypeface) {
-                        return matchingTypeface.release();
+                        return static_cast<sk_sp<SkTypeface>>(matchingTypeface.release());
                     }
                     lang = lang.getParent();
                 }
@@ -142,7 +144,7 @@ SkTypeface* SkFontMgr_Preview::onMatchFamilyStyleCharacter(const char familyName
                                             style, SkToBool(elegant),
                                             SkString(), character);
             if (matchingTypeface) {
-                return matchingTypeface.release();
+                return static_cast<sk_sp<SkTypeface>>(matchingTypeface.release());
             }
         }
     }
@@ -169,14 +171,14 @@ sk_sp<SkTypeface> SkFontMgr_Preview::onMakeFromStreamIndex(std::unique_ptr<SkStr
     if (!fScanner.scanFont(stream.get(), ttcIndex, &name, &style, &isFixedPitch, nullptr)) {
         return nullptr;
     }
-    auto data = std::make_unique<SkFontData>(std::move(stream), ttcIndex, nullptr, 0);
+    auto data = std::make_unique<SkFontData>(std::move(stream), ttcIndex, 0, nullptr, 0, nullptr, 0);
     return sk_sp<SkTypeface>(new SkTypeface_PreviewStream(std::move(data), style, isFixedPitch, name));
 }
 
 sk_sp<SkTypeface> SkFontMgr_Preview::onMakeFromStreamArgs(std::unique_ptr<SkStreamAsset> stream,
                                                       const SkFontArguments& args) const
 {
-    using Scanner = SkTypeface_FreeType::Scanner;
+    using Scanner = SkFontScanner_FreeType;
     bool isFixedPitch;
     SkFontStyle style;
     SkString name;
@@ -185,11 +187,13 @@ sk_sp<SkTypeface> SkFontMgr_Preview::onMakeFromStreamArgs(std::unique_ptr<SkStre
                            &name, &style, &isFixedPitch, &axisDefinitions)) {
         return nullptr;
     }
-    SkAutoSTMalloc<4, SkFixed> axisValues(axisDefinitions.count());
-    Scanner::computeAxisValues(axisDefinitions, args.getVariationDesignPosition(),
-                               axisValues, name);
-    auto data = std::make_unique<SkFontData>(std::move(stream), args.getCollectionIndex(),
-                                               axisValues.get(), axisDefinitions.count());
+    SkAutoSTMalloc<4, SkFixed> axisValues(axisDefinitions.size());
+    SkFontScanner::VariationPosition current;
+    const SkFontArguments::VariationPosition currentPos{current.data(), current.size()};
+    Scanner::computeAxisValues(axisDefinitions, currentPos, args.getVariationDesignPosition(),
+                               axisValues, name, &style);
+    auto data = std::make_unique<SkFontData>(std::move(stream), args.getCollectionIndex(), 0,
+                                             axisValues.get(), axisDefinitions.size(), nullptr, 0);
     return sk_sp<SkTypeface>(new SkTypeface_PreviewStream(std::move(data), style, isFixedPitch, name));
 }
 
@@ -203,10 +207,10 @@ sk_sp<SkTypeface> SkFontMgr_Preview::onLegacyMakeTypeface(const char familyName[
 
 void SkFontMgr_Preview::addFamily(FontFamily& family, int familyIndex)
 {
-    SkTArray<NameToFamily, true>* nameToFamily = &fNameToFamilyMap;
+    skia_private::TArray<NameToFamily, true>* nameToFamily = &fNameToFamilyMap;
     if (family.fIsFallbackFont) {
         nameToFamily = &fFallbackNameToFamilyMap;
-        if (0 == family.fNames.count()) {
+        if (0 == family.fNames.size()) {
             SkString& fallbackName = family.fNames.push_back();
             fallbackName.printf("%.2x##fallback", familyIndex);
         }
@@ -240,7 +244,7 @@ void SkFontMgr_Preview::findDefaultStyleSet()
     SkASSERT(!fStyleSets.empty());
     static const char* defaultNames[] = { "sans-serif" };
     for (const char* defaultName : defaultNames) {
-        fDefaultStyleSet.reset(this->onMatchFamily(defaultName));
+        fDefaultStyleSet = this->onMatchFamily(defaultName);
         if (fDefaultStyleSet) {
             break;
         }

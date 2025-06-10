@@ -88,6 +88,7 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
       sources = skia_unicode_icu_bidi_sources
       sources += skia_unicode_bidi_full_sources
       sources += skia_unicode_icu_sources
+      sources += [ "../../third_party/icu/SkLoadICU.cpp" ]
 
       # only available for Android at the moment
       if (skia_use_runtime_icu && (is_android || is_linux)) {

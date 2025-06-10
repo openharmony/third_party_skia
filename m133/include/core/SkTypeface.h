@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 class SkData;
 class SkDescriptor;
