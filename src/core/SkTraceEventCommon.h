@@ -223,10 +223,10 @@ public:
     HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, ##__VA_ARGS__)
 
 #ifdef NOT_BUILD_FOR_OHOS_SDK
-inline static int gTraceDebugLevel =
+inline int gTraceDebugLevel =
     std::atoi((OHOS::system::GetParameter("persist.sys.graphic.2dengine.openDebugTrace", "0")).c_str());
 #else
-inline static int gTraceDebugLevel = 0;
+inline int gTraceDebugLevel = 0;
 #endif
 
 class SkOHOSTraceUtil {
