@@ -1,5 +1,6 @@
 // Copyright 2019 Google LLC.
 #include "include/core/SkTypeface.h"
+#include "include/core/SkGraphics.h"
 #include "modules/skparagraph/include/FontCollection.h"
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
@@ -456,6 +457,7 @@ void FontCollection::clearCaches() {
     fTypefaces.reset();
 #else
     fTypefaces.clear();
+    SkGraphics::PurgeFontCache();
 #endif
     SkShaper::PurgeCaches();
 }

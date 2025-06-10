@@ -2,6 +2,7 @@
 #include "modules/skparagraph/include/FontCollection.h"
 
 #include "include/core/SkTypeface.h"
+#include "include/core/SkGraphics.h"
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skshaper/include/SkShaper_harfbuzz.h"
@@ -491,6 +492,7 @@ void FontCollection::clearCaches() {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     fParagraphCache.reset();
     fTypefaces.clear();
+    SkGraphics::PurgeFontCache();
 #else
     fParagraphCache.reset();
     fTypefaces.reset();
