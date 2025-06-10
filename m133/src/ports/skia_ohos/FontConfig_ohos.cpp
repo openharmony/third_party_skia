@@ -530,7 +530,7 @@ void FontConfig_OHOS::loadHMSymbol()
         return;
     }
     for (auto& dir : fFontDir) {
-        if (HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol(
+        if (skia::text::HmSymbolConfig_OHOS::LoadSymbolConfig(
             "hm_symbol_config_next.json", SkString(dir.c_str())) == NO_ERROR) {
             return;
         }
