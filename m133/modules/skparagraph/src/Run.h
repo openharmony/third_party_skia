@@ -176,6 +176,7 @@ public:
     SkScalar calculateWidth(size_t start, size_t end, bool clip) const;
 
 #ifdef ENABLE_TEXT_ENHANCE
+    SkScalar usingAutoSpaceWidth(const Cluster& cluster) const;
     void copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const;
     void copyTo(RSTextBlobBuilder& builder,
                 const RSPath* path,

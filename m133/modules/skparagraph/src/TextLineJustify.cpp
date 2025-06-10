@@ -111,22 +111,6 @@ void TextLineJustify::allocateRemainingWidth(
     clusterLevels.lowLevelOffset += remainingOffset;
 }
 
-SkScalar TextLineJustify::usingAutoSpaceWidth(const Cluster* cluster)
-{
-    if (cluster == nullptr) {
-        return 0.0f;
-    }
-    auto& run = cluster->run();
-    auto start = cluster->startPos();
-    auto end = cluster->endPos();
-    auto correction = 0.0f;
-    if (end > start && !run.getAutoSpacings().empty()) {
-        correction = run.getAutoSpacings()[end - 1].fX - run.getAutoSpacings()[start].fY;
-    }
-    
-    return cluster->width() + std::max(0.0f, correction);
-}
-
 TextLineJustify::ShiftLevel TextLineJustify::determineShiftLevelForIdeographic(
     const Cluster* prevCluster, MiddleLevelInfo& middleLevelInfo)
 {
@@ -156,7 +140,7 @@ TextLineJustify::ShiftLevel TextLineJustify::determineShiftLevelForPunctuation(
         return ShiftLevel::Undefined;
     }
     highLevelInfo.isClusterPunct = true;
-    highLevelInfo.punctWidths = usingAutoSpaceWidth(cluster);
+    highLevelInfo.punctWidths = textLineRef.usingAutoSpaceWidth(cluster);
     return ShiftLevel::HighLevel;
 }
 
@@ -287,7 +271,7 @@ bool TextLineJustify::justify(SkScalar maxWidth)
             if (cluster != nullptr && isFirstCluster) {
                 isFirstCluster = false;
                 prevCluster = cluster;
-                textLen += usingAutoSpaceWidth(cluster);
+                textLen += textLineRef.usingAutoSpaceWidth(cluster);
                 ideographicMaxLen =
                     (cluster->isIdeographic()) ? std::max(ideographicMaxLen, cluster->width()) : ideographicMaxLen;
                 return true;
@@ -315,7 +299,7 @@ bool TextLineJustify::justify(SkScalar maxWidth)
                 default:
                     break;
             }
-            textLen += usingAutoSpaceWidth(cluster);
+            textLen += textLineRef.usingAutoSpaceWidth(cluster);
             prevCluster = cluster;
             return true;
         });

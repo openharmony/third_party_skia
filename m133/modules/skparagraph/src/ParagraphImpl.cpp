@@ -498,11 +498,17 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 }
 
 void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
+#ifdef ENABLE_TEXT_ENHANCE
+    TEXT_TRACE_FUNC();
+#endif
     CanvasParagraphPainter painter(canvas);
     paint(&painter, x, y);
 }
 
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
+#ifdef ENABLE_TEXT_ENHANCE
+    TEXT_TRACE_FUNC();
+#endif
     for (auto& line : fLines) {
 #ifdef ENABLE_TEXT_ENHANCE
         line.updateTextLinePaintAttributes();
@@ -513,6 +519,7 @@ void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 
 #ifdef ENABLE_TEXT_ENHANCE
 void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) {
+    TEXT_TRACE_FUNC();
     auto& style = fTextStyles[0].fStyle;
     float align = 0.0f;
     switch (paragraphStyle().getTextAlign()) {
@@ -740,8 +747,7 @@ static const UnicodeIdentifier WESTERN_IDENTIFIER(WESTERN_UNICODE_SET);
 
 static Cluster::AutoSpacingFlag recognizeUnicodeAutoSpacingFlag(ParagraphImpl& paragraph, SkUnichar unicode)
 {
-    bool enableAutoSpaceFlag = paragraph.paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
-    if (!enableAutoSpaceFlag) {
+    if (!paragraph.isAutoSpaceEnabled()) {
         return Cluster::AutoSpacingFlag::NoFlag;
     }
     if (WESTERN_IDENTIFIER.exist(unicode)) {
@@ -847,7 +853,9 @@ SkScalar Run::calculateWidth(size_t start, size_t end, bool clip) const {
 // In some cases we apply spacing to glyphs first and then build the cluster table, in some we do
 // the opposite - just to optimize the most common case.
 void ParagraphImpl::applySpacingAndBuildClusterTable() {
-
+#ifdef ENABLE_TEXT_ENHANCE
+    TEXT_TRACE_FUNC();
+#endif
     // Check all text styles to see what we have to do (if anything)
     size_t letterSpacingStyles = 0;
     bool hasWordSpacing = false;
@@ -1947,11 +1955,31 @@ std::vector<ParagraphPainter::PaintID> ParagraphImpl::updateColor(size_t from, s
     return unresolvedPaintID;
 }
 
+bool ParagraphImpl::isAutoSpaceEnabled() const
+{
+    return paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
+}
+
+SkScalar ParagraphImpl::clusterUsingAutoSpaceWidth(const Cluster& cluster) const
+{
+    if(!isAutoSpaceEnabled()){
+        return cluster.width();
+    }
+    Run& run = cluster.run();
+    size_t start = cluster.startPos();
+    size_t end = cluster.endPos();
+    float correction = 0.0f;
+    if (end > start && !run.getAutoSpacings().empty()) {
+        correction = run.getAutoSpacings()[end - 1].fX - run.getAutoSpacings()[start].fY;
+    }
+
+    return cluster.width() + std::max(0.0f, correction);
+}
+
 bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
 {
     SkScalar singleRunWidth = fRuns[0].fAdvance.fX;
-    bool enableAutoSpace = paragraphStyle().getEnableAutoSpace() || TextParameter::GetAutoSpacingEnable();
-    if (!enableAutoSpace) {
+    if (!isAutoSpaceEnabled()) {
         return singleRunWidth <= floorWidth - this->detectIndents(0);
     }
     SkScalar totalFakeSpacing = 0.0f;
@@ -1959,8 +1987,8 @@ bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
     for (size_t cluster = 1; cluster < endOfClusters; ++cluster) {
         totalFakeSpacing += (fClusters[cluster].needAutoSpacing())
             ? fClusters[cluster - 1].getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
-        singleRunWidth += totalFakeSpacing;
     }
+    singleRunWidth += totalFakeSpacing;
     return singleRunWidth <= floorWidth - this->detectIndents(0);
 }
 

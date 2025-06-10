@@ -58,10 +58,20 @@ void OneLineShaper::commitRunBuffer(const RunInfo&) {
         if (fCurrentRun->textRange() == unresolved.fText) {
             // Nothing was resolved; preserve the initial run if it makes sense
             auto& front = fUnresolvedBlocks.front();
+#ifdef ENABLE_TEXT_ENHANCE
+            bool useTofu =
+                unresolved.fRun != nullptr && unresolved.fRun->fFont.GetTypeface() != nullptr &&
+                TextGlobalConfig::UndefinedGlyphDisplayUseTofu(unresolved.fRun->fFont.GetTypeface()->GetFamilyName());
+            if (front.fRun != nullptr && !useTofu) {
+                unresolved.fRun = front.fRun;
+                unresolved.fGlyphs = front.fGlyphs;
+            }
+#else
             if (front.fRun != nullptr) {
                unresolved.fRun = front.fRun;
                unresolved.fGlyphs = front.fGlyphs;
             }
+#endif
             return;
         }
     }
@@ -644,6 +654,7 @@ void OneLineShaper::matchResolvedFontsByUnicode(const TextStyle& textStyle, cons
         }
     }
 }
+
 void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                                        const TypefaceVisitor& visitor) {
     std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
@@ -666,6 +677,12 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
         // Return hopeless blocks back
         for (auto& block : hopelessBlocks) {
             fUnresolvedBlocks.emplace_front(block);
+        }
+    }
+    if (TextGlobalConfig::UndefinedGlyphDisplayUseTofu()) {
+        std::shared_ptr<RSTypeface> notdef = RSTypeface::MakeFromName(NOTDEF_FAMILY, textStyle.getFontStyle());
+        if (notdef != nullptr) {
+            visitor(notdef);
         }
     }
 }
