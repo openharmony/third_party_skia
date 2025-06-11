@@ -88,6 +88,8 @@ void SkTypeface_OHOS::onGetFontDescriptor(SkFontDescriptor* descriptor, bool* is
         *isLocal = false;
     }
     if (descriptor) {
+        // used for choosing SkTypeface_FreeType decoder during deserialization
+        descriptor->setFactoryId(SkTypeface_FreeType::FactoryId);
         SkString familyName;
         onGetFamilyName(&familyName);
         descriptor->setFamilyName(familyName.c_str());
