@@ -138,6 +138,7 @@ public:
     bool getApplyRoundingHack() const { return false; }
     size_t lineNumber() override { return fLineNumber; }
     TextRange getEllipsisTextRange() override;
+    bool isRunCombinated() const override { return fRuns.size() < fTextStyles.size(); }
 #else
     bool getApplyRoundingHack() const { return fParagraphStyle.getApplyRoundingHack(); }
     size_t lineNumber() override { return fLines.size(); }

@@ -87,6 +87,8 @@ public:
     virtual bool hasEnabledTextEffect() const = 0;
 
     virtual void setTextEffectState(bool state) = 0;
+
+    virtual bool isRunCombinated() const = 0;
 #endif
 
     virtual void layout(SkScalar width) = 0;
