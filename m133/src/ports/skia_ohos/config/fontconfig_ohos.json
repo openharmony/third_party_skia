@@ -892,6 +892,12 @@
       "lang": "zh-Hans",
       "family": "HYQiHei L3",
       "file": "HYQiHeiL3.ttf"
+    },
+    {
+      "type": 0,
+      "alias": "notdef",
+      "family": "HarmonyOS Sans Notdef",
+      "file": "HarmonyOS_Sans_Notdef.ttf"
     }
   ]
 }
