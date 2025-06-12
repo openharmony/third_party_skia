@@ -2767,7 +2767,8 @@ void GrVkGpu::endRenderPass(GrRenderTarget* target, GrSurfaceOrigin origin,
 }
 
 bool GrVkGpu::checkVkResult(VkResult result) {
-    switch (result) {
+    int32_t numResult = static_cast<int32_t>(result);
+    switch (numResult) {
         case VK_SUCCESS:
             return true;
         case VK_ERROR_DEVICE_LOST:
@@ -2780,11 +2781,25 @@ bool GrVkGpu::checkVkResult(VkResult result) {
                                                 fDeviceLostProc,
                                                 vkCaps().supportsDeviceFaultInfo());
             }
+            {
+                auto context = getContext();
+                if (context) {
+                    context->processVulkanError();
+                }
+            }
             return false;
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:
         case VK_ERROR_OUT_OF_HOST_MEMORY:
             this->setOOMed();
             return false;
+        case VK_HUAWEI_GPU_ERROR_RECOVER:
+            {
+                auto context = getContext();
+                if (context) {
+                    context->processVulkanError();
+                }
+                return true;
+            }
         default:
             return false;
     }
