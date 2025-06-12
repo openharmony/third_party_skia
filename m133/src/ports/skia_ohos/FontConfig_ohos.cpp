@@ -377,7 +377,6 @@ int FontConfig_OHOS::parseConfig(const char* fname)
     return NO_ERROR;
 }
 
-
 template<>
 bool Json::Value::is<UnicodeRange>() const
 {
@@ -386,7 +385,6 @@ bool Json::Value::is<UnicodeRange>() const
     }
     return std::all_of(begin(), end(), [](const Value& item) { return item.isUInt(); });
 }
-
 
 template<>
 UnicodeRange Json::Value::as<UnicodeRange>() const
@@ -542,7 +540,6 @@ void FontConfig_OHOS::sortTypefaceSet(std::vector<sk_sp<SkTypeface_OHOS>>& typef
     });
 }
 
-
 bool FontConfig_OHOS::judgeFileExist()
 {
     bool haveFile = false;
@@ -662,7 +659,6 @@ void FontConfig_OHOS::FontCollection::forAll(std::function<void(FontConfig_OHOS:
         func(f);
     }
 }
-
 
 int16_t FontConfig_OHOS::charRangeIndex(SkUnichar unicode)
 {
