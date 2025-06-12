@@ -45,7 +45,9 @@ enum {
 };
 } /* namespace ErrorCode */
 
-constexpr int RANGE_NUM = 4;
+constexpr size_t RANGE_SIZE = 11;
+constexpr size_t UNICODE_RANGE_SIZE = 332;
+using UnicodeRange = std::array<uint32_t, RANGE_SIZE>;
 
 /*!
  * \brief To parse the font configuration document and manage the system fonts
@@ -64,6 +66,8 @@ public:
         std::string family;
         std::string lang;
         std::string file;
+        UnicodeRange range { UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX,
+            UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX };
     };
 
     struct Font {
@@ -81,18 +85,9 @@ public:
         std::string lang;
         // all the typefaces of this font
         std::vector<sk_sp<SkTypeface_OHOS>> typefaces;
-        // the unicode range of this font
-        std::array<uint32_t, RANGE_NUM> range{};
 
         // may be redundant move
-        explicit Font(FontJson&& info)
-            : slant(info.slant), weight(info.weight), alias(std::move(info.alias)),
-              family(std::move(info.family)), lang(std::move(info.lang))
-        {
-            this->type = info.type >= FontType::NumOfFontType ? FontType::Generic : static_cast<FontType>(info.type);
-        }
-
-        bool containChar(SkUnichar unicode) const;
+        explicit Font(FontJson& info);
     };
 
     explicit FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname = nullptr);
@@ -119,72 +114,34 @@ public:
         const std::vector<sk_sp<SkTypeface_OHOS>>& typefaceSet, const SkFontStyle& pattern);
 
 private:
-    struct {
+    struct FontCollection {
         std::vector<Font> fFallback;
         std::vector<Font> fGeneric;
         std::unordered_map<std::string, std::pair<size_t, FontType>> fIndexMap;
+        std::array<std::vector<size_t>, UNICODE_RANGE_SIZE> fRangeToIndex;
 
-        void emplaceFont(FontJson&& fj, sk_sp<SkTypeface_OHOS>&& typeface, const std::array<uint32_t, 4>& range)
-        {
-            if (fj.family.empty()) {
-                return;
-            }
-            Font f(std::move(fj));
-            // copy the range, the range is a 128bit number stored in 4 uint32_t
-            f.range = range;
-            auto& targetVec = (f.type == FontType::Generic) ? fGeneric : fFallback;
-            auto& targetName = (f.type == FontType::Generic) ? f.alias : f.family;
-            // generic must have alias
-            auto exist = fIndexMap.find(targetName);
-            // if not found, insert directly
-            if (exist == fIndexMap.end()) {
-                fIndexMap.emplace(targetName, std::make_pair(targetVec.size(), f.type));
-                targetVec.emplace_back(f);
-                targetVec.back().typefaces.emplace_back(typeface);
-            } else {
-                // if exist, add the typeface to the font
-                targetVec[exist->second.first].typefaces.emplace_back(typeface);
-            }
-        }
-
-        bool getIndexByFamilyName(const std::string& family, std::pair<size_t, FontType>& res) const
-        {
-            if (fIndexMap.count(family)) {
-                res = fIndexMap.at(family);
-                return true;
-            }
-            return false;
-        }
-
-        const std::vector<Font>& getSet(bool isFallback) const
-        {
-            return isFallback ? fFallback : fGeneric;
-        }
-
-        void forAll(std::function<void(Font&)> func)
-        {
-            for (auto& f : fFallback) {
-                func(f);
-            }
-            for (auto& f : fGeneric) {
-                func(f);
-            }
-        }
+        void emplaceFont(FontJson&& fj, sk_sp<SkTypeface_OHOS>&& typeface);
+        bool getIndexByFamilyName(const std::string& family, std::pair<size_t, FontType>& res) const;
+        const std::vector<Font>& getSet(bool isFallback) const;
+        void forAll(std::function<void(Font&)> func);
     } fFontCollection;
 
     std::vector<std::string> fFontDir; // the directories where the fonts are
     const SkFontScanner_FreeType& fFontScanner;
     mutable std::mutex fFontMutex;
+    static const std::map<std::pair<uint32_t, uint32_t>, int16_t> fRangeMap;
 
     int parseConfig(const char* fname);
     int checkConfigFile(const char* fname, Json::Value& root);
     int parseFontDir(const char* fname, const Json::Value& root);
     int parseFonts(const Json::Value& root);
 
-    int loadFont(const char* fname, FontJson& font, sk_sp<SkTypeface_OHOS>& typeface, std::array<uint32_t, 4>& range);
+    int loadFont(const char* fname, FontJson& font, sk_sp<SkTypeface_OHOS>& typeface);
     void loadHMSymbol();
+    static bool containRange(const UnicodeRange& range, size_t index);
     static void sortTypefaceSet(std::vector<sk_sp<SkTypeface_OHOS>>& typefaceSet);
     static uint32_t getFontStyleDifference(const SkFontStyle& style1, const SkFontStyle& style2);
+    static int16_t charRangeIndex(SkUnichar unicode);
     FontConfig_OHOS(const FontConfig_OHOS&) = delete;
     FontConfig_OHOS& operator=(const FontConfig_OHOS&) = delete;
     FontConfig_OHOS(FontConfig_OHOS&&) = delete;
