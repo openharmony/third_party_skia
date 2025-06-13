@@ -149,49 +149,6 @@ bool SkFontScanner_FreeType::scanFont(
     return true;
 }
 
-bool SkFontScanner_FreeType::scanFont(SkStreamAsset* stream, FontInfo& info, std::array<uint32_t, 4>& range) const
-{
-    SkAutoMutexExclusive libraryLock(fLibraryMutex);
-
-    FT_StreamRec streamRec;
-    SkUniqueFTFace face(this->openFace(stream, info.index, &streamRec));
-    if (!face) {
-        return false;
-    }
-
-    int weight = face->style_flags & FT_STYLE_FLAG_BOLD ? SkFontStyle::kBold_Weight : SkFontStyle::kNormal_Weight;
-    int width = SkFontStyle::kNormal_Width;
-    SkFontStyle::Slant slant = face->style_flags & FT_STYLE_FLAG_ITALIC
-                                    ? SkFontStyle::kItalic_Slant
-                                    : SkFontStyle::kUpright_Slant;
-    PS_FontInfoRec psFontInfo;
-    TT_OS2* os2 = static_cast<TT_OS2*>(FT_Get_Sfnt_Table(face.get(), ft_sfnt_os2));
-    if (os2 && os2->version != 0xffff) {
-        weight = os2->usWeightClass;
-        width = os2->usWidthClass;
-        // OS/2::ulUnicodeRange is bigendian, so we need to swap it
-        range[0] = os2->ulUnicodeRange1;
-        range[1] = os2->ulUnicodeRange2;
-        range[2] = os2->ulUnicodeRange3;  // the 3rd range at index 2
-        range[3] = os2->ulUnicodeRange4;  // the 4th range at index 3
-
-        // OS/2::fsSelection bit 9 indicates oblique.
-        if (SkToBool(os2->fsSelection & (1u << 9))) {
-            slant = SkFontStyle::kOblique_Slant;
-        }
-    } else if (FT_Get_PS_Font_Info(face.get(), &psFontInfo) == 0 && psFontInfo.weight) {
-        int const index = SkStrLCSearch(&gCommonWeights[0].name, std::size(gCommonWeights),
-                                        psFontInfo.weight, sizeof(gCommonWeights[0]));
-        if (index >= 0) {
-            weight = gCommonWeights[index].weight;
-        }
-    }
-    info.familyName.set(face->family_name);
-    info.style = SkFontStyle(weight, width, slant);
-    info.isFixedWidth = FT_IS_FIXED_WIDTH(face);
-    return true;
-}
-
 /**
  *  Gets fullname from stream, true means success
  */
