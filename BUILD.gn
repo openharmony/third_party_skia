@@ -4767,14 +4767,6 @@ ohos_static_library("sksl_ext_static") {
           external_deps = [ "bounds_checking_function:libsec_static" ]
         }
       }
-      libs += [
-        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreText.framework/Versions/A/CoreText.tbd",
-        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation.tbd",
-        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics.tbd",
-        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO.tbd",
-        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices.tbd",
-        "/Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL.tbd",
-      ]
     }
 
     if (is_ios) {
