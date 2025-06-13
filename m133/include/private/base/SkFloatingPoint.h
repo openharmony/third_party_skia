@@ -160,7 +160,7 @@ static inline float sk_float_rsqrt         (float x) { return 1.0f / std::sqrt(x
 
 // IEEE defines how float divide behaves for non-finite values and zero-denoms, but C does not,
 // so we have a helper that suppresses the possible undefined-behavior warnings.
-#ifdef SK_BUILD_FOR_WIN
+#if defined(SK_BUILD_FOR_WIN) && defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4723)
 #endif
@@ -173,7 +173,7 @@ SK_NO_SANITIZE("float-divide-by-zero")
 static constexpr double sk_ieee_double_divide(double numer, double denom) {
     return numer / denom;
 }
-#ifdef SK_BUILD_FOR_WIN
+#if defined(SK_BUILD_FOR_WIN) && defined(_MSC_VER)
 #pragma warning( pop )
 #endif
 

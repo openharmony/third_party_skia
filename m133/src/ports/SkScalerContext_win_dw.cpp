@@ -1715,7 +1715,7 @@ bool SkScalerContext_DW::generatePngMetrics(const SkGlyph& glyph, SkRect* bounds
     }
 
     DWRITE_GLYPH_IMAGE_FORMATS imageFormats;
-    HRBM(fontFace4->GetGlyphImageFormats(glyph.getGlyphID(), 0, UINT32_MAX, &imageFormats),
+    HRBM(fontFace4->GetGlyphImageFormats_(glyph.getGlyphID(), 0, UINT32_MAX, &imageFormats),
          "Cannot get glyph image formats.");
     if (!(imageFormats & DWRITE_GLYPH_IMAGE_FORMATS_PNG)) {
         return false;
@@ -2263,7 +2263,7 @@ bool SkScalerContext_DW::drawSVGImage(const SkGlyph& glyph, SkCanvas& canvas) {
     }
 
     DWRITE_GLYPH_IMAGE_FORMATS imageFormats;
-    HRBM(fontFace4->GetGlyphImageFormats(glyph.getGlyphID(), 0, UINT32_MAX, &imageFormats),
+    HRBM(fontFace4->GetGlyphImageFormats_(glyph.getGlyphID(), 0, UINT32_MAX, &imageFormats),
          "Cannot get glyph image formats.");
     if (!(imageFormats & DWRITE_GLYPH_IMAGE_FORMATS_SVG)) {
         return false;

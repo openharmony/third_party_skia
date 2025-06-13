@@ -24,7 +24,7 @@
  *     SK_ALWAYS_INLINE void someMethod() { ... }   // should always be inlined
  */
 #if !defined(SK_ALWAYS_INLINE)
-#  if defined(SK_BUILD_FOR_WIN)
+#  if defined(SK_BUILD_FOR_WIN) && defined(_MSC_VER)
 #    define SK_ALWAYS_INLINE __forceinline
 #  else
 #    define SK_ALWAYS_INLINE SK_ATTRIBUTE(always_inline) inline

@@ -456,4 +456,108 @@ template<size_t N, typename C> constexpr auto SkMakeArray(C c)
     return SkMakeArrayFromIndexSequence(c, std::make_index_sequence<N>{});
 }
 
+template <size_t kCountRequested,
+          typename T,
+          typename = std::enable_if_t<std::is_trivially_default_constructible<T>::value &&
+                                      std::is_trivially_destructible<T>::value>>
+class SkAutoSTMalloc {
+public:
+    SkAutoSTMalloc() : fPtr(fTStorage) {}
+
+    SkAutoSTMalloc(size_t count) {
+        if (count > kCount) {
+            fPtr = (T*)sk_malloc_throw(count, sizeof(T));
+        } else if (count) {
+            fPtr = fTStorage;
+        } else {
+            fPtr = nullptr;
+        }
+    }
+
+    SkAutoSTMalloc(SkAutoSTMalloc&&) = delete;
+    SkAutoSTMalloc(const SkAutoSTMalloc&) = delete;
+    SkAutoSTMalloc& operator=(SkAutoSTMalloc&&) = delete;
+    SkAutoSTMalloc& operator=(const SkAutoSTMalloc&) = delete;
+
+    ~SkAutoSTMalloc() {
+        if (fPtr != fTStorage) {
+            sk_free(fPtr);
+        }
+    }
+
+    // doesn't preserve contents
+    T* reset(size_t count) {
+        if (fPtr != fTStorage) {
+            sk_free(fPtr);
+        }
+        if (count > kCount) {
+            fPtr = (T*)sk_malloc_throw(count, sizeof(T));
+        } else if (count) {
+            fPtr = fTStorage;
+        } else {
+            fPtr = nullptr;
+        }
+        return fPtr;
+    }
+
+    T* get() const { return fPtr; }
+
+    operator T*() {
+        return fPtr;
+    }
+
+    operator const T*() const {
+        return fPtr;
+    }
+
+    T& operator[](int index) {
+        return fPtr[index];
+    }
+
+    const T& operator[](int index) const {
+        return fPtr[index];
+    }
+
+    /** Aliases matching other types, like std::vector. */
+    const T* data() const { return fPtr; }
+    T* data() { return fPtr; }
+
+    // Reallocs the array, can be used to shrink the allocation.  Makes no attempt to be intelligent
+    void realloc(size_t count) {
+        if (count > kCount) {
+            if (fPtr == fTStorage) {
+                fPtr = (T*)sk_malloc_throw(count, sizeof(T));
+                memcpy((void*)fPtr, fTStorage, kCount * sizeof(T));
+            } else {
+                fPtr = (T*)sk_realloc_throw(fPtr, count, sizeof(T));
+            }
+        } else if (count) {
+            if (fPtr != fTStorage) {
+                fPtr = (T*)sk_realloc_throw(fPtr, count, sizeof(T));
+            }
+        } else {
+            this->reset(0);
+        }
+    }
+
+private:
+    // Since we use uint32_t storage, we might be able to get more elements for free.
+    static const size_t kCountWithPadding = SkAlign4(kCountRequested*sizeof(T)) / sizeof(T);
+#if defined(SK_BUILD_FOR_GOOGLE3)
+    // Stack frame size is limited for SK_BUILD_FOR_GOOGLE3. 4k is less than the actual max, but some functions
+    // have multiple large stack allocations.
+    static const size_t kMaxBytes = 4 * 1024;
+    static const size_t kCount = kCountRequested * sizeof(T) > kMaxBytes
+        ? kMaxBytes / sizeof(T)
+        : kCountWithPadding;
+#else
+    static const size_t kCount = kCountWithPadding;
+#endif
+
+    T*          fPtr;
+    union {
+        uint32_t    fStorage32[SkAlign4(kCount*sizeof(T)) >> 2];
+        T           fTStorage[1];   // do NOT want to invoke T::T()
+    };
+};
 #endif

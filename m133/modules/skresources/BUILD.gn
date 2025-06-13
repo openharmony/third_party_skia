@@ -18,6 +18,8 @@ static_library("skresources") {
     "../../:skia_private",
     "../../:skia_library",
   ]
+  cflags = [ "-std=c++17" ]
+  cflags_cc = [ "-Wno-unknown-pragmas" ]
   deps = [
     "../..:skia",
     "../../experimental/ffmpeg:video_decoder",

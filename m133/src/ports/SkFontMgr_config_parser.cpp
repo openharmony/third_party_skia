@@ -15,8 +15,9 @@
 #include <expat.h>
 
 #include "include/core/SkStream.h"
-#include "include/private/SkFixed.h"
-#include "src/core/SkTSearch.h"
+#include "include/private/base/SkFixed.h"
+#include "src/base/SkTSearch.h"
+#include "include/private/base/SkTDArray.h"
 
 #define SK_FONT_CONFIG_FILE_NAME "fonts.xml"
 std::string SkFontMgr::containerFontPath = "";
@@ -118,7 +119,7 @@ static bool is_whitespace(char c)
 
 static void trim_string(SkString* s)
 {
-    char* str = s->writable_str();
+    char* str = s->data();
     const char* start = str;  // start is inclusive
     const char* end = start + s->size();  // end is exclusive
     while (is_whitespace(*start)) { ++start; }
@@ -152,7 +153,7 @@ static const TagHandler axisHandler = {
                 if (valueLen == 4) {
                     axisTag = SkSetFourByteTag(value[0], value[1], value[2], value[3]);
                     axisTagIsValid = true;
-                    for (int j = 0; j < file.fVariationDesignPosition.count() - 1; ++j) {
+                    for (int j = 0; j < file.fVariationDesignPosition.size() - 1; ++j) {
                         if (file.fVariationDesignPosition[j].axis == axisTag) {
                             axisTagIsValid = false;
                             SK_FONTCONFIGPARSER_WARNING("'%c%c%c%c' axis specified more than once",
@@ -306,9 +307,9 @@ static const TagHandler familyHandler = {
 
 static FontFamily* find_family(FamilyData* self, const SkString& familyName)
 {
-    for (int i = 0; i < self->fFamilies.count(); i++) {
+    for (int i = 0; i < self->fFamilies.size(); i++) {
         FontFamily* candidate = self->fFamilies[i];
-        for (int j = 0; j < candidate->fNames.count(); j++) {
+        for (int j = 0; j < candidate->fNames.size(); j++) {
             if (candidate->fNames[j] == familyName) {
                 return candidate;
             }
@@ -356,7 +357,7 @@ static const TagHandler aliasHandler = {
             FontFamily* family = new FontFamily(targetFamily->fBasePath, self->fIsFallback);
             family->fNames.push_back().set(aliasName);
 
-            for (int i = 0; i < targetFamily->fFonts.count(); i++) {
+            for (int i = 0; i < targetFamily->fFonts.size(); i++) {
                 if (targetFamily->fFonts[i].fWeight == weight) {
                     family->fFonts.push_back(targetFamily->fFonts[i]);
                 }
@@ -418,7 +419,7 @@ static void XMLCALL start_element_handler(void *data, const char *tag, const cha
     FamilyData* self = static_cast<FamilyData*>(data);
 
     if (!self->fSkip) {
-        const TagHandler* parent = self->fHandler.top();
+        const TagHandler* parent = self->fHandler.back();
         const TagHandler* child = parent->tag ? parent->tag(self, tag, attributes) : nullptr;
         if (child) {
             if (child->start) {
@@ -442,18 +443,18 @@ static void XMLCALL end_element_handler(void* data, const char* tag)
     --self->fDepth;
 
     if (!self->fSkip) {
-        const TagHandler* child = self->fHandler.top();
+        const TagHandler* child = self->fHandler.back();
         if (child->end) {
             child->end(self, tag);
         }
-        self->fHandler.pop();
-        const TagHandler* parent = self->fHandler.top();
+        self->fHandler.pop_back();
+        const TagHandler* parent = self->fHandler.back();
         XML_SetCharacterDataHandler(self->fParser, parent->chars);
     }
 
     if (self->fSkip == self->fDepth) {
         self->fSkip = 0;
-        const TagHandler* parent = self->fHandler.top();
+        const TagHandler* parent = self->fHandler.back();
         XML_SetCharacterDataHandler(self->fParser, parent->chars);
     }
 }
@@ -555,7 +556,7 @@ void SkFontMgr_Config_Parser::GetSystemFontFamilies(SkTDArray<FontFamily*>& font
     }
     SkString basePath(containerFontBasePath.c_str());
     g_lmpSystemFontsFile = containerFontBasePath.append(SK_FONT_CONFIG_FILE_NAME);
-    HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol("hm_symbol_config_next.json", basePath);
+    skia::text::HmSymbolConfig_OHOS::LoadSymbolConfig("hm_symbol_config_next.json", basePath);
     append_system_font_families(fontFamilies, basePath);
 }
 

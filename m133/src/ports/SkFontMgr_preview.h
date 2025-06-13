@@ -17,14 +17,16 @@
 #include "include/core/SkStream.h"
 #include "include/core/SkString.h"
 #include "include/core/SkTypeface.h"
-#include "include/private/SkTArray.h"
-#include "include/private/SkTDArray.h"
-#include "include/private/SkFixed.h"
-#include "include/private/SkTemplates.h"
 #include "src/core/SkFontDescriptor.h"
 #include "src/core/SkOSFile.h"
 #include "src/ports/SkFontHost_FreeType_common.h"
 #include "src/ports/SkFontMgr_config_parser.h"
+#include "SkTypeface_FreeType.h"
+#include "src/ports/SkFontScanner_FreeType_priv.h"
+#include "include/private/base/SkTArray.h"
+#include "include/private/base/SkTDArray.h"
+#include "include/private/base/SkFixed.h"
+#include "include/private/base/SkTemplates.h"
 
 class SkData;
 
@@ -59,7 +61,7 @@ public:
                          const SkFontStyle& style,
                          bool isFixedPitch,
                          const SkString& familyName,
-                         const SkTArray<SkLanguage, true>& lang,
+                         const skia_private::TArray<SkLanguage, true>& lang,
                          FontVariant variantStyle)
         : INHERITED(style, isFixedPitch, familyName)
         , fPathName(pathName)
@@ -98,12 +100,13 @@ public:
 
     std::unique_ptr<SkFontData> onMakeFontData() const override
     {
-        return std::make_unique<SkFontData>(this->makeStream(), fIndex, fAxes.begin(), fAxes.count());
+        return std::make_unique<SkFontData>(this->makeStream(), fIndex, 0, fAxes.begin(), fAxes.size(), nullptr, 0);
     }
 
     sk_sp<SkTypeface> onMakeClone(const SkFontArguments& args) const override
     {
-        std::unique_ptr<SkFontData> data = this->cloneFontData(args);
+        SkFontStyle style = this->fontStyle();
+        std::unique_ptr<SkFontData> data = this->cloneFontData(args, &style);
         if (!data) {
             return nullptr;
         }
@@ -120,8 +123,8 @@ public:
 
     const SkString fPathName;
     int fIndex;
-    const SkSTArray<4, SkFixed, true> fAxes;
-    const SkSTArray<4, SkLanguage, true> fLang;
+    const skia_private::STArray<4, SkFixed, true> fAxes;
+    const skia_private::STArray<4, SkLanguage, true> fLang;
     const FontVariant fVariantStyle;
     SkAutoTCallVProc<FILE, sk_fclose> fFile;
 
@@ -161,7 +164,8 @@ public:
 
     sk_sp<SkTypeface> onMakeClone(const SkFontArguments& args) const override
     {
-        std::unique_ptr<SkFontData> data = this->cloneFontData(args);
+        SkFontStyle style = this->fontStyle();
+        std::unique_ptr<SkFontData> data = this->cloneFontData(args, &style);
         if (!data) {
             return nullptr;
         }
@@ -174,19 +178,19 @@ private:
 };
 
 class SkFontStyleSet_Preview : public SkFontStyleSet {
-    typedef SkTypeface_FreeType::Scanner Scanner;
+    typedef SkFontScanner_FreeType Scanner;
 
 public:
     explicit SkFontStyleSet_Preview(const FontFamily& family, const Scanner& scanner)
     {
         const SkString* cannonicalFamilyName = nullptr;
-        if (family.fNames.count() > 0) {
+        if (family.fNames.size() > 0) {
             cannonicalFamilyName = &family.fNames[0];
         }
         fFallbackFor = family.fFallbackFor;
 
         // TODO? make this lazy
-        for (int i = 0; i < family.fFonts.count(); ++i) {
+        for (int i = 0; i < family.fFonts.size(); ++i) {
             const FontFileInfo& fontFile = family.fFonts[i];
 
             SkString pathName(family.fBasePath);
@@ -241,15 +245,17 @@ public:
                 familyName = *cannonicalFamilyName;
             }
 
-            SkAutoSTMalloc<4, SkFixed> axisValues(axisDefinitions.count());
+            SkAutoSTMalloc<4, SkFixed> axisValues(axisDefinitions.size());
+            SkFontScanner::VariationPosition current;
+            const SkFontArguments::VariationPosition currentPos{current.data(), current.size()};
             SkFontArguments::VariationPosition position = {
                 fontFile.fVariationDesignPosition.begin(),
-                fontFile.fVariationDesignPosition.count()
+                fontFile.fVariationDesignPosition.size()
             };
-            Scanner::computeAxisValues(axisDefinitions, position, axisValues, familyName);
+            Scanner::computeAxisValues(axisDefinitions, currentPos, position, axisValues, familyName, &style);
 
             fStyles.push_back().reset(new SkTypeface_PreviewSystem(pathName, ttcIndex, axisValues.get(),
-                                                               axisDefinitions.count(), style, isFixedWidth,
+                                                               axisDefinitions.size(), style, isFixedWidth,
                                                                familyName, family.fLanguages, variant));
         }
     }
@@ -258,12 +264,12 @@ public:
 
     int count() override
     {
-        return fStyles.count();
+        return fStyles.size();
     }
 
     void getStyle(int index, SkFontStyle* style, SkString* name) override
     {
-        if (index < 0 || fStyles.count() <= index) {
+        if (index < 0 || fStyles.size() <= index) {
             return;
         }
         if (style) {
@@ -274,21 +280,21 @@ public:
         }
     }
 
-    SkTypeface_PreviewSystem* createTypeface(int index) override
+    sk_sp<SkTypeface> createTypeface(int index) override
     {
-        if (index < 0 || fStyles.count() <= index) {
+        if (index < 0 || fStyles.size() <= index) {
             return nullptr;
         }
-        return SkRef(fStyles[index].get());
+        return sk_sp<SkTypeface>(SkRef(fStyles[index].get()));
     }
 
-    SkTypeface_PreviewSystem* matchStyle(const SkFontStyle& pattern) override
+    sk_sp<SkTypeface> matchStyle(const SkFontStyle& pattern) override
     {
-        return static_cast<SkTypeface_PreviewSystem*>(this->matchStyleCSS3(pattern));
+        return static_cast<sk_sp<SkTypeface>>(this->matchStyleCSS3(pattern));
     }
 
 private:
-    SkTArray<sk_sp<SkTypeface_PreviewSystem>> fStyles;
+    skia_private::TArray<sk_sp<SkTypeface_PreviewSystem>> fStyles;
     SkString fFallbackFor;
 
     friend struct NameToFamily;
@@ -317,26 +323,28 @@ public:
 protected:
     int onCountFamilies() const override;
     void onGetFamilyName(int index, SkString* familyName) const override;
-    SkFontStyleSet* onCreateStyleSet(int index) const override;
-    SkFontStyleSet* onMatchFamily(const char familyName[]) const override;
-    virtual SkTypeface* onMatchFamilyStyle(const char familyName[],
+    sk_sp<SkFontStyleSet> onCreateStyleSet(int index) const override;
+    sk_sp<SkFontStyleSet> onMatchFamily(const char familyName[]) const override;
+    virtual sk_sp<SkTypeface> onMatchFamilyStyle(const char familyName[],
                                            const SkFontStyle& style) const override;
-    virtual SkTypeface* onMatchFaceStyle(const SkTypeface* typeface,
+    virtual sk_sp<SkTypeface> onMatchFaceStyle(const SkTypeface* typeface,
                                          const SkFontStyle& style) const override;
 
     static sk_sp<SkTypeface_PreviewSystem> find_family_style_character(
             const SkString& familyName,
-            const SkTArray<NameToFamily, true>& fallbackNameToFamilyMap,
+            const skia_private::TArray<NameToFamily, true>& fallbackNameToFamilyMap,
             const SkFontStyle& style, bool elegant,
             const SkString& langTag, SkUnichar character);
 
-    virtual SkTypeface* onMatchFamilyStyleCharacter(const char familyName[],
+    virtual sk_sp<SkTypeface> onMatchFamilyStyleCharacter(const char familyName[],
                                                     const SkFontStyle& style,
                                                     const char* bcp47[],
                                                     int bcp47Count,
                                                     SkUnichar character) const override;
     sk_sp<SkTypeface> onMakeFromData(sk_sp<SkData> data, int ttcIndex) const override;
     sk_sp<SkTypeface> onMakeFromFile(const char path[], int ttcIndex) const override;
+    sk_sp<SkTypeface> makeTypeface(std::unique_ptr<SkStreamAsset> stream,
+                                   const SkFontArguments& args, const char path[]) const;
     sk_sp<SkTypeface> onMakeFromStreamIndex(std::unique_ptr<SkStreamAsset> stream, int ttcIndex) const override;
     sk_sp<SkTypeface> onMakeFromStreamArgs(std::unique_ptr<SkStreamAsset> stream,
                                            const SkFontArguments& args) const override;
@@ -347,13 +355,12 @@ private:
     void findDefaultStyleSet();
     void addFamily(FontFamily& family, int familyIndex);
 
-    SkTypeface_FreeType::Scanner fScanner;
+    SkFontScanner_FreeType fScanner;
 
-    SkTArray<sk_sp<SkFontStyleSet_Preview>> fStyleSets;
     sk_sp<SkFontStyleSet> fDefaultStyleSet;
-
-    SkTArray<NameToFamily, true> fNameToFamilyMap;
-    SkTArray<NameToFamily, true> fFallbackNameToFamilyMap;
+    skia_private::TArray<sk_sp<SkFontStyleSet_Preview>> fStyleSets;
+    skia_private::TArray<NameToFamily, true> fNameToFamilyMap;
+    skia_private::TArray<NameToFamily, true> fFallbackNameToFamilyMap;
 
     typedef SkFontMgr INHERITED;
 };
