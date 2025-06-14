@@ -2077,6 +2077,7 @@ bool SkScalerContextFTUtils::generateGlyphPath(FT_Face face, SkPath* path) const
     if (!generateGlyphPathStatic(face, path)) {
         return false;
     }
+#ifdef HMSYMBOL_NOT_USED
     if (face->glyph->outline.flags & FT_OUTLINE_OVERLAP) {
         Simplify(*path, path);
         // Simplify will return an even-odd path.
@@ -2084,6 +2085,7 @@ bool SkScalerContextFTUtils::generateGlyphPath(FT_Face face, SkPath* path) const
         // https://github.com/flutter/flutter/issues/112546
         AsWinding(*path, path);
     }
+#endif
     return true;
 }
 
