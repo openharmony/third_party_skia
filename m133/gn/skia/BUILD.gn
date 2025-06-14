@@ -40,8 +40,7 @@ if (is_ios && xcode_sysroot == "") {
       sdk = "iphonesimulator"
     }
   }
-  xcode_sysroot =
-      exec_script("../find_xcode_sysroot.py", [ sdk ], "trim string")
+  xcode_sysroot = "`xcrun --sdk $sdk --show-sdk-path`"
 }
 
 # If building for mac on a mac then lookup all the system includes so that goma and the clang
@@ -49,8 +48,7 @@ if (is_ios && xcode_sysroot == "") {
 # In this case leave the xcode_sysroot empty, and the cc/c++ that come with XCode will be able to
 # find needed include paths.
 if (is_mac && host_os == "mac" && xcode_sysroot == "") {
-  xcode_sysroot =
-      exec_script("../find_xcode_sysroot.py", [ "macosx" ], "trim string")
+  xcode_sysroot = "`xcrun --sdk macosx --show-sdk-path`"
 }
 
 config("default") {
