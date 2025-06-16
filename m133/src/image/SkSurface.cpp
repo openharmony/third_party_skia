@@ -95,14 +95,14 @@ sk_sp<SkImage> SkSurface::makeImageSnapshot() {
     return asSB(this)->refCachedImage();
 }
 
-sk_sp<SkImage> SkSurface::makeImageSnapshot(const SkIRect& srcBounds) {
+sk_sp<SkImage> SkSurface::makeImageSnapshot(const SkIRect& srcBounds, bool allowRefCache) {
     const SkIRect surfBounds = { 0, 0, fWidth, fHeight };
     SkIRect bounds = srcBounds;
     if (!bounds.intersect(surfBounds)) {
         return nullptr;
     }
     SkASSERT(!bounds.isEmpty());
-    if (bounds == surfBounds) {
+    if ((bounds == surfBounds) && allowRefCache) {
         return this->makeImageSnapshot();
     } else {
         return asSB(this)->onNewImageSnapshot(&bounds);
