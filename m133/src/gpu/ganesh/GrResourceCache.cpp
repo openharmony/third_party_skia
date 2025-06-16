@@ -102,7 +102,17 @@ void GrResourceCache::insertResource(GrGpuResource* resource) {
 #endif
     }
     SkASSERT(!resource->cacheAccess().isUsableAsScratch());
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    if (fBudgetedBytes >= fMaxBytes) {
+        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over fBudgetedBytes:(%u),fMaxBytes:(%u)",
+            fBudgetedBytes, fMaxBytes);
+        this->purgeAsNeeded();
+    } else {
+        this->purgeAsNeeded();
+    }
+#else
     this->purgeAsNeeded();
+#endif
 }
 
 void GrResourceCache::removeResource(GrGpuResource* resource) {
@@ -613,6 +623,36 @@ void GrResourceCache::purgeUnlockedResources(const skgpu::StdSteadyClock::time_p
         for (int i = 0; i < scratchResources.size(); i++) {
             scratchResources[i]->cacheAccess().release();
         }
+    }
+
+    this->validate();
+}
+
+void GrResourceCache::purgeUnlockedResourcesByPid(bool scratchResourceOnly, const std::set<int>& exitedPidSet) {
+    // Sort the queue
+    fPurgeableQueue.sort();
+
+    //Make lists of the need purged resources to delete
+    fThreadSafeCache->dropUniqueRefs(nullptr);
+    SkTDArray<GrGpuResource*> exitPidResources;
+    SkTDArray<GrGpuResource*> scratchResources;
+    for (int i = 0; i < fPurgeableQueue.count(); i++) {
+        GrGpuResource* resource = fPurgeableQueue.at(i);
+        SkASSERT(resource->resourcePriv().isPurgeable());
+        if (exitedPidSet.count(resource->getResourceTag().fPid)) {
+            *exitPidResources.append() = resource;
+        } else if (!resource->getUniqueKey().isValid()) {
+            *scratchResources.append() = resource;
+        }
+    }
+
+    //Delete the exited pid and scatch resource. This must be done as a separate pass
+    //to avoid messing up the sorted order of the queue
+    for (int i = 0; i <exitPidResources.size(); i++) {
+        exitPidResources[i]->cacheAccess().release();
+    }
+    for (int i = 0; i <scratchResources.size(); i++) {
+        scratchResources[i]->cacheAccess().release();
     }
 
     this->validate();
