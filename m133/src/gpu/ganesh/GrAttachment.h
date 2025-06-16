@@ -100,6 +100,8 @@ protected:
 
     virtual size_t onGpuMemorySize() const override;
 
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const override;
+
 private:
     void onSetLabel() override{}
 
