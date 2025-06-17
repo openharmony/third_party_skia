@@ -59,6 +59,8 @@ config("skia_wno") {
           "-Wno-error=backend-plugin",
           "-Wno-profile-instr-out-of-date",
           "-Wno-profile-instr-unprofiled",
+          "-mllvm",
+          "-enable-partial-inlining",
         ]
       }
       if (skia_feature_product == "pc" && target_cpu == "arm64" &&
