@@ -562,6 +562,7 @@ sk_sp<GrVkPipeline> GrVkPipeline::Make(GrVkGpu* gpu,
     VkPipeline vkPipeline;
     VkResult err;
     {
+        HITRACE_OHOS_NAME_ALWAYS("CreateGraphicsPipeline");
         TRACE_EVENT0_ALWAYS("skia.shaders", "CreateGraphicsPipeline");
 #if defined(SK_ENABLE_SCOPED_LSAN_SUPPRESSIONS)
         // skia:8712

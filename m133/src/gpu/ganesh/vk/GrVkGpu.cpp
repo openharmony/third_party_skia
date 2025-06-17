@@ -967,6 +967,12 @@ static size_t fill_in_compressed_regions(TArray<VkBufferImageCopy>* regions,
     return bufferSize;
 }
 
+static int get_current_time() {
+    return static_cast<int>(
+        std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count());
+}
+
 bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
                                    SkIRect rect,
                                    GrColorType dataColorType,
@@ -1033,6 +1039,9 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
 
     int currentWidth = rect.width();
     int currentHeight = rect.height();
+#ifdef SKIA_OHOS
+    bool isTagEnabled = IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP);
+#endif
     for (int currentMipLevel = 0; currentMipLevel < mipLevelCount; currentMipLevel++) {
         if (texelsShallowCopy[currentMipLevel].fPixels) {
             const size_t trimRowBytes = currentWidth * bpp;
@@ -1041,7 +1050,25 @@ bool GrVkGpu::uploadTexDataOptimal(GrVkImage* texImage,
             // copy data into the buffer, skipping the trailing bytes
             char* dst = buffer + individualMipOffsets[currentMipLevel];
             const char* src = (const char*)texelsShallowCopy[currentMipLevel].fPixels;
+#ifdef SKIA_OHOS
+            int memStartTimestamp = 0;
+            int memEndTimestamp = 0;
+            if (UNLIKELY(isTagEnabled)) {
+                memStartTimestamp = get_current_time();
+            }
+#endif
             SkRectMemcpy(dst, trimRowBytes, src, rowBytes, trimRowBytes, currentHeight);
+#ifdef SKIA_OHOS
+            if (UNLIKELY(isTagEnabled)) {
+                memEndTimestamp = get_current_time();
+                int duration = memEndTimestamp - memStartTimestamp;
+                if (duration > TRACE_LIMIT_TIME) {
+                    HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal SkRectMemcpy: %zu Time: %d µs bpp = %zu "
+                        "width: %d height: %d",
+                        trimRowBytes * currentHeight, duration, bpp, currentWidth, currentHeight);
+                }
+            }
+#endif
 
             VkBufferImageCopy& region = regions.push_back();
             memset(&region, 0, sizeof(VkBufferImageCopy));
@@ -1140,12 +1167,29 @@ bool GrVkGpu::uploadTexDataCompressed(GrVkImage* uploadTexture,
     // command buffer has a ref on the buffer. This avoids having to add and remove a ref for ever
     // upload in the frame.
     GrVkBuffer* vkBuffer = static_cast<GrVkBuffer*>(slice.fBuffer);
+#ifdef SKIA_OHOS
+    int copyStartTimestamp = 0;
+    int copyEndTimestamp = 0;
+    if (UNLIKELY(isTagEnabled)) {
+        copyStartTimestamp = get_current_time();
+    }
+#endif
     this->currentCommandBuffer()->copyBufferToImage(this,
                                                     vkBuffer->vkBuffer(),
                                                     uploadTexture,
                                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                                     regions.size(),
                                                     regions.begin());
+#ifdef SKIA_OHOS
+    if (UNLIKELY(isTagEnabled)) {
+        copyEndTimestamp = get_current_time();
+        int duration = copyEndTimestamp - copyStartTimestamp;
+        if (duration > TRACE_LIMIT_TIME) {
+            HITRACE_OHOS_NAME_FMT_ALWAYS("uploadTexDataOptimal copyBufferToImage Time: %d µs width: %d height: %d",
+                duration, rect.width(), rect.height());
+        }
+    }
+#endif
 
     return true;
 }
