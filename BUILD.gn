@@ -4514,6 +4514,9 @@ ohos_static_library("sksl_ext_static") {
         ldflags += [
           "-Wl,-mllvm,-vectorization-bonus-factor=4",
           "-Wl,-mllvm,-vectorizer-min-trip-count=4",
+          "-Wl,--aarch64-inline-plt",
+          "-Wl,-mllvm,-enable-partial-inlining",
+          "-Wl,-mllvm,-tail-dup-profile-hot-percentile-override=999990",
         ]
       }
     }
