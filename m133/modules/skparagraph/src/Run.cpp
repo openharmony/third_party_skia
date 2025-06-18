@@ -245,7 +245,7 @@ void Run::calculateMetrics() {
 #else
     auto decompressFont = info.fFont;
     scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
-    const auto runHeight = fHeightMultiplier * fFont.getSize();
+    const auto runHeight = fHeightMultiplier * decompressFont.getSize();
 #endif
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
     if (fUseHalfLeading) {
