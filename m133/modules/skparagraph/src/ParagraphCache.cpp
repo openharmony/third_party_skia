@@ -260,9 +260,10 @@ uint32_t ParagraphCacheKey::computeHash() const {
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getTextDirection()));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getReplaceTabCharacters() ? 1 : 0));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getTextHeightBehavior()));
+#ifdef ENABLE_TEXT_ENHANCE
     hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getParagraphSpacing())));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getIsEndAddParagraphSpacing()));
-
+#endif
     auto& strutStyle = fParagraphStyle.getStrutStyle();
     if (strutStyle.getStrutEnabled()) {
         hash = mix(hash, SkGoodHash()(relax(strutStyle.getHeight())));
