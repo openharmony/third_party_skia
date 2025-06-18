@@ -301,6 +301,8 @@ private:
 
     // Central cache for creating pipelines
     VkPipelineCache fPipelineCache;
+    //CAUTION: should only used in GrVkResourceProvider
+    size_t fPipelineCacheSize;
 
     struct MSAALoadPipeline {
         sk_sp<const GrVkPipeline> fPipeline;
