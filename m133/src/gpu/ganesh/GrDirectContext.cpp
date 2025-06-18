@@ -437,6 +437,18 @@ skgpu::ganesh::SmallPathAtlasMgr* GrDirectContext::onGetSmallPathAtlasMgr() {
 }
 #endif
 
+void GrDirectContext::registerVulkanErrorCallback(const std::function<void()>& vulkanErrorCallback)
+{
+    vulkanErrorCallback_ = vulkanErrorCallback;
+}
+
+void GrDirectContext::processVulkanError()
+{
+    if (vulkanErrorCallback_) {
+        vulkanErrorCallback_();
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 skgpu::GpuStatsFlags GrDirectContext::supportedGpuStats() const {
