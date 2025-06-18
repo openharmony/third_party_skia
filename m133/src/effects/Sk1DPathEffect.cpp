@@ -133,7 +133,7 @@ public:
     }
 
     Factory getFactory() const override { return CreateProc; }
-    const char* getTypeName() const override { return "SkPath1DPathEffect"; }
+    const char* getTypeName() const override { return "SkPath1DPathEffectImpl"; }
 
 private:
     SkPath                      fPath;          // copied from constructor
