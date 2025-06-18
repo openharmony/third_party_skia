@@ -241,7 +241,9 @@ void Run::calculateMetrics() {
         return;
     }
 #ifdef ENABLE_TEXT_ENHANCE
-    const auto runHeight = fHeightMultiplier * fFont.GetSize();
+    auto decompressFont = fFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    const auto runHeight = fHeightMultiplier * decompressFont.GetSize();
 #else
     const auto runHeight = fHeightMultiplier * fFont.getSize();
 #endif
