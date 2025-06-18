@@ -726,6 +726,10 @@ optional("fontmgr_mac_ct") {
     ]
 
     defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+    external_deps = [ "jsoncpp:jsoncpp" ]
+    deps = [
+      ":fontmgr_symbol_load",
+    ]
   }
 
   if (is_mac) {
