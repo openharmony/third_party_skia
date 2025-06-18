@@ -5,7 +5,7 @@
 
 import("../zlib/zlib.gni")
 import("../../gn/platform.gni")
-import("//build/ohos_var.gni")
+
 declare_args() {
   # TODO: build from source all the time for testing?
   if (skia_use_system_lib) {
@@ -14,9 +14,6 @@ declare_args() {
     skia_use_system_freetype2 =
         (is_official_build || !(is_android || sanitize_skia == "MSAN")) &&
         !is_fuchsia && !is_wasm
-    if (use_new_skia) {
-      skia_use_system_freetype2 = false
-    }
   }
   skia_system_freetype2_include_path = "/usr/include/freetype2"
   skia_system_freetype2_lib = "freetype"
