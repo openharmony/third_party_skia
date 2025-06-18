@@ -293,7 +293,7 @@ void Run::calculateMetrics() {
 #else
     auto decompressFont = info.fFont;
     scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
-    const auto runHeight = fHeightMultiplier * fFont.GetSize();
+    const auto runHeight = fHeightMultiplier * decompressFont.GetSize();
 #endif
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
     if (fUseHalfLeading) {
