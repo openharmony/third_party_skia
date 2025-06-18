@@ -291,6 +291,8 @@ void Run::calculateMetrics() {
 #ifndef USE_SKIA_TXT
     const auto runHeight = fHeightMultiplier * fFont.getSize();
 #else
+    auto decompressFont = info.fFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
     const auto runHeight = fHeightMultiplier * fFont.GetSize();
 #endif
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
