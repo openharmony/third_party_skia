@@ -2267,6 +2267,11 @@ skia_component("skia") {
     sources += [ "tools/SkSharingProc.cpp" ]
   }
 
+  #Bisheng control is required in the future
+  if (is_ohos) {
+    ldflags = [ "-Wl,-Bsymbolic" ]
+  }
+
   # Overrides TRACE_EVENT0..2 macros (etc) to map to Perfetto's tracing macros.
   # Currently only supported in Android framework.
   if (skia_android_framework_use_perfetto) {
