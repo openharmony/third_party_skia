@@ -2831,6 +2831,7 @@ bool GrVkGpu::checkVkResult(VkResult result) {
                     context->processVulkanError();
                 }
             }
+            abort();
             return false;
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:
         case VK_ERROR_OUT_OF_HOST_MEMORY:
