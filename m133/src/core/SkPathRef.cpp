@@ -73,14 +73,15 @@ SkPathRef::~SkPathRef() {
     SkDEBUGCODE(fEditorsAttached.store(0x7777777);)
 }
 
-static SkPathRef* gEmpty = nullptr;
+SkPathRef* sk_create_empty_pathref() {
+    SkPathRef* empty = new SkPathRef;
+    empty->computeBounds();
+    return empty;
+}
+
+static SkPathRef* gEmpty = sk_create_empty_pathref();
 
 SkPathRef* SkPathRef::CreateEmpty() {
-    static SkOnce once;
-    once([]{
-        gEmpty = new SkPathRef;
-        gEmpty->computeBounds();   // Avoids races later to be the first to do this.
-    });
     return SkRef(gEmpty);
 }
 
