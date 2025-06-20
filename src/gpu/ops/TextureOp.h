@@ -60,9 +60,19 @@ public:
                             DrawQuad*,
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
                             const SkRect* subset = nullptr,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                            uint32_t stencilRef = UINT32_MAX,
+                            bool supportOpaqueOpt = false);
+#else
                             uint32_t stencilRef = UINT32_MAX);
+#endif
+#else
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                            const SkRect* subset = nullptr,
+                            bool supportOpaqueOpt = false);
 #else
                             const SkRect* subset = nullptr);
+#endif
 #endif
 
 #if SK_GPU_V1

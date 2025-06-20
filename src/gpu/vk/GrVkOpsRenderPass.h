@@ -98,6 +98,10 @@ private:
 
     void onDrawBlurImage(const GrSurfaceProxyView& proxyView, const SkBlurArg& blurArg) override;
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    void onSetOpaqueRegion(uint32_t opaqueRegionCount, const SkIRect* region) override;
+#endif
+
     using LoadFromResolve = GrVkRenderPass::LoadFromResolve;
 
     bool beginRenderPass(const VkClearValue& clearColor, LoadFromResolve loadFromResolve);

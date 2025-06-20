@@ -999,6 +999,28 @@ void GrVkPrimaryCommandBuffer::drawBlurImage(const GrVkGpu* gpu,
     GR_VK_CALL(gpu->vkInterface(), CmdDrawBlurImageHUAWEI(fCmdBuffer, &drawBlurImageInfo));
 }
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+void GrVkPrimaryCommandBuffer::setOpaqueRegion(const GrVkGpu* gpu,
+                                               uint32_t opaqueRegionCount,
+                                               const SkIRect* region)
+{
+    if (gpu == nullptr) {
+        return;
+    }
+    SkASSERT(fIsActive);
+    this->addingWork(gpu);
+
+    std::vector<VkRect2D> dstRegions;
+    for (uint32_t i = 0; i < opaqueRegionCount; ++i) {
+        VkRect2D dstReg;
+        dstReg.offset = {region[i].fLeft, region[i].fTop};
+        dstReg.extent = {region[i].width(), region[i].height()};
+        dstRegions.push_back(dstReg);
+    }
+    GR_VK_CALL(gpu->vkInterface(), CmdSetOpaqueRegionHUAWEI(fCmdBuffer, opaqueRegionCount, dstRegions.data()));
+}
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 // SecondaryCommandBuffer
 ////////////////////////////////////////////////////////////////////////////////

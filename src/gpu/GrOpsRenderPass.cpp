@@ -71,6 +71,13 @@ void GrOpsRenderPass::drawBlurImage(const GrSurfaceProxyView& proxyView, SkBlurA
     this->onDrawBlurImage(proxyView, blurArg);
 }
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+void GrOpsRenderPass::setOpaqueRegion(uint32_t opaqueRegionCount, const SkIRect* region)
+{
+    this->onSetOpaqueRegion(opaqueRegionCount, region);
+}
+#endif
+
 void GrOpsRenderPass::bindPipeline(const GrProgramInfo& programInfo, const SkRect& drawBounds) {
 #ifdef SK_DEBUG
     // Both the 'programInfo' and this renderPass have an origin. Since they come from the same

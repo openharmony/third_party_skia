@@ -74,6 +74,18 @@ VKAPI_ATTR VkResult VKAPI_CALL vkGetBlurImageSizeHUAWEI(
     VkRect2D*                         pSize);
 #endif
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+typedef void (VKAPI_PTR* PFN_vkCmdSetOpaqueRegionHUAWEI)(VkCommandBuffer commandBuffer,\
+    uint32_t scissorCount, VkRect2D* pScissors);
+
+#ifndef VK_NO_PROTOTYPES
+VKAPI_ATTR void VKAPI_CALL vkCmdSetOpaqueRegionHUAWEI(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    scissorCount,
+    VkRect2D                                    *pScissors);
+#endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif

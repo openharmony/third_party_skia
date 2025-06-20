@@ -152,6 +152,23 @@ public:
         }
     }
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    SkRRect getRRect() const {
+        const GrFragmentProcessor* processor = this->coverageFragmentProcessor();
+        if (processor != nullptr) {
+            const char* processorName = processor->name();
+            if (strcmp(processorName, "ContinuousRRectEffect") == 0) {
+                if (!(processor->getRRect().isEmpty())) {
+                    return processor->getRRect();
+                } else {
+                    return SkRRect::MakeEmpty();
+                }
+            }
+        }
+        return SkRRect::MakeEmpty();
+    }
+#endif
+
 private:
     GrAppliedHardClip fHardClip;
     std::unique_ptr<GrFragmentProcessor> fCoverageFP;

@@ -349,7 +349,12 @@ void draw_texture(skgpu::v1::SurfaceDrawContext* sdc,
                   GrQuadAAFlags aaFlags,
                   SkCanvas::SrcRectConstraint constraint,
                   GrSurfaceProxyView view,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                  const GrColorInfo& srcColorInfo,
+                  bool supportOpaqueOpt = false) {
+#else
                   const GrColorInfo& srcColorInfo) {
+#endif
     if (GrColorTypeIsAlphaOnly(srcColorInfo.colorType())) {
         view.concatSwizzle(GrSwizzle("aaaa"));
     }
@@ -390,7 +395,12 @@ void draw_texture(skgpu::v1::SurfaceDrawContext* sdc,
                              aaFlags,
                              constraint == SkCanvas::kStrict_SrcRectConstraint ? &srcRect : nullptr,
                              ctm,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                             std::move(textureXform),
+                             supportOpaqueOpt);
+#else
                              std::move(textureXform));
+#endif
     } else {
         sdc->drawTexture(clip,
                          std::move(view),
@@ -405,7 +415,12 @@ void draw_texture(skgpu::v1::SurfaceDrawContext* sdc,
                          aaFlags,
                          constraint,
                          ctm,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                         std::move(textureXform),
+                         supportOpaqueOpt);
+#else
                          std::move(textureXform));
+#endif
     }
 }
 
@@ -449,7 +464,12 @@ void draw_image(GrRecordingContext* rContext,
                      aaFlags,
                      constraint,
                      std::move(view),
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                     info,
+                     image.getSupportOpaqueOpt());
+#else
                      info);
+#endif
         return;
     }
 

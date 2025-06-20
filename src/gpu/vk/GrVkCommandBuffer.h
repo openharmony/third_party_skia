@@ -327,6 +327,12 @@ public:
                        const SkOriginInfo& originInfo,
                        const SkBlurArg& blurArg);
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    void setOpaqueRegion(const GrVkGpu* gpu,
+                         uint32_t opaqueRegionCount,
+                         const SkIRect* region);
+#endif
+
 private:
     explicit GrVkPrimaryCommandBuffer(VkCommandBuffer cmdBuffer)
         : INHERITED(cmdBuffer)

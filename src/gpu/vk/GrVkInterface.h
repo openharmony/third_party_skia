@@ -221,6 +221,9 @@ public:
         // Functions for YCBCRConversion
         VkPtr<PFN_vkCreateSamplerYcbcrConversion> fCreateSamplerYcbcrConversion;
         VkPtr<PFN_vkDestroySamplerYcbcrConversion> fDestroySamplerYcbcrConversion;
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+        VkPtr<PFN_vkCmdSetOpaqueRegionHUAWEI> fCmdSetOpaqueRegionHUAWEI;
+#endif
 
 #ifdef SKIA_USE_XEG
         VkPtr<PFN_vkGetPerFrameLoad> fGetPerFrameLoad;

@@ -274,6 +274,10 @@ public:
 
     bool supportsHpsBlur(const GrSurfaceProxyView* proxyViewPtr) const override;
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    bool supportsOpaqueRegion() const override;
+#endif
+
 #if GR_TEST_UTILS
     std::vector<TestFormatColorTypeCombination> getTestingCombinations() const override;
 #endif
@@ -428,6 +432,10 @@ private:
     bool fSupportsMemorylessAttachments = false;
 
     bool fSupportHpsBlur = false;
+
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    bool fSupportOpaqueRegion = false;
+#endif
 
     uint32_t fMaxDrawIndirectDrawCount = 0;
 

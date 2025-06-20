@@ -655,7 +655,12 @@ void SurfaceDrawContext::drawTexture(const GrClip* clip,
                                      GrQuadAAFlags edgeAA,
                                      SkCanvas::SrcRectConstraint constraint,
                                      const SkMatrix& viewMatrix,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                                     sk_sp<GrColorSpaceXform> colorSpaceXform,
+                                     bool supportOpaqueOpt) {
+#else
                                      sk_sp<GrColorSpaceXform> colorSpaceXform) {
+#endif
     // If we are using dmsaa then go through FillRRectOp (via fillRectToRect).
     if ((this->alwaysAntialias() || this->caps()->reducedShaderMode()) && aa == GrAA::kYes) {
         GrPaint paint;
@@ -684,8 +689,13 @@ void SurfaceDrawContext::drawTexture(const GrClip* clip,
             &srcRect : nullptr;
     DrawQuad quad{GrQuad::MakeFromRect(dstRect, viewMatrix), GrQuad(srcRect), edgeAA};
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    this->drawTexturedQuad(clip, std::move(view), srcAlphaType, std::move(colorSpaceXform), filter,
+                           mm, color, blendMode, aa, &quad, subset, supportOpaqueOpt);
+#else
     this->drawTexturedQuad(clip, std::move(view), srcAlphaType, std::move(colorSpaceXform), filter,
                            mm, color, blendMode, aa, &quad, subset);
+#endif
 }
 
 void SurfaceDrawContext::drawTexturedQuad(const GrClip* clip,
@@ -698,7 +708,12 @@ void SurfaceDrawContext::drawTexturedQuad(const GrClip* clip,
                                           SkBlendMode blendMode,
                                           GrAA aa,
                                           DrawQuad* quad,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                                          const SkRect* subset,
+                                          bool supportOpaqueOpt) {
+#else
                                           const SkRect* subset) {
+#endif
     ASSERT_SINGLE_OWNER
     RETURN_IF_ABANDONED
     SkDEBUGCODE(this->validate();)
@@ -727,18 +742,30 @@ void SurfaceDrawContext::drawTexturedQuad(const GrClip* clip,
             this->addDrawOp(finalClip,
                             TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
                                             std::move(textureXform), filter, mm, color, saturate,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                                            blendMode, aaType, quad, subset, fStencilRef, supportOpaqueOpt));
+#else
                                             blendMode, aaType, quad, subset, fStencilRef));
+#endif
         } else {
             this->addDrawOp(finalClip,
                             TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
                                             std::move(textureXform), filter, mm, color, saturate,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                                            blendMode, aaType, quad, subset, UINT32_MAX, supportOpaqueOpt));
+#else
                                             blendMode, aaType, quad, subset));
+#endif
         }
 #else
         this->addDrawOp(finalClip,
                         TextureOp::Make(fContext, std::move(proxyView), srcAlphaType,
                                         std::move(textureXform), filter, mm, color, saturate,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                                        blendMode, aaType, quad, subset, supportOpaqueOpt));
+#else
                                         blendMode, aaType, quad, subset));
+#endif
 #endif
     }
 }
