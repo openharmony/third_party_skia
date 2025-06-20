@@ -90,12 +90,6 @@ public:
 
     virtual InternalState getState() const = 0;
 
-    virtual std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() = 0;
-
-    virtual bool hasSkipTextBlobDrawing() const = 0;
-
-    virtual void setSkipTextBlobDrawing(bool state) = 0;
-
     virtual void paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) = 0;
 
     virtual TextRange getEllipsisTextRange() = 0;
@@ -105,9 +99,9 @@ public:
 
     virtual std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() = 0;
 
-    virtual bool hasEnabledTextEffect() const = 0;
+    virtual bool hasSkipTextBlobDrawing() const = 0;
 
-    virtual void setTextEffectState(bool state) = 0;
+    virtual void setSkipTextBlobDrawing(bool state) = 0;
 
     virtual bool isRunCombinated() const = 0;
 #endif
