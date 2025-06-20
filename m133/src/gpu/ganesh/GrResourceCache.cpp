@@ -648,10 +648,10 @@ void GrResourceCache::purgeUnlockedResourcesByPid(bool scratchResourceOnly, cons
 
     //Delete the exited pid and scatch resource. This must be done as a separate pass
     //to avoid messing up the sorted order of the queue
-    for (int i = 0; i <exitPidResources.size(); i++) {
+    for (int i = 0; i < exitPidResources.size(); i++) {
         exitPidResources[i]->cacheAccess().release();
     }
-    for (int i = 0; i <scratchResources.size(); i++) {
+    for (int i = 0; i < scratchResources.size(); i++) {
         scratchResources[i]->cacheAccess().release();
     }
 
