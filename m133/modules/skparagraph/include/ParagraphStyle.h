@@ -43,12 +43,6 @@ enum class TextVerticalAlign {
     TOP,
 };
 
-struct TextBlobRecordInfo {
-    std::shared_ptr<RSTextBlob> fBlob{nullptr};
-    SkPoint fOffset{0.0f, 0.0f};
-    ParagraphPainter::SkPaintOrID fPaint;
-};
-
 enum class WordBreakType {
     NORMAL,     // to be done.
     BREAK_ALL,  // break occur after any characters.
