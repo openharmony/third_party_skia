@@ -351,11 +351,16 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
     if (text.size() == 1 && std::isdigit(text.c_str()[0])) {
         TEXT_LOGI_LIMIT3_MIN("paint single-digit text %{public}s", fOwner->getText().c_str());
     }
-#endif
+    if (!(fOwner->hasSkipTextBlobDrawing())) {
+        for (auto& record : fTextBlobCache) {
+            record.paint(painter, x, y);
+        }
+    }
+#else
     for (auto& record : fTextBlobCache) {
         record.paint(painter, x, y);
     }
-
+#endif
     if (fHasDecorations) {
 #ifdef ENABLE_TEXT_ENHANCE
         this->fDecorationContext = {0.0f, 0.0f, 0.0f};

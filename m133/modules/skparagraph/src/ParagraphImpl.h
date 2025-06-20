@@ -271,8 +271,8 @@ public:
     void setState(InternalState state) override;
     InternalState getState() const override { return state(); }
     std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() override;
-    bool hasEnabledTextEffect() const override { return fTextEffectState; }
-    void setTextEffectState(bool state) override { fTextEffectState = state; }
+    bool hasSkipTextBlobDrawing() const override { return fSkipTextBlobDrawing; }
+    void setSkipTextBlobDrawing(bool state) override { fSkipTextBlobDrawing = state; }
 #else
     void setState(InternalState state);
 #endif
@@ -453,7 +453,7 @@ private:
     std::optional<SkRect> fPaintRegion;
     // just for building cluster table, record the last built unicode autospacing flag;
     Cluster::AutoSpacingFlag fLastAutoSpacingFlag;
-    bool fTextEffectState{false};
+    bool fSkipTextBlobDrawing{false};
 #endif
 };
 }  // namespace textlayout
