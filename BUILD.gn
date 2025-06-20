@@ -6,7 +6,7 @@
 import("//build/ohos.gni")
 import("build_overrides/skia.gni")
 
-if (skia_use_m133) {
+if (skia_feature_upgrade) {
   import("m133/gn/codec.gni")
   import("m133/gn/fuchsia_defines.gni")
   import("m133/gn/shared_sources.gni")
@@ -16,7 +16,7 @@ if (skia_use_m133) {
     import("//foundation/arkui/ace_engine/ace_config.gni")
   }
 }
-if (!skia_use_m133) {
+if (!skia_feature_upgrade) {
 import("gn/flutter_defines.gni")
 import("gn/fuchsia_defines.gni")
 import("gn/shared_sources.gni")
@@ -522,7 +522,7 @@ optional("fontmgr_android") {
   deps = [
     ":typeface_freetype",
   ]
-  if (use_new_skia) {
+  if (skia_feature_upgrade) {
     deps += ["${skia_third_party_dir}/expat:expatm133"]
   } else {
     deps += ["${skia_third_party_dir}/expat"]
@@ -578,7 +578,7 @@ optional("fontmgr_symbol_load") {
   deps = [
     ":typeface_freetype",
   ]
-  if (use_new_skia) {
+  if (skia_feature_upgrade) {
     deps += ["${skia_third_party_dir}/expat:expatm133"]
   } else {
     deps += ["${skia_third_party_dir}/expat"]
@@ -780,7 +780,7 @@ optional("fontmgr_mac_ct") {
     deps = [
       ":fontmgr_symbol_load",
     ]
-    if (use_new_skia) {
+    if (skia_feature_upgrade) {
       deps += ["${skia_third_party_dir}/expat:expatm133"]
     } else {
       deps += ["${skia_third_party_dir}/expat"]
@@ -849,7 +849,7 @@ optional("fontmgr_win") {
     deps = [
       ":fontmgr_symbol_load",
     ]
-    if (use_new_skia) {
+    if (skia_feature_upgrade) {
       deps += ["${skia_third_party_dir}/expat:expatm133"]
     } else {
       deps += ["${skia_third_party_dir}/expat"]
@@ -919,7 +919,7 @@ if (use_oh_skia && !is_arkui_x) {
       ":fontmgr_symbol_load",
       ":typeface_freetype",
     ]
-    if (use_new_skia) {
+    if (skia_feature_upgrade) {
       deps += ["${skia_third_party_dir}/expat:expatm133"]
     } else {
       deps += ["${skia_third_party_dir}/expat"]
@@ -1700,7 +1700,7 @@ optional("xml") {
   enabled = skia_use_expat
   public_defines = [ "SK_XML" ]
 
-  if (use_new_skia) {
+  if (skia_feature_upgrade) {
     deps = ["${skia_third_party_dir}/expat:expatm133"]
   } else {
     deps = ["${skia_third_party_dir}/expat"]
@@ -1938,7 +1938,7 @@ if (use_oh_skia) {
     }
 
     if (is_android) {
-      if (use_new_skia) {
+      if (skia_feature_upgrade) {
         deps += ["${skia_third_party_dir}/expat:expatm133"]
       } else {
         deps += ["${skia_third_party_dir}/expat"]
@@ -2237,7 +2237,7 @@ if (use_oh_skia) {
     }
 
     if (is_android) {
-      if (use_new_skia) {
+      if (skia_feature_upgrade) {
         deps += ["${skia_third_party_dir}/expat:expatm133"]
       } else {
         deps += ["${skia_third_party_dir}/expat"]
@@ -4424,7 +4424,7 @@ ohos_static_library("sksl_ext_static") {
   sources += skia_sksl_gpu_sources
   include_dirs = [ "." ]
 }
-} else { # skia_use_m133
+} else { # skia_feature_upgrade
   if (defined(is_mingw) && is_mingw == true) {
     is_win = true
   }
@@ -4711,7 +4711,7 @@ ohos_static_library("sksl_ext_static") {
     }
 
     if (is_android) {
-      if (use_new_skia) {
+      if (skia_feature_upgrade) {
         deps += ["${skia_third_party_dir}/expat:expatm133"]
       } else {
         deps += ["${skia_third_party_dir}/expat"]
