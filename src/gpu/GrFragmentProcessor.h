@@ -312,6 +312,12 @@ public:
     SkString dumpTreeInfo() const;
 #endif
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    virtual SkRRect getRRect() const {
+        return SkRRect::MakeEmpty();
+    }
+#endif
+
 protected:
     enum OptimizationFlags : uint32_t {
         kNone_OptimizationFlags,

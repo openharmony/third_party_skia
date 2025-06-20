@@ -252,7 +252,12 @@ public:
                      GrQuadAAFlags,
                      SkCanvas::SrcRectConstraint,
                      const SkMatrix&,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                     sk_sp<GrColorSpaceXform>,
+                     bool supportOpaqueOpt = false);
+#else
                      sk_sp<GrColorSpaceXform>);
+#endif
 
     /**
      * Variant of drawTexture that instead draws the texture applied to 'dstQuad' transformed by
@@ -274,11 +279,20 @@ public:
                          GrQuadAAFlags edgeAA,
                          const SkRect* subset,
                          const SkMatrix& viewMatrix,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                         sk_sp<GrColorSpaceXform> texXform,
+                         bool supportOpaqueOpt = false) {
+#else
                          sk_sp<GrColorSpaceXform> texXform) {
+#endif
         DrawQuad quad{GrQuad::MakeFromSkQuad(dstQuad, viewMatrix),
                       GrQuad::MakeFromSkQuad(srcQuad, SkMatrix::I()), edgeAA};
         this->drawTexturedQuad(clip, std::move(view), srcAlphaType, std::move(texXform), filter, mm,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                               color, mode, aa, &quad, subset, supportOpaqueOpt);
+#else
                                color, mode, aa, &quad, subset);
+#endif
     }
 
     /**
@@ -679,7 +693,12 @@ private:
                           SkBlendMode blendMode,
                           GrAA aa,
                           DrawQuad* quad,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                          const SkRect* subset = nullptr,
+                          bool supportOpaqueOpt = false);
+#else
                           const SkRect* subset = nullptr);
+#endif
 
     void drawStrokedLine(const GrClip*, GrPaint&&, GrAA, const SkMatrix&, const SkPoint[2],
                          const SkStrokeRec&);

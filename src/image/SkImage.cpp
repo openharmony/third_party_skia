@@ -45,7 +45,12 @@
 
 SkImage::SkImage(const SkImageInfo& info, uint32_t uniqueID)
         : fInfo(info)
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+        , fUniqueID(kNeedNewImageUniqueID == uniqueID ? SkNextID::ImageID() : uniqueID)
+        , fSupportOpaqueOpt(false) {
+#else
         , fUniqueID(kNeedNewImageUniqueID == uniqueID ? SkNextID::ImageID() : uniqueID) {
+#endif
     SkASSERT(info.width() > 0);
     SkASSERT(info.height() > 0);
 }
@@ -767,3 +772,13 @@ void SkSamplingPriv::Write(SkWriteBuffer& buffer, const SkSamplingOptions& sampl
         buffer.writeUInt((unsigned)sampling.mipmap);
     }
 }
+
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+void SkImage::setSupportOpaqueOpt(bool supportOpaqueOpt) {
+    fSupportOpaqueOpt = supportOpaqueOpt;
+}
+
+bool SkImage::getSupportOpaqueOpt() const {
+    return fSupportOpaqueOpt;
+}
+#endif

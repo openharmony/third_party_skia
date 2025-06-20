@@ -143,6 +143,10 @@ public:
 
     void drawBlurImage(const GrSurfaceProxyView& proxyView, SkBlurArg& blurArg);
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    void setOpaqueRegion(uint32_t opaqueRegionCount, const SkIRect* region);
+#endif
+
 protected:
     GrOpsRenderPass() : fOrigin(kTopLeft_GrSurfaceOrigin), fRenderTarget(nullptr) {}
 
@@ -208,6 +212,9 @@ private:
 #endif
     virtual void onExecuteDrawable(std::unique_ptr<SkDrawable::GpuDrawHandler>) {}
     virtual void onDrawBlurImage(const GrSurfaceProxyView& proxyView, const SkBlurArg& blurArg) {};
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    virtual void onSetOpaqueRegion(uint32_t opaqueRegionCount, const SkIRect* region) {};
+#endif
 
     enum class DrawPipelineStatus {
         kOk = 0,

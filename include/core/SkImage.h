@@ -1266,6 +1266,12 @@ public:
     */
     void dump(std::string& desc, int depth) const;
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    void setSupportOpaqueOpt(bool supportOpaqueOpt);
+
+    bool getSupportOpaqueOpt() const;
+#endif
+
 private:
     SkImage(const SkImageInfo& info, uint32_t uniqueID);
 
@@ -1275,6 +1281,10 @@ private:
 
     SkImageInfo     fInfo;
     const uint32_t  fUniqueID;
+
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    bool fSupportOpaqueOpt;
+#endif
 
     sk_sp<SkImage> withMipmaps(sk_sp<SkMipmap>) const;
 

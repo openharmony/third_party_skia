@@ -237,13 +237,27 @@ public:
                             DrawQuad* quad,
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
                             const SkRect* subset,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                            uint32_t stencilRef,
+                            bool supportOpaqueOpt = false) {
+        return GrOp::Make<TextureOpImpl>(context, std::move(proxyView), std::move(textureXform),
+                                         filter, mm, color, saturate, aaType, quad, subset, stencilRef, supportOpaqueOpt);
+#else
                             uint32_t stencilRef) {
         return GrOp::Make<TextureOpImpl>(context, std::move(proxyView), std::move(textureXform),
                                          filter, mm, color, saturate, aaType, quad, subset, stencilRef);
+#endif
+#else
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                            const SkRect* subset,
+                            bool supportOpaqueOpt = false) {
+        return GrOp::Make<TextureOpImpl>(context, std::move(proxyView), std::move(textureXform),
+                                         filter, mm, color, saturate, aaType, quad, subset, supportOpaqueOpt);
 #else
                             const SkRect* subset) {
         return GrOp::Make<TextureOpImpl>(context, std::move(proxyView), std::move(textureXform),
                                          filter, mm, color, saturate, aaType, quad, subset);
+#endif
 #endif
     }
 
@@ -298,7 +312,7 @@ public:
     }
 #endif
 
-    GrProcessorSet::Analysis finalize(const GrCaps& caps, const GrAppliedClip*,
+    GrProcessorSet::Analysis finalize(const GrCaps& caps, const GrAppliedClip* clip,
                                       GrClampType clampType) override {
         SkASSERT(fMetadata.colorType() == ColorType::kNone);
         auto iter = fQuads.metadata();
@@ -310,6 +324,9 @@ public:
                 colorType = std::max(colorType, ColorType::kByte);
             }
             fMetadata.fColorType = static_cast<uint16_t>(colorType);
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+            fRRect = clip->getRRect();
+#endif
         }
         return GrProcessorSet::EmptySetAnalysis();
     }
@@ -459,7 +476,12 @@ private:
                   DrawQuad* quad,
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
                   const SkRect* subsetRect,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                  uint32_t stencilRef = UINT32_MAX,
+                  bool supportOpaqueOpt = false)
+#else
                   uint32_t stencilRef = UINT32_MAX)
+#endif
             : INHERITED(ClassID())
             , fQuads(1, true /* includes locals */)
             , fTextureColorSpaceXform(std::move(textureColorSpaceXform))
@@ -467,7 +489,12 @@ private:
             , fMetadata(proxyView.swizzle(), filter, mm, Subset(!!subsetRect), saturate)
             , fStencilRef(stencilRef) {
 #else
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                  const SkRect* subsetRect,
+                  bool supportOpaqueOpt = false)
+#else
                   const SkRect* subsetRect)
+#endif
             : INHERITED(ClassID())
             , fQuads(1, true /* includes locals */)
             , fTextureColorSpaceXform(std::move(textureColorSpaceXform))
@@ -476,6 +503,9 @@ private:
 #endif
         // Clean up disparities between the overall aa type and edge configuration and apply
         // optimizations based on the rect and matrix when appropriate
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+        fSupportOpaqueOpt = (((color.fA - 1.0) < 1e-7 && (color.fA - 0.0) >= 1e-7) || (subsetRect != nullptr)) ? false : supportOpaqueOpt;
+#endif
         GrQuadUtils::ResolveAAType(aaType, quad->fEdgeFlags, quad->fDevice,
                                    &aaType, &quad->fEdgeFlags);
         fMetadata.fAAType = static_cast<uint16_t>(aaType);
@@ -956,6 +986,51 @@ private:
         }
     }
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    bool canUseOpaqueRegion(const TextureOpImpl& op, GrOpFlushState* flushState) {
+        bool isUseOpaqueRegion = flushState->caps().supportsOpaqueRegion() &&
+                                                    op.fSupportOpaqueOpt &&
+                                                    !(op.fRRect.isEmpty()) &&
+                                                    (op.fQuads.count() == 1) &&
+                                                    (op.fMetadata.fProxyCount == 1);
+        HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL,
+            "OpaqueRegion: %d [devSupport %d, isOpaque %d, hasRRect %d, QuadCount %d %d]",
+                                                            isUseOpaqueRegion,
+                                                            flushState->caps().supportsOpaqueRegion(),
+                                                            op.fSupportOpaqueOpt,
+                                                            !(op.fRRect.isEmpty()),
+                                                            (op.fQuads.count() == 1),
+                                                            (op.fMetadata.fProxyCount == 1));
+        return isUseOpaqueRegion;
+    }
+
+    inline int32_t computeLowEdge(SkScalar rawEdge, SkScalar rrect1, SkScalar rrect2) {
+        return ceil(rawEdge + fmax(rrect1, rrect2));
+    }
+
+    inline int32_t computeHighEdge(SkScalar rawEdge, SkScalar rrect1, SkScalar rrect2) {
+        return floor(rawEdge - fmax(rrect1, rrect2));
+    }
+
+    SkIRect computeOpaqueRegion(const TextureOpImpl& op) {
+        SkRect rawRegion = op.bounds();
+        SkIRect opaqueRegion;
+        opaqueRegion.fLeft = computeLowEdge(rawRegion.fLeft
+                            , op.fRRect.radii(SkRRect::Corner::kUpperLeft_Corner).x()
+                            , op.fRRect.radii(SkRRect::Corner::kLowerLeft_Corner).x());
+        opaqueRegion.fTop = computeLowEdge(rawRegion.fTop
+                            , op.fRRect.radii(SkRRect::Corner::kUpperLeft_Corner).y()
+                            , op.fRRect.radii(SkRRect::Corner::kUpperRight_Corner).y());
+        opaqueRegion.fRight = computeHighEdge(rawRegion.fRight
+                            , op.fRRect.radii(SkRRect::Corner::kUpperRight_Corner).x()
+                            , op.fRRect.radii(SkRRect::Corner::kLowerRight_Corner).x());
+        opaqueRegion.fBottom = computeHighEdge(rawRegion.fBottom
+                            , op.fRRect.radii(SkRRect::Corner::kLowerRight_Corner).y()
+                            , op.fRRect.radii(SkRRect::Corner::kLowerLeft_Corner).y());
+        return opaqueRegion.width() > 0 && opaqueRegion.height() > 0 ? opaqueRegion : SkIRect::MakeEmpty();
+    }
+#endif
+
     void onExecute(GrOpFlushState* flushState, const SkRect& chainBounds) override {
         if (!fDesc->fVertexBuffer) {
             return;
@@ -980,6 +1055,13 @@ private:
             for (unsigned p = 0; p < op.fMetadata.fProxyCount; ++p) {
                 const int quadCnt = op.fViewCountPairs[p].fQuadCnt;
                 SkASSERT(numDraws < fDesc->fNumProxies);
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                bool isUseOpaqueRegion = canUseOpaqueRegion(op, flushState);
+                if (isUseOpaqueRegion) {
+                    SkIRect opaqueRegion = computeOpaqueRegion(op);
+                    flushState->setOpaqueRegion(1, &opaqueRegion);
+                }
+#endif
                 flushState->bindTextures(fDesc->fProgramInfo->geomProc(),
                                          *op.fViewCountPairs[p].fProxy,
                                          fDesc->fProgramInfo->pipeline());
@@ -988,6 +1070,11 @@ private:
                                                     fDesc->totalNumVertices(), fDesc->fBaseVertex);
                 totQuadsSeen += quadCnt;
                 SkDEBUGCODE(++numDraws;)
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                if (isUseOpaqueRegion) {
+                    flushState->setOpaqueRegion(0, nullptr);
+                }
+#endif
             }
         }
 
@@ -1153,6 +1240,10 @@ private:
     Desc* fDesc;
     Metadata fMetadata;
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    SkRRect fRRect;
+    bool fSupportOpaqueOpt;
+#endif
     // This field must go last. When allocating this op, we will allocate extra space to hold
     // additional ViewCountPairs immediately after the op's allocation so we can treat this
     // as an fProxyCnt-length array.
@@ -1188,9 +1279,19 @@ GrOp::Owner TextureOp::Make(GrRecordingContext* context,
                             DrawQuad* quad,
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
                             const SkRect* subset,
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                            uint32_t stencilRef,
+                            bool supportOpaqueOpt) {
+#else
                             uint32_t stencilRef) {
+#endif
+#else
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                            const SkRect* subset,
+                            bool supportOpaqueOpt) {
 #else
                             const SkRect* subset) {
+#endif
 #endif
     // Apply optimizations that are valid whether or not using TextureOp or FillRectOp
     if (subset && subset->contains(proxyView.proxy()->backingStoreBoundsRect())) {
@@ -1211,9 +1312,17 @@ GrOp::Owner TextureOp::Make(GrRecordingContext* context,
     if (blendMode == SkBlendMode::kSrcOver) {
         return TextureOpImpl::Make(context, std::move(proxyView), std::move(textureXform), filter,
 #ifdef SK_ENABLE_STENCIL_CULLING_OHOS
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                                   mm, color, saturate, aaType, std::move(quad), subset, stencilRef, supportOpaqueOpt);
+#else
                                    mm, color, saturate, aaType, std::move(quad), subset, stencilRef);
+#endif
+#else
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+                                   mm, color, saturate, aaType, std::move(quad), subset, supportOpaqueOpt);
 #else
                                    mm, color, saturate, aaType, std::move(quad), subset);
+#endif
 #endif
     } else {
         // Emulate complex blending using FillRectOp

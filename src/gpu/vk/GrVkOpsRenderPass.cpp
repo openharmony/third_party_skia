@@ -972,3 +972,10 @@ void GrVkOpsRenderPass::onDrawBlurImage(const GrSurfaceProxyView& proxyView, con
 #endif
     return;
 }
+
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+void GrVkOpsRenderPass::onSetOpaqueRegion(uint32_t opaqueRegionCount, const SkIRect* region)
+{
+    fGpu->currentCommandBuffer()->setOpaqueRegion(fGpu, opaqueRegionCount, region);
+}
+#endif

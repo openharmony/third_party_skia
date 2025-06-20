@@ -519,6 +519,10 @@ public:
 
     virtual bool supportsHpsBlur(const GrSurfaceProxyView* proxyViewPtr) const { return false; }
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    virtual bool supportsOpaqueRegion() const { return false; }
+#endif
+
 protected:
     // Subclasses must call this at the end of their init method in order to do final processing on
     // the caps (including overrides requested by the client).

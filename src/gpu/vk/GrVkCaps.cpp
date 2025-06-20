@@ -28,9 +28,16 @@
 #include "src/gpu/vk/GrVkTexture.h"
 #include "src/gpu/vk/GrVkUniformHandler.h"
 #include "src/gpu/vk/GrVkUtil.h"
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+#include <parameters.h>
+#endif
 
 #ifdef SK_BUILD_FOR_ANDROID
 #include <sys/system_properties.h>
+#endif
+
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+#define SK_OPAQUE_REGION_HARDWARE_SUPPORT_MIN_VERSION 0x20021000
 #endif
 
 GrVkCaps::GrVkCaps(const GrContextOptions& contextOptions, const GrVkInterface* vkInterface,
@@ -699,6 +706,11 @@ void GrVkCaps::initGrCaps(const GrVkInterface* vkInterface,
     }
 
     fSupportHpsBlur = (kHisi_VkVendor == properties.vendorID);
+
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    fSupportOpaqueRegion = (kHisi_VkVendor == properties.vendorID) && \
+        (properties.deviceID >= SK_OPAQUE_REGION_HARDWARE_SUPPORT_MIN_VERSION);
+#endif
 }
 
 void GrVkCaps::initShaderCaps(const VkPhysicalDeviceProperties& properties,
@@ -1995,6 +2007,15 @@ bool GrVkCaps::supportsHpsBlur(const GrSurfaceProxyView* proxyViewPtr) const
     }
     return false;
 }
+
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+bool GrVkCaps::supportsOpaqueRegion() const
+{
+    static const bool opaqueRegionEnabled =
+        OHOS::system::GetIntParameter("persist.sys.graphic.openOpaqueRegion", 1) != 0;
+    return fSupportOpaqueRegion && opaqueRegionEnabled;
+}
+#endif
 
 #if GR_TEST_UTILS
 std::vector<GrCaps::TestFormatColorTypeCombination> GrVkCaps::getTestingCombinations() const {

@@ -55,6 +55,12 @@ public:
 
     void reset();
 
+#ifdef SUPPORT_OPAQUE_OPTIMIZATION
+    void setOpaqueRegion(uint32_t opaqueRegionCount, const SkIRect* region) {
+        fOpsRenderPass->setOpaqueRegion(opaqueRegionCount, region);
+    }
+#endif
+
     /** Additional data required on a per-op basis when executing GrOps. */
     struct OpArgs {
         // TODO: why does OpArgs have the op we're going to pass it to as a member? Remove it.
