@@ -495,10 +495,6 @@ private:
     skgpu::VulkanDeviceLostProc                           fDeviceLostProc;
 
     using INHERITED = GrGpu;
-
-#ifdef SKIA_OHOS
-    const int TRACE_LIMIT_TIME = 500;
-#endif
 };
 
 #endif
