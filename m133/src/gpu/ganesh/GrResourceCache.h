@@ -211,7 +211,8 @@ public:
     }
 
     void purgeUnlockedResourcesByTag(bool scratchResourceOnly, const GrGpuResourceTag& tag);
-
+    void purgeUnlockedResourcesByPid(bool scratchResourceOnly, const std::set<int>& exitedPidSet);
+    
     // Purge unlocked resources not used since the passed point in time. If 'opts' is
     // kScratchResourcesOnly, the purgeable resources containing persistent data are spared.
     // If it is kAllResources then all purgeable resources older than 'purgeTime' will be deleted.
