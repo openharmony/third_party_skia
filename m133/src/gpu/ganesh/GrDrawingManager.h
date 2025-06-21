@@ -204,6 +204,10 @@ public:
                const GrFlushInfo&,
                const skgpu::MutableTextureState* newState);
 
+#ifdef SKIA_OHOS
+    void increaseDrawOpNum() { fNumDrawOp++; }
+#endif
+
 private:
     GrDrawingManager(GrRecordingContext*,
                      const PathRendererChain::Options&,
@@ -268,6 +272,9 @@ private:
     };
 
     GrHashMapWithCache<uint32_t, GrRenderTask*, SurfaceIDKeyTraits, GrCheapHash> fLastRenderTasks;
+#ifdef SKIA_OHOS
+    int fNumDrawOp = 0;
+#endif
 };
 
 #endif

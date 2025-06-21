@@ -1952,7 +1952,12 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
     GrDrawOp* drawOp = (GrDrawOp*)op.get();
     SkDEBUGCODE(this->validate();)
     SkDEBUGCODE(drawOp->fAddDrawOpCalled = true;)
+#ifdef SKIA_OHOS
+    HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "SurfaceDrawContext::addDrawOp - %s",
+        drawOp->name());
+#else
     GR_CREATE_TRACE_MARKER_CONTEXT("SurfaceDrawContext", "addDrawOp", fContext);
+#endif
 
     // Setup clip
     SkRect bounds;

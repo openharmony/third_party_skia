@@ -499,9 +499,14 @@ bool GrGpu::writePixels(GrSurface* surface,
                         const GrMipLevel texels[],
                         int mipLevelCount,
                         bool prepForTexSampling) {
+#ifdef SKIA_OHOS
+    HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "Texture upload(%u) %ix%i",
+        surface->uniqueID().asUInt(), rect.width(), rect.height());
+#else
     TRACE_EVENT0("skia.gpu", TRACE_FUNC);
     ATRACE_ANDROID_FRAMEWORK_ALWAYS("Texture upload(%u) %ix%i",
                                     surface->uniqueID().asUInt(), rect.width(), rect.height());
+#endif
     SkASSERT(surface);
     SkASSERT(!surface->framebufferOnly());
 
