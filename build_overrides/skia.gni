@@ -13,10 +13,10 @@
 import("//build/ohos_var.gni")
 
 declare_args() {
-  skia_use_m133 = use_new_skia
+  skia_feature_upgrade = false
 }
 
-if (skia_use_m133) {
+if (skia_feature_upgrade) {
   skia_root_dir = "//third_party/skia/m133"
 } else {
   skia_root_dir = "//third_party/skia"

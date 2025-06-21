@@ -32,7 +32,7 @@ ohos_static_library("skia_paragraph_ohos_new") {
   sources = []
   external_deps = []
   public_configs = [ ":skia_paragraph_config" ]
-  if (use_new_skia) {
+  if (skia_feature_upgrade) {
     defines = [
       "ENABLE_TEXT_ENHANCE",
       "ENABLE_DRAWING_ADAPTER",

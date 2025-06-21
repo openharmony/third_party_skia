@@ -495,7 +495,7 @@ optional("fontmgr_android") {
     ":typeface_freetype",
     ":typeface_proxy",
   ]
-  if (use_new_skia) {
+  if (skia_feature_upgrade) {
     deps += ["${skia_third_party_dir}/expat:expatm133"]
   } else {
     deps += ["${skia_third_party_dir}/expat"]
@@ -534,7 +534,7 @@ optional("fontmgr_symbol_load") {
   deps = [
     ":typeface_freetype",
   ]
-  if (use_new_skia) {
+  if (skia_feature_upgrade) {
     deps += ["${skia_third_party_dir}/expat:expatm133"]
   } else {
     deps += ["${skia_third_party_dir}/expat"]
@@ -904,7 +904,7 @@ if (use_oh_skia && !is_arkui_x) {
       ":fontmgr_symbol_load",
       ":typeface_freetype",
     ]
-    if (use_new_skia) {
+    if (skia_feature_upgrade) {
       deps += ["${skia_third_party_dir}/expat:expatm133"]
     } else {
       deps += ["${skia_third_party_dir}/expat"]
@@ -2044,7 +2044,7 @@ optional("xml") {
   enabled = skia_use_expat || skia_use_jpeg_gainmaps
   public_defines = [ "SK_XML" ]
 
-  if (use_new_skia) {
+  if (skia_feature_upgrade) {
     deps = ["${skia_third_party_dir}/expat:expatm133"]
   } else {
     deps = ["${skia_third_party_dir}/expat"]
@@ -2209,7 +2209,7 @@ skia_component("skia") {
   }
 
   if (is_android) {
-    if (use_new_skia) {
+    if (skia_feature_upgrade) {
       deps += ["${skia_third_party_dir}/expat:expatm133"]
     } else {
       deps += ["${skia_third_party_dir}/expat"]
