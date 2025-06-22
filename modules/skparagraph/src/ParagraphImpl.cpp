@@ -575,6 +575,7 @@ bool ParagraphImpl::computeCodeUnitProperties() {
         return false;
     }
 
+    const char *locale = fParagraphStyle.getTextStyle().getLocale().c_str();
     // Collect all spaces and some extra information
     // (and also substitute \t with a space while we are at it)
     if (!fUnicode->computeCodeUnitFlags(&fText[0],
@@ -582,6 +583,7 @@ bool ParagraphImpl::computeCodeUnitProperties() {
 #ifdef OHOS_SUPPORT
                                         this->paragraphStyle().getReplaceTabCharacters() ||
                                         (!(this->paragraphStyle().getTextTab().location < 1.0)),
+                                        locale,
 #else
                                         this->paragraphStyle().getReplaceTabCharacters(),
 #endif

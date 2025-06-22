@@ -3,6 +3,13 @@
 #include "modules/skparagraph/src/TextWrapper.h"
 
 #ifdef OHOS_SUPPORT
+#include <cstdint>
+#include <iterator>
+#include <limits>
+#include <memory>
+#include <numeric>
+
+#include "include/DartTypes.h"
 #include "log.h"
 #include "modules/skparagraph/include/Hyphenator.h"
 #include "modules/skparagraph/src/TextTabAlign.h"
@@ -13,7 +20,6 @@ namespace skia {
 namespace textlayout {
 
 namespace {
-const size_t BREAK_NUM_TWO = 2;
 
 struct LineBreakerWithLittleRounding {
     LineBreakerWithLittleRounding(SkScalar maxWidth, bool applyRoundingHack)
@@ -444,441 +450,6 @@ std::tuple<Cluster*, size_t, SkScalar> TextWrapper::trimStartSpaces(Cluster* end
     return std::make_tuple(cluster, 0, width);
 }
 
-// calculate heuristics for different variants and select the least bad
-
-// calculate the total space required
-// define the goal for line numbers (max vs space required).
-// If text could fit, it has substantially larger score compared to nicer wrap with overflow
-
-// iterate: select nontrivial candidates with some maximum offset and set the penalty / benefit of variants
-// goals: 0) fit maximum amount of text
-//        1) fill lines
-//        2) make line lengths even
-//        2.5) define a cost for hyphenation - not done
-//        3) try to make it fast
-
-constexpr int64_t MINIMUM_FILL_RATIO = 75;
-constexpr int64_t MINIMUM_FILL_RATIO_SQUARED = MINIMUM_FILL_RATIO * MINIMUM_FILL_RATIO;
-constexpr int64_t GOOD_ENOUGH_LINE_SCORE = 95 * 95;
-constexpr int64_t UNDERFLOW_SCORE = 100;
-constexpr float BALANCED_LAST_LINE_MULTIPLIER = 1.4f;
-constexpr int64_t BEST_LOCAL_SCORE = -1000000;
-constexpr float  WIDTH_TOLERANCE = 5.f;
-constexpr int64_t PARAM_2 = 2;
-constexpr int64_t PARAM_10000 = 10000;
-
-// mkay, this makes an assumption that we do the scoring runs in a single thread and holds the variables during
-// recursion
-struct TextWrapScorer {
-    TextWrapScorer(SkScalar maxWidth, ParagraphImpl& parent, size_t maxLines)
-        : maxWidth_(maxWidth), currentTarget_(maxWidth), maxLines_(maxLines), parent_(parent)
-    {
-        CalculateCumulativeLen(parent);
-
-        if (parent_.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
-            // calculate target width before breaks
-            int64_t targetLines = 1 + cumulativeLen_ / maxWidth_;
-            currentTarget_ = cumulativeLen_ / targetLines;
-        }
-
-        GenerateBreaks(parent);
-    }
-
-    void GenerateBreaks(ParagraphImpl& parent)
-    {
-        // we trust that clusters are sorted on parent
-        bool prevWasWhitespace = false;
-        SkScalar currentWidth = 0;
-        size_t currentCount = 0; // in principle currentWidth != 0 should provide same result
-        SkScalar cumulativeLen = 0;
-        for (size_t ix = 0; ix < parent.clusters().size(); ix++) {
-            auto& cluster = parent.clusters()[ix];
-            auto len = cluster.width();
-            cumulativeLen += len;
-            currentWidth += len;
-            currentCount++;
-            if (cluster.isWhitespaceBreak()) {
-                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
-                prevWasWhitespace = true;
-                currentWidth = 0;
-                currentCount = 0;
-            } else if (cluster.isHardBreak()) {
-                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_HARD, false);
-                prevWasWhitespace = true;
-                currentWidth = 0;
-                currentCount = 0;
-            } else if (cluster.isHyphenBreak()) {
-                breaks_.emplace_back(cumulativeLen - cluster.width() + cluster.height(),
-                                     Break::BreakType::BREAKTYPE_HYPHEN, false);
-                breaks_.back().reservedSpace = cluster.height();
-                prevWasWhitespace = true;
-                currentWidth = 0;
-                currentCount = 0;
-            } else if (cluster.isIntraWordBreak()) {
-                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_INTRA, false);
-                prevWasWhitespace = true;
-                currentWidth = 0;
-                currentCount = 0;
-            } else if (currentWidth > currentTarget_) {
-                if (currentCount > 1) {
-                    cumulativeLen -= cluster.width();
-                    ix--;
-                }
-                breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_FORCED, false);
-                prevWasWhitespace = false;
-                currentWidth = 0;
-                currentCount = 0;
-            } else {
-                prevWasWhitespace = false;
-            }
-        }
-    }
-
-    void CalculateCumulativeLen(ParagraphImpl& parent)
-    {
-        auto startCluster = &parent.cluster(0);
-        auto endCluster = &parent.cluster(0);
-        auto locale = parent.paragraphStyle().getTextStyle().getLocale();
-        for (size_t clusterIx = 0; clusterIx < parent.clusters().size(); clusterIx++) {
-            if (parent.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
-                auto& cluster = parent.cluster(clusterIx);
-                auto len = cluster.width();
-                cumulativeLen_ += len;
-            }
-            CalculateHyphenPos(clusterIx, startCluster, endCluster, parent, locale);
-        }
-    }
-
-    void CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster, Cluster*& endCluster, ParagraphImpl& parent,
-                            const SkString& locale)
-    {
-        auto& cluster = parent.cluster(clusterIx);
-        const bool hyphenEnabled = parent.getWordBreakType() == WordBreakType::BREAK_HYPHEN;
-        bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak() || cluster.isTabulation());
-        if (hyphenEnabled && !fPrevWasWhitespace && isWhitespace && endCluster > startCluster) {
-            fPrevWasWhitespace = true;
-            auto results = Hyphenator::getInstance().findBreakPositions(
-                locale, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
-            CheckHyphenBreak(results, parent, startCluster);
-            if (clusterIx + 1 < parent.clusters().size()) {
-                startCluster = &cluster + 1;
-            }
-        } else if (!isWhitespace) {
-            fPrevWasWhitespace = false;
-            endCluster = &cluster;
-        } else { //  fix "one character + space and then the actual target"
-            uint32_t i = 1;
-            while (clusterIx + i < parent.clusters().size()) {
-                if (!parent.cluster(clusterIx + i).isWordBreak()) {
-                    startCluster = &cluster + i;
-                    break;
-                } else {
-                    i++;
-                }
-            }
-        }
-    }
-
-    void CheckHyphenBreak(std::vector<uint8_t> results, ParagraphImpl& parent, Cluster*& startCluster)
-    {
-        size_t prevClusterIx = 0;
-        for (size_t resultIx = 0; resultIx < results.size(); resultIx++) {
-            if (results[resultIx] & 0x1) {
-                auto clusterPos = parent.clusterIndex(startCluster->textRange().start + resultIx);
-                if (clusterPos != prevClusterIx) {
-                    parent.cluster(clusterPos).enableHyphenBreak();
-                    prevClusterIx = clusterPos;
-                }
-            }
-        }
-    }
-
-    struct RecursiveParam {
-        int64_t targetLines;
-        size_t maxLines;
-        size_t lineNumber;
-        SkScalar begin;
-        SkScalar remainingTextWidth;
-        SkScalar currentMax;
-        size_t breakPos;
-    };
-
-    void Run() {
-        int64_t targetLines = 1 + cumulativeLen_ / maxWidth_;
-
-        if (parent_.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
-            currentTarget_ = cumulativeLen_ / targetLines;
-        }
-
-        if (targetLines < PARAM_2) {
-            // need to have at least two lines for algo to do anything useful
-            return;
-        }
-        CalculateRecursive(RecursiveParam{
-            targetLines, maxLines_, 0, 0.f, cumulativeLen_,
-        });
-        LOGD("cache_: %{public}zu", cache_.size());
-    }
-
-    int64_t CalculateRecursive(RecursiveParam param)
-    {
-        if (param.maxLines == 0 || param.remainingTextWidth <= 1.f) {
-            return BEST_LOCAL_SCORE;
-        }
-
-        // This should come precalculated
-        param.currentMax = maxWidth_ - parent_.detectIndents(param.lineNumber);
-        if (nearlyZero(param.currentMax)) {
-            return BEST_LOCAL_SCORE;
-        }
-
-        // trim possible spaces at the beginning of line
-        while ((param.lineNumber > 0) && (lastBreakPos_ + 1 < breaks_.size()) &&
-            (breaks_[lastBreakPos_ + 1].subsequentWhitespace)) {
-            param.remainingTextWidth += (param.begin - breaks_[++lastBreakPos_].width);
-            param.begin = breaks_[lastBreakPos_].width;
-        }
-
-        if (lastBreakPos_ < breaks_.size() && breaks_[lastBreakPos_].type == Break::BreakType::BREAKTYPE_FORCED) {
-            lastBreakPos_++;
-        }
-        param.breakPos = lastBreakPos_;
-
-        while (param.breakPos < breaks_.size() && breaks_[param.breakPos].width < (param.begin + param.currentMax)) {
-            param.breakPos++;
-        }
-
-        if (param.breakPos == lastBreakPos_ && param.remainingTextWidth > param.currentMax) {
-            // If we were unable to find a break that matches the criteria, insert new one
-            // This may happen if there is a long word and per line indent for this particular line
-            if (param.breakPos + 1 > breaks_.size()) {
-                breaks_.emplace_back(param.begin + param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false);
-            } else {
-                breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax,
-                    Break::BreakType::BREAKTYPE_FORCED, false));
-            }
-            param.breakPos += BREAK_NUM_TWO;
-        }
-
-        LOGD("Line %{public}lu about to loop %{public}f, %{public}lu, %{public}lu, max: %{public}f",
-            static_cast<unsigned long>(param.lineNumber), param.begin, static_cast<unsigned long>(param.breakPos),
-            static_cast<unsigned long>(lastBreakPos_), maxWidth_);
-
-        return FindOptimalSolutionForCurrentLine(param);
-    }
-
-    std::vector<SkScalar>& GetResult()
-    {
-        return current_;
-    }
-
-    SkScalar calculateCurrentWidth(RecursiveParam& param, bool looped)
-    {
-        SkScalar newWidth = param.currentMax;
-
-        if (param.breakPos > 0 && param.begin < breaks_[param.breakPos - 1].width) {
-            newWidth = std::min(breaks_[--param.breakPos].width - param.begin, param.currentMax);
-        }
-
-        if (looped
-            && ((lastBreakPos_ == param.breakPos)
-                || (newWidth / param.currentMax * UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
-            LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
-                 static_cast<unsigned long>(param.lineNumber), param.begin, static_cast<unsigned long>(param.breakPos),
-                 newWidth, maxWidth_);
-            return 0;
-        }
-
-        lastBreakPos_ = param.breakPos;
-
-        return std::min(newWidth, param.remainingTextWidth);
-    }
-
-    int64_t FindOptimalSolutionForCurrentLine(RecursiveParam& param)
-    {
-        // have this in reversed order to avoid extra insertions
-        std::vector<SkScalar> currentBest;
-        bool looped = false;
-        int64_t score = 0;
-        int64_t overallScore = score;
-        int64_t bestLocalScore = BEST_LOCAL_SCORE;
-        do {
-            // until the given threshold is crossed (minimum line fill rate)
-            // re-break this line, if a result is different, calculate score
-            SkScalar currentWidth = calculateCurrentWidth(param, looped);
-            if (currentWidth == 0) {
-                break;
-            }
-            Index index { param.lineNumber, param.begin, currentWidth };
-
-            // check cache
-            const auto& ite = cache_.find(index);
-            if (ite != cache_.cend()) {
-                cacheHits_++;
-                current_ = ite->second.widths;
-                overallScore = ite->second.score;
-                UpdateSolution(bestLocalScore, overallScore, currentBest);
-                looped = true;
-                continue;
-            }
-            SkScalar scoref = std::min(1.f, abs(currentTarget_ - currentWidth) / currentTarget_);
-            score = int64_t((1.f - scoref) * UNDERFLOW_SCORE);
-            score *= score;
-
-            current_.clear();
-            overallScore = score;
-
-            // Handle last line
-            if (breaks_[param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN) {
-                auto copy = currentWidth - breaks_[param.breakPos].reservedSpace;
-                // name is bit confusing as the method enters also recursion
-                // with hyphen break this never is the last line
-                if (!HandleLastLine(param, overallScore, copy, score)) {
-                    break;
-                }
-            } else { // real last line may update currentWidth
-                if (!HandleLastLine(param, overallScore, currentWidth, score)) {
-                    break;
-                }
-            }
-            // we have exceeded target number of lines, add some penalty
-            if (param.targetLines < 0) {
-                overallScore += param.targetLines * PARAM_10000; // MINIMUM_FILL_RATIO;
-            }
-
-            // We always hold the best possible score of children at this point
-            current_.push_back(currentWidth);
-            cache_[index] = { overallScore, current_ };
-
-            UpdateSolution(bestLocalScore, overallScore, currentBest);
-            looped = true;
-        } while (score > MINIMUM_FILL_RATIO_SQUARED &&
-            !(param.lineNumber == 0 && bestLocalScore > param.targetLines * GOOD_ENOUGH_LINE_SCORE));
-        current_ = currentBest;
-        return bestLocalScore;
-    }
-
-    bool HandleLastLine(RecursiveParam& param, int64_t& overallScore, SkScalar& currentWidth, int64_t&score)
-    {
-        // Handle last line
-        if (abs(currentWidth - param.remainingTextWidth) < 1.f) {
-            // this is last line, with high-quality wrapping, relax the score a bit
-            if (parent_.getLineBreakStrategy() == LineBreakStrategy::HIGH_QUALITY) {
-                overallScore = std::max(MINIMUM_FILL_RATIO, overallScore);
-            } else {
-                overallScore *= BALANCED_LAST_LINE_MULTIPLIER;
-            }
-
-            // let's break the loop, under no same condition / fill-rate added rows can result to a better
-            // score.
-            currentWidth = param.currentMax;
-            score = MINIMUM_FILL_RATIO_SQUARED - 1;
-            LOGD("last line %{public}lu reached", static_cast<unsigned long>(param.lineNumber));
-            return true;
-        }
-        if (((param.remainingTextWidth - currentWidth) / maxWidth_) < param.maxLines) {
-            // recursively calculate best score for children
-            overallScore += CalculateRecursive(RecursiveParam{
-                param.targetLines - 1,
-                param.maxLines > param.lineNumber ? param.maxLines - param.lineNumber : 0,
-                param.lineNumber + 1,
-                param.begin + currentWidth,
-                param.remainingTextWidth - currentWidth
-            });
-            lastBreakPos_ = param.breakPos; // restore our ix
-            return true;
-        }
-
-        // the text is not going to fit anyway (anymore), no need to push it
-        return false;
-    }
-
-    void UpdateSolution(int64_t& bestLocalScore, const int64_t overallScore, std::vector<SkScalar>& currentBest)
-    {
-        if (overallScore > bestLocalScore) {
-            bestLocalScore = overallScore;
-            currentBest = current_;
-        }
-    }
-
-private:
-    struct Index {
-        size_t lineNumber { 0 };
-        SkScalar begin { 0 };
-        SkScalar width { 0 };
-        bool operator==(const Index& other) const
-        {
-            return (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE &&
-                fabs(width - other.width) < WIDTH_TOLERANCE);
-        }
-        bool operator<(const Index& other) const
-        {
-            return lineNumber < other.lineNumber ||
-                (lineNumber == other.lineNumber && other.begin - begin > WIDTH_TOLERANCE) ||
-                (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE &&
-                other.width - width > WIDTH_TOLERANCE);
-        }
-    };
-
-    struct Score {
-        int64_t score { 0 };
-        // in reversed order
-        std::vector<SkScalar> widths;
-    };
-
-    // to be seen if unordered map would be better fit
-    std::map<Index, Score> cache_;
-
-    SkScalar maxWidth_ { 0 };
-    SkScalar currentTarget_ { 0 };
-    SkScalar cumulativeLen_ { 0 };
-    size_t maxLines_ { 0 };
-    ParagraphImpl& parent_;
-    std::vector<SkScalar> current_;
-
-    struct Break {
-        enum class BreakType {
-            BREAKTYPE_NONE,
-            BREAKTYPE_HARD,
-            BREAKTYPE_WHITE_SPACE,
-            BREAKTYPE_INTRA,
-            BREAKTYPE_FORCED,
-            BREAKTYPE_HYPHEN
-        };
-        Break(SkScalar w, BreakType t, bool ssws) : width(w), type(t), subsequentWhitespace(ssws) {}
-
-        SkScalar width { 0.f };
-        BreakType type { BreakType::BREAKTYPE_NONE };
-        bool subsequentWhitespace { false };
-        SkScalar reservedSpace { 0.f };
-    };
-
-    std::vector<Break> breaks_;
-    size_t lastBreakPos_ { 0 };
-
-    uint64_t cacheHits_ { 0 };
-	bool fPrevWasWhitespace{false};
-};
-
-uint64_t TextWrapper::CalculateBestScore(std::vector<SkScalar>& widthOut, SkScalar maxWidth,
-    ParagraphImpl* parent, size_t maxLines) {
-    if (maxLines == 0 || !parent || nearlyZero(maxWidth)) {
-        return -1;
-    }
-
-    TextWrapScorer* scorer = new TextWrapScorer(maxWidth, *parent, maxLines);
-    scorer->Run();
-    while (scorer && scorer->GetResult().size()) {
-        auto width = scorer->GetResult().back();
-        widthOut.push_back(width);
-        LOGD("width %{public}f", width);
-        scorer->GetResult().pop_back();
-    }
-
-    delete scorer;
-    return 0;
-}
-
 void TextWrapper::updateMetricsWithPlaceholder(std::vector<Run*>& runs, bool iterateByCluster) {
     if (!iterateByCluster) {
         Run* lastRun = nullptr;
@@ -919,10 +490,22 @@ void TextWrapper::updateMetricsWithPlaceholder(std::vector<Run*>& runs, bool ite
 void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                                      SkScalar maxWidth,
                                      const AddLineToParagraph& addLine) {
-    fHeight = 0;
-    fMinIntrinsicWidth = std::numeric_limits<SkScalar>::min();
-    fMaxIntrinsicWidth = std::numeric_limits<SkScalar>::min();
+    initParent(parent);
 
+    if (fParent->getLineBreakStrategy() == LineBreakStrategy::BALANCED &&
+        fParent->getWordBreakType() != WordBreakType::BREAK_ALL &&
+        (fParent->getParagraphStyle().getMaxLines() >= MAX_LINES_LIMIT ||
+        fParent->getParagraphStyle().getEllipsisMod() == EllipsisModal::NONE)) {
+        layoutLinesBalanced(parent, maxWidth, addLine);
+        return;
+    }
+
+    layoutLinesSimple(parent, maxWidth, addLine);
+}
+
+void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
+                                     SkScalar maxWidth,
+                                     const AddLineToParagraph& addLine) {
     auto span = parent->clusters();
     if (span.empty()) {
         return;
@@ -936,21 +519,6 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     auto disableFirstAscent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent;
     auto disableLastDescent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
     bool firstLine = true; // We only interested in fist line if we have to disable the first ascent
-
-    // Resolve balanced line widths
-    std::vector<SkScalar> balancedWidths;
-
-    // if word breaking strategy is nontrivial (balanced / optimal), AND word break mode is not BREAK_ALL
-    if (parent->getWordBreakType() != WordBreakType::BREAK_ALL &&
-        parent->getLineBreakStrategy() != LineBreakStrategy::GREEDY) {
-        if (CalculateBestScore(balancedWidths, maxWidth, parent, maxLines) < 0) {
-            // if the line breaking strategy returns a negative score, the algorithm could not fit or break the text
-            // fall back to default, greedy algorithm
-            balancedWidths.clear();
-        }
-        LOGD("Got %{public}lu", static_cast<unsigned long>(balancedWidths.size()));
-    }
-
     SkScalar softLineMaxIntrinsicWidth = 0;
     fEndLine = TextStretch(span.begin(), span.begin(), parent->strutForceHeight() && parent->strutEnabled());
     auto end = span.end() - 1;
@@ -965,8 +533,6 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
             (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD ||
             parent->needCreateMiddleEllipsis())) {
             newWidth = FLT_MAX;
-        } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
-            newWidth = balancedWidths[fLineNumber - 1];
         } else {
             newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
         }
@@ -1193,6 +759,645 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     if (disableLastDescent) {
         parent->lines().back().setDescentStyle(LineMetricStyle::Typographic);
     }
+}
+
+std::vector<uint8_t> TextWrapper::findBreakPositions(Cluster* startCluster,
+                                                     Cluster* endOfClusters,
+                                                     SkScalar widthBeforeCluster,
+                                                     SkScalar maxWidth) {
+    auto startPos = startCluster->textRange().start;
+    auto endPos = startPos;
+    auto owner = startCluster->getOwner();
+    for (auto next = startCluster + 1; next != endOfClusters; next++) {
+        // find the end boundary of current word (hard/soft/whitespace break)
+        if (next->isWhitespaceBreak() || next->isHardBreak()) {
+            break;
+        } else {
+            endPos = next->textRange().end;
+        }
+    }
+
+    // Using end position cluster height as an estimate for reserved hyphen width
+    // hyphen may not be shaped at this point. End pos may be non-drawable, so prefer
+    // previous glyph before break
+    auto mappedEnd = owner->fClustersIndexFromCodeUnit[endPos];
+    auto len = widthBeforeCluster + owner->cluster(mappedEnd > 0 ? mappedEnd - 1 : 0).height();
+    // ToDo: We can stop here based on hyhpenation frequency setting
+    // but there is no need to proceed with hyphenation if we don't have space for even hyphen
+    if (std::isnan(len) || len >= maxWidth) {
+        return std::vector<uint8_t>{};
+    }
+
+    auto locale = owner->paragraphStyle().getTextStyle().getLocale();
+    return Hyphenator::getInstance().findBreakPositions(locale, owner->fText, startPos, endPos);
+}
+
+void TextWrapper::pushToWordVector() {
+    fWordStretches.push_back(fClusters);
+    fClusters.clean();
+}
+
+void TextWrapper::generateLineStretches(const std::vector<std::pair<size_t, size_t>>& linesGroupInfo) {
+    for (const std::pair<size_t, size_t>& pair : linesGroupInfo) {
+        TextStretch endLine{};
+        for (size_t i = pair.first; i <= pair.second; ++i) {
+            if (i == pair.first) {
+                endLine.setStartCluster(fWordStretches[i].startCluster());
+            }
+            endLine.extend(fWordStretches[i]);
+        }
+        fLineStretches.push_back(endLine);
+    }
+}
+
+void TextWrapper::extendCommonCluster(Cluster* cluster, TextTabAlign& textTabAlign,
+    SkScalar& totalFakeSpacing, WordBreakType wordBreakType) {
+    if (cluster->isTabulation()) {
+        if (textTabAlign.processTab(fWords, fClusters, cluster, totalFakeSpacing)) {
+            return;
+        }
+        fClusters.extend(cluster);
+
+        fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
+        pushToWordVector();
+    } else {
+        fClusters.extend(cluster);
+        if (fClusters.endOfWord()) { // Keep adding clusters/words
+            if (textTabAlign.processEndofWord(fWords, fClusters, cluster, totalFakeSpacing)) {
+                if (wordBreakType == WordBreakType::BREAK_ALL) {
+                    fClusters.trim(cluster);
+                }
+                return;
+            }
+
+            fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
+            pushToWordVector();
+        } else {
+            if (textTabAlign.processCluster(fWords, fClusters, cluster, totalFakeSpacing)) {
+                fClusters.trim(cluster);
+                return;
+            }
+        }
+    }
+}
+
+void TextWrapper::generateWordStretches(const SkSpan<Cluster>& span, WordBreakType wordBreakType) {
+    fEndLine.metrics().clean();
+
+    Cluster* start = span.begin();
+    Cluster* end = span.end() - 1;
+
+    fClusters.startFrom(start, start->startPos());
+    fClip.startFrom(start, start->startPos());
+
+    bool isFirstWord = true;
+    TextTabAlign textTabAlign(start->getOwner()->paragraphStyle().getTextTab());
+    textTabAlign.init(MAX_LINES_LIMIT, start);
+
+    SkScalar totalFakeSpacing = 0.0;
+
+    for (Cluster* cluster = start; cluster < end; ++cluster) {
+        totalFakeSpacing += (cluster->needAutoSpacing() && cluster != start)
+                                    ? (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO
+                                    : 0;
+        if (cluster->isHardBreak()) {
+            if (cluster != start) {
+                isFirstWord = false;
+            }
+        }
+
+        if (cluster->isSoftBreak() || cluster->isWhitespaceBreak()) {
+            isFirstWord = false;
+        }
+
+        if (cluster->run().isPlaceholder()) {
+            if (!fClusters.empty()) {
+                // Placeholder ends the previous word (placeholders are ignored in trimming)
+                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
+                pushToWordVector();
+            }
+
+            // Placeholder is separate word and its width now is counted in minIntrinsicWidth
+            fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, cluster->width());
+            fClusters.extend(cluster);
+            pushToWordVector();
+        } else {
+            extendCommonCluster(cluster, textTabAlign, totalFakeSpacing, wordBreakType);
+        }
+
+        if ((fHardLineBreak = cluster->isHardBreak())) {
+            fClusters.extend(cluster);
+            pushToWordVector();
+        }
+    }
+}
+
+SkScalar TextWrapper::getTextStretchTrimmedEndSpaceWidth(const TextStretch& stretch) {
+    SkScalar width = stretch.width();
+    for (Cluster* cluster = stretch.endCluster(); cluster >= stretch.startCluster(); --cluster) {
+        if (nearlyEqual(cluster->width(), 0) && cluster->run().isPlaceholder()) {
+            continue;
+        }
+
+        if (!cluster->isWhitespaceBreak()) {
+            break;
+        }
+        width -= cluster->width();
+    }
+    return width;
+}
+
+void calculateCostTable(const std::vector<SkScalar>& clustersWidth,
+                        SkScalar maxWidth,
+                        std::vector<SkScalar>& costTable,
+                        std::vector<std::pair<size_t, size_t>>& bestPick) {
+    int clustersCnt = clustersWidth.size();
+    for (int clustersIndex = clustersCnt - STRATEGY_START_POS; clustersIndex >= 0;
+         clustersIndex--) {
+        bestPick[clustersIndex].first = clustersIndex;
+        SkScalar rowCurrentLen = 0;
+        std::vector<SkScalar> costList;
+
+        int maxWord = clustersIndex;
+        for (int j = clustersIndex; j < clustersCnt; j++) {
+            rowCurrentLen += clustersWidth[j];
+            if (rowCurrentLen > maxWidth) {
+                rowCurrentLen -= clustersWidth[j];
+                maxWord = j - 1;
+                break;
+            }
+            maxWord = j;
+        }
+        if (maxWord < clustersIndex) {
+            maxWord = clustersIndex;
+        }
+
+        for (int j = clustersIndex; j <= maxWord; ++j) {
+            SkScalar cost = std::pow(std::abs(std::accumulate(clustersWidth.begin() + clustersIndex,
+                                                              clustersWidth.begin() + j + 1,
+                                                              0) -
+                                              maxWidth),
+                                     STRATEGY_START_POS);
+            if (j + 1 <= clustersCnt - 1) {
+                cost += costTable[j + 1];
+            }
+            costList.push_back(cost);
+        }
+
+        SkScalar minCost = *std::min_element(costList.begin(), costList.end());
+        std::vector<size_t> minCostIndices;
+        for (size_t q = 0; q < costList.size(); ++q) {
+            if (nearlyZero(costList[q], minCost)) {
+                minCostIndices.push_back(q);
+            }
+        }
+        size_t minCostIdx{0};
+        minCostIdx = minCostIndices[static_cast<int32_t>(minCostIndices.size() / MIN_COST_POS)];
+        costTable[clustersIndex] = minCost;
+        bestPick[clustersIndex].second = clustersIndex + minCostIdx;
+    }
+}
+
+std::vector<std::pair<size_t, size_t>> buildWordBalance(
+        const std::vector<std::pair<size_t, size_t>>& bestPick, int clustersCnt) {
+    int rowStart{0};
+    std::vector<std::pair<size_t, size_t>> wordBalance;
+
+    while (rowStart < clustersCnt) {
+        int rowEnd = bestPick[rowStart].second;
+        wordBalance.emplace_back(rowStart, rowEnd);
+        rowStart = rowEnd + 1;
+    }
+    return wordBalance;
+}
+
+std::vector<std::pair<size_t, size_t>> TextWrapper::generateLinesGroupInfo(
+        const std::vector<SkScalar>& clustersWidth, SkScalar maxWidth) {
+    std::vector<std::pair<size_t, size_t>> wordBalance;
+    if (clustersWidth.empty()) {
+        return wordBalance;
+    }
+    int clustersCnt = clustersWidth.size();
+    std::vector<SkScalar> costTable(clustersCnt, 0);
+    std::vector<std::pair<size_t, size_t>> bestPick(clustersCnt, {0, 0});
+
+    costTable[clustersCnt - 1] =
+            std::pow(std::abs(clustersWidth[clustersCnt - 1] - maxWidth), STRATEGY_START_POS);
+    bestPick[clustersCnt - 1] = {clustersCnt - 1, clustersCnt - 1};
+
+    calculateCostTable(clustersWidth, maxWidth, costTable, bestPick);
+
+    return buildWordBalance(bestPick, clustersCnt);
+}
+
+std::vector<SkScalar> TextWrapper::generateWordsWidthInfo() {
+    std::vector<SkScalar> result;
+    result.reserve(fWordStretches.size());
+    std::transform(fWordStretches.begin(),
+                   fWordStretches.end(),
+                   std::back_inserter(result),
+                   [](const TextStretch& word) { return word.width(); });
+    return result;
+}
+
+void TextWrapper::formalizedClusters(std::vector<TextStretch>& clusters, SkScalar limitWidth) {
+    for (auto it = clusters.begin(); it != clusters.end(); it++) {
+        if (it->width() < limitWidth) {
+            continue;
+        }
+        std::list<TextStretch> trimmedWordList{*it};
+
+        for (auto trimmedItor = trimmedWordList.begin(); trimmedItor != trimmedWordList.end();) {
+            if (trimmedItor->width() < limitWidth) {
+                continue;
+            }
+            auto result = trimmedItor->split();
+            trimmedItor = trimmedWordList.erase(trimmedItor);
+            trimmedItor = trimmedWordList.insert(trimmedItor, result.begin(), result.end());
+            std::advance(trimmedItor, result.size());
+        }
+
+        if (trimmedWordList.size() == 0) {
+            continue;
+        }
+
+        it = clusters.erase(it);
+        it = clusters.insert(it, trimmedWordList.begin(), trimmedWordList.end());
+        std::advance(it, trimmedWordList.size() - 1);
+    }
+}
+
+void TextWrapper::generateTextLines(SkScalar maxWidth,
+                                    const AddLineToParagraph& addLine,
+                                    const SkSpan<Cluster>& span) {
+    initializeFormattingState(maxWidth, span);
+    processLineStretches(maxWidth, addLine);
+    finalizeTextLayout(addLine);
+}
+
+void TextWrapper::initializeFormattingState(SkScalar maxWidth, const SkSpan<Cluster>& span) {
+    const auto& style = fParent->paragraphStyle();
+    fFormattingContext = {style.getMaxLines() == std::numeric_limits<size_t>::max(),
+                          !SkScalarIsFinite(maxWidth),
+                          style.ellipsized(),
+                          style.getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent,
+                          style.getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent,
+                          style.getMaxLines(),
+                          style.effective_align()};
+
+    fFirstLine = true;
+    fSoftLineMaxIntrinsicWidth = 0;
+    fNoIndentWidth = maxWidth;
+    fEnd = span.end() - 1;
+    fStart = span.begin();
+}
+
+void TextWrapper::processLineStretches(SkScalar maxWidth, const AddLineToParagraph& addLine) {
+    for (TextStretch& line : fLineStretches) {
+        prepareLineForFormatting(line, maxWidth);
+        formatCurrentLine(addLine);
+
+        if (shouldBreakFormattingLoop()) {
+            break;
+        }
+        advanceToNextLine();
+    }
+}
+
+void TextWrapper::finalizeTextLayout(const AddLineToParagraph& addLine) {
+    processRemainingClusters();
+    addFinalLineBreakIfNeeded(addLine);
+    adjustFirstLastLineMetrics();
+
+    if (fParent->paragraphStyle().getIsEndAddParagraphSpacing() &&
+        fParent->paragraphStyle().getParagraphSpacing() > 0) {
+        fHeight += fParent->paragraphStyle().getParagraphSpacing();
+    }
+}
+
+void TextWrapper::prepareLineForFormatting(TextStretch& line, SkScalar maxWidth) {
+    fEndLine = std::move(line);
+    fNoIndentWidth = maxWidth - fParent->detectIndents(fLineNumber - 1);
+}
+
+void TextWrapper::formatCurrentLine(const AddLineToParagraph& addLine) {
+    bool needEllipsis = determineIfEllipsisNeeded();
+    trimLineSpaces();
+    handleSpecialCases(needEllipsis);
+    updateLineMetrics();
+    addFormattedLineToParagraph(addLine, needEllipsis);
+}
+
+bool TextWrapper::determineIfEllipsisNeeded() {
+    bool lastLine = (fFormattingContext.hasEllipsis && fFormattingContext.unlimitedLines) ||
+                    fLineNumber >= fFormattingContext.maxLines;
+    bool needEllipsis =
+            fFormattingContext.hasEllipsis && !fFormattingContext.endlessLine && lastLine;
+
+    if (fLineStretches.size() > fFormattingContext.maxLines) {
+        needEllipsis = true;
+    }
+
+    if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
+        fFormattingContext.hasEllipsis) {
+        needEllipsis = fFormattingContext.maxLines <= 1;
+        if (needEllipsis) {
+            fHardLineBreak = false;
+        }
+    }
+
+    return needEllipsis;
+}
+
+void TextWrapper::trimLineSpaces() {
+    this->trimEndSpaces(fFormattingContext.align);
+    std::tie(fCurrentStartLine, fCurrentStartPos, fCurrentLineWidthWithSpaces) =
+            this->trimStartSpaces(fEnd);
+}
+
+void TextWrapper::handleSpecialCases(bool needEllipsis) {
+    if (needEllipsis && !fHardLineBreak) {
+        fEndLine.restoreBreak();
+        fCurrentLineWidthWithSpaces = fEndLine.widthWithGhostSpaces();
+    } else if (fBrokeLineWithHyphen) {
+        fEndLine.shiftWidth(fEndLine.endCluster()->width());
+    }
+}
+
+void TextWrapper::updateLineMetrics() {
+    if (fEndLine.metrics().isClean()) {
+        fEndLine.setMetrics(fParent->getEmptyMetrics());
+    }
+    updatePlaceholderMetrics();
+    adjustLineMetricsForFirstLastLine();
+    applyStrutMetrics();
+}
+
+void TextWrapper::updatePlaceholderMetrics() {
+    std::vector<Run*> runs;
+    updateMetricsWithPlaceholder(runs, true);
+    updateMetricsWithPlaceholder(runs, false);
+    fMaxRunMetrics = fEndLine.metrics();
+    fMaxRunMetrics.fForceStrut = false;
+}
+
+void TextWrapper::adjustLineMetricsForFirstLastLine() {
+    if (fFormattingContext.disableFirstAscent && fFirstLine) {
+        fEndLine.metrics().fAscent = fEndLine.metrics().fRawAscent;
+    }
+    if (fFormattingContext.disableLastDescent && isLastLine()) {
+        fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
+    }
+}
+
+void TextWrapper::applyStrutMetrics() {
+    if (fParent->strutEnabled()) {
+        fParent->strutMetrics().updateLineMetrics(fEndLine.metrics());
+    }
+}
+
+TextWrapper::LineTextRanges TextWrapper::calculateLineTextRanges() {
+    LineTextRanges ranges;
+
+    ranges.textExcludingSpaces = TextRange(fEndLine.startCluster()->textRange().start,
+                                           fEndLine.endCluster()->textRange().end);
+
+    ranges.text = TextRange(fEndLine.startCluster()->textRange().start,
+                            fEndLine.breakCluster()->textRange().start);
+
+    ranges.textIncludingNewlines = TextRange(fEndLine.startCluster()->textRange().start,
+                                             fCurrentStartLine->textRange().start);
+
+    if (fCurrentStartLine == fEnd) {
+        ranges.textIncludingNewlines.end = fParent->text().size();
+        ranges.text.end = fParent->text().size();
+    }
+
+    ranges.clusters =
+            ClusterRange(fEndLine.startCluster() - fStart, fEndLine.endCluster() - fStart + 1);
+
+    ranges.clustersWithGhosts =
+            ClusterRange(fEndLine.startCluster() - fStart, fCurrentStartLine - fStart);
+
+    if (fEndLine.empty()) {
+        ranges.textExcludingSpaces.end = ranges.textExcludingSpaces.start;
+        ranges.clusters.end = ranges.clusters.start;
+    }
+
+    ranges.text.end = std::max(ranges.text.end, ranges.textExcludingSpaces.end);
+
+    return ranges;
+}
+
+SkScalar TextWrapper::calculateLineHeight() {
+    SkScalar height = fEndLine.metrics().height();
+    if (fHardLineBreak && !isLastLine() && fParent->paragraphStyle().getParagraphSpacing() > 0) {
+        height += fParent->paragraphStyle().getParagraphSpacing();
+    }
+    return height;
+}
+
+void TextWrapper::addFormattedLineToParagraph(const AddLineToParagraph& addLine,
+                                              bool needEllipsis) {
+    LineTextRanges ranges = calculateLineTextRanges();
+    SkScalar lineHeight = calculateLineHeight();
+    SkScalar offsetX = fParent->detectIndents(fLineNumber - 1);
+
+    addLine(ranges.textExcludingSpaces,
+            ranges.text,
+            ranges.textIncludingNewlines,
+            ranges.clusters,
+            ranges.clustersWithGhosts,
+            fCurrentLineWidthWithSpaces,
+            fEndLine.startPos(),
+            fEndLine.endPos(),
+            SkVector::Make(offsetX, fHeight),
+            SkVector::Make(fEndLine.width(), lineHeight),
+            fEndLine.metrics(),
+            needEllipsis,
+            offsetX,
+            fNoIndentWidth);
+
+    updateIntrinsicWidths();
+}
+
+void TextWrapper::updateIntrinsicWidths() {
+    fSoftLineMaxIntrinsicWidth += fCurrentLineWidthWithSpaces;
+    fMaxIntrinsicWidth = std::max(fMaxIntrinsicWidth, fSoftLineMaxIntrinsicWidth);
+    if (fHardLineBreak) {
+        fSoftLineMaxIntrinsicWidth = 0;
+    }
+}
+
+bool TextWrapper::shouldBreakFormattingLoop() {
+    if (fFormattingContext.hasEllipsis && fFormattingContext.unlimitedLines) {
+        if (!fHardLineBreak) {
+            return true;
+        }
+    } else if (isLastLine()) {
+        fHardLineBreak = false;
+        return true;
+    }
+    return false;
+}
+
+bool TextWrapper::isLastLine() const { return fLineNumber >= fFormattingContext.maxLines; }
+
+void TextWrapper::advanceToNextLine() {
+    fHeight += calculateLineHeight();
+    prepareForNextLine();
+    ++fLineNumber;
+    fFirstLine = false;
+}
+
+void TextWrapper::prepareForNextLine() {
+    if (!fHardLineBreak || fCurrentStartLine != fEnd) {
+        fEndLine.clean();
+    }
+    fEndLine.startFrom(fCurrentStartLine, fCurrentStartPos);
+    fParent->fMaxWidthWithTrailingSpaces =
+            std::max(fParent->fMaxWidthWithTrailingSpaces, fCurrentLineWidthWithSpaces);
+}
+
+void TextWrapper::processRemainingClusters() {
+    if (fEndLine.endCluster() == nullptr) {
+        return;
+    }
+
+    float lastWordLength = 0.0f;
+    auto cluster = fEndLine.endCluster();
+
+    while (cluster != fEnd || cluster->endPos() < fEnd->endPos()) {
+        fExceededMaxLines = true;
+
+        if (cluster->isHardBreak()) {
+            handleHardBreak(lastWordLength);
+        } else if (cluster->isWhitespaceBreak()) {
+            handleWhitespaceBreak(cluster, lastWordLength);
+        } else if (cluster->run().isPlaceholder()) {
+            handlePlaceholder(cluster, lastWordLength);
+        } else {
+            handleRegularCluster(cluster, lastWordLength);
+        }
+
+        ++cluster;
+    }
+
+    fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, lastWordLength);
+    fMaxIntrinsicWidth = std::max(fMaxIntrinsicWidth, fSoftLineMaxIntrinsicWidth);
+
+    if (fParent->lines().empty()) {
+        adjustMetricsForEmptyParagraph();
+        fHeight = std::max(fHeight, fEndLine.metrics().height());
+    }
+}
+
+void TextWrapper::handleHardBreak(float& lastWordLength) {
+    fMaxIntrinsicWidth = std::max(fMaxIntrinsicWidth, fSoftLineMaxIntrinsicWidth);
+    fSoftLineMaxIntrinsicWidth = 0;
+    fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, lastWordLength);
+    lastWordLength = 0;
+}
+
+void TextWrapper::handleWhitespaceBreak(Cluster* cluster, float& lastWordLength) {
+    fSoftLineMaxIntrinsicWidth += cluster->width();
+    fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, lastWordLength);
+    lastWordLength = 0;
+}
+
+void TextWrapper::handlePlaceholder(Cluster* cluster, float& lastWordLength) {
+    fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, lastWordLength);
+    fSoftLineMaxIntrinsicWidth += cluster->width();
+    fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, cluster->width());
+    lastWordLength = 0;
+}
+
+void TextWrapper::handleRegularCluster(Cluster* cluster, float& lastWordLength) {
+    fSoftLineMaxIntrinsicWidth += cluster->width();
+    lastWordLength += cluster->width();
+}
+
+void TextWrapper::adjustMetricsForEmptyParagraph() {
+    if (fFormattingContext.disableFirstAscent) {
+        fEndLine.metrics().fAscent = fEndLine.metrics().fRawAscent;
+    }
+    if (fFormattingContext.disableLastDescent && !fHardLineBreak) {
+        fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
+    }
+}
+
+void TextWrapper::addFinalLineBreakIfNeeded(const AddLineToParagraph& addLine) {
+    if (!fHardLineBreak) {
+        return;
+    }
+
+    if (fFormattingContext.disableLastDescent) {
+        fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
+    }
+
+    if (fParent->strutEnabled()) {
+        fParent->strutMetrics().updateLineMetrics(fEndLine.metrics());
+    }
+
+    ClusterRange clusters(fEndLine.breakCluster() - fStart, fEndLine.endCluster() - fStart);
+
+    addLine(fEndLine.breakCluster()->textRange(),
+            fEndLine.breakCluster()->textRange(),
+            fEndLine.endCluster()->textRange(),
+            clusters,
+            clusters,
+            0,
+            0,
+            0,
+            SkVector::Make(0, fHeight),
+            SkVector::Make(0, fEndLine.metrics().height()),
+            fEndLine.metrics(),
+            false,
+            fParent->detectIndents(fLineNumber - 1),
+            fNoIndentWidth);
+
+    fHeight += fEndLine.metrics().height();
+    fParent->lines().back().setMaxRunMetrics(fMaxRunMetrics);
+}
+
+void TextWrapper::adjustFirstLastLineMetrics() {
+    if (fParent->lines().empty()) {
+        return;
+    }
+
+    if (fFormattingContext.disableFirstAscent) {
+        fParent->lines().front().setAscentStyle(LineMetricStyle::Typographic);
+    }
+
+    if (fFormattingContext.disableLastDescent) {
+        fParent->lines().back().setDescentStyle(LineMetricStyle::Typographic);
+    }
+}
+
+void TextWrapper::layoutLinesBalanced(ParagraphImpl* parent,
+                                      SkScalar maxWidth,
+                                      const AddLineToParagraph& addLine) {
+    reset();
+    SkSpan<Cluster> span = parent->clusters();
+    if (span.empty()) {
+        return;
+    }
+
+    // Generate word stretches
+    generateWordStretches(span, parent->getWordBreakType());
+
+    // Trimming a word that is longer than the line width
+    formalizedClusters(fWordStretches, maxWidth);
+
+    std::vector<SkScalar> clustersWidthVector = generateWordsWidthInfo();
+
+    // Execute the balancing algorithm to generate line grouping information
+    std::vector<std::pair<size_t, size_t>> linesGroupInfo =
+            generateLinesGroupInfo(clustersWidthVector, maxWidth);
+
+    generateLineStretches(linesGroupInfo);
+
+    generateTextLines(maxWidth, addLine, span);
 }
 #else
 // Since we allow cluster clipping when they don't fit
