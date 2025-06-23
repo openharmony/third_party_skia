@@ -4592,6 +4592,9 @@ ohos_static_library("sksl_ext_static") {
       deps -= [ ":fontmgr_ohos" ]
       deps += [ "//third_party/bounds_checking_function:libsec_static" ]
     }
+    if (!use_oh_skia) {
+      deps -= [ "${skia_root_dir}:fontmgr_ohos" ] 
+    }
 
     public = skia_core_public
     public += skia_codec_public

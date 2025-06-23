@@ -185,6 +185,7 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_enable_skunicode &&
           (skia_use_icu || skia_use_libgrapheme || skia_use_icu4x)) {
         testonly = true
         sources = [ "gm/simple_gm.cpp" ]
+        include_dirs = [ "${skia_root_dir}" ]
         if (use_oh_skia) {
           deps = [
             ":skparagraph",
@@ -208,6 +209,8 @@ if (skia_enable_skparagraph && skia_enable_skshaper && skia_enable_skunicode &&
       if (paragraph_tests_enabled &&
           (skia_use_icu || skia_use_libgrapheme || skia_use_icu4x)) {
         testonly = true
+
+        include_dirs = [ "${skia_root_dir}" ]
         sources = skparagraph_tests
         if (is_ohos) {
           external_deps = [ "hitrace:hitrace_meter" ]

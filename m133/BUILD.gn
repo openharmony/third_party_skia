@@ -84,12 +84,14 @@ config("skia_public") {
   defines = [
     "SK_CODEC_DECODES_BMP",
     "SK_CODEC_DECODES_WBMP",
-    "ENABLE_TEXT_ENHANCE",
     "USE_M133_SKIA",
     "TODO_M133_SKIA",
   ]
   if (defined(skia_ohos_debug) && skia_ohos_debug) {
     defines += [ "SKIA_OHOS_DEBUG" ]
+  }
+  if (use_oh_skia) {
+    defines += [ "ENABLE_TEXT_ENHANCE" ]
   }
   cflags_objcc = []
   if (is_ohos && (target_cpu == "arm" || target_cpu == "arm64")) {
@@ -1462,7 +1464,7 @@ optional("gpu") {
           "src/gpu/ganesh/gl/egl/GrGLMakeEGLInterface.cpp",
           "src/gpu/ganesh/gl/egl/GrGLMakeNativeInterface_egl.cpp",
         ]
-        if (use_oh_skia) {
+        if (is_ohos) {
           external_deps = [
             "egl:libEGL",
             "graphic_2d:EGL",
@@ -3233,7 +3235,13 @@ if (skia_enable_tools) {
       if (is_ohos) {
         sources += [ "${skia_root_dir}/src/ports/SkDebug_ohos.cpp" ]
         sources += skia_skottie_sources
-        external_deps = [ "hilog:libhilog" ]
+        external_deps = [
+          "bounds_checking_function:libsec_shared",
+          "faultloggerd:libbacktrace_local",
+          "hilog:libhilog",
+          "hitrace:hitrace_meter",
+          "init:libbegetutil",
+        ]
         deps += [ "modules/sksg" ]
       }
     }

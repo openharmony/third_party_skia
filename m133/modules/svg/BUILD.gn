@@ -10,14 +10,12 @@ if (skia_enable_svg && skia_use_expat) {
   config("public_config") {
     defines = [ "SK_ENABLE_SVG" ]
     include_dirs = [ "include" ]
-    if (use_oh_skia) {
-      include_dirs += [
-        "${skia_root_dir}",
-        "${skia_modules_dir}/svg/include",
-        "${skia_modules_dir}/skresources/include",
-        "${skia_modules_dir}/skshaper/include",
-      ]
-    }
+    include_dirs += [
+      "${skia_root_dir}",
+      "${skia_modules_dir}/svg/include",
+      "${skia_modules_dir}/skresources/include",
+      "${skia_modules_dir}/skshaper/include",
+    ]
   }
 
   ohos_source_set("svg") {
@@ -27,14 +25,7 @@ if (skia_enable_svg && skia_use_expat) {
     public = skia_svg_public
     sources = skia_svg_sources
     configs = [ "../../:skia_private" ]
-    if (!use_oh_skia) {
-      deps = [
-        "../..:skia",
-        "../skresources",
-        "../skshaper",
-        "../skunicode",
-      ]
-    } else {
+    if (use_oh_skia) {
       configs += [ "../../:skia_wno" ]
     }
   }

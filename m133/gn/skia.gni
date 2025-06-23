@@ -118,7 +118,7 @@ declare_args() {
 }
 
 declare_args() {
-  gm_test_enable_font = false
+  gm_test_enable_font = true
 }
 
 declare_args() {
@@ -173,6 +173,7 @@ declare_args() {
 declare_args() {
   skia_enable_fontmgr_android = skia_use_expat && skia_use_freetype
   skia_enable_fontmgr_android_ndk = is_android && skia_use_freetype
+  skia_enable_fontmgr_ohos = false
   if (use_oh_skia) {
     skia_enable_fontmgr_ohos = true
   }
