@@ -101,6 +101,9 @@ config("skia_public") {
   if (is_component_build) {
     defines += [ "SKIA_DLL" ]
   }
+  if (is_arkui_x && defined(is_android) && is_android) {
+    defines += [ "SK_BUILD_FOR_ANDROID" ]
+  }
   if (is_fuchsia || is_linux) {
     defines += [ "SK_R32_SHIFT=16" ]
   }
@@ -179,9 +182,10 @@ config("skia_public") {
 
 # Skia internal APIs, used by Skia itself and a few test tools.
 config("skia_private") {
-  # visibility = [ "./*" ]
-
-  cflags = [ "-Wno-format" ]
+  visibility = [ "./*", "../*" ]
+  cflags = [
+    "-Wno-format",
+  ]
 
   cflags_cc = [
     "-Wno-array-parameter",
@@ -370,9 +374,10 @@ config("harfbuzz_config") {
 }
 
 config("icu_config") {
-  include_dirs = [ "${skia_third_party_dir}/externals/icu/source/common" ]
   if (is_arkui_x) {
     include_dirs = [ "//third_party/icu/icu4c/source/common" ]
+  } else {
+    include_dirs = [ "${skia_third_party_dir}/externals/icu/source/common" ]
   }
 }
 
@@ -490,7 +495,6 @@ optional("android_utils") {
 
 optional("fontmgr_android") {
   enabled = skia_enable_fontmgr_android
-
   deps = [
     ":typeface_freetype",
     ":typeface_proxy",
@@ -503,6 +507,20 @@ optional("fontmgr_android") {
   public_defines = [ "SK_FONTMGR_ANDROID_AVAILABLE" ]
   public = skia_ports_fontmgr_android_public
   sources = skia_ports_fontmgr_android_sources
+  if (is_arkui_x) {
+    defines = [ "CROSS_PLATFORM" ]
+    deps += [
+      "//third_party/bounds_checking_function:libsec_static",
+      "//third_party/jsoncpp:jsoncpp_static",
+    ]
+    include_dirs = [
+      "//third_party/jsoncpp/include",
+      "${skia_root_dir}/src/ports/skia_ohos",
+    ]
+    if (is_arkui_x) {
+      sources += [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
+    }
+  }
   sources_for_tests = [ "tests/FontMgrAndroidParserTest.cpp" ]
 }
 
@@ -710,16 +728,34 @@ optional("fontmgr_fuchsia") {
 
 optional("fontmgr_mac_ct") {
   enabled = skia_use_fonthost_mac
-
+  defines = []
+  deps = []
+  if (is_arkui_x) {
+    deps += [
+      "//third_party/bounds_checking_function:libsec_static",
+      "//third_party/jsoncpp:jsoncpp_static",
+    ]
+    defines += [ "CROSS_PLATFORM" ]
+    include_dirs = [
+      "//third_party/jsoncpp/include",
+      "${skia_root_dir}/skia/src/ports/skia_ohos",
+    ]
+  }
   public_defines = [
     "SK_TYPEFACE_FACTORY_CORETEXT",
     "SK_FONTMGR_CORETEXT_AVAILABLE",
   ]
   public = skia_ports_fontmgr_coretext_public
   sources = skia_ports_fontmgr_coretext_sources
+  if (is_arkui_x) {
+    sources += [
+      "src/ports/SkFontMgr_android_parser.cpp",
+      "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp",
+    ]
+  }
   sources_for_tests = [ "tests/TypefaceMacTest.cpp" ]
 
-  if (use_oh_skia) {
+  if (use_oh_skia && !is_arkui_x) {
     # Use hos font
     sources += [
       "${skia_root_dir}/src/ports/SkFontMgr_config_parser.cpp",
@@ -728,9 +764,11 @@ optional("fontmgr_mac_ct") {
       "${skia_root_dir}/src/ports/SkFontMgr_preview.h",
     ]
 
-    defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
-    external_deps = [ "jsoncpp:jsoncpp" ]
-    deps = [
+    defines += [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
+    if (!is_arkui_x) {
+      external_deps = [ "jsoncpp:jsoncpp" ]
+    }
+    deps += [
       ":fontmgr_symbol_load",
     ]
   }
@@ -2595,18 +2633,22 @@ if (skia_enable_tools) {
 
   test_lib("gpu_tool_utils") {
     public_defines = []
-
+    public_deps = []
     # Bots and even devs may not have Vulkan headers, so put
     # include/third_party/vulkan on our path so they're always available.
     configs = [ ":use_skia_vulkan_headers" ]
-    external_deps = [ "vulkan-headers:vulkan_headers" ]
+    if (is_ios || is_android) {
+      public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
+    } else {
+      external_deps = [ "vulkan-headers:vulkan_headers" ]
+    }
+    
     defines = []
     if (skia_enable_discrete_gpu) {
       defines += [ "SK_ENABLE_DISCRETE_GPU" ]
     }
 
     deps = [ ":load_dynamic_library" ]
-    public_deps = []
     sources = [
       "tools/gpu/BackendSurfaceFactory.cpp",
       "tools/gpu/BackendSurfaceFactory.h",
@@ -3112,7 +3154,11 @@ if (skia_enable_tools) {
     test_app("imgcvt") {
       sources = [ "tools/imgcvt.cpp" ]
       configs = [ ":use_skia_vulkan_headers" ]
-      external_deps = [ "vulkan-headers:vulkan_headers" ]
+      if (is_ios || is_android) {
+        public_deps = [ "//third_party/vulkan-headers:vulkan_headers" ]
+      } else {
+        external_deps = [ "vulkan-headers:vulkan_headers" ]
+      }
       deps = [
         ":skia",
         "modules/skcms",

@@ -254,6 +254,11 @@ std::unique_ptr<Paragraph> ParagraphBuilderImpl::Build() {
     }
 #endif
 
+#if defined(SK_UNICODE_ICU_IMPLEMENTATION)
+    if (!fUnicode) {
+        fUnicode = get_unicode();
+    }
+#endif
     SkASSERT_RELEASE(fUnicode);
     return std::make_unique<ParagraphImpl>(
             fUtf8, fParagraphStyle, fStyledBlocks, fPlaceholders, fFontCollection, fUnicode);

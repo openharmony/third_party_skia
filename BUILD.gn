@@ -4433,7 +4433,7 @@ ohos_static_library("sksl_ext_static") {
   skia_component("skia") {
   }
   import("${skia_modules_dir}/skcms/skcms.gni")
-  static_library("skcms") {
+  skia_source_set("skcms") {
     cflags = []
     if (!is_win || is_clang) {
       cflags += [ "-std=c11" ]
@@ -4475,6 +4475,10 @@ ohos_static_library("sksl_ext_static") {
       ]
 
       if (is_arkui_x) {
+        public_configs += [
+          "${skia_root_dir}:harfbuzz_config",
+          "${skia_root_dir}:icu_config",
+        ]
         public_deps = [ ":skia_canvaskit_static" ]
       } else {
         public_deps = [ ":skia_canvaskit" ]
@@ -4589,7 +4593,8 @@ ohos_static_library("sksl_ext_static") {
     ]
 
     if (is_arkui_x) {
-      deps -= [ ":fontmgr_ohos" ]
+      deps -= [ "${skia_root_dir}:fontmgr_ohos", ]
+
       deps += [ "//third_party/bounds_checking_function:libsec_static" ]
     }
 
@@ -4643,6 +4648,9 @@ ohos_static_library("sksl_ext_static") {
     }
     if (skia_use_no_webp_encode) {
       sources += skia_no_encode_webp_srcs
+    }
+    if (is_arkui_x) {
+      defines += [ "ARKUI_X_ENABLE" ]
     }
 
     if (is_win) {
@@ -4862,6 +4870,7 @@ ohos_static_library("sksl_ext_static") {
       "${skia_root_dir}:skia_public",
       ":skia_config",
     ]
+
     configs = skia_library_configs
     deps = [
       "${skia_root_dir}:fontmgr_FontConfigInterface",
@@ -4901,7 +4910,7 @@ ohos_static_library("sksl_ext_static") {
       "${skia_root_dir}:webp_decode",
       "${skia_root_dir}:wuffs",
       "${skia_root_dir}:xml",
-      "${skia_modules_dir}/skcms",
+      "//third_party/skia:skcms",
       "${skia_modules_dir}/svg",
       "${skia_modules_dir}/skshaper",
       "${skia_modules_dir}/skunicode",
@@ -4961,6 +4970,10 @@ ohos_static_library("sksl_ext_static") {
     sources += [ "${skia_root_dir}/src/ports/SkOSFile_posix.cpp" ]
     if (is_ios) {
       sources += [ "${skia_root_dir}/src/ports/SkOSFile_ios.h" ]
+      deps += [
+        "${skia_root_dir}:fontmgr_mac_ct_factory",
+        "${skia_root_dir}:fontmgr_mac_ct"
+      ]
     }
 
     if (is_ohos) {
@@ -4970,11 +4983,19 @@ ohos_static_library("sksl_ext_static") {
     }
 
     if (is_android) {
-      deps += [ "${skia_third_party_dir}/expat" ]
+      if (use_new_skia) { 
+        deps += [ "${skia_third_party_dir}/expat:expatm133" ]
+      } else {
+        deps += [ "${skia_third_party_dir}/expat" ]
+      }
       if (defined(ndk) && ndk != "") {
         deps += [ "${skia_third_party_dir}/cpu-features" ]
       }
       sources += [ "${skia_root_dir}/src/ports/SkDebug_android.cpp" ]
+      deps += [
+        "${skia_root_dir}:fontmgr_android_factory",
+        "${skia_root_dir}:fontmgr_android"
+      ]
       libs += [
         "EGL",
         "GLESv2",

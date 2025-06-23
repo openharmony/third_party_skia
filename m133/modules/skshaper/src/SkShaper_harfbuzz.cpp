@@ -1660,6 +1660,9 @@ static sk_sp<SkUnicode> get_unicode() {
     return nullptr;
 }
 
+#ifdef ENABLE_DRAWING_ADAPTER
+namespace SkiaRsText {
+#endif
 std::unique_ptr<SkShaper::ScriptRunIterator>
 SkShaper::MakeHbIcuScriptRunIterator(const char* utf8, size_t utf8Bytes) {
     return SkShapers::HB::ScriptRunIterator(utf8, utf8Bytes);
@@ -1770,3 +1773,6 @@ void PurgeCaches() {
     cache.reset();
 }
 }  // namespace SkShapers::HB
+#ifdef ENABLE_DRAWING_ADAPTER
+} // namespace SkiaRsText
+#endif // ENABLE_DRAWING_ADAPTER
