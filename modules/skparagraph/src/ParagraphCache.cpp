@@ -174,6 +174,7 @@ uint32_t hash = 0;
         hash = mix(hash, SkGoodHash()(ts.fRange));
 #ifdef OHOS_SUPPORT
         hash = mix(hash, SkGoodHash()(ts.fStyle.getTextBadgeType()));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getTotalVerticalShift())));
 #endif
     }
 

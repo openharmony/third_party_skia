@@ -20,6 +20,10 @@
 #include <limits>
 #include <tuple>
 
+#ifdef OHOS_SUPPORT
+#include "modules/skparagraph/include/ParagraphStyle.h"
+#endif
+
 class SkTextBlobBuilder;
 
 namespace skia {
@@ -174,6 +178,7 @@ public:
     void extendClusterWidth(Cluster* cluster, SkScalar space);
     bool isTrailingSpaceIncluded(const ClusterRange& fTextLineClusterRange,
         const ClusterRange& fTextLineGhostClusterRange) const;
+    void updatePlaceholderAlignmentIfNeeded(PlaceholderAlignment& alignment, TextVerticalAlign paragraphAlignment);
 #endif
     SkScalar calculateHeight(LineMetricStyle ascentStyle, LineMetricStyle descentStyle) const {
         auto ascent = ascentStyle == LineMetricStyle::Typographic ? this->ascent()

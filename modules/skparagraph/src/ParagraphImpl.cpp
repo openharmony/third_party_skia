@@ -491,6 +491,10 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 #ifdef OHOS_SUPPORT
     TEXT_TRACE_FUNC();
+    // Reset all text style vertical shift
+    for (Block& block : fTextStyles) {
+        block.fStyle.setVerticalAlignShift(0.0);
+    }
 #endif
     for (auto& line : fLines) {
 #ifdef OHOS_SUPPORT

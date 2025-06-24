@@ -309,8 +309,9 @@ public:
 #ifdef OHOS_SUPPORT
     void setFontFamilies(std::vector<SkString> families);
 
-    SkScalar getBaselineShift() const { return fBaselineShift + getBadgeBaseLineShift() + getVerticalAlignShift(); }
+    SkScalar getBaselineShift() const { return fBaselineShift; }
     SkScalar getVerticalAlignShift() const { return fVerticalAlignShift; };
+    SkScalar getTotalVerticalShift() const { return fBaselineShift + fVerticalAlignShift + getBadgeBaseLineShift(); }
     void setVerticalAlignShift(SkScalar shift) { fVerticalAlignShift = shift; }
 #else
     void setFontFamilies(std::vector<SkString> families) {
