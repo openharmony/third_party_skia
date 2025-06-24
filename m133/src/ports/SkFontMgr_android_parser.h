@@ -107,6 +107,11 @@ namespace SkFontMgr_Android_Parser {
 /** Parses system font configuration files and appends result to fontFamilies. */
 void GetSystemFontFamilies(SkTDArray<FontFamily*>& fontFamilies);
 
+#if defined(CROSS_PLATFORM)
+/** Parses system font configuration files and appends result to fontFamilies. */
+void GetSystemFontFamiliesForSymbol(SkTDArray<FontFamily *> &fontFamilies);
+#endif
+
 /** Parses font configuration files and appends result to fontFamilies. */
 void GetCustomFontFamilies(SkTDArray<FontFamily*>& fontFamilies,
                            const SkString& basePath,

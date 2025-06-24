@@ -18,7 +18,9 @@
 
 class SkFontMgr;
 class SkUnicode;
-
+#ifdef ENABLE_DRAWING_ADAPTER
+namespace SkiaRsText {
+#endif
 namespace SkShapers::HB {
 #ifdef ENABLE_TEXT_ENHANCE
 SKSHAPER_API std::unique_ptr<SkShaper> ShaperDrivenWrapper(sk_sp<SkUnicode> unicode,
@@ -42,6 +44,11 @@ SKSHAPER_API std::unique_ptr<SkShaper::ScriptRunIterator> ScriptRunIterator(cons
                                                                             SkFourByteTag script);
 
 SKSHAPER_API void PurgeCaches();
-}  // namespace SkShapers::HB
-
+} // namespace SkShapers::HB
+#ifdef ENABLE_DRAWING_ADAPTER
+} // namespace SkiaRsText
+namespace SkShapers::HB{
+    using namespace SkiaRsText::SkShapers::HB;
+}
+#endif
 #endif

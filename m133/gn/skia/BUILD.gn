@@ -29,7 +29,7 @@ declare_args() {
 }
 
 if (is_ios && xcode_sysroot == "") {
-  if (is_tvos) {
+  if (defined(is_tvos) && is_tvos) {
     sdk = "appletvos"
     if (ios_use_simulator) {
       sdk = "appletvsimulator"
