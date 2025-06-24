@@ -6,6 +6,7 @@
 
 #include "include/core/SkTypes.h"
 #include "include/utils/SkTraceEventPhase.h"
+#include "base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter/hitrace_meter.h"
 
 // Trace events are for tracking application performance and resource usage.
 // Macros are provided to track:
@@ -56,11 +57,6 @@
 #if defined(TRACE_EVENT0)
     #error "Another copy of this file has already been included."
 #endif
-
-enum DebugTraceLevel {
-    NORMAL = 1,
-    DETAIL = 2,
-};
 
 // --- Temporary Perfetto migration shim preamble ---
 // Tracing in the Android framework, and tracing with Perfetto, are both in a partially migrated
@@ -252,17 +248,7 @@ static inline void sk_noop(Args...) {}
     #define TRACE_COUNTER1(cg, n, value) TRACE_EMPTY(cg, n, value)
     #define TRACE_COUNTER2(cg, n, v1n, v1v, v2n, v2v) TRACE_EMPTY(cg, n, v1n, v1v, v2n, v2v)
 
-    #define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
-    #define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY
-    #define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
-    #define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
-
 #elif defined(SK_ANDROID_FRAMEWORK_USE_PERFETTO)
-
-#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
-#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY
-#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
-#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
 
 namespace skia_private {
     // ATrace can't accept ::perfetto::DynamicString or ::perfetto::StaticString, so any trace event
@@ -590,136 +576,18 @@ namespace skia_private {
         *ret = false;                                                               \
     }
 
-#elif defined(SKIA_OHOS)
-
-#include <stdarg.h>
-#include "hitrace_meter.h"
-#include "securec.h"
-
-#ifdef NOT_BUILD_FOR_OHOS_SDK
-#include "parameters.h"
-#endif
-
-#define UNLIKELY(exp) (__builtin_expect((exp) != 0, false))
-#define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY_FMT(fmt, ##__VA_ARGS__)
-#define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY_FMT(fmt, ##__VA_ARGS__)
-#define HITRACE_OHOS_NAME_ALWAYS(name) HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name)
-#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) \
-    SkOHOSDebugLevelTraceUtil _ohosTraceLevel(debugLevel, fmt, ##__VA_ARGS__)
-#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) \
-    HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, fmt, ##__VA_ARGS__)
-
-#ifdef NOT_BUILD_FOR_OHOS_SDK
-inline int gTraceDebugLevel =
-    std::atoi((OHOS::system::GetParameter("persist.sys.graphic.2dengine.openDebugTrace", "0")).c_str());
-#else
-inline int gTraceDebugLevel = 0;
-#endif
-
-class SkOHOSTraceUtil {
-public:
-    SkOHOSTraceUtil(const char* name) {
-        if (UNLIKELY(gTraceDebugLevel >= DebugTraceLevel::DETAIL)) {
-            StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name);
-        }
-    }
-
-    ~SkOHOSTraceUtil() {
-        if (UNLIKELY(gTraceDebugLevel >= DebugTraceLevel::DETAIL)) {
-            FinishTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL);
-        }
-    }
-};
-
-class SkOHOSDebugLevelTraceUtil {
-public:
-    SkOHOSDebugLevelTraceUtil(int debugLevel, const char* fmt, ...) {
-        fDebugLevel = debugLevel;
-        if (UNLIKELY(gTraceDebugLevel >= fDebugLevel)) {
-            const int BUFFER_SIZE = 256;
-            char buf[BUFFER_SIZE];
-            va_list args;
-            va_start(args, fmt);
-            if (vsnprintf_s(buf, sizeof(buf), sizeof(buf) - 1, fmt, args) < 0) {
-                va_end(args);
-                StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, "Trace Error");
-                return;
-            }
-            va_end(args);
-            StartTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, buf);
-        }
-    }
-
-    ~SkOHOSDebugLevelTraceUtil() {
-        if (UNLIKELY(gTraceDebugLevel >= fDebugLevel)) {
-            FinishTrace(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL);
-        }
-    }
-
-    static bool getEnableDebugTrace() {
-        return gTraceDebugLevel > 0;
-    }
-
-private:
-    int fDebugLevel = 1;
-};
-
-// print ohos trace without SKIA_OHOS_DEBUG macro
-#define SKIA_OHOS_TRACE_PRIV(category_group, name) \
-    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
-
-#define TRACE_EVENT0(category_group, name) \
-    SkOHOSTraceUtil _ohosTrace(name)
-
-#define TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
-    SkOHOSTraceUtil _ohosTrace(name)
-
-#define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, arg2_val) \
-    SkOHOSTraceUtil _ohosTrace(name)
-
-#define TRACE_EVENT0_ALWAYS(category_group, name) \
-    HITRACE_METER_NAME(HITRACE_TAG_GRAPHIC_AGP | HITRACE_TAG_COMMERCIAL, name)
-
-#define TRACE_EVENT1_ALWAYS(cg, n, a1n, a1v) TRACE_EMPTY(cg, n, a1n, a1v)
-#define TRACE_EVENT2_ALWAYS(cg, n, a1n, a1v, a2n, a2v) TRACE_EMPTY(cg, n, a1n, a1v, a2n, a2v)
-
-#define TRACE_EVENT_INSTANT0(cg, n, scope) TRACE_EMPTY(cg, n, scope)
-#define TRACE_EVENT_INSTANT1(cg, n, scope, a1n, a1v) TRACE_EMPTY(cg, n, scope, a1n, a1v)
-#define TRACE_EVENT_INSTANT2(cg, n, scope, a1n, a1v, a2n, a2v)  \
-    TRACE_EMPTY(cg, n, scope, a1n, a1v, a2n, a2v)
-
-#define TRACE_EVENT_OBJECT_CREATED_WITH_ID(cg, n, id) TRACE_EMPTY(cg, n, id)
-#define TRACE_EVENT_OBJECT_SNAPSHOT_WITH_ID(cg, n, id, ss) TRACE_EMPTY(cg, n, id, ss)
-#define TRACE_EVENT_OBJECT_DELETED_WITH_ID(cg, n, id) TRACE_EMPTY(cg, n, id)
-
-#define TRACE_COUNTER1(cg, n, value) TRACE_EMPTY(cg, n, value)
-
-#define TRACE_COUNTER2(category_group, name, value1_name, value1_val, value2_name, value2_val) \
-    do { \
-        if (UNLIKELY(gTraceDebugLevel >= DebugTraceLevel::DETAIL)) { \
-            std::string tid = std::to_string(gettid()); \
-            std::string threadValue1Name = tid + "-" + name + "-" + value1_name; \
-            std::string threadValue2Name = tid + "-" + name + "-" + value2_name; \
-            CountTrace(HITRACE_TAG_GRAPHIC_AGP, threadValue1Name, value1_val); \
-            CountTrace(HITRACE_TAG_GRAPHIC_AGP, threadValue2Name, value2_val); \
-        } \
-    } while (0)
-
-#define TRACE_EVENT_CATEGORY_GROUP_ENABLED(category_group, ret) \
-    do { *ret = false; } while (0)
-
 #else // Route through SkEventTracer (!SK_DISABLE_TRACING && !SK_ANDROID_FRAMEWORK_USE_PERFETTO)
 
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY_FMT(fmt, ##__VA_ARGS__)
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY_FMT(fmt, ##__VA_ARGS__)
 
-#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
-#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY
-#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
-#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
-
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this does nothing.
+
+// print ohos trace without SKIA_OHOS_DEBUG macro
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) \
+    HitraceScoped _trace(HITRACE_TAG_GRAPHIC_AGP, name)
+
 #define TRACE_EVENT0(category_group, name) \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
 
