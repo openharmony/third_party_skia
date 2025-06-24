@@ -186,7 +186,7 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
                    getCorrectFontSize() == other.getCorrectFontSize() &&
                    fHeight == other.fHeight &&
                    fHalfLeading == other.fHalfLeading &&
-                   getBaselineShift() == other.getBaselineShift() &&
+                   getTotalVerticalShift() == other.getTotalVerticalShift() &&
 #else
                    fFontSize == other.fFontSize &&
                    fHeight == other.fHeight &&

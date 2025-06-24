@@ -566,6 +566,29 @@ bool Run::isTrailingSpaceIncluded(const ClusterRange& fTextLineClusterRange,
            fTextLineGhostClusterRange.end <= this->clusterRange().end &&
            fTextLineGhostClusterRange.end > this->clusterRange().start;
 }
+
+void Run::updatePlaceholderAlignmentIfNeeded(PlaceholderAlignment& alignment, TextVerticalAlign paragraphAlignment) {
+    if (alignment != PlaceholderAlignment::kFollow) {
+        return;
+    }
+
+    switch (paragraphAlignment) {
+        case TextVerticalAlign::TOP:
+            alignment = PlaceholderAlignment::kTop;
+            break;
+        case TextVerticalAlign::CENTER:
+            alignment = PlaceholderAlignment::kMiddle;
+            break;
+        case TextVerticalAlign::BOTTOM:
+            alignment = PlaceholderAlignment::kBottom;
+            break;
+        case TextVerticalAlign::BASELINE:
+            alignment = PlaceholderAlignment::kAboveBaseline;
+            break;
+        default:
+            break;
+    }
+}
 #endif
 
 void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
@@ -587,12 +610,16 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
     auto offset = placeholderStyle->fBaselineOffset;
 
     fFontMetrics.fLeading = 0;
+
+    updatePlaceholderAlignmentIfNeeded(placeholderStyle->fAlignment, fOwner->getParagraphStyle().getVerticalAlignment());
+
     switch (placeholderStyle->fAlignment) {
         case PlaceholderAlignment::kBaseline:
             fFontMetrics.fAscent = baselineAdjustment - height - offset;
             fFontMetrics.fDescent = baselineAdjustment - offset;
             break;
 
+        case PlaceholderAlignment::kFollow:
         case PlaceholderAlignment::kAboveBaseline:
             fFontMetrics.fAscent = baselineAdjustment - height;
             fFontMetrics.fDescent = baselineAdjustment;
@@ -608,7 +635,6 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
             fFontMetrics.fDescent = height + fFontMetrics.fAscent;
             break;
 
-        case PlaceholderAlignment::kFollow:
         case PlaceholderAlignment::kBottom:
             fFontMetrics.fDescent = endlineMetrics->descent();
             fFontMetrics.fAscent = fFontMetrics.fDescent - height;

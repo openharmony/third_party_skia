@@ -77,7 +77,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
                           : context.run->correctAscent(), textStyle.getDecorationStyle(),
-                          textStyle.getBaselineShift(), textStyle.getCorrectFontSize());
+                          textStyle.getTotalVerticalShift(), textStyle.getCorrectFontSize());
 #else
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline
@@ -99,7 +99,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         SkScalar y = (TextDecoration::kUnderline == decoration) ?
             fPosition : (context.clip.top() + fPosition);
 #ifdef OHOS_SUPPORT
-        updateDecorationPosition(decoration, textStyle.getBaselineShift(), context, y);
+        updateDecorationPosition(decoration, textStyle.getTotalVerticalShift(), context, y);
 #endif
 
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
