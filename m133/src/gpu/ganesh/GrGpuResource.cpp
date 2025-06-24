@@ -232,6 +232,16 @@ uint32_t GrGpuResource::CreateUniqueID() {
     return id;
 }
 
+void GrGpuResource::setResourceTag(const GrGpuResourceTag tag, bool curRealAlloc)
+{
+    int32_t pid = fGrResourceTag.fPid;
+    fGrResourceTag = tag;
+    if ((pid == tag.fPid) && (fRealAlloc == curRealAlloc)) {
+        return;
+    }
+    fRealAlloc = curRealAlloc;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 
 void GrGpuResource::ProxyAccess::ref(GrResourceCache* cache) {

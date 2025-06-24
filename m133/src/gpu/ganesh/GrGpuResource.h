@@ -121,15 +121,15 @@ private:
 };
 
 struct GrGpuResourceTag {
-    GrGpuResourceTag() : fPid(0), fTid(0), fWid(0), fFid(0)
+    GrGpuResourceTag() : fPid(0), fTid(0), fWid(0), fFid(0), fSid(0)
     {
         isGrGpuResourceTagValid = false;
     }
 
-    GrGpuResourceTag(uint32_t pid, uint32_t tid, uint32_t wid, uint32_t fid)
-        : fPid(pid), fTid(tid), fWid(wid), fFid(fid)
+    GrGpuResourceTag(uint32_t pid, uint32_t tid, uint64_t wid, uint32_t fid, uint32_t sid, const std::string& name)
+        : fPid(pid), fTid(tid), fWid(wid), fFid(fid), fSid(sid), fName(name)
     {
-        isGrGpuResourceTagValid = fPid || fTid || fWid || fFid;
+        isGrGpuResourceTagValid = fPid || fTid || fWid || fCid || fFid || fSid;
     }
 
     bool operator< (const GrGpuResourceTag& tag) const {
@@ -154,7 +154,8 @@ struct GrGpuResourceTag {
 
     std::string toString() const {
         return "[" + std::to_string(fPid) + "," + std::to_string(fTid) + ","
-            + std::to_string(fWid) + "," + std::to_string(fFid) + "]";
+            + std::to_string(fWid) + "," + std::to_string(fFid) + ","
+            + std::to_string(fCid) + "," + std::to_string(fSid) + "]";
     }
 
     bool isGrTagValid() const {
@@ -200,8 +201,11 @@ struct GrGpuResourceTag {
     }
     uint32_t fPid;
     uint32_t fTid;
-    uint32_t fWid;
+    uint64_t fWid;
+    uint64_t fCid{0};
     uint32_t fFid;
+    uint32_t fSid;
+    std::string fName;
     bool isGrGpuResourceTagValid;
 };
 
@@ -221,6 +225,9 @@ public:
      *         false otherwise.
      */
     bool wasDestroyed() const { return nullptr == fGpu; }
+
+    void setRealAlloc(bool realAlloc) { fRealAlloc = realAlloc; } // OH ISSUE: set real alloc flag
+    bool isRealAlloc() { return fRealAlloc; } // OH ISSUE: get real alloc flag
 
     /**
      * Retrieves the context that owns the object. Note that it is possible for
@@ -323,7 +330,7 @@ public:
     /**
      * Set the resource tag.
      */
-        void setResourceTag(const GrGpuResourceTag tag) { fGrResourceTag = tag; }
+    void setResourceTag(const GrGpuResourceTag tag, bool curRealAlloc = false);
 
     /**
      * Get the resource tag.
@@ -444,6 +451,7 @@ private:
     using INHERITED = GrIORef<GrGpuResource>;
     friend class GrIORef<GrGpuResource>; // to access notifyRefCntWillBeZero and
                                          // notifyARefCntIsZero.
+    bool fRealAlloc = false; // OH ISSUE: real alloc flag
 };
 
 class GrGpuResource::ProxyAccess {

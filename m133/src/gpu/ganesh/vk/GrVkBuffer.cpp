@@ -45,6 +45,7 @@ GrVkBuffer::GrVkBuffer(GrVkGpu* gpu,
     // We always require dynamic buffers to be mappable
     SkASSERT(accessPattern != kDynamic_GrAccessPattern || this->isVkMappable());
     SkASSERT(bufferType != GrGpuBufferType::kUniform || uniformDescriptorSet);
+    this->setRealAlloc(true); // OH ISSUE: set real alloc flag
     this->registerWithCache(skgpu::Budgeted::kYes);
 }
 
@@ -168,7 +169,12 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
                                                 allocUsage,
                                                 shouldPersistentlyMapCpuToGpu,
                                                 checkResult,
+#ifdef SKIA_DFX_FOR_OHOS
+                                                &alloc,
+                                                size)) {
+#else
                                                 &alloc)) {
+#endif
         VK_CALL(gpu, DestroyBuffer(gpu->device(), buffer, nullptr));
         return nullptr;
     }
@@ -202,6 +208,11 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
             return nullptr;
         }
     }
+
+#ifdef SKIA_DFX_FOR_OHOS
+    alloc.fBytes = size;
+    gpu->addAllocBufferBytes(size);
+#endif
 
     return sk_sp<GrVkBuffer>(new GrVkBuffer(
             gpu, size, bufferType, accessPattern, buffer, alloc, uniformDescSet,
@@ -397,6 +408,9 @@ void GrVkBuffer::vkRelease() {
     VK_CALL(this->getVkGpu(), DestroyBuffer(this->getVkGpu()->device(), fBuffer, nullptr));
     fBuffer = VK_NULL_HANDLE;
 
+#ifdef SKIA_DFX_FOR_OHOS
+    this->getVkGpu()->removeAllocBufferBytes(fAlloc.fBytes);
+#endif
     if (fAlloc.fIsExternalMemory) {
         skgpu::VulkanMemory::FreeBufferMemory(this->getVkGpu(), fAlloc);
     } else {

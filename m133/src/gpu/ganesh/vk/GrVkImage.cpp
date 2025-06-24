@@ -242,8 +242,12 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
         , fMutableState(std::move(mutableState))
         , fFramebufferView(std::move(framebufferView))
         , fTextureView(std::move(textureView))
+#ifdef SKIA_OHOS
+        , fBudgeted(budgeted)
+#endif
         , fIsBorrowed(false) {
     this->init(gpu, false);
+    this->setRealAlloc(true); // OH ISSUE: set real alloc flag
     this->registerWithCache(budgeted);
 }
 
@@ -567,6 +571,11 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
         return false;
     }
 
+#ifdef SKIA_DFX_FOR_OHOS
+    alloc.fBytes = alloc.fSize;
+    gpu->addAllocImageBytes(alloc.fSize);
+#endif
+
     info->fImage = image;
     info->fAlloc = alloc;
     info->fImageTiling = imageDesc.fImageTiling;
@@ -584,6 +593,9 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
 
 void GrVkImage::DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo* info) {
     VK_CALL(gpu, DestroyImage(gpu->device(), info->fImage, nullptr));
+#ifdef SKIA_DFX_FOR_OHOS
+    ((GrVkGpu*)gpu)->removeAllocImageBytes(info->fAlloc.fBytes);
+#endif
     skgpu::VulkanMemory::FreeImageMemory(gpu->memoryAllocator(), info->fAlloc);
 }
 
@@ -642,6 +654,9 @@ void GrVkImage::setResourceRelease(sk_sp<RefCntedReleaseProc> releaseHelper) {
 void GrVkImage::Resource::freeGPUData() const {
     this->invokeReleaseProc();
     VK_CALL(fGpu, DestroyImage(fGpu->device(), fImage, nullptr));
+#ifdef SKIA_DFX_FOR_OHOS
+    ((GrVkGpu*)fGpu)->removeAllocImageBytes(fAlloc.fBytes);
+#endif
     skgpu::VulkanMemory::FreeImageMemory(fGpu->memoryAllocator(), fAlloc);
 }
 

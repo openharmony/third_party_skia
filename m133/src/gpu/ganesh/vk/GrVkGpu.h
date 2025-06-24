@@ -244,6 +244,13 @@ public:
     // the GrVkGpu should be processed by this function so that we respond to OOMs and lost devices.
     bool checkVkResult(VkResult);
 
+#ifdef SKIA_DFX_FOR_OHOS
+    void addAllocImageBytes(size_t bytes);
+    void removeAllocImageBytes(size_t bytes);
+    void addAllocBufferBytes(size_t bytes);
+    void removeAllocBufferBytes(size_t bytes);
+#endif
+
 private:
     GrVkGpu(GrDirectContext*,
             const skgpu::VulkanBackendContext&,

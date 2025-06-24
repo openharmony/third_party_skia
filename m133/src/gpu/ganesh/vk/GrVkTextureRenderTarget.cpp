@@ -44,7 +44,16 @@ GrVkTextureRenderTarget::GrVkTextureRenderTarget(GrVkGpu* gpu,
                            std::move(resolveAttachment),
                            CreateType::kFromTextureRT,
                            label) {
+#ifdef SKIA_OHOS
+    GrVkImage* image = textureImage();
+    if (image && image->GetBudgeted() == skgpu::Budgeted::kYes) {
+        this->registerWithCache(skgpu::Budgeted::kNo);
+    } else {
+        this->registerWithCache(budgeted);
+    }
+#else
     this->registerWithCache(budgeted);
+#endif
 }
 
 GrVkTextureRenderTarget::GrVkTextureRenderTarget(
