@@ -1386,7 +1386,7 @@ optional("gpu_shared") {
   public_defines = []
   public_deps = []
   frameworks = []
-  public_external_deps = []
+  external_deps = []
 
   sources = skia_shared_gpu_sources
   sources += skia_sksl_pipeline_sources
@@ -1429,12 +1429,13 @@ optional("gpu_shared") {
     public_defines += [ "SK_VULKAN" ]
     sources += skia_shared_vk_sources
     configs += [ ":use_skia_vulkan_headers" ]
-    public_external_deps += [ "vulkan-headers:vulkan_headers" ]
+    external_deps += [ "vulkan-headers:vulkan_headers" ]
     if (skia_enable_vulkan_debug_layers) {
       public_defines += [ "SK_ENABLE_VK_LAYERS" ]
     }
     if (skia_use_vma) {
       sources += skia_vma_sources
+      deps += [ "${skia_third_party_dir}/vulkanmemoryallocator:vulkan_memoryallocator" ]
       public_deps += [ "src/gpu/vk/vulkanmemoryallocator" ]
     }
     if (skia_vk_enable_partialrender) {
@@ -1481,7 +1482,7 @@ optional("gpu") {
       libs += [ "android" ]
     }
   }
-
+  external_deps = []
   if (skia_use_gl) {
     public_defines += [ "SK_GL" ]
     if (is_android) {
@@ -1503,7 +1504,7 @@ optional("gpu") {
           "src/gpu/ganesh/gl/egl/GrGLMakeNativeInterface_egl.cpp",
         ]
         if (is_ohos) {
-          external_deps = [
+          external_deps += [
             "egl:libEGL",
             "graphic_2d:EGL",
             "graphic_2d:GLESv3",
@@ -1542,7 +1543,7 @@ optional("gpu") {
     public += skia_gpu_vk_public
     sources += skia_gpu_vk_private
     configs += [ ":use_skia_vulkan_headers" ]
-    public_external_deps = [ "vulkan-headers:vulkan_headers" ]
+    external_deps += [ "vulkan-headers:vulkan_headers" ]
     if (is_fuchsia) {
       if (using_fuchsia_sdk) {
         public_deps += [ "$fuchsia_sdk_root/pkg:vulkan" ]
@@ -2427,7 +2428,7 @@ config("use_skia_vulkan_headers") {
 }
 
 config("vulkan_memory_allocator") {
-  include_dirs = [ "$skia_vulkan_memory_allocator_dir/include" ]
+  include_dirs = [ "${skia_third_party_dir}/vulkanmemoryallocator" ]
 }
 
 # Targets guarded by skia_enable_tools may use ${skia_third_party_dir} freely.
@@ -2739,6 +2740,7 @@ if (skia_enable_tools) {
       sources += [ "tools/gpu/vk/VkTestUtils.cpp" ]
       sources += [ "tools/gpu/vk/VkYcbcrSamplerHelper.h" ]
       sources += [ "tools/gpu/vk/VkYcbcrSamplerHelper.cpp" ]
+      deps += [ "${skia_third_party_dir}/vulkanmemoryallocator:vulkan_memoryallocator" ]
     }
     if (skia_use_metal) {
       sources += [ "tools/gpu/mtl/MtlTestContext.mm" ]
@@ -2984,6 +2986,7 @@ if (skia_enable_tools) {
       "modules/skresources",
       "modules/skshaper",
     ]
+    external_deps = [ "vulkan-headers:vulkan_headers" ]
     if (gm_test_enable_font) {
       deps += [
         "modules/skparagraph",
@@ -3086,6 +3089,7 @@ if (skia_enable_tools) {
       "${skia_third_party_dir}/libwebp:libwebpm133",
       "${skia_third_party_dir}/zlib",
     ]
+    external_deps = [ "vulkan-headers:vulkan_headers" ]
     if (gm_test_enable_font) {
       deps += [
         "modules/skparagraph:tests",
@@ -3824,6 +3828,7 @@ if (skia_enable_tools) {
       deps = [
         ":load_dynamic_library",
         ":skia",
+        "${skia_third_party_dir}/vulkanmemoryallocator:vulkan_memoryallocator"
       ]
     }
   }
