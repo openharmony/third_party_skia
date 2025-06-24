@@ -144,23 +144,6 @@ SkRect GetTextBlobSkTightBound(std::shared_ptr<RSTextBlob> blob,
     }
     return SkRect::MakeLTRB(bound.left_, bound.top_, bound.right_, bound.bottom_);
 }
-#else
-SkRect GetTextBlobSkTightBound(sk_sp<SkTextBlob> blob,
-                               float offsetX,
-                               float offsetY,
-                               const SkRect& clipRect) {
-    if (blob == nullptr) {
-        return SkRect::MakeEmpty();
-    }
-
-    SkRect bound = blob->bounds();
-    if (!clipRect.isEmpty()) {
-        bound.fLeft = std::max(bound.fLeft, clipRect.fLeft);
-        bound.fRight = std::min(bound.fRight, clipRect.fRight);
-    }
-    bound.offset(offsetX, offsetY);
-    return bound;
-}
 #endif
 }  // namespace
 
@@ -1376,12 +1359,12 @@ void TextLine::middleEllipsisUpdateLine(ClusterIndex& startIndex, ClusterIndex& 
         fRunsInVisualOrder.clear();
     }
 }
-#endif
 
 static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
     SkUnichar val = SkUTF::NextUTF8(ptr, end);
     return val < 0 ? 0xFFFD : val;
 }
+#endif
 
 void TextLine::createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool) {
     // Replace some clusters with the ellipsis
