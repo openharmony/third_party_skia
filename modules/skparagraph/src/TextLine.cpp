@@ -2494,7 +2494,14 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                         size_t utf16Index = fOwner->getUTF16Index(graphemeUtf8Index);
                         result = { SkToS32(utf16Index), kDownstream };
                     } else {
+#ifdef OHOS_SUPPORT
+                        const size_t currentIdx = static_cast<size_t>(graphemeIndex);
+                        size_t nextGraphemeUtf8Index = (currentIdx + 1 < graphemes.size())
+                            ? graphemes[currentIdx + 1] : clusterEnd8;
+                        size_t utf16Index = fOwner->getUTF16IndexWithOverflowCheck(nextGraphemeUtf8Index);
+#else                      
                         size_t utf16Index = fOwner->getUTF16Index(graphemeUtf8Index + 1);
+#endif
                         result = { SkToS32(utf16Index), kUpstream };
                     }
                     // Keep UTF16 index as is
