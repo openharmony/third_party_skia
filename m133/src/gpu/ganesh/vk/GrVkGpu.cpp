@@ -2806,6 +2806,44 @@ bool GrVkGpu::checkVkResult(VkResult result) {
     }
 }
 
+#ifdef SKIA_DFX_FOR_OHOS
+void GrVkGpu::addAllocImageBytes(size_t bytes)
+{
+    auto cache = getContext()->priv().getResourceCache();
+    if (!cache) {
+        return;
+    }
+    cache->addAllocImageBytes(bytes);
+}
+
+void GrVkGpu::removeAllocImageBytes(size_t bytes)
+{
+    auto cache = getContext()->priv().getResourceCache();
+    if (!cache) {
+        return;
+    }
+    cache->removeAllocImageBytes(bytes);
+}
+
+void GrVkGpu::addAllocBufferBytes(size_t bytes)
+{
+    auto cache = getContext()->priv().getResourceCache();
+    if (!cache) {
+        return;
+    }
+    cache->addAllocBufferBytes(bytes);
+}
+
+void GrVkGpu::removeAllocBufferBytes(size_t bytes)
+{
+    auto cache = getContext()->priv().getResourceCache();
+    if (!cache) {
+        return;
+    }
+    cache->removeAllocBufferBytes(bytes);
+}
+#endif
+
 void GrVkGpu::submitSecondaryCommandBuffer(std::unique_ptr<GrVkSecondaryCommandBuffer> buffer) {
     if (!this->currentCommandBuffer()) {
         return;

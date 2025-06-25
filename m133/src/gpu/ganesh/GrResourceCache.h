@@ -132,6 +132,12 @@ public:
      * Returns the number of bytes consumed by resources.
      */
     size_t getResourceBytes() const { return fBytes; }
+#ifdef SKIA_DFX_FOR_OHOS
+    void addAllocImageBytes(size_t bytes) { fAllocImageBytes += bytes; }
+    void removeAllocImageBytes(size_t bytes) { fAllocImageBytes -= bytes; }
+    void addAllocBufferBytes(size_t bytes) { fAllocBufferBytes += bytes; }
+    void removeAllocBufferBytes(size_t bytes) { fAllocBufferBytes -= bytes; }
+#endif
 
     /**
      * Returns the number of bytes held by unlocked resources which are available for purging.
@@ -335,6 +341,23 @@ public:
         GrDirectContext::DirectContextID fRecipient;
     };
 
+#ifdef SKIA_DFX_FOR_OHOS
+    void dumpInfo(SkString* out);
+    std::string cacheInfo();
+
+#ifdef SKIA_OHOS
+    static bool purgeUnlocakedResTraceEnabled_;
+    struct SimpleCacheInfo {
+        int fPurgeableQueueCount;
+        int fNonpurgeableResourcesCount;
+        size_t fPurgeableBytes;
+        int fBudgetedCount;
+        size_t fBudgetedBytes;
+        size_t fAllocImageBytes;
+        size_t fAllocBufferBytes;
+    };
+#endif
+#endif
 private:
     ///////////////////////////////////////////////////////////////////////////
     /// @name Methods accessible via ResourceAccess
@@ -366,6 +389,44 @@ private:
     void validate() const;
 #else
     void validate() const {}
+#endif
+
+#ifdef SKIA_DFX_FOR_OHOS
+#ifdef SKIA_OHOS
+    void traceBeforePurgeUnlockRes(const std::string& method, SimpleCacheInfo& simpleCacheInfo);
+    void traceAfterPurgeUnlockRes(const std::string& method, const SimpleCacheInfo& simpleCacheInfo);
+    std::string cacheInfoComparison(const SimpleCacheInfo& simpleCacheInfo);
+#endif
+    std::string cacheInfoPurgeableQueue();
+    std::string cacheInfoNoPurgeableQueue();
+    void updatePurgeableWidMap(GrGpuResource* resource,
+                     std::map<uint64_t, std::string>& nameInfoWid,
+                     std::map<uint64_t, size_t>& sizeInfoWid,
+                     std::map<uint64_t, int>& pidInfoWid,
+                     std::map<uint64_t, int>& countInfoWid);
+    void updatePurgeablePidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoPid,
+                     std::map<uint32_t, size_t>& sizeInfoPid,
+                     std::map<uint32_t, int>& countInfoPid);
+    void updatePurgeableFidMap(GrGpuResource* resource,
+                     std::map<uint32_t, std::string>& nameInfoFid,
+                     std::map<uint32_t, size_t>& sizeInfoFid,
+                     std::map<uint32_t, int>& countInfoFid);
+    void updatePurgeableWidInfo(std::string& infoStr,
+                     std::map<uint64_t, std::string>& nameInfoWid,
+                     std::map<uint64_t, size_t>& sizeInfoWid,
+                     std::map<uint64_t, int>& pidInfoWid,
+                     std::map<uint64_t, int>& countInfoWid);
+    void updatePurgeablePidInfo(std::string& infoStr,
+                     std::map<uint32_t, std::string>& nameInfoPid,
+                     std::map<uint32_t, size_t>& sizeInfoPid,
+                     std::map<uint32_t, int>& countInfoPid);
+    void updatePurgeableFidInfo(std::string& infoStr,
+                     std::map<uint32_t, std::string>& nameInfoFid,
+                     std::map<uint32_t, size_t>& sizeInfoFid,
+                     std::map<uint32_t, int>& countInfoFid);
+    void updatePurgeableUnknownInfo(std::string& infoStr, const std::string& unknownPrefix,
+        const int countUnknown, const size_t sizeUnknown);
 #endif
 
     class AutoValidate;
@@ -427,6 +488,10 @@ private:
     // our current stats for all resources
     SkDEBUGCODE(int                     fCount = 0;)
     size_t                              fBytes = 0;
+#ifdef SKIA_DFX_FOR_OHOS
+    size_t                              fAllocImageBytes = 0;
+    size_t                              fAllocBufferBytes = 0;
+#endif
 
     // our current stats for resources that count against the budget
     int                                 fBudgetedCount = 0;
@@ -448,6 +513,11 @@ private:
 
     //Indicates the cached resource tags.
     std::stack<GrGpuResourceTag> GrResourceCacheStack;
+
+    // OH ISSUE: stores fBytes of each pid.
+    std::unordered_map<int32_t, size_t> fBytesOfPid;
+    // OH ISSUE: stores the memory information of the updated pid.
+    std::unordered_map<int32_t, size_t> fUpdatedBytesOfPid;
 };
 
 class GrResourceCache::ResourceAccess {

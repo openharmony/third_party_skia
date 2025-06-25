@@ -27,7 +27,12 @@ namespace VulkanMemory {
                            skgpu::VulkanMemoryAllocator::BufferUsage,
                            bool shouldPersistentlyMapCpuToGpu,
                            const std::function<CheckResult>&,
+#ifdef SKIA_DFX_FOR_OHOS
+                           VulkanAlloc* alloc,
+                           size_t size);
+#else
                            VulkanAlloc* alloc);
+#endif
 
     void FreeBufferMemory(VulkanMemoryAllocator*, const VulkanAlloc& alloc);
 

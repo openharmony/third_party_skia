@@ -47,7 +47,12 @@ bool VulkanMemory::AllocBufferMemory(VulkanMemoryAllocator* allocator,
                                      BufferUsage usage,
                                      bool shouldPersistentlyMapCpuToGpu,
                                      const std::function<CheckResult>& checkResult,
+#ifdef SKIA_DFX_FOR_OHOS
+                                     VulkanAlloc* alloc,
+                                     size_t size) {
+#else
                                      VulkanAlloc* alloc) {
+#endif
     VulkanBackendMemory memory = 0;
     uint32_t propFlags;
     if (usage == BufferUsage::kTransfersFromCpuToGpu ||
@@ -172,9 +177,14 @@ bool VulkanMemory::AllocImageMemory(VulkanMemoryAllocator* allocator,
         propFlags = propFlags | VulkanMemoryAllocator::kLazyAllocation_AllocationPropertyFlag;
     }
 
-    VkResult result = allocator->allocateImageMemory(image, propFlags, &memory);
-    if (!checkResult(result)) {
-        return false;
+    { // OH ISSUE: add trace for vulkan interface
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "allocateImageMemory");
+#endif
+        VkResult result = allocator->allocateImageMemory(image, propFlags, &memory);
+        if (!checkResult(result)) {
+            return false;
+        }
     }
 
     allocator->getAllocInfo(memory, alloc);
