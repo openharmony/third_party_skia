@@ -30,11 +30,13 @@ using VulkanGetProc = std::function<PFN_vkVoidFunction(
         )>;
 
 typedef intptr_t VulkanBackendMemory;
+class VulkanMemoryAllocator;
 
 /**
  * Types for interacting with Vulkan resources created externally to Skia.
  */
 struct VulkanAlloc {
+    VulkanMemoryAllocator* fAllocator = nullptr;
 #ifdef SKIA_DFX_FOR_OHOS
     VkDeviceSize      fBytes = 0;
 #endif
@@ -55,6 +57,7 @@ struct VulkanAlloc {
 
     bool operator==(const VulkanAlloc& that) const {
         return fMemory == that.fMemory && fOffset == that.fOffset && fSize == that.fSize &&
+               fAllocator == that.fAllocator &&
                fFlags == that.fFlags && fUsesSystemHeap == that.fUsesSystemHeap;
     }
 

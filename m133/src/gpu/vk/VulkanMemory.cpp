@@ -11,6 +11,7 @@
 #include "include/gpu/vk/VulkanTypes.h"
 #include "src/gpu/ganesh/vk/GrVkUtil.h"
 #include "src/gpu/vk/VulkanMemory.h"
+#include "src/base/SkUtils.h"
 
 #include <cstdint>
 #include <cstring>
@@ -145,25 +146,37 @@ void VulkanMemory::FreeBufferMemory(const GrVkGpu* gpu, const VulkanAlloc& alloc
     } else {
         SkASSERT(alloc.fBackendMemory);
         VulkanMemoryAllocator* allocator = gpu->memoryAllocator();
+        if (alloc.fAllocator != nullptr) {
+            allocator = alloc.fAllocator;
+        }
         allocator->freeMemory(alloc.fBackendMemory);
     }
 }
 
 bool VulkanMemory::AllocImageMemory(VulkanMemoryAllocator* allocator,
+                                    VulkanMemoryAllocator* allocatorCacheImage,
                                     VkImage image,
                                     Protected isProtected,
                                     bool forceDedicatedMemory,
                                     bool useLazyAllocation,
                                     const std::function<CheckResult>& checkResult,
-                                    VulkanAlloc* alloc) {
+                                    VulkanAlloc* alloc,
+                                    int memorySize) {
     VulkanBackendMemory memory = 0;
 
+    bool vmaFlag = SkGetVmaCacheFlag();
+    bool vmaCacheFlag = vmaFlag && memorySize > SkGetNeedCachedMemroySize();
+    if (vmaCacheFlag && allocatorCacheImage) {
+        allocator = allocatorCacheImage;
+    }
     uint32_t propFlags;
     // If we ever find that our allocator is not aggressive enough in using dedicated image
     // memory we can add a size check here to force the use of dedicate memory. However for now,
     // we let the allocators decide. The allocator can query the GPU for each image to see if the
     // GPU recommends or requires the use of dedicated memory.
-    if (forceDedicatedMemory) {
+    if (vmaCacheFlag) {
+        propFlags = VulkanMemoryAllocator::kNone_AllocationPropertyFlag;
+    } else if (forceDedicatedMemory) {
         propFlags = VulkanMemoryAllocator::kDedicatedAllocation_AllocationPropertyFlag;
     } else {
         propFlags = VulkanMemoryAllocator::kNone_AllocationPropertyFlag;
@@ -194,6 +207,9 @@ bool VulkanMemory::AllocImageMemory(VulkanMemoryAllocator* allocator,
 void VulkanMemory::FreeImageMemory(VulkanMemoryAllocator* allocator,
                                    const VulkanAlloc& alloc) {
     SkASSERT(alloc.fBackendMemory);
+    if (alloc.fAllocator != nullptr) {
+        allocator = alloc.fAllocator;
+    }
     allocator->freeMemory(alloc.fBackendMemory);
 }
 
@@ -202,6 +218,9 @@ void* VulkanMemory::MapAlloc(VulkanMemoryAllocator* allocator,
                              const std::function<CheckResult>& checkResult) {
     SkASSERT(VulkanAlloc::kMappable_Flag & alloc.fFlags);
     SkASSERT(alloc.fBackendMemory);
+    if (alloc.fAllocator != nullptr) {
+        allocator = alloc.fAllocator;
+    }
     void* mapPtr;
     VkResult result = allocator->mapMemory(alloc.fBackendMemory, &mapPtr);
     if (!checkResult(result)) {
@@ -213,6 +232,9 @@ void* VulkanMemory::MapAlloc(VulkanMemoryAllocator* allocator,
 void VulkanMemory::UnmapAlloc(VulkanMemoryAllocator* allocator,
                               const VulkanAlloc& alloc) {
     SkASSERT(alloc.fBackendMemory);
+    if (alloc.fAllocator != nullptr) {
+        allocator = alloc.fAllocator;
+    }
     allocator->unmapMemory(alloc.fBackendMemory);
 }
 
@@ -250,6 +272,9 @@ void VulkanMemory::FlushMappedAlloc(VulkanMemoryAllocator* allocator,
         SkASSERT(offset == 0);
         SkASSERT(size <= alloc.fSize);
         SkASSERT(alloc.fBackendMemory);
+        if (alloc.fAllocator != nullptr) {
+            allocator = alloc.fAllocator;
+        }
         VkResult result = allocator->flushMemory(alloc.fBackendMemory, offset, size);
         checkResult(result);
     }
@@ -264,6 +289,9 @@ void VulkanMemory::InvalidateMappedAlloc(VulkanMemoryAllocator* allocator,
         SkASSERT(offset == 0);
         SkASSERT(size <= alloc.fSize);
         SkASSERT(alloc.fBackendMemory);
+        if (alloc.fAllocator != nullptr) {
+            allocator = alloc.fAllocator;
+        }
         VkResult result = allocator->invalidateMemory(alloc.fBackendMemory, offset, size);
         checkResult(result);
     }

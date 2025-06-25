@@ -720,6 +720,8 @@ void popGrResourceTag()
     // Called before certain draws in order to guarantee coherent results from dst reads.
     virtual void xferBarrier(GrRenderTarget*, GrXferBarrierType) = 0;
 
+    virtual void vmaDefragment() {}
+    virtual void dumpVmaStats(SkString *out) {}
 protected:
     static bool CompressedDataIsCorrect(SkISize dimensions,
                                         SkTextureCompressionType,

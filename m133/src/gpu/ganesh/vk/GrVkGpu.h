@@ -109,6 +109,7 @@ public:
     bool isDeviceLost() const override { return fDeviceIsLost; }
 
     skgpu::VulkanMemoryAllocator* memoryAllocator() const { return fMemoryAllocator.get(); }
+    skgpu::VulkanMemoryAllocator* memoryAllocatorCacheImage() const { return fMemoryAllocatorCacheImage.get(); }
 
     VkPhysicalDevice physicalDevice() const { return fPhysicalDevice; }
     VkDevice device() const { return fDevice; }
@@ -251,6 +252,8 @@ public:
     void removeAllocBufferBytes(size_t bytes);
 #endif
 
+    void vmaDefragment() override;
+    void dumpVmaStats(SkString *out) override;
 private:
     GrVkGpu(GrDirectContext*,
             const skgpu::VulkanBackendContext&,
@@ -258,6 +261,7 @@ private:
             sk_sp<const skgpu::VulkanInterface>,
             uint32_t instanceVersion,
             uint32_t physicalDeviceVersion,
+            sk_sp<skgpu::VulkanMemoryAllocator>,
             sk_sp<skgpu::VulkanMemoryAllocator>);
 
     void destroyResources();
@@ -464,6 +468,7 @@ private:
 
     sk_sp<const skgpu::VulkanInterface>                   fInterface;
     sk_sp<skgpu::VulkanMemoryAllocator>                   fMemoryAllocator;
+    sk_sp<skgpu::VulkanMemoryAllocator>                   fMemoryAllocatorCacheImage;
     sk_sp<GrVkCaps>                                       fVkCaps;
     bool                                                  fDeviceIsLost = false;
 

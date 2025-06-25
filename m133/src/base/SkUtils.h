@@ -9,6 +9,7 @@
 #define SkUtils_DEFINED
 
 #include "include/private/base/SkAttributes.h"
+#include "include/private/base/SkAPI.h"
 
 #include <cstring>
 #include <type_traits> // is_trivially_copyable
@@ -73,5 +74,18 @@ static SK_ALWAYS_INLINE Dst SK_FP_SAFE_ABI sk_bit_cast(const Src& src) {
 }
 
 #undef SK_FP_SAFE_ABI
+
+// vma cache
+void SK_API SkSetVmaCacheFlag(bool flag);
+
+bool SkGetMemoryOptimizedFlag();
+bool SkGetVmaCacheFlag();
+int SkGetVmaBlockSizeMB();
+int SkGetNeedCachedMemroySize();
+bool SkGetVmaDefragmentOn();
+size_t SkGetVmaBlockCountMax();
+bool SkGetVmaDebugFlag();
+bool SkGetPreAllocFlag();
+size_t SkGetPreAllocDelay();
 
 #endif

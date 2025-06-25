@@ -35,6 +35,7 @@
 #include "src/core/SkCompressedDataUtils.h"
 #include "src/core/SkMipmap.h"
 #include "src/core/SkTraceEvent.h"
+#include "src/base/SkUtils.h"
 #include "src/gpu/DataUtils.h"
 #include "src/gpu/RefCntedCallback.h"
 #include "src/gpu/ganesh/GrBackendUtils.h"
@@ -172,6 +173,15 @@ std::unique_ptr<GrGpu> GrVkGpu::Make(const skgpu::VulkanBackendContext& backendC
         SkDEBUGFAIL("No supplied vulkan memory allocator and unable to create one internally.");
         return nullptr;
     }
+    const size_t maxBlockCount = SkGetVmaBlockCountMax(); // limit memory hols for vma cache
+    sk_sp<skgpu::VulkanMemoryAllocator> memoryAllocatorCacheImage =
+        skgpu::VulkanMemoryAllocators::Make(backendContext,
+                                            skgpu::ThreadSafe::kNo,
+                                            options.fVulkanVMALargeHeapBlockSize, maxBlockCount);
+    if (!memoryAllocatorCacheImage) {
+        SkDEBUGFAIL("No supplied vulkan memory allocator for cache image and unable to create one internally.");
+        return nullptr;
+    }
 
     std::unique_ptr<GrVkGpu> vkGpu(new GrVkGpu(direct,
                                                backendContext,
@@ -179,7 +189,8 @@ std::unique_ptr<GrGpu> GrVkGpu::Make(const skgpu::VulkanBackendContext& backendC
                                                interface,
                                                instanceVersion,
                                                physDevVersion,
-                                               std::move(memoryAllocator)));
+                                               std::move(memoryAllocator),
+                                               std::move(memoryAllocatorCacheImage)));
     if (backendContext.fProtectedContext == GrProtected::kYes &&
         !vkGpu->vkCaps().supportsProtectedContent()) {
         return nullptr;
@@ -195,10 +206,12 @@ GrVkGpu::GrVkGpu(GrDirectContext* direct,
                  sk_sp<const skgpu::VulkanInterface> interface,
                  uint32_t instanceVersion,
                  uint32_t physicalDeviceVersion,
-                 sk_sp<skgpu::VulkanMemoryAllocator> memoryAllocator)
+                 sk_sp<skgpu::VulkanMemoryAllocator> memoryAllocator,
+                 sk_sp<skgpu::VulkanMemoryAllocator> memoryAllocatorCacheImage)
         : INHERITED(direct)
         , fInterface(std::move(interface))
         , fMemoryAllocator(std::move(memoryAllocator))
+        , fMemoryAllocatorCacheImage(std::move(memoryAllocatorCacheImage))
         , fVkCaps(std::move(caps))
         , fPhysicalDevice(backendContext.fPhysicalDevice)
         , fDevice(backendContext.fDevice)
@@ -211,6 +224,7 @@ GrVkGpu::GrVkGpu(GrDirectContext* direct,
         , fDeviceLostContext(backendContext.fDeviceLostContext)
         , fDeviceLostProc(backendContext.fDeviceLostProc) {
     SkASSERT(fMemoryAllocator);
+    SkASSERT(fMemoryAllocatorCacheImage);
 
     this->initCaps(fVkCaps);
 
@@ -266,6 +280,7 @@ GrVkGpu::~GrVkGpu() {
     // We don't delete the memory allocator until the very end of the GrVkGpu lifetime so that
     // clients can continue to delete backend textures even after a context has been abandoned.
     fMemoryAllocator.reset();
+    fMemoryAllocatorCacheImage.reset();
 }
 
 
@@ -2843,6 +2858,18 @@ void GrVkGpu::removeAllocBufferBytes(size_t bytes)
     cache->removeAllocBufferBytes(bytes);
 }
 #endif
+
+void GrVkGpu::vmaDefragment() {
+    fMemoryAllocatorCacheImage->vmaDefragment();
+}
+
+void GrVkGpu::dumpVmaStats(SkString *out) {
+    if (out == nullptr) {
+        return;
+    }
+    out->appendf("dumpVmaCacheStats:\n");
+    fMemoryAllocatorCacheImage->dumpVmaStats(out, "\n");
+}
 
 void GrVkGpu::submitSecondaryCommandBuffer(std::unique_ptr<GrVkSecondaryCommandBuffer> buffer) {
     if (!this->currentCommandBuffer()) {

@@ -638,6 +638,22 @@ std::set<GrGpuResourceTag> GrDirectContext::getAllGrGpuResourceTags() const {
     return {};
 }
 
+void GrDirectContext::vmaDefragment()
+{
+    if (fGpu) {
+        fGpu->vmaDefragment();
+    }
+}
+
+void GrDirectContext::dumpVmaStats(SkString *out)
+{
+    if (out == nullptr) {
+        return;
+    }
+    if (fGpu) {
+        fGpu->dumpVmaStats(out);
+    }
+}
 GrBackendTexture GrDirectContext::createBackendTexture(int width,
                                                        int height,
                                                        const GrBackendFormat& backendFormat,
