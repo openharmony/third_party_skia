@@ -545,6 +545,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
         fShouldAlwaysUseDedicatedImageMemory = true;
     }
 
+#if defined(SK_BUILD_FOR_OLD_MALI)
     // On Mali galaxy s7 and s9 we see lots of rendering issues with image filters dropping out when
     // using only primary command buffers. We also see issues on the P30 running android 28.
     if (kARM_VkVendor == properties.vendorID && androidAPIVersion <= 28) {
@@ -554,6 +555,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
         fTextureBarrierSupport = false;
         fBlendEquationSupport = kBasic_BlendEquationSupport;
     }
+#endif
 
     // We've seen numerous driver bugs on qualcomm devices running on android P (api 28) or earlier
     // when trying to using discardable msaa attachments and loading from resolve. So we disable the
