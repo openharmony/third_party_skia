@@ -459,13 +459,11 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         fMaxIntrinsicWidth = littleRound(fMaxIntrinsicWidth);
     }
 
-#ifndef OHOS_SUPPORT
     // TODO: This is strictly Flutter thing. Must be factored out into some flutter code
     if (fParagraphStyle.getMaxLines() == 1 ||
         (fParagraphStyle.unlimited_lines() && fParagraphStyle.ellipsized())) {
         fMinIntrinsicWidth = fMaxIntrinsicWidth;
     }
-#endif
 
     // TODO: Since min and max are calculated differently it's possible to get a rounding error
     //  that would make min > max. Sort it out later, make it the same for now
