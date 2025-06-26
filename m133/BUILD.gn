@@ -2303,10 +2303,10 @@ skia_component("skia") {
     sources += [ "src/ports/SkDebug_stdio.cpp" ]
   }
 
-  if (skia_enable_spirv_validation) {
-    deps += [ "${skia_third_party_dir}/externals/spirv-tools:spvtools_val" ]
-    defines += [ "SK_ENABLE_SPIRV_VALIDATION" ]
-  }
+  # if (skia_enable_spirv_validation) {
+  #   deps += [ "${skia_third_party_dir}/externals/spirv-tools:spvtools_val" ]
+  #   defines += [ "SK_ENABLE_SPIRV_VALIDATION" ]
+  # }
 
   if (skia_include_multiframe_procs) {
     sources += [ "tools/SkSharingProc.cpp" ]
