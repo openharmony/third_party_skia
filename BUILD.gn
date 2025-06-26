@@ -4836,7 +4836,8 @@ ohos_static_library("sksl_ext_static") {
     if (is_ohos) {
       sources += [ "${skia_root_dir}/src/ports/SkDebug_ohos.cpp" ]
       external_deps = [
-          "hilog:libhilog"
+          "hilog:libhilog",
+          "hitrace:hitrace_meter",
       ]
     } else if (is_android) {
       sources += [ "${skia_root_dir}/src/ports/SkDebug_android.cpp" ]
@@ -4982,6 +4983,7 @@ ohos_static_library("sksl_ext_static") {
     if (is_ohos) {
       external_deps = [
         "bounds_checking_function:libsec_shared",
+        "hitrace:hitrace_meter",
       ]
     }
 
