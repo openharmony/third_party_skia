@@ -493,9 +493,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     initParent(parent);
 
     if (fParent->getLineBreakStrategy() == LineBreakStrategy::BALANCED &&
-        fParent->getWordBreakType() != WordBreakType::BREAK_ALL &&
-        (fParent->getParagraphStyle().getMaxLines() >= MAX_LINES_LIMIT ||
-        fParent->getParagraphStyle().getEllipsisMod() == EllipsisModal::NONE)) {
+        fParent->getWordBreakType() != WordBreakType::BREAK_ALL) {
         layoutLinesBalanced(parent, maxWidth, addLine);
         return;
     }
@@ -792,19 +790,28 @@ std::vector<uint8_t> TextWrapper::findBreakPositions(Cluster* startCluster,
     return Hyphenator::getInstance().findBreakPositions(locale, owner->fText, startPos, endPos);
 }
 
-void TextWrapper::pushToWordVector() {
+void TextWrapper::pushToWordStretches() {
     fWordStretches.push_back(fClusters);
+    fWordWidthGroups.push_back(fClusters.width());
     fClusters.clean();
 }
 
-void TextWrapper::generateLineStretches(const std::vector<std::pair<size_t, size_t>>& linesGroupInfo) {
+void TextWrapper::pushToWordStretchesBatch() {
+    fWordStretchesBatch.push_back(fWordStretches);
+    fWordWidthGroupsBatch.push_back(fWordWidthGroups);
+    fWordStretches.clear();
+    fWordWidthGroups.clear();
+}
+
+void TextWrapper::generateLineStretches(const std::vector<std::pair<size_t, size_t>>& linesGroupInfo,
+    std::vector<TextStretch>& wordStretches) {
     for (const std::pair<size_t, size_t>& pair : linesGroupInfo) {
         TextStretch endLine{};
         for (size_t i = pair.first; i <= pair.second; ++i) {
             if (i == pair.first) {
-                endLine.setStartCluster(fWordStretches[i].startCluster());
+                endLine.setStartCluster(wordStretches[i].startCluster());
             }
-            endLine.extend(fWordStretches[i]);
+            endLine.extend(wordStretches[i]);
         }
         fLineStretches.push_back(endLine);
     }
@@ -819,23 +826,16 @@ void TextWrapper::extendCommonCluster(Cluster* cluster, TextTabAlign& textTabAli
         fClusters.extend(cluster);
 
         fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
-        pushToWordVector();
+        pushToWordStretches();
     } else {
         fClusters.extend(cluster);
         if (fClusters.endOfWord()) { // Keep adding clusters/words
-            if (textTabAlign.processEndofWord(fWords, fClusters, cluster, totalFakeSpacing)) {
-                if (wordBreakType == WordBreakType::BREAK_ALL) {
-                    fClusters.trim(cluster);
-                }
-                return;
-            }
-
+            textTabAlign.processEndofWord(fWords, fClusters, cluster, totalFakeSpacing);
             fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
-            pushToWordVector();
+            pushToWordStretches();
         } else {
             if (textTabAlign.processCluster(fWords, fClusters, cluster, totalFakeSpacing)) {
                 fClusters.trim(cluster);
-                return;
             }
         }
     }
@@ -844,51 +844,46 @@ void TextWrapper::extendCommonCluster(Cluster* cluster, TextTabAlign& textTabAli
 void TextWrapper::generateWordStretches(const SkSpan<Cluster>& span, WordBreakType wordBreakType) {
     fEndLine.metrics().clean();
 
-    Cluster* start = span.begin();
-    Cluster* end = span.end() - 1;
+    if (fStart == nullptr) {
+        fStart = span.begin();
+        fEnd = span.end() - 1;
+    }
 
-    fClusters.startFrom(start, start->startPos());
-    fClip.startFrom(start, start->startPos());
+    fClusters.startFrom(fStart, fStart->startPos());
+    fClip.startFrom(fStart, fStart->startPos());
 
-    bool isFirstWord = true;
-    TextTabAlign textTabAlign(start->getOwner()->paragraphStyle().getTextTab());
-    textTabAlign.init(MAX_LINES_LIMIT, start);
+    TextTabAlign textTabAlign(fStart->getOwner()->paragraphStyle().getTextTab());
+    textTabAlign.init(MAX_LINES_LIMIT, fStart);
 
     SkScalar totalFakeSpacing = 0.0;
 
-    for (Cluster* cluster = start; cluster < end; ++cluster) {
-        totalFakeSpacing += (cluster->needAutoSpacing() && cluster != start)
+    for (Cluster* cluster = fStart; cluster < fEnd; ++cluster) {
+        totalFakeSpacing += (cluster->needAutoSpacing() && cluster != fStart)
                                     ? (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO
                                     : 0;
-        if (cluster->isHardBreak()) {
-            if (cluster != start) {
-                isFirstWord = false;
-            }
-        }
-
-        if (cluster->isSoftBreak() || cluster->isWhitespaceBreak()) {
-            isFirstWord = false;
-        }
-
         if (cluster->run().isPlaceholder()) {
             if (!fClusters.empty()) {
                 // Placeholder ends the previous word (placeholders are ignored in trimming)
                 fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
-                pushToWordVector();
+                pushToWordStretches();
             }
 
             // Placeholder is separate word and its width now is counted in minIntrinsicWidth
             fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, cluster->width());
             fClusters.extend(cluster);
-            pushToWordVector();
+            pushToWordStretches();
         } else {
             extendCommonCluster(cluster, textTabAlign, totalFakeSpacing, wordBreakType);
         }
 
-        if ((fHardLineBreak = cluster->isHardBreak())) {
-            fClusters.extend(cluster);
-            pushToWordVector();
+        if (cluster->isHardBreak()) {
+            fStart = cluster;
+            pushToWordStretchesBatch();
         }
+    }
+
+    if (!fEnd->isHardBreak()) {
+        pushToWordStretchesBatch();
     }
 }
 
@@ -912,8 +907,7 @@ void calculateCostTable(const std::vector<SkScalar>& clustersWidth,
                         std::vector<SkScalar>& costTable,
                         std::vector<std::pair<size_t, size_t>>& bestPick) {
     int clustersCnt = clustersWidth.size();
-    for (int clustersIndex = clustersCnt - STRATEGY_START_POS; clustersIndex >= 0;
-         clustersIndex--) {
+    for (int clustersIndex = clustersCnt - STRATEGY_START_POS; clustersIndex >= 0; --clustersIndex) {
         bestPick[clustersIndex].first = clustersIndex;
         SkScalar rowCurrentLen = 0;
         std::vector<SkScalar> costList;
@@ -951,8 +945,10 @@ void calculateCostTable(const std::vector<SkScalar>& clustersWidth,
                 minCostIndices.push_back(q);
             }
         }
-        size_t minCostIdx{0};
-        minCostIdx = minCostIndices[static_cast<int32_t>(minCostIndices.size() / MIN_COST_POS)];
+        size_t minCostIdx{costList.size() - 1};
+        if (minCostIndices.size() > 0) {
+            minCostIdx = minCostIndices[static_cast<int32_t>(minCostIndices.size() / MIN_COST_POS)];
+        }
         costTable[clustersIndex] = minCost;
         bestPick[clustersIndex].second = clustersIndex + minCostIdx;
     }
@@ -990,11 +986,11 @@ std::vector<std::pair<size_t, size_t>> TextWrapper::generateLinesGroupInfo(
     return buildWordBalance(bestPick, clustersCnt);
 }
 
-std::vector<SkScalar> TextWrapper::generateWordsWidthInfo() {
+std::vector<SkScalar> TextWrapper::generateWordsWidthInfo(const std::vector<TextStretch>& wordStretches) {
     std::vector<SkScalar> result;
-    result.reserve(fWordStretches.size());
-    std::transform(fWordStretches.begin(),
-                   fWordStretches.end(),
+    result.reserve(wordStretches.size());
+    std::transform(wordStretches.begin(),
+                   wordStretches.end(),
                    std::back_inserter(result),
                    [](const TextStretch& word) { return word.width(); });
     return result;
@@ -1009,6 +1005,7 @@ void TextWrapper::formalizedClusters(std::vector<TextStretch>& clusters, SkScala
 
         for (auto trimmedItor = trimmedWordList.begin(); trimmedItor != trimmedWordList.end();) {
             if (trimmedItor->width() < limitWidth) {
+                ++trimmedItor;
                 continue;
             }
             auto result = trimmedItor->split();
@@ -1077,7 +1074,6 @@ void TextWrapper::finalizeTextLayout(const AddLineToParagraph& addLine) {
 
 void TextWrapper::prepareLineForFormatting(TextStretch& line, SkScalar maxWidth) {
     fEndLine = std::move(line);
-    fNoIndentWidth = maxWidth - fParent->detectIndents(fLineNumber - 1);
 }
 
 void TextWrapper::formatCurrentLine(const AddLineToParagraph& addLine) {
@@ -1093,10 +1089,6 @@ bool TextWrapper::determineIfEllipsisNeeded() {
                     fLineNumber >= fFormattingContext.maxLines;
     bool needEllipsis =
             fFormattingContext.hasEllipsis && !fFormattingContext.endlessLine && lastLine;
-
-    if (fLineStretches.size() > fFormattingContext.maxLines) {
-        needEllipsis = true;
-    }
 
     if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
         fFormattingContext.hasEllipsis) {
@@ -1218,6 +1210,7 @@ void TextWrapper::addFormattedLineToParagraph(const AddLineToParagraph& addLine,
             offsetX,
             fNoIndentWidth);
 
+    fHeight += lineHeight;
     updateIntrinsicWidths();
 }
 
@@ -1374,6 +1367,25 @@ void TextWrapper::adjustFirstLastLineMetrics() {
     }
 }
 
+void TextWrapper::preProcessingForLineStretches() {
+    if (fLineStretches.empty()) {
+        return;
+    }
+
+    const ParagraphStyle& style = fParent->getParagraphStyle();
+    EllipsisModal ellipsisMod = style.getEllipsisMod();
+    if (style.getMaxLines() == 1 && fLineStretches.size() > 1 &&
+        (ellipsisMod == EllipsisModal::HEAD || ellipsisMod == EllipsisModal::MIDDLE)) {
+        TextStretch merged = fLineStretches.front();
+
+        for (size_t i = 1; i < fLineStretches.size(); ++i) {
+            merged.extend(fLineStretches[i]);
+        }
+        fLineStretches.clear();
+        fLineStretches.push_back(merged);
+    }
+}
+
 void TextWrapper::layoutLinesBalanced(ParagraphImpl* parent,
                                       SkScalar maxWidth,
                                       const AddLineToParagraph& addLine) {
@@ -1386,16 +1398,20 @@ void TextWrapper::layoutLinesBalanced(ParagraphImpl* parent,
     // Generate word stretches
     generateWordStretches(span, parent->getWordBreakType());
 
-    // Trimming a word that is longer than the line width
-    formalizedClusters(fWordStretches, maxWidth);
+    for (std::vector<TextStretch>& wordStretches : fWordStretchesBatch) {
+        // Trimming a word that is longer than the line width
+        formalizedClusters(wordStretches, maxWidth);
 
-    std::vector<SkScalar> clustersWidthVector = generateWordsWidthInfo();
+        std::vector<SkScalar> clustersWidthVector = generateWordsWidthInfo(wordStretches);
 
-    // Execute the balancing algorithm to generate line grouping information
-    std::vector<std::pair<size_t, size_t>> linesGroupInfo =
-            generateLinesGroupInfo(clustersWidthVector, maxWidth);
+        // Execute the balancing algorithm to generate line grouping information
+        std::vector<std::pair<size_t, size_t>> linesGroupInfo =
+                generateLinesGroupInfo(clustersWidthVector, maxWidth);
 
-    generateLineStretches(linesGroupInfo);
+        generateLineStretches(linesGroupInfo, wordStretches);
+    }
+
+    preProcessingForLineStretches();
 
     generateTextLines(maxWidth, addLine, span);
 }

@@ -290,6 +290,9 @@ private:
     bool fBrokeLineWithHyphen{false};
     std::vector<TextStretch> fWordStretches;
     std::vector<TextStretch> fLineStretches;
+    std::vector<SkScalar> fWordWidthGroups;
+    std::vector<std::vector<TextStretch>> fWordStretchesBatch;
+    std::vector<std::vector<SkScalar>> fWordWidthGroupsBatch;
 #else
     SkScalar fHeight;
     SkScalar fMinIntrinsicWidth;
@@ -307,6 +310,8 @@ private:
         fBrokeLineWithHyphen = false;
         fWordStretches.clear();
         fLineStretches.clear();
+        fStart = nullptr;
+        fEnd = nullptr;
 #endif
     }
 
@@ -329,16 +334,19 @@ private:
                                                    SkScalar widthBeforeCluster,
                                                    SkScalar maxWidth);
     void initParent(ParagraphImpl* parent) { fParent = parent; }
-    void pushToWordVector();
+    void pushToWordStretches();
+    void pushToWordStretchesBatch();
     void layoutLinesBalanced(
         ParagraphImpl* parent, SkScalar maxWidth, const AddLineToParagraph& addLine);
     void layoutLinesSimple(
         ParagraphImpl* parent, SkScalar maxWidth, const AddLineToParagraph& addLine);
-    std::vector<SkScalar> generateWordsWidthInfo();
+    std::vector<SkScalar> generateWordsWidthInfo(const std::vector<TextStretch>& wordStretches);
     std::vector<std::pair<size_t, size_t>> generateLinesGroupInfo(
         const std::vector<float>& clustersWidth, SkScalar maxWidth);
     void generateWordStretches(const SkSpan<Cluster>& span, WordBreakType wordBreakType);
-    void generateLineStretches(const std::vector<std::pair<size_t, size_t>>& linesGroupInfo);
+    void generateLineStretches(const std::vector<std::pair<size_t, size_t>>& linesGroupInfo,
+        std::vector<TextStretch>& wordStretches);
+    void preProcessingForLineStretches();
     void extendCommonCluster(Cluster* cluster, TextTabAlign& textTabAlign,
         SkScalar& totalFakeSpacing, WordBreakType wordBreakType);
     SkScalar getTextStretchTrimmedEndSpaceWidth(const TextStretch& stretch);
@@ -384,15 +392,15 @@ private:
 
 #ifdef OHOS_SUPPORT
     ParagraphImpl* fParent{nullptr};
-    FormattingContext fFormattingContext{};
-    InternalLineMetrics fMaxRunMetrics{};
+    FormattingContext fFormattingContext;
+    InternalLineMetrics fMaxRunMetrics;
     SkScalar fSoftLineMaxIntrinsicWidth{0.0f};
     SkScalar fCurrentLineWidthWithSpaces{0.0f};
     SkScalar fNoIndentWidth{0.0f};
     bool fFirstLine{false};
     Cluster* fCurrentStartLine{nullptr};
     size_t fCurrentStartPos{0};
-    const Cluster* fStart{nullptr};
+    Cluster* fStart{nullptr};
     Cluster* fEnd{nullptr};
 #endif
 };
