@@ -9,7 +9,7 @@
 #define SkiaVulkan_DEFINED
 
 #include "include/core/SkTypes.h"
-#include "third_party/vulkan-headers/include/vulkan/vulkan_core.h"
+#include "vulkan/vulkan_core.h"
 
 // IWYU pragma: begin_exports
 
