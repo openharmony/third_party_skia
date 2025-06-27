@@ -546,14 +546,17 @@ bool GrVkImage::InitImageInfo(GrVkGpu* gpu, const ImageDesc& imageDesc, GrVkImag
         return gpu->checkVkResult(result);
     };
     auto allocator = gpu->memoryAllocator();
+    auto allocatorCacheImage = gpu->memoryAllocatorCacheImage();
     skgpu::VulkanAlloc alloc;
     if (!skgpu::VulkanMemory::AllocImageMemory(allocator,
+                                               allocatorCacheImage,
                                                image,
                                                isProtected,
                                                forceDedicatedMemory,
                                                useLazyAllocation,
                                                checkResult,
-                                               &alloc) ||
+                                               &alloc,
+                                               imageDesc.fWidth * imageDesc.fHeight * 4) ||
         (useLazyAllocation &&
          !SkToBool(alloc.fFlags & skgpu::VulkanAlloc::kLazilyAllocated_Flag))) {
         VK_CALL(gpu, DestroyImage(gpu->device(), image, nullptr));

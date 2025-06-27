@@ -1061,6 +1061,7 @@ typedef struct VmaAllocatorCreateInfo
     Leaving it initialized to zero is equivalent to `VK_API_VERSION_1_0`.
     */
     uint32_t vulkanApiVersion;
+    size_t maxBlockCount = SIZE_MAX;
 #if VMA_EXTERNAL_MEMORY
     /** \brief Either null or a pointer to an array of external memory handle types for each Vulkan memory type.
 
@@ -1633,6 +1634,11 @@ become outdated.
 VMA_CALL_PRE void VMA_CALL_POST vmaCalculateStatistics(
     VmaAllocator VMA_NOT_NULL allocator,
     VmaTotalStatistics* VMA_NOT_NULL pStats);
+
+/** \brief Free empty block of the Allocator.
+*/
+VMA_CALL_PRE void VMA_CALL_POST vmaFreeEmptyBlock(
+    VmaAllocator VMA_NOT_NULL allocator);
 
 /** \brief Retrieves information about current memory usage and budget for all memory heaps.
 
@@ -6022,6 +6028,8 @@ public:
     VkResult DedicatedAllocMap(VmaAllocator hAllocator, void** ppData);
     void DedicatedAllocUnmap(VmaAllocator hAllocator);
 
+    void FreeEmptyBlock();
+
 #if VMA_STATS_STRING_ENABLED
     uint32_t GetBufferImageUsage() const { return m_BufferImageUsage; }
 
@@ -6746,6 +6754,8 @@ public:
 
     void AddDetailedStatistics(VmaDetailedStatistics& inoutStats) const override;
     void AddStatistics(VmaStatistics& inoutStats) const override;
+
+    void FreeEmptyBlock();
 
 #if VMA_STATS_STRING_ENABLED
     void PrintDetailedMap(class VmaJsonWriter& json, uint32_t mapRefCount) const override;
@@ -10913,6 +10923,8 @@ public:
 
     void Free(const VmaAllocation hAllocation);
 
+    void FreeEmptyBlock();
+
 #if VMA_STATS_STRING_ENABLED
     void PrintDetailedMap(class VmaJsonWriter& json);
 #endif
@@ -11541,6 +11553,8 @@ public:
         return m_TypeExternalMemoryHandleTypes[memTypeIndex];
     }
 #endif // #if VMA_EXTERNAL_MEMORY
+
+    void FreeEmptyBlock();
 
 private:
     VkDeviceSize m_PreferredLargeHeapBlockSize;
@@ -12942,6 +12956,26 @@ VkResult VmaBlockVector::CheckCorruption()
     return VK_SUCCESS;
 }
 
+void VmaBlockVector::FreeEmptyBlock()
+{
+#ifdef VMA_FORCE_EMPTY_BLOCK_DELETION
+    // Force deletion of empty blocks.
+    VmaMutexLockWrite lock(m_Mutex, m_hAllocator->m_UseMutex);
+
+    if (HasEmptyBlock())
+    {
+        VmaDeviceMemoryBlock* pLastBlock = m_Blocks.back();
+        if (pLastBlock->m_pMetadata->IsEmpty())
+        {
+            VMA_DEBUG_LOG("  Freeing empty block #%u", pLastBlock->GetId());
+            pLastBlock->Destroy(m_hAllocator);
+            vma_delete(m_hAllocator, pLastBlock);
+            m_Blocks.pop_back();
+        }
+    }
+#endif
+}
+
 #endif // _VMA_BLOCK_VECTOR_FUNCTIONS
 
 #ifndef _VMA_DEFRAGMENTATION_CONTEXT_FUNCTIONS
@@ -14117,7 +14151,7 @@ VmaAllocator_T::VmaAllocator_T(const VmaAllocatorCreateInfo* pCreateInfo) :
                 memTypeIndex,
                 preferredBlockSize,
                 0,
-                SIZE_MAX,
+                pCreateInfo->maxBlockCount,
                 GetBufferImageGranularity(),
                 false, // explicitBlockSize
                 0, // algorithm
@@ -15164,6 +15198,15 @@ void VmaAllocator_T::CalculateStatistics(VmaTotalStatistics* pStats)
         pStats->total.unusedRangeSizeMax >= pStats->total.unusedRangeSizeMin);
 }
 
+void VmaAllocator_T::FreeEmptyBlock()
+{
+    for (uint32_t memTypeIndex = 0; memTypeIndex < GetMemoryTypeCount(); ++memTypeIndex) {
+        VmaBlockVector* const pBlockVector = m_pBlockVectors[memTypeIndex];
+        VMA_ASSERT(pBlockVector);
+        pBlockVector->FreeEmptyBlock();
+    }
+}
+
 void VmaAllocator_T::GetHeapBudgets(VmaBudget* outBudgets, uint32_t firstHeap, uint32_t heapCount)
 {
 #if VMA_MEMORY_BUDGET
@@ -16071,6 +16114,14 @@ VMA_CALL_PRE void VMA_CALL_POST vmaCalculateStatistics(
     VMA_ASSERT(allocator && pStats);
     VMA_DEBUG_GLOBAL_MUTEX_LOCK
     allocator->CalculateStatistics(pStats);
+}
+
+VMA_CALL_PRE void VMA_CALL_POST vmaFreeEmptyBlock(
+    VmaAllocator allocator)
+{
+    VMA_ASSERT(allocator);
+    VMA_DEBUG_GLOBAL_MUTEX_LOCK
+    allocator->FreeEmptyBlock();
 }
 
 VMA_CALL_PRE void VMA_CALL_POST vmaGetHeapBudgets(

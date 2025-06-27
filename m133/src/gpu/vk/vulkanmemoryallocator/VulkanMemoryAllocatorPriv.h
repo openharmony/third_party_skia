@@ -27,7 +27,8 @@ namespace VulkanMemoryAllocators {
 // which are done at compile time, we cannot really expose this to clients in a meaningful way.
 sk_sp<VulkanMemoryAllocator> Make(const skgpu::VulkanBackendContext&,
                                   ThreadSafe,
-                                  std::optional<VkDeviceSize> blockSize);
+                                  std::optional<VkDeviceSize> blockSize,
+                                  size_t maxBlockCount = SIZE_MAX);
 
 }  // namespace VulkanMemoryAllocators
 }  // namespace skgpu

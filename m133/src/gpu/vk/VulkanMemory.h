@@ -39,12 +39,14 @@ namespace VulkanMemory {
     void FreeBufferMemory(const GrVkGpu* gpu, const VulkanAlloc& alloc);
 
     bool AllocImageMemory(VulkanMemoryAllocator*,
+                          VulkanMemoryAllocator*,
                           VkImage image,
                           skgpu::Protected isProtected,
                           bool forceDedicatedMemory,
                           bool useLazyAllocation,
                           const std::function<CheckResult>&,
-                          VulkanAlloc* alloc);
+                          VulkanAlloc* alloc,
+                          int memorySize);
 
     void FreeImageMemory(VulkanMemoryAllocator*, const VulkanAlloc& alloc);
 

@@ -9,6 +9,7 @@
 #define skgpu_VulkanMemoryAllocator_DEFINED
 
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkString.h"
 #include "include/gpu/vk/VulkanTypes.h"
 #include "include/private/gpu/vk/SkiaVulkan.h"
 
@@ -110,6 +111,9 @@ public:
     // amount of memory in use by an allocation from this allocator.
     // Return 1st param is total allocated memory, 2nd is total used memory.
     virtual std::pair<uint64_t, uint64_t> totalAllocatedAndUsedMemory() const = 0;
+
+    virtual void vmaDefragment() {}
+    virtual void dumpVmaStats(SkString *out, const char *sep = ", ") const {}
 };
 
 } // namespace skgpu

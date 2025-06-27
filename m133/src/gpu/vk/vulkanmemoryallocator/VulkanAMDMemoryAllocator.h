@@ -33,7 +33,9 @@ public:
                                              const VulkanExtensions* extensions,
                                              const VulkanInterface* interface,
                                              ThreadSafe,
-                                             std::optional<VkDeviceSize> blockSize);
+                                             std::optional<VkDeviceSize> blockSize,
+                                             bool cacheFlag = false,
+                                             size_t maxBlockCount = SIZE_MAX);
 
     ~VulkanAMDMemoryAllocator() override;
 
@@ -61,6 +63,9 @@ public:
                               VkDeviceSize size) override;
 
     std::pair<uint64_t, uint64_t> totalAllocatedAndUsedMemory() const override;
+
+    void vmaDefragment() override;
+    void dumpVmaStats(SkString *out, const char *sep = ", ") const override;
 
 private:
     VulkanAMDMemoryAllocator(VmaAllocator allocator);

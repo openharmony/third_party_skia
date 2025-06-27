@@ -965,6 +965,8 @@ public:
      */
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const;
 
+    void vmaDefragment();
+    void dumpVmaStats(SkString *out);
 protected:
     GrDirectContext(GrBackendApi backend,
                     const GrContextOptions& options,

@@ -16,6 +16,7 @@
 #include "src/gpu/vk/VulkanInterface.h"
 #include "src/gpu/vk/VulkanUtilsPriv.h"
 #include "src/gpu/vk/vulkanmemoryallocator/VulkanMemoryAllocatorPriv.h"
+#include "src/base/SkUtils.h"
 
 #include <algorithm>
 #include <cstring>
@@ -29,7 +30,9 @@ sk_sp<VulkanMemoryAllocator> VulkanAMDMemoryAllocator::Make(VkInstance instance,
                                                             const VulkanExtensions* extensions,
                                                             const VulkanInterface* interface,
                                                             ThreadSafe threadSafe,
-                                                            std::optional<VkDeviceSize> blockSize) {
+                                                            std::optional<VkDeviceSize> blockSize,
+                                                            bool cacheFlag,
+                                                            size_t maxBlockCount) {
 #define SKGPU_COPY_FUNCTION(NAME) functions.vk##NAME = interface->fFunctions.f##NAME
 #define SKGPU_COPY_FUNCTION_KHR(NAME) functions.vk##NAME##KHR = interface->fFunctions.f##NAME
 
@@ -82,7 +85,12 @@ sk_sp<VulkanMemoryAllocator> VulkanAMDMemoryAllocator::Make(VkInstance instance,
     // It seems to be a good compromise of not wasting unused allocated space and not making too
     // many small allocations. The AMD allocator will start making blocks at 1/8 the max size and
     // builds up block size as needed before capping at the max set here.
-    info.preferredLargeHeapBlockSize = blockSize.value_or(4 * 1024 * 1024);
+    if (cacheFlag) {
+        info.preferredLargeHeapBlockSize = SkGetVmaBlockSizeMB() * 1024 * 1024; // 1024 = 1K
+    } else {
+        info.preferredLargeHeapBlockSize = blockSize.value_or(4 * 1024 * 1024);
+    }
+    info.maxBlockCount = maxBlockCount;
     info.pAllocationCallbacks = nullptr;
     info.pDeviceMemoryCallbacks = nullptr;
     info.pHeapSizeLimit = nullptr;
@@ -240,6 +248,7 @@ void VulkanAMDMemoryAllocator::getAllocInfo(const VulkanBackendMemory& memoryHan
     alloc->fSize          = vmaInfo.size;
     alloc->fFlags         = flags;
     alloc->fBackendMemory = memoryHandle;
+    alloc->fAllocator     = (VulkanMemoryAllocator *)this;
 }
 
 VkResult VulkanAMDMemoryAllocator::mapMemory(const VulkanBackendMemory& memoryHandle, void** data) {
@@ -276,10 +285,80 @@ std::pair<uint64_t, uint64_t> VulkanAMDMemoryAllocator::totalAllocatedAndUsedMem
     return {stats.total.statistics.blockBytes, stats.total.statistics.allocationBytes};
 }
 
+void VulkanAMDMemoryAllocator::dumpVmaStats(SkString *out, const char *sep) const
+{
+    constexpr int MB = 1024 * 1024;
+    if (out == nullptr || sep == nullptr) {
+        return;
+    }
+    bool flag = SkGetMemoryOptimizedFlag();
+    out->appendf("vma_flag: %d %s", flag, sep);
+    if (!flag) {
+        return;
+    }
+    VmaTotalStatistics stats;
+    vmaCalculateStatistics(fAllocator, &stats);
+    uint64_t used = stats.total.statistics.allocationBytes;
+    uint64_t total = stats.total.statistics.blockBytes;
+    uint64_t free = total - used;
+    auto maxBlockCount = SkGetVmaBlockCountMax();
+    out->appendf("vma_free: %llu (%d MB)%s", free, free / MB, sep);
+    out->appendf("vma_used: %llu (%d MB)%s", used, used / MB, sep);
+    out->appendf("vma_total: %llu (%d MB)%s", total, total / MB, sep);
+    out->appendf("vma_cacheBlockSize: %d MB%s", SkGetVmaBlockSizeMB(), sep);
+    out->appendf("vma_cacheBlockCount: %llu / %llu%s",
+        stats.total.statistics.blockCount <= maxBlockCount ? stats.total.statistics.blockCount : maxBlockCount,
+        maxBlockCount, sep);
+    out->appendf("vma_dedicatedBlockCount: %llu%s",
+        stats.total.statistics.blockCount <= maxBlockCount ? 0 : stats.total.statistics.blockCount - maxBlockCount, sep);
+    out->appendf("vma_allocationCount: %u%s", stats.total.statistics.allocationCount, sep);
+    out->appendf("vma_unusedRangeCount: %u%s", stats.total.unusedRangeCount, sep);
+    out->appendf("vma_allocationSize: %llu / %llu%s",
+        stats.total.allocationSizeMin, stats.total.allocationSizeMax, sep);
+    out->appendf("vma_unusedRangeSize: %llu / %llu%s",
+        stats.total.unusedRangeSizeMin, stats.total.unusedRangeSizeMax, sep);
+}
+
+void VulkanAMDMemoryAllocator::vmaDefragment()
+{
+    bool flag = SkGetVmaDefragmentOn();
+    if (!flag) {
+        return;
+    }
+    bool debugFlag = SkGetVmaDebugFlag();
+    if (!debugFlag) {
+        vmaFreeEmptyBlock(fAllocator);
+        return;
+    }
+
+    // dfx
+    SkString debugInfo;
+    dumpVmaStats(&debugInfo);
+    SkDebugf("GrVkAMDMemoryAllocator::vmaDefragment() before: %s",
+        debugInfo.c_str());
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_OHOS_NAME_FMT_ALWAYS("GrVkAMDMemoryAllocator::vmaDefragment() before: %s", debugInfo.c_str());
+#endif
+
+    {
+        vmaFreeEmptyBlock(fAllocator);
+    }
+
+    // dfx
+    debugInfo = "";
+    dumpVmaStats(&debugInfo);
+    SkDebugf("GrVkAMDMemoryAllocator::vmaDefragment() after: %s",
+        debugInfo.c_str());
+#ifdef SKIA_OHOS_FOR_OHOS_TRACE
+    HITRACE_OHOS_NAME_FMT_ALWAYS("GrVkAMDMemoryAllocator::vmaDefragment() after: %s", debugInfo.c_str());
+#endif
+}
+
 namespace VulkanMemoryAllocators {
 sk_sp<VulkanMemoryAllocator> Make(const skgpu::VulkanBackendContext& backendContext,
                                   ThreadSafe threadSafe,
-                                  std::optional<VkDeviceSize> blockSize) {
+                                  std::optional<VkDeviceSize> blockSize,
+                                  size_t maxBlockCount) {
     SkASSERT(backendContext.fInstance != VK_NULL_HANDLE);
     SkASSERT(backendContext.fPhysicalDevice != VK_NULL_HANDLE);
     SkASSERT(backendContext.fDevice != VK_NULL_HANDLE);
@@ -312,7 +391,8 @@ sk_sp<VulkanMemoryAllocator> Make(const skgpu::VulkanBackendContext& backendCont
                                           extensions,
                                           interface.get(),
                                           threadSafe,
-                                          blockSize);
+                                          blockSize,
+                                          maxBlockCount);
 }
 
 }  // namespace VulkanMemoryAllocators
