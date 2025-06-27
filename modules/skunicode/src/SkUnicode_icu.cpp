@@ -24,6 +24,10 @@
 #include <utility>
 #include <vector>
 
+#ifdef OHOS_SUPPORT
+#include <unordered_set>
+#endif
+
 #if defined(SK_USING_THIRD_PARTY_ICU)
 #include "SkLoadICU.h"
 #endif
@@ -172,6 +176,32 @@ class SkIcuBreakIteratorCache {
         return instance;
     }
 
+#ifdef OHOS_SUPPORT
+    ICUBreakIterator makeBreakIterator(const char locale[], SkUnicode::BreakType type) {
+        UErrorCode status = U_ZERO_ERROR;
+        ICUBreakIterator* cachedIterator;
+        {
+            SkAutoMutexExclusive lock(fBreakCacheMutex);
+            cachedIterator = fBreakCache.find(type);
+            if (!cachedIterator) {
+                ICUBreakIterator newIterator(sk_ubrk_open(convertType(type), locale, nullptr, 0, &status));
+                if (U_FAILURE(status)) {
+                    SkDEBUGF("Break error: %s", sk_u_errorName(status));
+                } else {
+                    cachedIterator = fBreakCache.set(type, std::move(newIterator));
+                }
+            }
+        }
+        ICUBreakIterator iterator;
+        if (cachedIterator) {
+            iterator.reset(sk_ubrk_clone(cachedIterator->get(), &status));
+            if (U_FAILURE(status)) {
+                SkDEBUGF("Break error: %s", sk_u_errorName(status));
+            }
+        }
+        return iterator;
+    }
+#else
     ICUBreakIterator makeBreakIterator(SkUnicode::BreakType type) {
         UErrorCode status = U_ZERO_ERROR;
         ICUBreakIterator* cachedIterator;
@@ -197,6 +227,7 @@ class SkIcuBreakIteratorCache {
         }
         return iterator;
     }
+#endif
 };
 
 class SkUnicode_icu : public SkUnicode {
@@ -209,7 +240,11 @@ class SkUnicode_icu : public SkUnicode {
 
         UErrorCode status = U_ZERO_ERROR;
 
+#ifdef OHOS_SUPPORT
+        ICUBreakIterator iterator = SkIcuBreakIteratorCache::get().makeBreakIterator(locale, BreakType::kWords);
+#else
         ICUBreakIterator iterator = SkIcuBreakIteratorCache::get().makeBreakIterator(BreakType::kWords);
+#endif
         if (!iterator) {
             SkDEBUGF("Break error: %s", sk_u_errorName(status));
             return false;
@@ -239,7 +274,12 @@ class SkUnicode_icu : public SkUnicode {
     }
 
     static bool extractPositions
+#ifdef OHOS_SUPPORT
+        (const char utf8[], int utf8Units, BreakType type, const char locale[],
+            std::function<void(int, int)> setBreak) {
+#else
         (const char utf8[], int utf8Units, BreakType type, std::function<void(int, int)> setBreak) {
+#endif
 
         UErrorCode status = U_ZERO_ERROR;
         ICUUText text(sk_utext_openUTF8(nullptr, &utf8[0], utf8Units, &status));
@@ -250,7 +290,11 @@ class SkUnicode_icu : public SkUnicode {
         }
         SkASSERT(text);
 
+#ifdef OHOS_SUPPORT
+        ICUBreakIterator iterator = SkIcuBreakIteratorCache::get().makeBreakIterator(locale, type);
+#else
         ICUBreakIterator iterator = SkIcuBreakIteratorCache::get().makeBreakIterator(type);
+#endif
         if (!iterator) {
             return false;
         }
@@ -343,6 +387,16 @@ class SkUnicode_icu : public SkUnicode {
     static bool isGraphemeExtend(SkUnichar unichar) {
         return sk_u_hasBinaryProperty(unichar, UCHAR_GRAPHEME_EXTEND);
     }
+    static bool isCustomSoftBreak(SkUnichar unichar) {
+        // ‘ “ ( [ { < « — – - • – – $ £ € + = × / \ % ° # * @ _ § © ®
+        static const std::unordered_set<SkUnichar> kBreakTriggerCodePoints {
+            0x2018, 0x201C, 0x0028, 0x005B, 0x007B, 0x003C, 0x00AB, 0x2014, 0x2013, 0x002D,
+            0x2022, 0x0024, 0x00A3, 0x20AC, 0x002B, 0x003D, 0x00D7, 0x002F, 0x005C, 0x0025,
+            0x00B0, 0x0023, 0x002A, 0x0040, 0x005F, 0x00A7, 0x00A9, 0x00AE
+        };
+
+        return kBreakTriggerCodePoints.count(unichar) > 0;
+    }
 #endif
 
 public:
@@ -421,21 +475,36 @@ public:
         if (SkUnicode_icu::isEllipsis(unichar)) {
             results->at(i) |= SkUnicode::kEllipsis;
         }
+        if (SkUnicode_icu::isCustomSoftBreak(unichar)) {
+            results->at(i) |= SkUnicode::kSoftLineBreakBefore;
+        }
     }
 #endif
 
+#ifdef OHOS_SUPPORT
+    bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs, const char locale[],
+#else
     bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs,
+#endif
                           SkTArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->reset();
         results->push_back_n(utf8Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
 
+#ifdef OHOS_SUPPORT
+        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kLines, locale, [&](int pos, int status) {
+#else
         SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kLines, [&](int pos, int status) {
+#endif
             (*results)[pos] |= status == UBRK_LINE_HARD
                                     ? CodeUnitFlags::kHardLineBreakBefore
                                     : CodeUnitFlags::kSoftLineBreakBefore;
         });
 
+#ifdef OHOS_SUPPORT
+        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kGraphemes, locale, [&](int pos, int status) {
+#else
         SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kGraphemes, [&](int pos, int status) {
+#endif
             (*results)[pos] |= CodeUnitFlags::kGraphemeStart;
         });
 
@@ -482,7 +551,11 @@ public:
         return true;
     }
 
+#ifdef OHOS_SUPPORT
+    bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs, const char locale[],
+#else
     bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs,
+#endif
                           SkTArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->reset();
         results->push_back_n(utf16Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
@@ -513,6 +586,9 @@ public:
         this->forEachBreak((char16_t*)&utf16[0],
                            utf16Units,
                            SkUnicode::BreakType::kGraphemes,
+#ifdef OHOS_SUPPORT
+                           locale,
+#endif
                            [results](SkBreakIterator::Position pos, SkBreakIterator::Status) {
                                (*results)[pos] |= CodeUnitFlags::kGraphemeStart;
                            });
@@ -521,6 +597,9 @@ public:
                 (char16_t*)&utf16[0],
                 utf16Units,
                 SkUnicode::BreakType::kLines,
+#ifdef OHOS_SUPPORT
+                locale,
+#endif
                 [results](SkBreakIterator::Position pos, SkBreakIterator::Status status) {
                     if (status ==
                         (SkBreakIterator::Status)SkUnicode::LineBreakType::kHardLineBreak) {

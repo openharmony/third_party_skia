@@ -6,9 +6,25 @@
 #include "include/ParagraphStyle.h"
 #include "include/core/SkSpan.h"
 #include "modules/skparagraph/src/TextLine.h"
+#include "src/Run.h"
+
+#ifdef OHOS_SUPPORT
+#include <list>
+#include <vector>
+
+#include "include/TextStyle.h"
+#include "modules/skparagraph/src/ParagraphImpl.h"
+#include "SkScalar.h"
+#endif
 
 namespace skia {
 namespace textlayout {
+
+#ifdef OHOS_SUPPORT
+const size_t STRATEGY_START_POS{2};
+const size_t MIN_COST_POS{2};
+const size_t MAX_LINES_LIMIT{1000000000};
+#endif
 
 class ParagraphImpl;
 #ifdef OHOS_SUPPORT
@@ -31,6 +47,9 @@ class TextWrapper {
             fCluster += up ? 1 : -1;
             fPos = up ? 0 : fCluster->endPos();
         }
+#ifdef OHOS_SUPPORT
+        void setCluster(Cluster* cluster) { fCluster = cluster; }
+#endif
 
     private:
         Cluster* fCluster;
@@ -51,6 +70,34 @@ class TextWrapper {
             }
             fWidthWithGhostSpaces = fWidth;
         }
+
+#ifdef OHOS_SUPPORT
+        TextStretch(Cluster* c, bool forceStrut)
+                : fStart(c, 0), fEnd(c, c->endPos()), fMetrics(forceStrut), fWidth(0), fWidthWithGhostSpaces(0) {
+            if (auto r = c->runOrNull()) {
+                fMetrics.add(r);
+            }
+            fWidth = c->width();
+            fWidthWithGhostSpaces = fWidth;
+        }
+
+        std::vector<TextStretch> split() {
+            ParagraphImpl* owner = fStart.cluster()->getOwner();
+            Cluster* cluster = fStart.cluster();
+            std::vector<TextStretch> result{};
+            while(cluster <= fEnd.cluster()) {
+                auto endIndex = (cluster)->textRange().end;
+                Cluster* endCluster = &owner->cluster(
+                    std::min(owner->fClustersIndexFromCodeUnit[endIndex], owner->clusters().size() - 1));
+                TextStretch singleClusterStretch = TextStretch(cluster, metrics().getForceStrut());
+                result.push_back(singleClusterStretch);
+                cluster = endCluster;
+            }
+            return result;
+        }
+
+        void setStartCluster(Cluster* cluster) { fStart.setCluster(cluster); }
+#endif
 
         inline SkScalar width() const { return fWidth; }
         SkScalar widthWithGhostSpaces() const { return fWidthWithGhostSpaces; }
@@ -205,6 +252,24 @@ public:
 
 private:
 #ifdef OHOS_SUPPORT
+    struct FormattingContext {
+        bool unlimitedLines{false};
+        bool endlessLine{false};
+        bool hasEllipsis{false};
+        bool disableFirstAscent{false};
+        bool disableLastDescent{false};
+        size_t maxLines{0};
+        TextAlign align{TextAlign::kLeft};
+    };
+
+    struct LineTextRanges {
+        TextRange textExcludingSpaces;
+        TextRange text;
+        TextRange textIncludingNewlines;
+        ClusterRange clusters;
+        ClusterRange clustersWithGhosts;
+    };
+
     friend TextTabAlign;
 #endif
     TextStretch fWords;
@@ -218,9 +283,21 @@ private:
     bool fHardLineBreak;
     bool fExceededMaxLines;
 
+#ifdef OHOS_SUPPORT
+    SkScalar fHeight{0};
+    SkScalar fMinIntrinsicWidth{std::numeric_limits<SkScalar>::min()};
+    SkScalar fMaxIntrinsicWidth{std::numeric_limits<SkScalar>::min()};
+    bool fBrokeLineWithHyphen{false};
+    std::vector<TextStretch> fWordStretches;
+    std::vector<TextStretch> fLineStretches;
+    std::vector<SkScalar> fWordWidthGroups;
+    std::vector<std::vector<TextStretch>> fWordStretchesBatch;
+    std::vector<std::vector<SkScalar>> fWordWidthGroupsBatch;
+#else
     SkScalar fHeight;
     SkScalar fMinIntrinsicWidth;
     SkScalar fMaxIntrinsicWidth;
+#endif
 
     void reset() {
         fWords.clean();
@@ -231,6 +308,10 @@ private:
         fHardLineBreak = false;
 #ifdef OHOS_SUPPORT
         fBrokeLineWithHyphen = false;
+        fWordStretches.clear();
+        fLineStretches.clear();
+        fStart = nullptr;
+        fEnd = nullptr;
 #endif
     }
 
@@ -246,9 +327,61 @@ private:
                                SkScalar widthBeforeCluster,
                                SkScalar maxWidth);
 
-    bool fBrokeLineWithHyphen{false};
     static void matchHyphenResult(const std::vector<uint8_t>& result, ParagraphImpl* owner, size_t& pos,
                                   SkScalar maxWidth, SkScalar length);
+    static std::vector<uint8_t> findBreakPositions(Cluster* startCluster,
+                                                   Cluster* endOfClusters,
+                                                   SkScalar widthBeforeCluster,
+                                                   SkScalar maxWidth);
+    void initParent(ParagraphImpl* parent) { fParent = parent; }
+    void pushToWordStretches();
+    void pushToWordStretchesBatch();
+    void layoutLinesBalanced(
+        ParagraphImpl* parent, SkScalar maxWidth, const AddLineToParagraph& addLine);
+    void layoutLinesSimple(
+        ParagraphImpl* parent, SkScalar maxWidth, const AddLineToParagraph& addLine);
+    std::vector<SkScalar> generateWordsWidthInfo(const std::vector<TextStretch>& wordStretches);
+    std::vector<std::pair<size_t, size_t>> generateLinesGroupInfo(
+        const std::vector<float>& clustersWidth, SkScalar maxWidth);
+    void generateWordStretches(const SkSpan<Cluster>& span, WordBreakType wordBreakType);
+    void generateLineStretches(const std::vector<std::pair<size_t, size_t>>& linesGroupInfo,
+        std::vector<TextStretch>& wordStretches);
+    void preProcessingForLineStretches();
+    void extendCommonCluster(Cluster* cluster, TextTabAlign& textTabAlign,
+        SkScalar& totalFakeSpacing, WordBreakType wordBreakType);
+    SkScalar getTextStretchTrimmedEndSpaceWidth(const TextStretch& stretch);
+    void formalizedClusters(std::vector<TextStretch>& clusters, SkScalar limitWidth);
+    void generateTextLines(SkScalar maxWidth,
+                            const AddLineToParagraph& addLine,
+                            const SkSpan<Cluster>& span);
+    void initializeFormattingState(SkScalar maxWidth, const SkSpan<Cluster>& span);
+    void processLineStretches(SkScalar maxWidth, const AddLineToParagraph& addLine);
+    void finalizeTextLayout(const AddLineToParagraph& addLine);
+    void prepareLineForFormatting(TextStretch& line, SkScalar maxWidth);
+    void formatCurrentLine(const AddLineToParagraph& addLine);
+    bool determineIfEllipsisNeeded();
+    void trimLineSpaces();
+    void handleSpecialCases(bool needEllipsis);
+    void updateLineMetrics();
+    void updatePlaceholderMetrics();
+    void adjustLineMetricsForFirstLastLine();
+    void applyStrutMetrics();
+    LineTextRanges calculateLineTextRanges();
+    SkScalar calculateLineHeight();
+    void addFormattedLineToParagraph(const AddLineToParagraph& addLine, bool needEllipsis);
+    void updateIntrinsicWidths();
+    bool shouldBreakFormattingLoop();
+    bool isLastLine() const;
+    void advanceToNextLine();
+    void prepareForNextLine();
+    void processRemainingClusters();
+    void handleHardBreak(float& lastWordLength);
+    void handleWhitespaceBreak(Cluster* cluster, float& lastWordLength);
+    void handlePlaceholder(Cluster* cluster, float& lastWordLength);
+    void handleRegularCluster(Cluster* cluster, float& lastWordLength);
+    void adjustMetricsForEmptyParagraph();
+    void addFinalLineBreakIfNeeded(const AddLineToParagraph& addLine);
+    void adjustFirstLastLineMetrics();
 #else
     void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack);
     void moveForward(bool hasEllipsis);
@@ -256,6 +389,20 @@ private:
     void trimEndSpaces(TextAlign align);
     std::tuple<Cluster*, size_t, SkScalar> trimStartSpaces(Cluster* endOfClusters);
     SkScalar getClustersTrimmedWidth();
+
+#ifdef OHOS_SUPPORT
+    ParagraphImpl* fParent{nullptr};
+    FormattingContext fFormattingContext;
+    InternalLineMetrics fMaxRunMetrics;
+    SkScalar fSoftLineMaxIntrinsicWidth{0.0f};
+    SkScalar fCurrentLineWidthWithSpaces{0.0f};
+    SkScalar fNoIndentWidth{0.0f};
+    bool fFirstLine{false};
+    Cluster* fCurrentStartLine{nullptr};
+    size_t fCurrentStartPos{0};
+    Cluster* fStart{nullptr};
+    Cluster* fEnd{nullptr};
+#endif
 };
 }  // namespace textlayout
 }  // namespace skia
