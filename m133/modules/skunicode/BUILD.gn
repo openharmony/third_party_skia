@@ -97,7 +97,11 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
         deps += [ "${skia_third_party_dir}/icu:headers" ]
       } else {
         sources += skia_unicode_builtin_icu_sources
-        deps += [ "${skia_third_party_dir}/icu" ]
+        if (skia_use_system_lib) {
+          external_deps = [ "icu:static_icu_for_skia" ]
+        } else {
+          deps += [ "${skia_third_party_dir}/icu" ]
+        }
         if (is_arkui_x) {
           defines += [ "U_DISABLE_RENAMING=0" ]
           deps -= [ "${skia_third_party_dir}/icu" ]
@@ -140,7 +144,11 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
       sources = skia_unicode_icu_bidi_sources
       sources += skia_unicode_bidi_subset_sources
       sources += skia_unicode_client_icu_sources
-      deps += [ skia_icu_bidi_third_party_dir ]
+      if (skia_use_system_lib) {
+        external_deps = [ "icu:static_icu_bidi_for_skia" ]
+      } else {
+        deps += [ skia_icu_bidi_third_party_dir ]
+      }
     }
   }
 
@@ -168,10 +176,12 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
       sources += skia_unicode_bidi_subset_sources
 
       sources += skia_unicode_libgrapheme_sources
-      deps += [
-        skia_icu_bidi_third_party_dir,
-        skia_libgrapheme_third_party_dir,
-      ]
+      deps += [ skia_libgrapheme_third_party_dir ]
+      if (skia_use_system_lib) {
+        external_deps = [ "icu:static_icu_bidi_for_skia" ]
+      } else {
+        deps += [ skia_icu_bidi_third_party_dir ]
+      }
     }
   }
 
@@ -225,8 +235,12 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
           "../..:test",
         ]
         sources = skia_unicode_tests
-        deps += [ skia_icu_bidi_third_party_dir ]
         external_deps = [ "hitrace:hitrace_meter" ]
+        if (skia_use_system_lib) {
+          external_deps += [ "icu:static_icu_bidi_for_skia" ]
+        } else {
+          deps += [ skia_icu_bidi_third_party_dir ]
+        }
       } else {
         sources = []
       }

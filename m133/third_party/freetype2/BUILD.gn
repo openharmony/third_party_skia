@@ -28,7 +28,7 @@ import("../third_party.gni")
 
 if (skia_use_system_freetype2) {
   source_set("freetype2") {
-    public_external_deps = [ "freetype:freetype_static" ]
+    external_deps = [ "freetype:freetype_static" ]
   }
 } else {
   third_party("freetype2") {

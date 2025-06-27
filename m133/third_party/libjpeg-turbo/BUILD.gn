@@ -24,7 +24,7 @@ config("libjpeg-turbo-inline") {
 
 if (skia_use_system_libjpeg_turbo2) {
   source_set("libjpeg") {
-    public_external_deps = [ "libjpeg-turbo:turbojpeg" ]
+    external_deps = [ "libjpeg-turbo:turbojpeg" ]
   }
 } else {
   third_party("libjpegm133") {

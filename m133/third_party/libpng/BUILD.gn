@@ -17,7 +17,7 @@ import("../third_party.gni")
 
 if (skia_use_system_libpng) {
   source_set("libpng") {
-    public_external_deps = [ "libpng:libpng" ]
+    external_deps = [ "libpng:libpng" ]
   }
 } else {
   third_party("libpng") {

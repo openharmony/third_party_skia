@@ -6,18 +6,14 @@
 import("../../../../gn/skia.gni")
 
 config("vulkanmemoryallocator_public") {
-  include_dirs = [
-    ".",
-    "$skia_vulkan_memory_allocator_dir/include",
-  ]
+  include_dirs = [ "." ]
 }
 
 source_set("vulkanmemoryallocator") {
   public_configs = [ ":vulkanmemoryallocator_public" ]
 
-  include_dirs = [
-    "../../../../",
-  ]
+  include_dirs = [ "${skia_root_dir}" ]
+  deps = [ "${skia_third_party_dir}/vulkanmemoryallocator:vulkan_memoryallocator" ]
   external_deps = [ "vulkan-headers:vulkan_headers" ]
   defines = [ "SK_USE_INTERNAL_VULKAN_HEADERS" ]
 
