@@ -21,6 +21,9 @@
 #include <cstring>
 #include <memory>
 
+#ifdef ENABLE_DRAWING_ADAPTER
+namespace SkiaRsText {
+#endif
 class SkShaperPrimitive : public SkShaper {
 public:
     SkShaperPrimitive() {}
@@ -346,3 +349,6 @@ std::unique_ptr<SkShaper> SkShaper::MakePrimitive() { return SkShapers::Primitiv
 namespace SkShapers::Primitive {
 std::unique_ptr<SkShaper> PrimitiveText() { return std::make_unique<SkShaperPrimitive>(); }
 }  // namespace SkShapers
+#ifdef ENABLE_DRAWING_ADAPTER
+} // namespace SkiaRsText
+#endif // ENABLE_DRAWING_ADAPTER

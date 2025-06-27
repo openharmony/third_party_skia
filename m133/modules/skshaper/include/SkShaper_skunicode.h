@@ -22,7 +22,6 @@ SKSHAPER_API std::unique_ptr<SkShaper::BiDiRunIterator> BidiRunIterator(sk_sp<Sk
                                                                         const char* utf8,
                                                                         size_t utf8Bytes,
                                                                         uint8_t bidiLevel);
-
 }  // namespace SkShapers::unicode
 
 #endif

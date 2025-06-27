@@ -56,7 +56,8 @@ struct SkUbrkGetLocaleByType<
 }  // namespace
 
 #define SKICU_FUNC(funcname) funcname,
-std::unique_ptr<SkICULib> SkLoadICULib() {
+std::unique_ptr<SkICULib> SkLoadICULib()
+{
     return std::make_unique<SkICULib>(SkICULib{
         SKICU_EMIT_FUNCS
         &SkUbrkClone<const UBreakIterator*>::clone,
