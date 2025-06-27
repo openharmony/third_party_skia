@@ -226,6 +226,7 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
         ]
         sources = skia_unicode_tests
         deps += [ skia_icu_bidi_third_party_dir ]
+        external_deps = [ "hitrace:hitrace_meter" ]
       } else {
         sources = []
       }
