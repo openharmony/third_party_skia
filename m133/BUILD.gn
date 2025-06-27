@@ -1650,7 +1650,12 @@ optional("jpeg_decode") {
   enabled = skia_use_libjpeg_turbo_decode
   public_defines = [ "SK_CODEC_DECODES_JPEG" ]
 
-  deps = [ "${skia_third_party_dir}/libjpeg-turbo:libjpegm133" ]
+  deps = []
+  if (skia_use_system_lib) {
+    external_deps = [ "libjpeg-turbo:turbojpeg" ]
+  } else {
+    deps += [ "${skia_third_party_dir}/libjpeg-turbo:libjpegm133" ]
+  }
   sources = [
     "src/codec/SkJpegCodec.cpp",
     "src/codec/SkJpegDecoderMgr.cpp",
@@ -1674,7 +1679,12 @@ optional("jpeg_encode") {
   enabled = skia_use_libjpeg_turbo_encode && !skia_use_ndk_images
   public_defines = [ "SK_CODEC_ENCODES_JPEG" ]
 
-  deps = [ "${skia_third_party_dir}/libjpeg-turbo:libjpegm133" ]
+  deps = []
+  if (skia_use_system_lib) {
+    external_deps = [ "libjpeg-turbo:turbojpeg" ]
+  } else {
+    deps += [ "${skia_third_party_dir}/libjpeg-turbo:libjpegm133" ]
+  }
   public = skia_encode_jpeg_public
   sources = skia_encode_jpeg_srcs
 
@@ -1769,14 +1779,22 @@ optional("pdf") {
     if (skia_feature_zlib != "") {
       external_deps += [ skia_feature_zlib ]
     } else {
-      deps += [ "${skia_third_party_dir}/zlib" ]
+      if (skia_use_system_lib) {
+        external_deps += [ "zlib:libz" ]
+      } else {
+        deps += [ "${skia_third_party_dir}/zlib" ]
+      }
     }
   }
   public = skia_pdf_public
   sources = skia_pdf_sources
   sources_when_disabled = [ "src/pdf/SkDocument_PDF_None.cpp" ]
   if (skia_pdf_subset_harfbuzz) {
-    deps += [ "${skia_third_party_dir}/harfbuzz" ]
+    if (skia_use_system_lib) {
+      external_deps += [ "harfbuzz:harfbuzz_static_for_skia" ]
+    } else {
+      deps += [ "${skia_third_party_dir}/harfbuzz" ]
+    }
     defines = [ "SK_PDF_USE_HARFBUZZ_SUBSET" ]
   }
   deps += [
@@ -1800,7 +1818,11 @@ optional("png_decode_libpng") {
     "SK_CODEC_DECODES_PNG_WITH_LIBPNG",
   ]
 
-  deps = [ "${skia_third_party_dir}/libpng" ]
+  if (skia_use_system_lib) {
+    external_deps = [ "libpng:libpng" ]
+  } else {
+    deps = [ "${skia_third_party_dir}/libpng" ]
+  }
   sources = [ "src/codec/SkIcoCodec.cpp" ] + skia_codec_png_base +
             skia_codec_libpng_srcs
   defines = [ "ICO_CODEC_HW_HIGH_QUALITY_DECODE" ]
@@ -1814,7 +1836,11 @@ optional("png_encode") {
   ]
 
   public = skia_encode_png_public
-  deps = [ "${skia_third_party_dir}/libpng" ]
+  if (skia_use_system_lib) {
+    external_deps = [ "libpng:libpng" ]
+  } else {
+    deps = [ "${skia_third_party_dir}/libpng" ]
+  }
   sources = skia_encode_png_srcs
 }
 
@@ -1824,10 +1850,13 @@ optional("raw") {
 
   deps = [
     "${skia_third_party_dir}/dng_sdk",
-    "${skia_third_party_dir}/libjpeg-turbo:libjpegm133",
     "${skia_third_party_dir}/piex:piexm133",
   ]
-
+  if (skia_use_system_lib) {
+    external_deps = [ "libjpeg-turbo:turbojpeg" ]
+  } else {
+    deps += [ "${skia_third_party_dir}/libjpeg-turbo:libjpegm133" ]
+  }
   # SkRawCodec catches any exceptions thrown by dng_sdk, insulating the rest of
   # Skia.
   configs = [ "gn/portable:add_exceptions" ]
@@ -1843,7 +1872,12 @@ optional("typeface_freetype") {
   }
 
   public_defines = [ "SK_TYPEFACE_FACTORY_FREETYPE" ]
-  deps = [ "${skia_third_party_dir}/freetype2" ]
+  if (skia_use_system_lib || ((is_official_build || !(is_android || sanitize_skia == "MSAN")) &&
+        !is_fuchsia && !is_wasm)) {
+    external_deps = [ "freetype:freetype_static" ]
+  } else {
+    deps = [ "${skia_third_party_dir}/freetype2" ]
+  }
   if (defined(external_deps)) {
     external_deps += [ "bounds_checking_function:libsec_shared" ]
   } else {
@@ -3103,14 +3137,23 @@ if (skia_enable_tools) {
       "modules/sksg:tests",
       "modules/skshaper",
       "modules/skunicode:tests",
-      "${skia_third_party_dir}/libpng",
       "${skia_third_party_dir}/libwebp:libwebpm133",
-      "${skia_third_party_dir}/zlib",
     ]
     external_deps = [
       "hitrace:hitrace_meter",
       "vulkan-headers:vulkan_headers",
     ]
+    if (skia_use_system_lib) {
+      external_deps += [
+        "libpng:libpng",
+        "zlib:libz",
+      ]
+    } else {
+      deps += [
+        "${skia_third_party_dir}/libpng",
+        "${skia_third_party_dir}/zlib",
+      ]
+    }
     if (gm_test_enable_font) {
       deps += [
         "modules/skparagraph:tests",
@@ -3171,8 +3214,12 @@ if (skia_enable_tools) {
     deps = [
       ":flags",
       ":skia",
-      "${skia_third_party_dir}/libpng",
     ]
+    if (skia_use_system_lib) {
+      external_deps = [ "libpng:libpng" ]
+    } else {
+      deps += [ "${skia_third_party_dir}/libpng" ]
+    }
   }
   if (target_cpu != "wasm") {
     test_app("convert-to-nia") {

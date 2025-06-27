@@ -8,7 +8,7 @@ import("zlib.gni")
 
 if (skia_use_system_zlib) {
   source_set("zlib") {
-    public_external_deps = [ "zlib:libz" ]
+    external_deps = [ "zlib:libz" ]
   }
 } else {
   config("zlib_internal_config") {

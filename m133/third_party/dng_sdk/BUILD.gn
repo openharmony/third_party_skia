@@ -29,13 +29,22 @@ third_party("dng_sdk") {
     "qDNGValidateTarget=1",
     "UNIX_ENV=1",
   ]
-
-  deps = [ "${skia_third_party_dir}/libjpeg-turbo:libjpegm133" ]
+  deps = []
+  external_deps = []
+  if (skia_use_system_lib) {
+    external_deps += [ "libjpeg-turbo:turbojpeg" ]
+  } else {
+    deps += [ "${skia_third_party_dir}/libjpeg-turbo:libjpegm133" ]
+  }
 
   if (skia_feature_zlib != "") {
-    external_deps = [ skia_feature_zlib ]
+    external_deps += [ skia_feature_zlib ]
   } else {
-    deps += [ "${skia_third_party_dir}/zlib" ]
+    if (skia_use_system_lib) {
+      external_deps += [ "zlib:libz" ]
+    } else {
+      deps += [ "${skia_third_party_dir}/zlib" ]
+    }
   }
 
   sources = [

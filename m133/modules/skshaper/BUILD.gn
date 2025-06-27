@@ -68,7 +68,11 @@ if (skia_enable_skshaper) {
           "${skia_third_party_dir}/harfbuzz",
         ]
       } else {
-        deps += [ "${skia_third_party_dir}/harfbuzz" ]
+        if (skia_use_system_lib) {
+          external_deps = [ "harfbuzz:harfbuzz_static_for_skia" ]
+        } else {
+          deps += [ "${skia_third_party_dir}/harfbuzz" ]
+        }
       }
     }
     configs += [ "../../:skia_private" ]
