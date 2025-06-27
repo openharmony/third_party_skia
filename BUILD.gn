@@ -4461,6 +4461,10 @@ ohos_static_library("sksl_ext_static") {
     defines = skia_common_defines
   }
 
+  config("oboe_config") {
+    include_dirs = [ "//third_party/skia/third_party/externals/oboe" ]
+  }
+
   template("make_skia_deps") {
     forward_variables_from(invoker, "*")
     ohos_source_set("skia_$platform") {
@@ -4537,6 +4541,7 @@ ohos_static_library("sksl_ext_static") {
       ":skia_config",
       "${skia_root_dir}:harfbuzz_config",
       "${skia_root_dir}:icu_config",
+      ":oboe_config",
     ]
     configs = skia_library_configs
     if (enhanced_opt) {
