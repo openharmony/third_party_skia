@@ -43,6 +43,9 @@ std::shared_ptr<RSTypeface> GetRSTypefaceOrDefault(std::shared_ptr<RSTypeface> t
 }
 }
 #endif
+#ifdef ENABLE_DRAWING_ADAPTER
+namespace SkiaRsText {
+#endif
 
 #if !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
 #ifdef ENABLE_TEXT_ENHANCE
@@ -391,3 +394,6 @@ sk_sp<SkTextBlob> SkTextBlobBuilderRunHandler::makeBlob() {
     return fBuilder.make();
 }
 #endif
+#ifdef ENABLE_DRAWING_ADAPTER
+} // namespace SkiaRsText
+#endif // ENABLE_DRAWING_ADAPTER

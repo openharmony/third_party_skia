@@ -53,7 +53,9 @@ class SkFontMgr;
         #define SKSHAPER_API
     #endif
 #endif
-
+#ifdef ENABLE_DRAWING_ADAPTER
+namespace SkiaRsText { 
+#endif
 class SKSHAPER_API SkShaper {
 public:
 #if !defined(SK_DISABLE_LEGACY_SKSHAPER_FUNCTIONS)
@@ -361,4 +363,12 @@ SKSHAPER_API std::unique_ptr<SkShaper::BiDiRunIterator> TrivialBiDiRunIterator
 SKSHAPER_API std::unique_ptr<SkShaper::ScriptRunIterator> TrivialScriptRunIterator
                                               (size_t utf8Bytes, SkFourByteTag scriptTag);
 }  // namespace SkShapers
+#ifdef ENABLE_DRAWING_ADAPTER
+}
+using SkShaper = SkiaRsText::SkShaper;
+// namespace SkShapers::Primitive = SkiaRsText::SkShapers::Primitive;
+namespace SkShapers::Primitive{
+    using namespace SkiaRsText::SkShapers::Primitive;;
+}
+#endif
 #endif  // SkShaper_DEFINED

@@ -442,6 +442,46 @@ if (skia_use_system_harfbuzz) {
       "$_src/wasm/sample/c/shape-fallback.cc",
       "$_src/wasm/sample/c/shape-ot.cc",
     ]
+
+    if (is_arkui_x) {
+      deps = [ "../icu" ]
+      if (is_arkui_x) {
+        deps -= [ "../icu" ]
+        deps += [ "//third_party/icu/icu4c:static_icuuc" ]
+        public_include_dirs += [ "//third_party/icu/icu4c/source/common" ]
+      }
+
+      defines += [
+        "HAVE_ICU",
+        "HAVE_ICU_BUILTIN",
+      ]
+
+      public += [ "$_src/hb-icu.h" ]
+      sources += [ "$_src/hb-icu.cc" ]
+      unused_sources -= [
+        "$_src/hb-icu.cc",
+        "$_src/hb-icu.h",
+      ]
+    }
+
     assert(unused_sources != [])
+  }
+
+  if (is_arkui_x) {
+    config("harfbuzz_config") {
+      visibility = [ ":*" ]
+
+      include_dirs = [
+        ".",
+        "../externals/harfbuzz/src",
+      ]
+
+      defines = [
+        "HAVE_OT",
+        "HAVE_CONFIG_OVERRIDE_H",
+        "HB_NO_FALLBACK_SHAPE",
+        "HB_NO_WIN1256",
+      ]
+    }
   }
 }

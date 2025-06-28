@@ -35,7 +35,9 @@ declare_args() {
     target_cxx = cxx
   }
 
-  cc_wrapper = ""
+  if (!is_arkui_x) {
+    cc_wrapper = ""
+  }
 
   # dsymutil seems to kill the machine when too many processes are run in
   # parallel, so we need to use a pool to limit the concurrency when passing
