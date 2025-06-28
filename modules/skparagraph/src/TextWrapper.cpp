@@ -1691,7 +1691,6 @@ bool TextWrapper::shouldBreakFormattingLoop() {
 bool TextWrapper::isLastLine() const { return fLineNumber >= fFormattingContext.maxLines; }
 
 void TextWrapper::advanceToNextLine() {
-    fHeight += calculateLineHeight();
     prepareForNextLine();
     ++fLineNumber;
     fFirstLine = false;
