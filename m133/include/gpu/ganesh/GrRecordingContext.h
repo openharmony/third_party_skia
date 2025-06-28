@@ -122,6 +122,9 @@ public:
         sktext::gpu::SubRunAllocator* fRecordTimeSubRunAllocator;
     };
 
+    // OH ISSUE: check whether the PID is abnormal.
+    virtual bool isPidAbnormal() const { return false; }
+
 protected:
     friend class GrRecordingContextPriv;    // for hidden functions
     friend class GrDeferredDisplayList;     // for OwnedArenas
