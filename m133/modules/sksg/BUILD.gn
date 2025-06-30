@@ -29,7 +29,6 @@ if (defined(is_skia_standalone) && skia_enable_tools) {
       "../..:skia",
       "../..:test",
     ]
-    external_deps = [ "hitrace:hitrace_meter" ]
   }
 
   skia_source_set("slides") {

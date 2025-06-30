@@ -89,7 +89,6 @@ if (skia_enable_skshaper) {
           "../..:test",
           "../skunicode",
         ]
-        external_deps = [ "hitrace:hitrace_meter" ]
       } else {
         sources = []
       }
