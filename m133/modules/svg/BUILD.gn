@@ -28,9 +28,6 @@ if (skia_enable_svg && skia_use_expat) {
     if (use_oh_skia) {
       configs += [ "../../:skia_wno" ]
     }
-    external_deps = [ "hitrace:hitrace_meter" ]
-    part_name = "skia"
-    subsystem_name = "thirdparty"
   }
 
   if (skia_enable_tools) {
@@ -67,7 +64,6 @@ if (skia_enable_svg && skia_use_expat) {
         "../..:test",
         "../skshaper",
       ]
-      external_deps = [ "hitrace:hitrace_meter" ]
     }
   }
 } else {

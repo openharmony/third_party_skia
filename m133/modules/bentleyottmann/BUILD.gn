@@ -29,7 +29,6 @@ if (skia_enable_bentleyottmann) {
         "../..:skia",
         "../..:test",
       ]
-      external_deps = [ "hitrace:hitrace_meter" ]
     }
   }
 }

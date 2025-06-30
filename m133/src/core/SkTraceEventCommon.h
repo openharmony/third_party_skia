@@ -6,7 +6,7 @@
 
 #include "include/core/SkTypes.h"
 #include "include/utils/SkTraceEventPhase.h"
-#include "hitrace_meter.h"
+#include "base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter/hitrace_meter.h"
 
 // Trace events are for tracking application performance and resource usage.
 // Macros are provided to track:
