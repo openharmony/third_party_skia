@@ -22,6 +22,9 @@
 #include "src/gpu/ganesh/GrDirectContextPriv.h"
 #include "src/gpu/ganesh/GrGpuResourceCacheAccess.h"
 #include "src/gpu/ganesh/GrProxyProvider.h"
+#ifdef SKIA_OHOS
+#include "src/gpu/ganesh/GrPerfMonitorReporter.h"
+#endif
 #include "src/gpu/ganesh/GrThreadSafeCache.h"
 
 #include <algorithm>
@@ -847,6 +850,9 @@ void GrResourceCache::didChangeBudgetStatus(GrGpuResource* resource) {
         this->purgeAsNeeded();
     } else {
         SkASSERT(resource->resourcePriv().budgetedType() != GrBudgetedType::kUnbudgetedCacheable);
+#ifdef SKIA_OHOS
+        GrPerfMonitorReporter::GetInstance().recordTextureCache(resource->getResourceTag().fName);
+#endif
         --fBudgetedCount;
         fBudgetedBytes -= size;
         if (!resource->resourcePriv().isPurgeable() &&
