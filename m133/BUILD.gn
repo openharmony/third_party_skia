@@ -688,7 +688,6 @@ skia_source_set("fontscanner_tests") {
     "tests/FontScanner.cpp",
     "tests/FontScanner.h",
   ]
-  external_deps = [ "hitrace:hitrace_meter" ]
 }
 
 optional("fontmgr_FontConfigInterface") {
@@ -1100,7 +1099,6 @@ if (skia_compile_modules) {
       libs += [ "dl" ]
     }
     sources += skia_sksl_core_sources
-    external_deps = [ "hitrace:hitrace_meter" ]
     sources += skia_sksl_codegen_sources
     include_dirs = [ "." ]
     deps = [ ":run_sksllex" ]
@@ -1227,7 +1225,6 @@ if (skia_compile_sksl_tests) {
       sources += [ "src/ports/SkOSFile_posix.cpp" ]
       libs += [ "dl" ]
     }
-    external_deps = [ "hitrace:hitrace_meter" ]
     sources += skia_sksl_codegen_sources
     sources += skia_sksl_core_sources
     sources += skia_sksl_hlsl_sources
@@ -1390,11 +1387,12 @@ optional("gpu_shared") {
   public_defines = []
   public_deps = []
   frameworks = []
+  external_deps = []
 
   sources = skia_shared_gpu_sources
   sources += skia_sksl_pipeline_sources
   sources += skia_sksl_codegen_sources
-  external_deps = [ "hitrace:hitrace_meter" ]
+
   if (skia_use_dawn) {
     public_defines += [ "SK_DAWN" ]
 
@@ -1485,7 +1483,7 @@ optional("gpu") {
       libs += [ "android" ]
     }
   }
-  external_deps = [ "hitrace:hitrace_meter" ]
+  external_deps = []
   if (skia_use_gl) {
     public_defines += [ "SK_GL" ]
     if (is_android) {
@@ -1772,7 +1770,7 @@ optional("pdf") {
             skia_use_libjpeg_turbo_encode
   public_defines = [ "SK_SUPPORT_PDF" ]
   deps = []
-  external_deps = [ "hitrace:hitrace_meter" ]
+  external_deps = []
   if (use_oh_skia) {
     external_deps += [ "zlib:libz" ]
   } else {
@@ -2213,7 +2211,7 @@ skia_component("skia") {
   public += skia_utils_public
   public += skia_effects_public
   public += skia_effects_imagefilter_public
-  external_deps = [ "hitrace:hitrace_meter" ]
+
   sources = []
   sources += skia_core_sources
   sources += skia_utils_private
@@ -2680,10 +2678,7 @@ if (skia_enable_tools) {
     if (is_ios || is_android) {
       public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     } else {
-      external_deps = [
-        "hitrace:hitrace_meter",
-        "vulkan-headers:vulkan_headers",
-      ]
+      external_deps = [ "vulkan-headers:vulkan_headers" ]
     }
     
     defines = []
@@ -2894,7 +2889,6 @@ if (skia_enable_tools) {
       ]
       defines = [ "SK_USE_PERFETTO" ]
     }
-    external_deps = [ "hitrace:hitrace_meter" ]
   }
 
   test_lib("tool_utils") {
@@ -3027,10 +3021,7 @@ if (skia_enable_tools) {
       "modules/skresources",
       "modules/skshaper",
     ]
-    external_deps = [
-      "hitrace:hitrace_meter",
-      "vulkan-headers:vulkan_headers",
-    ]
+    external_deps = [ "vulkan-headers:vulkan_headers" ]
     if (gm_test_enable_font) {
       deps += [
         "modules/skparagraph",
@@ -3068,7 +3059,6 @@ if (skia_enable_tools) {
     public_deps = [
       ":gpu_tool_utils",  # Test.h #includes headers from this target.
     ]
-    external_deps = [ "hitrace:hitrace_meter" ]
   }
 
   import("gn/tests.gni")
@@ -3133,7 +3123,6 @@ if (skia_enable_tools) {
       "${skia_third_party_dir}/libwebp:libwebpm133",
     ]
     external_deps = [
-      "hitrace:hitrace_meter",
       "vulkan-headers:vulkan_headers",
     ]
     if (skia_use_system_lib) {
@@ -3174,7 +3163,6 @@ if (skia_enable_tools) {
       "modules/skparagraph:bench",
       "modules/skshaper",
     ]
-    external_deps = [ "hitrace:hitrace_meter" ]
   }
 
   if (is_linux || is_mac || skia_enable_optimize_size) {
