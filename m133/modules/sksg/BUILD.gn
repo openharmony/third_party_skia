@@ -29,6 +29,19 @@ if (defined(is_skia_standalone) && skia_enable_tools) {
       "../..:skia",
       "../..:test",
     ]
+    if (is_ohos) {
+      external_deps = [ "hitrace:hitrace_meter" ]
+    }
+
+    if (is_arkui_x) {
+        deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+    } else if (is_ohos) {
+      if (is_component_build) {
+        external_deps += [ "bounds_checking_function:libsec_shared" ]
+      } else {
+        external_deps += [ "bounds_checking_function:libsec_static" ]
+      }
+    }
   }
 
   skia_source_set("slides") {

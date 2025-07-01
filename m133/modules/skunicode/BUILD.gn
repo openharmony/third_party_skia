@@ -240,6 +240,18 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
         } else {
           deps += [ skia_icu_bidi_third_party_dir ]
         }
+        if (is_ohos) {
+          external_deps = [ "hitrace:hitrace_meter" ]
+        }
+        if (is_arkui_x) {
+            deps += [ "//third_party/bounds_checking_function:libsec_static" ]
+        } else if (is_ohos) {
+          if (is_component_build) {
+            external_deps += [ "bounds_checking_function:libsec_shared" ]
+          } else {
+            external_deps += [ "bounds_checking_function:libsec_static" ]
+          }
+        }
       } else {
         sources = []
       }

@@ -225,6 +225,9 @@ bool GrDrawingManager::flush(SkSpan<GrSurfaceProxy*> proxies,
         resourceCache->purgeAsNeeded();
     }
     fFlushing = false;
+#ifdef SKIA_OHOS
+    fNumDrawOp = 0;
+#endif
 
     return true;
 }
@@ -278,6 +281,10 @@ bool GrDrawingManager::executeRenderTasks(GrOpFlushState* flushState) {
     int numRenderTasksExecuted = 0;
 
     // Execute the normal op lists.
+#ifdef SKIA_OHOS
+    int numOpsTaskExecuted = 0;
+    int numOpsExecuted = 0;
+#endif
     for (const auto& renderTask : fDAG) {
         SkASSERT(renderTask);
         if (!renderTask->isInstantiated()) {
@@ -286,12 +293,23 @@ bool GrDrawingManager::executeRenderTasks(GrOpFlushState* flushState) {
 
         if (renderTask->execute(flushState)) {
             anyRenderTasksExecuted = true;
+#ifdef SKIA_OHOS
+            if (UNLIKELY(SkOHOSDebugLevelTraceUtil::getEnableDebugTrace()) && renderTask->asOpsTask()) {
+                numOpsTaskExecuted++;
+                numOpsExecuted += renderTask->asOpsTask()->getNumOpChainsExecuted();
+            }
+#endif
         }
         if (++numRenderTasksExecuted >= kMaxRenderTasksBeforeFlush) {
             flushState->gpu()->submitToGpu();
             numRenderTasksExecuted = 0;
         }
     }
+
+#ifdef SKIA_OHOS
+    HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::NORMAL, "Add: %d drawOps, Flush: %d opsTasks, %d ops",
+        fNumDrawOp, numOpsTaskExecuted, numOpsExecuted);
+#endif
 
     SkASSERT(!flushState->opsRenderPass());
     SkASSERT(fTokenTracker.nextDrawToken() == fTokenTracker.nextFlushToken());

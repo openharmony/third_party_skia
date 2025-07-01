@@ -1229,6 +1229,8 @@ sk_sp<GrTexture> GrVkGpu::onCreateTexture(SkISize dimensions,
     SkASSERT(!skgpu::VkFormatIsCompressed(pixelFormat));
     SkASSERT(mipLevelCount > 0);
 
+    HITRACE_OHOS_NAME_FMT_ALWAYS("onCreateTexture width = %d, height = %d",
+        dimensions.width(), dimensions.height());
     GrMipmapStatus mipmapStatus =
             mipLevelCount > 1 ? GrMipmapStatus::kDirty : GrMipmapStatus::kNotAllocated;
 
