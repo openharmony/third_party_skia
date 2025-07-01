@@ -186,12 +186,21 @@ class SKUNICODE_API SkUnicode : public SkRefCnt {
                                   int utf8Units,
                                   const char* locale,
                                   std::vector<Position>* results) = 0;
+#ifdef ENABLE_TEXT_ENHANCE
+        virtual bool computeCodeUnitFlags(
+                char utf8[], int utf8Units, bool replaceTabs, const char locale[],
+                skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results) = 0;
+        virtual bool computeCodeUnitFlags(
+                char16_t utf16[], int utf16Units, bool replaceTabs, const char locale[],
+                skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results) = 0;
+#else
         virtual bool computeCodeUnitFlags(
                 char utf8[], int utf8Units, bool replaceTabs,
                 skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results) = 0;
         virtual bool computeCodeUnitFlags(
                 char16_t utf16[], int utf16Units, bool replaceTabs,
                 skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results) = 0;
+#endif
 
         static SkString convertUtf16ToUtf8(const char16_t * utf16, int utf16Units);
         static SkString convertUtf16ToUtf8(const std::u16string& utf16);
@@ -296,8 +305,14 @@ class SKUNICODE_API SkUnicode : public SkRefCnt {
         }
 
         template <typename Callback>
+#ifdef ENABLE_TEXT_ENHANCE
+        void forEachBreak(const char16_t utf16[], int utf16Units, SkUnicode::BreakType type,
+            const char locale[], Callback&& callback) {
+            auto iter = makeBreakIterator(type);
+#else
         void forEachBreak(const char16_t utf16[], int utf16Units, SkUnicode::BreakType type, Callback&& callback) {
             auto iter = makeBreakIterator(type);
+#endif
             iter->setText(utf16, utf16Units);
             auto pos = iter->first();
             do {

@@ -39,6 +39,9 @@
 #include <utility>
 #include <vector>
 
+#ifdef ENABLE_TEXT_ENHANCE
+#include <unordered_set>
+#endif
 #if defined(SK_USING_THIRD_PARTY_ICU) && defined(SK_BUILD_FOR_WIN)
 #include "SkLoadICU.h"
 #include "include/private/base/SkOnce.h"
@@ -370,9 +373,14 @@ class SkUnicode_icu : public SkUnicode {
         return true;
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    static bool extractPositions(const char utf8[], int utf8Units, BreakType type,
+        const char locale[], std::function<void(int, int)> setBreak) {
+#else
     static bool extractPositions(const char utf8[], int utf8Units,
                                  BreakType type, const char* locale,
                                  const std::function<void(int, int)>& setBreak) {
+#endif
 
         UErrorCode status = U_ZERO_ERROR;
         ICUUText text(sk_utext_openUTF8(nullptr, &utf8[0], utf8Units, &status));
@@ -500,6 +508,16 @@ class SkUnicode_icu : public SkUnicode {
     static bool isGraphemeExtend(SkUnichar unichar) {
         return sk_u_hasBinaryProperty(unichar, UCHAR_GRAPHEME_EXTEND);
     }
+    static bool isCustomSoftBreak(SkUnichar unichar) {
+        // ‘ “ ( [ { < « — – - • – – $ £ € + = × / \ % ° # * @ _ § © ®
+        static const std::unordered_set<SkUnichar> kBreakTriggerCodePoints {
+            0x2018, 0x201C, 0x0028, 0x005B, 0x007B, 0x003C, 0x00AB, 0x2014, 0x2013, 0x002D,
+            0x2022, 0x0024, 0x00A3, 0x20AC, 0x002B, 0x003D, 0x00D7, 0x002F, 0x005C, 0x0025,
+            0x00B0, 0x0023, 0x002A, 0x0040, 0x005F, 0x00A7, 0x00A9, 0x00AE
+        };
+
+        return kBreakTriggerCodePoints.count(unichar) > 0;
+    }
 #endif
 
 public:
@@ -610,20 +628,23 @@ public:
         if (SkUnicode_icu::isEllipsis(unichar)) {
             results->at(i) |= SkUnicode::kEllipsis;
         }
+        if (SkUnicode_icu::isCustomSoftBreak(unichar)) {
+            results->at(i) |= SkUnicode::kSoftLineBreakBefore;
+        }
     }
 
-    bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs,
+    bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs, const char locale[],
                               TArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->clear();
         results->push_back_n(utf8Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
 
-        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kLines, nullptr,
+        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kLines, locale,
                                         [&](int pos, int status) {
             (*results)[pos] |= status == UBRK_LINE_HARD ? CodeUnitFlags::kHardLineBreakBefore :
                 CodeUnitFlags::kSoftLineBreakBefore;
         });
 
-        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kGraphemes, nullptr,
+        SkUnicode_icu::extractPositions(utf8, utf8Units, BreakType::kGraphemes, locale,
                                         [&](int pos, int status) {
             (*results)[pos] |= CodeUnitFlags::kGraphemeStart;
         });
@@ -718,7 +739,11 @@ public:
     }
 #endif
 
+#ifdef ENABLE_TEXT_ENHANCE
+    bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs, const char locale[],
+#else
     bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs,
+#endif
                           TArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->clear();
         results->push_back_n(utf16Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
@@ -749,6 +774,9 @@ public:
         this->forEachBreak((char16_t*)&utf16[0],
                            utf16Units,
                            SkUnicode::BreakType::kGraphemes,
+#ifdef ENABLE_TEXT_ENHANCE
+                           locale,
+#endif
                            [results](SkBreakIterator::Position pos, SkBreakIterator::Status) {
                                (*results)[pos] |= CodeUnitFlags::kGraphemeStart;
                            });
@@ -757,6 +785,9 @@ public:
                 (char16_t*)&utf16[0],
                 utf16Units,
                 SkUnicode::BreakType::kLines,
+#ifdef ENABLE_TEXT_ENHANCE
+                locale,
+#endif
                 [results](SkBreakIterator::Position pos, SkBreakIterator::Status status) {
                     if (status ==
                         (SkBreakIterator::Status)SkUnicode::LineBreakType::kHardLineBreak) {
