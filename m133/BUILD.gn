@@ -1962,7 +1962,7 @@ optional("typeface_freetype") {
   }
 
   public_defines = [ "SK_TYPEFACE_FACTORY_FREETYPE" ]
-  if (skia_use_system_lib || ((is_official_build || !(is_android || sanitize_skia == "MSAN")) &&
+  if (skia_use_system_lib || ((is_official_build || sanitize_skia != "MSAN") &&
         !is_fuchsia && !is_wasm)) {
     external_deps = [ "freetype:freetype_static" ]
   } else {
