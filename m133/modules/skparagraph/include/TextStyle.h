@@ -24,7 +24,6 @@ namespace skia {
 namespace textlayout {
 #ifdef ENABLE_TEXT_ENHANCE
 const SkScalar TEXT_BADGE_FONT_SIZE_SCALE = 0.65;
-const SkScalar TEXT_BADGE_HEIGHT_SCALE = 2.0;
 const SkScalar SUPERSCRIPT_BASELINE_SHIFT_SCALE = -0.7;
 const SkScalar SUBSCRIPT_BASELINE_SHIFT_SCALE = 0.2;
 #endif
@@ -311,8 +310,10 @@ public:
 
 #ifdef ENABLE_TEXT_ENHANCE
     void setFontFamilies(std::vector<SkString> families);
-    SkScalar getBaselineShift() const { return fBaselineShift + getBadgeBaseLineShift() + getVerticalAlignShift(); }
+
+    SkScalar getBaselineShift() const { return fBaselineShift; }
     SkScalar getVerticalAlignShift() const { return fVerticalAlignShift; };
+    SkScalar getTotalVerticalShift() const { return fBaselineShift + fVerticalAlignShift + getBadgeBaseLineShift(); }
     void setVerticalAlignShift(SkScalar shift) { fVerticalAlignShift = shift; }
 #else
     void setFontFamilies(std::vector<SkString> families) {

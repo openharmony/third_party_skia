@@ -23,7 +23,6 @@ namespace skia {
 namespace textlayout {
 #ifdef OHOS_SUPPORT
 const SkScalar TEXT_BADGE_FONT_SIZE_SCALE = 0.65;
-const SkScalar TEXT_BADGE_HEIGHT_SCALE = 2.0;
 const SkScalar SUPERSCRIPT_BASELINE_SHIFT_SCALE = -0.7;
 const SkScalar SUBSCRIPT_BASELINE_SHIFT_SCALE = 0.2;
 #endif

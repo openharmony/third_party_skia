@@ -216,26 +216,8 @@ Run::Run(ParagraphImpl* owner,
 }
 
 void Run::calculateMetrics() {
-#ifdef ENABLE_TEXT_ENHANCE
-    SkScalar fontMetircsScale = 1.0;
-    if (fOwner != nullptr) {
-        BlockRange blockRange = fOwner->findAllBlocks(fTextRange);
-        const SkSpan<Block>& blocks = fOwner->blocks(blockRange);
-        for (const Block& block: blocks) {
-            if (block.fStyle.getTextBadgeType() == TextBadgeType::BADGE_NONE) {
-                continue;
-            }
-            fontMetircsScale = TEXT_BADGE_HEIGHT_SCALE;
-            break;
-        }
-    }
-    fCorrectAscent = fFontMetrics.fAscent * fontMetircsScale - fFontMetrics.fLeading * 0.5;
-    fCorrectDescent = fFontMetrics.fDescent * fontMetircsScale + fFontMetrics.fLeading * 0.5;
-#else
     fCorrectAscent = fFontMetrics.fAscent - fFontMetrics.fLeading * 0.5;
     fCorrectDescent = fFontMetrics.fDescent + fFontMetrics.fLeading * 0.5;
-#endif
-
     fCorrectLeading = 0;
     if (SkScalarNearlyZero(fHeightMultiplier)) {
         return;
@@ -525,6 +507,29 @@ bool Run::isTrailingSpaceIncluded(const ClusterRange& fTextLineClusterRange,
            fTextLineGhostClusterRange.end > this->clusterRange().start;
 }
 
+void Run::updatePlaceholderAlignmentIfNeeded(PlaceholderAlignment& alignment, TextVerticalAlign paragraphAlignment) {
+    if (alignment != PlaceholderAlignment::kFollow) {
+        return;
+    }
+
+    switch (paragraphAlignment) {
+        case TextVerticalAlign::TOP:
+            alignment = PlaceholderAlignment::kTop;
+            break;
+        case TextVerticalAlign::CENTER:
+            alignment = PlaceholderAlignment::kMiddle;
+            break;
+        case TextVerticalAlign::BOTTOM:
+            alignment = PlaceholderAlignment::kBottom;
+            break;
+        case TextVerticalAlign::BASELINE:
+            alignment = PlaceholderAlignment::kAboveBaseline;
+            break;
+        default:
+            break;
+    }
+}
+
 void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
 
     SkASSERT(isPlaceholder());
@@ -544,12 +549,16 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
     auto offset = placeholderStyle->fBaselineOffset;
 
     fFontMetrics.fLeading = 0;
+
+    updatePlaceholderAlignmentIfNeeded(placeholderStyle->fAlignment, fOwner->getParagraphStyle().getVerticalAlignment());
+
     switch (placeholderStyle->fAlignment) {
         case PlaceholderAlignment::kBaseline:
             fFontMetrics.fAscent = baselineAdjustment - height - offset;
             fFontMetrics.fDescent = baselineAdjustment - offset;
             break;
 
+        case PlaceholderAlignment::kFollow:
         case PlaceholderAlignment::kAboveBaseline:
             fFontMetrics.fAscent = baselineAdjustment - height;
             fFontMetrics.fDescent = baselineAdjustment;
@@ -565,7 +574,6 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
             fFontMetrics.fDescent = height + fFontMetrics.fAscent;
             break;
 
-        case PlaceholderAlignment::kFollow:
         case PlaceholderAlignment::kBottom:
             fFontMetrics.fDescent = endlineMetrics->descent();
             fFontMetrics.fAscent = fFontMetrics.fDescent - height;

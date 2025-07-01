@@ -210,6 +210,7 @@ uint32_t ParagraphCacheKey::computeHash() const {
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getFontSize())));
         hash = mix(hash, SkGoodHash()(ts.fRange));
 		hash = mix(hash, SkGoodHash()(ts.fStyle.getTextBadgeType()));
+		hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getTotalVerticalShift())));
     }
 
     computeHashMix(hash);

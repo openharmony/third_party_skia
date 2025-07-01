@@ -77,7 +77,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
                           : context.run->correctAscent(), textStyle.getDecorationStyle(),
-                          textStyle.getBaselineShift(), textStyle.getCorrectFontSize());
+                          textStyle.getTotalVerticalShift(), textStyle.getCorrectFontSize());
 
         calculatePaint(textStyle);
 
@@ -89,7 +89,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         SkScalar x = context.clip.left();
         SkScalar y = (TextDecoration::kUnderline == decoration) ?
             fPosition : (context.clip.top() + fPosition);
-        updateDecorationPosition(decoration, textStyle.getBaselineShift(), context, y);
+        updateDecorationPosition(decoration, textStyle.getTotalVerticalShift(), context, y);
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
                         textStyle.getDecorationType() == TextDecoration::kUnderline;
 

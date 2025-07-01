@@ -20,6 +20,10 @@
 #include <limits>
 #include <tuple>
 
+#ifdef ENABLE_TEXT_ENHANCE
+#include "modules/skparagraph/include/ParagraphStyle.h"
+#endif
+
 class SkTextBlobBuilder;
 
 namespace skia {
@@ -166,6 +170,7 @@ public:
     SkScalar addSpacesEvenly(SkScalar space);
     void shift(const Cluster* cluster, SkScalar offset);
     void extend(const Cluster* cluster, SkScalar offset);
+    void updatePlaceholderAlignmentIfNeeded(PlaceholderAlignment& alignment, TextVerticalAlign paragraphAlignment);
     SkScalar calculateHeight(LineMetricStyle ascentStyle, LineMetricStyle descentStyle) const {
         auto ascent = ascentStyle == LineMetricStyle::Typographic ? this->ascent()
                                     : this->correctAscent();
