@@ -10,6 +10,7 @@
 
 #include <set>
 #include <stack>
+#include <unordered_set>
 
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkTypes.h"
@@ -314,6 +315,19 @@ public:
 
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const; // Get the tag of all GPU resources
 
+    // OH ISSUE: get the memory information of the updated pid.
+    void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
+
+    // OH ISSUE: check whether the PID is abnormal.
+    bool isPidAbnormal() const;
+
+    // OH ISSUE: change the fbyte when the resource tag changes.
+    void changeByteOfPid(int32_t beforePid, int32_t afterPid,
+        size_t bytes, bool beforeRealAlloc, bool afterRealAlloc);
+
+    // OH ISSUE: init gpu memory limit.
+    void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
+
     // It'd be nice if this could be private but SkMessageBus relies on macros to define types that
     // require this to be public.
     class UnrefResourceMessage {
@@ -511,6 +525,13 @@ private:
     SkDEBUGCODE(GrGpuResource*          fNewlyPurgeableResourceForValidation = nullptr;)
     std::stack<GrGpuResourceTag> grResourceTagCacheStack;
 
+    // OH ISSUE: gpu memory limit.
+    uint64_t fMemoryControl_ = UINT64_MAX;
+    // OH ISSUE: memory overflow callback.
+    MemoryOverflowCalllback fMemoryOverflowCallback_ = nullptr;
+    // OH ISSUE: record pid had exited.
+    std::unordered_set<int32_t> fExitedPid_;
+
     //Indicates the cached resource tags.
     std::stack<GrGpuResourceTag> GrResourceCacheStack;
 
@@ -589,6 +610,12 @@ private:
      * Called by GrGpuResources when they change from budgeted to unbudgeted or vice versa.
      */
     void didChangeBudgetStatus(GrGpuResource* resource) { fCache->didChangeBudgetStatus(resource); }
+
+    void changeByteOfPid(int32_t beforePid, int32_t afterPid,
+        size_t bytes, bool beforeRealAlloc, bool afterRealAlloc)
+    {
+        fCache->changeByteOfPid(beforePid, afterPid, bytes, beforeRealAlloc, afterRealAlloc);
+    }
 
     // No taking addresses of this type.
     const ResourceAccess* operator&() const;

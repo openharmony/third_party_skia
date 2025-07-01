@@ -9,6 +9,7 @@
 #define GrDirectContext_DEFINED
 
 #include <set>
+#include <unordered_map>
 
 #include "src/gpu/ganesh/GrGpuResource.h"
 
@@ -47,6 +48,9 @@ enum SkColorType : int;
 enum class SkTextureCompressionType;
 struct GrMockOptions;
 struct GrD3DBackendContext; // IWYU pragma: keep
+
+// OH ISSUE: callback for memory protect.
+using MemoryOverflowCalllback = std::function<void(int32_t, size_t, bool)>;
 
 namespace skgpu {
     class MutableTextureState;
@@ -964,6 +968,15 @@ public:
      * @return all GrGpuResourceTags.
      */
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const;
+
+    // OH ISSUE: get the memory information of the updated pid.
+    void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
+
+    // OH ISSUE: init gpu memory limit.
+    void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
+
+    // OH ISSUE: check whether the PID is abnormal.
+    bool isPidAbnormal() const override;
 
     void vmaDefragment();
     void dumpVmaStats(SkString *out);
