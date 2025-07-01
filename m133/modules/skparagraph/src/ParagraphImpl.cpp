@@ -506,6 +506,10 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 #ifdef ENABLE_TEXT_ENHANCE
     TEXT_TRACE_FUNC();
+    // Reset all text style vertical shift
+    for (Block& block : fTextStyles) {
+        block.fStyle.setVerticalAlignShift(0.0);
+    }
 #endif
     for (auto& line : fLines) {
 #ifdef ENABLE_TEXT_ENHANCE

@@ -242,6 +242,7 @@ public:
     void resetBlobShift(const Run& run);
     void shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign VerticalAlignment);
     void shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment, const RSRect& groupClustersBounds);
+    void applyPlaceholderVerticalShift();
     void applyVerticalShift();
     void updateBlobAndRunShift(Run& run);
 #endif
