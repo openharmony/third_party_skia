@@ -4987,7 +4987,6 @@ ohos_static_library("sksl_ext_static") {
     if (is_ohos) {
       external_deps = [
         "bounds_checking_function:libsec_shared",
-        "hitrace:hitrace_meter",
       ]
     }
 
