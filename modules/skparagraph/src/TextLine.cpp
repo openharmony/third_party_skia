@@ -2845,6 +2845,9 @@ void TextLine::shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign V
         case TextVerticalAlign::BOTTOM:
             aligment = PlaceholderAlignment::kBottom;
             break;
+        case TextVerticalAlign::BASELINE:
+            aligment = PlaceholderAlignment::kAboveBaseline;
+            break;
         default:
             break;
     }
@@ -2901,9 +2904,6 @@ void TextLine::applyPlaceholderVerticalShift() {
 
 void TextLine::applyVerticalShift() {
     TextVerticalAlign VerticalAlignment = fOwner->getParagraphStyle().getVerticalAlignment();
-    if (VerticalAlignment == TextVerticalAlign::BASELINE) {
-        return;
-    }
 
     ClusterRange clustersRange = clusters();
     ClusterIndex curClusterIndex = clustersRange.start;
