@@ -1510,6 +1510,7 @@ void TextWrapper::processLineStretches(SkScalar maxWidth, const AddLineToParagra
         formatCurrentLine(addLine);
 
         if (shouldBreakFormattingLoop()) {
+            advanceToNextLine();
             break;
         }
         advanceToNextLine();
@@ -1529,6 +1530,7 @@ void TextWrapper::finalizeTextLayout(const AddLineToParagraph& addLine) {
 
 void TextWrapper::prepareLineForFormatting(TextStretch& line, SkScalar maxWidth) {
     fEndLine = std::move(line);
+    fHardLineBreak = fEndLine.endCluster()->isHardBreak();
 }
 
 void TextWrapper::formatCurrentLine(const AddLineToParagraph& addLine) {
@@ -1665,7 +1667,6 @@ void TextWrapper::addFormattedLineToParagraph(const AddLineToParagraph& addLine,
             offsetX,
             fNoIndentWidth);
 
-    fHeight += lineHeight;
     updateIntrinsicWidths();
 }
 
@@ -1698,6 +1699,7 @@ void TextWrapper::advanceToNextLine() {
 }
 
 void TextWrapper::prepareForNextLine() {
+    fHeight += calculateLineHeight();
     if (!fHardLineBreak || fCurrentStartLine != fEnd) {
         fEndLine.clean();
     }
