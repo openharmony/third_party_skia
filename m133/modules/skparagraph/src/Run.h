@@ -170,7 +170,9 @@ public:
     SkScalar addSpacesEvenly(SkScalar space);
     void shift(const Cluster* cluster, SkScalar offset);
     void extend(const Cluster* cluster, SkScalar offset);
+#ifdef ENABLE_TEXT_ENHANCE
     void updatePlaceholderAlignmentIfNeeded(PlaceholderAlignment& alignment, TextVerticalAlign paragraphAlignment);
+#endif
     SkScalar calculateHeight(LineMetricStyle ascentStyle, LineMetricStyle descentStyle) const {
         auto ascent = ascentStyle == LineMetricStyle::Typographic ? this->ascent()
                                     : this->correctAscent();
