@@ -59,11 +59,13 @@ ohos_static_library("skia_paragraph_ohos_new") {
   if (!is_arkui_x) {
     sources += [
       "$skia_modules_root/skunicode/src/SkUnicode.cpp",
-      "$skia_modules_root/skunicode/src/SkUnicode_icu.cpp",
-      "$skia_modules_root/skunicode/src/SkUnicode_icu_bidi.cpp",
-      "$skia_modules_root/skunicode/src/SkUnicode_icu_builtin.cpp",
     ]
   }
+  sources += [
+    "$skia_modules_root/skunicode/src/SkUnicode_icu.cpp",
+    "$skia_modules_root/skunicode/src/SkUnicode_icu_bidi.cpp",
+    "$skia_modules_root/skunicode/src/SkUnicode_icu_builtin.cpp",
+  ]
 
   # skshaper
   defines += [ "SKSHAPER_IMPLEMENTATION=1" ]
