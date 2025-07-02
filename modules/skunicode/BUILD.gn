@@ -41,7 +41,9 @@ if (skia_use_icu || skia_use_client_icu) {
     configs += [ "../../:skia_private" ]
 
     if (skia_use_icu) {
-      sources += skia_unicode_icu_sources
+      if (!is_arkui_x) {
+        sources += skia_unicode_icu_sources
+      }
       defines += [ "SK_UNICODE_ICU_IMPLEMENTATION" ]
 
       # only available for Android at the moment
@@ -52,6 +54,7 @@ if (skia_use_icu || skia_use_client_icu) {
         sources += skia_unicode_builtin_icu_sources
         deps += [ "${skia_third_party_dir}/icu" ]
         if (is_arkui_x) {
+          sources -= skia_unicode_builtin_icu_sources
           deps -= [ "${skia_third_party_dir}/icu" ]
           deps += [ "//third_party/icu/icu4c:static_icuuc" ]
           include_dirs += [ "//third_party/icu/icu4c/source/common" ]
