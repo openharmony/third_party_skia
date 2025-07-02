@@ -504,7 +504,9 @@ private:
         // Clean up disparities between the overall aa type and edge configuration and apply
         // optimizations based on the rect and matrix when appropriate
 #ifdef SUPPORT_OPAQUE_OPTIMIZATION
-        fSupportOpaqueOpt = (((color.fA - 1.0) < 1e-7 && (color.fA - 0.0) >= 1e-7) || (subsetRect != nullptr)) ? false : supportOpaqueOpt;
+        fSupportOpaqueOpt = \
+        ((color.fA < 1.0 - 1e-7) ||
+        (subsetRect != nullptr)) ? false : supportOpaqueOpt;
 #endif
         GrQuadUtils::ResolveAAType(aaType, quad->fEdgeFlags, quad->fDevice,
                                    &aaType, &quad->fEdgeFlags);
