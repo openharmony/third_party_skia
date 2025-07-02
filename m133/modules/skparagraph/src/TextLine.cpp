@@ -854,7 +854,11 @@ void TextLine::paintShadow(ParagraphPainter* painter,
                            TextRange textRange,
                            const TextStyle& style,
                            const ClipContext& context) const {
+#ifdef ENABLE_TEXT_ENHANCE
     SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getTotalVerticalShift() + 0.5);
+#else
+    SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getBaselineShift() + 0.5);
+#endif
 
     for (TextShadow shadow : style.getShadows()) {
         if (!shadow.hasShadow()) continue;
@@ -903,7 +907,11 @@ SkScalar TextLine::calculateThickness(const TextStyle& style, const ClipContext&
 
 void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar y, TextRange textRange, const TextStyle& style, const ClipContext& context) const {
     ParagraphPainterAutoRestore ppar(painter);
+#ifdef ENABLE_TEXT_ENHANCE
     painter->translate(x + this->offset().fX, y + this->offset().fY + style.getTotalVerticalShift());
+#else
+    painter->translate(x + this->offset().fX, y + this->offset().fY + style.getBaselineShift());
+#endif
     Decorations decorations;
 #ifdef ENABLE_TEXT_ENHANCE
     decorations.setVerticalAlignment(fOwner->getParagraphStyle().getVerticalAlignment());

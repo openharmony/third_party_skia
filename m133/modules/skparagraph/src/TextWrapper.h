@@ -5,10 +5,10 @@
 #include <string>
 #ifdef ENABLE_TEXT_ENHANCE
 #include "include/ParagraphStyle.h"
+#include "src/Run.h"
 #endif
 #include "include/core/SkSpan.h"
 #include "modules/skparagraph/src/TextLine.h"
-#include "src/Run.h"
 
 #ifdef ENABLE_TEXT_ENHANCE
 #include <list>

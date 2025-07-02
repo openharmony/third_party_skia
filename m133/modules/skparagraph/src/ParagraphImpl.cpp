@@ -592,7 +592,9 @@ bool ParagraphImpl::computeCodeUnitProperties() {
         return false;
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
     const char *locale = fParagraphStyle.getTextStyle().getLocale().c_str();
+#endif
     // Collect all spaces and some extra information
     // (and also substitute \t with a space while we are at it)
     if (!fUnicode->computeCodeUnitFlags(&fText[0],
