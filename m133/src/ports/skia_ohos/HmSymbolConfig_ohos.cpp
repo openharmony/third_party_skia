@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,12 +13,6 @@
  * limitations under the License.
  */
 
-#ifdef _WIN32
-#include "cstdlib"
-#else
-#include <climits>
-#include <cstddef>
-#endif
 #include <memory>
 
 #include "HmSymbolConfig_ohos.h"
@@ -62,19 +56,6 @@ int HmSymbolConfig_OHOS::LoadSymbolConfig(const char* fileName, SkString fileDir
     std::string fNameStr(fileName, strlen(fileName));
     fullname += fNameStr;
 
-    char tmpPath[PATH_MAX] = {0};
-    if (fullname.size() > PATH_MAX) {
-        return ERROR_CONFIG_FILE_PATH_ERROR;
-    }
-#ifdef _WIN32
-    auto canonicalFilePath = _fullpath(tmpPath, fullname.c_str(), sizeof(tmpPath));
-#else
-    auto canonicalFilePath = realpath(fullname.c_str(), tmpPath);
-#endif
-    if (canonicalFilePath == nullptr) {
-        return ERROR_CONFIG_FILE_PATH_ERROR;
-    }
-
-    return (*fLoadSymbolConfigFunc)(canonicalFilePath);
+    return (*fLoadSymbolConfigFunc)(fullname.c_str());
 }
 } // namespace skia::text
