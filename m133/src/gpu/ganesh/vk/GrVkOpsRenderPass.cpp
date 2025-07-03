@@ -28,9 +28,6 @@
 #include "src/gpu/ganesh/GrGpuBuffer.h"
 #include "src/gpu/ganesh/GrNativeRect.h"
 #include "src/gpu/ganesh/GrOpFlushState.h"
-#ifdef SKIA_OHOS
-#include "src/gpu/ganesh/GrPerfMonitorReporter.h"
-#endif
 #include "src/gpu/ganesh/GrPipeline.h"
 #include "src/gpu/ganesh/GrProgramInfo.h"
 #include "src/gpu/ganesh/GrRenderTarget.h"

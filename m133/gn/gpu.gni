@@ -220,8 +220,6 @@ skia_ganesh_private = [
   "$_src/gpu/ganesh/GrOpsTypes.h",
   "$_src/gpu/ganesh/GrPaint.cpp",
   "$_src/gpu/ganesh/GrPaint.h",
-  "$_src/gpu/ganesh/GrPerfMonitorReporter.cpp",
-  "$_src/gpu/ganesh/GrPerfMonitorReporter.h",
   "$_src/gpu/ganesh/GrPersistentCacheUtils.cpp",
   "$_src/gpu/ganesh/GrPersistentCacheUtils.h",
   "$_src/gpu/ganesh/GrPipeline.cpp",
