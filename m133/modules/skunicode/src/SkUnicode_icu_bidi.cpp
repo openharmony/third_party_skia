@@ -39,6 +39,9 @@ private:
 };
 }  // namespace
 
+#ifdef ENABLE_DRAWING_ADAPTER
+namespace SkiaRsText {
+#endif
 std::unique_ptr<SkBidiIterator> SkBidiFactory::MakeIterator(const uint16_t utf16[],
                                                             int utf16Units,
                                                             SkBidiIterator::Direction dir) const {
@@ -151,3 +154,6 @@ bool SkBidiFactory::ExtractBidi(const char utf8[],
     }
     return true;
 }
+#ifdef ENABLE_DRAWING_ADAPTER
+}
+#endif // ENABLE_DRAWING_ADAPTER
