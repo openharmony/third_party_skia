@@ -45,12 +45,13 @@
 #endif
 
 using namespace skia_private;
-
+#ifdef ENABLE_DRAWING_ADAPTER
+namespace SkiaRsText { 
+#endif
 const SkICULib* SkGetICULib() {
     static const auto gICU = SkLoadICULib();
     return gICU.get();
 }
-
 // sk_* wrappers for ICU funcs
 #define SKICU_FUNC(funcname)                                                                \
     template <typename... Args>                                                             \
@@ -798,3 +799,6 @@ sk_sp<SkUnicode> Make() {
     return nullptr;
 }
 }  // namespace SkUnicodes::ICU
+#ifdef ENABLE_DRAWING_ADAPTER
+}
+#endif // ENABLE_DRAWING_ADAPTER

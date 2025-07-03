@@ -19,6 +19,9 @@
 
 // Some versions of SkUnicode need a small subset of ICU to do bidi things. This
 // allows us to have the same API for the subset as well as the full ICU.
+#ifdef ENABLE_DRAWING_ADAPTER
+namespace SkiaRsText { 
+#endif
 class SkBidiFactory : public SkRefCnt {
 public:
     std::unique_ptr<SkBidiIterator> MakeIterator(const uint16_t utf16[],
@@ -52,5 +55,8 @@ using BidiCloseCallback = void(*)(UBiDi* bidi);
                                     int levelsCount,
                                     int32_t logicalFromVisual[]) const = 0;
 };
-
+#ifdef ENABLE_DRAWING_ADAPTER
+}
+using SkBidiFactory = SkiaRsText::SkBidiFactory;
+#endif // ENABLE_DRAWING_ADAPTER
 #endif // SkUnicode_icu_bidi_DEFINED
