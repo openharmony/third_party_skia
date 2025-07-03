@@ -362,7 +362,7 @@ private:
     void initializeFormattingState(SkScalar maxWidth, const SkSpan<Cluster>& span);
     void processLineStretches(SkScalar maxWidth, const AddLineToParagraph& addLine);
     void finalizeTextLayout(const AddLineToParagraph& addLine);
-    void prepareLineForFormatting(TextStretch& line, SkScalar maxWidth);
+    void prepareLineForFormatting(TextStretch& line);
     void formatCurrentLine(const AddLineToParagraph& addLine);
     bool determineIfEllipsisNeeded();
     void trimLineSpaces();

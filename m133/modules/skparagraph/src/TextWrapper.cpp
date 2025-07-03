@@ -1528,7 +1528,7 @@ void TextWrapper::finalizeTextLayout(const AddLineToParagraph& addLine) {
     }
 }
 
-void TextWrapper::prepareLineForFormatting(TextStretch& line, SkScalar maxWidth) {
+void TextWrapper::prepareLineForFormatting(TextStretch& line) {
     fEndLine = std::move(line);
     fHardLineBreak = fEndLine.endCluster()->isHardBreak();
 }
