@@ -386,6 +386,11 @@ public:
     // Set the proxy tag.
     void setGrProxyTag(const GrGpuResourceTag& tag) { fGrProxyTag = tag; }
 
+#ifdef SKIA_OHOS
+    // Get the proxy tag.
+    GrGpuResourceTag& getGrProxyTag() { return fGrProxyTag; }
+#endif
+
 protected:
     // Deferred version - takes a new UniqueID from the shared resource/proxy pool.
     GrSurfaceProxy(const GrBackendFormat&,
