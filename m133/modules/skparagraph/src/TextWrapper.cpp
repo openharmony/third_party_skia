@@ -1506,14 +1506,13 @@ void TextWrapper::initializeFormattingState(SkScalar maxWidth, const SkSpan<Clus
 
 void TextWrapper::processLineStretches(SkScalar maxWidth, const AddLineToParagraph& addLine) {
     for (TextStretch& line : fLineStretches) {
-        prepareLineForFormatting(line, maxWidth);
+        prepareLineForFormatting(line);
         formatCurrentLine(addLine);
 
+        advanceToNextLine();
         if (shouldBreakFormattingLoop()) {
-            advanceToNextLine();
             break;
         }
-        advanceToNextLine();
     }
 }
 
