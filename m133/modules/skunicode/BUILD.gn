@@ -85,11 +85,9 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
         defines += [ "U_DISABLE_RENAMING=1" ]
       }
 
-      sources = skia_unicode_bidi_full_sources
-      if (!is_arkui_x) {
-        sources += skia_unicode_icu_bidi_sources
-        sources += skia_unicode_icu_sources
-      }
+      sources = skia_unicode_icu_bidi_sources
+      sources += skia_unicode_bidi_full_sources
+      sources += skia_unicode_icu_sources
       sources += [ "../../third_party/icu/SkLoadICU.cpp" ]
 
       # only available for Android at the moment
@@ -105,7 +103,6 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
           deps += [ "${skia_third_party_dir}/icu" ]
         }
         if (is_arkui_x) {
-          sources -= skia_unicode_builtin_icu_sources
           defines += [ "U_DISABLE_RENAMING=0" ]
           deps -= [ "${skia_third_party_dir}/icu" ]
           deps += [ "//third_party/icu/icu4c:static_icuuc" ]

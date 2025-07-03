@@ -39,7 +39,6 @@ namespace sknonstd { template <typename T> struct is_bitmask_enum; }
         #define SKUNICODE_API
     #endif
 #endif
-
 class SKUNICODE_API SkBidiIterator {
 public:
     typedef int32_t Position;
@@ -308,7 +307,6 @@ class SKUNICODE_API SkUnicode : public SkRefCnt {
 
         virtual void reorderVisual(const BidiLevel runLevels[], int levelsCount, int32_t logicalFromVisual[]) = 0;
 };
-
 namespace sknonstd {
 template <> struct is_bitmask_enum<SkUnicode::CodeUnitFlags> : std::true_type {};
 }  // namespace sknonstd
