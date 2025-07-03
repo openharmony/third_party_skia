@@ -55,6 +55,9 @@ struct SkUbrkGetLocaleByType<
 
 }  // namespace
 
+#ifdef ENABLE_DRAWING_ADAPTER
+namespace SkiaRsText {
+#endif
 #define SKICU_FUNC(funcname) funcname,
 std::unique_ptr<SkICULib> SkLoadICULib()
 {
@@ -66,3 +69,6 @@ std::unique_ptr<SkICULib> SkLoadICULib()
     });
 }
 
+#ifdef ENABLE_DRAWING_ADAPTER
+}
+#endif

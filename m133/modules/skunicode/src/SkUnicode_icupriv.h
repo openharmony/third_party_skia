@@ -65,10 +65,16 @@ struct SkICULib {
 };
 #undef SKICU_FUNC
 
+#ifdef ENABLE_DRAWING_ADAPTER
+namespace SkiaRsText {
+#endif
 // Platform/config specific ICU factory.
 std::unique_ptr<SkICULib> SkLoadICULib();
 
 // Get cached already loaded ICU library.
 const SkICULib* SkGetICULib();
 
+#ifdef ENABLE_DRAWING_ADAPTER
+}
+#endif  // namespace SkiaRsText
 #endif // SkUnicode_icupriv_DEFINED
