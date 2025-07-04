@@ -21,6 +21,10 @@ if (skia_use_system_libpng) {
   }
 } else {
   third_party("libpng") {
+    cflags = [
+      "-fvisibility=hidden",
+    ]
+
     public_include_dirs = [
       ".",
       "../externals/libpng",
