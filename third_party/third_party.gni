@@ -101,11 +101,15 @@ template("third_party") {
       }
       public_configs = [ ":" + target_name + "_public" ]
 
+      if (!defined(cflags)) {
+        cflags = []
+      }
+
       # Warnings are just noise if we're not maintaining the code.
       if (is_win && (!defined(is_mingw) || (defined(is_mingw) && !is_mingw))) {
-        cflags = [ "/w" ]
+        cflags += [ "/w" ]
       } else {
-        cflags = [ "-w" ]
+        cflags += [ "-w" ]
       }
     }
   }
