@@ -255,6 +255,8 @@ public:
 
     virtual GradientType asGradient(GradientInfo* info    = nullptr,
                                     SkMatrix* localMatrix = nullptr) const {
+        (void)info;
+        (void)localMatrix;
         return GradientType::kNone;
     }
 
