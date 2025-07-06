@@ -4536,6 +4536,10 @@ ohos_static_library("sksl_ext_static") {
     part_name = "skia"
     subsystem_name = "thirdparty"
 
+    if (is_ohos) {
+      public_external_deps = [ "hitrace:hitrace_meter" ]
+    }
+
     public_configs = [
       "${skia_root_dir}:skia_public",
       ":skia_config",
@@ -4873,6 +4877,10 @@ ohos_static_library("sksl_ext_static") {
   ohos_static_library("skia_canvaskit_static") {
     part_name = "skia"
     subsystem_name = "thirdparty"
+
+    if (is_ohos) {
+      public_external_deps = [ "hitrace:hitrace_meter" ]
+    }
 
     public_configs = [
       "${skia_root_dir}:skia_public",
