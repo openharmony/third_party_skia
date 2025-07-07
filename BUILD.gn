@@ -4646,7 +4646,24 @@ ohos_static_library("sksl_ext_static") {
 
     defines = skia_common_defines
     cflags = skia_common_cflags
-    cflags += [ "-Wno-ignored-attributes" ]
+    cflags += [
+      "-Wno-ignored-attributes",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-fvisibility=hidden",
+      "-fno-unwind-tables",
+      "-fno-asynchronous-unwind-tables",
+    ]
+
+    cflags_cc = [
+      "-fvisibility-inlines-hidden",
+      "-fno-rtti",
+    ]
+
+    ldflags = [
+      "-Wl,--gc-sections",
+      "-Wl,--icf=safe",
+    ]
 
     if (skia_build_for_debugger) {
       defines += [ "SK_BUILD_FOR_DEBUGGER" ]
@@ -4829,6 +4846,22 @@ ohos_static_library("sksl_ext_static") {
     if (!skia_enable_ganesh && !skia_enable_graphite) {
       sources += skia_no_slug_srcs
     }
+
+    if (product_name == "qemu-arm-linux-min") {
+      deps -= [
+        "${skia_root_dir}:android_utils",
+        "${skia_root_dir}:raw",
+        "${skia_root_dir}:wuffs",
+      ]
+      sources -= [
+        "${skia_root_dir}/src/android/SkAndroidFrameworkUtils.cpp",
+        "${skia_root_dir}/src/android/SkAnimatedImage.cpp",
+        "${skia_root_dir}/src/codec/SkAndroidCodec.cpp",
+        "${skia_root_dir}/src/codec/SkAndroidCodecAdapter.cpp",
+        "${skia_root_dir}/src/codec/SkSampledCodec.cpp",
+        "${skia_root_dir}/src/ports/SkDiscardableMemory_none.cpp",
+        ]
+    }
   }
   ohos_static_library("sksl_ext_static") {
     part_name = "skia"
@@ -4995,6 +5028,7 @@ ohos_static_library("sksl_ext_static") {
     if (is_ohos) {
       external_deps = [
         "bounds_checking_function:libsec_shared",
+        "hitrace:hitrace_meter",
       ]
     }
 
