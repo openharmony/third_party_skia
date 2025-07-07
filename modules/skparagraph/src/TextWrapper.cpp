@@ -1512,6 +1512,7 @@ void TextWrapper::processLineStretches(SkScalar maxWidth, const AddLineToParagra
         if (shouldBreakFormattingLoop()) {
             break;
         }
+        ++fLineNumber;
     }
 }
 
@@ -1692,7 +1693,6 @@ bool TextWrapper::isLastLine() const { return fLineNumber >= fFormattingContext.
 
 void TextWrapper::advanceToNextLine() {
     prepareForNextLine();
-    ++fLineNumber;
     fFirstLine = false;
 }
 
