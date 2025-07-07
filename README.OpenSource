@@ -6,6 +6,7 @@
         "Version Number": "canvaskit/0.31.0",
         "Owner": "yangguangyu6@huawei.com",
         "Upstream URL": "https://skia.googlesource.com/skia.git",
-        "Description": "Skia is a complete 2D graphic library for drawing Text, Geometries, and Images."
+        "Description": "Skia is a complete 2D graphic library for drawing Text, Geometries, and Images.",
+        "Dependencies": [ "dng_sdk", "expat", "harfbuzz", "icu", "libjpeg-turbo", "libpng", "libwebp", "libyuv", "piex", "vulkanmemoryallocator", "wuffs", "zlib" ]
     }
 ]
