@@ -13,7 +13,7 @@
 import("//build/ohos_var.gni")
 
 declare_args() {
-  skia_feature_upgrade = false
+  skia_feature_upgrade = true
 }
 
 if (skia_feature_upgrade) {
