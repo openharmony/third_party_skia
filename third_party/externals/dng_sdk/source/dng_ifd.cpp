@@ -351,7 +351,8 @@ bool dng_ifd::ParseTag (dng_stream &stream,
 			
 			CheckTagType (parentCode, tagCode, tagType, ttShort);
 			
-			CheckTagCount (parentCode, tagCode, tagCount, 1, 0x0FFFF);
+			if (!CheckTagCount (parentCode, tagCode, tagCount, 1, 0x0FFFF))
+				return false;
 			
 			#if qDNGValidate
 			
@@ -973,7 +974,8 @@ bool dng_ifd::ParseTag (dng_stream &stream,
 			
 			CheckTagType (parentCode, tagCode, tagType, ttShort);
 			
-			CheckTagCount (parentCode, tagCode, tagCount, 1, fSamplesPerPixel);
+			if (!CheckTagCount (parentCode, tagCode, tagCount, 1, fSamplesPerPixel))
+				return false;
 			
 			#if qDNGValidate
 			
@@ -1025,7 +1027,8 @@ bool dng_ifd::ParseTag (dng_stream &stream,
 			
 			CheckTagType (parentCode, tagCode, tagType, ttShort);
 			
-			CheckTagCount (parentCode, tagCode, tagCount, fSamplesPerPixel);
+			if (!CheckTagCount (parentCode, tagCode, tagCount, fSamplesPerPixel))
+				return false;
 			
 			#if qDNGValidate
 			
