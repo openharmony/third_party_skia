@@ -39,6 +39,7 @@ skia_common_defines = [
   "SK_UNICODE_AVAILABLE",
   "SKUNICODE_IMPLEMENTATION=1",
   "SK_SUPPORT_PDF",
+  "SK_LEGACY_IGNORE_DRAW_VERTICES_BLEND_WITH_NO_SHADER",
 ]
 
 skia_common_cflags = [
