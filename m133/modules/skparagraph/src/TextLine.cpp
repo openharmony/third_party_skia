@@ -3378,6 +3378,7 @@ SkRect TextLine::generatePaintRegion(SkScalar x, SkScalar y)
     paintRegion.join(rect);
 
     // textblob
+    applyVerticalShift();
     this->ensureTextBlobCachePopulated();
     for (auto& record : fTextBlobCache) {
         rect = GetTextBlobSkTightBound(record.fBlob, x + record.fOffset.fX, y + record.fOffset.fY, record.fClipRect);
