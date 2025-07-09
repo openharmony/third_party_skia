@@ -4660,10 +4660,12 @@ ohos_static_library("sksl_ext_static") {
       "-fno-rtti",
     ]
 
-    ldflags = [
-      "-Wl,--gc-sections",
-      "-Wl,--icf=safe",
-    ]
+    if (!is_mac) {
+      ldflags = [
+        "-Wl,--gc-sections",
+        "-Wl,--icf=safe",
+      ]
+    }
 
     if (skia_build_for_debugger) {
       defines += [ "SK_BUILD_FOR_DEBUGGER" ]
