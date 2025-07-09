@@ -241,7 +241,11 @@ inline void blit_row_s32a_opaque(SkPMColor* dst, const SkPMColor* src, int len, 
 // Blend constant color over count dst pixels
 /*not static*/
 inline void blit_row_color32(SkPMColor* dst, int count, SkPMColor color) {
+#ifdef SKIA_OHOS
+    constexpr int N = 8;
+#else
     constexpr int N = 4;  // 8, 16 also reasonable choices
+#endif
     using U32 = skvx::Vec<  N, uint32_t>;
     using U16 = skvx::Vec<4*N, uint16_t>;
     using U8  = skvx::Vec<4*N, uint8_t>;
