@@ -1616,6 +1616,10 @@ inline int32 dng_lossless_decoder::get_bit ()
 inline int32 dng_lossless_decoder::HuffDecode (HuffmanTable *htbl)
 	{
 	
+	if (htbl == nullptr) {
+		ThrowBadFormat ();
+	}
+
     // If the huffman code is less than 8 bits, we can use the fast
     // table lookup to get its value.  It's more than 8 bits about
     // 3-4% of the time.
