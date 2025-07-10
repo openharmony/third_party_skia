@@ -147,9 +147,6 @@ config("skia_public") {
   if (ace_enable_skia_small_page_texture && is_ohos) {
     defines += [ "SK_ENABLE_SMALL_PAGE" ]
   }
-  if (ace_enable_skia_small_page_texture) {
-    defines += [ "SK_ENABLE_SMALL_PAGE" ]
-  }
   if (is_skia_dev_build && !is_wasm) {
     defines += [ "GPU_TEST_UTILS=1" ]
   }
