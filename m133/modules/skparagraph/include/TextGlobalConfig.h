@@ -24,7 +24,6 @@
 
 namespace skia {
 namespace textlayout {
-constexpr uint32_t SINCE_API20_VERSION = 20;
 constexpr const char* NOTDEF_FAMILY = "notdef";
 
 class TextGlobalConfig {

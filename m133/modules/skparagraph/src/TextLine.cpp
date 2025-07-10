@@ -22,6 +22,9 @@
 #include "modules/skparagraph/src/Decorations.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/ParagraphPainterImpl.h"
+#ifdef ENABLE_TEXT_ENHANCE
+#include "modules/skparagraph/src/TextLineBaseImpl.h"
+#endif
 #include "modules/skshaper/include/SkShaper.h"
 #include "modules/skshaper/include/SkShaper_harfbuzz.h"
 #include "modules/skshaper/include/SkShaper_skunicode.h"
@@ -2376,7 +2379,7 @@ void TextLine::getRectsForRange(TextRange textRange0,
 
             auto intersect = textRange * textRange0;
 #ifdef ENABLE_TEXT_ENHANCE
-            if (intersect.empty() && !this->fBreakWithHyphen) {
+            if (intersect.empty() && !(this->fBreakWithHyphen && textRange0.end == fText.end && run->isEllipsis())) {
 #else
             if (intersect.empty()) {
 #endif

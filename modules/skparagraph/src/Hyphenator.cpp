@@ -342,7 +342,7 @@ void processLinear(uint16_t* data, size_t index, HyphenFindBreakParam& param, st
     uint32_t offset = 1 + count; // array size, code points, no padding for 16 bit
     uint16_t pOffset = *(data + offset);
     offset++; // move forward, after pattern
-    if (!pOffset) {
+    if (pOffset == 0) {
         return;
     }
 
@@ -403,7 +403,7 @@ void findBreakByType(HyphenFindBreakParam& param, const size_t& targetIndex, std
                 *(reinterpret_cast<const uint16_t*>(param.header) + nextOffset + (param.header->version & 0xffff));
         }
         nextOffset++;
-        if (pOffset) {
+        if (pOffset > 0) {
             // if we have reached pattern, apply it to result
             uint16_t count = (pOffset >> 0xc);
             pOffset = 0xfff & pOffset;
