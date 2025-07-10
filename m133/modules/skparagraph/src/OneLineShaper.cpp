@@ -26,7 +26,8 @@ static inline SkUnichar nextUtf8Unit(const char** ptr, const char* end) {
 namespace skia {
 namespace textlayout {
 #ifdef ENABLE_TEXT_ENHANCE
-constexpr int UBIDI_LTR = 0;
+constexpr uint8_t UBIDI_LTR = 0;
+constexpr uint8_t UBIDI_MIXED = 2;
 #endif
 
 void OneLineShaper::commitRunBuffer(const RunInfo&) {
@@ -868,7 +869,8 @@ bool OneLineShaper::iterateThroughShapingRegions(const ShapeVisitor& shape) {
 
         // "Shape" the placeholder
 #ifdef ENABLE_TEXT_ENHANCE
-        uint8_t bidiLevel = UBIDI_LTR;
+        uint8_t bidiLevel = (fParagraph->paragraphStyle().getTextDirection() == TextDirection::kLtr)
+            ? UBIDI_LTR : UBIDI_MIXED;
 #else
         uint8_t bidiLevel = (bidiIndex < fParagraph->fBidiRegions.size())
             ? fParagraph->fBidiRegions[bidiIndex].level
