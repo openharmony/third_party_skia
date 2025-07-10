@@ -4660,7 +4660,7 @@ ohos_static_library("sksl_ext_static") {
       "-fno-rtti",
     ]
 
-    if (!is_mac) {
+    if (!is_mac && !is_asan) {
       ldflags = [
         "-Wl,--gc-sections",
         "-Wl,--icf=safe",
