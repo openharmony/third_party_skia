@@ -193,13 +193,21 @@ public:
      * necessary before execute() is called.
      */
     void prepare(GrOpFlushState* state) {
+#ifdef SKIA_OHOS
+        HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "prepare: %s", name());
+#else
         TRACE_EVENT0_ALWAYS("skia.gpu", TRACE_STR_STATIC(name()));
+#endif
         this->onPrepare(state);
     }
 
     /** Issues the op's commands to GrGpu. */
     void execute(GrOpFlushState* state, const SkRect& chainBounds) {
+#ifdef SKIA_OHOS
+        HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "execute: %s", name());
+#else
         TRACE_EVENT0_ALWAYS("skia.gpu", TRACE_STR_STATIC(name()));
+#endif
         this->onExecute(state, chainBounds);
     }
 
