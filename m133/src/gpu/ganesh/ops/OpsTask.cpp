@@ -529,7 +529,11 @@ void OpsTask::onPrepare(GrOpFlushState* flushState) {
         (fClippedContentBounds.isEmpty() && fColorLoadOp != GrLoadOp::kDiscard)) {
         return;
     }
+#ifdef SKIA_OHOS
+    HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "onPrepare");
+#else
     TRACE_EVENT0_ALWAYS("skia.gpu", TRACE_FUNC);
+#endif
 
     flushState->setSampledProxyArray(&fSampledProxies);
     GrSurfaceProxyView dstView(sk_ref_sp(this->target(0)), fTargetOrigin, fTargetSwizzle);
@@ -580,7 +584,11 @@ bool OpsTask::onExecute(GrOpFlushState* flushState) {
     if (this->isColorNoOp() || fClippedContentBounds.isEmpty()) {
         return false;
     }
+#ifdef SKIA_OHOS
+    HITRACE_OHOS_NAME_FMT_LEVEL(DebugTraceLevel::DETAIL, "onExecute");
+#else
     TRACE_EVENT0_ALWAYS("skia.gpu", TRACE_FUNC);
+#endif
 
     // Make sure load ops are not kClear if the GPU needs to use draws for clears
     SkASSERT(fColorLoadOp != GrLoadOp::kClear ||

@@ -7,6 +7,9 @@
 
 #include "src/base/SkUtils.h"
 #include <cstdint>
+#ifdef NOT_BUILD_FOR_OHOS_SDK
+#include <parameters.h>
+#endif
 
 const char SkHexadecimalDigits::gUpper[16] =
     { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
