@@ -226,6 +226,13 @@ public:
     bool isAutoSpaceEnabled() const;
     SkScalar clusterUsingAutoSpaceWidth(const Cluster& cluster) const;
     const SkString& getText() const { return fText; }
+    void updateSplitRunClusterInfo(const Run& run, bool isSplitRun);
+    void refreshLines();
+    void generateSplitPoint(
+        std::vector<SplitPoint>& splitPoints, const Run& run, ClusterRange lineRange, size_t lineIndex);
+    void generateSplitPoints(std::vector<SplitPoint>& splitPoints);
+    void generateRunsBySplitPoints(std::vector<SplitPoint>& splitPoints, skia_private::TArray<Run, false>& runs);
+    void splitRuns();
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }

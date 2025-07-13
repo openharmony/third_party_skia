@@ -241,10 +241,15 @@ public:
     void updateBlobShift(const Run& run, SkScalar& verticalShift);
     void resetBlobShift(const Run& run);
     void shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign VerticalAlignment);
-    void shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment, const RSRect& groupClustersBounds);
+    void shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment);
     void applyPlaceholderVerticalShift();
     void applyVerticalShift();
     void updateBlobAndRunShift(Run& run);
+    void refresh();
+    void setLineAllRuns(skia_private::STArray<1, size_t, true>& runsInVisualOrder) {
+        fRunsInVisualOrder = std::move(runsInVisualOrder);
+    }
+    void setEllipsisRunIndex(size_t runIndex) { fEllipsisIndex = runIndex; }
 #endif
 
     // For testing internal structures

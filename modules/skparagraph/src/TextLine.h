@@ -228,9 +228,14 @@ public:
     void resetBlobShift(const Run& run);
     void updateBlobAndRunShift(Run& run);
     void shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign VerticalAlignment);
-    void shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment, const RSRect& groupClustersBounds);
+    void shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment);
     void applyPlaceholderVerticalShift();
     void applyVerticalShift();
+    void refresh();
+    void setLineAllRuns(SkSTArray<1, size_t, true>& runsInVisualOrder) {
+        fRunsInVisualOrder = std::move(runsInVisualOrder);
+    }
+    void setEllipsisRunIndex(size_t runIndex) { fEllipsisIndex = runIndex; }
 #endif
     // For testing internal structures
     void scanStyles(StyleType style, const RunStyleVisitor& visitor);

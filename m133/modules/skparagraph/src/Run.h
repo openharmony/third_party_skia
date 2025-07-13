@@ -35,6 +35,7 @@ constexpr int PARAM_64 = 64;
 class Cluster;
 class InternalLineMetrics;
 class ParagraphImpl;
+class TextLine;
 
 typedef size_t RunIndex;
 const size_t EMPTY_RUN = EMPTY_INDEX;
@@ -73,6 +74,13 @@ constexpr SkScalar AUTO_SPACING_WIDTH_RATIO = 8;
 enum class ScaleOP {
     COMPRESS,
     DECOMPRESS,
+};
+
+struct SplitPoint {
+    size_t lineIndex;
+    size_t runIndex;
+    size_t headClusterIndex;
+    size_t tailClusterIndex;
 };
 
 void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op);
@@ -116,19 +124,11 @@ public:
         return SkVector::Make(fAdvance.fX, fFontMetrics.fDescent - fFontMetrics.fAscent + fFontMetrics.fLeading);
     }
     SkVector offset() const { return fOffset; }
-#ifdef ENABLE_TEXT_ENHANCE
-    SkScalar ascent() const { return fFontMetrics.fAscent + fBaselineShift + getVerticalAlignShift(); }
-    SkScalar descent() const { return fFontMetrics.fDescent + fBaselineShift + getVerticalAlignShift(); }
-    SkScalar leading() const { return fFontMetrics.fLeading; }
-    SkScalar correctAscent() const { return fCorrectAscent + fBaselineShift + getVerticalAlignShift(); }
-    SkScalar correctDescent() const { return fCorrectDescent + fBaselineShift + getVerticalAlignShift(); }
-#else
     SkScalar ascent() const { return fFontMetrics.fAscent + fBaselineShift; }
     SkScalar descent() const { return fFontMetrics.fDescent + fBaselineShift; }
     SkScalar leading() const { return fFontMetrics.fLeading; }
     SkScalar correctAscent() const { return fCorrectAscent + fBaselineShift; }
     SkScalar correctDescent() const { return fCorrectDescent + fBaselineShift; }
-#endif
     SkScalar correctLeading() const { return fCorrectLeading; }
 #ifdef ENABLE_TEXT_ENHANCE
     const RSFont& font() const { return fFont; }
@@ -141,10 +141,9 @@ public:
     SkScalar heightMultiplier() const { return fHeightMultiplier; }
     bool useHalfLeading() const { return fUseHalfLeading; }
 #ifdef ENABLE_TEXT_ENHANCE
-    SkScalar baselineShift() const { return fBaselineShift + getVerticalAlignShift(); }
-#else
-    SkScalar baselineShift() const { return fBaselineShift; }
+    SkScalar getRunTotalShift() const { return fBaselineShift + getVerticalAlignShift(); }
 #endif
+    SkScalar baselineShift() const { return fBaselineShift; }
     PlaceholderStyle* placeholderStyle() const;
     bool isPlaceholder() const { return fPlaceholderIndex != std::numeric_limits<size_t>::max(); }
     size_t clusterIndex(size_t pos) const { return fClusterIndexes[pos]; }
@@ -171,6 +170,11 @@ public:
     void shift(const Cluster* cluster, SkScalar offset);
     void extend(const Cluster* cluster, SkScalar offset);
 #ifdef ENABLE_TEXT_ENHANCE
+    Run(const Run& run, size_t runIndex);
+    size_t findSplitClusterPos(size_t target);
+    void updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex);
+    void updateSplitRunMesureInfo(Run& splitRun, size_t startClusterPos, size_t endClusterPos);
+    void generateSplitRun(Run& splitRun, const SplitPoint& splitPoint);
     void updatePlaceholderAlignmentIfNeeded(PlaceholderAlignment& alignment, TextVerticalAlign paragraphAlignment);
 #endif
     SkScalar calculateHeight(LineMetricStyle ascentStyle, LineMetricStyle descentStyle) const {
@@ -684,10 +688,17 @@ public:
         }
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar runTop(const Run* run, LineMetricStyle ascentStyle) const {
+        return fLeading / 2 - fAscent + (ascentStyle == LineMetricStyle::Typographic ?
+            run->ascent() : run->correctAscent() + run->getVerticalAlignShift()) + delta();
+    }
+#else
     SkScalar runTop(const Run* run, LineMetricStyle ascentStyle) const {
         return fLeading / 2 - fAscent +
           (ascentStyle == LineMetricStyle::Typographic ? run->ascent() : run->correctAscent()) + delta();
     }
+#endif
 
     SkScalar height() const {
         return ::round((double)fDescent - fAscent + fLeading);

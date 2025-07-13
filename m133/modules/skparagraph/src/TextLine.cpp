@@ -275,7 +275,6 @@ void TextLine::paint(ParagraphPainter* painter,
 
 void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 #ifdef ENABLE_TEXT_ENHANCE
-    applyVerticalShift();
     prepareRoundRect();
     paintRoundRect(painter, x, y);
     fIsArcText = false;
@@ -716,7 +715,12 @@ void TextLine::buildTextBlob(TextRange textRange,
     }
 
     SkASSERT(nearlyEqual(context.run->baselineShift(), style.getBaselineShift()));
-    SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getTotalVerticalShift() + 0.5);
+    SkScalar correctedBaseline = 0.0f;
+    if (fOwner->getParagraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE) {
+        correctedBaseline = SkScalarFloorToScalar(this->baseline() + context.run->getRunTotalShift() + 0.5);
+    } else {
+        correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getTotalVerticalShift() + 0.5);
+    }
     record.fBlob = builder.Make();
     if (record.fBlob != nullptr) {
         auto bounds = record.fBlob->Bounds();
@@ -855,7 +859,7 @@ void TextLine::paintShadow(ParagraphPainter* painter,
                            const TextStyle& style,
                            const ClipContext& context) const {
 #ifdef ENABLE_TEXT_ENHANCE
-    SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getTotalVerticalShift() + 0.5);
+    SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + context.run->getRunTotalShift() + 0.5);
 #else
     SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getBaselineShift() + 0.5);
 #endif
@@ -908,7 +912,11 @@ SkScalar TextLine::calculateThickness(const TextStyle& style, const ClipContext&
 void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar y, TextRange textRange, const TextStyle& style, const ClipContext& context) const {
     ParagraphPainterAutoRestore ppar(painter);
 #ifdef ENABLE_TEXT_ENHANCE
-    painter->translate(x + this->offset().fX, y + this->offset().fY + style.getTotalVerticalShift());
+    if (fOwner->getParagraphStyle().getVerticalAlignment() == TextVerticalAlign::BASELINE) {
+        painter->translate(x + this->offset().fX, y + this->offset().fY + style.getTotalVerticalShift());
+    } else {
+        painter->translate(x + this->offset().fX, y + this->offset().fY + context.run->baselineShift());
+    }
 #else
     painter->translate(x + this->offset().fX, y + this->offset().fY + style.getBaselineShift());
 #endif
@@ -916,8 +924,12 @@ void TextLine::paintDecorations(ParagraphPainter* painter, SkScalar x, SkScalar 
 #ifdef ENABLE_TEXT_ENHANCE
     decorations.setVerticalAlignment(fOwner->getParagraphStyle().getVerticalAlignment());
     decorations.setDecorationContext(fDecorationContext);
-    SkScalar correctedBaseline =
-        SkScalarFloorToScalar(-this->sizes().rawAscent() + style.getTotalVerticalShift() + 0.5);
+    SkScalar correctedBaseline = 0.0f;
+    if (fOwner->getParagraphStyle().getVerticalAlignment() == TextVerticalAlign::BASELINE) {
+        correctedBaseline = SkScalarFloorToScalar(-this->sizes().rawAscent() + style.getTotalVerticalShift() + 0.5);
+    } else {
+        correctedBaseline = SkScalarFloorToScalar(-this->sizes().rawAscent() + context.run->baselineShift() + 0.5);
+    }
 #else
     SkScalar correctedBaseline = SkScalarFloorToScalar(-this->sizes().rawAscent() + style.getBaselineShift() + 0.5);
 #endif
@@ -3210,9 +3222,8 @@ void TextLine::shiftPlaceholderByVerticalAlignMode(Run& run, TextVerticalAlign V
     }
 }
 
-void TextLine::shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment,
-    const RSRect& groupClustersBounds) {
-    SkScalar shift{0.0f};
+void TextLine::shiftTextByVerticalAlignment(Run& run, TextVerticalAlign VerticalAlignment) {
+    SkScalar shift = 0.0f;
     switch (VerticalAlignment) {
         case TextVerticalAlign::TOP:
             shift = sizes().ascent() - run.ascent();
@@ -3230,9 +3241,7 @@ void TextLine::shiftTextByVerticalAlignment(Run& run, TextVerticalAlign Vertical
         default:
             break;
     }
-
     run.setVerticalAlignShift(shift);
-    updateBlobAndRunShift(run);
 }
 
 void TextLine::applyPlaceholderVerticalShift() {
@@ -3257,32 +3266,68 @@ void TextLine::applyPlaceholderVerticalShift() {
 }
 
 void TextLine::applyVerticalShift() {
-    TextVerticalAlign VerticalAlignment = fOwner->getParagraphStyle().getVerticalAlignment();
+    TextVerticalAlign verticalAlignment = fOwner->getParagraphStyle().getVerticalAlignment();
+    if (verticalAlignment == TextVerticalAlign::BASELINE) {
+        return;
+    }
 
-    ClusterRange clustersRange = clusters();
+    ClusterRange clustersRange = clustersWithSpaces();
     ClusterIndex curClusterIndex = clustersRange.start;
-    // Reset textStyle vertical shift for current line's first run
-    const Run& run = fOwner->runByCluster(curClusterIndex);
-    resetBlobShift(run);
-
     while (curClusterIndex < clustersRange.end) {
         Run& run = fOwner->runByCluster(curClusterIndex);
-        ClusterRange groupClusterRange = {std::max(curClusterIndex, run.clusterRange().start),
-            std::min(clustersRange.end, run.clusterRange().end)};
-
         if (run.isPlaceholder()) {
-            shiftPlaceholderByVerticalAlignMode(run, VerticalAlignment);
-            curClusterIndex = groupClusterRange.end;
+            shiftPlaceholderByVerticalAlignMode(run, verticalAlignment);
+            curClusterIndex = run.clusterRange().end;
             continue;
         }
-        // Reset vertical shift because run may cross multiple lines
-        run.setVerticalAlignShift(0);
+        shiftTextByVerticalAlignment(run, verticalAlignment);
+        curClusterIndex = run.clusterRange().end;
+    }
 
-        // Just for vertical center alignment
-        RSRect groupClustersBounds = getClusterRangeBounds(groupClusterRange, fOwner);
-        shiftTextByVerticalAlignment(run, VerticalAlignment, groupClustersBounds);
+    if (ellipsis()) {
+        shiftTextByVerticalAlignment(*ellipsis(), verticalAlignment);
+    }
+}
 
-        curClusterIndex = groupClusterRange.end;
+void TextLine::refresh() {
+    // Refresh line runs order
+    auto& start = fOwner->cluster(clustersWithSpaces().start);
+    auto& end = fOwner->cluster(clustersWithSpaces().end - 1);
+    size_t numRuns = end.runIndex() - start.runIndex() + 1;
+    constexpr int kPreallocCount = 4;
+    SkAutoSTArray<kPreallocCount, SkUnicode::BidiLevel> runLevels(numRuns);
+    size_t runLevelsIndex = 0;
+    std::vector<RunIndex> placeholdersInOriginalOrder;
+    InternalLineMetrics maxRunMetrics = getMaxRunMetrics();
+    for (auto runIndex = start.runIndex(); runIndex <= end.runIndex(); ++runIndex) {
+        Run& run = fOwner->run(runIndex);
+        runLevels[runLevelsIndex++] = run.fBidiLevel;
+        maxRunMetrics.add(
+            InternalLineMetrics(run.correctAscent(), run.correctDescent(), run.fFontMetrics.fLeading));
+        if (run.isPlaceholder()) {
+            placeholdersInOriginalOrder.push_back(runIndex);
+        }
+    }
+    setMaxRunMetrics(maxRunMetrics);
+    SkAutoSTArray<kPreallocCount, int32_t> logicalOrder(numRuns);
+    fOwner->getUnicode()->reorderVisual(runLevels.data(), numRuns, logicalOrder.data());
+    auto firstRunIndex = start.runIndex();
+    auto placeholderIter = placeholdersInOriginalOrder.begin();
+    skia_private::STArray<1, size_t, true> runsInVisualOrder{};
+    for (auto index : logicalOrder) {
+        auto runIndex = firstRunIndex + index;
+        if (fOwner->run(runIndex).isPlaceholder()) {
+            runsInVisualOrder.push_back(*placeholderIter++);
+        } else {
+            runsInVisualOrder.push_back(runIndex);
+        }
+    }
+    setLineAllRuns(runsInVisualOrder);
+
+    if (ellipsis()) {
+        size_t runIndex = fOwner->cluster(clusters().start).runIndex();
+        ellipsis()->fIndex = runIndex;
+        setEllipsisRunIndex(runIndex);
     }
 }
 
@@ -3377,8 +3422,6 @@ SkRect TextLine::generatePaintRegion(SkScalar x, SkScalar y)
     SkRect rect = getAllShadowsRect(x, y);
     paintRegion.join(rect);
 
-    // textblob
-    applyVerticalShift();
     this->ensureTextBlobCachePopulated();
     for (auto& record : fTextBlobCache) {
         rect = GetTextBlobSkTightBound(record.fBlob, x + record.fOffset.fX, y + record.fOffset.fY, record.fClipRect);
