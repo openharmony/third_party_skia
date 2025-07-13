@@ -3295,7 +3295,7 @@ void TextLine::refresh() {
     auto& end = fOwner->cluster(clustersWithSpaces().end - 1);
     size_t numRuns = end.runIndex() - start.runIndex() + 1;
     constexpr int kPreallocCount = 4;
-    SkAutoSTArray<kPreallocCount, SkUnicode::BidiLevel> runLevels(numRuns);
+    AutoSTArray<kPreallocCount, SkUnicode::BidiLevel> runLevels(numRuns);
     size_t runLevelsIndex = 0;
     std::vector<RunIndex> placeholdersInOriginalOrder;
     InternalLineMetrics maxRunMetrics = getMaxRunMetrics();
@@ -3309,7 +3309,7 @@ void TextLine::refresh() {
         }
     }
     setMaxRunMetrics(maxRunMetrics);
-    SkAutoSTArray<kPreallocCount, int32_t> logicalOrder(numRuns);
+    AutoSTArray<kPreallocCount, int32_t> logicalOrder(numRuns);
     fOwner->getUnicode()->reorderVisual(runLevels.data(), numRuns, logicalOrder.data());
     auto firstRunIndex = start.runIndex();
     auto placeholderIter = placeholdersInOriginalOrder.begin();
