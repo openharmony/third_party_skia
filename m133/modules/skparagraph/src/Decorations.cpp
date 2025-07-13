@@ -73,11 +73,17 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
             continue;
         }
 
+        SkScalar textBaselineShift = 0.0f;
+        if (getVerticalAlignment() == TextVerticalAlign::BASELINE) {
+            textBaselineShift = textStyle.getTotalVerticalShift();
+        } else {
+            textBaselineShift = context.run->baselineShift();
+        }
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
                           : context.run->correctAscent(), textStyle.getDecorationStyle(),
-                          textStyle.getTotalVerticalShift(), textStyle.getCorrectFontSize());
+                          textBaselineShift, textStyle.getCorrectFontSize());
 
         calculatePaint(textStyle);
 
@@ -89,7 +95,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         SkScalar x = context.clip.left();
         SkScalar y = (TextDecoration::kUnderline == decoration) ?
             fPosition : (context.clip.top() + fPosition);
-        updateDecorationPosition(decoration, textStyle.getTotalVerticalShift(), context, y);
+        updateDecorationPosition(decoration, textBaselineShift, context, y);
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
                         textStyle.getDecorationType() == TextDecoration::kUnderline;
 

@@ -452,6 +452,13 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     }
 
     if (fState == kLineBroken) {
+#ifdef ENABLE_TEXT_ENHANCE
+        if (paragraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE &&
+            paragraphStyle().getMaxLines() > 1) {
+            splitRuns();
+        }
+#endif
+
         // Build the picture lazily not until we actually have to paint (or never)
         this->resetShifts();
         this->formatLines(fWidth);
@@ -494,6 +501,120 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 #endif
     //SkDebugf("layout('%s', %f): %f %f\n", fText.c_str(), rawWidth, fMinIntrinsicWidth, fMaxIntrinsicWidth);
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+void ParagraphImpl::updateSplitRunClusterInfo(const Run& run, bool isSplitRun) {
+    size_t rtlShift = cluster(run.clusterRange().end - 1).startPos();
+    for (size_t clusterIndex = run.clusterRange().start; clusterIndex < run.clusterRange().end; ++clusterIndex) {
+        Cluster& updateCluster = this->cluster(clusterIndex);
+        updateCluster.fRunIndex = run.index();
+        // If the run has not been split, it only needs to update the run index
+        if (!isSplitRun) {
+            continue;
+        }
+
+        if (run.leftToRight()) {
+            size_t width = updateCluster.size();
+            updateCluster.fStart = clusterIndex - run.clusterRange().start;
+            updateCluster.fEnd = updateCluster.fStart + width;
+        } else {
+            size_t width = updateCluster.size();
+            updateCluster.fStart -= rtlShift;
+            updateCluster.fEnd = updateCluster.fStart + width;
+        }
+    }
+}
+
+void ParagraphImpl::refreshLines() {
+    for (TextLine& line : fLines) {
+        line.refresh();
+    }
+}
+
+void ParagraphImpl::generateSplitPoint(
+    std::vector<SplitPoint>& splitPoints, const Run& run, ClusterRange lineRange, size_t lineIndex) {
+    size_t startIndex =
+        std::max(cluster(lineRange.start).textRange().start, cluster(run.clusterRange().start).textRange().start);
+    size_t endIndex =
+        std::min(cluster(lineRange.end - 1).textRange().end, cluster(run.clusterRange().end- 1).textRange().end);
+    // The run cross line
+    splitPoints.push_back({lineIndex, run.index(), startIndex, endIndex});
+}
+
+void ParagraphImpl::generateSplitPoints(std::vector<SplitPoint>& splitPoints) {
+    for (size_t lineIndex = 0; lineIndex < fLines.size(); ++lineIndex) {
+        const TextLine& line = fLines[lineIndex];
+        const ClusterRange lineClusterRange = line.clustersWithSpaces();
+        // Skip blank line
+        if (lineClusterRange.empty()) {
+            continue;
+        }
+        size_t lineStart = lineClusterRange.start;
+        size_t lineEnd = lineClusterRange.end;
+        // The next line's starting cluster index
+        const Run& lineFirstRun = runByCluster(lineStart);
+        const Run& lineLastRun = runByCluster(lineEnd - 1);
+        // Each line may have 0, 1, or 2 Runs need to be split
+        bool onlyGenerateOnce{false};
+        if (lineFirstRun.clusterRange().start != lineStart) {
+            generateSplitPoint(splitPoints, lineFirstRun, lineClusterRange, lineIndex);
+
+            if (lineFirstRun.index() == lineLastRun.index()) {
+                onlyGenerateOnce = true;
+            }
+        }
+
+        if (lineLastRun.clusterRange().end != lineEnd && !onlyGenerateOnce) {
+            generateSplitPoint(splitPoints, lineLastRun, lineClusterRange, lineIndex);
+        }
+    }
+}
+
+void ParagraphImpl::generateRunsBySplitPoints(std::vector<SplitPoint>& splitPoints, skia_private::TArray<Run, false>& runs) {
+    std::reverse(splitPoints.begin(), splitPoints.end());
+    size_t newRunGlobalIndex = 0;
+    for (size_t runIndex = 0; runIndex < fRuns.size(); ++runIndex) {
+        Run& run = fRuns[runIndex];
+        if (splitPoints.empty() || splitPoints.back().runIndex != run.fIndex) {
+            // No need to split
+            run.fIndex = newRunGlobalIndex++;
+            updateSplitRunClusterInfo(run, false);
+            runs.push_back(run);
+            continue;
+        }
+
+        while (!splitPoints.empty()) {
+            SplitPoint& splitPoint = splitPoints.back();
+            size_t splitRunIndex = splitPoint.runIndex;
+            if (splitRunIndex != runIndex) {
+                break;
+            }
+
+            Run splitRun{run, newRunGlobalIndex++};
+            run.generateSplitRun(splitRun, splitPoint);
+            updateSplitRunClusterInfo(splitRun, true);
+            runs.push_back(std::move(splitRun));
+            splitPoints.pop_back();
+        }
+    }
+}
+
+void ParagraphImpl::splitRuns() {
+    // Collect split info for crossing line's run
+    std::vector<SplitPoint> splitPoints{};
+    generateSplitPoints(splitPoints);
+    if (splitPoints.empty()) {
+        return;
+    }
+    skia_private::TArray<Run, false> newRuns;
+    generateRunsBySplitPoints(splitPoints, newRuns);
+    if (newRuns.empty()) {
+        return;
+    }
+    fRuns = std::move(newRuns);
+    refreshLines();
+}
+#endif
 
 void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 #ifdef ENABLE_TEXT_ENHANCE
@@ -1335,6 +1456,10 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
             line.setLineOffsetX(0);
         }
         line.format(effectiveAlign, noIndentWidth, this->paragraphStyle().getEllipsisMod());
+
+        if (paragraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE) {
+            line.applyVerticalShift();
+        }
     }
 #else
     for (auto& line : fLines) {

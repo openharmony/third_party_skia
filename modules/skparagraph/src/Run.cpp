@@ -292,6 +292,143 @@ void Run::calculateMetrics() {
     fCorrectDescent += fBaselineShift;
 }
 
+#ifdef OHOS_SUPPORT
+Run::Run(const Run& run, size_t runIndex)
+    : fOwner(run.fOwner),
+      fTextRange(run.textRange()),
+      fClusterRange(run.clusterRange()),
+      fFont(run.fFont),
+      fPlaceholderIndex(run.fPlaceholderIndex),
+      fIndex(runIndex),
+      fAdvance(SkVector::Make(0, 0)),
+      fOffset(SkVector::Make(0, 0)),
+      fClusterStart(run.fClusterStart),
+      fUtf8Range(run.fUtf8Range),
+      fGlyphData(std::make_shared<GlyphData>()),
+      fGlyphs(fGlyphData->glyphs),
+      fPositions(fGlyphData->positions),
+      fOffsets(fGlyphData->offsets),
+      fClusterIndexes(fGlyphData->clusterIndexes),
+      fGlyphAdvances(fGlyphData->advances),
+      fJustificationShifts(),
+      fAutoSpacings(),
+      fHalfLetterspacings(),
+      fFontMetrics(run.fFontMetrics),
+      fHeightMultiplier(run.fHeightMultiplier),
+      fUseHalfLeading(run.fUseHalfLeading),
+      fBaselineShift(run.fBaselineShift),
+      fCorrectAscent(run.fCorrectAscent),
+      fCorrectDescent(run.fCorrectDescent),
+      fCorrectLeading(run.fCorrectLeading),
+      fEllipsis(run.fEllipsis),
+      fBidiLevel(run.fBidiLevel),
+      fTopInGroup(run.fTopInGroup),
+      fBottomInGroup(run.fBottomInGroup),
+      fMaxRoundRectRadius(run.fMaxRoundRectRadius),
+      indexInLine(run.indexInLine),
+      fCompressionBaselineShift(run.fCompressionBaselineShift),
+      fVerticalAlignShift(run.fVerticalAlignShift) {}
+
+size_t Run::findSplitClusterPos(size_t target) {
+    const auto& indexes = clusterIndexes();
+    bool isIncreasing = indexes.size() > 1 && indexes[0] < indexes[1];
+
+    if (!isIncreasing && target == 0 && indexes.back() == 0) {
+        return indexes.size() - 1;
+    }
+
+    if (!isIncreasing && target != 0) {
+        // Run's clusterIndexes shift 2
+        target -= 2;
+    }
+
+    size_t left = 0;
+    size_t right = indexes.size() - 1;
+    while (left <= right) {
+        size_t mid = left + (right - left)/2;
+
+        if (mid > indexes.size()) {
+            if (isIncreasing) {
+                return indexes.size() - 1;
+            } else {
+                return 0;
+            }
+        }
+
+        if (indexes[mid] == target) {
+            return mid;
+        }
+
+        if ((isIncreasing && indexes[mid] < target) ||
+            (!isIncreasing && indexes[mid] > target)) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    return indexes.size() - 1;
+}
+
+void Run::updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex) {
+    splitRun.fTextRange.start = std::max(headIndex,
+        fOwner->cluster(splitLine.clustersWithSpaces().start).textRange().start);
+    splitRun.fClusterRange.start = fOwner->clusterIndex(headIndex);
+    splitRun.fTextRange.end = std::min(tailIndex,
+        fOwner->cluster(splitLine.clustersWithSpaces().end-1).textRange().end);
+    splitRun.fUtf8Range = {splitRun.fTextRange.start, splitRun.fTextRange.width()};
+    splitRun.fClusterRange.end = fOwner->clusterIndex(tailIndex);
+}
+
+void Run::updateSplitRunMesureInfo(Run& splitRun, size_t startClusterPos, size_t endClusterPos) {
+    if (!leftToRight()) {
+        std::swap(startClusterPos, endClusterPos);
+    }
+    SkScalar glyphPosVal = 0.0f;
+    SkScalar posOffset = 0.0f;
+    posOffset = fGlyphData->positions[startClusterPos].fX;
+    for (; startClusterPos < endClusterPos; ++startClusterPos) {
+        splitRun.fGlyphData->glyphs.push_back(fGlyphData->glyphs[startClusterPos]);
+        glyphPosVal = fGlyphData->positions[startClusterPos].fX - posOffset;
+        splitRun.fGlyphData->positions.push_back({glyphPosVal, fGlyphData->positions[startClusterPos].fY});
+        splitRun.fGlyphData->offsets.push_back(fGlyphData->offsets[startClusterPos]);
+        splitRun.fGlyphData->clusterIndexes.push_back(fGlyphData->clusterIndexes[startClusterPos]);
+        splitRun.fGlyphData->advances.push_back(fGlyphData->advances[startClusterPos]);
+        splitRun.fHalfLetterspacings.push_back(fHalfLetterspacings[startClusterPos]);
+    }
+
+    // Generate for ghost cluster
+    splitRun.fGlyphData->positions.push_back(
+        {fGlyphData->positions[startClusterPos].fX - posOffset, fGlyphData->positions[startClusterPos].fY});
+    splitRun.fGlyphData->offsets.push_back({0.0f, 0.0f});
+    splitRun.fGlyphData->clusterIndexes.push_back(fGlyphData->clusterIndexes[startClusterPos]);
+    splitRun.fGlyphData->advances.push_back({0.0f, 0.0f});
+    splitRun.fPositions = splitRun.fGlyphData->positions;
+    splitRun.fOffsets = splitRun.fGlyphData->offsets;
+    splitRun.fClusterIndexes = splitRun.fGlyphData->clusterIndexes;
+    splitRun.fGlyphAdvances = splitRun.fGlyphData->advances;
+    splitRun.fGlyphs = splitRun.fGlyphData->glyphs;
+    splitRun.fAdvance = {glyphPosVal, fAdvance.fY};
+    splitRun.fHalfLetterspacings.push_back(fHalfLetterspacings[startClusterPos]);
+}
+
+void Run::generateSplitRun(Run& splitRun, const SplitPoint& splitPoint) {
+    if (fGlyphData->positions.empty()) {
+        return;
+    }
+    size_t tailIndex = splitPoint.tailClusterIndex;
+    size_t headIndex = splitPoint.headClusterIndex;
+    const TextLine& splitLine = fOwner->lines()[splitPoint.lineIndex];
+    updateSplitRunRangeInfo(splitRun, splitLine, headIndex, tailIndex);
+    size_t startClusterPos = findSplitClusterPos(headIndex - fClusterStart);
+    size_t endClusterPos = findSplitClusterPos(tailIndex - fClusterStart);
+    if (endClusterPos >= clusterIndexes().size() || startClusterPos >= clusterIndexes().size()) {
+        LOGE("Failed to find clusterPos by binary search algorithm");
+        return;
+    }
+    updateSplitRunMesureInfo(splitRun, startClusterPos, endClusterPos);
+}
+#endif
+
 SkShaper::RunHandler::Buffer Run::newRunBuffer() {
 #ifdef OHOS_SUPPORT
     return {fGlyphs.data(), fPositions.data(), fOffsets.data(), fClusterIndexes.data(), fOffset, fGlyphAdvances.data()};
