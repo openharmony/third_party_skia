@@ -570,7 +570,8 @@ void ParagraphImpl::generateSplitPoints(std::vector<SplitPoint>& splitPoints) {
     }
 }
 
-void ParagraphImpl::generateRunsBySplitPoints(std::vector<SplitPoint>& splitPoints, skia_private::TArray<Run, false>& runs) {
+void ParagraphImpl::generateRunsBySplitPoints(std::vector<SplitPoint>& splitPoints,
+    skia_private::TArray<Run, false>& runs) {
     std::reverse(splitPoints.begin(), splitPoints.end());
     size_t newRunGlobalIndex = 0;
     for (size_t runIndex = 0; runIndex < fRuns.size(); ++runIndex) {

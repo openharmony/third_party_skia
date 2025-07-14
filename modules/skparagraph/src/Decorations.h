@@ -48,8 +48,8 @@ class Decorations {
 #ifdef OHOS_SUPPORT
     void updateDecorationPosition(TextDecoration decorationMode, SkScalar baselineShift,
         const TextLine::ClipContext& context, SkScalar& positionY);
-    void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle,
-        SkScalar textBaselineShift, const SkScalar& fontSize);
+    void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextStyle& textStyle,
+        SkScalar textBaselineShift, const Run& run);
 #else
     void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle,
         SkScalar textBaselineShift);

@@ -41,8 +41,8 @@ class Decorations {
     void calculateThickness(TextStyle textStyle, std::shared_ptr<RSTypeface> typeface);
     void updateDecorationPosition(TextDecoration decorationMode, SkScalar baselineShift,
         const TextLine::ClipContext& context, SkScalar& positionY);
-    void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextDecorationStyle textDecorationStyle,
-        SkScalar textBaselineShift, const SkScalar& fontSize);
+    void calculatePosition(TextDecoration decoration, SkScalar ascent, const TextStyle& textStyle,
+        SkScalar textBaselineShift, const Run& run);
     void calculateAvoidanceWaves(const TextStyle& textStyle, SkRect clip);
     void calculateGaps(const TextLine::ClipContext& context, const SkRect& rect, SkScalar baseline,
         SkScalar halo, const TextStyle& textStyle);

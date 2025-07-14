@@ -82,8 +82,8 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
-                          : context.run->correctAscent(), textStyle.getDecorationStyle(),
-                          textBaselineShift, textStyle.getCorrectFontSize());
+                          : context.run->correctAscent(),
+                          textStyle, textBaselineShift, *context.run);
 #else
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline
@@ -160,6 +160,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
                   SkScalar left = x - context.fTextShift;
                   painter->translate(context.fTextShift, 0);
                   SkRect rect = SkRect::MakeXYWH(left, y, width, fThickness);
+                  baseline += context.run->getVerticalAlignShift();
                   calculateGaps(context, rect, baseline, fThickness, textStyle);
                   painter->drawPath(fPath, fDecorStyle);
               } else {
@@ -314,34 +315,50 @@ void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSType
 // This is how flutter calculates the positioning
 #ifdef OHOS_SUPPORT
 void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
-    const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift, const SkScalar& fontSize) {
+    const TextStyle& textStyle, SkScalar textBaselineShift, const Run& run) {
+    switch (decoration) {
+        case TextDecoration::kUnderline:
+            fPosition = fDecorationContext.underlinePosition + run.getVerticalAlignShift();
+            break;
+        case TextDecoration::kOverline:
+            fPosition = (textStyle.getDecorationStyle() == TextDecorationStyle::kWavy ?
+            fThickness : fThickness / 2.0f) - ascent;
+            break;
+        case TextDecoration::kLineThrough: {
+            fPosition = LINE_THROUGH_TOP * textStyle.getCorrectFontSize() - ascent + textBaselineShift;
+            break;
+        }
+        default:SkASSERT(false);
+            break;
+    }
+}
 #else
-void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
-    const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift) {
-#endif
+void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent) {
     switch (decoration) {
       case TextDecoration::kUnderline:
-          fPosition = fDecorationContext.underlinePosition;
+          if ((fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kUnderlinePositionIsValid_Flag) &&
+               fFontMetrics.fUnderlinePosition > 0) {
+            fPosition  = fFontMetrics.fUnderlinePosition;
+          } else {
+            fPosition = fThickness;
+          }
+          fPosition -= ascent;
           break;
       case TextDecoration::kOverline:
-          fPosition = (textDecorationStyle == TextDecorationStyle::kWavy ? fThickness : fThickness / 2.0f) - ascent;
-          break;
+          fPosition = - ascent;
+        break;
       case TextDecoration::kLineThrough: {
-#ifdef OHOS_SUPPORT
-          fPosition = LINE_THROUGH_TOP * fontSize;
-#else
           fPosition = (fFontMetrics.fFlags & SkFontMetrics::FontMetricsFlags::kStrikeoutPositionIsValid_Flag)
-                    ? fFontMetrics.fStrikeoutPosition
-                    : fFontMetrics.fXHeight / -2;
-#endif
+                     ? fFontMetrics.fStrikeoutPosition
+                     : fFontMetrics.fXHeight / -2;
           fPosition -= ascent;
-          fPosition += textBaselineShift;
           break;
       }
       default:SkASSERT(false);
           break;
     }
 }
+#endif
 
 void Decorations::calculatePaint(const TextStyle& textStyle) {
     std::optional<ParagraphPainter::DashPathEffect> dashPathEffect;

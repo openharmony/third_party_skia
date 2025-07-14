@@ -1361,9 +1361,9 @@ void calculateCostTable(const std::vector<SkScalar>& clustersWidth,
                         SkScalar maxWidth,
                         std::vector<SkScalar>& costTable,
                         std::vector<std::pair<size_t, size_t>>& bestPick) {
-    int clustersCnt = clustersWidth.size();
+    int clustersCnt = static_cast<int>(clustersWidth.size());
     for (int clustersIndex = clustersCnt - STRATEGY_START_POS; clustersIndex >= 0; --clustersIndex) {
-        bestPick[clustersIndex].first = clustersIndex;
+        bestPick[clustersIndex].first = static_cast<size_t>(clustersIndex);
         SkScalar rowCurrentLen = 0;
         std::vector<SkScalar> costList;
 
@@ -1405,7 +1405,7 @@ void calculateCostTable(const std::vector<SkScalar>& clustersWidth,
             minCostIdx = minCostIndices[static_cast<int32_t>(minCostIndices.size() / MIN_COST_POS)];
         }
         costTable[clustersIndex] = minCost;
-        bestPick[clustersIndex].second = clustersIndex + minCostIdx;
+        bestPick[clustersIndex].second = static_cast<size_t>(clustersIndex + minCostIdx);
     }
 }
 
@@ -1428,7 +1428,7 @@ std::vector<std::pair<size_t, size_t>> TextWrapper::generateLinesGroupInfo(
     if (clustersWidth.empty()) {
         return wordBalance;
     }
-    int clustersCnt = clustersWidth.size();
+    int clustersCnt = static_cast<int>(clustersWidth.size());
     std::vector<SkScalar> costTable(clustersCnt, 0);
     std::vector<std::pair<size_t, size_t>> bestPick(clustersCnt, {0, 0});
 

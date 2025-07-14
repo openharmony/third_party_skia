@@ -357,8 +357,8 @@ float RunBaseImpl::getTypographicBounds(float* ascent, float* descent, float* le
         *leading = 0.0;
         return 0.0;
     }
-    *ascent = fVisitorRun->ascent();
-    *descent = fVisitorRun->descent();
+    *ascent = fVisitorRun->ascent() + fVisitorRun->getVerticalAlignShift();
+    *descent = fVisitorRun->descent() + fVisitorRun->getVerticalAlignShift();
     *leading = fVisitorRun->leading();
     return fClipRect.width() + calculateTrailSpacesWidth();
 }
