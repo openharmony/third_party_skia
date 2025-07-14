@@ -25,7 +25,7 @@ namespace textlayout {
 class ParagraphLineFetcherImpl final : public ParagraphLineFetcher {
 public:
     ParagraphLineFetcherImpl() = delete;
-    ParagraphLineFetcherImpl(std::unique_ptr<Paragraph>&& paragraph);
+    explicit ParagraphLineFetcherImpl(std::unique_ptr<Paragraph>&& paragraph);
     ~ParagraphLineFetcherImpl() override;
     size_t getLineBreak(size_t startIndex, SkScalar width) const override;
     std::unique_ptr<TextLineBase> createLine(size_t startIndex, size_t count) override;

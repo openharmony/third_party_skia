@@ -21,6 +21,9 @@
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skparagraph/src/ParagraphPainterImpl.h"
 #include "modules/skparagraph/src/TextLine.h"
+#ifdef OHOS_SUPPORT
+#include "modules/skparagraph/src/TextLineBaseImpl.h"
+#endif
 #include "modules/skshaper/include/SkShaper.h"
 
 #include <algorithm>
@@ -2167,7 +2170,7 @@ void TextLine::getRectsForRange(TextRange textRange0,
 
             auto intersect = textRange * textRange0;
 #ifdef OHOS_SUPPORT
-            if (intersect.empty() && !this->fBreakWithHyphen) {
+            if (intersect.empty() && !(this->fBreakWithHyphen && textRange0.end == fText.end && run->isEllipsis())) {
 #else
             if (intersect.empty()) {
 #endif
@@ -2503,7 +2506,7 @@ PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
                 auto clusterEnd8 = context.run->globalClusterIndex(found + 1);
                 auto graphemes = fOwner->countSurroundingGraphemes({clusterIndex8, clusterEnd8});
 
-                SkScalar center = (context.clip.right() + context.clip.left()) / 2;
+                SkScalar center = glyphemePosLeft + glyphemesWidth * fOwner->getTextSplitRatio();
                 if (graphemes.size() > 1) {
                     // Calculate the position proportionally based on grapheme count
                     SkScalar averageGraphemeWidth = glyphemesWidth / graphemes.size();

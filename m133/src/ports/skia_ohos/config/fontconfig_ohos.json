@@ -121,7 +121,7 @@
       "lang": "",
       "family": "Noto Sans",
       "file": "NotoSans[wdth,wght].ttf",
-      "range": [1023, 2181038096, 4243448, 2684354754, 1409351777, 67108874, 0, 0, 0, 2, 0]
+      "range": [1023, 2181038080, 4243448, 2684354754, 1409351777, 67108874, 0, 65536, 0, 2, 0]
     },
     {
       "type": 1,
@@ -380,7 +380,7 @@
       "lang": "und-Cprt",
       "family": "Noto Sans Cypriot",
       "file": "NotoSansCypriot-Regular.ttf",
-      "range": [111, 0, 5440, 0, 0, 134217792, 0, 0, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 134217728, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
@@ -774,7 +774,7 @@
       "lang": "und-Zsym",
       "family": "Noto Sans Symbols 2",
       "file": "NotoSansSymbols2-Regular.ttf",
-      "range": [111, 0, 2848445760, 8388608, 0, 5000, 32768, 0, 2013265920, 2127790080, 0]
+      "range": [111, 0, 2848445760, 8388608, 0, 5000, 32768, 0, 1879048192, 2127790080, 0]
     },
     {
       "type": 1,
@@ -837,7 +837,7 @@
       "lang": "und-Lina",
       "family": "Noto Sans Linear A",
       "file": "NotoSansLinearA-Regular.ttf",
-      "range": [111, 0, 5440, 0, 0, 33554496, 0, 0, 0, 0, 0]
+      "range": [111, 0, 5440, 0, 0, 33554432, 0, 0, 0, 0, 0]
     },
     {
       "type": 1,
@@ -1053,7 +1053,8 @@
       "type": 1,
       "lang": "zh-Hans",
       "family": "HYQiHei L3",
-      "file": "HYQiHeiL3.ttf"
+      "file": "HYQiHeiL3.ttf",
+      "range": [3, 0, 0, 0, 0, 0, 0, 0, 0, 2147483648, 15]
     },
     {
       "type": 0,
