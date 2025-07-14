@@ -281,13 +281,13 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
             break;
         case TextDecoration::kOverline:
             fPosition = (textStyle.getDecorationStyle() == TextDecorationStyle::kWavy ?
-            fThickness : fThickness / 2.0f) - ascent;
+                fThickness : fThickness / 2.0f) - ascent;
             break;
         case TextDecoration::kLineThrough: {
             fPosition = LINE_THROUGH_TOP * textStyle.getCorrectFontSize() - ascent + textBaselineShift;
             break;
         }
-        default:SkASSERT(false);
+        default:
             break;
     }
 }
