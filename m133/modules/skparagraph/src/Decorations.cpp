@@ -96,6 +96,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         SkScalar y = (TextDecoration::kUnderline == decoration) ?
             fPosition : (context.clip.top() + fPosition);
         updateDecorationPosition(decoration, textBaselineShift, context, y);
+        baseline += context.run->getVerticalAlignShift();
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
                         textStyle.getDecorationType() == TextDecoration::kUnderline;
 
@@ -144,7 +145,6 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
                   SkScalar left = x - context.fTextShift;
                   painter->translate(context.fTextShift, 0);
                   SkRect rect = SkRect::MakeXYWH(left, y, width, fThickness);
-                  baseline += context.run->getVerticalAlignShift();
                   calculateGaps(context, rect, baseline, fThickness, textStyle);
                   painter->drawPath(fPath, fDecorStyle);
               } else {
@@ -283,10 +283,9 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
             fPosition = (textStyle.getDecorationStyle() == TextDecorationStyle::kWavy ?
                 fThickness : fThickness / 2.0f) - ascent;
             break;
-        case TextDecoration::kLineThrough: {
+        case TextDecoration::kLineThrough:
             fPosition = LINE_THROUGH_TOP * textStyle.getCorrectFontSize() - ascent + textBaselineShift;
             break;
-        }
         default:
             break;
     }
