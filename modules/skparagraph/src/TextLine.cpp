@@ -685,11 +685,9 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
 
     SkASSERT(nearlyEqual(context.run->baselineShift(), style.getBaselineShift()));
 #ifdef OHOS_SUPPORT
-    SkScalar correctedBaseline = 0.0f;
+    SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getTotalVerticalShift() + 0.5);
     if (fOwner->getParagraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE) {
         correctedBaseline = SkScalarFloorToScalar(this->baseline() + context.run->getRunTotalShift() + 0.5);
-    } else {
-        correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getTotalVerticalShift() + 0.5);
     }
 #else
     SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getBaselineShift() + 0.5);

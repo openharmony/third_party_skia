@@ -82,8 +82,8 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         calculatePosition(decoration,
                           decoration == TextDecoration::kOverline
                           ? context.run->correctAscent() - context.run->ascent()
-                          : context.run->correctAscent(), textStyle.getDecorationStyle(),
-                          textBaselineShift, textStyle.getCorrectFontSize());
+                          : context.run->correctAscent(),
+                          textStyle, textBaselineShift, *context.run);
 
         calculatePaint(textStyle);
 
@@ -96,6 +96,7 @@ void Decorations::paint(ParagraphPainter* painter, const TextStyle& textStyle, c
         SkScalar y = (TextDecoration::kUnderline == decoration) ?
             fPosition : (context.clip.top() + fPosition);
         updateDecorationPosition(decoration, textBaselineShift, context, y);
+        baseline += context.run->getVerticalAlignShift();
         bool drawGaps = textStyle.getDecorationMode() == TextDecorationMode::kGaps &&
                         textStyle.getDecorationType() == TextDecoration::kUnderline;
 
@@ -273,22 +274,20 @@ void Decorations::calculateThickness(TextStyle textStyle, std::shared_ptr<RSType
 }
 
 void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent,
-    const TextDecorationStyle textDecorationStyle, SkScalar textBaselineShift, const SkScalar& fontSize) {
+    const TextStyle& textStyle, SkScalar textBaselineShift, const Run& run) {
     switch (decoration) {
-      case TextDecoration::kUnderline:
-          fPosition = fDecorationContext.underlinePosition;
-          break;
-      case TextDecoration::kOverline:
-          fPosition = (textDecorationStyle == TextDecorationStyle::kWavy ? fThickness : fThickness / 2.0f) - ascent;
-          break;
-      case TextDecoration::kLineThrough: {
-          fPosition = LINE_THROUGH_TOP * fontSize;
-          fPosition -= ascent;
-          fPosition += textBaselineShift;
-          break;
-      }
-      default:SkASSERT(false);
-          break;
+        case TextDecoration::kUnderline:
+            fPosition = fDecorationContext.underlinePosition + run.getVerticalAlignShift();
+            break;
+        case TextDecoration::kOverline:
+            fPosition = (textStyle.getDecorationStyle() == TextDecorationStyle::kWavy ?
+                fThickness : fThickness / 2.0f) - ascent;
+            break;
+        case TextDecoration::kLineThrough:
+            fPosition = LINE_THROUGH_TOP * textStyle.getCorrectFontSize() - ascent + textBaselineShift;
+            break;
+        default:
+            break;
     }
 }
 

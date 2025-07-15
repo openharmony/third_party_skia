@@ -717,12 +717,9 @@ void TextLine::buildTextBlob(TextRange textRange,
         record.fClipRect = context.clip.makeOffset(this->offset());
     }
 
-    SkASSERT(nearlyEqual(context.run->baselineShift(), style.getBaselineShift()));
-    SkScalar correctedBaseline = 0.0f;
+    SkScalar correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getTotalVerticalShift() + 0.5);
     if (fOwner->getParagraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE) {
         correctedBaseline = SkScalarFloorToScalar(this->baseline() + context.run->getRunTotalShift() + 0.5);
-    } else {
-        correctedBaseline = SkScalarFloorToScalar(this->baseline() + style.getTotalVerticalShift() + 0.5);
     }
     record.fBlob = builder.Make();
     if (record.fBlob != nullptr) {
