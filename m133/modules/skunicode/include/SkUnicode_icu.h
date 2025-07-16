@@ -13,15 +13,16 @@
 
 #ifdef ENABLE_DRAWING_ADAPTER
 namespace SkiaRsText {
-#endif
 namespace SkUnicodes::ICU {
 SKUNICODE_API sk_sp<SkUnicode> Make();
 }
-
-#ifdef ENABLE_DRAWING_ADAPTER
 }
-namespace SkUnicodes::ICU{
-    using namespace SkiaRsText::SkUnicodes::ICU;
+namespace SkUnicodes::ICU {
+using namespace SkiaRsText::SkUnicodes::ICU;
+}
+#else
+namespace SkUnicodes::ICU {
+SKUNICODE_API sk_sp<SkUnicode> Make();
 }
 #endif
 #endif //SkUnicode_icu_DEFINED
