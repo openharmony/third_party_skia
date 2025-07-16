@@ -4856,22 +4856,6 @@ ohos_static_library("sksl_ext_static") {
     if (!skia_enable_ganesh && !skia_enable_graphite) {
       sources += skia_no_slug_srcs
     }
-
-    if (product_name == "qemu-arm-linux-min") {
-      deps -= [
-        "${skia_root_dir}:android_utils",
-        "${skia_root_dir}:raw",
-        "${skia_root_dir}:wuffs",
-      ]
-      sources -= [
-        "${skia_root_dir}/src/android/SkAndroidFrameworkUtils.cpp",
-        "${skia_root_dir}/src/android/SkAnimatedImage.cpp",
-        "${skia_root_dir}/src/codec/SkAndroidCodec.cpp",
-        "${skia_root_dir}/src/codec/SkAndroidCodecAdapter.cpp",
-        "${skia_root_dir}/src/codec/SkSampledCodec.cpp",
-        "${skia_root_dir}/src/ports/SkDiscardableMemory_none.cpp",
-        ]
-    }
   }
   ohos_static_library("sksl_ext_static") {
     part_name = "skia"
