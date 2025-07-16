@@ -331,15 +331,25 @@ Run::Run(const Run& run, size_t runIndex)
 
 size_t Run::findSplitClusterPos(size_t target) {
     const auto& indexes = clusterIndexes();
-    bool isIncreasing = indexes.size() > 1 && indexes[0] < indexes[1];
-
-    if (!isIncreasing && target == 0 && indexes.back() == 0) {
+    if (!leftToRight() && target == 0 && indexes.back() == 0) {
         return indexes.size() - 1;
     }
 
-    if (!isIncreasing && target != 0) {
-        // Run's clusterIndexes shift 2
+    // Distingguish the critical point of abnormal array length as 2
+    const size_t criticalPoint = 2;
+    if (!leftToRight() && target != 0) {
+        // RTL's run clusterIndexes shift 2
         target -= 2;
+    } else if (leftToRight() && indexes.size() > criticalPoint && indexes[0] == indexes[1] == 0) {
+        // New Thai Language's special case cluster's byte length is 3
+        size_t newThaiSpecialCaseByteLen = 3;
+        if (target == 0) {
+            return 0;
+        } else if (target != 0 && indexes[criticalPoint] == newThaiSpecialCaseByteLen) {
+            target -= newThaiSpecialCaseByteLen;
+        }
+    } else if (leftToRight() && indexes.size() == criticalPoint && target != 0) {
+        return 1;
     }
 
     size_t left = 0;
@@ -348,7 +358,7 @@ size_t Run::findSplitClusterPos(size_t target) {
         size_t mid = left + (right - left)/2;
 
         if (mid > indexes.size()) {
-            if (isIncreasing) {
+            if (leftToRight()) {
                 return indexes.size() - 1;
             } else {
                 return 0;
@@ -359,8 +369,8 @@ size_t Run::findSplitClusterPos(size_t target) {
             return mid;
         }
 
-        if ((isIncreasing && indexes[mid] < target) ||
-            (!isIncreasing && indexes[mid] > target)) {
+        if ((leftToRight() && indexes[mid] < target) ||
+            (!leftToRight() && indexes[mid] > target)) {
             left = mid + 1;
         } else {
             right = mid - 1;

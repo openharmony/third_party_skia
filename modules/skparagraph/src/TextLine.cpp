@@ -2984,7 +2984,8 @@ void TextLine::refresh() {
     setLineAllRuns(runsInVisualOrder);
 
     if (ellipsis()) {
-        size_t runIndex = fOwner->cluster(clusters().start).runIndex();
+        TextIndex textIndex = ellipsis()->textRange().start == 0 ? 0 : ellipsis()->textRange().start - 1;
+        size_t runIndex = fOwner->cluster(textIndex).runIndex();
         ellipsis()->fIndex = runIndex;
         setEllipsisRunIndex(runIndex);
     }
