@@ -13,30 +13,28 @@
  * limitations under the License.
  */
 
-#include <memory>
-
 #include "HmSymbolConfig_ohos.h"
 
 namespace skia::text {
-std::unique_ptr<std::function<int(const char* filePath)>> HmSymbolConfig_OHOS::fLoadSymbolConfigFunc = nullptr;
+std::function<int(const char* filePath)> HmSymbolConfig_OHOS::fLoadSymbolConfigFunc;
 std::mutex HmSymbolConfig_OHOS::fMutex;
 
 void HmSymbolConfig_OHOS::SetLoadSymbolConfig(std::function<int(const char* filePath)>& loadSymbolConfigFunc)
 {
     std::lock_guard<std::mutex> lock(fMutex);
-    fLoadSymbolConfigFunc = std::make_unique<std::function<int(const char* filePath)>>(loadSymbolConfigFunc);
+    fLoadSymbolConfigFunc = loadSymbolConfigFunc;
 }
 
 void HmSymbolConfig_OHOS::ClearLoadSymbolConfig()
 {
     std::lock_guard<std::mutex> lock(fMutex);
-    fLoadSymbolConfigFunc.reset();
+    fLoadSymbolConfigFunc = nullptr;
 }
 
 int HmSymbolConfig_OHOS::LoadSymbolConfig(const char* fileName, SkString fileDir)
 {
     std::lock_guard<std::mutex> lock(fMutex);
-    if (fLoadSymbolConfigFunc == nullptr || *fLoadSymbolConfigFunc == nullptr) {
+    if (!fLoadSymbolConfigFunc) {
         return ERROR_CONFIG_FUN_NOT_DEFINED;
     }
     if (fileName == nullptr || strlen(fileName) == 0) {
@@ -56,6 +54,6 @@ int HmSymbolConfig_OHOS::LoadSymbolConfig(const char* fileName, SkString fileDir
     std::string fNameStr(fileName, strlen(fileName));
     fullname += fNameStr;
 
-    return (*fLoadSymbolConfigFunc)(fullname.c_str());
+    return fLoadSymbolConfigFunc(fullname.c_str());
 }
 } // namespace skia::text

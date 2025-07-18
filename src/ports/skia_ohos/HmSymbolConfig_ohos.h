@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,6 @@
 #ifndef LIB_HW_SYMBOL_CONFIG_H
 #define LIB_HW_SYMBOL_CONFIG_H
 #include <functional>
-#include <memory>
 #include <mutex>
 
 #include "include/core/SkString.h"
@@ -34,7 +33,7 @@ public:
     static int LoadSymbolConfig(const char* fileName, SkString fileDir);
 
 private:
-    static std::unique_ptr<std::function<int(const char* filePath)>> fLoadSymbolConfigFunc;
+    static std::function<int(const char* filePath)> fLoadSymbolConfigFunc;
     static std::mutex fMutex;
 };
 } // namespace skia::text
