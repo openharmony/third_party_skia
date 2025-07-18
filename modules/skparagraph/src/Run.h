@@ -175,6 +175,7 @@ public:
 
 #ifdef OHOS_SUPPORT
     Run(const Run& run, size_t runIndex);
+    size_t findClusterByBinarySearch(size_t target);
     size_t findSplitClusterPos(size_t target);
     void updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex);
     void updateSplitRunMesureInfo(Run& splitRun, size_t startClusterPos, size_t endClusterPos);

@@ -329,6 +329,37 @@ Run::Run(const Run& run, size_t runIndex)
       fCompressionBaselineShift(run.fCompressionBaselineShift),
       fVerticalAlignShift(run.fVerticalAlignShift) {}
 
+size_t Run::findClusterByBinarySearch(size_t target) {
+    size_t left = 0;
+    size_t right = clusterIndexes().size() - 1;
+    size_t mid = 0;
+    while (left <= right) {
+        mid = left + (right - left)/2;
+        if (mid > clusterIndexes().size()) {
+            if (leftToRight()) {
+                return clusterIndexes().size() - 1;
+            } else {
+                return 0;
+            }
+        }
+
+        if (clusterIndexes()[mid] == target) {
+            return mid;
+        }
+
+        if ((leftToRight() && clusterIndexes()[mid] < target) ||
+            (!leftToRight() && clusterIndexes()[mid] > target)) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    if (leftToRight()) {
+        return mid;
+    }
+    return mid == 0 ? mid : mid - 1;
+}
+
 size_t Run::findSplitClusterPos(size_t target) {
     const auto& indexes = clusterIndexes();
     if (!leftToRight() && target == 0 && indexes.back() == 0) {
@@ -351,35 +382,7 @@ size_t Run::findSplitClusterPos(size_t target) {
     } else if (leftToRight() && indexes.size() == criticalPoint && target != 0) {
         return 1;
     }
-
-    size_t left = 0;
-    size_t right = indexes.size() - 1;
-    size_t mid = 0;
-    while (left <= right) {
-        mid = left + (right - left)/2;
-        if (mid > indexes.size()) {
-            if (leftToRight()) {
-                return indexes.size() - 1;
-            } else {
-                return 0;
-            }
-        }
-
-        if (indexes[mid] == target) {
-            return mid;
-        }
-
-        if ((leftToRight() && indexes[mid] < target) ||
-            (!leftToRight() && indexes[mid] > target)) {
-            left = mid + 1;
-        } else {
-            right = mid - 1;
-        }
-    }
-    if (leftToRight()) {
-        return mid;
-    }
-    return mid == 0 ? mid : mid - 1;
+    return findClusterByBinarySearch(target);
 }
 
 void Run::updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex) {
