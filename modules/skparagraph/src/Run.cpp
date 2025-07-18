@@ -354,8 +354,9 @@ size_t Run::findSplitClusterPos(size_t target) {
 
     size_t left = 0;
     size_t right = indexes.size() - 1;
+    size_t mid = 0;
     while (left <= right) {
-        size_t mid = left + (right - left)/2;
+        mid = left + (right - left)/2;
 
         if (mid > indexes.size()) {
             if (leftToRight()) {
@@ -376,7 +377,10 @@ size_t Run::findSplitClusterPos(size_t target) {
             right = mid - 1;
         }
     }
-    return indexes.size() - 1;
+    if (leftToRight()) {
+        return mid;
+    }
+    return mid == 0 ? mid : mid - 1;
 }
 
 void Run::updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex) {
