@@ -201,9 +201,6 @@ struct GrGpuResourceTag {
  */
 class SK_API GrGpuResource : public GrIORef<GrGpuResource> {
 public:
-    inline bool checkMagic() {
-        return fMagicNum == MAGIC_INIT;
-    }
     /**
      * Tests whether a object has been abandoned or released. All objects will
      * be in this state after their creating GrContext is destroyed or has
@@ -408,8 +405,6 @@ private:
 #ifdef SK_DEBUG
     friend class GrGpu;  // for assert in GrGpu to access getGpu
 #endif
-    static constexpr uint32_t MAGIC_INIT = 0xDEADBEEF;
-    uint32_t fMagicNum = MAGIC_INIT;
     // An index into a heap when this resource is purgeable or an array when not. This is maintained
     // by the cache.
     int fCacheArrayIndex;
