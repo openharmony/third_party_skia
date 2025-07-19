@@ -14,7 +14,6 @@
 #include "src/gpu/GrGpuResourcePriv.h"
 #include "src/gpu/GrResourceCache.h"
 #include <atomic>
-#include "include/core/SkLog.h"
 #include "include/core/SkTypes.h"
 
 static inline GrResourceCache* get_resource_cache(GrGpu* gpu) {
@@ -68,7 +67,6 @@ GrGpuResource::~GrGpuResource() {
         raise(SIGNAL_FOR_OCEAN);
     }
 #endif
-    fMagicNum = 0;
     SkASSERT(this->wasDestroyed());
 }
 
@@ -78,7 +76,6 @@ void GrGpuResource::release() {
     get_resource_cache(fGpu)->resourceAccess().removeResource(this);
     fGpu = nullptr;
     fGpuMemorySize = 0;
-    fMagicNum = 0;
 }
 
 void GrGpuResource::abandon() {
