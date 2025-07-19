@@ -45,9 +45,11 @@ protected:
                 }
                 distance += delta;
             }
+#ifdef OHOS_USED
             if (governor < 0) {
                 return false;
             }
+#endif
         } while (meas.nextContour());
         return true;
     }
