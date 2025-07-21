@@ -334,7 +334,7 @@ size_t Run::findClusterByBinarySearch(size_t target) {
     size_t right = clusterIndexes().size() - 1;
     size_t mid = 0;
     while (left <= right) {
-        mid = left + (right - left)/2;
+        mid = left + (right - left) / 2;
         if (mid > clusterIndexes().size()) {
             if (leftToRight()) {
                 return clusterIndexes().size() - 1;
