@@ -233,6 +233,7 @@ private:
         kWorkgroupBarrier_SpecialIntrinsic,
 #ifdef SKSL_EXT
         kTextureSize_SpecialIntrinsic,
+        kSampleGather_SpecialIntrinsic,
         kNonuniformEXT_SpecialIntrinsic,
 #endif
     };
@@ -979,7 +980,8 @@ SPIRVCodeGenerator::Intrinsic SPIRVCodeGenerator::getIntrinsic(IntrinsicKind ik)
         case k_storageBarrier_IntrinsicKind:   return SPECIAL(StorageBarrier);
         case k_workgroupBarrier_IntrinsicKind: return SPECIAL(WorkgroupBarrier);
 #ifdef SKSL_EXT
-        case k_textureSize_IntrinsicKind:   return SPECIAL(TextureSize);
+        case k_textureSize_IntrinsicKind:     return SPECIAL(TextureSize);
+        case k_sampleGather_IntrinsicKind:    return SPECIAL(SampleGather);
         case k_nonuniformEXT_IntrinsicKind:   return SPECIAL(NonuniformEXT);
 #endif
         default:
@@ -2500,6 +2502,21 @@ SpvId SPIRVCodeGenerator::writeSpecialIntrinsic(const FunctionCall& c, SpecialIn
             SpvId lod = this->writeExpression(*arguments[1], out);
             this->writeInstruction(SpvOpImage, imageType, image, sampledImage, out);
             this->writeInstruction(SpvOpImageQuerySizeLod, dimsType, result, image, lod, out);
+            break;
+        }
+        case kSampleGather_SpecialIntrinsic: {
+            SpvOp_ op = SpvOpImageGather;
+            SpvId type = this->getType(callType);
+            SpvId sampler = this->writeExpression(*arguments[0], out);
+            SpvId uv = this->writeExpression(*arguments[1], out);
+            SpvId comp;
+            if (arguments.size() == 3) {
+                comp = this->writeExpression(*arguments[2], out);
+            } else {
+                SkASSERT(arguments.size() == 2);
+                comp = this->writeLiteral(0, *fContext.fTypes.fInt);
+            }
+            this->writeInstruction(op, type, result, sampler, uv, comp, out);
             break;
         }
         case kNonuniformEXT_SpecialIntrinsic: {

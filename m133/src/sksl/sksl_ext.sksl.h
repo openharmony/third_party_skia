@@ -385,6 +385,10 @@ $pure float coverage_bias(float scale) {
 // add the support of textureSize
 int2 textureSize(sampler2D x, int y);
 
+// add the support of textureGather
+half4 sampleGather(sampler2D s, float2 p);
+half4 sampleGather(sampler2D s, float2 p, int comp);
+
 // add the support of nonuniformEXT
 uint nonuniformEXT(uint x);
 )"},
