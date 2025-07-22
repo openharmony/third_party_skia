@@ -124,6 +124,7 @@
 #define SKSL_INTRINSIC_LIST          \
     SKSL_INTRINSIC_LIST_BASE         \
     SKSL_INTRINSIC(textureSize)      \
+    SKSL_INTRINSIC(sampleGather)     \
     SKSL_INTRINSIC(nonuniformEXT)
 #else // SKSL_EXT
 #define SKSL_INTRINSIC_LIST SKSL_INTRINSIC_LIST_BASE
