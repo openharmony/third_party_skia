@@ -3325,7 +3325,17 @@ void TextLine::refresh() {
     setLineAllRuns(runsInVisualOrder);
 
     if (ellipsis()) {
-        size_t runIndex = fOwner->cluster(clusters().start).runIndex();
+        ClusterIndex clusterIndex = 0;
+        if (fOwner->getParagraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
+            clusterIndex = clusters().start;
+        } else {
+            TextIndex textIndex = ellipsis()->textRange().start == 0 ? 0 : ellipsis()->textRange().start - 1;
+            if (textIndex > 0) {
+                textIndex--;
+            }
+            clusterIndex = fOwner->clusterIndex(textIndex);
+        }
+        size_t runIndex = fOwner->cluster(clusterIndex).runIndex();
         ellipsis()->fIndex = runIndex;
         setEllipsisRunIndex(runIndex);
     }

@@ -544,7 +544,12 @@ void ParagraphImpl::generateSplitPoint(
 void ParagraphImpl::generateSplitPoints(std::vector<SplitPoint>& splitPoints) {
     for (size_t lineIndex = 0; lineIndex < fLines.size(); ++lineIndex) {
         const TextLine& line = fLines[lineIndex];
-        const ClusterRange lineClusterRange = line.clustersWithSpaces();
+        ClusterRange lineClusterRange = line.clustersWithSpaces();
+        // Avoid abnormal split of the last line
+        if (lineIndex == fLines.size() - 1) {
+            size_t lineEnd = line.clusters().end == 0 ? 0 : line.clusters().end - 1;
+            lineClusterRange.end = cluster(lineEnd).run().clusterRange().end;
+        }
         // Skip blank line
         if (lineClusterRange.empty()) {
             continue;
