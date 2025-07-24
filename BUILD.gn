@@ -4544,8 +4544,14 @@ ohos_static_library("sksl_ext_static") {
     part_name = "skia"
     subsystem_name = "thirdparty"
 
+    public_external_deps = []
+
+    if (skia_use_vulkan) {
+      public_external_deps += [ "vulkan-headers:vulkan_headers" ]
+    }
+
     if (is_ohos) {
-      public_external_deps = [ "hitrace:hitrace_meter" ]
+      public_external_deps += [ "hitrace:hitrace_meter" ]
     }
 
     public_configs = [
@@ -4905,8 +4911,14 @@ ohos_static_library("sksl_ext_static") {
     part_name = "skia"
     subsystem_name = "thirdparty"
 
+    public_external_deps = []
+
+    if (skia_use_vulkan) {
+      public_external_deps += [ "vulkan-headers:vulkan_headers" ]
+    }
+
     if (is_ohos) {
-      public_external_deps = [ "hitrace:hitrace_meter" ]
+      public_external_deps += [ "hitrace:hitrace_meter" ]
     }
 
     public_configs = [
