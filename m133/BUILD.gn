@@ -2800,7 +2800,10 @@ if (skia_enable_tools) {
     if (is_ios || is_android) {
       public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     } else {
-      external_deps = [ "vulkan-headers:vulkan_headers" ]
+      external_deps = []
+      if (skia_use_vulkan) {
+        external_deps += [ "vulkan-headers:vulkan_headers" ]
+      }
     }
     
     defines = []
@@ -3173,7 +3176,11 @@ if (skia_enable_tools) {
       "modules/skresources",
       "modules/skshaper",
     ]
-    external_deps = [ "vulkan-headers:vulkan_headers" ]
+    if (skia_use_vulkan) {
+      external_deps = [ "vulkan-headers:vulkan_headers" ]
+    } else {
+      external_deps = []
+    }
     if (is_ohos) {
       external_deps += [ "hitrace:hitrace_meter" ]
       if (!build_ohos_sdk && !is_arkui_x) {
@@ -3304,9 +3311,11 @@ if (skia_enable_tools) {
       "modules/skunicode:tests",
       "${skia_third_party_dir}/libwebp:libwebpm133",
     ]
-    external_deps = [
-      "vulkan-headers:vulkan_headers",
-    ]
+    if (skia_use_vulkan) {
+      external_deps = [ "vulkan-headers:vulkan_headers" ]
+    } else {
+      external_deps = []
+    }
     if (skia_use_system_lib) {
       external_deps += [
         "libpng:libpng",
@@ -3425,7 +3434,11 @@ if (skia_enable_tools) {
       if (is_ios || is_android) {
         public_deps = [ "//third_party/vulkan-headers:vulkan_headers" ]
       } else {
-        external_deps = [ "vulkan-headers:vulkan_headers" ]
+        if (skia_use_vulkan) {
+          external_deps = [ "vulkan-headers:vulkan_headers" ]
+        } else {
+          external_deps = []
+        }
       }
       deps = [
         ":skia",
