@@ -147,7 +147,11 @@ public:
     PlaceholderStyle* placeholderStyle() const;
     bool isPlaceholder() const { return fPlaceholderIndex != std::numeric_limits<size_t>::max(); }
     size_t clusterIndex(size_t pos) const { return fClusterIndexes[pos]; }
+#ifdef ENABLE_TEXT_ENHANCE
+    size_t globalClusterIndex(size_t pos) const;
+#else
     size_t globalClusterIndex(size_t pos) const { return fClusterStart + fClusterIndexes[pos]; }
+#endif
     SkScalar positionX(size_t pos) const;
 
     TextRange textRange() const { return fTextRange; }

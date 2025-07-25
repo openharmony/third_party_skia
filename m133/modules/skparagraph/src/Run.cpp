@@ -312,6 +312,14 @@ size_t Run::findSplitClusterPos(size_t target) {
     return static_cast<size_t>(left);
 }
 
+// Compatible with getCoordinate RTL scenario
+size_t Run::globalClusterIndex(size_t pos) const {
+    if (leftToRight() || pos == (size_t)fGlyphs.size()) {
+        return fClusterStart + fClusterIndexes[pos];
+    }
+    return fClusterStart + fClusterIndexes[pos + 1];
+}
+
 void Run::updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex) {
     splitRun.fTextRange.start = std::max(headIndex,
         fOwner->cluster(splitLine.clustersWithSpaces().start).textRange().start);

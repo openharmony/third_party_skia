@@ -148,7 +148,11 @@ public:
     PlaceholderStyle* placeholderStyle() const;
     bool isPlaceholder() const { return fPlaceholderIndex != std::numeric_limits<size_t>::max(); }
     size_t clusterIndex(size_t pos) const { return fClusterIndexes[pos]; }
+#ifdef OHOS_SUPPORT
+    size_t globalClusterIndex(size_t pos) const;
+#else
     size_t globalClusterIndex(size_t pos) const { return fClusterStart + fClusterIndexes[pos]; }
+#endif
     SkScalar positionX(size_t pos) const;
     SkScalar usingAutoSpaceWidth(const Cluster& cluster) const;
     TextRange textRange() const { return fTextRange; }
