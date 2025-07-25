@@ -279,6 +279,7 @@ public:
     SkScalar clusterUsingAutoSpaceWidth(const Cluster& cluster) const;
     void updateSplitRunClusterInfo(const Run& run, bool isSplitRun);
     void refreshLines();
+    bool isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated);
     void generateSplitPoint(
         std::vector<SplitPoint>& splitPoints, const Run& run, ClusterRange lineRange, size_t lineIndex);
     void generateSplitPoints(std::vector<SplitPoint>& splitPoints);

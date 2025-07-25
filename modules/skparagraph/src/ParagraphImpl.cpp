@@ -486,7 +486,8 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 
 #ifdef OHOS_SUPPORT
 void ParagraphImpl::updateSplitRunClusterInfo(const Run& run, bool isSplitRun) {
-    size_t rtlShift = cluster(run.clusterRange().end - 1).startPos();
+    size_t posOffset = run.leftToRight() ? cluster(run.clusterRange().start).startPos() :
+        cluster(run.clusterRange().end - 1).startPos();
     for (size_t clusterIndex = run.clusterRange().start; clusterIndex < run.clusterRange().end; ++clusterIndex) {
         Cluster& updateCluster = this->cluster(clusterIndex);
         updateCluster.fRunIndex = run.index();
@@ -494,16 +495,9 @@ void ParagraphImpl::updateSplitRunClusterInfo(const Run& run, bool isSplitRun) {
         if (!isSplitRun) {
             continue;
         }
-
-        if (run.leftToRight()) {
-            size_t width = updateCluster.size();
-            updateCluster.fStart = clusterIndex - run.clusterRange().start;
-            updateCluster.fEnd = updateCluster.fStart + width;
-        } else {
-            size_t width = updateCluster.size();
-            updateCluster.fStart -= rtlShift;
-            updateCluster.fEnd = updateCluster.fStart + width;
-        }
+        size_t width = updateCluster.size();
+        updateCluster.fStart -= posOffset;
+        updateCluster.fEnd = updateCluster.fStart + width;
     }
 }
 
@@ -511,6 +505,12 @@ void ParagraphImpl::refreshLines() {
     for (TextLine& line : fLines) {
         line.refresh();
     }
+}
+
+bool ParagraphImpl::isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated) {
+    return !hasGenerated && ((lineLastRun.clusterRange().end != lineEnd) ||
+        (cluster(lineEnd - 1).isHardBreak() &&
+        !cluster(runByCluster(lineEnd - 1).clusterRange().start).isHardBreak()));
 }
 
 void ParagraphImpl::generateSplitPoint(
@@ -551,7 +551,7 @@ void ParagraphImpl::generateSplitPoints(std::vector<SplitPoint>& splitPoints) {
             }
         }
 
-        if (lineLastRun.clusterRange().end != lineEnd && !onlyGenerateOnce) {
+        if (isTailOfLineNeedSplit(lineLastRun, lineEnd, onlyGenerateOnce)) {
             generateSplitPoint(splitPoints, lineLastRun, lineClusterRange, lineIndex);
         }
     }

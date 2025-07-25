@@ -171,7 +171,6 @@ public:
     void extend(const Cluster* cluster, SkScalar offset);
 #ifdef ENABLE_TEXT_ENHANCE
     Run(const Run& run, size_t runIndex);
-    size_t findClusterByBinarySearch(size_t target);
     size_t findSplitClusterPos(size_t target);
     void updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex);
     void updateSplitRunMesureInfo(Run& splitRun, size_t startClusterPos, size_t endClusterPos);
@@ -365,8 +364,13 @@ void Run::iterateThroughClustersInTextOrder(Visitor visitor) {
         size_t glyph = this->size();
         size_t cluster = this->fUtf8Range.begin();
         for (int32_t start = this->size() - 1; start >= 0; --start) {
+#ifdef ENABLE_TEXT_ENHANCE
+            size_t nextCluster =
+                start == 0 ? this->fUtf8Range.end() : this->clusterIndex(start);
+#else
             size_t nextCluster =
                     start == 0 ? this->fUtf8Range.end() : this->clusterIndex(start - 1);
+#endif
             if (nextCluster <= cluster) {
                 continue;
             }
