@@ -2194,7 +2194,9 @@ optional("png_encode_rust") {
 optional("webp_decode") {
   enabled = skia_use_libwebp_decode
   public_defines = [ "SK_CODEC_DECODES_WEBP" ]
-
+  if (skia_feature_hispeed_plugin) {
+    public_defines += [ "USE_HISPEED_PLUGIN" ]
+  }
   deps = [ "${skia_third_party_dir}/libwebp:libwebpm133" ]
   sources = [ "src/codec/SkWebpCodec.cpp" ]
 }

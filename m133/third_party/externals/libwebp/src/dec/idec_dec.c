@@ -21,6 +21,7 @@
 #include "src/dec/vp8i_dec.h"
 #include "src/utils/utils.h"
 #include "src/webp/decode.h"
+#include "src/plugin/hispeed_plugin.h"
 
 // In append mode, buffer allocations increase as multiples of this value.
 // Needs to be a power of 2.
@@ -467,12 +468,31 @@ static VP8StatusCode DecodeRemaining(WebPIDecoder* const idec) {
   }
   for (; dec->mb_y_ < dec->mb_h_; ++dec->mb_y_) {
     if (idec->last_mb_y_ != dec->mb_y_) {
-      if (!VP8ParseIntraModeRow(&dec->br_, dec)) {
-        // note: normally, error shouldn't occur since we already have the whole
-        // partition0 available here in DecodeRemaining(). Reaching EOF while
-        // reading intra modes really means a BITSTREAM_ERROR.
-        return IDecError(idec, VP8_STATUS_BITSTREAM_ERROR);
+#ifdef USE_HISPEED_PLUGIN
+      if (g_vp8ParseIntraModeRowHandle != NULL) {
+        uint8_t *top = dec->intra_t_;
+        uint8_t *const left = dec->intra_l_;
+        VP8MBData *block = dec->mb_data_;
+        VP8Proba *dec_proba = &dec->proba_;
+        const uint8_t dec_skip_p = dec->skip_p_;
+        const int update_map = dec->segment_hdr_.update_map_;
+        const int dec_use_skip_proba = dec->use_skip_proba_;
+        int mb_w = dec->mb_w_;
+        if (!g_vp8ParseIntraModeRowHandle(
+                &dec->br_, top, left, block, dec_proba, dec_skip_p, update_map, dec_use_skip_proba, mb_w)) {
+          return IDecError(idec, VP8_STATUS_BITSTREAM_ERROR);
+        }
+      } else {
+#endif
+        if (!VP8ParseIntraModeRow(&dec->br_, dec)) {
+          // note: normally, error shouldn't occur since we already have the whole
+          // partition0 available here in DecodeRemaining(). Reaching EOF while
+          // reading intra modes really means a BITSTREAM_ERROR.
+          return IDecError(idec, VP8_STATUS_BITSTREAM_ERROR);
+        }
+#ifdef USE_HISPEED_PLUGIN
       }
+#endif
       idec->last_mb_y_ = dec->mb_y_;
     }
     for (; dec->mb_x_ < dec->mb_w_; ++dec->mb_x_) {

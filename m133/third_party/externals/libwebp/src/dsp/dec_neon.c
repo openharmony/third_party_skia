@@ -18,6 +18,7 @@
 
 #include "src/dsp/neon.h"
 #include "src/dec/vp8i_dec.h"
+#include "src/plugin/hispeed_plugin.h"
 
 //------------------------------------------------------------------------------
 // NxM Loading functions
@@ -1607,6 +1608,75 @@ static void TM16_NEON(uint8_t* dst) {
 
 extern void VP8DspInitNEON(void);
 
+#ifdef USE_HISPEED_PLUGIN  // USE_HISPEED_PLUGIN
+WEBP_TSAN_IGNORE_FUNCTION void VP8DspInitNEON(void) {
+  VP8Transform = TransformTwo_NEON;
+  VP8TransformAC3 = TransformAC3_NEON;
+  VP8TransformDC = TransformDC_NEON;
+  VP8TransformWHT = TransformWHT_NEON;
+
+  VP8VFilter16 = VFilter16_NEON;
+if (g_vFilter16iHandle != NULL) {
+  VP8VFilter16i = g_vFilter16iHandle;
+} else {
+  VP8VFilter16i = VFilter16i_NEON;
+}
+if (g_hFilter16Handle != NULL) {
+  VP8HFilter16 = g_hFilter16Handle;
+} else {
+  VP8HFilter16 = HFilter16_NEON;
+}
+#if !defined(WORK_AROUND_GCC)
+if (g_hFilter16iHandle != NULL) {
+  VP8HFilter16i = g_hFilter16iHandle;
+} else {
+  VP8HFilter16i = HFilter16i_NEON;
+}
+#endif
+  VP8VFilter8 = VFilter8_NEON;
+  VP8VFilter8i = VFilter8i_NEON;
+#if !defined(WORK_AROUND_GCC)
+if (g_hFilter8Handle != NULL) {
+  VP8HFilter8 = g_hFilter8Handle;
+} else {
+  VP8HFilter8 = HFilter8_NEON;
+}
+if (g_hFilter8iHandle != NULL) {
+  VP8HFilter8i = g_hFilter8iHandle;
+} else {
+  VP8HFilter8i = HFilter8i_NEON;
+}
+#endif
+  VP8SimpleVFilter16 = SimpleVFilter16_NEON;
+  VP8SimpleHFilter16 = SimpleHFilter16_NEON;
+  VP8SimpleVFilter16i = SimpleVFilter16i_NEON;
+  VP8SimpleHFilter16i = SimpleHFilter16i_NEON;
+
+  VP8PredLuma4[0] = DC4_NEON;
+  VP8PredLuma4[1] = TM4_NEON;
+  VP8PredLuma4[2] = VE4_NEON;
+  VP8PredLuma4[4] = RD4_NEON;
+  VP8PredLuma4[6] = LD4_NEON;
+
+  VP8PredLuma16[0] = DC16TopLeft_NEON;
+  VP8PredLuma16[1] = TM16_NEON;
+  VP8PredLuma16[2] = VE16_NEON;
+  VP8PredLuma16[3] = HE16_NEON;
+  VP8PredLuma16[4] = DC16NoTop_NEON;
+  VP8PredLuma16[5] = DC16NoLeft_NEON;
+  VP8PredLuma16[6] = DC16NoTopLeft_NEON;
+
+  VP8PredChroma8[0] = DC8uv_NEON;
+  VP8PredChroma8[1] = TM8uv_NEON;
+  VP8PredChroma8[2] = VE8uv_NEON;
+  VP8PredChroma8[3] = HE8uv_NEON;
+  VP8PredChroma8[4] = DC8uvNoTop_NEON;
+  VP8PredChroma8[5] = DC8uvNoLeft_NEON;
+  VP8PredChroma8[6] = DC8uvNoTopLeft_NEON;
+}
+
+#else  // USE_HISPEED_PLUGIN
+
 WEBP_TSAN_IGNORE_FUNCTION void VP8DspInitNEON(void) {
   VP8Transform = TransformTwo_NEON;
   VP8TransformAC3 = TransformAC3_NEON;
@@ -1652,6 +1722,8 @@ WEBP_TSAN_IGNORE_FUNCTION void VP8DspInitNEON(void) {
   VP8PredChroma8[5] = DC8uvNoLeft_NEON;
   VP8PredChroma8[6] = DC8uvNoTopLeft_NEON;
 }
+
+#endif  // USE_HISPEED_PLUGIN
 
 #else  // !WEBP_USE_NEON
 

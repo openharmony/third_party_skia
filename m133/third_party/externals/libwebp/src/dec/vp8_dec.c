@@ -19,6 +19,7 @@
 #include "src/dec/webpi_dec.h"
 #include "src/utils/bit_reader_inl_utils.h"
 #include "src/utils/utils.h"
+#include "src/plugin/hispeed_plugin.h"
 
 //------------------------------------------------------------------------------
 
@@ -615,7 +616,20 @@ int VP8DecodeMB(VP8Decoder* const dec, VP8BitReader* const token_br) {
   int skip = dec->use_skip_proba_ ? block->skip_ : 0;
 
   if (!skip) {
-    skip = ParseResiduals(dec, mb, token_br);
+#ifdef USE_HISPEED_PLUGIN
+    if (g_vp8ParseResidualsHandle != NULL) {
+      const VP8BandProbas *(*const bands)[16 + 1] = dec->proba_.bands_ptr_;
+      VP8MBData *const block = dec->mb_data_ + dec->mb_x_;
+      const VP8QuantMatrix *const q = &dec->dqm_[block->segment_];
+      int16_t *dst = block->coeffs_;
+      VP8MB *const left_mb = dec->mb_info_ - 1;
+      skip = g_vp8ParseResidualsHandle(bands, block, q, dst, left_mb, mb, token_br);
+    } else {
+#endif
+      skip = ParseResiduals(dec, mb, token_br);
+#ifdef USE_HISPEED_PLUGIN
+    }
+#endif
   } else {
     left->nz_ = mb->nz_ = 0;
     if (!block->is_i4x4_) {

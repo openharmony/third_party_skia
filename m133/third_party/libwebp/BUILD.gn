@@ -7,6 +7,7 @@ declare_args() {
   skia_use_system_libwebp2 = is_official_build && !is_wasm
 }
 
+import("../../gn/oh_skia.gni")
 import("../third_party.gni")
 
 if (skia_use_system_libwebp2) {
@@ -26,6 +27,9 @@ if (skia_use_system_libwebp2) {
       # TODO: swizzle ourself in SkWebpCodec instead of requiring this non-standard libwebp.
       "WEBP_SWAP_16BIT_CSP",
     ]
+    if (skia_feature_hispeed_plugin) {
+      defines += [ "USE_HISPEED_PLUGIN" ]
+    }
   }
 
   third_party("libwebp_sse41") {
@@ -178,6 +182,7 @@ if (skia_use_system_libwebp2) {
       "../externals/libwebp/src/utils/rescaler_utils.c",
       "../externals/libwebp/src/utils/thread_utils.c",
       "../externals/libwebp/src/utils/utils.c",
+      "../externals/libwebp/src/plugin/hispeed_plugin.c",
     ]
   }
 }
