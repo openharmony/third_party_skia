@@ -509,6 +509,7 @@ void ParagraphImpl::refreshLines() {
 
 bool ParagraphImpl::isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated) {
     return !hasGenerated && ((lineLastRun.clusterRange().end != lineEnd) ||
+        // Special case: the line of last run combines a hard break, such as "<\n"
         (cluster(lineEnd - 1).isHardBreak() &&
         !cluster(runByCluster(lineEnd - 1).clusterRange().start).isHardBreak()));
 }

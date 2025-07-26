@@ -665,6 +665,7 @@ void append(SkShaper::RunHandler* handler, const SkShaper::RunHandler::RunInfo& 
         }
         if (buffer.clusters) {
 #ifdef ENABLE_TEXT_ENHANCE
+            // Specail handle for Rtl language's cluster index overall offset
             size_t clusterUpdatePos = is_LTR(run.fLevel) ? i : i + 1;
             buffer.clusters[clusterUpdatePos] = glyph.fCluster;
 #else

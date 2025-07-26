@@ -260,6 +260,7 @@ Run::Run(ParagraphImpl* owner,
     if (leftToRight()) {
         fClusterIndexes[info.glyphCount] = info.utf8Range.end();
     } else {
+        // First cluster index in rtl's language run is end of the utf8 range value
         fClusterIndexes[0] = info.utf8Range.end();
     }
 #else
