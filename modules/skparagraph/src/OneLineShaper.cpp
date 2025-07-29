@@ -453,11 +453,10 @@ void OneLineShaper::sortOutGlyphs(std::function<void(GlyphRange)>&& sortOutUnres
     TextIndex graphemeStart = EMPTY_INDEX;
     for (size_t i = 0; i < fCurrentRun->size(); ++i) {
 
-        ClusterIndex ci = clusterIndex(i);
 #ifdef OHOS_SUPPORT
-        if (!fCurrentRun->leftToRight()) {
-            ci = clusterIndex(i + 1);
-        }
+        ClusterIndex ci = fCurrentRun->leftToRight() ? clusterIndex(i) : clusterIndex(i + 1);
+#else
+        ClusterIndex ci = clusterIndex(i);
 #endif
         // Removing all pretty optimizations for whitespaces
         // because they get in a way of grapheme rounding
