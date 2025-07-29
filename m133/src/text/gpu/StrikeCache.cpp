@@ -33,6 +33,22 @@ void StrikeCache::freeAll() {
     this->internalPurge(fTotalMemoryUsed);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+void StrikeCache::removeStrikeByUniqueID(uint32_t uniqueID) {
+    std::vector<TextStrike*> strikes;
+
+    fCache.foreach([&strikes, uniqueID](const sk_sp<TextStrike>* item) {
+        if (item && (*item) && (*item)->strikeSpec().typeface().uniqueID() == uniqueID) {
+            strikes.push_back(item->get());
+        }
+    });
+
+    for (TextStrike* strike : strikes) {
+        this->internalRemoveStrike(strike);
+    }
+}
+#endif
+
 sk_sp<TextStrike> StrikeCache::findOrCreateStrike(const SkStrikeSpec& strikeSpec) {
     if (sk_sp<TextStrike>* cached = fCache.find(strikeSpec.descriptor())) {
         return *cached;

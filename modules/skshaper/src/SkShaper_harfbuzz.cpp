@@ -1494,6 +1494,11 @@ public:
     void reset() {
         fLRUCache.reset();
     }
+#ifdef USE_SKIA_TXT
+    void removeByUniqueID(uint32_t uniqueID) {
+        fLRUCache.removePublic(uniqueID);
+    }
+#endif
 private:
     SkLRUCache<uint32_t, HBFont>& fLRUCache;
     SkMutex& fMutex;
@@ -1770,5 +1775,9 @@ void SkShaper::PurgeHarfBuzzCache() {
     cache.reset();
 }
 #ifdef USE_SKIA_TXT
+void SkShaper::RemoveCacheByUniqueID(uint32_t uniqueID) {
+    HBLockedFaceCache cache = get_hbFace_cache();
+    cache.removeByUniqueID(uniqueID);
+}
 } // namespace SkiaRsText
 #endif

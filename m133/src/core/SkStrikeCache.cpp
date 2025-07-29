@@ -50,6 +50,28 @@ sk_sp<StrikeForGPU> SkStrikeCache::findOrCreateScopedStrike(const SkStrikeSpec& 
     return this->findOrCreateStrike(strikeSpec);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+void SkStrikeCache::RemoveStrikeByUniqueID(uint32_t uniqueID) {
+    GlobalStrikeCache()->removeStrikeByUniqueID(uniqueID);
+}
+
+void SkStrikeCache::removeStrikeByUniqueID(uint32_t uniqueID) {
+    SkAutoMutexExclusive ac(fLock);
+
+    std::vector<SkStrike*> strikes;
+
+    fStrikeLookup.foreach([&strikes, uniqueID](sk_sp<SkStrike>* item) {
+        if (item && (*item) &&(*item)->strikeSpec().typeface().uniqueID() == uniqueID) {
+            strikes.push_back(item->get());
+        }
+    });
+
+    for (SkStrike* strike : strikes) {
+        this->internalRemoveStrike(strike);
+    }
+}
+#endif
+
 void SkStrikeCache::PurgeAll() {
     GlobalStrikeCache()->purgeAll();
 }

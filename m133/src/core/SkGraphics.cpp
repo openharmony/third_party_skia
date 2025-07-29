@@ -102,3 +102,9 @@ SkGraphics::SetOpenTypeSVGDecoderFactory(OpenTypeSVGDecoderFactory svgDecoderFac
 SkGraphics::OpenTypeSVGDecoderFactory SkGraphics::GetOpenTypeSVGDecoderFactory() {
     return gSVGDecoderFactory;
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+void SkGraphics::RemoveCacheByUniqueID(uint32_t uniqueID) {
+    SkStrikeCache::RemoveStrikeByUniqueID(uniqueID);
+}
+#endif

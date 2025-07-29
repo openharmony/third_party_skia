@@ -164,6 +164,9 @@ public:
             std::unique_ptr<SkOpenTypeSVGDecoder> (*)(const uint8_t* svg, size_t length);
     static OpenTypeSVGDecoderFactory SetOpenTypeSVGDecoderFactory(OpenTypeSVGDecoderFactory);
     static OpenTypeSVGDecoderFactory GetOpenTypeSVGDecoderFactory();
+#ifdef ENABLE_TEXT_ENHANCE
+    static void RemoveCacheByUniqueID(uint32_t uniqueID);
+#endif
 };
 
 #endif

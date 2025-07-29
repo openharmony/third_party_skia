@@ -81,6 +81,9 @@ public:
     sk_sp<TextStrike> findOrCreateStrike(const SkStrikeSpec& strikeSpec);
 
     void freeAll();
+#ifdef ENABLE_TEXT_ENHANCE
+    void removeStrikeByUniqueID(uint32_t uniqueID);
+#endif
 
 private:
     friend class TextStrike;  // for TextStrike::getGlyph

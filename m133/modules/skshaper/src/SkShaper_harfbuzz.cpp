@@ -1452,6 +1452,11 @@ public:
     void reset() {
         fLRUCache.reset();
     }
+#ifdef ENABLE_TEXT_ENHANCE
+    void removeByUniqueID(uint32_t uniqueID) {
+        fLRUCache.removePublic(uniqueID);
+    }
+#endif
 private:
     SkLRUCache<SkTypefaceID, HBFont>& fLRUCache;
     SkMutex& fMutex;
@@ -1772,6 +1777,13 @@ void PurgeCaches() {
     HBLockedFaceCache cache = get_hbFace_cache();
     cache.reset();
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+void RemoveCacheByUniqueID(uint32_t uniqueID) {
+    HBLockedFaceCache cache = get_hbFace_cache();
+    cache.removeByUniqueID(uniqueID);
+}
+#endif
 }  // namespace SkShapers::HB
 #ifdef ENABLE_DRAWING_ADAPTER
 } // namespace SkiaRsText

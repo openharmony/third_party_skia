@@ -9,6 +9,7 @@
 #define SkTypeface_DEFINED
 
 #ifdef OHOS_SUPPORT
+#include <functional>
 #include <vector>
 #endif
 
@@ -140,6 +141,7 @@ public:
 
 #ifdef OHOS_SUPPORT
     static std::vector<sk_sp<SkTypeface>> GetSystemFonts();
+    static void RegisterOnTypefaceDestroyed(std::function<void(uint32_t)> cb);
 #endif
 
     /** Return a new typeface based on this typeface but parameterized as specified in the
@@ -494,6 +496,7 @@ private:
     bool                fIsCustom = false;
 #ifdef OHOS_SUPPORT
     bool                fIsTheme = false;
+    static std::function<void(uint32_t)> fTypefaceDestroyed;
 #endif
     using INHERITED = SkWeakRefCnt;
 };

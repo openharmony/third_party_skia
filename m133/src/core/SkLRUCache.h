@@ -106,6 +106,20 @@ public:
         }
     }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    void removePublic(const K& key) {
+        Entry** value = fMap.find(key);
+        if (value == nullptr || *value == nullptr || (*value)->fKey != key) {
+            return;
+        }
+        Entry* entry = *value;
+        PurgeCB()(key, &entry->fValue);
+        fMap.remove(key);
+        fLRU.remove(entry);
+        delete entry;
+    }
+#endif
+
 private:
     struct Traits {
         static const K& GetKey(Entry* e) {

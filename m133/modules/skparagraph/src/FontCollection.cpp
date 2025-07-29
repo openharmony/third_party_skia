@@ -220,6 +220,14 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
     fTypefaces.emplace(familyKey, typefaces);
     return typefaces;
 }
+
+void FontCollection::removeCacheByUniqueID(uint32_t uniqueID) {
+    SkGraphics::RemoveCacheByUniqueID(uniqueID);
+    SkShapers::HB::RemoveCacheByUniqueID(uniqueID);
+    std::unique_lock writeLock(mutex_);
+    fTypefaces.clear();
+    fParagraphCache.reset();
+}
 #else
 std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames,
     SkFontStyle fontStyle, const std::optional<FontArguments>& fontArgs) {

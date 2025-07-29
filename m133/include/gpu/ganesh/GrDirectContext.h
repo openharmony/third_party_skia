@@ -230,6 +230,14 @@ public:
      */
     void freeGpuResources();
 
+#ifdef ENABLE_TEXT_ENHANCE
+    /**
+     * Frees CPU cache created by the context. Can be called to reduce CPU memory
+     * pressure.
+     */
+    void freeCpuCache(uint32_t uniqueID);
+#endif
+
     /**
      * Purge GPU resources that haven't been used in the past 'msNotUsed' milliseconds or are
      * otherwise marked for deletion, regardless of whether the context is under budget.
