@@ -148,7 +148,11 @@ public:
     PlaceholderStyle* placeholderStyle() const;
     bool isPlaceholder() const { return fPlaceholderIndex != std::numeric_limits<size_t>::max(); }
     size_t clusterIndex(size_t pos) const { return fClusterIndexes[pos]; }
+#ifdef OHOS_SUPPORT
+    size_t globalClusterIndex(size_t pos) const;
+#else
     size_t globalClusterIndex(size_t pos) const { return fClusterStart + fClusterIndexes[pos]; }
+#endif
     SkScalar positionX(size_t pos) const;
     SkScalar usingAutoSpaceWidth(const Cluster& cluster) const;
     TextRange textRange() const { return fTextRange; }
@@ -175,7 +179,6 @@ public:
 
 #ifdef OHOS_SUPPORT
     Run(const Run& run, size_t runIndex);
-    size_t findClusterByBinarySearch(size_t target);
     size_t findSplitClusterPos(size_t target);
     void updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex);
     void updateSplitRunMesureInfo(Run& splitRun, size_t startClusterPos, size_t endClusterPos);
@@ -364,8 +367,13 @@ void Run::iterateThroughClustersInTextOrder(Visitor visitor) {
         size_t glyph = this->size();
         size_t cluster = this->fUtf8Range.begin();
         for (int32_t start = this->size() - 1; start >= 0; --start) {
+#ifdef OHOS_SUPPORT
+            size_t nextCluster =
+                start == 0 ? this->fUtf8Range.end() : this->clusterIndex(start);
+#else
             size_t nextCluster =
                     start == 0 ? this->fUtf8Range.end() : this->clusterIndex(start - 1);
+#endif
             if (nextCluster <= cluster) {
                 continue;
             }

@@ -698,7 +698,13 @@ void append(SkShaper::RunHandler* handler, const SkShaper::RunHandler::RunInfo& 
             buffer.positions[i] = advance + buffer.point + glyph.fOffset;
         }
         if (buffer.clusters) {
+#ifdef OHOS_SUPPORT
+            // Specail handle for Rtl language's cluster index overall offset
+            size_t clusterUpdatePos = is_LTR(run.fLevel) ? i : i + 1;
+            buffer.clusters[clusterUpdatePos] = glyph.fCluster;
+#else
             buffer.clusters[i] = glyph.fCluster;
+#endif
         }
 #ifdef OHOS_SUPPORT
         if (buffer.advances) {

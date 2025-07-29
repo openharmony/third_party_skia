@@ -255,9 +255,16 @@ Run::Run(ParagraphImpl* owner,
     // To make edge cases easier:
     fPositions[info.glyphCount] = fOffset + fAdvance;
     fOffsets[info.glyphCount] = {0, 0};
-    fClusterIndexes[info.glyphCount] = this->leftToRight() ? info.utf8Range.end() : info.utf8Range.begin();
 #ifdef OHOS_SUPPORT
     fGlyphAdvances[info.glyphCount] = {0, 0};
+    if (leftToRight()) {
+        fClusterIndexes[info.glyphCount] = info.utf8Range.end();
+    } else {
+        // First cluster index in rtl's language run is end of the utf8 range value
+        fClusterIndexes[0] = info.utf8Range.end();
+    }
+#else
+    fClusterIndexes[info.glyphCount] = this->leftToRight() ? info.utf8Range.end() : info.utf8Range.begin();
 #endif
     fEllipsis = false;
     fPlaceholderIndex = std::numeric_limits<size_t>::max();
@@ -329,60 +336,37 @@ Run::Run(const Run& run, size_t runIndex)
       fCompressionBaselineShift(run.fCompressionBaselineShift),
       fVerticalAlignShift(run.fVerticalAlignShift) {}
 
-size_t Run::findClusterByBinarySearch(size_t target) {
-    size_t left = 0;
-    size_t right = clusterIndexes().size() - 1;
-    size_t mid = 0;
-    while (left <= right) {
-        mid = left + (right - left) / 2;
-        if (mid > clusterIndexes().size()) {
+size_t Run::findSplitClusterPos(size_t target) {
+    int left = -1;
+    int right = clusterIndexes().size();
+    while (left + 1 < right) {
+        int mid = left + (right - left) / 2;
+        if (clusterIndexes()[mid] >= target) {
             if (leftToRight()) {
-                return clusterIndexes().size() - 1;
-            } else {
-                return 0;
+                right = mid;
+                continue;
             }
-        }
-
-        if (clusterIndexes()[mid] == target) {
-            return mid;
-        }
-
-        if ((leftToRight() && clusterIndexes()[mid] < target) ||
-            (!leftToRight() && clusterIndexes()[mid] > target)) {
-            left = mid + 1;
+            left = mid;
         } else {
-            right = mid - 1;
+            if (leftToRight()) {
+                left = mid;
+                continue;
+            }
+            right = mid;
         }
     }
     if (leftToRight()) {
-        return mid;
+        return static_cast<size_t>(right);
     }
-    return mid == 0 ? mid : mid - 1;
+    return static_cast<size_t>(left);
 }
 
-size_t Run::findSplitClusterPos(size_t target) {
-    const auto& indexes = clusterIndexes();
-    if (!leftToRight() && target == 0 && indexes.back() == 0) {
-        return indexes.size() - 1;
+// Compatible with getCoordinate RTL scenario
+size_t Run::globalClusterIndex(size_t pos) const {
+    if (leftToRight() || pos == (size_t)fGlyphs.size()) {
+        return fClusterStart + fClusterIndexes[pos];
     }
-
-    // Distingguish the critical point of abnormal array length as 2
-    const size_t criticalPoint = 2;
-    if (!leftToRight() && target != 0) {
-        // RTL's run clusterIndexes shift 2
-        target -= 2;
-    } else if (leftToRight() && indexes.size() > criticalPoint && indexes[0] == indexes[1] == 0) {
-        // New Thai Language's special case cluster's byte length is 3
-        size_t newThaiSpecialCaseByteLen = 3;
-        if (target == 0) {
-            return 0;
-        } else if (target != 0 && indexes[criticalPoint] == newThaiSpecialCaseByteLen) {
-            target -= newThaiSpecialCaseByteLen;
-        }
-    } else if (leftToRight() && indexes.size() == criticalPoint && target != 0) {
-        return 1;
-    }
-    return findClusterByBinarySearch(target);
+    return fClusterStart + fClusterIndexes[pos + 1];
 }
 
 void Run::updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex) {
@@ -413,8 +397,8 @@ void Run::updateSplitRunMesureInfo(Run& splitRun, size_t startClusterPos, size_t
     }
 
     // Generate for ghost cluster
-    splitRun.fGlyphData->positions.push_back(
-        {fGlyphData->positions[startClusterPos].fX - posOffset, fGlyphData->positions[startClusterPos].fY});
+    glyphPosVal = fGlyphData->positions[startClusterPos].fX - posOffset;
+    splitRun.fGlyphData->positions.push_back({glyphPosVal, fGlyphData->positions[startClusterPos].fY});
     splitRun.fGlyphData->offsets.push_back({0.0f, 0.0f});
     splitRun.fGlyphData->clusterIndexes.push_back(fGlyphData->clusterIndexes[startClusterPos]);
     splitRun.fGlyphData->advances.push_back({0.0f, 0.0f});

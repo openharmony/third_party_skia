@@ -400,10 +400,17 @@ TextRange OneLineShaper::normalizeTextRange(GlyphRange glyphRange) {
     if (fCurrentRun->leftToRight()) {
         return TextRange(clusterIndex(glyphRange.start), clusterIndex(glyphRange.end));
     } else {
+#ifdef ENABLE_TEXT_ENHANCE
+        return TextRange(clusterIndex(glyphRange.end),
+            glyphRange.start > 0 ?
+            clusterIndex(glyphRange.start) :
+            fCurrentRun->fTextRange.end);
+#else
         return TextRange(clusterIndex(glyphRange.end - 1),
                 glyphRange.start > 0
                 ? clusterIndex(glyphRange.start - 1)
                 : fCurrentRun->fTextRange.end);
+#endif
     }
 }
 
@@ -460,7 +467,11 @@ void OneLineShaper::sortOutGlyphs(std::function<void(GlyphRange)>&& sortOutUnres
     TextIndex graphemeStart = EMPTY_INDEX;
     for (size_t i = 0; i < fCurrentRun->size(); ++i) {
 
+#ifdef ENABLE_TEXT_ENHANCE
+        ClusterIndex ci = fCurrentRun->leftToRight() ? clusterIndex(i) : clusterIndex(i + 1);
+#else
         ClusterIndex ci = clusterIndex(i);
+#endif
         // Removing all pretty optimizations for whitespaces
         // because they get in a way of grapheme rounding
         // Inspect the glyph
