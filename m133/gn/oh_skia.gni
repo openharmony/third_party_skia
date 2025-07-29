@@ -85,6 +85,7 @@ declare_args() {
   skia_use_freetype2 = true
   skia_feature_zlib = ""
   skia_use_system_lib = false
+  skia_feature_hispeed_plugin = false
 }
 
 use_mingw_win = "${current_os}_${current_cpu}" == "mingw_x86_64"

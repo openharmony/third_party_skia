@@ -21,6 +21,7 @@
 #include <string.h>
 #include "src/dsp/neon.h"
 #include "src/dsp/yuv.h"
+#include "src/plugin/hispeed_plugin.h"
 
 #ifdef FANCY_UPSAMPLING
 
@@ -260,6 +261,33 @@ extern WebPUpsampleLinePairFunc WebPUpsamplers[/* MODE_LAST */];
 
 extern void WebPInitUpsamplersNEON(void);
 
+#ifdef USE_HISPEED_PLUGIN  // USE_HISPEED_PLUGIN
+WEBP_TSAN_IGNORE_FUNCTION void WebPInitUpsamplersNEON(void) {
+if (g_upsampleYuvToRgbaLinePairHandle != NULL) {
+  WebPUpsamplers[MODE_RGBA] = g_upsampleYuvToRgbaLinePairHandle;
+} else {
+  WebPUpsamplers[MODE_RGBA] = UpsampleRgbaLinePair_NEON;
+}
+  WebPUpsamplers[MODE_BGRA] = UpsampleBgraLinePair_NEON;
+if (g_upsampleYuvToRgbaLinePairHandle != NULL) { 
+  WebPUpsamplers[MODE_rgbA] = g_upsampleYuvToRgbaLinePairHandle;
+} else {
+  WebPUpsamplers[MODE_rgbA] = UpsampleRgbaLinePair_NEON;
+}
+  WebPUpsamplers[MODE_bgrA] = UpsampleBgraLinePair_NEON;
+#if !defined(WEBP_REDUCE_CSP)
+  WebPUpsamplers[MODE_RGB]  = UpsampleRgbLinePair_NEON;
+  WebPUpsamplers[MODE_BGR]  = UpsampleBgrLinePair_NEON;
+  WebPUpsamplers[MODE_ARGB] = UpsampleArgbLinePair_NEON;
+  WebPUpsamplers[MODE_Argb] = UpsampleArgbLinePair_NEON;
+  WebPUpsamplers[MODE_RGB_565] = UpsampleRgb565LinePair_NEON;
+  WebPUpsamplers[MODE_RGBA_4444] = UpsampleRgba4444LinePair_NEON;
+  WebPUpsamplers[MODE_rgbA_4444] = UpsampleRgba4444LinePair_NEON;
+#endif   // WEBP_REDUCE_CSP
+}
+
+#else  // USE_HISPEED_PLUGIN
+
 WEBP_TSAN_IGNORE_FUNCTION void WebPInitUpsamplersNEON(void) {
   WebPUpsamplers[MODE_RGBA] = UpsampleRgbaLinePair_NEON;
   WebPUpsamplers[MODE_BGRA] = UpsampleBgraLinePair_NEON;
@@ -275,6 +303,8 @@ WEBP_TSAN_IGNORE_FUNCTION void WebPInitUpsamplersNEON(void) {
   WebPUpsamplers[MODE_rgbA_4444] = UpsampleRgba4444LinePair_NEON;
 #endif   // WEBP_REDUCE_CSP
 }
+
+#endif  // USE_HISPEED_PLUGIN
 
 #endif  // FANCY_UPSAMPLING
 

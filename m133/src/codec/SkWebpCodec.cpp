@@ -48,6 +48,22 @@
 #include "webp/decode.h"  // NO_G3_REWRITE
 #include "webp/demux.h"  // NO_G3_REWRITE
 #include "webp/mux_types.h"  // NO_G3_REWRITE
+#include "plugin/hispeed_plugin.h"
+
+#ifdef USE_HISPEED_PLUGIN
+
+struct HispeedPluginLoader {
+    HispeedPluginLoader() {
+        WebPLoadHispeedPlugin();
+    }
+
+    ~HispeedPluginLoader() {
+        WebPUnloadHispeedPlugin();
+    }
+};
+
+static HispeedPluginLoader hispeedPluginLoader;
+#endif
 
 bool SkWebpCodec::IsWebp(const void* buf, size_t bytesRead) {
     // WEBP starts with the following:
