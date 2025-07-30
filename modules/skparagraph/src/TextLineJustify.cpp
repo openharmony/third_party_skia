@@ -225,6 +225,9 @@ void TextLineJustify::justifyShiftCluster(const SkScalar maxWidth, SkScalar text
     size_t prevClusterNotSpaceCount, ClusterLevelsIndices& clusterLevels)
 {
     SkScalar allocatedWidth = maxWidth - textLen - (textLineRef.ellipsis() ? textLineRef.ellipsis()->fAdvanceX() : 0);
+    if (textLineRef.getBreakWithHyphen()) {
+        allocatedWidth -= textLineRef.fHyphenRun->fAdvanceX();
+    }
     const SkScalar verifyShift = allocatedWidth;
     // Allocate offsets for each level
     allocateHighLevelOffsets(ideographicMaxLen, clusterLevels, allocatedWidth);
