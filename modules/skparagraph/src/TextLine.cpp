@@ -38,6 +38,7 @@
 #ifdef OHOS_SUPPORT
 #include <cstddef>
 #include <numeric>
+#include <sstream>
 #include <vector>
 
 #include "include/TextGlobalConfig.h"
@@ -1482,6 +1483,52 @@ void TextLine::measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeG
         }
     }
 }
+
+namespace {
+std::string toHexString(int32_t decimal) {
+    std::stringstream ss;
+    ss << std::hex << decimal;
+    return ss.str();
+}
+
+void logUnicodeDataAroundIndex(ParagraphImpl* fOwner, TextIndex index) {
+    const auto& unicodeText = fOwner->unicodeText();
+    if (unicodeText.size() == 0) {
+        return;
+    }
+    size_t unicodeIndex = fOwner->getUnicodeIndex(index);
+
+    size_t start = (unicodeIndex > 4) ? unicodeIndex - 4 : 0;
+    size_t end = std::min(unicodeIndex + 4, unicodeText.size() - 1);
+
+    std::string logMsg = "Unicode around index " + std::to_string(index) + ": [";
+    for (size_t i = start; i <= end; ++i) {
+        SkUnichar unicode = unicodeText[i];
+        logMsg += (i == unicodeIndex) ? "{" : "";
+        logMsg += "U+" + toHexString(unicode);
+        logMsg += (i == unicodeIndex) ? "}" : "";
+        if (i < end) {
+            logMsg += ", ";
+        }
+    }
+    logMsg += "]";
+    TEXT_LOGW_LIMIT3_HOUR("%{public}s", logMsg.c_str());
+}
+
+ClusterIndex getValidClusterIndex(ParagraphImpl* fOwner, const TextIndex& primaryIndex,
+    const TextIndex& fallbackIndex) {
+    // We need to find the best cluster index for the given text index
+    // The primary plan is the original text index, the fallback plan is the next one
+    // We prefer plan primary if clusterIndex is not empty
+    ClusterIndex clusterIndex = fOwner->clusterIndex(primaryIndex);
+    if (clusterIndex == EMPTY_INDEX) {
+        TEXT_LOGW("Warning: clusterIndex is EMPTY_INDEX");
+        logUnicodeDataAroundIndex(fOwner, primaryIndex);
+        clusterIndex = fOwner->clusterIndex(fallbackIndex);
+    }
+    return clusterIndex;
+}
+} // namespace
 #endif
 
 TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
@@ -1546,8 +1593,14 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
 
         // Move the start until it's on the grapheme edge (and glypheme, too)
     }
+#ifdef OHOS_SUPPORT
+    Cluster* start = &fOwner->cluster(getValidClusterIndex(fOwner, textRange.start, originalTextRange.start));
+    Cluster* end = &fOwner->cluster(getValidClusterIndex(fOwner, textRange.end - (textRange.width() == 0 ? 0 : 1),
+        originalTextRange.end - (originalTextRange.width() == 0 ? 0 : 1)));
+#else
     Cluster* start = &fOwner->cluster(fOwner->clusterIndex(textRange.start));
     Cluster* end = &fOwner->cluster(fOwner->clusterIndex(textRange.end - (textRange.width() == 0 ? 0 : 1)));
+#endif
 
     if (!run->leftToRight()) {
         std::swap(start, end);
