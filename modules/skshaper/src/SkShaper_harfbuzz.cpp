@@ -37,6 +37,7 @@
 #include <locale>
 #include <memory>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 
 
@@ -1489,6 +1490,11 @@ public:
         return fLRUCache.find(fontId);
     }
     HBFont* insert(uint32_t fontId, HBFont hbFont) {
+#ifdef USE_SKIA_TXT
+        if (fUniqueIDs.count(fontId)) {
+            return nullptr;
+        }
+#endif
         return fLRUCache.insert(fontId, std::move(hbFont));
     }
     void reset() {
@@ -1496,8 +1502,12 @@ public:
     }
 #ifdef USE_SKIA_TXT
     void removeByUniqueID(uint32_t uniqueID) {
-        fLRUCache.removePublic(uniqueID);
+        if (fLRUCache.removePublic(uniqueID) == 0) {
+            fUniqueIDs.emplace(uniqueID);
+        }
     }
+private:
+    std::unordered_set<uint32_t> fUniqueIDs;
 #endif
 private:
     SkLRUCache<uint32_t, HBFont>& fLRUCache;
@@ -1574,15 +1584,17 @@ ShapedRun ShaperHarfBuzz::shape(char const * const utf8,
         uint32_t dataId = const_cast<RSFont&>(font.currentFont()).GetTypeface()->GetUniqueID();
 #endif
         HBFont* typefaceFontCached = cache.find(dataId);
-        if (!typefaceFontCached) {
+        if (typefaceFontCached != nullptr) {
+            hbFont = create_sub_hb_font(font.currentFont(), *typefaceFontCached);
+        } else {
 #ifndef USE_SKIA_TXT
             HBFont typefaceFont(create_typeface_hb_font(*font.currentFont().getTypeface()));
 #else
             HBFont typefaceFont(create_typeface_hb_font(*const_cast<RSFont&>(font.currentFont()).GetTypeface()));
 #endif
-            typefaceFontCached = cache.insert(dataId, std::move(typefaceFont));
+            hbFont = create_sub_hb_font(font.currentFont(), typefaceFont);
+            cache.insert(dataId, std::move(typefaceFont));
         }
-        hbFont = create_sub_hb_font(font.currentFont(), *typefaceFontCached);
     }
     if (!hbFont) {
         return run;

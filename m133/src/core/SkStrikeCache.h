@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <unordered_set>
 
 class SkDescriptor;
 class SkStrikeSpec;
@@ -59,6 +60,9 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     static void RemoveStrikeByUniqueID(uint32_t uniqueID);
     void removeStrikeByUniqueID(uint32_t uniqueID) SK_EXCLUDES(fLock);
+private:
+    std::unordered_set<uint32_t> fUniqueIDs;
+public:
 #endif
             
     static void PurgeAll();

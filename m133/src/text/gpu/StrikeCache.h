@@ -16,6 +16,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <unordered_set>
 
 struct SkPackedGlyphID;
 
@@ -83,6 +84,9 @@ public:
     void freeAll();
 #ifdef ENABLE_TEXT_ENHANCE
     void removeStrikeByUniqueID(uint32_t uniqueID);
+private:
+    std::unordered_set<uint32_t> fUniqueIDs;
+public:
 #endif
 
 private:

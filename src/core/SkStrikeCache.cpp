@@ -63,6 +63,10 @@ void SkStrikeCache::removeStrikeByUniqueID(uint32_t uniqueID) {
         }
     });
 
+    if (!strikes.empty()) {
+        fUniqueIDs.emplace(uniqueID);
+    }
+
     for (SkStrike* strike : strikes) {
         this->internalRemoveStrike(strike);
     }
@@ -186,7 +190,13 @@ auto SkStrikeCache::internalCreateStrike(
     std::unique_ptr<SkScalerContext> scaler = strikeSpec.createScalerContext();
     auto strike =
         sk_make_sp<SkStrike>(this, strikeSpec, std::move(scaler), maybeMetrics, std::move(pinner));
+#ifdef OHOS_SUPPORT
+    if (!fUniqueIDs.count(strikeSpec.typeface().uniqueID())) {
+        this->internalAttachToHead(strike);
+    }
+#else
     this->internalAttachToHead(strike);
+#endif
     return strike;
 }
 
