@@ -125,6 +125,7 @@ public:
     void paint(ParagraphPainter* canvas, SkScalar x, SkScalar y) override;
 #ifdef ENABLE_TEXT_ENHANCE
     void paint(ParagraphPainter* canvas, RSPath* path, SkScalar hOffset, SkScalar vOffset) override;
+    std::string_view GetDumpInfo() override;
 #endif // ENABLE_TEXT_ENHANCE
     std::vector<TextBox> getRectsForRange(unsigned start,
                                           unsigned end,
@@ -337,7 +338,6 @@ public:
     InternalLineMetrics getStrutMetrics() const { return fStrutMetrics; }
 
     BlockRange findAllBlocks(TextRange textRange);
-
     void resetShifts() {
         for (auto& run : fRuns) {
             run.resetJustificationShifts();
@@ -402,6 +402,7 @@ private:
     TextBox getEmptyTextRect(RectHeightStyle rectHeightStyle) const;
     size_t prefixByteCountUntilChar(size_t index);
     void copyProperties(const ParagraphImpl& source);
+    std::string_view GetState();
 #endif
 
     // Input

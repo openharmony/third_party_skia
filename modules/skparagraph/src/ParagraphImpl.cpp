@@ -607,6 +607,7 @@ void ParagraphImpl::splitRuns() {
 void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 #ifdef OHOS_SUPPORT
     TEXT_TRACE_FUNC();
+    fState = kDrawn;
 #endif
     CanvasParagraphPainter painter(canvas);
     paint(&painter, x, y);
@@ -615,6 +616,7 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 #ifdef OHOS_SUPPORT
     TEXT_TRACE_FUNC();
+    fState = kDrawn;
     // Reset all text style vertical shift
     for (Block& block : fTextStyles) {
         block.fStyle.setVerticalAlignShift(0.0);
@@ -631,6 +633,7 @@ void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) {
 #ifdef OHOS_SUPPORT
     TEXT_TRACE_FUNC();
+    fState = kDrawn;
 #endif
     auto& style = fTextStyles[0].fStyle;
     float align = 0.0f;
@@ -2471,6 +2474,65 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     }
     return paragraph;
 }
+
+#ifdef OHOS_SUPPORT
+std::string_view ParagraphImpl::GetState()
+{
+    static std::unordered_map<InternalState, std::string_view> state = {
+        {kUnknown, "Unknow"},
+        {kIndexed, "Indexed"},
+        {kShaped, "Shaped"},
+        {kLineBroken, "LineBroken"},
+        {kFormatted, "Formatted"},
+        {kDrawn, "Drawn"},
+    };
+    return state[fState];
+}
+
+std::string_view ParagraphImpl::GetDumpInfo()
+{
+    std::string paragraphInfo = "This is paragraph dump info:\n";
+    paragraphInfo += "Text size: " + std::to_string(fText.size()) + " fState: " + std::string(GetState()) +
+        " fSkipTextBlobDrawing: " + (fSkipTextBlobDrawing ? "true" : "false") + "\n";
+    uint32_t glyphSize = 0;
+    uint32_t runIndex = 1;
+    for (auto& run : fRuns) {
+        paragraphInfo += " Run[" + std::to_string(runIndex) + "] text range: [" +
+            std::to_string(run.textRange().start) + "-" +
+            std::to_string(run.textRange().end) + ")" + " cluster range: [" +
+            std::to_string(run.clusterRange().start) + "-" + std::to_string(run.clusterRange().end) + ")";
+        auto blockRange = findAllBlocks(run.textRange());
+        BlockIndex blockIndex = blockRange.start;
+        for (; blockIndex < blockRange.end; blockIndex++) {
+            paragraphInfo += " Block[" + std::to_string(blockIndex) + "] text range[" +
+                std::to_string(block(blockIndex).fRange.start) + "-" +
+                std::to_string(block(blockIndex).fRange.end) + ")" + " font size: " +
+                std::to_string(block(blockIndex).fStyle.getFontSize()) + " font color: " +
+                std::to_string(block(blockIndex).fStyle.getColor()) + " font height: " +
+                std::to_string(block(blockIndex).fStyle.getHeight()) + " font weight: " +
+                std::to_string(block(blockIndex).fStyle.getFontStyle().GetWeight()) + " font width: " +
+                std::to_string(block(blockIndex).fStyle.getFontStyle().GetWidth()) + " font slant: " +
+                std::to_string(block(blockIndex).fStyle.getFontStyle().GetSlant()) + "\n";
+        }
+        runIndex++;
+        glyphSize += run.size();
+        paragraphInfo += " Run glyph size: " + std::to_string(run.size()) + "\n";
+    }
+    paragraphInfo += " Paragraph glyph size: " + std::to_string(glyphSize);
+    uint32_t lineIndex = 1;
+    for (auto& line : fLines) {
+        auto runs = line.getLineAllRuns();
+        auto runSize = runs.size();
+        if (runSize !=0 ) {
+            paragraphInfo += " Line[" + std::to_string(lineIndex) + "] run range: [" +
+                std::to_string(runs[0]) + "-" + std::to_string(runs[runSize - 1]) + "]\n";
+        }
+        lineIndex++;
+    }
+    paragraphInfo += "\n";
+    return paragraphInfo;
+}
+#endif
 
 }  // namespace textlayout
 }  // namespace skia
