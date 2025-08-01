@@ -89,6 +89,8 @@ public:
     virtual void setSkipTextBlobDrawing(bool state) = 0;
 
     virtual bool isRunCombinated() const = 0;
+
+    virtual bool canPaintAllText() const = 0;
 #endif
 
     virtual void layout(SkScalar width) = 0;
