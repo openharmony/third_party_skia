@@ -252,6 +252,10 @@ public:
     void getRectsForPlaceholders(std::vector<TextBox>& boxes);
     PositionWithAffinity getGlyphPositionAtCoordinate(SkScalar dx);
 
+#ifdef OHOS_SUPPORT
+    TextLine::ClipContext getRunClipContextByRange(
+        const Run* run, TextRange textRange, TextLine::TextAdjustment textAdjustment, SkScalar textStartInLine) const;
+#endif
     ClipContext measureTextInsideOneRun(TextRange textRange,
                                         const Run* run,
                                         SkScalar runOffsetInLine,
