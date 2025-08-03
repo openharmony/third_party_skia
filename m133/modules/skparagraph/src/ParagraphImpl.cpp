@@ -2146,11 +2146,12 @@ std::vector<TextBlobRecordInfo> ParagraphImpl::getTextBlobRecordInfo()
 
 bool ParagraphImpl::canPaintAllText() const
 {
-    bool hasEllipsis = false;
     for (auto& line : fLines) {
-        hasEllipsis = hasEllipsis || (line.ellipsis() != nullptr);
+        if (line.ellipsis() != nullptr) {
+            return false;
+        }
     }
-    return !hasEllipsis&&!fExceededMaxLines;
+    return !fExceededMaxLines;
 }
 #endif
 TArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
