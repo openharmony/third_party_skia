@@ -498,8 +498,13 @@ std::tuple<bool, ClusterIndex, ClusterIndex> Run::findLimitingClusters(TextRange
         clusterRange.end = fOwner->clusterIndex(text.end - 1);
     } else {
         // RTL: (start:end]
+#ifdef ENABLE_TEXT_ENHANCE
+        clusterRange.start = fOwner->clusterIndex(text.end - 1);
+        clusterRange.end = fOwner->clusterIndex(text.start);
+#else
         clusterRange.start = fOwner->clusterIndex(text.end);
         clusterRange.end = fOwner->clusterIndex(text.start + 1);
+#endif
         found = clusterRange.end != fClusterRange.start;
     }
 

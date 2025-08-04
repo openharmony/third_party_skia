@@ -1085,17 +1085,17 @@ void OneLineShaper::adjustRange(GlyphRange& glyphs, TextRange& textRange) {
             }
         }
     } else {
-        while (glyphs.start > 0 && clusterIndex(glyphs.start - 1) < textRange.end) {
+        while (glyphs.start > 0 && clusterIndex(glyphs.start) < textRange.end) {
             glyphs.start--;
             if (glyphs.start == 0) {
                 break;
             }
-            ClusterIndex currentIndex = clusterIndex(glyphs.start - 1);
+            ClusterIndex currentIndex = clusterIndex(glyphs.start);
             if (currentIndex > textRange.end) {
                 textRange.end = currentIndex;
             }
         }
-        while (glyphs.end < fCurrentRun->size() && clusterIndex(glyphs.end) > textRange.start) {
+        while (glyphs.end < fCurrentRun->size() && clusterIndex(glyphs.end + 1) > textRange.start) {
             glyphs.end++;
             ClusterIndex currentIndex = clusterIndex(glyphs.end);
             if (currentIndex < textRange.start) {
