@@ -2144,6 +2144,16 @@ std::vector<TextBlobRecordInfo> ParagraphImpl::getTextBlobRecordInfo()
     }
     return textBlobRecordInfos;
 }
+
+bool ParagraphImpl::canPaintAllText() const
+{
+    for (auto& line : fLines) {
+        if (line.ellipsis() != nullptr) {
+            return false;
+        }
+    }
+    return !fExceededMaxLines;
+}
 #endif
 TArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
     textRange = textRange.intersection({0, fText.size()});

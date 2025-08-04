@@ -2006,6 +2006,16 @@ std::vector<TextBlobRecordInfo> ParagraphImpl::getTextBlobRecordInfo()
     }
     return textBlobRecordInfos;
 }
+
+bool ParagraphImpl::canPaintAllText() const
+{
+    for (auto& line : fLines) {
+        if (line.ellipsis() != nullptr) {
+            return false;
+        }
+    }
+    return !fExceededMaxLines;
+}
 #endif
 
 SkTArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
