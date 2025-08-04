@@ -252,17 +252,17 @@ static inline void sk_noop(Args...) {}
     #define TRACE_COUNTER1(cg, n, value) TRACE_EMPTY(cg, n, value)
     #define TRACE_COUNTER2(cg, n, v1n, v1v, v2n, v2v) TRACE_EMPTY(cg, n, v1n, v1v, v2n, v2v)
 
-    #define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
-    #define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY
-    #define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
-    #define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
+    #define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY(name)
+    #define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY(fmt, ##__VA_ARGS__)
+    #define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY(fmt, ##__VA_ARGS__)
+    #define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY(category_group, name)
 
 #elif defined(SK_ANDROID_FRAMEWORK_USE_PERFETTO)
 
-#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
-#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY
-#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
-#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY(name)
+#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY(fmt, ##__VA_ARGS__)
+#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY(fmt, ##__VA_ARGS__)
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY(category_group, name)
 
 namespace skia_private {
     // ATrace can't accept ::perfetto::DynamicString or ::perfetto::StaticString, so any trace event
@@ -718,10 +718,10 @@ private:
 #define ATRACE_ANDROID_FRAMEWORK(fmt, ...) TRACE_EMPTY_FMT(fmt, ##__VA_ARGS__)
 #define ATRACE_ANDROID_FRAMEWORK_ALWAYS(fmt, ...) TRACE_EMPTY_FMT(fmt, ##__VA_ARGS__)
 
-#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY
-#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY
-#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY
-#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY
+#define HITRACE_OHOS_NAME_ALWAYS(name) TRACE_EMPTY(name)
+#define HITRACE_OHOS_NAME_FMT_LEVEL(debugLevel, fmt, ...) TRACE_EMPTY(fmt, ##__VA_ARGS__)
+#define HITRACE_OHOS_NAME_FMT_ALWAYS(fmt, ...) TRACE_EMPTY(fmt, ##__VA_ARGS__)
+#define SKIA_OHOS_TRACE_PRIV(category_group, name) TRACE_EMPTY(category_group, name)
 
 // Records a pair of begin and end events called "name" for the current scope, with 0, 1 or 2
 // associated arguments. If the category is not enabled, then this does nothing.
