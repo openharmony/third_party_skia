@@ -51,6 +51,10 @@ if (skia_use_system_libjpeg_turbo2) {
       defines += [ "USE_CLZ_INTRINSIC" ]  # Cuts a 64K table.
     }
 
+    if (is_ohos) {
+      defines += [ "SK_ENABLE_HI_JPEG" ]
+    }
+
     sources = [
       "../externals/libjpeg-turbo/jaricom.c",
       "../externals/libjpeg-turbo/jcapimin.c",
