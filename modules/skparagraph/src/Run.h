@@ -412,10 +412,10 @@ void Run::iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor vis
         }
     } else {
         size_t glyph = glyphRange.end;
-        size_t cluster = this->clusterIndex(glyphRange.end - 1);
+        size_t cluster = this->clusterIndex(glyphRange.end);
         int32_t glyphStart = std::max((int32_t)glyphRange.start, 0);
         for (int32_t start = glyphRange.end - 1; start >= glyphStart; --start) {
-            size_t nextCluster = start == 0 ? this->fUtf8Range.end() : this->clusterIndex(start - 1);
+            size_t nextCluster = start == 0 ? this->fUtf8Range.end() : this->clusterIndex(start);
             if (nextCluster <= cluster) {
                 continue;
             }
