@@ -23,7 +23,8 @@
             "skia_feature_wuji_enable",
             "skia_feature_ace_enable_gpu",
             "skia_feature_upgrade",
-            "skia_feature_hispeed_plugin"
+            "skia_feature_hispeed_plugin",
+            "skia_feature_use_vulkan"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "",
