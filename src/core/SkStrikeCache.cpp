@@ -54,9 +54,7 @@ void SkStrikeCache::RemoveStrikeByUniqueID(uint32_t uniqueID) {
 
 void SkStrikeCache::removeStrikeByUniqueID(uint32_t uniqueID) {
     SkAutoMutexExclusive ac(fLock);
-
     std::vector<SkStrike*> strikes;
-
     fStrikeLookup.foreach([&strikes, uniqueID](sk_sp<SkStrike>* item) {
         if (item && (*item) &&(*item)->strikeSpec().typeface().uniqueID() == uniqueID) {
             strikes.push_back(item->get());
@@ -64,7 +62,7 @@ void SkStrikeCache::removeStrikeByUniqueID(uint32_t uniqueID) {
     });
 
     if (!strikes.empty()) {
-        fUniqueIDs.emplace(uniqueID);
+        fRemovedUniqueIds.emplace(uniqueID);
     }
 
     for (SkStrike* strike : strikes) {
@@ -191,7 +189,7 @@ auto SkStrikeCache::internalCreateStrike(
     auto strike =
         sk_make_sp<SkStrike>(this, strikeSpec, std::move(scaler), maybeMetrics, std::move(pinner));
 #ifdef OHOS_SUPPORT
-    if (!fUniqueIDs.count(strikeSpec.typeface().uniqueID())) {
+    if (!fRemovedUniqueIds.count(strikeSpec.typeface().uniqueID())) {
         this->internalAttachToHead(strike);
     }
 #else

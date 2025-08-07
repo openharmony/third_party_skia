@@ -1456,11 +1456,11 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     void removeByUniqueID(uint32_t uniqueID) {
         if (fLRUCache.removePublic(uniqueID) == 0) {
-            fUniqueIDs.emplace(uniqueID);
+            fRemovedUniqueIds.emplace(uniqueID);
         }
     }
 private:
-    std::unordered_set<uint32_t> fUniqueIDs;
+    std::unordered_set<uint32_t> fRemovedUniqueIds;
 #endif
 private:
     SkLRUCache<SkTypefaceID, HBFont>& fLRUCache;

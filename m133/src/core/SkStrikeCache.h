@@ -61,7 +61,7 @@ public:
     static void RemoveStrikeByUniqueID(uint32_t uniqueID);
     void removeStrikeByUniqueID(uint32_t uniqueID) SK_EXCLUDES(fLock);
 private:
-    std::unordered_set<uint32_t> fUniqueIDs;
+    std::unordered_set<uint32_t> fRemovedUniqueIds;
 public:
 #endif
             

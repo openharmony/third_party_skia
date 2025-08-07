@@ -85,7 +85,7 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     void removeStrikeByUniqueID(uint32_t uniqueID);
 private:
-    std::unordered_set<uint32_t> fUniqueIDs;
+    std::unordered_set<uint32_t> fRemovedUniqueIds;
 public:
 #endif
 

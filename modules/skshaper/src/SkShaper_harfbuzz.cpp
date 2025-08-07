@@ -1491,7 +1491,7 @@ public:
     }
     HBFont* insert(uint32_t fontId, HBFont hbFont) {
 #ifdef USE_SKIA_TXT
-        if (fUniqueIDs.count(fontId)) {
+        if (fRemovedUniqueIds.count(fontId)) {
             return nullptr;
         }
 #endif
@@ -1503,11 +1503,11 @@ public:
 #ifdef USE_SKIA_TXT
     void removeByUniqueID(uint32_t uniqueID) {
         if (fLRUCache.removePublic(uniqueID) == 0) {
-            fUniqueIDs.emplace(uniqueID);
+            fRemovedUniqueIds.emplace(uniqueID);
         }
     }
 private:
-    std::unordered_set<uint32_t> fUniqueIDs;
+    std::unordered_set<uint32_t> fRemovedUniqueIds;
 #endif
 private:
     SkLRUCache<uint32_t, HBFont>& fLRUCache;

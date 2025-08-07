@@ -44,7 +44,7 @@ void StrikeCache::removeStrikeByUniqueID(uint32_t uniqueID) {
     });
 
     if (!strikes.empty()) {
-        fUniqueIDs.emplace(uniqueID);
+        fRemovedUniqueIds.emplace(uniqueID);
     }
 
     for (TextStrike* strike : strikes) {
@@ -91,7 +91,7 @@ sk_sp<TextStrike> StrikeCache::internalFindStrikeOrNull(const SkDescriptor& desc
 sk_sp<TextStrike> StrikeCache::generateStrike(const SkStrikeSpec& strikeSpec) {
     sk_sp<TextStrike> strike = sk_make_sp<TextStrike>(this, strikeSpec);
 #ifdef ENABLE_TEXT_ENHANCE
-    if (fUniqueIDs.count(strikeSpec.typeface().uniqueID())) {
+    if (fRemovedUniqueIds.count(strikeSpec.typeface().uniqueID())) {
         return strike;
     }
 #endif
