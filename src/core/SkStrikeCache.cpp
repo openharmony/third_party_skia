@@ -48,21 +48,21 @@ SkScopedStrikeForGPU SkStrikeCache::findOrCreateScopedStrike(const SkStrikeSpec&
 }
 
 #ifdef OHOS_SUPPORT
-void SkStrikeCache::RemoveStrikeByUniqueID(uint32_t uniqueID) {
-    GlobalStrikeCache()->removeStrikeByUniqueID(uniqueID);
+void SkStrikeCache::RemoveStrikeByUniqueId(uint32_t uniqueId) {
+    GlobalStrikeCache()->removeStrikeByUniqueId(uniqueId);
 }
 
-void SkStrikeCache::removeStrikeByUniqueID(uint32_t uniqueID) {
+void SkStrikeCache::removeStrikeByUniqueId(uint32_t uniqueId) {
     SkAutoMutexExclusive ac(fLock);
     std::vector<SkStrike*> strikes;
-    fStrikeLookup.foreach([&strikes, uniqueID](sk_sp<SkStrike>* item) {
-        if (item && (*item) &&(*item)->strikeSpec().typeface().uniqueID() == uniqueID) {
+    fStrikeLookup.foreach([&strikes, uniqueId](sk_sp<SkStrike>* item) {
+        if (item && (*item) &&(*item)->strikeSpec().typeface().uniqueID() == uniqueId) {
             strikes.push_back(item->get());
         }
     });
 
     if (!strikes.empty()) {
-        fRemovedUniqueIds.emplace(uniqueID);
+        fRemovedUniqueIds.emplace(uniqueId);
     }
 
     for (SkStrike* strike : strikes) {

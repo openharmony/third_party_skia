@@ -1501,9 +1501,9 @@ public:
         fLRUCache.reset();
     }
 #ifdef USE_SKIA_TXT
-    void removeByUniqueID(uint32_t uniqueID) {
-        if (fLRUCache.removePublic(uniqueID) == 0) {
-            fRemovedUniqueIds.emplace(uniqueID);
+    void removeByUniqueId(uint32_t uniqueId) {
+        if (fLRUCache.removePublic(uniqueId) == 0) {
+            fRemovedUniqueIds.emplace(uniqueId);
         }
     }
 private:
@@ -1787,9 +1787,9 @@ void SkShaper::PurgeHarfBuzzCache() {
     cache.reset();
 }
 #ifdef USE_SKIA_TXT
-void SkShaper::RemoveCacheByUniqueID(uint32_t uniqueID) {
+void SkShaper::RemoveCacheByUniqueId(uint32_t uniqueId) {
     HBLockedFaceCache cache = get_hbFace_cache();
-    cache.removeByUniqueID(uniqueID);
+    cache.removeByUniqueId(uniqueId);
 }
 } // namespace SkiaRsText
 #endif

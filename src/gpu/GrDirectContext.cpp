@@ -212,7 +212,7 @@ void GrDirectContext::freeGpuResources() {
 }
 
 #ifdef OHOS_SUPPORT
-void GrDirectContext::freeCpuCache(uint32_t uniqueID) {
+void GrDirectContext::freeCpuCache(uint32_t uniqueId) {
     ASSERT_SINGLE_OWNER
 
     if (this->abandoned() || fStrikeCache == nullptr) {

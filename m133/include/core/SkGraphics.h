@@ -165,7 +165,7 @@ public:
     static OpenTypeSVGDecoderFactory SetOpenTypeSVGDecoderFactory(OpenTypeSVGDecoderFactory);
     static OpenTypeSVGDecoderFactory GetOpenTypeSVGDecoderFactory();
 #ifdef ENABLE_TEXT_ENHANCE
-    static void RemoveCacheByUniqueID(uint32_t uniqueID);
+    static void RemoveCacheByUniqueId(uint32_t uniqueId);
 #endif
 };
 

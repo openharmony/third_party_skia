@@ -63,7 +63,7 @@ public:
     static std::unique_ptr<SkShaper> MakeShapeThenWrap(std::shared_ptr<RSFontMgr> = nullptr);
     static std::unique_ptr<SkShaper> MakeShapeDontWrapOrReorder(std::unique_ptr<SkUnicode> unicode,
                                                                 std::shared_ptr<RSFontMgr> = nullptr);
-    static void RemoveCacheByUniqueID(uint32_t uniqueID);
+    static void RemoveCacheByUniqueId(uint32_t uniqueId);
 #endif
     static void PurgeHarfBuzzCache();
     #endif

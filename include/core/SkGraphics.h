@@ -145,7 +145,7 @@ public:
      */
     static void AllowJIT();
 #ifdef OHOS_SUPPORT
-    static void RemoveCacheByUniqueID(uint32_t uniqueID);
+    static void RemoveCacheByUniqueId(uint32_t uniqueId);
 #endif
 };
 

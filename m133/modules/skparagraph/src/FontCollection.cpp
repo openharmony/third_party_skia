@@ -221,9 +221,9 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
     return typefaces;
 }
 
-void FontCollection::removeCacheByUniqueID(uint32_t uniqueID) {
-    SkGraphics::RemoveCacheByUniqueID(uniqueID);
-    SkShapers::HB::RemoveCacheByUniqueID(uniqueID);
+void FontCollection::removeCacheByUniqueId(uint32_t uniqueId) {
+    SkGraphics::RemoveCacheByUniqueId(uniqueId);
+    SkShapers::HB::RemoveCacheByUniqueId(uniqueId);
     std::unique_lock writeLock(mutex_);
     fTypefaces.clear();
     fParagraphCache.reset();

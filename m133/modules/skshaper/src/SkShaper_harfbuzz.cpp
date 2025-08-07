@@ -1454,9 +1454,9 @@ public:
         fLRUCache.reset();
     }
 #ifdef ENABLE_TEXT_ENHANCE
-    void removeByUniqueID(uint32_t uniqueID) {
-        if (fLRUCache.removePublic(uniqueID) == 0) {
-            fRemovedUniqueIds.emplace(uniqueID);
+    void removeByUniqueId(uint32_t uniqueId) {
+        if (fLRUCache.removePublic(uniqueId) == 0) {
+            fRemovedUniqueIds.emplace(uniqueId);
         }
     }
 private:
@@ -1786,9 +1786,9 @@ void PurgeCaches() {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
-void RemoveCacheByUniqueID(uint32_t uniqueID) {
+void RemoveCacheByUniqueId(uint32_t uniqueId) {
     HBLockedFaceCache cache = get_hbFace_cache();
-    cache.removeByUniqueID(uniqueID);
+    cache.removeByUniqueId(uniqueId);
 }
 #endif
 }  // namespace SkShapers::HB

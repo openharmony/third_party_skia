@@ -34,17 +34,17 @@ void StrikeCache::freeAll() {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
-void StrikeCache::removeStrikeByUniqueID(uint32_t uniqueID) {
+void StrikeCache::removeStrikeByUniqueId(uint32_t uniqueId) {
     std::vector<TextStrike*> strikes;
 
-    fCache.foreach([&strikes, uniqueID](const sk_sp<TextStrike>* item) {
-        if (item && (*item) && (*item)->strikeSpec().typeface().uniqueID() == uniqueID) {
+    fCache.foreach([&strikes, uniqueId](const sk_sp<TextStrike>* item) {
+        if (item && (*item) && (*item)->strikeSpec().typeface().uniqueID() == uniqueId) {
             strikes.push_back(item->get());
         }
     });
 
     if (!strikes.empty()) {
-        fRemovedUniqueIds.emplace(uniqueID);
+        fRemovedUniqueIds.emplace(uniqueId);
     }
 
     for (TextStrike* strike : strikes) {

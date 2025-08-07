@@ -53,7 +53,7 @@ public:
     std::shared_ptr<RSTypeface> defaultFallback();
     std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface,
         const std::optional<FontArguments>& fontArgs);
-    void removeCacheByUniqueID(uint32_t uniqueID);
+    void removeCacheByUniqueId(uint32_t uniqueId);
 #else
     void setAssetFontManager(sk_sp<SkFontMgr> fontManager);
     void setDynamicFontManager(sk_sp<SkFontMgr> fontManager);

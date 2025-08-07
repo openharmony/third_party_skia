@@ -132,7 +132,7 @@ void SkGraphics::AllowJIT() {
 }
 
 #ifdef OHOS_SUPPORT
-void SkGraphics::RemoveCacheByUniqueID(uint32_t uniqueID) {
-    SkStrikeCache::RemoveStrikeByUniqueID(uniqueID);
+void SkGraphics::RemoveCacheByUniqueId(uint32_t uniqueId) {
+    SkStrikeCache::RemoveStrikeByUniqueId(uniqueId);
 }
 #endif

@@ -58,8 +58,8 @@ public:
             const SkStrikeSpec& strikeSpec) override SK_EXCLUDES(fLock);
 
 #ifdef ENABLE_TEXT_ENHANCE
-    static void RemoveStrikeByUniqueID(uint32_t uniqueID);
-    void removeStrikeByUniqueID(uint32_t uniqueID) SK_EXCLUDES(fLock);
+    static void RemoveStrikeByUniqueId(uint32_t uniqueId);
+    void removeStrikeByUniqueId(uint32_t uniqueId) SK_EXCLUDES(fLock);
 private:
     std::unordered_set<uint32_t> fRemovedUniqueIds;
 public:

@@ -235,7 +235,7 @@ public:
      * Frees CPU cache created by the context. Can be called to reduce CPU memory
      * pressure.
      */
-    void freeCpuCache(uint32_t uniqueID);
+    void freeCpuCache(uint32_t uniqueId);
 #endif
 
     /**
