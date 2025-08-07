@@ -104,7 +104,7 @@ declare_args() {
     skia_use_vulkan = false
     if (skia_feature_product == "phone" || skia_feature_product == "pc" ||
         skia_feature_product == "tablet" ||
-        skia_feature_product == "wearable") {
+        skia_feature_product == "wearable" || skia_feature_use_vulkan) {
       skia_use_vulkan = true
       skia_vk_enable_partialrender = true
     }
