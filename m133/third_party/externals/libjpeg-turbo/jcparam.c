@@ -70,6 +70,28 @@ jpeg_add_quant_table(j_compress_ptr cinfo, int which_tbl,
  * The spec says that the values given produce "good" quality, and
  * when divided by 2, "very good" quality.
  */
+#ifdef SK_ENABLE_HI_JPEG
+static const unsigned int std_luminance_quant_tbl[DCTSIZE2] = {
+  15,  15,  18,  22,  15,  46,  96,  46,
+  12,  20,  22,  28,  31,  46,  43,  76,
+   7,  22,  33,  32,  68,  65,  91, 121,
+  22,  22,  28,  61,  38,  43, 137,  65,
+  29,  22,  22,  65,  65,  68, 134,  99,
+  84,  38,  53, 103,  84,  73, 134, 156,
+  73,  68, 106,  61, 111, 152, 181, 139,
+  61, 127, 111, 149, 129, 187, 111, 180
+};
+static const unsigned int std_chrominance_quant_tbl[DCTSIZE2] = {
+  15,  15,  46,  38,  57,  38, 121, 141,
+  22,  15,  76,  53,  68,  81, 114, 121,
+  15, 103,  61, 114,  76, 127, 118, 111,
+  99,  43,  68, 137,  91, 137,  96, 118,
+  53,  38,  57,  73, 127, 114, 182, 190,
+  61,  96,  76,  99,  76, 134, 149, 174,
+ 141, 134,  88, 114, 137, 121, 174,   4,
+  84,  99,  73, 129, 170, 167, 156, 182
+};
+#else
 static const unsigned int std_luminance_quant_tbl[DCTSIZE2] = {
   16,  11,  10,  16,  24,  40,  51,  61,
   12,  12,  14,  19,  26,  58,  60,  55,
@@ -90,6 +112,7 @@ static const unsigned int std_chrominance_quant_tbl[DCTSIZE2] = {
   99,  99,  99,  99,  99,  99,  99,  99,
   99,  99,  99,  99,  99,  99,  99,  99
 };
+#endif
 
 
 #if JPEG_LIB_VERSION >= 70

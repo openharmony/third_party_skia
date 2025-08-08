@@ -253,6 +253,10 @@ static_library("libjpeg") {
     defines += [ "HAS_CHROMIUM" ]
   }
 
+  if (is_ohos) {
+    defines += [ "SK_ENABLE_HI_JPEG" ]
+  }
+
   configs += [ ":libjpeg_config" ]
 
   public_configs = [ ":libjpeg_config" ]
