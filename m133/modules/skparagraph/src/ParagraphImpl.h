@@ -282,6 +282,7 @@ public:
     std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() override;
     bool hasSkipTextBlobDrawing() const override { return fSkipTextBlobDrawing; }
     void setSkipTextBlobDrawing(bool state) override { fSkipTextBlobDrawing = state; }
+    bool canPaintAllText() const override;
 #else
     void setState(InternalState state);
 #endif
@@ -338,6 +339,7 @@ public:
     InternalLineMetrics getStrutMetrics() const { return fStrutMetrics; }
 
     BlockRange findAllBlocks(TextRange textRange);
+
     void resetShifts() {
         for (auto& run : fRuns) {
             run.resetJustificationShifts();

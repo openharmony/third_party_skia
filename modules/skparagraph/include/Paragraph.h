@@ -90,6 +90,8 @@ public:
 
     virtual bool isRunCombinated() const = 0;
 
+    virtual bool canPaintAllText() const = 0;
+
     virtual std::string_view GetDumpInfo() = 0;
 #endif
 

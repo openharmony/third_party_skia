@@ -248,6 +248,7 @@ public:
     std::vector<TextBlobRecordInfo> getTextBlobRecordInfo() override;
     bool hasSkipTextBlobDrawing() const override { return fSkipTextBlobDrawing; }
     void setSkipTextBlobDrawing(bool state) override { fSkipTextBlobDrawing = state; }
+    bool canPaintAllText() const override;
 #else
     void setState(InternalState state);
 #endif

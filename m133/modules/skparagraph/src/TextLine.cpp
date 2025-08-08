@@ -41,7 +41,9 @@
 #ifdef ENABLE_TEXT_ENHANCE
 #include <cstddef>
 #include <numeric>
+#include <sstream>
 #include <vector>
+
 #include "include/TextGlobalConfig.h"
 #include "TextLineJustify.h"
 #include "TextParameter.h"
@@ -1682,8 +1684,146 @@ void TextLine::measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeG
         }
     }
 }
-#endif
 
+namespace {
+std::string toHexString(int32_t decimal) {
+    std::stringstream ss;
+    ss << std::hex << decimal;
+    return ss.str();
+}
+
+void logUnicodeDataAroundIndex(ParagraphImpl* fOwner, TextIndex index) {
+    const auto& unicodeText = fOwner->unicodeText();
+    if (unicodeText.size() == 0) {
+        return;
+    }
+    size_t unicodeIndex = fOwner->getUnicodeIndex(index);
+
+    size_t start = (unicodeIndex > 4) ? unicodeIndex - 4 : 0;
+    size_t end = std::min(unicodeIndex + 4, unicodeText.size() - 1);
+
+    std::string logMsg = "Unicode around index " + std::to_string(index) + ": [";
+    for (size_t i = start; i <= end; ++i) {
+        SkUnichar unicode = unicodeText[i];
+        logMsg += (i == unicodeIndex) ? "{" : "";
+        logMsg += "U+" + toHexString(unicode);
+        logMsg += (i == unicodeIndex) ? "}" : "";
+        if (i < end) {
+            logMsg += ", ";
+        }
+    }
+    logMsg += "]";
+    TEXT_LOGW_LIMIT3_HOUR("%{public}s", logMsg.c_str());
+}
+
+ClusterIndex getValidClusterIndex(ParagraphImpl* fOwner, const TextIndex& primaryIndex,
+    const TextIndex& fallbackIndex) {
+    // We need to find the best cluster index for the given text index
+    // The primary plan is the original text index, the fallback plan is the next one
+    // We prefer plan primary if clusterIndex is not empty
+    ClusterIndex clusterIndex = fOwner->clusterIndex(primaryIndex);
+    if (clusterIndex == EMPTY_INDEX) {
+        TEXT_LOGW("Warning: clusterIndex is EMPTY_INDEX");
+        logUnicodeDataAroundIndex(fOwner, primaryIndex);
+        clusterIndex = fOwner->clusterIndex(fallbackIndex);
+    }
+    return clusterIndex;
+}
+
+void adjustTextRange(TextRange& textRange, const Run* run, TextLine::TextAdjustment textAdjustment) {
+    while (true) {
+        TextRange updatedTextRange;
+        std::tie(std::ignore, updatedTextRange.start, updatedTextRange.end) = run->findLimitingGlyphClusters(textRange);
+        if ((textAdjustment & TextLine::TextAdjustment::Grapheme) == 0) {
+            textRange = updatedTextRange;
+            break;
+        }
+        std::tie(std::ignore, updatedTextRange.start, updatedTextRange.end) =
+            run->findLimitingGraphemes(updatedTextRange);
+        if (updatedTextRange == textRange) {
+            break;
+        }
+        textRange = updatedTextRange;
+    }
+}
+} // namespace
+
+TextLine::ClipContext TextLine::getRunClipContextByRange(
+    const Run* run, TextRange textRange, TextLine::TextAdjustment textAdjustment, SkScalar textStartInLine) const {
+    ClipContext result = {run, 0, run->size(), 0, SkRect::MakeEmpty(), 0, false};
+    TextRange originalTextRange(textRange); // We need it for proportional measurement
+    // Find [start:end] clusters for the text
+    adjustTextRange(textRange, run, textAdjustment);
+
+    Cluster* start = &fOwner->cluster(getValidClusterIndex(fOwner, textRange.start, originalTextRange.start));
+    Cluster* end = &fOwner->cluster(getValidClusterIndex(fOwner, textRange.end - (textRange.width() == 0 ? 0 : 1),
+        originalTextRange.end - (originalTextRange.width() == 0 ? 0 : 1)));
+
+    if (!run->leftToRight()) {
+        std::swap(start, end);
+    }
+    result.pos = start->startPos();
+    result.size = (end->isHardBreak() ? end->startPos() : end->endPos()) - start->startPos();
+    auto textStartInRun = run->positionX(start->startPos());
+
+    if (!run->leftToRight()) {
+        std::swap(start, end);
+    }
+    // Calculate the clipping rectangle for the text with cluster edges
+    // There are 2 cases:
+    // EOL (when we expect the last cluster clipped without any spaces)
+    // Anything else (when we want the cluster width contain all the spaces -
+    // coming from letter spacing or word spacing or justification)
+    result.clip = SkRect::MakeXYWH(0, sizes().runTop(run, this->fAscentStyle),
+        run->calculateWidth(result.pos, result.pos + result.size, false),
+        run->calculateHeight(this->fAscentStyle, this->fDescentStyle));
+    // Correct the width in case the text edges don't match clusters
+    auto leftCorrection = start->sizeToChar(originalTextRange.start);
+    auto rightCorrection = end->sizeFromChar(originalTextRange.end - 1);
+    result.clippingNeeded = leftCorrection != 0 || rightCorrection != 0;
+    if (run->leftToRight()) {
+        result.clip.fLeft += leftCorrection;
+        result.clip.fRight -= rightCorrection;
+        textStartInLine -= leftCorrection;
+    } else {
+        result.clip.fRight -= leftCorrection;
+        result.clip.fLeft += rightCorrection;
+        textStartInLine -= rightCorrection;
+    }
+    result.clip.offset(textStartInLine, 0);
+    // The text must be aligned with the lineOffset
+    result.fTextShift = textStartInLine - textStartInRun;
+    return result;
+}
+
+TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange, const Run* run, SkScalar runOffsetInLine,
+    SkScalar textOffsetInRunInLine, bool includeGhostSpaces, TextAdjustment textAdjustment) const {
+    ClipContext result = {run, 0, run->size(), 0, SkRect::MakeEmpty(), 0, false};
+
+    if (run->fEllipsis) {
+        // Both ellipsis and placeholders can only be measured as one glyph
+        result.fTextShift = runOffsetInLine;
+        result.clip = SkRect::MakeXYWH(runOffsetInLine, sizes().runTop(run, this->fAscentStyle), run->advance().fX,
+            run->calculateHeight(this->fAscentStyle, this->fDescentStyle));
+        return result;
+    } else if (run->isPlaceholder()) {
+        result.fTextShift = runOffsetInLine;
+        if (SkIsFinite(run->fFontMetrics.fAscent)) {
+            result.clip = SkRect::MakeXYWH(runOffsetInLine, sizes().runTop(run, this->fAscentStyle), run->advance().fX,
+                run->calculateHeight(this->fAscentStyle, this->fDescentStyle));
+        } else {
+            result.clip = SkRect::MakeXYWH(runOffsetInLine, run->fFontMetrics.fAscent, run->advance().fX, 0);
+        }
+        return result;
+    } else if (textRange.empty()) {
+        return result;
+    }
+    auto textStartInLine = runOffsetInLine + textOffsetInRunInLine;
+    result = getRunClipContextByRange(run, textRange, textAdjustment, textStartInLine);
+    measureTextWithSpacesAtTheEnd(result, includeGhostSpaces);
+    return result;
+}
+#else
 TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
                                                         const Run* run,
                                                         SkScalar runOffsetInLine,
@@ -1805,9 +1945,6 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
     result.clip.offset(textStartInLine, 0);
     //SkDebugf("@%f[%f:%f)\n", textStartInLine, result.clip.fLeft, result.clip.fRight);
 
-#ifdef ENABLE_TEXT_ENHANCE
-    measureTextWithSpacesAtTheEnd(result, includeGhostSpaces);
-#else
     if (compareRound(result.clip.fRight, fAdvance.fX, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces) {
         // There are few cases when we need it.
         // The most important one: we measure the text with spaces at the end (or at the beginning in RTL)
@@ -1825,13 +1962,13 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange,
         // (happens with zalgo texts, for instance)
         result.clip.fRight = result.clip.fLeft;
     }
-#endif
 
     // The text must be aligned with the lineOffset
     result.fTextShift = textStartInLine - textStartInRun;
 
     return result;
 }
+#endif
 
 void TextLine::iterateThroughClustersInGlyphsOrder(bool reversed,
                                                    bool includeGhosts,

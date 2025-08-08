@@ -29,6 +29,7 @@
 #include <utility>
 
 #ifdef ENABLE_TEXT_ENHANCE
+#include <sstream>
 #include "trace.h"
 #include "log.h"
 #include "include/TextGlobalConfig.h"
@@ -2147,6 +2148,16 @@ std::vector<TextBlobRecordInfo> ParagraphImpl::getTextBlobRecordInfo()
     }
     return textBlobRecordInfos;
 }
+
+bool ParagraphImpl::canPaintAllText() const
+{
+    for (auto& line : fLines) {
+        if (line.ellipsis() != nullptr) {
+            return false;
+        }
+    }
+    return !fExceededMaxLines;
+}
 #endif
 TArray<TextIndex> ParagraphImpl::countSurroundingGraphemes(TextRange textRange) const {
     textRange = textRange.intersection({0, fText.size()});
@@ -2900,46 +2911,44 @@ std::string_view ParagraphImpl::GetState()
 
 std::string_view ParagraphImpl::GetDumpInfo()
 {
-    std::string paragraphInfo = "This is paragraph dump info:\n";
-    paragraphInfo += "Text size: " + std::to_string(fText.size()) + " fState: " + std::string(GetState()) +
-        " fSkipTextBlobDrawing: " + (fSkipTextBlobDrawing ? "true" : "false") + "\n";
+    static std::string result;
+    std::ostringstream paragraphInfo;
+    paragraphInfo << "This is paragraph dump info:\n";
+    paragraphInfo << "Text size: " << fText.size() << " fState: " << GetState()
+                  << " fSkipTextBlobDrawing: " << (fSkipTextBlobDrawing ? "true" : "false") << "\n";
     uint32_t glyphSize = 0;
-    uint32_t runIndex = 1;
+    uint32_t runIndex = 0;
     for (auto& run : fRuns) {
-        paragraphInfo += " Run[" + std::to_string(runIndex) + "] text range: [" +
-            std::to_string(run.textRange().start) + "-" +
-            std::to_string(run.textRange().end) + ")" + " cluster range: [" +
-            std::to_string(run.clusterRange().start) + "-" + std::to_string(run.clusterRange().end) + ")";
         auto blockRange = findAllBlocks(run.textRange());
-        BlockIndex blockIndex = blockRange.start;
-        for (; blockIndex < blockRange.end; blockIndex++) {
-            paragraphInfo += " Block[" + std::to_string(blockIndex) + "] text range[" +
-                std::to_string(block(blockIndex).fRange.start) + "-" +
-                std::to_string(block(blockIndex).fRange.end) + ")" + " font size: " +
-                std::to_string(block(blockIndex).fStyle.getFontSize()) + " font color: " +
-                std::to_string(block(blockIndex).fStyle.getColor()) + " font height: " +
-                std::to_string(block(blockIndex).fStyle.getHeight()) + " font weight: " +
-                std::to_string(block(blockIndex).fStyle.getFontStyle().GetWeight()) + " font width: " +
-                std::to_string(block(blockIndex).fStyle.getFontStyle().GetWidth()) + " font slant: " +
-                std::to_string(block(blockIndex).fStyle.getFontStyle().GetSlant()) + "\n";
-        }
+        paragraphInfo << "Run[" << runIndex << "]" << " glyph size: " << run.size()
+                      << " text range: [" << run.textRange().start << "-" << run.textRange().end << ")\n";
         runIndex++;
         glyphSize += run.size();
-        paragraphInfo += " Run glyph size: " + std::to_string(run.size()) + "\n";
     }
-    paragraphInfo += " Paragraph glyph size: " + std::to_string(glyphSize);
-    uint32_t lineIndex = 1;
+    uint32_t blockIndex = 0;
+    for (auto& block : fTextStyles) {
+        paragraphInfo << "Block[" << blockIndex << "]"
+                      << " text range[" << block.fRange.start << "-"<< block.fRange.end << ")"
+                      << " font size: " << block.fStyle.getFontSize()
+                      << " font color: " << std::hex << block.fStyle.getColor() << std::dec
+                      << " font height: " << block.fStyle.getHeight()
+                      << " font weight: " << block.fStyle.getFontStyle().GetWeight()
+                      << " font width: " << block.fStyle.getFontStyle().GetWidth()
+                      << " font slant: " << block.fStyle.getFontStyle().GetSlant() << "\n";
+        blockIndex++;
+    }
+    paragraphInfo << "Paragraph glyph size: " << glyphSize << "\n";
+    uint32_t lineIndex = 0;
     for (auto& line : fLines) {
         auto runs = line.getLineAllRuns();
         auto runSize = runs.size();
         if (runSize !=0 ) {
-            paragraphInfo += " Line[" + std::to_string(lineIndex) + "] run range: [" +
-                std::to_string(runs[0]) + "-" + std::to_string(runs[runSize - 1]) + "]\n";
+            paragraphInfo << "Line[" << lineIndex << "] run range: [" << runs[0] << "-" << runs[runSize - 1] << "]\n";
         }
         lineIndex++;
     }
-    paragraphInfo += "\n";
-    return paragraphInfo;
+    result = paragraphInfo.str();
+    return result;
 }
 #endif
 
