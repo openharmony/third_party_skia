@@ -92,7 +92,7 @@ public:
 
     virtual bool canPaintAllText() const = 0;
 
-    virtual std::string_view GetDumpInfo() = 0;
+    virtual std::string GetDumpInfo() const = 0;
 #endif
 
     virtual void layout(SkScalar width) = 0;

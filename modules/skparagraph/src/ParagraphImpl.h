@@ -137,7 +137,7 @@ public:
 #ifdef OHOS_SUPPORT
     TextRange getEllipsisTextRange() override;
     bool isRunCombinated() const override { return fRuns.size() < fTextStyles.size(); }
-    std::string_view GetDumpInfo() override;
+    std::string GetDumpInfo() const override;
 #endif
 
     TextLine& addLine(SkVector offset, SkVector advance,
@@ -415,7 +415,7 @@ private:
     TextBox getEmptyTextRect(RectHeightStyle rectHeightStyle) const;
     size_t prefixByteCountUntilChar(size_t index);
     void copyProperties(const ParagraphImpl& source);
-    std::string_view GetState();
+    std::string_view GetState() const;
 #endif
 
     // Input

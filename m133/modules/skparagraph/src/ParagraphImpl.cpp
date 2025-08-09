@@ -2896,7 +2896,7 @@ bool ParagraphImpl::containsColorFontOrBitmap(SkTextBlob* textBlob) {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
-std::string_view ParagraphImpl::GetState()
+std::string_view ParagraphImpl::GetState() const
 {
     static std::unordered_map<InternalState, std::string_view> state = {
         {kUnknown, "Unknow"},
@@ -2909,9 +2909,8 @@ std::string_view ParagraphImpl::GetState()
     return state[fState];
 }
 
-std::string_view ParagraphImpl::GetDumpInfo()
+std::string ParagraphImpl::GetDumpInfo() const
 {
-    static std::string result;
     std::ostringstream paragraphInfo;
     paragraphInfo << "This is paragraph dump info:\n";
     paragraphInfo << "Text size: " << fText.size() << " fState: " << GetState()
@@ -2919,7 +2918,6 @@ std::string_view ParagraphImpl::GetDumpInfo()
     uint32_t glyphSize = 0;
     uint32_t runIndex = 0;
     for (auto& run : fRuns) {
-        auto blockRange = findAllBlocks(run.textRange());
         paragraphInfo << "Run[" << runIndex << "]" << " glyph size: " << run.size()
                       << " text range: [" << run.textRange().start << "-" << run.textRange().end << ")\n";
         runIndex++;
@@ -2947,8 +2945,7 @@ std::string_view ParagraphImpl::GetDumpInfo()
         }
         lineIndex++;
     }
-    result = paragraphInfo.str();
-    return result;
+    return paragraphInfo.str();
 }
 #endif
 
