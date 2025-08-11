@@ -16,6 +16,7 @@
 #define TEXTLINE_JUSTIFY_DEFINED
 
 #ifdef OHOS_SUPPORT
+#include <unordered_set>
 #include "include/core/SkScalar.h"
 #include "modules/skparagraph/src/TextLine.h"
 
@@ -43,9 +44,9 @@ private:
     };
 
     struct ClusterLevelsIndices {
-        std::vector<HighLevelInfo> highLevelIndices;
-        std::vector<MiddleLevelInfo> middleLevelIndices;
-        std::vector<ClusterIndex> LowLevelIndices;
+        std::unordered_map<ClusterIndex, HighLevelInfo> highLevelIndices;
+        std::unordered_map<ClusterIndex, MiddleLevelInfo> middleLevelIndices;
+        std::unordered_set<ClusterIndex> LowLevelIndices;
         SkScalar middleLevelOffset{0.0f};
         SkScalar lowLevelOffset{0.0f};
 
