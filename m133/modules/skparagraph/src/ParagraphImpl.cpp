@@ -29,6 +29,7 @@
 #include <utility>
 
 #ifdef ENABLE_TEXT_ENHANCE
+#include <sstream>
 #include "trace.h"
 #include "log.h"
 #include "include/TextGlobalConfig.h"
@@ -626,6 +627,7 @@ void ParagraphImpl::splitRuns() {
 void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 #ifdef ENABLE_TEXT_ENHANCE
     TEXT_TRACE_FUNC();
+    fState = kDrawn;
 #endif
     CanvasParagraphPainter painter(canvas);
     paint(&painter, x, y);
@@ -634,6 +636,7 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 #ifdef ENABLE_TEXT_ENHANCE
     TEXT_TRACE_FUNC();
+    fState = kDrawn;
     // Reset all text style vertical shift
     for (Block& block : fTextStyles) {
         block.fStyle.setVerticalAlignShift(0.0);
@@ -650,6 +653,7 @@ void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 #ifdef ENABLE_TEXT_ENHANCE
 void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) {
     TEXT_TRACE_FUNC();
+    fState = kDrawn;
     auto& style = fTextStyles[0].fStyle;
     float align = 0.0f;
     switch (paragraphStyle().getTextAlign()) {
@@ -2890,6 +2894,60 @@ bool ParagraphImpl::containsColorFontOrBitmap(SkTextBlob* textBlob) {
     }
     return flag;
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+std::string_view ParagraphImpl::GetState() const
+{
+    static std::unordered_map<InternalState, std::string_view> state = {
+        {kUnknown, "Unknow"},
+        {kIndexed, "Indexed"},
+        {kShaped, "Shaped"},
+        {kLineBroken, "LineBroken"},
+        {kFormatted, "Formatted"},
+        {kDrawn, "Drawn"},
+    };
+    return state[fState];
+}
+
+std::string ParagraphImpl::GetDumpInfo() const
+{
+    std::ostringstream paragraphInfo;
+    paragraphInfo << "This is paragraph dump info:\n";
+    paragraphInfo << "Text size: " << fText.size() << " fState: " << GetState()
+                  << " fSkipTextBlobDrawing: " << (fSkipTextBlobDrawing ? "true" : "false") << "\n";
+    uint32_t glyphSize = 0;
+    uint32_t runIndex = 0;
+    for (auto& run : fRuns) {
+        paragraphInfo << "Run[" << runIndex << "]" << " glyph size: " << run.size()
+                      << " text range: [" << run.textRange().start << "-" << run.textRange().end << ")\n";
+        runIndex++;
+        glyphSize += run.size();
+    }
+    uint32_t blockIndex = 0;
+    for (auto& block : fTextStyles) {
+        paragraphInfo << "Block[" << blockIndex << "]"
+                      << " text range[" << block.fRange.start << "-"<< block.fRange.end << ")"
+                      << " font size: " << block.fStyle.getFontSize()
+                      << " font color: " << std::hex << block.fStyle.getColor() << std::dec
+                      << " font height: " << block.fStyle.getHeight()
+                      << " font weight: " << block.fStyle.getFontStyle().GetWeight()
+                      << " font width: " << block.fStyle.getFontStyle().GetWidth()
+                      << " font slant: " << block.fStyle.getFontStyle().GetSlant() << "\n";
+        blockIndex++;
+    }
+    paragraphInfo << "Paragraph glyph size: " << glyphSize << "\n";
+    uint32_t lineIndex = 0;
+    for (auto& line : fLines) {
+        auto runs = line.getLineAllRuns();
+        auto runSize = runs.size();
+        if (runSize !=0 ) {
+            paragraphInfo << "Line[" << lineIndex << "] run range: [" << runs[0] << "-" << runs[runSize - 1] << "]\n";
+        }
+        lineIndex++;
+    }
+    return paragraphInfo.str();
+}
+#endif
 
 }  // namespace textlayout
 }  // namespace skia
