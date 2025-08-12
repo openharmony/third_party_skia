@@ -143,8 +143,7 @@ static std::unique_ptr<GrFragmentProcessor> make_simple_rrect_sdf(GrRecordingCon
 
     std::unique_ptr<GrFragmentProcessor> fp =
             GrSkSLFP::Make(effect, "SimpleRRectSDF", nullptr,
-                           origColor.isOpaque() ? GrSkSLFP::OptFlags::kPreservesOpaqueInput
-                                                : GrSkSLFP::OptFlags::kNone,
+                           GrSkSLFP::OptFlags::kNone,
                            "sdfRadius", sdfRadius, "wh", wh, "r", r, "origColor", origColor);
 
     if (!fp) {
@@ -198,8 +197,7 @@ static std::unique_ptr<GrFragmentProcessor> make_complex_rrect_sdf(GrRecordingCo
 
     std::unique_ptr<GrFragmentProcessor> fp =
             GrSkSLFP::Make(effect, "ComplexRRectSDF", nullptr,
-                           origColor.isOpaque() ? GrSkSLFP::OptFlags::kPreservesOpaqueInput
-                                                : GrSkSLFP::OptFlags::kNone,
+                           GrSkSLFP::OptFlags::kNone,
                            "sdfRadius", sdfRadius, "wh", wh, "r0", r, "r3", r3, "origColor", origColor);
 
     if (!fp) {
