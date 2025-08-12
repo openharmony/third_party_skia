@@ -44,7 +44,7 @@ private:
     };
 
     struct ClusterLevelsIndices {
-        std::unordered_map<ClusterIndex, HighLevelInfo> highLevelIndices;
+        std::map<ClusterIndex, HighLevelInfo> highLevelIndices;
         std::unordered_map<ClusterIndex, MiddleLevelInfo> middleLevelIndices;
         std::unordered_set<ClusterIndex> LowLevelIndices;
         SkScalar middleLevelOffset{0.0f};
