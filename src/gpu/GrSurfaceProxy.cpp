@@ -50,8 +50,9 @@ static bool is_valid_non_lazy(SkISize dimensions) {
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
 #ifndef SK_VULKAN
 namespace ParallelDebug {
+bool IsVkImageDfxEnabled() { return false; }
 void RecordNodeId(uint64_t nodeId) {}
-uint64_t GetNodeId() {return 0;}
+uint64_t GetNodeId() { return 0; }
 };
 #endif
 #endif
@@ -194,6 +195,11 @@ sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceP
     if (!surface) {
         return nullptr;
     }
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    if (ParallelDebug::IsVkImageDfxEnabled()) {
+        surface->updateNodeId(fNodeId);
+    }
+#endif
 
     if (fGrProxyTag.isGrTagValid()) {
 #ifdef SKIA_DFX_FOR_OHOS
@@ -512,6 +518,11 @@ bool GrSurfaceProxyPriv::doLazyInstantiation(GrResourceProvider* resourceProvide
         fProxy->fDimensions.setEmpty();
         return false;
     }
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    if (ParallelDebug::IsVkImageDfxEnabled()) {
+        surface->updateNodeId(nodeId);
+    }
+#endif
 
     if (fProxy->isFullyLazy()) {
         // This was a fully lazy proxy. We need to fill in the width & height. For partially

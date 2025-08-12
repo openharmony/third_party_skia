@@ -7,6 +7,9 @@
 
 #include "src/gpu/ganesh/vk/GrVkImage.h"
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include "include/core/SkLog.h"
+#endif
 #include "include/core/SkSize.h"
 #include "include/gpu/vk/VulkanMutableTextureState.h"
 #include "src/gpu/ganesh/vk/GrVkCaps.h"
@@ -16,6 +19,9 @@
 #include "src/gpu/ganesh/vk/GrVkResourceProvider.h"
 #include "src/gpu/ganesh/vk/GrVkUniformHandler.h"
 #include "src/gpu/ganesh/vk/GrVkUtil.h"
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include "src/gpu/ganesh/vk/GrVulkanTracker.h"
+#endif
 #include "src/gpu/vk/VulkanMemory.h"
 #include "src/gpu/vk/VulkanMutableTextureStatePriv.h"
 #include "src/gpu/vk/VulkanUtilsPriv.h"
@@ -654,7 +660,62 @@ void GrVkImage::setResourceRelease(sk_sp<RefCntedReleaseProc> releaseHelper) {
     fResource->setRelease(std::move(releaseHelper));
 }
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+void GrVkImage::dumpVkImageInfo(std::stringstream& dump) const {
+    auto vkGpu = getVkGpu();
+    if (vkGpu == nullptr) {
+        SK_LOGE("GrVkImage::dumpVkImageInfo vkGpu nullptr");
+        return;
+    }
+    VkMemoryRequirements memRequirements;
+    VK_CALL(vkGpu, GetImageMemoryRequirements(vkGpu->device(), image(), &memRequirements));
+    VkDeviceSize imageSize = memRequirements.size;
+
+    if (fResource == nullptr) {
+        SK_LOGE("GrVkImage::dumpVkImageInfo fResource nullptr");
+        return;
+    }
+    fResource->dumpVkImageResource(dump);
+    dump << "Borrowed: " << isBorrowed() << ", " << "ImageSize: " << imageSize << ", ";
+    if (fResource->fCaller == nullptr) {
+        SK_LOGE("GrVkImage::dumpVkImageInfo fCaller nullptr");
+    } else {
+        fResource->fCaller->Dump(dump);
+    }
+    dump << "\n";
+}
+
+void GrVkImage::Resource::dumpVkImageResource(std::stringstream& dump) {
+    dump << "VkImage: " << fImage << ", "
+        << "Memory: " << fAlloc.fMemory << ", "
+        << "Offset: " << fAlloc.fOffset << ", "
+        << "Size: " << fAlloc.fSize << ", ";
+}
+
+void GrVkImage::Resource::RecordFreeVkImage(bool isBorrowed) const {
+    static const bool isInRenderSevice = IsRenderService();
+    if (isInRenderSevice) {
+        ParallelDebug::VkImageDestroyRecord::Record(fImage, isBorrowed, fCaller, fAlloc.fMemory);
+    }
+}
+
+void GrVkImage::updateNodeId(uint64_t nodeId) {
+    if (fResource && fResource->fCaller) {
+        fResource->fCaller->nodeId_ = nodeId;
+    }
+}
+#endif
+
+GrVkImage::Resource::~Resource() {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    ParallelDebug::DestroyVkImageInvokeRecord(fCaller);
+#endif
+}
+
 void GrVkImage::Resource::freeGPUData() const {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    RecordFreeVkImage(true);
+#endif
     this->invokeReleaseProc();
     VK_CALL(fGpu, DestroyImage(fGpu->device(), fImage, nullptr));
 #ifdef SKIA_DFX_FOR_OHOS
@@ -664,6 +725,9 @@ void GrVkImage::Resource::freeGPUData() const {
 }
 
 void GrVkImage::BorrowedResource::freeGPUData() const {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    RecordFreeVkImage(true);
+#endif
     this->invokeReleaseProc();
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-#include "include/gpu/vk/GrVulkanTracker.h"
+#include "src/gpu/ganesh/vk/GrVulkanTracker.h"
+
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
-#include "src/gpu/vk/GrVkImage.h"
+
 #include <deque>
 #include <parameters.h>
 
-static thread_local ParallelDebug::VkImageInvokeRecord CALLER_;
-static thread_local std::deque<ParallelDebug::VkImageDestroyRecord> DELETE_;
+static thread_local ParallelDebug::VkImageInvokeRecord g_caller;
+static thread_local std::deque<ParallelDebug::VkImageDestroyRecord> g_delete;
 static constexpr size_t DESTROY_RECORD_CAPACITY = 100;
-static std::atomic<int64_t> count;
 
 static inline int64_t GetNanoSecords()
 {
@@ -40,18 +40,18 @@ bool ParallelDebug::IsVkImageDfxEnabled()
 
 uint64_t ParallelDebug::GetNodeId()
 {
-    return CALLER_.nodeId_;
+    return g_caller.nodeId_;
 }
 
 void ParallelDebug::RecordNodeId(uint64_t nodeId)
 {
-    CALLER_.nodeId_ = nodeId;
+    g_caller.nodeId_ = nodeId;
 }
 
 ParallelDebug::VkImageInvokeRecord* ParallelDebug::GenerateVkImageInvokeRecord()
 {
     auto caller = new ParallelDebug::VkImageInvokeRecord();
-    caller->nodeId_ = CALLER_.nodeId_;
+    caller->nodeId_ = g_caller.nodeId_;
     return caller;
 }
 
@@ -68,20 +68,20 @@ void ParallelDebug::VkImageInvokeRecord::Dump(std::stringstream& ss)
 void ParallelDebug::VkImageDestroyRecord::Record(VkImage image,
                                                 bool borrow,
                                                 const ParallelDebug::VkImageInvokeRecord* call,
-                                                VkDeviceMemory fMemory)
+                                                VkDeviceMemory memory)
 {
     if (call == nullptr) {
         return;
     }
-    DELETE_.push_back({image, borrow, *call, fMemory, GetNanoSecords()});
-    if (DELETE_.size() > DESTROY_RECORD_CAPACITY) {
-        DELETE_.pop_front();
+    g_delete.push_back({image, borrow, *call, memory, GetNanoSecords()});
+    if (g_delete.size() > DESTROY_RECORD_CAPACITY) {
+        g_delete.pop_front();
     }
 }
 
 void ParallelDebug::DumpAllDestroyVkImage(std::stringstream &ss)
 {
-    for (auto& del : DELETE_) {
+    for (auto& del : g_delete) {
         del.Dump(ss);
         ss << "\n";
     }
@@ -91,25 +91,9 @@ void ParallelDebug::VkImageDestroyRecord::Dump(std::stringstream& ss)
 {
     char timeStr[20];
     struct tm timeInfo;
-    time_t seconds = timeStamp / 1000000000LL;
+    time_t seconds = timeStamp_ / 1000000000LL;
     localtime_r(&seconds, &timeInfo);
     std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &timeInfo);
     ss << timeStr << "VkImage: " << image_ << ", " << borrowed_ << ", " << memory_ << " ";
     caller_.Dump(ss);
-}
-
-namespace RealAllocConfig {
-// OH ISSUE: isRealAlloc indicates whether the Vulkan memory(external and proxy)
-// in the current thread context should be calculated.
-static thread_local bool isRealAlloc = false;
-
-bool GetRealAllocStatus()
-{
-    return isRealAlloc;
-}
-
-void SetRealAllocStatus(bool ret)
-{
-    isRealAlloc = ret;
-}
 }

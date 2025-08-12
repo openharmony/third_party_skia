@@ -19,6 +19,9 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include <sstream>
+#endif
 #include <string>
 #include <string_view>
 
@@ -338,6 +341,12 @@ public:
      * @return all GrGpuResourceTags.
      */
     GrGpuResourceTag getResourceTag() const { return fGrResourceTag; }
+
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    virtual void dumpVkImageInfo(std::stringstream& dump) const {
+        dump << "\n";
+    }
+#endif
 
 #if defined(GPU_TEST_UTILS)
     virtual const GrSurface* asSurface() const { return nullptr; }

@@ -2713,6 +2713,72 @@ void GrVkGpu::endRenderPass(GrRenderTarget* target, GrSurfaceOrigin origin,
     this->didWriteToSurface(target, origin, &bounds);
 }
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+void GrVkGpu::dumpDeviceFaultInfo(const std::string& errorCategory) {
+    VkDeviceFaultCountsEXT fc{};
+    fc.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT;
+    fc.pNext = nullptr;
+    GR_VK_CALL(this->vkInterface(), GetDeviceFaultInfoEXT(fDevice, &fc, nullptr));
+
+    const uint32_t vendorBinarySize =
+        std::min(uint32_t(fc.vendorBinarySize), std::numeric_limits<uint32_t>::max());
+    std::vector<VkDeviceFaultAddressInfoEXT>    addressInfos    (fc.addressInfoCount);
+    std::vector<VkDeviceFaultVendorInfoEXT>     vendorInfos     (fc.vendorInfoCount);
+    std::vector<uint8_t>                        vendorBinaryData(vendorBinarySize);
+    VkDeviceFaultInfoEXT fi{};
+    VkDebugUtilsObjectNameInfoEXT nameInfo{};
+    fi.sType                = VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_EXT;
+    fi.pNext                = &nameInfo;
+    fi.pAddressInfos        = addressInfos.data();
+    fi.pVendorInfos         = vendorInfos.data();
+    fi.pVendorBinaryData    = vendorBinaryData.data();
+    GR_VK_CALL(this->vkInterface(), GetDeviceFaultInfoEXT(fDevice, &fc, &fi));
+    if (!fi.pNext) {
+        SK_LOGE("GrVkGpu::dumpDeviceFaultInfo %{public}s pNext is nullptr", errorCategory.c_str());
+        return;
+    }
+    auto obj = static_cast<VkDebugUtilsObjectNameInfoEXT*>(fi.pNext);
+    if (obj == nullptr) {
+        SK_LOGE("GrVkGpu::dumpDeviceFaultInfo %{public}s obj is nullptr", errorCategory.c_str());
+        return;
+    }
+    auto vkImage = obj->objectHandle;
+    if (!vkImage) {
+        SK_LOGE("GrVkGpu::dumpDeviceFaultInfo %{public}s vkimage is nullptr", errorCategory.c_str());
+        return;
+    }
+    SK_LOGE("GrVkGpu::dumpDeviceFaultInfo %{public}s vkimage 0x%{public}llx", errorCategory.c_str(), vkImage);
+}
+
+void GrVkGpu::dumpVkImageDfx(const std::string& errorCategory) {
+    if (!ParallelDebug::IsVkImageDfxEnabled()) {
+        return;
+    }
+    dumpDeviceFaultInfo(errorCategory);
+    auto context = getContext();
+    if (context == nullptr) {
+        SK_LOGE("GrVkGpu::dumpVkImageDfx %{public}s context nullptr", errorCategory.c_str());
+        return;
+    }
+    std::stringstream dump;
+    context->dumpAllResource(dump);
+    std::string s;
+    while (std::getline(dump, s, '\n')) {
+        SK_LOGE("%{public}s", s.c_str());
+    }
+}
+#endif
+
+void GrVkGpu::reportVulkanError(const std::string& errorCategory) {
+    auto context = getContext();
+    if (context == nullptr) {
+        SK_LOGE("GrVkGpu::reportVulkanError %{public}s context nullptr", errorCategory.c_str());
+        return;
+    }
+    SK_LOGE("GrVkGpu::reportVulkanError report %{public}s", errorCategory.c_str());
+    context->processVulkanError();
+}
+
 bool GrVkGpu::checkVkResult(VkResult result) {
     int32_t numResult = static_cast<int32_t>(result); 
     switch (numResult) {
@@ -2733,36 +2799,21 @@ bool GrVkGpu::checkVkResult(VkResult result) {
             }
 #endif
             fDeviceIsLost = true;
+            reportVulkanError("VK_ERROR_DEVICE_LOST");
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
-            {
-                std::stringstream dump;
-                getContext()->dumpAllResource(dump);
-            }
+            dumpVkImageDfx("VK_ERROR_DEVICE_LOST");
 #endif
-            {
-                auto context = getContext();
-                if (context) {
-                    context->processVulkanError();
-                } else {
-                    SK_LOGE("checkVkResult context nullptr");
-                }
-            }
             return false;
         case VK_ERROR_OUT_OF_DEVICE_MEMORY:
         case VK_ERROR_OUT_OF_HOST_MEMORY:
             this->setOOMed();
             return false;
         case VK_HUAWEI_GPU_ERROR_RECOVER:
-            {
-                SK_LOGE("report VK_HUAWEI_GPU_ERROR_RECOVER");
-                auto context = getContext();
-                if (context) {
-                    context->processVulkanError();
-                } else {
-                    SK_LOGE("checkVkResult context nullptr");
-                }
-                return true;
-            }
+            reportVulkanError("VK_HUAWEI_GPU_ERROR_RECOVER");
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+            dumpVkImageDfx("VK_HUAWEI_GPU_ERROR_RECOVER");
+#endif
+            return true;
         default:
             return false;
     }

@@ -18,12 +18,15 @@
 #define LOG_TAG "skia"
 #include "hilog/log.h"
 
+#if defined(SKIA_OHOS_SINGLE_OWNER) || defined(SKIA_DFX_FOR_RECORD_VKIMAGE)
+#include "include/core/SkLog.h"
+#include <fstream>
+#endif
+
 #ifdef SKIA_OHOS_SINGLE_OWNER
 #include "backtrace_local.h"
-#include "include/core/SkLog.h"
 #include <sstream>
 #include <thread>
-#include <fstream>
 #endif
 
 extern "C" {
@@ -57,8 +60,8 @@ bool SkShaderReduceProperty()
 }
 #endif
 
-#ifdef SKIA_OHOS_SINGLE_OWNER
-static bool IsRenderService()
+#if defined(SKIA_OHOS_SINGLE_OWNER) || defined(SKIA_DFX_FOR_RECORD_VKIMAGE)
+bool IsRenderService()
 {
     std::ifstream procfile("/proc/self/cmdline");
     if (!procfile.is_open()) {
@@ -72,7 +75,9 @@ static bool IsRenderService()
     bool result = processName.compare(0, target.size(), target) == 0;
     return result;
 }
+#endif
 
+#ifdef SKIA_OHOS_SINGLE_OWNER
 static bool IsBeta()
 {
     static const bool isBeta = OHOS::system::GetParameter("const.logsystem.versiontype", "unknown") == "beta";

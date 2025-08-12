@@ -411,6 +411,13 @@ private:
                                         GrVkImageInfo*,
                                         GrProtected);
 
+    // checkVkResult dfx
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    void dumpDeviceFaultInfo(const std::string& errorCategory);
+    void dumpVkImageDfx(const std::string& errorCategory);
+#endif
+    void reportVulkanError(const std::string& errorCategory);
+
     sk_sp<const GrVkInterface>                            fInterface;
     sk_sp<GrVkMemoryAllocator>                            fMemoryAllocator;
     sk_sp<GrVkMemoryAllocator>                            fMemoryAllocatorCacheImage;

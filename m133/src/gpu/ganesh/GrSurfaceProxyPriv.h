@@ -13,6 +13,9 @@
 #include "src/gpu/SkBackingFit.h"
 #include "src/gpu/ganesh/GrSurface.h"
 #include "src/gpu/ganesh/GrSurfaceProxy.h"
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
+#endif
 
 #include <utility>
 
@@ -55,7 +58,11 @@ public:
     void setIsPromiseProxy() { fProxy->fIsPromiseProxy = true; }
 
 private:
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) : fProxy(proxy), fNodeId(ParallelDebug::GetNodeId()) {}
+#else
     explicit GrSurfaceProxyPriv(GrSurfaceProxy* proxy) : fProxy(proxy) {}
+#endif
     GrSurfaceProxyPriv& operator=(const GrSurfaceProxyPriv&) = delete;
 
     // No taking addresses of this type.
@@ -63,6 +70,9 @@ private:
     GrSurfaceProxyPriv* operator&();
 
     GrSurfaceProxy* fProxy;
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    uint64_t fNodeId;
+#endif
 
     friend class GrSurfaceProxy; // to construct/copy this type.
 };
