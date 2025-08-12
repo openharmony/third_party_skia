@@ -88,13 +88,6 @@ sk_sp<SkImageFilter> SkImageFilters::Blur(
         return input;
     }
 
-    if (!SkIsFinite(sigmaX, sigmaY) || sigmaX < 0.f || sigmaY < 0.f) {
-        // Non-finite or negative sigmas are error conditions. We allow 0 sigma for X and/or Y
-        // for 1D blurs; onFilterImage() will detect when no visible blurring would occur based on
-        // the Context mapping.
-        return nullptr;
-    }
-
     // Temporarily allow tiling with no crop rect
     if (tileMode != SkTileMode::kDecal && !cropRect) {
         return sk_make_sp<SkBlurImageFilter>(SkSize{sigmaX, sigmaY}, tileMode, std::move(input));
@@ -232,8 +225,8 @@ skif::LayerSpace<SkSize> SkBlurImageFilter::mapSigma(const skif::Mapping& mappin
                                                      bool useBlurEngine) const {
     skif::LayerSpace<SkSize> sigma = mapping.paramToLayer(fSigma);
     // Clamp to the maximum sigma
-    sigma = skif::LayerSpace<SkSize>({std::min(sigma.width(), kMaxSigma),
-                                      std::min(sigma.height(), kMaxSigma)});
+    sigma = skif::LayerSpace<SkSize>({std::min(SkScalarAbs(sigma.width()), kMaxSigma),
+                                      std::min(SkScalarAbs(sigma.height()), kMaxSigma)});
 
     // TODO(b/294575803) - The legacy CPU blur uses only the successive box-blur which is both
     // inaccurate for sigma < 2 and unable to represent blurring when its window is <= 1 (sigma
