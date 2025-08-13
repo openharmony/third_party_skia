@@ -311,7 +311,7 @@ void SkColorSpace::SetIccCicp(const skcms_CICP cicp) {
 }
 
 bool SkColorSpace::GetIccCicp(skcms_CICP* cicp) const {
-    if (hasCicp) {
+    if (hasCicp && cicp) {
         *cicp = fcicp;
         return true;
     }
