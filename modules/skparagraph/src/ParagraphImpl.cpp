@@ -2502,15 +2502,16 @@ std::string_view ParagraphImpl::GetState() const
 
 std::string ParagraphImpl::GetDumpInfo() const
 {
+    // 由于arkui那边要求dump信息只能一行，这里将应该换行的地方用逗号代替，方便定位时统一用工具替换
     std::ostringstream paragraphInfo;
-    paragraphInfo << "This is paragraph dump info:\n";
+    paragraphInfo << "This is paragraph dump info:,";
     paragraphInfo << "Text size: " << fText.size() << " fState: " << GetState()
-                  << " fSkipTextBlobDrawing: " << (fSkipTextBlobDrawing ? "true" : "false") << "\n";
+                  << " fSkipTextBlobDrawing: " << (fSkipTextBlobDrawing ? "true" : "false") << ",";
     uint32_t glyphSize = 0;
     uint32_t runIndex = 0;
     for (auto& run : fRuns) {
         paragraphInfo << "Run[" << runIndex << "]" << " glyph size: " << run.size()
-                      << " text range: [" << run.textRange().start << "-" << run.textRange().end << ")\n";
+                      << " text range: [" << run.textRange().start << "-" << run.textRange().end << "),";
         runIndex++;
         glyphSize += run.size();
     }
@@ -2523,16 +2524,16 @@ std::string ParagraphImpl::GetDumpInfo() const
                       << " font height: " << block.fStyle.getHeight()
                       << " font weight: " << block.fStyle.getFontStyle().GetWeight()
                       << " font width: " << block.fStyle.getFontStyle().GetWidth()
-                      << " font slant: " << block.fStyle.getFontStyle().GetSlant() << "\n";
+                      << " font slant: " << block.fStyle.getFontStyle().GetSlant() << ",";
         blockIndex++;
     }
-    paragraphInfo << "Paragraph glyph size: " << glyphSize << "\n";
+    paragraphInfo << "Paragraph glyph size: " << glyphSize << ",";
     uint32_t lineIndex = 0;
     for (auto& line : fLines) {
         auto runs = line.getLineAllRuns();
         auto runSize = runs.size();
         if (runSize !=0 ) {
-            paragraphInfo << "Line[" << lineIndex << "] run range: [" << runs[0] << "-" << runs[runSize - 1] << "]\n";
+            paragraphInfo << "Line[" << lineIndex << "] run range: [" << runs[0] << "-" << runs[runSize - 1] << "],";
         }
         lineIndex++;
     }
