@@ -18,7 +18,8 @@
 #include "src/gpu/ganesh/GrRenderTargetProxy.h"
 #include "src/gpu/ganesh/surface/SkSurface_Ganesh.h"
 
-void GrVkDrawAreaManager::bindDrawingArea(SkSurface* surface, const std::vector<SkIRect>& skIRects) {
+void GrVkDrawAreaManager::bindDrawingArea(SkSurface* surface, const std::vector<SkIRect>& skIRects)
+{
     if (!surface) {
         return;
     }
@@ -37,7 +38,8 @@ void GrVkDrawAreaManager::bindDrawingArea(SkSurface* surface, const std::vector<
     fRtmap[gpuDeviceProxy->peekRenderTarget()] = skIRects;
 }
 
-std::vector<SkIRect>& GrVkDrawAreaManager::getDrawingArea(GrRenderTarget* rt) {
+std::vector<SkIRect>& GrVkDrawAreaManager::getDrawingArea(GrRenderTarget* rt)
+{
     SkAutoMutexExclusive lock(fMutex);
     std::map<GrRenderTarget*, std::vector<SkIRect>>::iterator iter = fRtmap.find(rt);
     if (iter != fRtmap.end()) {
@@ -48,7 +50,8 @@ std::vector<SkIRect>& GrVkDrawAreaManager::getDrawingArea(GrRenderTarget* rt) {
     }
 }
 
-void GrVkDrawAreaManager::clearSurface(SkSurface* surface) {
+void GrVkDrawAreaManager::clearSurface(SkSurface* surface)
+{
     if (!surface) {
         return;
     }
@@ -67,7 +70,8 @@ void GrVkDrawAreaManager::clearSurface(SkSurface* surface) {
     fRtmap.erase(gpuDeviceProxy->peekRenderTarget());
 }
 
-void GrVkDrawAreaManager::clearAll() {
+void GrVkDrawAreaManager::clearAll()
+{
     SkAutoMutexExclusive lock(fMutex);
     fRtmap.clear();
 }
