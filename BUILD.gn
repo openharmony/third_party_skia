@@ -2030,6 +2030,10 @@ if (use_oh_skia) {
     }
   }
 
+  config("piex_config") {
+    include_dirs = [ "${skia_third_party_dir}/externals/piex" ]
+  }
+
   ohos_shared_library("skia_canvaskit") {
     branch_protector_ret = "pac_ret"
     part_name = "skia"
@@ -2046,6 +2050,7 @@ if (use_oh_skia) {
       ":skia_config",
       ":harfbuzz_config",
       ":icu_config",
+      ":piex_config",
     ]
     configs = skia_library_configs
     if (enhanced_opt) {
@@ -4527,6 +4532,10 @@ ohos_static_library("sksl_ext_static") {
     }
   }
 
+  config("piex_config") {
+    include_dirs = [ "${skia_third_party_dir}/externals/piex" ]
+  }
+
   ohos_shared_library("skia_canvaskit") {
     branch_protector_ret = "pac_ret"
     part_name = "skia"
@@ -4537,6 +4546,7 @@ ohos_static_library("sksl_ext_static") {
       ":skia_config",
       "${skia_root_dir}:harfbuzz_config",
       "${skia_root_dir}:icu_config",
+      ":piex_config",
     ]
     configs = skia_library_configs
     if (enhanced_opt) {
