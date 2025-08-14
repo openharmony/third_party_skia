@@ -9,6 +9,7 @@
 #include <json/json.h>
 #include <mutex>
 #include <vector>
+#include <functional>
 
 #include "FontInfo_ohos.h"
 #include "HmSymbolConfig_ohos.h"

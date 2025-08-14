@@ -34,7 +34,7 @@ enum InternalState {
   kDrawn = 7
 };
 
-enum UtfEncodeType {
+enum class UtfEncodeType {
     kUtf8,
     kUtf16
 };

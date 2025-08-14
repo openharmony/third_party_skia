@@ -1,11 +1,6 @@
-/*
- * Copyright 2015 Google Inc.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- * 2023.4.23 SkFontMgr on ohos.
- *           Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef SKFONTMGR_OHOS_H
 #define SKFONTMGR_OHOS_H

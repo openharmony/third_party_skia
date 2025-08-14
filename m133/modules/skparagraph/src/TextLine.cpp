@@ -1364,7 +1364,8 @@ void TextLine::middleEllipsisUpdateLine(ClusterIndex& startIndex, ClusterIndex& 
 {
     const Cluster& startCluster = fOwner->cluster(startIndex);
     const Cluster& endCluster = fOwner->cluster(endIndex);
-    fEllipsis->fTextRange = TextRange(startCluster.textRange().start, startCluster.textRange().start + fEllipsis->size());
+    fEllipsis->fTextRange = TextRange(startCluster.textRange().start,
+        startCluster.textRange().start + fEllipsis->size());
     fEllipsis->setOwner(fOwner);
     fEllipsis->fClusterStart = startCluster.textRange().start;
     fEllipsisIndex = startCluster.runIndex();
