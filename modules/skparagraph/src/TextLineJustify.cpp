@@ -31,23 +31,23 @@ void TextLineJustify::allocateHighLevelOffsets(
     SkScalar lastPunctStretch = 0.0f;   // Extrusion width to the left of the previous punctuation.
     constexpr size_t scaleFactor = 6;  // Defines the maximum width of 1 / 6 ideographs.
     for (auto& index : clusterLevels.highLevelIndices) {
-        if (index.isClusterPunct) {
-            SkScalar curPunctWidth = index.punctWidths;
+        if (index.second.isClusterPunct) {
+            SkScalar curPunctWidth = index.second.punctWidths;
             SkScalar stretchWidth = std::max(0.0f, (ideographicMaxLen - curPunctWidth) / scaleFactor);
-            index.highLevelOffset = stretchWidth + lastPunctStretch;
+            index.second.highLevelOffset = stretchWidth + lastPunctStretch;
             lastPunctStretch = stretchWidth;
         } else {
-            index.highLevelOffset = lastPunctStretch;
+            index.second.highLevelOffset = lastPunctStretch;
             lastPunctStretch = 0.0f;
         }
     }
     SkScalar highLevelMaxWidth =
         std::accumulate(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(), 0.0f,
-            [](const SkScalar& a, const HighLevelInfo& b) { return a + b.highLevelOffset; });
+            [](const SkScalar& a, const auto& b) { return a + b.second.highLevelOffset; });
     if (highLevelMaxWidth > allocatedWidth) {
         std::for_each(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(),
-            [highLevelMaxWidth, allocatedWidth](HighLevelInfo& val) {
-                val.highLevelOffset = allocatedWidth * val.highLevelOffset / highLevelMaxWidth;
+            [highLevelMaxWidth, allocatedWidth](auto& val) {
+                val.second.highLevelOffset = allocatedWidth * val.second.highLevelOffset / highLevelMaxWidth;
             });
         allocatedWidth = 0;
     } else {
@@ -106,7 +106,7 @@ void TextLineJustify::allocateRemainingWidth(
                                 clusterLevels.LowLevelIndices.size();
     const SkScalar remainingOffset = allocatedWidth / (totalPatches + prevClusterNotSpaceCount);
     std::for_each(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(),
-        [remainingOffset](HighLevelInfo& val) { val.highLevelOffset += remainingOffset; });
+        [remainingOffset](auto& val) { val.second.highLevelOffset += remainingOffset; });
     clusterLevels.middleLevelOffset += remainingOffset;
     clusterLevels.lowLevelOffset += remainingOffset;
 }
@@ -199,23 +199,17 @@ SkScalar TextLineJustify::calculateClusterShift(
         return 0.0f;
     }
     SkScalar step = 0.0f;
-    auto highLevelIterator =
-        std::find_if(clusterLevels.highLevelIndices.begin(), clusterLevels.highLevelIndices.end(),
-            [index](const HighLevelInfo& data) { return data.clusterIndex == index; });
-    auto lowLevelIterator =
-        std::find_if(clusterLevels.middleLevelIndices.begin(), clusterLevels.middleLevelIndices.end(),
-            [index](const MiddleLevelInfo& data) { return data.clusterIndex == index; });
+    auto highLevelIterator = clusterLevels.highLevelIndices.find(index);
+    auto lowLevelIterator = clusterLevels.middleLevelIndices.find(index);
     if (highLevelIterator != clusterLevels.highLevelIndices.end()) {
-        size_t idx = static_cast<size_t>(std::distance(clusterLevels.highLevelIndices.begin(), highLevelIterator));
-        step = clusterLevels.highLevelIndices[idx].highLevelOffset;
+        step = highLevelIterator->second.highLevelOffset;
     } else if (lowLevelIterator != clusterLevels.middleLevelIndices.end()) {
         // Because both sides of the WhitespaceBreak are equally widened, the
         // ideographic and non-ideographic characters are only widened once.
         // So the front is not WhitespaceBreak, and the count increases by 1.
-        step = lowLevelIterator->isPrevClusterSpace ? clusterLevels.middleLevelOffset
+        step = lowLevelIterator->second.isPrevClusterSpace ? clusterLevels.middleLevelOffset
                                                     : clusterLevels.middleLevelOffset * (1 + 1);
-    } else if (std::find(clusterLevels.LowLevelIndices.begin(), clusterLevels.LowLevelIndices.end(), index) !=
-            clusterLevels.LowLevelIndices.end()) {
+    } else if (clusterLevels.LowLevelIndices.count(index)) {
         step = clusterLevels.lowLevelOffset;
     }
     return step;
@@ -286,7 +280,7 @@ bool TextLineJustify::justify(SkScalar maxWidth)
             switch (shiftLevel) {
                 case ShiftLevel::HighLevel:
                     highLevelInfo.clusterIndex = index;
-                    clusterLevels.highLevelIndices.push_back(highLevelInfo);
+                    clusterLevels.highLevelIndices.emplace(index, highLevelInfo);
                     break;
                 case ShiftLevel::MiddleLevel:
                     // Because both sides of the WhitespaceBreak are equally widened, the
@@ -294,10 +288,10 @@ bool TextLineJustify::justify(SkScalar maxWidth)
                     // So the front is not WhitespaceBreak, and the count increases by 1.
                     prevClusterNotSpaceCount += middleLevelInfo.isPrevClusterSpace ? 0 : 1;
                     middleLevelInfo.clusterIndex = index;
-                    clusterLevels.middleLevelIndices.push_back(middleLevelInfo);
+                    clusterLevels.middleLevelIndices.emplace(index, middleLevelInfo);
                     break;
                 case ShiftLevel::LowLevel:
-                    clusterLevels.LowLevelIndices.push_back(index);
+                    clusterLevels.LowLevelIndices.emplace(index);
                     break;
                 default:
                     break;
