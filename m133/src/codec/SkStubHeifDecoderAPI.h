@@ -2,7 +2,7 @@
  * Copyright 2017 Google Inc.
  *
  * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
+ * found in the LICENSE files.
  */
 
 #ifndef SkStubHeifDecoderAPI_DEFINED
@@ -65,6 +65,10 @@ enum class HeifImageHdrType {
     ISO_SINGLE,
 };
 
+/*
+ * This is a stub implementation of the HeifDecoder API.
+ * For heif yuv decode
+ */
 struct HeifDecoder {
     HeifDecoder() {}
 
@@ -142,7 +146,6 @@ struct StubHeifDecoder : HeifDecoder {
         return 0;
     }
 
-    
     bool getImageInfo(HeifFrameInfo *frameInfo) override {
         return false;
     }
