@@ -237,5 +237,9 @@ void GrVkTexture::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const
                                          this->mipmapped());
     SkString resourceName = this->getResourceName();
     resourceName.append("/texture");
-    this->dumpMemoryStatisticsPriv(traceMemoryDump, resourceName, "Texture", size);
+    if (fTexture->isBorrowed() && !fTexture->isRealAlloc()) {
+        this->dumpMemoryStatisticsPriv(traceMemoryDump, resourceName, "External Texture", size);
+    } else {
+        this->dumpMemoryStatisticsPriv(traceMemoryDump, resourceName, "Texture", size);
+    }
 }
