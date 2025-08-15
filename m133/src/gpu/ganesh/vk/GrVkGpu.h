@@ -466,6 +466,13 @@ private:
                                         GrVkImageInfo*,
                                         GrProtected);
 
+    // checkVkResult dfx
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    void dumpDeviceFaultInfo(const std::string& errorCategory);
+    void dumpVkImageDfx(const std::string& errorCategory);
+#endif
+    void reportVulkanError(const std::string& errorCategory);
+
     sk_sp<const skgpu::VulkanInterface>                   fInterface;
     sk_sp<skgpu::VulkanMemoryAllocator>                   fMemoryAllocator;
     sk_sp<skgpu::VulkanMemoryAllocator>                   fMemoryAllocatorCacheImage;

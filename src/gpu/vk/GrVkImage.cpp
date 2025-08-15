@@ -6,6 +6,7 @@
  */
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include "include/core/SkLog.h"
 #include "include/gpu/vk/GrVulkanTracker.h"
 #endif
 #include "src/gpu/vk/GrVkImage.h"
@@ -618,13 +619,26 @@ void GrVkImage::setResourceRelease(sk_sp<GrRefCntedCallback> releaseHelper) {
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
 void GrVkImage::dumpVkImageInfo(std::stringstream& dump) const {
+    auto vkGpu = getVkGpu();
+    if (vkGpu == nullptr) {
+        SK_LOGE("GrVkImage::dumpVkImageInfo vkGpu nullptr");
+        return;
+    }
     VkMemoryRequirements memRequirements;
-    VK_CALL(getVkGpu(), GetImageMemoryRequirements(getVkGpu()->device(), image(), &memRequirements));
+    VK_CALL(vkGpu, GetImageMemoryRequirements(vkGpu->device(), image(), &memRequirements));
     VkDeviceSize imageSize = memRequirements.size;
 
+    if (fResource == nullptr) {
+        SK_LOGE("GrVkImage::dumpVkImageInfo fResource nullptr");
+        return;
+    }
     fResource->dumpVkImageResource(dump);
     dump << "Borrowed: " << isBorrowed() << ", " << "ImageSize: " << imageSize << ", ";
-    fResource->fCaller->Dump(dump);
+    if (fResource->fCaller == nullptr) {
+        SK_LOGE("GrVkImage::dumpVkImageInfo fCaller nullptr");
+    } else {
+        fResource->fCaller->Dump(dump);
+    }
     dump << "\n";
 }
 
@@ -635,10 +649,16 @@ void GrVkImage::Resource::dumpVkImageResource(std::stringstream& dump) {
         << "Size: " << fResource->fAlloc.fSize << ", ";
 }
 
-void GrVkimage::Resource::RecordFreeVkImage(bool isBorrowed) const {
+void GrVkImage::Resource::RecordFreeVkImage(bool isBorrowed) const {
     static const bool isInRenderSevice = IsRenderService();
     if (isInRenderSevice) {
         ParallelDebug::VkImageDestroyRecord::Record(fImage, isBorrowed, fCaller, fAlloc.fMemory);
+    }
+}
+
+void GrVkImage::updateNodeId(uint64_t nodeId) {
+    if (fResource && fResource->fCaller) {
+        fResource->fCaller->nodeId_ = nodeId;
     }
 }
 #endif

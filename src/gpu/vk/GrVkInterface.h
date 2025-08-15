@@ -237,6 +237,7 @@ public:
 
         VkPtr<PFN_vkCmdDrawBlurImageHUAWEI> fCmdDrawBlurImageHUAWEI;
         VkPtr<PFN_vkGetBlurImageSizeHUAWEI> fGetBlurImageSizeHUAWEI;
+        VkPtr<PFN_vkGetDeviceFaultInfoEXT> fGetDeviceFaultInfoEXT;
 
     } fFunctions;
 };

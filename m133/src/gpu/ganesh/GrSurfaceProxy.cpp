@@ -12,6 +12,9 @@
 #include "include/core/SkPoint.h"
 #include "include/gpu/GpuTypes.h"
 #include "include/gpu/ganesh/GrRecordingContext.h"
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
+#endif
 #include "src/gpu/SkBackingFit.h"
 #include "src/gpu/Swizzle.h"
 #include "src/gpu/ganesh/GrCaps.h"
@@ -52,6 +55,17 @@ static bool is_valid_non_lazy(SkISize dimensions) {
 }
 #endif
 
+// emulator mock
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#ifndef SK_VULKAN
+namespace ParallelDebug {
+bool IsVkImageDfxEnabled() { return false; }
+void RecordNodeId(uint64_t nodeId) {}
+uint64_t GetNodeId() { return 0; }
+}
+#endif
+#endif
+
 GrSurfaceProxy::LazyCallbackResult::LazyCallbackResult(sk_sp<GrSurface> surf,
                                                        bool releaseCallback,
                                                        LazyInstantiationKeyMode mode)
@@ -74,6 +88,9 @@ GrSurfaceProxy::GrSurfaceProxy(const GrBackendFormat& format,
         , fFit(fit)
         , fBudgeted(budgeted)
         , fUseAllocator(useAllocator)
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        , fNodeId(ParallelDebug::GetNodeId())
+#endif
         , fIsProtected(isProtected)
         , fLabel(label) {
     SkASSERT(fFormat.isValid());
@@ -97,6 +114,9 @@ GrSurfaceProxy::GrSurfaceProxy(LazyInstantiateCallback&& callback,
         , fBudgeted(budgeted)
         , fUseAllocator(useAllocator)
         , fLazyInstantiateCallback(std::move(callback))
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        , fNodeId(ParallelDebug::GetNodeId())
+#endif
         , fIsProtected(isProtected)
         , fLabel(label) {
     SkASSERT(fFormat.isValid());
@@ -118,6 +138,9 @@ GrSurfaceProxy::GrSurfaceProxy(sk_sp<GrSurface> surface,
                             : skgpu::Budgeted::kNo)
         , fUseAllocator(useAllocator)
         , fUniqueID(fTarget->uniqueID())  // Note: converting from unique resource ID to a proxy ID!
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        , fNodeId(ParallelDebug::GetNodeId())
+#endif
         , fIsProtected(fTarget->isProtected() ? GrProtected::kYes : GrProtected::kNo)
         , fLabel(fTarget->getLabel()) {
     SkASSERT(fFormat.isValid());
@@ -126,10 +149,27 @@ GrSurfaceProxy::GrSurfaceProxy(sk_sp<GrSurface> surface,
 GrSurfaceProxy::~GrSurfaceProxy() {
 }
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+struct NodeIdHelper {
+    explicit inline NodeIdHelper(uint64_t nodeId): initNodeId_(ParallelDebug::GetNodeId())
+    {
+        ParallelDebug::RecordNodeId(nodeId);
+    }
+    inline ~NodeIdHelper()
+    {
+        ParallelDebug::RecordNodeId(initNodeId_);
+    }
+    uint64_t initNodeId_;
+};
+#endif
+
 sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceProvider,
                                                    int sampleCnt,
                                                    GrRenderable renderable,
                                                    skgpu::Mipmapped mipmapped) const {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    NodeIdHelper helper(fNodeId);
+#endif
     SkASSERT(mipmapped == skgpu::Mipmapped::kNo || fFit == SkBackingFit::kExact);
     SkASSERT(!this->isLazy());
     SkASSERT(!fTarget);
@@ -159,6 +199,11 @@ sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceP
     if (!surface) {
         return nullptr;
     }
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    if (ParallelDebug::IsVkImageDfxEnabled()) {
+        surface->updateNodeId(fNodeId);
+    }
+#endif
 
     if (fGrProxyTag.isGrTagValid()) {
         surface->setResourceTag(fGrProxyTag);
@@ -449,6 +494,9 @@ bool GrSurfaceProxyPriv::doLazyInstantiation(GrResourceProvider* resourceProvide
     bool syncKey = true;
     bool releaseCallback = false;
     if (!surface) {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+        NodeIdHelper helper(fNodeId);
+#endif
         auto result = fProxy->fLazyInstantiateCallback(resourceProvider, fProxy->callbackDesc());
         surface = std::move(result.fSurface);
         syncKey = result.fKeyMode == GrSurfaceProxy::LazyInstantiationKeyMode::kSynced;
@@ -458,6 +506,11 @@ bool GrSurfaceProxyPriv::doLazyInstantiation(GrResourceProvider* resourceProvide
         fProxy->fDimensions.setEmpty();
         return false;
     }
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    if (ParallelDebug::IsVkImageDfxEnabled()) {
+        surface->updateNodeId(fNodeId);
+    }
+#endif
 
     if (fProxy->isFullyLazy()) {
         // This was a fully lazy proxy. We need to fill in the width & height. For partially
