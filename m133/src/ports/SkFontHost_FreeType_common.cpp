@@ -2077,6 +2077,7 @@ bool SkScalerContextFTUtils::generateGlyphPath(FT_Face face, SkPath* path) const
     if (!generateGlyphPathStatic(face, path)) {
         return false;
     }
+// Simplification will cause segments missing for multi-layer path, so we block it.
 #ifdef HMSYMBOL_NOT_USED
     if (face->glyph->outline.flags & FT_OUTLINE_OVERLAP) {
         Simplify(*path, path);

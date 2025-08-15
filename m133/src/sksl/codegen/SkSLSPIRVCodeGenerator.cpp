@@ -2510,9 +2510,12 @@ SpvId SPIRVCodeGenerator::writeSpecialIntrinsic(const FunctionCall& c, SpecialIn
             SpvId sampler = this->writeExpression(*arguments[0], out);
             SpvId uv = this->writeExpression(*arguments[1], out);
             SpvId comp;
+            // 3 is the number of input parameters for this function.
             if (arguments.size() == 3) {
+                // 2 is the position of the comp parameter, representing the sequence number of the color channel.
                 comp = this->writeExpression(*arguments[2], out);
             } else {
+                // 2 is the number of input parameter for function.
                 SkASSERT(arguments.size() == 2);
                 comp = this->writeLiteral(0, *fContext.fTypes.fInt);
             }

@@ -41,7 +41,8 @@ void Decorations::updateDecorationPosition(TextDecoration decorationMode, SkScal
             break;
         case TextVerticalAlign::CENTER:
             if (decorationMode == TextDecoration::kLineThrough) {
-                // Line through is in the middle of the line
+                // Position the line-through decoration at the vertical center of the line
+                // The division by 2 places it in the middle between the line
                 positionY = fDecorationContext.lineHeight / 2 - baselineShift;
             }
             break;
@@ -484,7 +485,6 @@ void Decorations::calculatePosition(TextDecoration decoration, SkScalar ascent) 
 }
 
 void Decorations::calculateWaves(const TextStyle& textStyle, SkRect clip) {
-
     fPath.reset();
     int wave_count = 0;
     SkScalar x_start = 0;
