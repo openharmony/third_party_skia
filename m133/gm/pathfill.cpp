@@ -707,15 +707,3 @@ DEF_SIMPLE_GM(path_skbug_11886, canvas, 256, 256) {
     paint.setAntiAlias(true);
     canvas->drawPath(path, paint);
 }
-
-DEF_SIMPLE_GM(conicPathPespectiveTransform, canvas, 256, 256) {
-    SkPaint paint;
-    SkPath path;
-    path.moveTo(-100, -100);
-    path.rConicTo(260, 0, 260, 260, 0.45f);
-
-    SkMatrix mat;
-    mat.setAll(5, 2, 100, 2, 5, 100, 0.02, 0.02, 1.02);
-    canvas->setMatrix(mat);
-    canvas->drawPath(path, paint);
-}
