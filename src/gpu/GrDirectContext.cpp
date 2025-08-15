@@ -641,6 +641,12 @@ void GrDirectContext::beginFrame()
         fResourceCache->beginFrame();
     }
 #endif
+#ifdef SKIA_OHOS
+    static const bool isInRenderService = IsRenderService();
+    if (fDrawOpOverCallback && isInRenderService) {
+        resetDrawOpCounter();
+    }
+#endif
 }
 
 // OH ISSUE: intra frame and inter frame identification
@@ -650,6 +656,9 @@ void GrDirectContext::endFrame()
     if (fResourceCache) {
         fResourceCache->endFrame();
     }
+#endif
+#ifdef SKIA_OHOS
+    processDrawOpOverCallback();
 #endif
 }
 
