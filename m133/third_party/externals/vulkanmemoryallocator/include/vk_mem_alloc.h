@@ -12958,22 +12958,25 @@ VkResult VmaBlockVector::CheckCorruption()
 
 void VmaBlockVector::FreeEmptyBlock()
 {
-#ifdef VMA_FORCE_EMPTY_BLOCK_DELETION
     // Force deletion of empty blocks.
     VmaMutexLockWrite lock(m_Mutex, m_hAllocator->m_UseMutex);
-
-    if (HasEmptyBlock())
+    for(size_t blockIndex = m_Blocks.size(); blockIndex--; )
     {
-        VmaDeviceMemoryBlock* pLastBlock = m_Blocks.back();
-        if (pLastBlock->m_pMetadata->IsEmpty())
+        VmaDeviceMemoryBlock* pBlock = m_Blocks[blockIndex];
+        if(pBlock->m_pMetadata->IsEmpty())
         {
-            VMA_DEBUG_LOG("  Freeing empty block #%u", pLastBlock->GetId());
-            pLastBlock->Destroy(m_hAllocator);
-            vma_delete(m_hAllocator, pLastBlock);
-            m_Blocks.pop_back();
+            if(m_Blocks.size() > m_MinBlockCount)
+            {
+                VmaVectorRemove(m_Blocks, blockIndex);
+                pBlock->Destroy(m_hAllocator);
+                vma_delete(m_hAllocator, pBlock);
+            }
+            else
+            {
+                break;
+            }
         }
     }
-#endif
 }
 
 #endif // _VMA_BLOCK_VECTOR_FUNCTIONS
