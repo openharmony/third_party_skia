@@ -59,6 +59,10 @@ public:
 
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const override;
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    void updateNodeId(uint64_t nodeId) override;
+#endif
+
 protected:
     GrVkTexture(GrVkGpu*,
                 SkISize dimensions,

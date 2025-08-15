@@ -790,6 +790,13 @@ public:
         return this->onGetRepetitionCount();
     }
 
+    /**
+     * this function to add Heif Type to the list of supported formats
+     * 
+     * @brief Get the Heif Context object
+     * 
+     * @return void*
+     */
     virtual void *getHeifContext() { return nullptr; }
 
     // Register a decoder at runtime by passing two function pointers:

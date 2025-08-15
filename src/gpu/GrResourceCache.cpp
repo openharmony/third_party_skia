@@ -1536,14 +1536,24 @@ void GrResourceCache::dumpAllResource(std::stringstream &dump) const {
     dump << "Purgeable: " << fPurgeableQueue.count() << std::endl;
     for (int i = 0; i < fPurgeableQueue.count(); ++i) {
         GrGpuResource* resource = fPurgeableQueue.at(i);
-        if (strcmp(resource->getResourceType(), "VkImage") != 0) continue;
+        if (resource == nullptr) {
+            continue;
+        }
+        if (strcmp(resource->getResourceType(), "VkImage") != 0) {
+            continue;
+        }
         dump << i << " " << resource->getResourceType() << " ";
         resource->dumpVkImageInfo(dump);
     }
     dump << "Non-Purgeable: " << fNonpurgeableResources.count() << std::endl;
     for (int i = 0; i < fNonpurgeableResources.count(); ++i) {
         GrGpuResource* resource = fNonpurgeableResources[i];
-        if (strcmp(resource->getResourceType(), "VkImage") != 0) continue;
+        if (resource == nullptr) {
+            continue;
+        }
+        if (strcmp(resource->getResourceType(), "VkImage") != 0) {
+            continue;
+        }
         dump << i << " " << resource->getResourceType() << " ";
         resource->dumpVkImageInfo(dump);
     }

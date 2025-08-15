@@ -172,6 +172,10 @@ public:
         fMutableState->setImageLayout(newLayout);
     }
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    void updateNodeId(uint64_t nodeId) override;
+#endif
+
     struct ImageDesc {
         VkImageType         fImageType;
         VkFormat            fFormat;

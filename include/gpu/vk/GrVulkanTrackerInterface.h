@@ -24,6 +24,7 @@
 #endif
 namespace ParallelDebug {
 struct VkImageInvokeRecord;
+SK_API bool IsVkImageDfxEnabled();
 SK_API void RecordNodeId(uint64_t id);
 void DestroyVkImageInvokeRecord(VkImageInvokeRecord*);
 void DumpAllDestroyVkImage(std::stringstream& ss);

@@ -18,10 +18,7 @@
  #include <sstream>
  
  #if defined (SK_VULKAN) && defined (SKIA_DFX_FOR_RECORD_VKIMAGE)
- #define RECORD_GPU_RESOURCE_DRAWABLE_CALLER(NodeId) \
-     if (ParallelDebug::IsVkImageDfxEnabled()) { \
-         ParallelDebug::RecordNodeId(NodeId); \
-     }
+ #define RECORD_GPU_RESOURCE_DRAWABLE_CALLER(NodeId) ParallelDebug::RecordNodeId(NodeId)
  #else
  #define RECORD_GPU_RESOURCE_DRAWABLE_CALLER(NodeId)
  #endif

@@ -16,6 +16,9 @@
 #include "include/gpu/ganesh/GrTypes.h"
 #include "include/gpu/ganesh/vk/GrVkBackendSurface.h"
 #include "include/gpu/ganesh/vk/GrVkTypes.h"
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#include "include/gpu/vk/GrVulkanTrackerInterface.h"
+#endif
 #include "include/gpu/vk/VulkanMutableTextureState.h"
 #include "include/gpu/vk/VulkanTypes.h"
 #include "include/private/base/SkDebug.h"
@@ -222,6 +225,12 @@ public:
     static VkAccessFlags LayoutToSrcAccessMask(const VkImageLayout layout);
 
     size_t onGpuMemorySize() const override;
+
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    void dumpVkImageInfo(std::stringstream& dump) const override;
+    void updateNodeId(uint64_t nodeId) override;
+#endif
+
 #if defined(GPU_TEST_UTILS)
     void setCurrentQueueFamilyToGraphicsQueue(GrVkGpu* gpu);
 #endif
@@ -309,12 +318,18 @@ private:
             , fImage(image)
             , fAlloc(alloc) {}
 
-        ~Resource() override {}
+        ~Resource() override;
 
 #ifdef SK_TRACE_MANAGED_RESOURCES
         void dumpInfo() const override {
             SkDebugf("GrVkImage: %" PRIdPTR " (%d refs)\n", (intptr_t)fImage, this->getRefCnt());
         }
+#endif
+
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    ParallelDebug::VkImageInvokeRecord* fCaller = ParallelDebug::GenerateVkImageInvokeRecord();
+    void dumpVkImageResource(std::stringstream& dump);
+    void RecordFreeVkImage(bool isBorrowed) const;
 #endif
 
 #ifdef SK_DEBUG

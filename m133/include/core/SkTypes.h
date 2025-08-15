@@ -167,6 +167,10 @@
   #endif
 #endif
 
+#if defined(SKIA_OHOS_SINGLE_OWNER) || defined(SKIA_DFX_FOR_RECORD_VKIMAGE)
+    extern bool IsRenderService();
+#endif
+
 #ifdef SKIA_OHOS_SHADER_REDUCE
     extern SK_API bool SkShaderReduceProperty();
 #endif

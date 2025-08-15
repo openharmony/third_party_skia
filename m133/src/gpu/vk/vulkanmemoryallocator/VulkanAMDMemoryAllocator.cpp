@@ -310,7 +310,8 @@ void VulkanAMDMemoryAllocator::dumpVmaStats(SkString *out, const char *sep) cons
         stats.total.statistics.blockCount <= maxBlockCount ? stats.total.statistics.blockCount : maxBlockCount,
         maxBlockCount, sep);
     out->appendf("vma_dedicatedBlockCount: %llu%s",
-        stats.total.statistics.blockCount <= maxBlockCount ? 0 : stats.total.statistics.blockCount - maxBlockCount, sep);
+        stats.total.statistics.blockCount <= maxBlockCount ? 0 : stats.total.statistics.blockCount - maxBlockCount,
+        sep);
     out->appendf("vma_allocationCount: %u%s", stats.total.statistics.allocationCount, sep);
     out->appendf("vma_unusedRangeCount: %u%s", stats.total.unusedRangeCount, sep);
     out->appendf("vma_allocationSize: %llu / %llu%s",

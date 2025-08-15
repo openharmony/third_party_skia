@@ -199,3 +199,11 @@ void GrVkTexture::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const
         this->dumpMemoryStatisticsPriv(traceMemoryDump, resourceName, "Texture", size);
     }
 }
+
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+void GrVkTexture::updateNodeId(uint64_t nodeId) {
+    if (fTexture != nullptr) {
+        fTexture->updateNodeId(nodeId);
+    }
+}
+#endif

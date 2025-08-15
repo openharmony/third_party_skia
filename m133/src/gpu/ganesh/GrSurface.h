@@ -115,6 +115,10 @@ public:
     const GrSurface* asSurface() const override { return this; }
 #endif
 
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    virtual void updateNodeId(uint64_t nodeId) {}
+#endif
+
 protected:
     void setGLRTFBOIDIs0() {
         SkASSERT(!this->requiresManualMSAAResolve());

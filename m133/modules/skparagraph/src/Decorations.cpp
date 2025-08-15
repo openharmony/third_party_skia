@@ -41,7 +41,7 @@ void Decorations::updateDecorationPosition(TextDecoration decorationMode, SkScal
             break;
         case TextVerticalAlign::CENTER:
             if (decorationMode == TextDecoration::kLineThrough) {
-                // Postion the line-through decoration at the vertical center of the line
+                // Position the line-through decoration at the vertical center of the line
                 // The division by 2 places it in the middle between the line
                 positionY = fDecorationContext.lineHeight / 2 - baselineShift;
             }
