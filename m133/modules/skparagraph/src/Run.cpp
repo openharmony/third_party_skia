@@ -692,8 +692,7 @@ void Run::updateMetrics(InternalLineMetrics* endlineMetrics) {
 
     fFontMetrics.fLeading = 0;
 
-    updatePlaceholderAlignmentIfNeeded(placeholderStyle->fAlignment,
-        fOwner->getParagraphStyle().getVerticalAlignment());
+    updatePlaceholderAlignmentIfNeeded(placeholderStyle->fAlignment, fOwner->getParagraphStyle().getVerticalAlignment());
 
     switch (placeholderStyle->fAlignment) {
         case PlaceholderAlignment::kBaseline:

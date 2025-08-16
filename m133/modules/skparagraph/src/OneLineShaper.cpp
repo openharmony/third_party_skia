@@ -7,6 +7,8 @@
 #ifdef ENABLE_TEXT_ENHANCE
 #include "src/Run.h"
 #include "include/TextGlobalConfig.h"
+#include "include/TextStyle.h"
+#include "SkScalar.h"
 #include "trace.h"
 #endif
 

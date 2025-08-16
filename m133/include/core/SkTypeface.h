@@ -113,7 +113,7 @@ public:
 
     /** Creates a new reference to the typeface that most closely matches the
         requested familyName and fontStyle. This method allows extended font
-        face specifiers as in the SkFontStyle type.
+        face specifiers as in the SkFontStyle type. Will never return null.
 
         @param familyName  May be NULL. The name of the font family.
         @param fontStyle   The style of the typeface.

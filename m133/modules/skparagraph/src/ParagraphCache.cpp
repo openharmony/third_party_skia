@@ -473,7 +473,7 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
     paragraph.getIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
         value->fAlphabeticBaseline, value->fIdeographicBaseline,
         value->fExceededMaxLines);
-    for (auto& indent : paragraph.fIndents) {
+    for (auto& indent : value->indents) {
         value->indents.push_back(indent);
     }
     value->linebreakStrategy = paragraph.getLineBreakStrategy();
