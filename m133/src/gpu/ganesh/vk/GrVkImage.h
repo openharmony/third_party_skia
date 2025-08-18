@@ -327,9 +327,9 @@ private:
 #endif
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
-    ParallelDebug::VkImageInvokeRecord* fCaller = ParallelDebug::GenerateVkImageInvokeRecord();
-    void dumpVkImageResource(std::stringstream& dump);
-    void RecordFreeVkImage(bool isBorrowed) const;
+        ParallelDebug::VkImageInvokeRecord* fCaller = nullptr;
+        void dumpVkImageResource(std::stringstream& dump);
+        void RecordFreeVkImage(bool isBorrowed) const;
 #endif
 
 #ifdef SK_DEBUG
