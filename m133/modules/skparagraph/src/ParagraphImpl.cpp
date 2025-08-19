@@ -2911,38 +2911,40 @@ std::string_view ParagraphImpl::GetState() const
 
 std::string ParagraphImpl::GetDumpInfo() const
 {
-    // 由于arkui那边要求dump信息只能一行，这里将应该换行的地方用逗号代替，方便定位时统一用工具替换
     std::ostringstream paragraphInfo;
-    paragraphInfo << "This is paragraph dump info:,";
-    paragraphInfo << "Text size: " << fText.size() << " fState: " << GetState()
-                  << " fSkipTextBlobDrawing: " << (fSkipTextBlobDrawing ? "true" : "false") << ",";
+    paragraphInfo << "Paragraph dump:";
+    paragraphInfo << "Text sz:" << fText.size() << ",State:" << GetState()
+                  << ",TextDraw:" << (fSkipTextBlobDrawing ? "T" : "F") << ",";
     uint32_t glyphSize = 0;
     uint32_t runIndex = 0;
     for (auto& run : fRuns) {
-        paragraphInfo << "Run[" << runIndex << "]" << " glyph size: " << run.size()
-                      << " text range: [" << run.textRange().start << "-" << run.textRange().end << "),";
+        paragraphInfo << "Run" << runIndex << " glyph sz:" << run.size()
+                      << ",rng[" << run.textRange().start << "-" << run.textRange().end << "),";
         runIndex++;
         glyphSize += run.size();
     }
     uint32_t blockIndex = 0;
     for (auto& block : fTextStyles) {
-        paragraphInfo << "Block[" << blockIndex << "]"
-                      << " text range[" << block.fRange.start << "-"<< block.fRange.end << ")"
-                      << " font size: " << block.fStyle.getFontSize()
-                      << " font color: " << std::hex << block.fStyle.getColor() << std::dec
-                      << " font height: " << block.fStyle.getHeight()
-                      << " font weight: " << block.fStyle.getFontStyle().GetWeight()
-                      << " font width: " << block.fStyle.getFontStyle().GetWidth()
-                      << " font slant: " << block.fStyle.getFontStyle().GetSlant() << ",";
+        paragraphInfo << "Blk" << blockIndex
+                      << " rng[" << block.fRange.start << "-"<< block.fRange.end << ")"
+                      << ",sz:" << block.fStyle.getFontSize()
+                      << ",clr:" << std::hex << block.fStyle.getColor() << std::dec
+                      << ",ht:" << block.fStyle.getHeight()
+                      << ",wt:" << block.fStyle.getFontStyle().GetWeight()
+                      << ",wd:" << block.fStyle.getFontStyle().GetWidth()
+                      << ",slt:" << block.fStyle.getFontStyle().GetSlant() << ",";
         blockIndex++;
     }
-    paragraphInfo << "Paragraph glyph size: " << glyphSize << ",";
+    paragraphInfo << "Paragraph glyph sz:" << glyphSize << ",";
     uint32_t lineIndex = 0;
     for (auto& line : fLines) {
+        if (lineIndex > 0) {
+            paragraphInfo << ",";
+        }
         auto runs = line.getLineAllRuns();
         auto runSize = runs.size();
         if (runSize !=0 ) {
-            paragraphInfo << "Line[" << lineIndex << "] run range: [" << runs[0] << "-" << runs[runSize - 1] << "],";
+            paragraphInfo << "L" << lineIndex << " run rng:" << runs[0] << "-" << runs[runSize - 1];
         }
         lineIndex++;
     }
