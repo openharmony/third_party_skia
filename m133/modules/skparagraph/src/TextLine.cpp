@@ -1173,6 +1173,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     bool iterForWord = false;
     for (auto clusterIndex = fClusterRange.end; clusterIndex > fClusterRange.start; --clusterIndex) {
         auto& cluster = fOwner->cluster(clusterIndex - 1);
+        // The style of the ellipsis follows that of the first omitted cluster.
         auto& ellipsisStyleCluster = fOwner->cluster(clusterIndex);
         // Shape the ellipsis if the run has changed
         if (lastRun != ellipsisStyleCluster.runIndex()) {
@@ -1266,7 +1267,7 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     SkScalar width = fAdvance.fX;
     std::unique_ptr<Run> ellipsisRun;
 
-    // Shape the ellipsis, which style is the first cluster.
+    // Shape the ellipsis to follow the style of the first cluster.
     Cluster& ellipsisCluster = fOwner->cluster(fGhostClusterRange.start);
     ellipsisRun = this->shapeEllipsis(ellipsis, &ellipsisCluster);
 
@@ -1321,6 +1322,7 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
     while (startIndex < endIndex) {
         addStart = (startWidth <= endWidth);
         if (addStart) {
+            // The style of the ellipsis follows that of the first omitted cluster.
             Cluster& ellipsisStyleCluster = fOwner->cluster(startIndex + 1);
             if (lastRun != ellipsisStyleCluster.runIndex()) {
                 ellipsisRun = this->shapeEllipsis(ellipsis, &ellipsisStyleCluster);
@@ -1493,58 +1495,42 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
 
     const Run& run = cluster->run();
     TextStyle textStyle = fOwner->paragraphStyle().getTextStyle();
-    // // 设置默认的省略号样式为下一个
-    // TextRange truncatedTextRange(cluster->textRange().start, fOwner->text().size());
-    // BlockRange truncatedBlockRange = fOwner->findAllBlocks(truncatedTextRange);
-    // if (cluster->textRange().start < fOwner->text().size()) {
-    //     textStyle = fOwner->block(truncatedBlockRange.start).fStyle;
-    // }
     for (auto i = fBlockRange.start; i < fBlockRange.end; ++i) {
         auto& block = fOwner->block(i);
         if (run.leftToRight() && cluster->textRange().end <= block.fRange.end) {
             textStyle = block.fStyle;
             break;
+#ifdef ENABLE_TEXT_ENHANCE
         } else if (!run.leftToRight() && cluster->textRange().start < block.fRange.end) {
+#else
+        } else if (!run.leftToRight() && cluster->textRange().start <= block.fRange.end) {
+#endif
             textStyle = block.fStyle;
             break;
         }
     }
 #ifdef ENABLE_TEXT_ENHANCE
     auto shaped = [&](std::shared_ptr<RSTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
-#else
-    auto shaped = [&](sk_sp<SkTypeface> typeface, sk_sp<SkFontMgr> fallback) -> std::unique_ptr<Run> {
-#endif
-
-#ifdef ENABLE_TEXT_ENHANCE
         ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), str);
-#else
-        ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), ellipsis);
-#endif
-#ifdef ENABLE_TEXT_ENHANCE
         RSFont font(typeface, textStyle.getCorrectFontSize(), 1, 0);
         font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
         font.SetHinting(RSDrawing::FontHinting::SLIGHT);
         font.SetSubpixel(true);
+        std::unique_ptr<SkShaper> shaper = SkShapers::HB::ShapeDontWrapOrReorder(
+                    fOwner->getUnicode(), fallback ? RSFontMgr::CreateDefaultFontMgr() : RSFontMgr::CreateDefaultFontMgr());
+        const SkBidiIterator::Level defaultLevel = SkBidiIterator::kLTR;
+        const char* utf8 = str.c_str();
+        size_t utf8Bytes = str.size();
 #else
+    auto shaped = [&](sk_sp<SkTypeface> typeface, sk_sp<SkFontMgr> fallback) -> std::unique_ptr<Run> {
+        ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), ellipsis);
         SkFont font(std::move(typeface), textStyle.getFontSize());
         font.setEdging(SkFont::Edging::kAntiAlias);
         font.setHinting(SkFontHinting::kSlight);
         font.setSubpixel(true);
-#endif
-
-#ifdef ENABLE_TEXT_ENHANCE
-        std::unique_ptr<SkShaper> shaper = SkShapers::HB::ShapeDontWrapOrReorder(
-                fOwner->getUnicode(), fallback ? RSFontMgr::CreateDefaultFontMgr() : RSFontMgr::CreateDefaultFontMgr());
-#else
         std::unique_ptr<SkShaper> shaper = SkShapers::HB::ShapeDontWrapOrReorder(
                 fOwner->getUnicode(), fallback ? fallback : SkFontMgr::RefEmpty());
-#endif
-
         const SkBidiIterator::Level defaultLevel = SkBidiIterator::kLTR;
-#ifdef ENABLE_TEXT_ENHANCE
-        const char* utf8 = str.c_str();
-        size_t utf8Bytes = str.size();
-#else
         const char* utf8 = ellipsis.c_str();
         size_t utf8Bytes = ellipsis.size();
 #endif
@@ -2076,9 +2062,10 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         // Extra efforts to get the ellipsis text style
         ClipContext clipContext = correctContext(run->textRange(), 0.0f);
         TextRange testRange(run->fClusterStart, run->fClusterStart + run->textRange().width());
+        
+#ifdef ENABLE_TEXT_ENHANCE
         for (BlockIndex index = fBlockRange.start; index < fBlockRange.end + 1; ++index) {
             auto block = fOwner->styles().begin() + index;
-#ifdef ENABLE_TEXT_ENHANCE
             TextRange intersect = intersected(
                     block->fRange, TextRange(run->textRange().start, run->textRange().end));
             if (intersect.width() > 0) {
@@ -2090,14 +2077,17 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
                 visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
                 return run->advance().fX;
             }
+        }
 #else
+        for (BlockIndex index = fBlockRange.start; index < fBlockRange.end; ++index) {
+            auto block = fOwner->styles().begin() + index;
             auto intersect = intersected(block->fRange, testRange);
             if (intersect.width() > 0) {
                 visitor(testRange, block->fStyle, clipContext);
             }
             return run->advance().fX;
-#endif
         }
+#endif
         SkASSERT(false);
     }
 
