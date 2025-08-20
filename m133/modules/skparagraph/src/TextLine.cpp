@@ -350,7 +350,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
         // 16 is default value in placeholder-only scenario, calculated by the fontsize 14.
         SkScalar maxLineHeightWithoutPlaceholder = 16;
         this->iterateThroughVisualRuns(
-                EllipsisReadStrategy::DEFAULT,
+                EllipsisReadStrategy::READ_REPLACED_WORD,
                 true,
                 [painter, x, y, this, &maxLineHeightWithoutPlaceholder](const Run* run,
                                                                         SkScalar runOffsetInLine,
@@ -391,7 +391,7 @@ void TextLine::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
         fDecorationContext.textBlobTop = maxLineHeightWithoutPlaceholder * 0.16;
         fDecorationContext.lineHeight = sizes().height();
         this->iterateThroughVisualRuns(
-                EllipsisReadStrategy::DEFAULT,
+                EllipsisReadStrategy::READ_REPLACED_WORD,
                 true,
 #else
         this->iterateThroughVisualRuns(
@@ -1173,11 +1173,12 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     bool iterForWord = false;
     for (auto clusterIndex = fClusterRange.end; clusterIndex > fClusterRange.start; --clusterIndex) {
         auto& cluster = fOwner->cluster(clusterIndex - 1);
+        auto& ellipsisStyleCluster = fOwner->cluster(clusterIndex);
         // Shape the ellipsis if the run has changed
-        if (lastRun != cluster.runIndex()) {
-            ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
+        if (lastRun != ellipsisStyleCluster.runIndex()) {
+            ellipsisRun = this->shapeEllipsis(ellipsis, &ellipsisStyleCluster);
             // We may need to continue
-            lastRun = cluster.runIndex();
+            lastRun = ellipsisStyleCluster.runIndex();
         }
 
         if (!cluster.isWordBreak()) {
@@ -1187,7 +1188,8 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             inWord = false;
         }
         // See if it fits
-        if (ellipsisRun != nullptr && width + ellipsisRun->advance().fX > maxWidth) {
+        SkScalar ellipsisWidth = ellipsisRun ? ellipsisRun->advance().fX : 0;
+        if (ellipsisRun != nullptr && width + ellipsisWidth > maxWidth) {
             if (!cluster.isHardBreak()) {
                 width -= usingAutoSpaceWidth(&cluster);
             }
@@ -1207,8 +1209,8 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         }
 
         fEllipsis = std::move(ellipsisRun);
-        fEllipsis->fTextRange =
-                TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
+        fEllipsis->fTextRange = TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
+        fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
         TailEllipsisUpdateLine(cluster, width, clusterIndex, wordBreakType);
 
         break;
@@ -1226,8 +1228,8 @@ void TextLine::handleTailEllipsisInEmptyLine(std::unique_ptr<Run>& ellipsisRun,
     auto& cluster = fOwner->cluster(fClusterRange.start);
     ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
     fEllipsis = std::move(ellipsisRun);
-    fEllipsis->fTextRange =
-            TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
+    fEllipsis->fTextRange = TextRange(cluster.textRange().start, cluster.textRange().start + ellipsis.size());
+    fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().start, fOwner->text().size());
     TailEllipsisUpdateLine(cluster, width, fGhostClusterRange.end, wordBreakType);
     fWidthWithSpaces = width;
     ellipsisNotFitProcess(EllipsisModal::TAIL);
@@ -1243,7 +1245,6 @@ void TextLine::TailEllipsisUpdateLine(Cluster& cluster,
     fEllipsis->fClusterStart = cluster.textRange().end;
 
     // Let's update the line
-    fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
     fClusterRange.end = clusterIndex;
     fGhostClusterRange.end = fClusterRange.end;
     // Get the last run directions after clipping
@@ -1264,16 +1265,13 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     }
     SkScalar width = fAdvance.fX;
     std::unique_ptr<Run> ellipsisRun;
-    RunIndex lastRun = EMPTY_RUN;
-    for (auto clusterIndex = fGhostClusterRange.start; clusterIndex < fGhostClusterRange.end;
-         ++clusterIndex) {
-        auto& cluster = fOwner->cluster(clusterIndex);
-        // Shape the ellipsis if the run has changed
-        if (lastRun != cluster.runIndex()) {
-            ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
-            // We may need to continue
-            lastRun = cluster.runIndex();
-        }
+
+    // Shape the ellipsis, which style is the first cluster.
+    Cluster& ellipsisCluster = fOwner->cluster(fGhostClusterRange.start);
+    ellipsisRun = this->shapeEllipsis(ellipsis, &ellipsisCluster);
+
+    for (auto clusterIndex = fGhostClusterRange.start; clusterIndex < fGhostClusterRange.end; ++clusterIndex) {
+        Cluster& cluster = fOwner->cluster(clusterIndex);
         // See if it fits
         if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
             width -= usingAutoSpaceWidth(&cluster);
@@ -1323,10 +1321,10 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
     while (startIndex < endIndex) {
         addStart = (startWidth <= endWidth);
         if (addStart) {
-            Cluster& startCluster = fOwner->cluster(startIndex);
-            if (lastRun != startCluster.runIndex()) {
-                ellipsisRun = this->shapeEllipsis(ellipsis, &startCluster);
-                lastRun = startCluster.runIndex();
+            Cluster& ellipsisStyleCluster = fOwner->cluster(startIndex + 1);
+            if (lastRun != ellipsisStyleCluster.runIndex()) {
+                ellipsisRun = this->shapeEllipsis(ellipsis, &ellipsisStyleCluster);
+                lastRun = ellipsisStyleCluster.runIndex();
             }
             startWidth += usingAutoSpaceWidth(&fOwner->cluster(startIndex++));
         } else {
@@ -1495,12 +1493,18 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
 
     const Run& run = cluster->run();
     TextStyle textStyle = fOwner->paragraphStyle().getTextStyle();
+    // // 设置默认的省略号样式为下一个
+    // TextRange truncatedTextRange(cluster->textRange().start, fOwner->text().size());
+    // BlockRange truncatedBlockRange = fOwner->findAllBlocks(truncatedTextRange);
+    // if (cluster->textRange().start < fOwner->text().size()) {
+    //     textStyle = fOwner->block(truncatedBlockRange.start).fStyle;
+    // }
     for (auto i = fBlockRange.start; i < fBlockRange.end; ++i) {
         auto& block = fOwner->block(i);
         if (run.leftToRight() && cluster->textRange().end <= block.fRange.end) {
             textStyle = block.fStyle;
             break;
-        } else if (!run.leftToRight() && cluster->textRange().start <= block.fRange.end) {
+        } else if (!run.leftToRight() && cluster->textRange().start < block.fRange.end) {
             textStyle = block.fStyle;
             break;
         }
@@ -2072,11 +2076,11 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         // Extra efforts to get the ellipsis text style
         ClipContext clipContext = correctContext(run->textRange(), 0.0f);
         TextRange testRange(run->fClusterStart, run->fClusterStart + run->textRange().width());
-        for (BlockIndex index = fBlockRange.start; index < fBlockRange.end; ++index) {
+        for (BlockIndex index = fBlockRange.start; index < fBlockRange.end + 1; ++index) {
             auto block = fOwner->styles().begin() + index;
 #ifdef ENABLE_TEXT_ENHANCE
             TextRange intersect = intersected(
-                    block->fRange, TextRange(run->textRange().start - 1, run->textRange().end));
+                    block->fRange, TextRange(run->textRange().start, run->textRange().end));
             if (intersect.width() > 0) {
                 visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
                 return run->advance().fX;
