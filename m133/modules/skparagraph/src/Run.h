@@ -312,11 +312,9 @@ private:
 #ifdef ENABLE_TEXT_ENHANCE
     skia_private::STArray<PARAM_64, SkPoint, true>& fGlyphAdvances;
 #endif
-    skia_private::STArray<64, SkPoint, true> fJustificationShifts; // For justification
-                                                                   // (current and prev shifts)
+    skia_private::STArray<64, SkPoint, true> fJustificationShifts; // For justification(current and prev shifts)
 #ifdef ENABLE_TEXT_ENHANCE
-    skia_private::STArray<PARAM_64, SkPoint, true> fAutoSpacings; // For auto spacing
-                                                                   // (current and prev spacings)
+    skia_private::STArray<PARAM_64, SkPoint, true> fAutoSpacings; // For auto spacing(current and prev spacings)
     skia_private::STArray<PARAM_64, SkScalar, true> fHalfLetterspacings; // For letterspacing
     RSFontMetrics fFontMetrics;
 #else

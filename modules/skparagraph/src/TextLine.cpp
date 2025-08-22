@@ -1839,7 +1839,7 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
             result.fIsTrimTrailingSpaceWidth = false;
             if (fOwner->paragraphStyle().getTrailingSpaceOptimized() &&
                 run->isTrailingSpaceIncluded(fClusterRange, fGhostClusterRange)) {
-                result.fTrailingSpaceWidth = spacesWidth() < 0 ? 0 : spacesWidth();
+                result.fTrailingSpaceWidth = std::max(spacesWidth(), 0.0f);
                 if (!run->leftToRight() && (fGhostClusterRange.width() > 0 &&
                     fOwner->cluster(fGhostClusterRange.end - 1).isHardBreak())) {
                     result.fTrailingSpaceWidth += fOwner->cluster(fGhostClusterRange.end - 1).width();
