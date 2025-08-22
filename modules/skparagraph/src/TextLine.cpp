@@ -1117,14 +1117,21 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     bool iterForWord = false;
     for (auto clusterIndex = fClusterRange.end; clusterIndex > fClusterRange.start; --clusterIndex) {
-        auto& cluster = fOwner->cluster(clusterIndex - 1);
+        Cluster& cluster = fOwner->cluster(clusterIndex - 1);
         // The style of the ellipsis follows that of the first omitted cluster.
-        auto& ellipsisStyleCluster = fOwner->cluster(clusterIndex);
+        Cluster& ellipsisStyleCluster = fOwner->cluster(clusterIndex);
         // Shape the ellipsis if the run has changed
         if (lastRun != ellipsisStyleCluster.runIndex()) {
             ellipsisRun = this->shapeEllipsis(ellipsis, &ellipsisStyleCluster);
             // We may need to continue
             lastRun = ellipsisStyleCluster.runIndex();
+        }
+
+        // fall back: if ellipsisRun is nullptr, it indecates that fClusterRange end has already gone out of bounds,
+        // rather than the first cluster being omitted.
+        if (ellipsisRun == nullptr && lastRun != cluster.runIndex()) {
+            ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
+            lastRun = cluster.runIndex();
         }
 
         if (!cluster.isWordBreak()) {
