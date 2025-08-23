@@ -27,10 +27,6 @@ class SkString;
 
 namespace skia {
 namespace textlayout {
-#ifdef ENABLE_TEXT_ENHANCE
-const size_t BOTTOM_PADDING_FACTOR = 8;
-#endif
-
 class ParagraphImpl;
 #ifdef ENABLE_TEXT_ENHANCE
 struct DecorationContext {

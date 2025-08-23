@@ -1221,13 +1221,12 @@ std::vector<uint8_t> TextWrapper::findBreakPositions(Cluster* startCluster,
     auto startPos = startCluster->textRange().start;
     auto endPos = startPos;
     auto owner = startCluster->getOwner();
-    for (auto next = startCluster + 1; next != endOfClusters; next++) {
+    for (auto next = startCluster + 1; next < endOfClusters; next++) {
         // find the end boundary of current word (hard/soft/whitespace break)
         if (next->isWhitespaceBreak() || next->isHardBreak()) {
             break;
-        } else {
-            endPos = next->textRange().end;
         }
+        endPos = next->textRange().end;
     }
 
     // Using end position cluster height as an estimate for reserved hyphen width

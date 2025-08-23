@@ -27,8 +27,6 @@ class SkString;
 
 namespace skia {
 namespace textlayout {
-const size_t BOTTOM_PADDING_FACTOR = 8;
-
 class ParagraphImpl;
 struct DecorationContext {
     SkScalar thickness = 0.0f;

@@ -309,10 +309,8 @@ private:
 #ifdef OHOS_SUPPORT
     SkSTArray<PARAM_64, SkPoint, true>& fGlyphAdvances;
 #endif
-    SkSTArray<64, SkPoint, true> fJustificationShifts; // For justification
-                                                                   // (current and prev shifts)
-    SkSTArray<PARAM_64, SkPoint, true> fAutoSpacings; // For auto spacing
-                                                                   // (current and prev spacings)
+    SkSTArray<64, SkPoint, true> fJustificationShifts; // For justification(current and prev shifts)
+    SkSTArray<PARAM_64, SkPoint, true> fAutoSpacings; // For auto spacing(current and prev spacings)
     SkSTArray<PARAM_64, SkScalar, true> fHalfLetterspacings; // For letterspacing
 
 #ifndef USE_SKIA_TXT
