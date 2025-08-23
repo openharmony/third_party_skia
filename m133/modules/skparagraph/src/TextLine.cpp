@@ -1501,6 +1501,14 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
 
     const Run& run = cluster->run();
     TextStyle textStyle = fOwner->paragraphStyle().getTextStyle();
+#ifdef ENABLE_TEXT_ENHANCE
+    // Initialize textStyle from the current cluster to prevent block-missing after line break.
+    TextRange omittedTextRange(cluster->textRange().start, fOwner->text().size());
+    BlockRange omittedTextBlockRange = fOwner->findAllBlocks(omittedTextRange);
+    if(omittedTextBlockRange.start < fOwner->text().size()){
+        textStyle = fOwner->block(omittedTextBlockRange.start).fStyle;
+    }
+#endif
     for (auto i = fBlockRange.start; i < fBlockRange.end; ++i) {
         auto& block = fOwner->block(i);
         if (run.leftToRight() && cluster->textRange().end <= block.fRange.end) {
@@ -1522,8 +1530,8 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
         font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
         font.SetHinting(RSDrawing::FontHinting::SLIGHT);
         font.SetSubpixel(true);
-        std::unique_ptr<SkShaper> shaper = SkShapers::HB::ShapeDontWrapOrReorder(
-                    fOwner->getUnicode(), fallback ? RSFontMgr::CreateDefaultFontMgr() : RSFontMgr::CreateDefaultFontMgr());
+        std::unique_ptr<SkShaper> shaper = SkShapers::HB::ShapeDontWrapOrReorder(fOwner->getUnicode(), 
+            fallback ? RSFontMgr::CreateDefaultFontMgr() : RSFontMgr::CreateDefaultFontMgr());
         const SkBidiIterator::Level defaultLevel = SkBidiIterator::kLTR;
         const char* utf8 = str.c_str();
         size_t utf8Bytes = str.size();

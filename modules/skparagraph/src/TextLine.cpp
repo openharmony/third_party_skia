@@ -1378,6 +1378,14 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
 
     const Run& run = cluster->run();
     TextStyle textStyle = fOwner->paragraphStyle().getTextStyle();
+#ifdef OHOS_SUPPORT
+    // Initialize textStyle from the current cluster to prevent block-missing after line break.
+    TextRange omittedTextRange(cluster->textRange().start, fOwner->text().size());
+    BlockRange omittedTextBlockRange = fOwner->findAllBlocks(omittedTextRange);
+    if(omittedTextBlockRange.start < fOwner->text().size()){
+        textStyle = fOwner->block(omittedTextBlockRange.start).fStyle;
+    }
+#endif
     for (auto i = fBlockRange.start; i < fBlockRange.end; ++i) {
         auto& block = fOwner->block(i);
         if (run.leftToRight() && cluster->textRange().end <= block.fRange.end) {
