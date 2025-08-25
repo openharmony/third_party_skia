@@ -149,6 +149,8 @@ public:
     size_t clusterIndex(size_t pos) const { return fClusterIndexes[pos]; }
 #ifdef ENABLE_TEXT_ENHANCE
     size_t globalClusterIndex(size_t pos) const;
+    void initLimitHeightParam();
+    void calculateMetricsWithoutHeightScale();
 #else
     size_t globalClusterIndex(size_t pos) const { return fClusterStart + fClusterIndexes[pos]; }
 #endif
@@ -268,6 +270,12 @@ public:
     void setIndexInLine(size_t index) { indexInLine = index; }
     SkScalar getVerticalAlignShift() const { return fVerticalAlignShift; }
     void setVerticalAlignShift(SkScalar verticalAlignShift) { fVerticalAlignShift = verticalAlignShift; }
+    SkScalar getMaxLineHeight() const { return fMaxLineHeight; }
+    void setMaxLineHeight(SkScalar maxLineHeight) { fMaxLineHeight = maxLineHeight; }
+    SkScalar getMinLineHeight() const { return fMinLineHeight; }
+    void setMinLineHeight(SkScalar minLineHeight) { fMinLineHeight = minLineHeight; }
+    LineHeightStyle getLineHeightStyle() const { return fLineHeightStyle; }
+    void setLineHeightStyle(LineHeightStyle lineHeightStyle) { fLineHeightStyle = lineHeightStyle; }
 #endif
 private:
     friend class ParagraphImpl;
@@ -317,10 +325,11 @@ private:
     skia_private::STArray<PARAM_64, SkPoint, true> fAutoSpacings; // For auto spacing(current and prev spacings)
     skia_private::STArray<PARAM_64, SkScalar, true> fHalfLetterspacings; // For letterspacing
     RSFontMetrics fFontMetrics;
+    SkScalar fHeightMultiplier;
 #else
     SkFontMetrics fFontMetrics;
-#endif
     const SkScalar fHeightMultiplier;
+#endif
     const bool fUseHalfLeading;
     const SkScalar fBaselineShift;
     SkScalar fCorrectAscent;
@@ -336,6 +345,9 @@ private:
     size_t indexInLine;
     SkScalar fCompressionBaselineShift{0.0f};
     SkScalar fVerticalAlignShift{0.0f};
+    SkScalar fMaxLineHeight{std::numeric_limits<float>::max()};
+    SkScalar fMinLineHeight{0.0f};
+    LineHeightStyle fLineHeightStyle{LineHeightStyle::kFontSize};
 #endif
 };
 

@@ -954,6 +954,8 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
     auto disableFirstAscent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent;
     auto disableLastDescent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
     bool firstLine = true; // We only interested in fist line if we have to disable the first ascent
+    SkScalar lineSpacing = parent->paragraphStyle().getLineSpacing();
+    bool needLineSpacing = lineSpacing > 0;
 
     // Resolve balanced line widths
     std::vector<SkScalar> balancedWidths;
@@ -1049,6 +1051,7 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
         }
         if (disableLastDescent && (lastLine || (startLine == end && !fHardLineBreak))) {
             fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
+            needLineSpacing = false;
         }
 
         if (parent->strutEnabled()) {
@@ -1057,6 +1060,9 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
         }
 
         SkScalar lineHeight = fEndLine.metrics().height();
+        if (needLineSpacing) {
+            lineHeight += lineSpacing;
+        }
         if (fHardLineBreak && !lastLine && parent->paragraphStyle().getParagraphSpacing() > 0) {
             lineHeight += parent->paragraphStyle().getParagraphSpacing();
         }
@@ -1493,7 +1499,9 @@ void TextWrapper::initializeFormattingState(SkScalar maxWidth, const SkSpan<Clus
                           style.getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent,
                           style.getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent,
                           style.getMaxLines(),
-                          style.effective_align()};
+                          style.effective_align(),
+                          fParent->paragraphStyle().getLineSpacing() > 0,
+                          fParent->paragraphStyle().getLineSpacing()};
 
     fFirstLine = true;
     fSoftLineMaxIntrinsicWidth = 0;
@@ -1516,14 +1524,13 @@ void TextWrapper::processLineStretches(SkScalar maxWidth, const AddLineToParagra
 }
 
 void TextWrapper::finalizeTextLayout(const AddLineToParagraph& addLine) {
-    processRemainingClusters();
-    addFinalLineBreakIfNeeded(addLine);
-    adjustFirstLastLineMetrics();
-
     if (fParent->paragraphStyle().getIsEndAddParagraphSpacing() &&
         fParent->paragraphStyle().getParagraphSpacing() > 0) {
         fHeight += fParent->paragraphStyle().getParagraphSpacing();
     }
+    processRemainingClusters();
+    addFinalLineBreakIfNeeded(addLine);
+    adjustFirstLastLineMetrics();
 }
 
 void TextWrapper::prepareLineForFormatting(TextStretch& line) {
@@ -1540,10 +1547,10 @@ void TextWrapper::formatCurrentLine(const AddLineToParagraph& addLine) {
 }
 
 bool TextWrapper::determineIfEllipsisNeeded() {
-    bool lastLine = (fFormattingContext.hasEllipsis && fFormattingContext.unlimitedLines) ||
+    fIsLastLine = (fFormattingContext.hasEllipsis && fFormattingContext.unlimitedLines) ||
                     fLineNumber >= fFormattingContext.maxLines;
     bool needEllipsis =
-            fFormattingContext.hasEllipsis && !fFormattingContext.endlessLine && lastLine;
+            fFormattingContext.hasEllipsis && !fFormattingContext.endlessLine && fIsLastLine;
 
     if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
         fFormattingContext.hasEllipsis) {
@@ -1592,8 +1599,9 @@ void TextWrapper::adjustLineMetricsForFirstLastLine() {
     if (fFormattingContext.disableFirstAscent && fFirstLine) {
         fEndLine.metrics().fAscent = fEndLine.metrics().fRawAscent;
     }
-    if (fFormattingContext.disableLastDescent && isLastLine()) {
+    if (fFormattingContext.disableLastDescent && (fIsLastLine ||(fCurrentStartLine == fEnd && !fHardLineBreak))) {
         fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
+        fFormattingContext.needLineSpacing = false;
     }
 }
 
@@ -1638,6 +1646,9 @@ TextWrapper::LineTextRanges TextWrapper::calculateLineTextRanges() {
 
 SkScalar TextWrapper::calculateLineHeight() {
     SkScalar height = fEndLine.metrics().height();
+    if (fFormattingContext.needLineSpacing) {
+        height += fFormattingContext.lineSpacing;
+    }
     if (fHardLineBreak && !isLastLine() && fParent->paragraphStyle().getParagraphSpacing() > 0) {
         height += fParent->paragraphStyle().getParagraphSpacing();
     }
@@ -1767,7 +1778,7 @@ void TextWrapper::adjustMetricsForEmptyParagraph() {
     if (fFormattingContext.disableFirstAscent) {
         fEndLine.metrics().fAscent = fEndLine.metrics().fRawAscent;
     }
-    if (fFormattingContext.disableLastDescent && !fHardLineBreak) {
+    if (fFormattingContext.disableLastDescent && (fIsLastLine || (fEndLine.endCluster() == fEnd && !fHardLineBreak))) {
         fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
     }
 }

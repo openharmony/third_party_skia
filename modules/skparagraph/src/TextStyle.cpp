@@ -52,6 +52,68 @@ TextStyle TextStyle::cloneForPlaceholder() {
     return result;
 }
 
+#ifdef OHOS_SUPPORT
+bool TextStyle::equalsByTextShadow(const TextStyle& other) const {
+    if (fTextShadows.size() != other.fTextShadows.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < fTextShadows.size(); ++i) {
+        if (fTextShadows[i] != other.fTextShadows[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool TextStyle::equalsByFontFeatures(const TextStyle& other) const {
+    if (fFontFeatures.size() != other.fFontFeatures.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < fFontFeatures.size(); ++i) {
+        if (!(fFontFeatures[i] == other.fFontFeatures[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool TextStyle::equalsByShape(const TextStyle& other) const {
+    return fFontStyle == other.fFontStyle &&
+           fLocale == other.fLocale &&
+           fFontFamilies == other.fFontFamilies &&
+           getCorrectFontSize() == other.getCorrectFontSize() &&
+           fHeightOverride == other.fHeightOverride &&
+           fHeight == other.fHeight &&
+           fHalfLeading == other.fHalfLeading &&
+           nearlyEqual(getTotalVerticalShift(), other.getTotalVerticalShift()) &&
+           fFontArguments == other.fFontArguments &&
+           fStyleId == other.fStyleId &&
+           fBackgroundRect == other.fBackgroundRect &&
+           nearlyEqual(fBaselineShift, other.fBaselineShift) &&
+           nearlyEqual(fMaxLineHeight, other.fMaxLineHeight) &&
+           nearlyEqual(fMinLineHeight, other.fMinLineHeight) &&
+           fLineHeightStyle == other.fLineHeightStyle &&
+           fBadgeType == other.fBadgeType;
+}
+
+bool TextStyle::equals(const TextStyle& other) const {
+    if (fIsPlaceholder || other.fIsPlaceholder) {
+        return false;
+    }
+
+    return fColor == other.fColor &&
+           fDecoration == other.fDecoration &&
+           nearlyEqual(fLetterSpacing, other.fLetterSpacing) &&
+           nearlyEqual(fWordSpacing, other.fWordSpacing) &&
+           fHasForeground == other.fHasForeground &&
+           fForeground == other.fForeground &&
+           fHasBackground == other.fHasBackground &&
+           fBackground == other.fBackground &&
+           equalsByFontFeatures(other) &&
+           equalsByTextShadow(other) &&
+           equalsByShape(other);
+}
+#else
 bool TextStyle::equals(const TextStyle& other) const {
 
     if (fIsPlaceholder || other.fIsPlaceholder) {
@@ -119,12 +181,9 @@ bool TextStyle::equals(const TextStyle& other) const {
     if (fFontArguments != other.fFontArguments) {
         return false;
     }
-    if (fStyleId != other.fStyleId || fBackgroundRect != other.fBackgroundRect) {
-        return false;
-    }
-
     return true;
 }
+#endif
 
 bool TextStyle::equalsByFonts(const TextStyle& that) const {
 
@@ -143,6 +202,33 @@ bool TextStyle::equalsByFonts(const TextStyle& that) const {
            fBackgroundRect == that.fBackgroundRect;
 }
 
+#ifdef OHOS_SUPPORT
+bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) const {
+    switch (styleType) {
+        case kForeground:
+            return (!fHasForeground && !other.fHasForeground && fColor == other.fColor) ||
+                   ( fHasForeground &&  other.fHasForeground && fForeground == other.fForeground);
+        case kBackground:
+            return (!fHasBackground && !other.fHasBackground) ||
+                   ( fHasBackground &&  other.fHasBackground && fBackground == other.fBackground);
+        case kShadow:
+            return equalsByTextShadow(other);
+        case kDecorations:
+            return this->fDecoration == other.fDecoration;
+        case kLetterSpacing:
+            return fLetterSpacing == other.fLetterSpacing;
+        case kWordSpacing:
+            return fWordSpacing == other.fWordSpacing;
+        case kAllAttributes:
+            return this->equals(other);
+        case kFont:
+            return equalsByShape(other);
+        default:
+            SkASSERT(false);
+            return false;
+    }
+}
+#else
 bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) const {
     switch (styleType) {
         case kForeground:
@@ -182,17 +268,10 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
             return fFontStyle == other.fFontStyle &&
                    fLocale == other.fLocale &&
                    fFontFamilies == other.fFontFamilies &&
-#ifdef OHOS_SUPPORT
-                   getCorrectFontSize() == other.getCorrectFontSize() &&
-                   fHeight == other.fHeight &&
-                   fHalfLeading == other.fHalfLeading &&
-                   getTotalVerticalShift() == other.getTotalVerticalShift() &&
-#else
                    fFontSize == other.fFontSize &&
                    fHeight == other.fHeight &&
                    fHalfLeading == other.fHalfLeading &&
                    fBaselineShift == other.fBaselineShift &&
-#endif
                    fFontArguments == other.fFontArguments &&
                    fStyleId == other.fStyleId &&
                    fBackgroundRect == other.fBackgroundRect;
@@ -201,6 +280,7 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
             return false;
     }
 }
+#endif
 
 #ifndef USE_SKIA_TXT
 void TextStyle::getFontMetrics(SkFontMetrics* metrics) const {

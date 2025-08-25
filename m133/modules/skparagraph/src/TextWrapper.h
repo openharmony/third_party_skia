@@ -265,6 +265,8 @@ private:
         bool disableLastDescent{false};
         size_t maxLines{0};
         TextAlign align{TextAlign::kLeft};
+        bool needLineSpacing{false};
+        SkScalar lineSpacing{0.0f};
     };
 
     struct LineTextRanges {
@@ -407,6 +409,7 @@ private:
     size_t fCurrentStartPos{0};
     Cluster* fStart{nullptr};
     Cluster* fEnd{nullptr};
+    bool fIsLastLine{false};
 #endif
 };
 }  // namespace textlayout

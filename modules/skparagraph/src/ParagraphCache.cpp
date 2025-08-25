@@ -175,11 +175,15 @@ uint32_t hash = 0;
 #ifdef OHOS_SUPPORT
         hash = mix(hash, SkGoodHash()(ts.fStyle.getTextBadgeType()));
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getTotalVerticalShift())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getMaxLineHeight())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getMinLineHeight())));
+        hash = mix(hash, SkGoodHash()(ts.fStyle.getLineHeightStyle()));
 #endif
     }
 
 #ifdef OHOS_SUPPORT
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getVerticalAlignment()));
+    hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getLineSpacing())));
 #endif
     hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getHeight())));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getTextDirection()));

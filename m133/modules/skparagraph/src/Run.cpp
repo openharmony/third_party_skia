@@ -200,6 +200,7 @@ Run::Run(ParagraphImpl* owner,
     metricsIncludeFontPadding(&fFontMetrics, decompressFont);
     auto config = findCompressionConfigWithFont(decompressFont);
     fCompressionBaselineShift = (fFontMetrics.fDescent - fFontMetrics.fAscent) * config.baselineShiftScale;
+    initLimitHeightParam();
 #endif
 
     this->calculateMetrics();
@@ -222,21 +223,66 @@ Run::Run(ParagraphImpl* owner,
     fPlaceholderIndex = std::numeric_limits<size_t>::max();
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+void Run::initLimitHeightParam() {
+    if (fOwner == nullptr) {
+        return;
+    }
+
+    BlockRange blockRange = fOwner->findAllBlocks(fTextRange);
+    const SkSpan<Block>& blocks = fOwner->blocks(blockRange);
+    // Preprocessing has been completed, and within the same run,
+    // all textstyle's minLineHeight, maxLineHeight, and lineHeightStyle are equal.
+    if (!blocks.empty()) {
+        const TextStyle& style = blocks.front().fStyle;
+        setLineHeightStyle(style.getLineHeightStyle());
+        setMaxLineHeight(style.getMaxLineHeight());
+        setMinLineHeight(style.getMinLineHeight());
+    }
+}
+
+void Run::calculateMetricsWithoutHeightScale() {
+    if (nearlyZero(fFont.GetSize())) {
+        return;
+    }
+    SkScalar originRunHeight = fCorrectDescent - fCorrectAscent;
+    if (getMaxLineHeight() < 0) {
+        setMaxLineHeight(std::numeric_limits<float>::max());
+    }
+    SkScalar runHeight = std::min(std::max(originRunHeight, getMinLineHeight()), getMaxLineHeight());
+    const auto multiplier = runHeight / originRunHeight;
+    fCorrectAscent *= multiplier;
+    fCorrectDescent *= multiplier;
+}
+#endif
+
 void Run::calculateMetrics() {
     fCorrectAscent = fFontMetrics.fAscent - fFontMetrics.fLeading * 0.5;
     fCorrectDescent = fFontMetrics.fDescent + fFontMetrics.fLeading * 0.5;
     fCorrectLeading = 0;
+#ifdef ENABLE_TEXT_ENHANCE
+    if (SkScalarNearlyZero(fHeightMultiplier)) {
+        calculateMetricsWithoutHeightScale();
+        return;
+    }
+    auto decompressFont = fFont;
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
+    SkScalar runHeight = fLineHeightStyle == LineHeightStyle::kFontSize ?
+        fHeightMultiplier * decompressFont.GetSize() : fHeightMultiplier * fontIntrinsicHeight;
+    if (getMaxLineHeight() < 0) {
+        setMaxLineHeight(std::numeric_limits<float>::max());
+    }
+    if (runHeight >= 0) {
+        runHeight = std::min(std::max(runHeight, getMinLineHeight()), getMaxLineHeight());
+    }
+#else
     if (SkScalarNearlyZero(fHeightMultiplier)) {
         return;
     }
-#ifdef ENABLE_TEXT_ENHANCE
-    auto decompressFont = fFont;
-    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
-    const auto runHeight = fHeightMultiplier * decompressFont.GetSize();
-#else
     const auto runHeight = fHeightMultiplier * fFont.getSize();
-#endif
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
+#endif
     if (fUseHalfLeading) {
         const auto extraLeading = (runHeight - fontIntrinsicHeight) / 2;
         fCorrectAscent -= extraLeading;

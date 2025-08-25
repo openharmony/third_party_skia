@@ -51,6 +51,13 @@ static inline bool nearlyEqual(SkScalar x, SkScalar y, SkScalar tolerance = SK_S
     return x == y;
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+enum class LineHeightStyle {
+    kFontSize,
+    kFontHeight
+};
+#endif
+
 // Multiple decorations can be applied at once. Ex: Underline and overline is
 // (0x1 | 0x2)
 enum TextDecoration {
@@ -383,6 +390,24 @@ public:
     SkScalar getBadgeBaseLineShift() const;
 
     SkScalar getCorrectFontSize() const;
+
+    SkScalar getMaxLineHeight() const { return fMaxLineHeight; }
+
+    void setMaxLineHeight(SkScalar maxLineHeight) { fMaxLineHeight = maxLineHeight; }
+
+    SkScalar getMinLineHeight() const { return fMinLineHeight; }
+
+    void setMinLineHeight(SkScalar minLineHeight) { fMinLineHeight = minLineHeight; }
+
+    LineHeightStyle getLineHeightStyle() const { return fLineHeightStyle; }
+
+    void setLineHeightStyle(LineHeightStyle lineHeightStyle) { fLineHeightStyle = lineHeightStyle; }
+
+    bool equalsByTextShadow(const TextStyle& other) const;
+
+    bool equalsByFontFeatures(const TextStyle& other) const;
+
+    bool equalsByShape(const TextStyle& other) const;
 #endif
 private:
     static const std::vector<SkString>* kDefaultFontFamilies;
@@ -424,6 +449,9 @@ private:
     SkColor fStyleId = {0};
     size_t fTextStyleUid{0};
     SkScalar fVerticalAlignShift{0.0f};
+    SkScalar fMaxLineHeight{std::numeric_limits<float>::max()};
+    SkScalar fMinLineHeight{0.0f};
+    LineHeightStyle fLineHeightStyle{LineHeightStyle::kFontSize};
 #endif
 
     TextBaseline fTextBaseline = TextBaseline::kAlphabetic;
