@@ -21,10 +21,10 @@
 
 static thread_local ParallelDebug::VkImageInvokeRecord CALLER_;
 static thread_local std::deque<ParallelDebug::VkImageDestroyRecord> DELETE_;
-static constexpr size_t DESTROY_RECORD_CAPACITY = 100;
+static constexpr size_t DESTROY_RECORD_CAPACITY = 1000;
 static std::atomic<int64_t> count;
 
-static inline int64_t GetNanoSecords()
+static inline int64_t GetNanoSeconds()
 {
     struct timespec ts {};
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -57,6 +57,9 @@ ParallelDebug::VkImageInvokeRecord* ParallelDebug::GenerateVkImageInvokeRecord()
 
 void ParallelDebug::DestroyVkImageInvokeRecord(ParallelDebug::VkImageInvokeRecord* vkImageInvokeRecord)
 {
+    if (vkImageInvokeRecord == nullptr) {
+        return;
+    }
     delete vkImageInvokeRecord;
 }
 
@@ -66,20 +69,20 @@ void ParallelDebug::VkImageInvokeRecord::Dump(std::stringstream& ss)
 }
 
 void ParallelDebug::VkImageDestroyRecord::Record(VkImage image,
-                                                bool borrow,
-                                                const ParallelDebug::VkImageInvokeRecord* call,
-                                                VkDeviceMemory fMemory)
+                                                 bool borrow,
+                                                 const ParallelDebug::VkImageInvokeRecord* call,
+                                                 VkDeviceMemory fMemory)
 {
     if (call == nullptr) {
         return;
     }
-    DELETE_.push_back({image, borrow, *call, fMemory, GetNanoSecords()});
+    DELETE_.push_back({image, borrow, *call, fMemory, GetNanoSeconds()});
     if (DELETE_.size() > DESTROY_RECORD_CAPACITY) {
         DELETE_.pop_front();
     }
 }
 
-void ParallelDebug::DumpAllDestroyVkImage(std::stringstream &ss)
+void ParallelDebug::DumpAllDestroyVkImage(std::stringstream& ss)
 {
     for (auto& del : DELETE_) {
         del.Dump(ss);
@@ -94,7 +97,7 @@ void ParallelDebug::VkImageDestroyRecord::Dump(std::stringstream& ss)
     time_t seconds = timeStamp / 1000000000LL;
     localtime_r(&seconds, &timeInfo);
     std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &timeInfo);
-    ss << timeStr << "VkImage: " << image_ << ", " << borrowed_ << ", " << memory_ << " ";
+    ss << timeStr << "VkImage: " << image_ << ", " << "borrowed: " << borrowed_ << ", " << "memory: " << memory_;
     caller_.Dump(ss);
 }
 
