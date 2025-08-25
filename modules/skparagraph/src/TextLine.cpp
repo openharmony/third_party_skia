@@ -1160,9 +1160,8 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             }
         }
 
-        fEllipsis = std::move(ellipsisRun);
-        fEllipsis->fTextRange = TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
-        fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
+        // Update the ellipsis attributes and line attributes.
+        TailEllipsisUpdateEllipsis(cluster, ellipsisRun, ellipsis, width);
         TailEllipsisUpdateLine(cluster, width, clusterIndex, wordBreakType);
 
         break;
@@ -1184,6 +1183,22 @@ void TextLine::handleTailEllipsisInEmptyLine(std::unique_ptr<Run>& ellipsisRun, 
     TailEllipsisUpdateLine(cluster, width, fGhostClusterRange.end, wordBreakType);
     fWidthWithSpaces = width;
     ellipsisNotFitProcess(EllipsisModal::TAIL);
+}
+
+void TextLine::TailEllipsisUpdateEllipsis(Cluster& cluster, std::unique_ptr<Run>& ellipsisRun,
+    const SkString& ellipsis, float width)
+{
+    // Update the ellipsis style to that of the first cluster when maxwidth is less than or equal to 0.
+    if (width <= 0) {
+        ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
+        fEllipsis = std::move(ellipsisRun);
+        fEllipsis->fTextRange = TextRange(cluster.textRange().start, cluster.textRange().start + ellipsis.size());
+        fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().start, fOwner->text().size());
+        return;
+    }
+    fEllipsis = std::move(ellipsisRun);
+    fEllipsis->fTextRange = TextRange(cluster.textRange().end, cluster.textRange().end + ellipsis.size());
+    fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
 }
 
 void TextLine::TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType)
