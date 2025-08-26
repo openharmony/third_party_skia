@@ -1196,8 +1196,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             inWord = false;
         }
         // See if it fits
-        SkScalar ellipsisWidth = ellipsisRun ? ellipsisRun->advance().fX : 0;
-        if (ellipsisRun != nullptr && width + ellipsisWidth > maxWidth) {
+        if (ellipsisRun != nullptr && width + ellipsisRun->advance().fX > maxWidth) {
             if (!cluster.isHardBreak()) {
                 width -= usingAutoSpaceWidth(&cluster);
             }
