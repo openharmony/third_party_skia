@@ -627,7 +627,9 @@ void ParagraphImpl::splitRuns() {
 void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 #ifdef ENABLE_TEXT_ENHANCE
     TEXT_TRACE_FUNC();
-    fState = kDrawn;
+    if (fState >= kFormatted) {
+        fState = kDrawn;
+    }
 #endif
     CanvasParagraphPainter painter(canvas);
     paint(&painter, x, y);
@@ -636,7 +638,9 @@ void ParagraphImpl::paint(SkCanvas* canvas, SkScalar x, SkScalar y) {
 void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 #ifdef ENABLE_TEXT_ENHANCE
     TEXT_TRACE_FUNC();
-    fState = kDrawn;
+    if (fState >= kFormatted) {
+        fState = kDrawn;
+    }
     // Reset all text style vertical shift
     for (Block& block : fTextStyles) {
         block.fStyle.setVerticalAlignShift(0.0);
@@ -653,7 +657,9 @@ void ParagraphImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y) {
 #ifdef ENABLE_TEXT_ENHANCE
 void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOffset, SkScalar vOffset) {
     TEXT_TRACE_FUNC();
-    fState = kDrawn;
+    if (fState >= kFormatted) {
+        fState = kDrawn;
+    }
     auto& style = fTextStyles[0].fStyle;
     float align = 0.0f;
     switch (paragraphStyle().getTextAlign()) {
