@@ -270,6 +270,7 @@ void Run::calculateMetrics() {
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
     SkScalar runHeight = fLineHeightStyle == LineHeightStyle::kFontSize ?
         fHeightMultiplier * decompressFont.GetSize() : fHeightMultiplier * fontIntrinsicHeight;
+    // If the maxLineHeight is less than 0, it is meaningless and the it is set to max of type float
     if (getMaxLineHeight() < 0) {
         setMaxLineHeight(std::numeric_limits<float>::max());
     }
