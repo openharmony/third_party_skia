@@ -325,11 +325,10 @@ private:
     skia_private::STArray<PARAM_64, SkPoint, true> fAutoSpacings; // For auto spacing(current and prev spacings)
     skia_private::STArray<PARAM_64, SkScalar, true> fHalfLetterspacings; // For letterspacing
     RSFontMetrics fFontMetrics;
-    SkScalar fHeightMultiplier;
 #else
     SkFontMetrics fFontMetrics;
-    const SkScalar fHeightMultiplier;
 #endif
+    const SkScalar fHeightMultiplier;
     const bool fUseHalfLeading;
     const SkScalar fBaselineShift;
     SkScalar fCorrectAscent;

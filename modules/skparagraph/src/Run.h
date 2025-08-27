@@ -323,11 +323,10 @@ private:
 
 #ifndef USE_SKIA_TXT
     SkFontMetrics fFontMetrics;
-    const SkScalar fHeightMultiplier;
 #else
     RSFontMetrics fFontMetrics;
-    SkScalar fHeightMultiplier;
 #endif
+    SkScalar fHeightMultiplier;
     const bool fUseHalfLeading;
     const SkScalar fBaselineShift;
     SkScalar fCorrectAscent;
