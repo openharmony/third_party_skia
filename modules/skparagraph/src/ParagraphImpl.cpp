@@ -1197,6 +1197,9 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     } while (trailingSpaces != 0);
 
     advance.fY = metrics.height();
+    if (this->paragraphStyle().getLineSpacing() > 0 && !disableLastDescent) {
+        advance.fY += this->paragraphStyle().getLineSpacing();
+    }
     SkScalar heightWithParagraphSpacing = advance.fY;
     if (this->paragraphStyle().getIsEndAddParagraphSpacing() &&
         this->paragraphStyle().getParagraphSpacing() > 0) {

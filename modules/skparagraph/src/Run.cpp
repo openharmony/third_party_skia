@@ -284,7 +284,8 @@ void Run::initLimitHeightParam() {
     if (!blocks.empty()) {
         const TextStyle& style = blocks.front().fStyle;
         setLineHeightStyle(style.getLineHeightStyle());
-        setMaxLineHeight(style.getMaxLineHeight());
+        style.getMaxLineHeight() > 0 ?
+            setMaxLineHeight(style.getMaxLineHeight()) : setMaxLineHeight(std::numeric_limits<float>::max());
         setMinLineHeight(style.getMinLineHeight());
     }
 }
@@ -294,9 +295,6 @@ void Run::calculateMetricsWithoutHeightScale() {
         return;
     }
     SkScalar originRunHeight = fCorrectDescent - fCorrectAscent;
-    if (getMaxLineHeight() < 0) {
-        setMaxLineHeight(std::numeric_limits<float>::max());
-    }
     SkScalar runHeight = std::min(std::max(originRunHeight, getMinLineHeight()), getMaxLineHeight());
     const auto multiplier = runHeight / originRunHeight;
     fCorrectAscent *= multiplier;
@@ -324,9 +322,6 @@ void Run::calculateMetrics() {
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
     SkScalar runHeight = fLineHeightStyle == LineHeightStyle::kFontSize ?
         fHeightMultiplier * decompressFont.GetSize() : fHeightMultiplier * fontIntrinsicHeight;
-    if (getMaxLineHeight() < 0) {
-        setMaxLineHeight(std::numeric_limits<float>::max());
-    }
     if (runHeight >= 0) {
         runHeight = std::min(std::max(runHeight, getMinLineHeight()), getMaxLineHeight());
     }
