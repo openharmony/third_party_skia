@@ -683,7 +683,7 @@ struct TextWrapScorer {
     {
         SkScalar newWidth = param.currentMax;
 
-        if (param.breakPos > 0 && param.breakPos - 1 >= breaks_.size() &&
+        if (((param.breakPos > 0) && (param.breakPos - 1) >= breaks_.size()) &&
             param.begin < breaks_[param.breakPos - 1].width) {
             newWidth = std::min(breaks_[--param.breakPos].width - param.begin, param.currentMax);
         }
