@@ -150,6 +150,8 @@ public:
     size_t clusterIndex(size_t pos) const { return fClusterIndexes[pos]; }
 #ifdef OHOS_SUPPORT
     size_t globalClusterIndex(size_t pos) const;
+    void initLimitHeightParam();
+    void calculateMetricsWithoutHeightScale();
 #else
     size_t globalClusterIndex(size_t pos) const { return fClusterStart + fClusterIndexes[pos]; }
 #endif
@@ -218,6 +220,12 @@ public:
     void iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor visitor);
     SkScalar getVerticalAlignShift() const { return fVerticalAlignShift; }
     void setVerticalAlignShift(SkScalar verticalAlignShift) { fVerticalAlignShift = verticalAlignShift; }
+    SkScalar getMaxLineHeight() const { return fMaxLineHeight; }
+    void setMaxLineHeight(SkScalar maxLineHeight) { fMaxLineHeight = maxLineHeight; }
+    SkScalar getMinLineHeight() const { return fMinLineHeight; }
+    void setMinLineHeight(SkScalar minLineHeight) { fMinLineHeight = minLineHeight; }
+    LineHeightStyle getLineHeightStyle() const { return fLineHeightStyle; }
+    void setLineHeightStyle(LineHeightStyle lineHeightStyle) { fLineHeightStyle = lineHeightStyle; }
 #endif
 
     using ClusterVisitor = std::function<void(Cluster* cluster)>;
@@ -318,7 +326,7 @@ private:
 #else
     RSFontMetrics fFontMetrics;
 #endif
-    const SkScalar fHeightMultiplier;
+    SkScalar fHeightMultiplier;
     const bool fUseHalfLeading;
     const SkScalar fBaselineShift;
     SkScalar fCorrectAscent;
@@ -335,6 +343,9 @@ private:
 #ifdef OHOS_SUPPORT
     SkScalar fCompressionBaselineShift{0.0f};
     SkScalar fVerticalAlignShift{0.0f};
+    SkScalar fMaxLineHeight{std::numeric_limits<float>::max()};
+    SkScalar fMinLineHeight{0.0f};
+    LineHeightStyle fLineHeightStyle{LineHeightStyle::kFontSize};
 #endif
 };
 

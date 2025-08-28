@@ -48,6 +48,13 @@ static inline bool nearlyEqual(SkScalar x, SkScalar y, SkScalar tolerance = SK_S
     return x == y;
 }
 
+#ifdef OHOS_SUPPORT
+enum class LineHeightStyle {
+    kFontSize,
+    kFontHeight
+};
+#endif
+
 // Multiple decorations can be applied at once. Ex: Underline and overline is
 // (0x1 | 0x2)
 enum TextDecoration {
@@ -385,6 +392,24 @@ public:
     SkScalar getBadgeBaseLineShift() const;
 
     SkScalar getCorrectFontSize() const;
+
+    SkScalar getMaxLineHeight() const { return fMaxLineHeight; }
+
+    void setMaxLineHeight(SkScalar maxLineHeight) { fMaxLineHeight = maxLineHeight; }
+
+    SkScalar getMinLineHeight() const { return fMinLineHeight; }
+
+    void setMinLineHeight(SkScalar minLineHeight) { fMinLineHeight = minLineHeight; }
+
+    LineHeightStyle getLineHeightStyle() const { return fLineHeightStyle; }
+
+    void setLineHeightStyle(LineHeightStyle lineHeightStyle) { fLineHeightStyle = lineHeightStyle; }
+
+    bool equalsByTextShadow(const TextStyle& other) const;
+
+    bool equalsByFontFeatures(const TextStyle& other) const;
+
+    bool equalsByShape(const TextStyle& other) const;
 #endif
 
 private:
@@ -421,6 +446,9 @@ private:
 #ifdef OHOS_SUPPORT
     size_t fTextStyleUid{0};
     SkScalar fVerticalAlignShift{0.0f};
+    SkScalar fMaxLineHeight{std::numeric_limits<float>::max()};
+    SkScalar fMinLineHeight{0.0f};
+    LineHeightStyle fLineHeightStyle{LineHeightStyle::kFontSize};
 #endif
     SkScalar fLetterSpacing = 0.0;
     SkScalar fWordSpacing = 0.0;

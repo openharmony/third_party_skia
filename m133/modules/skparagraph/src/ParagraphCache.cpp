@@ -153,6 +153,7 @@ void ParagraphCacheKey::computeHashMix(uint32_t& hash) const {
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getIsEndAddParagraphSpacing()));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getEnableAutoSpace()));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getVerticalAlignment()));
+    hash = mix(hash, SkGoodHash()(relax(fParagraphStyle.getLineSpacing())));
 
     auto& strutStyle = fParagraphStyle.getStrutStyle();
     if (strutStyle.getStrutEnabled()) {
@@ -211,6 +212,9 @@ uint32_t ParagraphCacheKey::computeHash() const {
         hash = mix(hash, SkGoodHash()(ts.fRange));
 		hash = mix(hash, SkGoodHash()(ts.fStyle.getTextBadgeType()));
 		hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getTotalVerticalShift())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getMaxLineHeight())));
+        hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getMinLineHeight())));
+        hash = mix(hash, SkGoodHash()(ts.fStyle.getLineHeightStyle()));
     }
 
     computeHashMix(hash);

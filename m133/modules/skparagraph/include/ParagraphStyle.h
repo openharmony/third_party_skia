@@ -153,18 +153,19 @@ struct ParagraphStyle {
 
     bool operator==(const ParagraphStyle& rhs) const {
 #ifdef ENABLE_TEXT_ENHANCE
-        return this->fHeight == rhs.fHeight && this->fEllipsis == rhs.fEllipsis &&
+        return nearlyEqual(this->fHeight, rhs.fHeight) && this->fEllipsis == rhs.fEllipsis &&
                this->fEllipsisUtf16 == rhs.fEllipsisUtf16 &&
                this->fTextDirection == rhs.fTextDirection && this->fTextAlign == rhs.fTextAlign &&
                this->fDefaultTextStyle == rhs.fDefaultTextStyle &&
                this->fEllipsisModal == rhs.fEllipsisModal &&
                this->fTextOverflower == rhs.fTextOverflower &&
                this->fReplaceTabCharacters == rhs.fReplaceTabCharacters &&
-               this->fTextTab == rhs.fTextTab && this->fParagraphSpacing == rhs.fParagraphSpacing &&
+               this->fTextTab == rhs.fTextTab && nearlyEqual(this->fParagraphSpacing, rhs.fParagraphSpacing) &&
                this->fIsEndAddParagraphSpacing == rhs.fIsEndAddParagraphSpacing &&
                this->fIsTrailingSpaceOptimized == rhs.fIsTrailingSpaceOptimized &&
                this->fEnableAutoSpace == rhs.fEnableAutoSpace &&
                this->fVerticalAlignment == rhs.fVerticalAlignment &&
+               nearlyEqual(this->fLineSpacing, rhs.fLineSpacing) &&
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
 #else
         return this->fHeight == rhs.fHeight &&
@@ -249,6 +250,8 @@ struct ParagraphStyle {
     {
         fEnableAutoSpace = enableAutoSpace;
     }
+    SkScalar getLineSpacing() const { return fLineSpacing; }
+    void setLineSpacing(SkScalar lineSpacing) { fLineSpacing = lineSpacing; }
 #endif
     bool getApplyRoundingHack() const { return fApplyRoundingHack; }
     void setApplyRoundingHack(bool value) { fApplyRoundingHack = value; }
@@ -276,6 +279,7 @@ private:
     bool fIsTrailingSpaceOptimized{false};
     bool fEnableAutoSpace{false};
     TextVerticalAlign fVerticalAlignment{TextVerticalAlign::BASELINE};
+    SkScalar fLineSpacing{0.0f};
 #endif
 };
 }  // namespace textlayout
