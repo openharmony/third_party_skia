@@ -1600,7 +1600,7 @@ void TextWrapper::adjustLineMetricsForFirstLastLine() {
     if (fFormattingContext.disableFirstAscent && fFirstLine) {
         fEndLine.metrics().fAscent = fEndLine.metrics().fRawAscent;
     }
-    if (fFormattingContext.disableLastDescent && (fIsLastLine ||(fCurrentStartLine == fEnd && !fHardLineBreak))) {
+    if (fFormattingContext.disableLastDescent && (fIsLastLine || (fCurrentStartLine == fEnd && !fHardLineBreak))) {
         fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
         fFormattingContext.needLineSpacing = false;
     }

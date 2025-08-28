@@ -296,7 +296,7 @@ void Run::calculateMetricsWithoutHeightScale() {
     }
     SkScalar originRunHeight = fCorrectDescent - fCorrectAscent;
     SkScalar runHeight = std::min(std::max(originRunHeight, getMinLineHeight()), getMaxLineHeight());
-    const auto multiplier = runHeight / originRunHeight;
+    const auto multiplier = nearlyZero(originRunHeight) ? 0 : runHeight / originRunHeight;
     fCorrectAscent *= multiplier;
     fCorrectDescent *= multiplier;
 }
@@ -320,6 +320,9 @@ void Run::calculateMetrics() {
     auto decompressFont = fFont;
     scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
+    if (nearlyZero(fontIntrinsicHeight)) {
+        return;
+    }
     SkScalar runHeight = fLineHeightStyle == LineHeightStyle::kFontSize ?
         fHeightMultiplier * decompressFont.GetSize() : fHeightMultiplier * fontIntrinsicHeight;
     if (runHeight >= 0) {
