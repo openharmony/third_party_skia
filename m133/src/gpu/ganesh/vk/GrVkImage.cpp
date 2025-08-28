@@ -292,6 +292,12 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
         fResource->fCaller = ParallelDebug::GenerateVkImageInvokeRecord();
     }
 #endif
+#ifdef SKIA_DFX_FOR_OHOS
+    if (RealAllocConfig::GetRealAllocStatus()) {
+        // OH ISSUE: set real alloc flag
+        this->setRealAlloc(true);
+    }
+#endif
     this->registerWithCacheWrapped(cacheable);
 }
 
