@@ -332,7 +332,7 @@ public:
         size_t bytes, bool beforeRealAlloc, bool afterRealAlloc);
 
     // OH ISSUE: init gpu memory limit.
-    void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
+    void initGpuMemoryLimit(MemoryOverflowCallback callback, uint64_t size);
 
     // It'd be nice if this could be private but SkMessageBus relies on macros to define types that
     // require this to be public.
@@ -534,7 +534,7 @@ private:
     // OH ISSUE: gpu memory limit.
     uint64_t fMemoryControl_ = UINT64_MAX;
     // OH ISSUE: memory overflow callback.
-    MemoryOverflowCalllback fMemoryOverflowCallback_ = nullptr;
+    MemoryOverflowCallback fMemoryOverflowCallback_ = nullptr;
     // OH ISSUE: record pid had exited.
     std::unordered_set<int32_t> fExitedPid_;
 
