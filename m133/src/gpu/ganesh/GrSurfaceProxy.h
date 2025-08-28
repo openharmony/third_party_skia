@@ -496,7 +496,10 @@ private:
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     uint64_t fNodeId;
 #endif
-
+#ifdef SKIA_DFX_FOR_OHOS
+    // OH ISSUE: proxy resources real alloc status
+    bool                   fRealAllocProxy = false;
+#endif
     GrProtected            fIsProtected;
 
     int                     fTaskTargetCount = 0;

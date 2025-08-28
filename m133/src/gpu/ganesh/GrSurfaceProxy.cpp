@@ -66,6 +66,16 @@ uint64_t GetNodeId() { return 0; }
 #endif
 #endif
 
+// OH ISSUE: emulator mock
+#ifdef SKIA_DFX_FOR_OHOS
+#ifndef SK_VULKAN
+namespace RealAllocConfig {
+bool GetRealAllocStatus() { return false; }
+void SetRealAllocStatus(bool ret) { static_cast<void>(ret); }
+};
+#endif
+#endif
+
 GrSurfaceProxy::LazyCallbackResult::LazyCallbackResult(sk_sp<GrSurface> surf,
                                                        bool releaseCallback,
                                                        LazyInstantiationKeyMode mode)
@@ -90,6 +100,9 @@ GrSurfaceProxy::GrSurfaceProxy(const GrBackendFormat& format,
         , fUseAllocator(useAllocator)
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         , fNodeId(ParallelDebug::GetNodeId())
+#endif
+#ifdef SKIA_DFX_FOR_OHOS
+        , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
 #endif
         , fIsProtected(isProtected)
         , fLabel(label) {
@@ -117,6 +130,9 @@ GrSurfaceProxy::GrSurfaceProxy(LazyInstantiateCallback&& callback,
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         , fNodeId(ParallelDebug::GetNodeId())
 #endif
+#ifdef SKIA_DFX_FOR_OHOS
+        , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
+#endif
         , fIsProtected(isProtected)
         , fLabel(label) {
     SkASSERT(fFormat.isValid());
@@ -140,6 +156,9 @@ GrSurfaceProxy::GrSurfaceProxy(sk_sp<GrSurface> surface,
         , fUniqueID(fTarget->uniqueID())  // Note: converting from unique resource ID to a proxy ID!
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         , fNodeId(ParallelDebug::GetNodeId())
+#endif
+#ifdef SKIA_DFX_FOR_OHOS
+        , fRealAllocProxy(RealAllocConfig::GetRealAllocStatus())
 #endif
         , fIsProtected(fTarget->isProtected() ? GrProtected::kYes : GrProtected::kNo)
         , fLabel(fTarget->getLabel()) {
@@ -206,7 +225,11 @@ sk_sp<GrSurface> GrSurfaceProxy::createSurfaceImpl(GrResourceProvider* resourceP
 #endif
 
     if (fGrProxyTag.isGrTagValid()) {
+#ifdef SKIA_DFX_FOR_OHOS
+        surface->setResourceTag(fGrProxyTag, fRealAllocProxy);
+#else
         surface->setResourceTag(fGrProxyTag);
+#endif
 #ifdef SKIA_OHOS
         int64_t allocTime = GrPerfMonitorReporter::getCurrentTime() - currentTime;
         GrPerfMonitorReporter::GetInstance().recordTextureNode(fGrProxyTag.fName, allocTime);

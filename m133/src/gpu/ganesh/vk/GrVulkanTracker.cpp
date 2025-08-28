@@ -100,3 +100,19 @@ void ParallelDebug::VkImageDestroyRecord::Dump(std::stringstream& ss)
     ss << timeStr << "VkImage: " << image_ << ", " << "borrowed: " << borrowed_ << ", " << "memory: " << memory_;
     caller_.Dump(ss);
 }
+
+namespace RealAllocConfig {
+// OH ISSUE: isRealAlloc indicates whether the Vulkan memory(external and proxy)
+// in the current thread context should be calculated.
+static thread_local bool isRealAlloc = false;
+
+bool GetRealAllocStatus()
+{
+    return isRealAlloc;
+}
+
+void SetRealAllocStatus(bool ret)
+{
+    isRealAlloc = ret;
+}
+}

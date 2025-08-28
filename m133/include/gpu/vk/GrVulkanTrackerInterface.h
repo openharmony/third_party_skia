@@ -35,7 +35,7 @@
  // OH ISSUE if real alloc status is setted to true, vulkan memory will be accounted for MemorySnapshot
  // Supported interfaces: makeImageSnapshot, MakeFromBackendTexture
  // Constraint: Only effective in the current thread context.
- #if defined (SK_VULKAN) && defined (SKIA_DFX_FOR_OHOS)
+ #ifdef SKIA_DFX_FOR_OHOS
  #define REAL_ALLOC_CONFIG_SET_STATUS(stat) RealAllocConfig::SetRealAllocStatus(stat)
  #else
  #define REAL_ALLOC_CONFIG_SET_STATUS(stat)
