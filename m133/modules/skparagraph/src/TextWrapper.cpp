@@ -684,7 +684,8 @@ struct TextWrapScorer {
     {
         SkScalar newWidth = param.currentMax;
 
-        if (param.breakPos > 0 && param.begin < breaks_[param.breakPos - 1].width) {
+        if (param.breakPos > 0 && param.breakPos - 1 >= breaks_.size() &&
+            param.begin < breaks_[param.breakPos - 1].width) {
             newWidth = std::min(breaks_[--param.breakPos].width - param.begin, param.currentMax);
         }
 
@@ -737,7 +738,7 @@ struct TextWrapScorer {
             overallScore = score;
 
             // Handle last line
-            if (breaks_[param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN) {
+            if (param.breakPos < breaks_.size() && breaks_[param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN) {
                 auto copy = currentWidth - breaks_[param.breakPos].reservedSpace;
                 // name is bit confusing as the method enters also recursion
                 // with hyphen break this never is the last line
