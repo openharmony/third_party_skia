@@ -418,7 +418,7 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::makeTypeface(std::unique_ptr<SkStreamAsset> st
             SkFixed axis[axisDef.count()];
             SkTypeface_FreeType::Scanner::computeAxisValues(
                 axisDef, args.getVariationDesignPosition(), axis, fontInfo.familyName);
-            fontInfo.setAxisSet(axisCount, axis, axisDef.data());
+            fontInfo.setAxisSet(axisDef.count(), axis, axisDef.data());
             fontInfo.style = fontInfo.computeFontStyle();
         }
     }
