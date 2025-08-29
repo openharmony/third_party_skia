@@ -157,7 +157,7 @@ sk_sp<SkTypeface> SkTypeface_OHOS::onMakeClone(const SkFontArguments& args) cons
                 SkFontArguments::VariationPosition{nullptr, 0},
                 args.getVariationDesignPosition(),
                 axis, info.familyName, nullptr);
-            info.setAxisSet(axisCount, axis, axisDefs.data());
+            info.setAxisSet(axisDefs.size(), axis, axisDefs.data());
             info.style = info.computeFontStyle();
             return sk_make_sp<SkTypeface_OHOS>(specifiedName, info);
         }
