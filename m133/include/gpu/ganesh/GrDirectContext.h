@@ -50,7 +50,7 @@ struct GrMockOptions;
 struct GrD3DBackendContext; // IWYU pragma: keep
 
 // OH ISSUE: callback for memory protect.
-using MemoryOverflowCalllback = std::function<void(int32_t, size_t, bool)>;
+using MemoryOverflowCallback = std::function<void(int32_t, size_t, bool)>;
 
 namespace skgpu {
     class MutableTextureState;
@@ -973,7 +973,7 @@ public:
     void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
 
     // OH ISSUE: init gpu memory limit.
-    void initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
+    void initGpuMemoryLimit(MemoryOverflowCallback callback, uint64_t size);
 
     // OH ISSUE: check whether the PID is abnormal.
     bool isPidAbnormal() const override;

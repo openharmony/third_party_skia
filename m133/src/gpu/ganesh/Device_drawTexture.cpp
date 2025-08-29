@@ -475,11 +475,6 @@ void Device::drawImageQuadDirect(const SkImage* image,
         return;
     }
 
-    // OH ISSUE: restricting the drawing of abnormal processes
-    if (fContext->isPidAbnormal()) {
-        return;
-    }
-
     if (src.contains(image->bounds())) {
         constraint = SkCanvas::kFast_SrcRectConstraint;
     }
@@ -518,6 +513,11 @@ void Device::drawEdgeAAImageSet(const SkCanvas::ImageSetEntry set[], int count,
                                 const SkSamplingOptions& sampling, const SkPaint& paint,
                                 SkCanvas::SrcRectConstraint constraint) {
     SkASSERT(count > 0);
+    // OH ISSUE: restricting the drawing of abnormal processes
+    if (fContext->isPidAbnormal()) {
+        return;
+    }
+
     if (!can_use_draw_texture(paint, sampling)) {
         // Send every entry through drawImageQuad() to handle the more complicated paint
         int dstClipIndex = 0;
