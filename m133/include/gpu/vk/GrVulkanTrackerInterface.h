@@ -28,6 +28,7 @@
  SK_API void RecordNodeId(uint64_t id);
  void DestroyVkImageInvokeRecord(VkImageInvokeRecord*);
  void DumpAllDestroyVkImage(std::stringstream& ss);
+ void DumpDestroyVkImageByObjHandle(std::stringstream& ss, uint64_t objHandle);
  VkImageInvokeRecord* GenerateVkImageInvokeRecord();
  uint64_t GetNodeId();
  }

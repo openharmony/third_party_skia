@@ -1560,6 +1560,38 @@ void GrResourceCache::dumpAllResource(std::stringstream& dump) const {
     ParallelDebug::DumpAllDestroyVkImage(dump);
 #endif
 }
+
+void GrResourceCache::dumpResourceByObjHandle(std::stringstream& dump, uint64_t objHandle) const {
+    if (getResourceCount() == 0) {
+        return;
+    }
+    dump << "Purgeable: " << fPurgeableQueue.count() << std::endl;
+    for (size_t i = 0; i < fPurgeableQueue.count(); ++i) {
+        GrGpuResource* resource = fPurgeableQueue.at(i);
+        if (resource == nullptr) {
+            continue;
+        }
+        if (strcmp(resource->getResourceType(), "VkImage") != 0) {
+            continue;
+        }
+        resource->dumpVkImageInfoByObjHandle(dump, objHandle);
+    }
+    dump << "Non-Purgeable: " << fNonpurgeableResources.count() << std::endl;
+    for (size_t i = 0; i < fNonpurgeableResources.count(); ++i) {
+        GrGpuResource* resource = fNonpurgeableResources[i];
+        if (resource == nullptr) {
+            continue;
+        }
+        if (strcmp(resource->getResourceType(), "VkImage") != 0) {
+            continue;
+        }
+        resource->dumpVkImageInfoByObjHandle(dump, objHandle);
+    }
+#ifdef SK_VULKAN
+    dump << "Destroy Record: " << std::endl;
+    ParallelDebug::DumpDestroyVkImageByObjHandle(dump, objHandle);
+#endif
+}
 #endif
 
 void GrResourceCache::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {

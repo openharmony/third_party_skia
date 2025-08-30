@@ -879,6 +879,7 @@ public:
     void vmaDefragment();
     void dumpVmaStats(SkString *out);
     void dumpAllResource(std::stringstream& dump) const;
+    void dumpResourceByObjHandle(std::stringstream& dump, uint64_t objHandle) const;
 
 #ifdef SKIA_OHOS
     // OH ISSUE: set purgeable resource max count limit.

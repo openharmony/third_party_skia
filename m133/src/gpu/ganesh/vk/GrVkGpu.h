@@ -468,10 +468,10 @@ private:
 
     // checkVkResult dfx
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
-    void dumpDeviceFaultInfo(const std::string& errorCategory);
+    uint64_t dumpDeviceFaultInfo(const std::string& errorCategory);
     void dumpVkImageDfx(const std::string& errorCategory);
 #endif
-    void reportVulkanError(const std::string& errorCategory);
+    void processVulkanError(const std::string& errorCategory);
 
     sk_sp<const skgpu::VulkanInterface>                   fInterface;
     sk_sp<skgpu::VulkanMemoryAllocator>                   fMemoryAllocator;

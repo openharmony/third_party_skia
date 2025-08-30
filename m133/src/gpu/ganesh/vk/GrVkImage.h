@@ -228,6 +228,7 @@ public:
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     void dumpVkImageInfo(std::stringstream& dump) const override;
+    void dumpVkImageInfoByObjHandle(std::stringstream& dump, uint64_t objHandle) const override;
     void updateNodeId(uint64_t nodeId) override;
 #endif
 
@@ -328,6 +329,7 @@ private:
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         ParallelDebug::VkImageInvokeRecord* fCaller = nullptr;
+        VkImage getVkImage() const { return fImage; }
         void dumpVkImageResource(std::stringstream& dump);
         void RecordFreeVkImage(bool isBorrowed) const;
 #endif
