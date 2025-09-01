@@ -276,6 +276,8 @@ public:
     void setMinLineHeight(SkScalar minLineHeight) { fMinLineHeight = minLineHeight; }
     LineHeightStyle getLineHeightStyle() const { return fLineHeightStyle; }
     void setLineHeightStyle(LineHeightStyle lineHeightStyle) { fLineHeightStyle = lineHeightStyle; }
+    bool isRunHeightNominal() const { return fRunHeightNominal; }
+    void initRunHeightNominal();
 #endif
 private:
     friend class ParagraphImpl;
@@ -347,6 +349,7 @@ private:
     SkScalar fMaxLineHeight{std::numeric_limits<float>::max()};
     SkScalar fMinLineHeight{0.0f};
     LineHeightStyle fLineHeightStyle{LineHeightStyle::kFontSize};
+    bool fRunHeightNominal{true};
 #endif
 };
 
