@@ -442,7 +442,8 @@ SkScalar Run::usingAutoSpaceWidth(const Cluster& cluster) const
 void Run::copyTo(RSTextBlobBuilder& builder, size_t pos, size_t size) const {
     SkASSERT(pos + size <= this->size());
     const auto& blobBuffer = builder.AllocRunPos(fFont, SkToInt(size));
-    if (!blobBuffer.glyphs || !fGlyphs.data()) {
+    if (!blobBuffer.glyphs || !fGlyphs.data() || pos + size > this->size()) {
+        TEXT_LOGE("Failed to copy run, copy pos %{public}zu size %{public}zu", pos, size);
         return;
     }
 
@@ -471,7 +472,8 @@ void Run::copyTo(RSTextBlobBuilder& builder,
                  size_t size) const {
     SkASSERT(pos + size <= this->size());
     auto& blobBuffer = builder.AllocRunRSXform(fFont, SkToInt(size));
-    if (!blobBuffer.glyphs || !fGlyphs.data()) {
+    if (!blobBuffer.glyphs || !fGlyphs.data() || (pos + size > this->size())) {
+        TEXT_LOGE("Failed to copy run, copy pos %{public}zu size %{public}zu", pos, size);
         return;
     }
 
