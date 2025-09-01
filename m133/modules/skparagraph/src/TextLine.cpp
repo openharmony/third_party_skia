@@ -2192,7 +2192,7 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
 #ifdef ENABLE_TEXT_ENHANCE
         RectStyle temp;
         if (styleType == StyleType::kBackground && prevStyle->getBackgroundRect() != temp &&
-            prevStyle->getHeight() != 0) {
+            (prevStyle->getHeight() != 0 || !run->isRunHeightNominal())) {
             clipContext.clip.fTop = run->fFontMetrics.fAscent + this->baseline() + run->fBaselineShift
                 + run->getVerticalAlignShift();
             clipContext.clip.fBottom =

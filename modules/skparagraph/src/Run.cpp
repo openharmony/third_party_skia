@@ -264,6 +264,7 @@ Run::Run(ParagraphImpl* owner,
         // First cluster index in rtl's language run is end of the utf8 range value
         fClusterIndexes[0] = info.utf8Range.end();
     }
+    initRunHeightNominal();
 #else
     fClusterIndexes[info.glyphCount] = this->leftToRight() ? info.utf8Range.end() : info.utf8Range.begin();
 #endif
@@ -272,6 +273,11 @@ Run::Run(ParagraphImpl* owner,
 }
 
 #ifdef OHOS_SUPPORT
+void Run::initRunHeightNominal() {
+    fRunHeightNominal = nearlyEqual(calculateHeight(LineMetricStyle::Typographic, LineMetricStyle::Typographic),
+        calculateHeight(LineMetricStyle::CSS, LineMetricStyle::CSS));
+}
+
 void Run::initLimitHeightParam() {
     if (fOwner == nullptr) {
         return;
@@ -378,7 +384,11 @@ Run::Run(const Run& run, size_t runIndex)
       fMaxRoundRectRadius(run.fMaxRoundRectRadius),
       indexInLine(run.indexInLine),
       fCompressionBaselineShift(run.fCompressionBaselineShift),
-      fVerticalAlignShift(run.fVerticalAlignShift) {}
+      fVerticalAlignShift(run.fVerticalAlignShift),
+      fMaxLineHeight(run.fMaxLineHeight),
+      fMinLineHeight(run.fMinLineHeight),
+      fLineHeightStyle(run.fLineHeightStyle),
+      fRunHeightNominal(run.fRunHeightNominal) {}
 
 size_t Run::findSplitClusterPos(size_t target) {
     int left = -1;

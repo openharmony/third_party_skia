@@ -1986,13 +1986,16 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         }
 
         RectStyle temp;
+#ifdef OHOS_SUPPORT
         if (styleType == StyleType::kBackground &&
             prevStyle->getBackgroundRect() != temp &&
-            prevStyle->getHeight() != 0) {
-#ifdef OHOS_SUPPORT
+            (prevStyle->getHeight() != 0 || !run->isRunHeightNominal())) {
                 clipContext.clip.fTop = run->fFontMetrics.fAscent + this->baseline() + run->fBaselineShift
                     + run->getVerticalAlignShift();
 #else
+        if (styleType == StyleType::kBackground &&
+            prevStyle->getBackgroundRect() != temp &&
+            prevStyle->getHeight() != 0) {
                 clipContext.clip.fTop = run->fFontMetrics.fAscent - run->fCorrectAscent;
 #endif
                 clipContext.clip.fBottom = clipContext.clip.fTop + run->fFontMetrics.fDescent -
