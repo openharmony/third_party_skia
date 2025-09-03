@@ -170,7 +170,6 @@ sk_sp<SkFontMgr> SkFontMgr::RefEmpty() {
     return singleton;
 }
 
-#ifdef ENABLE_TEXT_ENHANCE
 // A global function pointer that's not declared, but can be overriden at startup by test tools.
 sk_sp<SkFontMgr> (*gSkFontMgr_DefaultFactory)() = nullptr;
 
@@ -185,7 +184,6 @@ sk_sp<SkFontMgr> SkFontMgr::RefDefault() {
     });
     return singleton;
 }
-#endif
 
 /**
 * Width has the greatest priority.

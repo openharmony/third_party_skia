@@ -13,6 +13,7 @@
 #include "include/private/base/SkAssert.h"
 #include "include/private/base/SkTo.h"
 #include "modules/skshaper/include/SkShaper_factory.h"
+#include "modules/skshaper/utils/FactoryHelpers.h"
 #include "modules/svg/include/SkSVGAttribute.h"
 #include "modules/svg/include/SkSVGAttributeParser.h"
 #include "modules/svg/include/SkSVGCircle.h"
@@ -442,7 +443,7 @@ sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str) const {
     auto resource_provider = fResourceProvider ? fResourceProvider
                                                : sk_make_sp<NullResourceProvider>();
 
-    auto factory = fTextShapingFactory ? fTextShapingFactory : SkShapers::Primitive::Factory();
+    auto factory = fTextShapingFactory ? fTextShapingFactory : SkShapers::BestAvailable();
 
     return sk_sp<SkSVGDOM>(new SkSVGDOM(sk_sp<SkSVGSVG>(static_cast<SkSVGSVG*>(root.release())),
                                         std::move(fFontMgr),

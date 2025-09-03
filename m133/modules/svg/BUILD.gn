@@ -18,6 +18,25 @@ if (skia_enable_svg && skia_use_expat) {
     ]
   }
 
+  config("svg_private_config") {
+    defines = []
+    if (skia_use_harfbuzz) {
+      defines += [ "SK_SHAPER_HARFBUZZ_AVAILABLE" ]
+    }
+    if (skia_enable_skunicode) {
+      defines += [ "SK_SHAPER_UNICODE_AVAILABLE" ]
+    }
+    if (skia_use_libgrapheme) {
+      defines += [ "SK_UNICODE_LIBGRAPHEME_IMPLEMENTATION" ]
+    }
+    if (skia_use_icu4x) {
+      defines += [ "SK_UNICODE_ICU4X_IMPLEMENTATION" ]
+    }
+    if (skia_use_icu) {
+      defines += [ "SK_UNICODE_ICU_IMPLEMENTATION" ]
+    }
+  }
+
   ohos_source_set("svg") {
     check_includes = false
     import("svg.gni")
@@ -27,6 +46,7 @@ if (skia_enable_svg && skia_use_expat) {
     configs = [ "../../:skia_private" ]
     if (use_oh_skia) {
       configs += [ "../../:skia_wno" ]
+      configs += [ ":svg_private_config" ]
     }
   }
 
