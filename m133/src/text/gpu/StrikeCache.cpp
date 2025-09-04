@@ -33,6 +33,26 @@ void StrikeCache::freeAll() {
     this->internalPurge(fTotalMemoryUsed);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+void StrikeCache::removeStrikeByUniqueId(uint32_t uniqueId) {
+    std::vector<TextStrike*> strikes;
+
+    fCache.foreach([&strikes, uniqueId](const sk_sp<TextStrike>* item) {
+        if (item && (*item) && (*item)->strikeSpec().typeface().uniqueID() == uniqueId) {
+            strikes.push_back(item->get());
+        }
+    });
+
+    if (!strikes.empty()) {
+        fRemovedUniqueIds.emplace(uniqueId);
+    }
+
+    for (TextStrike* strike : strikes) {
+        this->internalRemoveStrike(strike);
+    }
+}
+#endif
+
 sk_sp<TextStrike> StrikeCache::findOrCreateStrike(const SkStrikeSpec& strikeSpec) {
     if (sk_sp<TextStrike>* cached = fCache.find(strikeSpec.descriptor())) {
         return *cached;
@@ -70,6 +90,11 @@ sk_sp<TextStrike> StrikeCache::internalFindStrikeOrNull(const SkDescriptor& desc
 
 sk_sp<TextStrike> StrikeCache::generateStrike(const SkStrikeSpec& strikeSpec) {
     sk_sp<TextStrike> strike = sk_make_sp<TextStrike>(this, strikeSpec);
+#ifdef ENABLE_TEXT_ENHANCE
+    if (fRemovedUniqueIds.count(strikeSpec.typeface().uniqueID())) {
+        return strike;
+    }
+#endif
     this->internalAttachToHead(strike);
     return strike;
 }

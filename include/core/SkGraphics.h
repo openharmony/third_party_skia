@@ -144,6 +144,9 @@ public:
      *  Call early in main() to allow Skia to use a JIT to accelerate CPU-bound operations.
      */
     static void AllowJIT();
+#ifdef OHOS_SUPPORT
+    static void RemoveCacheByUniqueId(uint32_t uniqueId);
+#endif
 };
 
 class SkAutoGraphics {

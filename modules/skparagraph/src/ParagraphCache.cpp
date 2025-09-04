@@ -527,11 +527,7 @@ bool ParagraphCache::updateParagraph(ParagraphImpl* paragraph) {
         ParagraphCacheValue* value = new ParagraphCacheValue(std::move(key), paragraph);
         fLRUCacheMap.insert(value->fKey, std::make_unique<Entry>(value));
         fChecker(paragraph, "addedParagraph", true);
-#ifdef OHOS_SUPPORT
-#ifdef USE_UNSAFE_CACHED_VALUE
-        fLastCachedValue = value;
-#endif
-#else
+#ifndef OHOS_SUPPORT
         fLastCachedValue = value;
 #endif
         return true;
@@ -567,9 +563,6 @@ ParagraphCacheValue* ParagraphCache::cacheLayout(ParagraphImpl* paragraph) {
         ParagraphCacheValue* value = new ParagraphCacheValue(std::move(key), paragraph);
         fLRUCacheMap.insert(value->fKey, std::make_unique<Entry>(value));
         fChecker(paragraph, "addedParagraph", true);
-#ifdef USE_UNSAFE_CACHED_VALUE
-        fLastCachedValue = value;
-#endif
         return value;
     } else {
         // Paragraph&layout already cached

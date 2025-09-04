@@ -243,6 +243,21 @@ void GrDirectContext::freeGpuResources() {
     fResourceCache->purgeUnlockedResources(GrPurgeResourceOptions::kAllResources);
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+void GrDirectContext::freeCpuCache(uint32_t uniqueId) {
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned() || fStrikeCache == nullptr) {
+        return;
+    }
+    if (uniqueId == 0) {
+        fStrikeCache->freeAll();
+    } else {
+        fStrikeCache->removeStrikeByUniqueId(uniqueId);
+    }
+}
+#endif
+
 bool GrDirectContext::init() {
     ASSERT_SINGLE_OWNER
     if (!fGpu) {

@@ -263,6 +263,14 @@ public:
      */
     void freeGpuResources();
 
+#ifdef OHOS_SUPPORT
+    /**
+     * Frees CPU cache created by the context. Can be called to reduce CPU memory
+     * pressure.
+     */
+    void freeCpuCache(uint32_t uniqueId);
+#endif
+
     /**
      * Purge GPU resources that haven't been used in the past 'msNotUsed' milliseconds or are
      * otherwise marked for deletion, regardless of whether the context is under budget.
@@ -894,7 +902,7 @@ public:
     // OH ISSUE: intra frame and inter frame identification
     void beginFrame();
     void endFrame();
-    
+
     // OH ISSUE: asyn memory reclaimer
     void setGpuMemoryAsyncReclaimerSwitch(bool enabled, const std::function<void()>& setThreadPriority);
     void flushGpuMemoryInWaitQueue();

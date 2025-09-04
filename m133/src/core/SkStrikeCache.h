@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <unordered_set>
 
 class SkDescriptor;
 class SkStrikeSpec;
@@ -56,6 +57,14 @@ public:
     sk_sp<sktext::StrikeForGPU> findOrCreateScopedStrike(
             const SkStrikeSpec& strikeSpec) override SK_EXCLUDES(fLock);
 
+#ifdef ENABLE_TEXT_ENHANCE
+    static void RemoveStrikeByUniqueId(uint32_t uniqueId);
+    void removeStrikeByUniqueId(uint32_t uniqueId) SK_EXCLUDES(fLock);
+private:
+    std::unordered_set<uint32_t> fRemovedUniqueIds;
+public:
+#endif
+            
     static void PurgeAll();
     static void Dump();
 

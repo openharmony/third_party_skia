@@ -211,6 +211,18 @@ void GrDirectContext::freeGpuResources() {
     fResourceCache->purgeUnlockedResources();
 }
 
+#ifdef OHOS_SUPPORT
+void GrDirectContext::freeCpuCache(uint32_t uniqueId) {
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned() || fStrikeCache == nullptr) {
+        return;
+    }
+
+    fStrikeCache->freeAll();
+}
+#endif
+
 bool GrDirectContext::init() {
     ASSERT_SINGLE_OWNER
     if (!fGpu) {

@@ -130,3 +130,9 @@ extern bool gSkVMAllowJIT;
 void SkGraphics::AllowJIT() {
     gSkVMAllowJIT = true;
 }
+
+#ifdef OHOS_SUPPORT
+void SkGraphics::RemoveCacheByUniqueId(uint32_t uniqueId) {
+    SkStrikeCache::RemoveStrikeByUniqueId(uniqueId);
+}
+#endif

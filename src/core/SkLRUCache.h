@@ -97,6 +97,20 @@ public:
         }
     }
 
+#ifdef USE_SKIA_TXT
+    int removePublic(const K& key) {
+        Entry** value = fMap.find(key);
+        if (value == nullptr || (*value) == nullptr || (*value)->fKey != key) {
+            return 1;
+        }
+        Entry* entry = *value;
+        fMap.remove(key);
+        fLRU.remove(entry);
+        delete entry;
+        return 0;
+    }
+#endif
+
 private:
     struct Traits {
         static const K& GetKey(Entry* e) {

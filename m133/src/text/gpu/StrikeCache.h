@@ -16,6 +16,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <unordered_set>
 
 struct SkPackedGlyphID;
 
@@ -81,6 +82,12 @@ public:
     sk_sp<TextStrike> findOrCreateStrike(const SkStrikeSpec& strikeSpec);
 
     void freeAll();
+#ifdef ENABLE_TEXT_ENHANCE
+    void removeStrikeByUniqueId(uint32_t uniqueId);
+private:
+    std::unordered_set<uint32_t> fRemovedUniqueIds;
+public:
+#endif
 
 private:
     friend class TextStrike;  // for TextStrike::getGlyph

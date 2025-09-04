@@ -47,6 +47,30 @@ SkScopedStrikeForGPU SkStrikeCache::findOrCreateScopedStrike(const SkStrikeSpec&
     return SkScopedStrikeForGPU{this->findOrCreateStrike(strikeSpec).release()};
 }
 
+#ifdef OHOS_SUPPORT
+void SkStrikeCache::RemoveStrikeByUniqueId(uint32_t uniqueId) {
+    GlobalStrikeCache()->removeStrikeByUniqueId(uniqueId);
+}
+
+void SkStrikeCache::removeStrikeByUniqueId(uint32_t uniqueId) {
+    SkAutoMutexExclusive ac(fLock);
+    std::vector<SkStrike*> strikes;
+    fStrikeLookup.foreach([&strikes, uniqueId](sk_sp<SkStrike>* item) {
+        if (item && (*item) &&(*item)->strikeSpec().typeface().uniqueID() == uniqueId) {
+            strikes.push_back(item->get());
+        }
+    });
+
+    if (!strikes.empty()) {
+        fRemovedUniqueIds.emplace(uniqueId);
+    }
+
+    for (SkStrike* strike : strikes) {
+        this->internalRemoveStrike(strike);
+    }
+}
+#endif
+
 void SkStrikeCache::PurgeAll() {
     GlobalStrikeCache()->purgeAll();
 }
@@ -164,7 +188,13 @@ auto SkStrikeCache::internalCreateStrike(
     std::unique_ptr<SkScalerContext> scaler = strikeSpec.createScalerContext();
     auto strike =
         sk_make_sp<SkStrike>(this, strikeSpec, std::move(scaler), maybeMetrics, std::move(pinner));
+#ifdef OHOS_SUPPORT
+    if (!fRemovedUniqueIds.count(strikeSpec.typeface().uniqueID())) {
+        this->internalAttachToHead(strike);
+    }
+#else
     this->internalAttachToHead(strike);
+#endif
     return strike;
 }
 

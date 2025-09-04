@@ -107,6 +107,8 @@ public:
     {
         return fIsAdpaterTextHeightEnabled;
     }
+
+    void removeCacheByUniqueId(uint32_t uniqueId);
 #endif
 private:
 #ifndef USE_SKIA_TXT

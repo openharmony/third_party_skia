@@ -28,7 +28,20 @@
 SkTypeface::SkTypeface(const SkFontStyle& style, bool isFixedPitch)
     : fUniqueID(SkTypefaceCache::NewFontID()), fStyle(style), fIsFixedPitch(isFixedPitch) { }
 
+#ifdef OHOS_SUPPORT
+std::function<void(uint32_t)> SkTypeface::fTypefaceDestroyed = nullptr;
+SkTypeface::~SkTypeface() {
+    if (fTypefaceDestroyed) {
+        fTypefaceDestroyed(uniqueID());
+    }
+}
+
+void SkTypeface::RegisterOnTypefaceDestroyed(std::function<void(uint32_t)> cb) {
+    fTypefaceDestroyed = cb;
+}
+#else
 SkTypeface::~SkTypeface() { }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 

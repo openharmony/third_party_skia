@@ -62,8 +62,19 @@ using namespace skia_private;
 SkTypeface::SkTypeface(const SkFontStyle& style, bool isFixedPitch)
     : fUniqueID(SkTypefaceCache::NewTypefaceID()), fStyle(style), fIsFixedPitch(isFixedPitch) { }
 
+#ifdef ENABLE_TEXT_ENHANCE
+std::function<void(uint32_t)> SkTypeface::fTypefaceDestroyed = nullptr;
+SkTypeface::~SkTypeface() {
+    if (fTypefaceDestroyed) {
+        fTypefaceDestroyed(uniqueID());
+    }
+}
+void SkTypeface::RegisterOnTypefaceDestroyed(std::function<void(uint32_t)> cb) {
+    fTypefaceDestroyed = cb;
+}
+#else
 SkTypeface::~SkTypeface() { }
-
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 
 namespace {

@@ -21,6 +21,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -144,6 +145,7 @@ public:
 
 #ifdef ENABLE_TEXT_ENHANCE
     static std::vector<sk_sp<SkTypeface>> GetSystemFonts();
+    static void RegisterOnTypefaceDestroyed(std::function<void(uint32_t)> cb);
     void getFontPath(SkString* path) const;
 #endif
 
@@ -520,6 +522,7 @@ private:
 #ifdef ENABLE_TEXT_ENHANCE
     bool                fIsCustom{false};
     bool                fIsTheme{false};
+    static std::function<void(uint32_t)> fTypefaceDestroyed;
 #endif
     using INHERITED = SkWeakRefCnt;
 };

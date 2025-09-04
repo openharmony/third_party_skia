@@ -173,6 +173,13 @@ public:
     SkScopedStrikeForGPU findOrCreateScopedStrike(
             const SkStrikeSpec& strikeSpec) override SK_EXCLUDES(fLock);
 
+#ifdef OHOS_SUPPORT
+    static void RemoveStrikeByUniqueId(uint32_t uniqueId);
+    void removeStrikeByUniqueId(uint32_t uniqueId) SK_EXCLUDES(fLock);
+private:
+    std::unordered_set<uint32_t> fRemovedUniqueIds;
+public:
+#endif
     static void PurgeAll();
     static void Dump();
 

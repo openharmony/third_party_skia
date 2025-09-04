@@ -34,6 +34,14 @@ std::unordered_map<uint32_t, std::shared_ptr<RSTypeface>> g_faceTypeCache(MAX_VA
 
 #ifdef OHOS_SUPPORT
 bool FontCollection::fIsAdpaterTextHeightEnabled = false;
+
+void FontCollection::removeCacheByUniqueId(uint32_t uniqueId) {
+    SkGraphics::RemoveCacheByUniqueId(uniqueId);
+    SkShaper::RemoveCacheByUniqueId(uniqueId);
+    std::unique_lock writeLock(mutex_);
+    fTypefaces.clear();
+    fParagraphCache.reset();
+}
 #endif
 
 bool FontCollection::FamilyKey::operator==(const FontCollection::FamilyKey& other) const {
