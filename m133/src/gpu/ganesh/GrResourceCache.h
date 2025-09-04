@@ -137,6 +137,7 @@ public:
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     void dumpAllResource(std::stringstream& dump) const;
+    void dumpResourceByObjHandle(std::stringstream& dump, uint64_t objHandle) const;
 #endif
 
 #ifdef SKIA_DFX_FOR_OHOS

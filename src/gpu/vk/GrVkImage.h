@@ -218,6 +218,7 @@ public:
     size_t onGpuMemorySize() const override;
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     void dumpVkImageInfo(std::stringstream& dump) const override;
+    void dumpVkImageInfoByObjHandle(std::stringstream& dump, uint64_t objHandle) const override;
     const char* getResourceType() const override { return "VkImage"; }
 #endif
 #if GR_TEST_UTILS
@@ -311,6 +312,7 @@ private:
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
         ParallelDebug::VkImageInvokeRecord* fCaller = nullptr;
+        VkImage getVkImage() const { return fImage; }
         void dumpVkImageResource(std::stringstream& dump);
         void RecordFreeVkImage(bool isBorrowed) const;
 #endif

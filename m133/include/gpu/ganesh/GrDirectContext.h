@@ -989,6 +989,7 @@ public:
     void vmaDefragment();
     void dumpVmaStats(SkString *out);
     void dumpAllResource(std::stringstream& dump) const;
+    void dumpResourceByObjHandle(std::stringstream& dump, uint64_t objHandle) const;
 
 protected:
     GrDirectContext(GrBackendApi backend,

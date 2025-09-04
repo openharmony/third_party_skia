@@ -343,9 +343,8 @@ public:
     GrGpuResourceTag getResourceTag() const { return fGrResourceTag; }
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
-    virtual void dumpVkImageInfo(std::stringstream& dump) const {
-        dump << "\n";
-    }
+    virtual void dumpVkImageInfo(std::stringstream& dump) const {}
+    virtual void dumpVkImageInfoByObjHandle(std::stringstream& dump, uint64_t objHandle) const {}
 #endif
 
 #if defined(GPU_TEST_UTILS)

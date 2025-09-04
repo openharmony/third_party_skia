@@ -90,6 +90,18 @@ void ParallelDebug::DumpAllDestroyVkImage(std::stringstream& ss)
     }
 }
 
+void ParallelDebug::DumpDestroyVkImageByObjHandle(std::stringstream& ss, uint64_t objHandle)
+{
+    VkImage vkImage = reinterpret_cast<VkImage>(static_cast<uintptr_t>(objHandle));
+    for (auto& del : DELETE_) {
+        if (del.image_ != vkImage) {
+            continue;
+        }
+        del.Dump(ss);
+        ss << "\n";
+    }
+}
+
 void ParallelDebug::VkImageDestroyRecord::Dump(std::stringstream& ss)
 {
     char timeStr[20];

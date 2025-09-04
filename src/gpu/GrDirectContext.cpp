@@ -547,6 +547,14 @@ void GrDirectContext::dumpAllResource(std::stringstream& dump) const {
 #endif
 }
 
+void GrDirectContext::dumpResourceByObjHandle(std::stringstream& dump, uint64_t objHandle) const {
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    if (fResourceCache) {
+        fResourceCache->dumpResourceByObjHandle(dump, objHandle);
+    }
+#endif
+}
+
 void GrDirectContext::dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const {
     ASSERT_SINGLE_OWNER
     fResourceCache->dumpMemoryStatistics(traceMemoryDump);

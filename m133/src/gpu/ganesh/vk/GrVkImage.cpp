@@ -701,6 +701,35 @@ void GrVkImage::dumpVkImageInfo(std::stringstream& dump) const {
     dump << "\n";
 }
 
+void GrVkImage::dumpVkImageInfoByObjHandle(std::stringstream& dump, uint64_t objHandle) const {
+    if (fResource == nullptr) {
+        SK_LOGE("GrVkImage::dumpVkImageInfo fResource nullptr");
+        return;
+    }
+    VkImage vkImage = reinterpret_cast<VkImage>(static_cast<uintptr_t>(objHandle));
+    if (fResource->getVkImage() != vkImage) {
+        return;
+    }
+
+    auto vkGpu = getVkGpu();
+    if (vkGpu == nullptr) {
+        SK_LOGE("GrVkImage::dumpVkImageInfo vkGpu nullptr");
+        return;
+    }
+    VkMemoryRequirements memRequirements;
+    VK_CALL(vkGpu, GetImageMemoryRequirements(vkGpu->device(), image(), &memRequirements));
+    VkDeviceSize imageSize = memRequirements.size;
+
+    fResource->dumpVkImageResource(dump);
+    dump << "Borrowed: " << isBorrowed() << ", " << "ImageSize: " << imageSize;
+    if (fResource->fCaller == nullptr) {
+        SK_LOGE("GrVkImage::dumpVkImageInfo fCaller nullptr");
+    } else {
+        fResource->fCaller->Dump(dump);
+    }
+    dump << "\n";
+}
+
 void GrVkImage::Resource::dumpVkImageResource(std::stringstream& dump) {
     dump << "VkImage: " << fImage << ", "
          << "Memory: " << fAlloc.fMemory << ", "
