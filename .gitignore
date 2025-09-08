@@ -1,5 +1,0 @@
-.settings/
-.vscode/
-out
-third_party/externals/*/.git
-third_party/externals/*/.github
