@@ -932,7 +932,8 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
 
     if (fParent->getLineBreakStrategy() == LineBreakStrategy::BALANCED &&
         fParent->getWordBreakType() != WordBreakType::BREAK_ALL &&
-        fParent->getWordBreakType() != WordBreakType::BREAK_HYPHEN) {
+        fParent->getWordBreakType() != WordBreakType::BREAK_HYPHEN &&
+        (fParent->getParagraphStyle().getTextTab().location < 1.0)) {
         layoutLinesBalanced(parent, maxWidth, addLine);
         return;
     }
