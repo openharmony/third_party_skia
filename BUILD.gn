@@ -178,6 +178,8 @@ config("skia_public") {
   # OH ISSUE: jpeg optimize
   if (target_platform == "pc") {
     defines += [ "TURBO_JPEG_HUFF_DECODE_OPT" ]
+  }
+  if (target_platform == "pc" || target_platform == "phone") {
     defines += [ "TURBO_PNG_MULTY_LINE_OPT" ]
   }
   if (is_ohos) {
