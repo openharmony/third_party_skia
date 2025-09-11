@@ -115,6 +115,29 @@ GrTextureProxy::~GrTextureProxy() {
     // message to (Note: in this case we don't want to remove its cached resource).
     if (fUniqueKey.isValid() && fProxyProvider) {
         sk_sp<GrGpuResource> invalidGpuResource;
+#ifdef SKIA_OHOS
+        //OH ISSUE :cache small Texture on UnUni devices
+        auto context = fProxyProvider->getfImageContext();
+        bool clearSmallTexture = true;
+        if (context) {
+            clearSmallTexture = context->priv().options().clearSmallTexture;
+            auto direct = context->asDirectContext();
+            if (direct) {
+                GrResourceProvider* resourceProvider = direct->priv().resourceProvider();
+                if (resourceProvider) {
+                    invalidGpuResource = resourceProvider->findByUniqueKey<GrGpuResource>(fUniqueKey);
+                }
+            }
+        }
+        // less than 1024 Bytes resources will be delated
+        if (invalidGpuResource && clearSmallTexture && invalidGpuResource->gpuMemorySize() < 1024) {
+            fProxyProvider->processInvalidUniqueKey(
+                fUniqueKey, this, GrProxyProvider::InvalidateGPUResource::kYes);
+        } else {
+            fProxyProvider->processInvalidUniqueKey(
+                fUniqueKey, this, GrProxyProvider::InvalidateGPUResource::kNo);
+        }
+#else
         auto direct = fProxyProvider->getfImageContext()->asDirectContext();
         if (direct) {
             GrResourceProvider* resourceProvider = direct->priv().resourceProvider();
@@ -130,6 +153,7 @@ GrTextureProxy::~GrTextureProxy() {
             fProxyProvider->processInvalidUniqueKey(
                 fUniqueKey, this, GrProxyProvider::InvalidateGPUResource::kNo);
         }
+#endif
     } else {
         SkASSERT(!fProxyProvider);
     }
