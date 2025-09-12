@@ -2791,6 +2791,10 @@ void GrVkGpu::endRenderPass(GrRenderTarget* target, GrSurfaceOrigin origin,
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
 uint64_t GrVkGpu::dumpDeviceFaultInfo(const std::string& errorCategory) {
+    if (nullptr == this->vkInterface()->fFunctions.fGetDeviceFaultInfo) {
+        SK_LOGE("GrVkGpu::dumpDeviceFaultInfo vkGetDeviceFaultInfoEXT is nullptr");
+        return VK_INVALID_HANDLE;
+    }
     VkDeviceFaultCountsEXT fc{};
     fc.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT;
     fc.pNext = nullptr;
