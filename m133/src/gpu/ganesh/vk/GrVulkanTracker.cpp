@@ -34,7 +34,7 @@ static inline int64_t GetNanoSeconds()
 bool ParallelDebug::IsVkImageDfxEnabled()
 {
     static const bool dfxEnabled =
-        std::atoi(OHOS::system::GetParameter("persist.sys.graphic.openVkImageMemoryDfx", "1").c_str()) != 0;
+        std::atoi(OHOS::system::GetParameter("persist.sys.graphic.openVkImageMemoryDfx", "0").c_str()) != 0;
     return dfxEnabled;
 }
 
