@@ -85,6 +85,11 @@ void FontCollection::setDynamicFontManager(std::shared_ptr<RSFontMgr> font_manag
     fDynamicFontManager = font_manager;
 }
 
+void FontCollection::setGlobalFontManager(std::shared_ptr<RSFontMgr> font_manager) {
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    fGlobalFontManager = font_manager;
+}
+
 void FontCollection::setTestFontManager(std::shared_ptr<RSFontMgr> font_manager)
 {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
@@ -138,13 +143,19 @@ void FontCollection::setDefaultFontManager(sk_sp<SkFontMgr> fontManager) {
 #ifdef ENABLE_TEXT_ENHANCE
 std::vector<std::shared_ptr<RSFontMgr>> FontCollection::getFontManagerOrder() const {
     std::vector<std::shared_ptr<RSFontMgr>> order;
-#else
-std::vector<sk_sp<SkFontMgr>> FontCollection::getFontManagerOrder() const {
-    std::vector<sk_sp<SkFontMgr>> order;
-#endif
     if (fDynamicFontManager) {
         order.push_back(fDynamicFontManager);
     }
+    if (fGlobalFontManager) {
+        order.push_back(fGlobalFontManager);
+    }
+#else
+std::vector<sk_sp<SkFontMgr>> FontCollection::getFontManagerOrder() const {
+    std::vector<sk_sp<SkFontMgr>> order;
+    if (fDynamicFontManager) {
+        order.push_back(fDynamicFontManager);
+    }
+#endif
     if (fAssetFontManager) {
         order.push_back(fAssetFontManager);
     }
