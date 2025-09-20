@@ -175,6 +175,12 @@
     extern SK_API bool SkShaderReduceProperty();
 #endif
 
+#ifdef SKIA_OHOS_SINGLE_OWNER
+    extern SK_API bool GetEnableSkiaSingleOwner();
+
+    extern SK_API void PrintBackTrace(uint32_t tid);
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /** 32 bit integer to hold a unicode value

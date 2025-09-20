@@ -44,7 +44,11 @@ DECLARE_SKMESSAGEBUS_MESSAGE(GrResourceCache::UnrefResourceMessage,
                              GrDirectContext::DirectContextID,
                              /*AllowCopyableMessage=*/false)
 
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+#define ASSERT_SINGLE_OWNER SKGPU_ASSERT_SINGLE_OWNER_OHOS(fSingleOwner)
+#else
 #define ASSERT_SINGLE_OWNER SKGPU_ASSERT_SINGLE_OWNER(fSingleOwner)
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 

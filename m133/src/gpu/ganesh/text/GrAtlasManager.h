@@ -45,7 +45,11 @@ public:
     GrAtlasManager(GrProxyProvider*,
                    size_t maxTextureBytes,
                    GrDrawOpAtlas::AllowMultitexturing,
-                   bool supportBilerpAtlas);
+                   bool supportBilerpAtlas
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+                   ,skgpu::SingleOwner* owner
+#endif
+                );
     ~GrAtlasManager() override;
 
     // if getViews returns nullptr, the client must not try to use other functions on the
@@ -200,6 +204,10 @@ private:
     GrProxyProvider* fProxyProvider;
     sk_sp<const GrCaps> fCaps;
     GrDrawOpAtlasConfig fAtlasConfig;
+
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+    mutable skgpu::SingleOwner* fSingleOwner;
+#endif
 
 #if defined(SK_ENABLE_SMALL_PAGE) || defined(SK_DEBUG_ATLAS_HIT_RATE)
     int fAtlasHitCount = 0;

@@ -43,14 +43,18 @@ struct SkImageInfo;
 
 using namespace skia_private;
 
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+#define ASSERT_SINGLE_OWNER SKGPU_ASSERT_SINGLE_OWNER_OHOS(fSingleOwner)
+#else
 #define ASSERT_SINGLE_OWNER SKGPU_ASSERT_SINGLE_OWNER(fSingleOwner)
+#endif
 
 GrResourceProvider::GrResourceProvider(GrGpu* gpu,
                                        GrResourceCache* cache,
                                        skgpu::SingleOwner* owner)
         : fCache(cache)
         , fGpu(gpu)
-#ifdef SK_DEBUG
+#if defined(SK_DEBUG) || defined(SKIA_OHOS_SINGLE_OWNER)
         , fSingleOwner(owner)
 #endif
 {

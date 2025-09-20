@@ -13,6 +13,7 @@
 #include "include/gpu/ganesh/GrBackendSurface.h"
 #include "include/private/base/SkAssert.h"
 #include "include/private/base/SkDebug.h"
+#include "include/private/base/SingleOwner.h"
 #include "src/gpu/AtlasTypes.h"
 #include "src/gpu/ganesh/GrDeferredUpload.h"
 #include "src/gpu/ganesh/GrSurfaceProxyView.h"
@@ -23,6 +24,10 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+#define ASSERT_SINGLE_OWNER_OHOS SKGPU_ASSERT_SINGLE_OWNER_OHOS(fSingleOwner)
+#endif
 
 class GrOnFlushResourceProvider;
 class GrProxyProvider;
@@ -91,6 +96,9 @@ public:
 #ifdef SK_ENABLE_SMALL_PAGE
                                                int atlasPageNum,
 #endif
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+                                               skgpu::SingleOwner* owner,
+#endif
                                                skgpu::PlotEvictionCallback* evictor,
                                                std::string_view label);
 
@@ -124,6 +132,9 @@ public:
     uint64_t atlasGeneration() const { return fAtlasGeneration; }
 
     bool hasID(const skgpu::PlotLocator& plotLocator) {
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+        ASSERT_SINGLE_OWNER_OHOS
+#endif
         if (!plotLocator.isValid()) {
             return false;
         }
@@ -137,6 +148,9 @@ public:
 
     /** To ensure the atlas does not evict a given entry, the client must set the last use token. */
     void setLastUseToken(const skgpu::AtlasLocator& atlasLocator, skgpu::AtlasToken token) {
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+        ASSERT_SINGLE_OWNER_OHOS
+#endif
         SkASSERT(this->hasID(atlasLocator.plotLocator()));
         uint32_t plotIdx = atlasLocator.plotIndex();
         SkASSERT(plotIdx < fNumPlots);
@@ -151,6 +165,9 @@ public:
 
     void setLastUseTokenBulk(const skgpu::BulkUsePlotUpdater& updater,
                              skgpu::AtlasToken token) {
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+        ASSERT_SINGLE_OWNER_OHOS
+#endif
         int count = updater.count();
         for (int i = 0; i < count; i++) {
             const skgpu::BulkUsePlotUpdater::PlotData& pd = updater.plotData(i);
@@ -181,6 +198,9 @@ private:
     GrDrawOpAtlas(GrProxyProvider*, const GrBackendFormat& format, SkColorType, size_t bpp,
                   int width, int height, int plotWidth, int plotHeight,
                   skgpu::AtlasGenerationCounter* generationCounter,
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+                  skgpu::SingleOwner* owner,
+#endif
 #ifdef SK_ENABLE_SMALL_PAGE
                   AllowMultitexturing allowMultitexturing, int atlasPageNum, std::string_view label);
 #else
@@ -256,6 +276,9 @@ private:
     // proxies kept separate to make it easier to pass them up to client
     GrSurfaceProxyView fViews[skgpu::PlotLocator::kMaxMultitexturePages];
     Page fPages[skgpu::PlotLocator::kMaxMultitexturePages];
+#ifdef SKIA_OHOS_SINGLE_OWNER
+    mutable skgpu::SingleOwner* fSingleOwner;
+#endif
     uint32_t fMaxPages;
 
     uint32_t fNumActivePages;

@@ -137,7 +137,10 @@ if (is_arkui_x) {
     }
 
     if (is_ohos) {
-      public_external_deps += [ "hitrace:hitrace_meter" ]
+      public_external_deps += [ 
+        "hitrace:hitrace_meter",
+        "hilog:libhilog",
+       ]
     }
 
     public_configs = [
@@ -342,6 +345,7 @@ if (is_arkui_x) {
       sources += [ "${skia_root_dir}/src/ports/SkDebug_ohos.cpp" ]
       external_deps = [
         "bounds_checking_function:libsec_shared",
+        "faultloggerd:libbacktrace_local",
         "hilog:libhilog",
         "hitrace:hitrace_meter",
         "init:libbegetutil",
@@ -503,7 +507,10 @@ if (is_arkui_x) {
     }
 
     if (is_ohos) {
-      public_external_deps += [ "hitrace:hitrace_meter" ]
+      public_external_deps += [ 
+        "hitrace:hitrace_meter",
+        "hilog:libhilog",
+       ]
     }
 
     public_configs = [
