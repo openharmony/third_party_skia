@@ -43,7 +43,8 @@
                 "icu",
                 "graphic_2d",
                 "libpng",
-                "freetype"
+                "freetype",
+                "faultloggerd"
             ],
             "third_party": [
                 "vulkan-headers"

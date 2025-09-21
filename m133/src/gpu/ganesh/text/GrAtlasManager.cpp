@@ -34,12 +34,20 @@ using MaskFormat = skgpu::MaskFormat;
 GrAtlasManager::GrAtlasManager(GrProxyProvider* proxyProvider,
                                size_t maxTextureBytes,
                                GrDrawOpAtlas::AllowMultitexturing allowMultitexturing,
-                               bool supportBilerpAtlas)
+                               bool supportBilerpAtlas
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+                               ,skgpu::SingleOwner* owner
+#endif
+                            )
             : fAllowMultitexturing{allowMultitexturing}
             , fSupportBilerpAtlas{supportBilerpAtlas}
             , fProxyProvider{proxyProvider}
             , fCaps{fProxyProvider->refCaps()}
-            , fAtlasConfig{fCaps->maxTextureSize(), maxTextureBytes} { }
+            , fAtlasConfig{fCaps->maxTextureSize(), maxTextureBytes}
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+            , fSingleOwner{owner}
+#endif  
+             { }
 
 GrAtlasManager::~GrAtlasManager() = default;
 
@@ -288,6 +296,9 @@ bool GrAtlasManager::initAtlas(MaskFormat format) {
                                               fAllowMultitexturing,
 #ifdef SK_ENABLE_SMALL_PAGE
                                               pageNum,
+#endif
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+                                              fSingleOwner,
 #endif
                                               nullptr,
                                               /*label=*/"TextAtlas");

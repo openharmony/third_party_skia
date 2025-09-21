@@ -451,7 +451,11 @@ private:
     sk_sp<const GrGpuBuffer> fAAQuadIndexBuffer;
 
     // In debug builds we guard against improper thread handling
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+    mutable skgpu::SingleOwner* fSingleOwner;
+#else
     SkDEBUGCODE(mutable skgpu::SingleOwner* fSingleOwner;)
+#endif
 };
 
 #endif

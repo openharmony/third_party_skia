@@ -86,6 +86,9 @@ std::unique_ptr<GrDrawOpAtlas> GrDrawOpAtlas::Make(GrProxyProvider* proxyProvide
 #ifdef SK_ENABLE_SMALL_PAGE
                                                    int atlasPageNum,
 #endif
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+                                                   skgpu::SingleOwner* owner,
+#endif
                                                    EvictionCallback* evictor,
                                                    std::string_view label) {
     if (!format.isValid()) {
@@ -95,6 +98,9 @@ std::unique_ptr<GrDrawOpAtlas> GrDrawOpAtlas::Make(GrProxyProvider* proxyProvide
     std::unique_ptr<GrDrawOpAtlas> atlas(new GrDrawOpAtlas(proxyProvider, format, colorType, bpp,
                                                            width, height, plotWidth, plotHeight,
                                                            generationCounter,
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+                                                           owner,
+#endif
 #ifdef SK_ENABLE_SMALL_PAGE
                                                            allowMultitexturing, atlasPageNum, label));
 #else
@@ -115,6 +121,9 @@ std::unique_ptr<GrDrawOpAtlas> GrDrawOpAtlas::Make(GrProxyProvider* proxyProvide
 GrDrawOpAtlas::GrDrawOpAtlas(GrProxyProvider* proxyProvider, const GrBackendFormat& format,
                              SkColorType colorType, size_t bpp, int width, int height,
                              int plotWidth, int plotHeight, GenerationCounter* generationCounter,
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+                             skgpu::SingleOwner* owner,
+#endif
 #ifdef SK_ENABLE_SMALL_PAGE
                              AllowMultitexturing allowMultitexturing, int atlasPageNum, std::string_view label)
 #else
@@ -132,6 +141,9 @@ GrDrawOpAtlas::GrDrawOpAtlas(GrProxyProvider* proxyProvider, const GrBackendForm
         , fAtlasGeneration(fGenerationCounter->next())
         , fPrevFlushToken(AtlasToken::InvalidToken())
         , fFlushesSinceLastUse(0)
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+        , fSingleOwner(owner)
+#endif
 #ifdef SK_ENABLE_SMALL_PAGE
         , fMaxPages(AllowMultitexturing::kYes == allowMultitexturing ? ((atlasPageNum > 16) ? 16 : atlasPageNum) : 1)
 #else
@@ -240,6 +252,9 @@ GrDrawOpAtlas::ErrorCode GrDrawOpAtlas::addToAtlas(GrResourceProvider* resourceP
                                                    GrDeferredUploadTarget* target,
                                                    int width, int height, const void* image,
                                                    AtlasLocator* atlasLocator) {
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+    ASSERT_SINGLE_OWNER_OHOS
+#endif
     if (width > fPlotWidth || height > fPlotHeight) {
         return ErrorCode::kError;
     }
@@ -529,6 +544,9 @@ void GrDrawOpAtlas::compact(AtlasToken startTokenForNextFlush) {
 
 bool GrDrawOpAtlas::createPages(
         GrProxyProvider* proxyProvider, GenerationCounter* generationCounter) {
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+    ASSERT_SINGLE_OWNER_OHOS
+#endif
     SkASSERT(SkIsPow2(fTextureWidth) && SkIsPow2(fTextureHeight));
 
     SkISize dims = {fTextureWidth, fTextureHeight};
@@ -597,6 +615,9 @@ bool GrDrawOpAtlas::activateNewPage(GrResourceProvider* resourceProvider) {
 }
 
 inline void GrDrawOpAtlas::deactivateLastPage() {
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+    ASSERT_SINGLE_OWNER_OHOS
+#endif
     SkASSERT(fNumActivePages);
 
     uint32_t lastPageIndex = fNumActivePages - 1;

@@ -312,7 +312,11 @@ bool GrDirectContext::init() {
     fAtlasManager = std::make_unique<GrAtlasManager>(proxyProvider,
                                                      this->options().fGlyphCacheTextureMaximumBytes,
                                                      allowMultitexturing,
-                                                     this->options().fSupportBilerpFromGlyphAtlas);
+                                                     this->options().fSupportBilerpFromGlyphAtlas
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+                                                     ,singleOwner()
+#endif
+                                                    );
     this->priv().addOnFlushCallbackObject(fAtlasManager.get());
 
     return true;

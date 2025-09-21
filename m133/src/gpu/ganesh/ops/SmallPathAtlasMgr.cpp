@@ -85,6 +85,9 @@ bool SmallPathAtlasMgr::initAtlas(GrProxyProvider* proxyProvider, const GrCaps* 
 #ifdef SK_ENABLE_SMALL_PAGE
                                  pageNum,
 #endif
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+                                 nullptr,
+#endif
                                  this,
                                  /*label=*/"SmallPathAtlas");
 
