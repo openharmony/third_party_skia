@@ -381,6 +381,8 @@ public:
     void setIsThemeTypeface(bool isTheme);
     uint32_t GetHash() const;
     void SetHash(uint32_t hash);
+    int32_t GetFd() const;
+    void SetFd(int32_t fd);
 #endif
     // PRIVATE / EXPERIMENTAL -- do not call
     void filterRec(SkScalerContextRec* rec) const {
@@ -510,6 +512,7 @@ private:
     static SkFontStyle FromOldStyle(Style oldStyle);
     static sk_sp<SkTypeface> GetDefaultTypeface(Style style = SkTypeface::kNormal);
     mutable uint32_t hash_{0};
+    int32_t fd_{-1};
 #endif
     friend class SkFontPriv;         // getGlyphToUnicodeMap
 

@@ -66,7 +66,11 @@ SkTypeface::SkTypeface(const SkFontStyle& style, bool isFixedPitch)
 std::function<void(uint32_t)> SkTypeface::fTypefaceDestroyed = nullptr;
 SkTypeface::~SkTypeface() {
     if (fTypefaceDestroyed) {
-        fTypefaceDestroyed(uniqueID());
+        if (GetFd() == -1) {
+            fTypefaceDestroyed(uniqueID());
+        } else {
+            fTypefaceDestroyed(GetHash());
+        }
     }
 }
 void SkTypeface::RegisterOnTypefaceDestroyed(std::function<void(uint32_t)> cb) {
@@ -323,6 +327,16 @@ uint32_t SkTypeface::GetHash() const
 void SkTypeface::SetHash(uint32_t hash)
 {
     hash_ = hash;
+}
+
+void SkTypeface::SetFd(int32_t fd)
+{
+    fd_ = fd;
+}
+
+int32_t SkTypeface::GetFd() const
+{
+    return fd_;
 }
 
 sk_sp<SkTypeface> SkTypeface::MakeFromStream(std::unique_ptr<SkStreamAsset> stream, int index) {
