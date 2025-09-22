@@ -351,6 +351,10 @@ jpeg_make_d_derived_tbl(j_decompress_ptr cinfo, boolean isDC, int tblno,
   for (i = 0; i < (1 << HUFF_LOOKAHEAD); i++) {
     dtbl->lookup[i] = (HUFF_LOOKAHEAD + 1) << HUFF_LOOKAHEAD;
   }
+  for (; i < (1 << HUFF_LOOKAHEAD) + HUFF_CODE_LARGE_LONG_ALIGNED; i++) {
+    dtbl->lookup[i] = 0;
+  }
+
   if (!isDC) {
     jpeg_make_d_ac_derived_tbl(htbl, dtbl, huffcode);
   } else {
