@@ -21,6 +21,8 @@
 #include <sstream>
 #include "include/core/SkLog.h"
 #include <csignal>
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 #endif
@@ -78,7 +80,7 @@ private:
          if (!assertCheck) {
             SK_LOGE("\n\n\n\n ========== BackTrace Start ==========");
             PrintBackTrace(fOwnerTid);
-            PrintBackTrace(SkGetThreadID());
+            PrintBackTrace(gettid());
             SK_LOGE("========== BackTrace End ========== occur file:%{public}s line:%{public}d\n\n\n\n",
                 file, line);
             raise(SIGNO_FOR_OCEAN); // report to Ocean
@@ -107,7 +109,7 @@ private:
          if (!assertCheck) {
             SK_LOGE("\n\n\n\n ========== BackTrace Start ==========");
             PrintBackTrace(fOwnerTid);
-            PrintBackTrace(SkGetThreadID());
+            PrintBackTrace(gettid());
             SK_LOGE("========== BackTrace End ========== occur file:%{public}s line:%{public}d\n\n\n\n",
                 file, line);
             raise(SIGNO_FOR_OCEAN); // report to Ocean
