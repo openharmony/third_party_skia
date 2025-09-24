@@ -217,8 +217,9 @@ bool TextStyle::matchOneAttribute(StyleType styleType, const TextStyle& other) c
             return (!fHasForeground && !other.fHasForeground && fColor == other.fColor) ||
                    (fHasForeground &&  other.fHasForeground && fForeground == other.fForeground);
         case kBackground:
-            return (!fHasBackground && !other.fHasBackground) ||
-                   (fHasBackground &&  other.fHasBackground && fBackground == other.fBackground);
+            return (fBackgroundRect == other.fBackgroundRect) &&
+                ((!fHasBackground && !other.fHasBackground) ||
+                (fHasBackground &&  other.fHasBackground && fBackground == other.fBackground));
         case kShadow:
             return equalsByTextShadow(other);
         case kDecorations:
