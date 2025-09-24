@@ -34,6 +34,7 @@ public:
     void setAssetFontManager(std::shared_ptr<RSFontMgr> fontManager);
     void setDynamicFontManager(std::shared_ptr<RSFontMgr> fontManager);
     void setTestFontManager(std::shared_ptr<RSFontMgr> fontManager);
+    void setGlobalFontManager(std::shared_ptr<RSFontMgr> fontManager);
     void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager);
     void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const char defaultFamilyName[]);
     void setDefaultFontManager(std::shared_ptr<RSFontMgr> fontManager, const std::vector<SkString>& defaultFamilyNames);
@@ -142,10 +143,11 @@ private:
     bool fEnableFontFallback;
 #ifdef ENABLE_TEXT_ENHANCE
     std::unordered_map<FamilyKey, std::vector<std::shared_ptr<RSTypeface>>, FamilyKey::Hasher> fTypefaces;
-    std::shared_ptr<RSFontMgr> fDefaultFontManager;
-    std::shared_ptr<RSFontMgr> fAssetFontManager;
-    std::shared_ptr<RSFontMgr> fDynamicFontManager;
-    std::shared_ptr<RSFontMgr> fTestFontManager;
+    std::shared_ptr<RSFontMgr> fDefaultFontManager{nullptr};
+    std::shared_ptr<RSFontMgr> fGlobalFontManager{nullptr};
+    std::shared_ptr<RSFontMgr> fAssetFontManager{nullptr};
+    std::shared_ptr<RSFontMgr> fDynamicFontManager{nullptr};
+    std::shared_ptr<RSFontMgr> fTestFontManager{nullptr};
 #else
     skia_private::THashMap<FamilyKey, std::vector<sk_sp<SkTypeface>>, FamilyKey::Hasher> fTypefaces;
     sk_sp<SkFontMgr> fDefaultFontManager;
