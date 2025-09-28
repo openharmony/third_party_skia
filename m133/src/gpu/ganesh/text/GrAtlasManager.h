@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 
 class GrDeferredUploadTarget;
 class GrResourceProvider;
@@ -207,6 +208,7 @@ private:
 
 #if defined(SKIA_OHOS_SINGLE_OWNER)
     mutable skgpu::SingleOwner* fSingleOwner;
+    std::recursive_mutex fMutex;
 #endif
 
 #if defined(SK_ENABLE_SMALL_PAGE) || defined(SK_DEBUG_ATLAS_HIT_RATE)

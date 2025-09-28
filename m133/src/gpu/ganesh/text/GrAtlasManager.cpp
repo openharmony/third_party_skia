@@ -31,6 +31,10 @@
 using Glyph = sktext::gpu::Glyph;
 using MaskFormat = skgpu::MaskFormat;
 
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+#define ASSERT_SINGLE_OWNER_OHOS SKGPU_ASSERT_SINGLE_OWNER_OHOS(fSingleOwner)
+#endif
+
 GrAtlasManager::GrAtlasManager(GrProxyProvider* proxyProvider,
                                size_t maxTextureBytes,
                                GrDrawOpAtlas::AllowMultitexturing allowMultitexturing,
@@ -52,6 +56,10 @@ GrAtlasManager::GrAtlasManager(GrProxyProvider* proxyProvider,
 GrAtlasManager::~GrAtlasManager() = default;
 
 void GrAtlasManager::freeAll() {
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+    ASSERT_SINGLE_OWNER_OHOS
+    std::lock_guard<std::recursive_mutex> lock(fMutex);
+#endif
     for (int i = 0; i < skgpu::kMaskFormatCount; ++i) {
         fAtlases[i] = nullptr;
     }
@@ -59,6 +67,10 @@ void GrAtlasManager::freeAll() {
 
 bool GrAtlasManager::hasGlyph(MaskFormat format, Glyph* glyph) {
     SkASSERT(glyph);
+#if defined(SKIA_OHOS_SINGLE_OWNER)
+    ASSERT_SINGLE_OWNER_OHOS
+    std::lock_guard<std::recursive_mutex> lock(fMutex);
+#endif
     return this->getAtlas(format)->hasID(glyph->fAtlasLocator.plotLocator());
 }
 
