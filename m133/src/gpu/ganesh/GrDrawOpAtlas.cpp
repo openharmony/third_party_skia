@@ -254,6 +254,7 @@ GrDrawOpAtlas::ErrorCode GrDrawOpAtlas::addToAtlas(GrResourceProvider* resourceP
                                                    AtlasLocator* atlasLocator) {
 #if defined(SKIA_OHOS_SINGLE_OWNER)
     ASSERT_SINGLE_OWNER_OHOS
+    std::lock_guard<std::recursive_mutex> lock(fMutex);
 #endif
     if (width > fPlotWidth || height > fPlotHeight) {
         return ErrorCode::kError;
@@ -546,6 +547,7 @@ bool GrDrawOpAtlas::createPages(
         GrProxyProvider* proxyProvider, GenerationCounter* generationCounter) {
 #if defined(SKIA_OHOS_SINGLE_OWNER)
     ASSERT_SINGLE_OWNER_OHOS
+    std::lock_guard<std::recursive_mutex> lock(fMutex);
 #endif
     SkASSERT(SkIsPow2(fTextureWidth) && SkIsPow2(fTextureHeight));
 
@@ -617,6 +619,7 @@ bool GrDrawOpAtlas::activateNewPage(GrResourceProvider* resourceProvider) {
 inline void GrDrawOpAtlas::deactivateLastPage() {
 #if defined(SKIA_OHOS_SINGLE_OWNER)
     ASSERT_SINGLE_OWNER_OHOS
+    std::lock_guard<std::recursive_mutex> lock(fMutex);
 #endif
     SkASSERT(fNumActivePages);
 

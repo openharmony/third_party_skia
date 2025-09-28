@@ -134,6 +134,7 @@ public:
     bool hasID(const skgpu::PlotLocator& plotLocator) {
 #if defined(SKIA_OHOS_SINGLE_OWNER)
         ASSERT_SINGLE_OWNER_OHOS
+        std::lock_guard<std::recursive_mutex> lock(fMutex);
 #endif
         if (!plotLocator.isValid()) {
             return false;
@@ -150,6 +151,7 @@ public:
     void setLastUseToken(const skgpu::AtlasLocator& atlasLocator, skgpu::AtlasToken token) {
 #if defined(SKIA_OHOS_SINGLE_OWNER)
         ASSERT_SINGLE_OWNER_OHOS
+        std::lock_guard<std::recursive_mutex> lock(fMutex);
 #endif
         SkASSERT(this->hasID(atlasLocator.plotLocator()));
         uint32_t plotIdx = atlasLocator.plotIndex();
@@ -167,6 +169,7 @@ public:
                              skgpu::AtlasToken token) {
 #if defined(SKIA_OHOS_SINGLE_OWNER)
         ASSERT_SINGLE_OWNER_OHOS
+        std::lock_guard<std::recursive_mutex> lock(fMutex);
 #endif
         int count = updater.count();
         for (int i = 0; i < count; i++) {
@@ -278,6 +281,7 @@ private:
     Page fPages[skgpu::PlotLocator::kMaxMultitexturePages];
 #ifdef SKIA_OHOS_SINGLE_OWNER
     mutable skgpu::SingleOwner* fSingleOwner;
+    std::recursive_mutex fMutex;
 #endif
     uint32_t fMaxPages;
 
