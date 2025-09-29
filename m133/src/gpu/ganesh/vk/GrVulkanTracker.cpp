@@ -109,7 +109,7 @@ void ParallelDebug::VkImageDestroyRecord::Dump(std::stringstream& ss)
     time_t seconds = timeStamp_ / 1000000000LL;
     localtime_r(&seconds, &timeInfo);
     std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &timeInfo);
-    ss << timeStr << "VkImage: " << image_ << ", " << "borrowed: " << borrowed_ << ", " << "memory: " << memory_;
+    ss << timeStr << " VkImage: " << image_ << ", " << "borrowed: " << borrowed_ << ", " << "memory: " << memory_;
     caller_.Dump(ss);
 }
 
