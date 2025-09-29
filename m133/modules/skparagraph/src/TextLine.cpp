@@ -1217,7 +1217,11 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         // Update the ellipsis attributes and line attributes.
         TailEllipsisUpdateEllipsis(cluster, ellipsisRun, ellipsis, width);
         TailEllipsisUpdateLine(cluster, width, clusterIndex, wordBreakType);
-
+        // Update the ellipsis info for the paragraph that has been split runs.
+        if (fEllipsis && fOwner->getParagraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE) {
+            fOwner->setEllipsisRunIndexOffset(cluster.runIndex() - fEllipsisIndex);
+            fOwner->setIsEllipsisReplaceFitCluster(cluster.textRange().start == fEllipsis->textRange().start);
+        }
         break;
     }
 
@@ -3443,8 +3447,24 @@ void TextLine::applyVerticalShift() {
     }
 }
 
-void TextLine::refresh() {
-    // Refresh line runs order
+void TextLine::refreshLineEllipsis() {
+    if (!ellipsis()) {
+        return;
+    }
+
+    TextIndex replaceTextIndex = fOwner->IsEllipsisReplaceFitCluster() ?
+        ellipsis()->textRange().start : ellipsis()->textRange().start - 1;
+    ClusterIndex clusterIndex = fOwner->clusterIndex(replaceTextIndex);
+    size_t runIndex = fOwner->cluster(clusterIndex).runIndex() + fOwner->getEllipsisRunIndexOffset();
+    ellipsis()->fIndex = runIndex;
+    setEllipsisRunIndex(runIndex);
+}
+
+void TextLine::refreshLineRuns() {
+    if (fRunsInVisualOrder.empty()) {
+        return;
+    }
+
     auto& start = fOwner->cluster(clustersWithSpaces().start);
     auto& end = fOwner->cluster(clustersWithSpaces().end - 1);
     size_t numRuns = end.runIndex() - start.runIndex() + 1;
@@ -3477,22 +3497,12 @@ void TextLine::refresh() {
         }
     }
     setLineAllRuns(runsInVisualOrder);
+}
 
-    if (ellipsis()) {
-        ClusterIndex clusterIndex = 0;
-        if (fOwner->getParagraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
-            clusterIndex = clusters().start;
-        } else {
-            TextIndex textIndex = ellipsis()->textRange().start == 0 ? 0 : ellipsis()->textRange().start - 1;
-            if (textIndex > 0) {
-                textIndex--;
-            }
-            clusterIndex = fOwner->clusterIndex(textIndex);
-        }
-        size_t runIndex = fOwner->cluster(clusterIndex).runIndex();
-        ellipsis()->fIndex = runIndex;
-        setEllipsisRunIndex(runIndex);
-    }
+void TextLine::refresh() {
+    refreshLineEllipsis();
+    // Refresh line runs order
+    refreshLineRuns();
 }
 
 RSRect TextLine::getImageBounds() const

@@ -357,6 +357,10 @@ public:
     bool IsPlaceholderAlignedFollowParagraph(size_t placeholderIndex);
     bool setPlaceholderAlignment(size_t placeholderIndex, PlaceholderAlignment alignment);
     Block& getBlockByRun(const Run& run);
+    int getEllipsisRunIndexOffset() const { return fEllipsisRunIndexOffset; }
+    void setEllipsisRunIndexOffset(int offset) { fEllipsisRunIndexOffset = offset; }
+    bool IsEllipsisReplaceFitCluster() const { return fIsEllipsisReplaceFitCluster; }
+    void setIsEllipsisReplaceFitCluster(bool state) { fIsEllipsisReplaceFitCluster = state; }
 #endif
 private:
     friend class ParagraphBuilder;
@@ -465,6 +469,8 @@ private:
     // just for building cluster table, record the last built unicode autospacing flag;
     Cluster::AutoSpacingFlag fLastAutoSpacingFlag;
     bool fSkipTextBlobDrawing{false};
+    int fEllipsisRunIndexOffset{0};
+    bool fIsEllipsisReplaceFitCluster{false};
 #endif
 };
 }  // namespace textlayout
