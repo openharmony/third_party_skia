@@ -641,7 +641,7 @@ void GrResourceCache::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &o
 }
 
 // OH ISSUE: init gpu memory limit.
-void GrResourceCache::initGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size)
+void GrResourceCache::initGpuMemoryLimit(MemoryOverflowCallback callback, uint64_t size)
 {
     if (fMemoryOverflowCallback_ == nullptr) {
         fMemoryOverflowCallback_ = callback;
