@@ -147,7 +147,7 @@ public:
     static std::vector<sk_sp<SkTypeface>> GetSystemFonts();
     static void RegisterOnTypefaceDestroyed(std::function<void(uint32_t)> cb);
     void getFontPath(SkString* path) const;
-    virtual void updateStream(std::unique_ptr<SkStreamAsset> stream){};
+    virtual void updateStream(std::unique_ptr<SkStreamAsset> stream) { };
 #endif
 
     /**
