@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef GrVulkanTrackerInterface_DEFINED 
+#ifndef GrVulkanTrackerInterface_DEFINED
 #define GrVulkanTrackerInterface_DEFINED
 #include <sstream>
 

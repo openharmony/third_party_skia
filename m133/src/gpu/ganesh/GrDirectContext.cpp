@@ -593,7 +593,7 @@ bool GrDirectContext::supportsDistanceFieldText() const {
 
 //////////////////////////////////////////////////////////////////////////////
 
-void GrDirectContext::dumpAllResource(std::stringstream &dump) const {
+void GrDirectContext::dumpAllResource(std::stringstream& dump) const {
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
     if (fResourceCache) {
         fResourceCache->dumpAllResource(dump);

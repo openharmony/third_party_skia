@@ -253,6 +253,11 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
 #endif
         , fIsBorrowed(false) {
     this->init(gpu, false);
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    if (ParallelDebug::IsVkImageDfxEnabled() && fResource) {
+        fResource->fCaller = ParallelDebug::GenerateVkImageInvokeRecord();
+    }
+#endif
     this->setRealAlloc(true); // OH ISSUE: set real alloc flag
     this->registerWithCache(budgeted);
 }
@@ -282,6 +287,11 @@ GrVkImage::GrVkImage(GrVkGpu* gpu,
         , fTextureView(std::move(textureView))
         , fIsBorrowed(GrBackendObjectOwnership::kBorrowed == ownership) {
     this->init(gpu, forSecondaryCB);
+#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+    if (ParallelDebug::IsVkImageDfxEnabled() && fResource) {
+        fResource->fCaller = ParallelDebug::GenerateVkImageInvokeRecord();
+    }
+#endif
     this->registerWithCacheWrapped(cacheable);
 }
 
@@ -676,7 +686,7 @@ void GrVkImage::dumpVkImageInfo(std::stringstream& dump) const {
         return;
     }
     fResource->dumpVkImageResource(dump);
-    dump << "Borrowed: " << isBorrowed() << ", " << "ImageSize: " << imageSize << ", ";
+    dump << "Borrowed: " << isBorrowed() << ", " << "ImageSize: " << imageSize;
     if (fResource->fCaller == nullptr) {
         SK_LOGE("GrVkImage::dumpVkImageInfo fCaller nullptr");
     } else {
@@ -687,12 +697,15 @@ void GrVkImage::dumpVkImageInfo(std::stringstream& dump) const {
 
 void GrVkImage::Resource::dumpVkImageResource(std::stringstream& dump) {
     dump << "VkImage: " << fImage << ", "
-        << "Memory: " << fAlloc.fMemory << ", "
-        << "Offset: " << fAlloc.fOffset << ", "
-        << "Size: " << fAlloc.fSize << ", ";
+         << "Memory: " << fAlloc.fMemory << ", "
+         << "Offset: " << fAlloc.fOffset << ", "
+         << "Size: " << fAlloc.fSize << ", ";
 }
 
 void GrVkImage::Resource::RecordFreeVkImage(bool isBorrowed) const {
+    if (!ParallelDebug::IsVkImageDfxEnabled()) {
+        return;
+    }
     static const bool isInRenderSevice = IsRenderService();
     if (isInRenderSevice) {
         ParallelDebug::VkImageDestroyRecord::Record(fImage, isBorrowed, fCaller, fAlloc.fMemory);
@@ -708,13 +721,15 @@ void GrVkImage::updateNodeId(uint64_t nodeId) {
 
 GrVkImage::Resource::~Resource() {
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
-    ParallelDebug::DestroyVkImageInvokeRecord(fCaller);
+    if (ParallelDebug::IsVkImageDfxEnabled()) {
+        ParallelDebug::DestroyVkImageInvokeRecord(fCaller);
+    }
 #endif
 }
 
 void GrVkImage::Resource::freeGPUData() const {
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
-    RecordFreeVkImage(true);
+    RecordFreeVkImage(false);
 #endif
     this->invokeReleaseProc();
     VK_CALL(fGpu, DestroyImage(fGpu->device(), fImage, nullptr));

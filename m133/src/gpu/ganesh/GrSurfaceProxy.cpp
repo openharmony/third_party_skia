@@ -151,7 +151,7 @@ GrSurfaceProxy::~GrSurfaceProxy() {
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
 struct NodeIdHelper {
-    explicit inline NodeIdHelper(uint64_t nodeId): initNodeId_(ParallelDebug::GetNodeId())
+    explicit inline NodeIdHelper(uint64_t nodeId) : initNodeId_(ParallelDebug::GetNodeId())
     {
         ParallelDebug::RecordNodeId(nodeId);
     }

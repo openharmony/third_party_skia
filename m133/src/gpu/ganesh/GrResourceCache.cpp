@@ -1276,12 +1276,12 @@ uint32_t GrResourceCache::getNextTimestamp() {
 }
 
 #ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
-void GrResourceCache::dumpAllResource(std::stringstream &dump) const {
+void GrResourceCache::dumpAllResource(std::stringstream& dump) const {
     if (getResourceCount() == 0) {
         return;
     }
     dump << "Purgeable: " << fPurgeableQueue.count() << std::endl;
-    for (int i = 0; i < fPurgeableQueue.count(); ++i) {
+    for (size_t i = 0; i < fPurgeableQueue.count(); ++i) {
         GrGpuResource* resource = fPurgeableQueue.at(i);
         if (resource == nullptr) {
             continue;
@@ -1292,7 +1292,7 @@ void GrResourceCache::dumpAllResource(std::stringstream &dump) const {
         resource->dumpVkImageInfo(dump);
     }
     dump << "Non-Purgeable: " << fNonpurgeableResources.size() << std::endl;
-    for (int i = 0; i < fNonpurgeableResources.size(); ++i) {
+    for (size_t i = 0; i < fNonpurgeableResources.size(); ++i) {
         GrGpuResource* resource = fNonpurgeableResources[i];
         if (resource == nullptr) {
             continue;
