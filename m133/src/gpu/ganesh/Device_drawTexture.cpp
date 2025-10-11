@@ -23,6 +23,7 @@
 #include "include/gpu/GpuTypes.h"
 #include "include/gpu/ganesh/GrContextOptions.h"
 #include "include/gpu/ganesh/GrRecordingContext.h"
+#include "include/private/base/ImageStat.h"
 #include "include/private/SkColorData.h"
 #include "include/private/base/SkAssert.h"
 #include "include/private/base/SkPoint_impl.h"
@@ -267,8 +268,15 @@ void Device::drawEdgeAAImage(const SkImage* image,
     if (tm == SkTileMode::kClamp && !ib->isYUVA() && can_use_draw_texture(paint, sampling)) {
         // We've done enough checks above to allow us to pass ClampNearest() and not check for
         // scaling adjustments.
+#ifdef SKIA_OHOS
+        auto& imageStat = skgpu::ImageStat::GetInstance();
+        imageStat.CheckAndInsert(image);
+#endif
         auto [view, ct] = skgpu::ganesh::AsView(rContext, image, skgpu::Mipmapped::kNo);
         if (!view) {
+#ifdef SKIA_OHOS
+            imageStat.Erase(image);
+#endif
             return;
         }
         GrColorInfo info(image->imageInfo().colorInfo());
@@ -285,6 +293,9 @@ void Device::drawEdgeAAImage(const SkImage* image,
                      constraint,
                      std::move(view),
                      info);
+#ifdef SKIA_OHOS
+        imageStat.Erase(image);
+#endif
         return;
     }
 
