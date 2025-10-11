@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2023 Huawei Device Co., Ltd.
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+
+    This is the configuration file template for OpenHarmony OSS Audit Tool, please copy it to your project root dir and modify it refer to OpenHarmony/tools_oat/README.
+    All configurations in this file will be merged to OAT-Default.xml, if you have any questions or concerns, please create issue in OpenHarmony/tools_oat and @jalenchen or chenyaxun.
+
+    licensefile:
+    1.If the project don't have "LICENSE" in root dir, please define all the license files in this project in , OAT will check license files according to this rule.
+
+    policylist:
+    1. policy: If the OAT-Default.xml policies do not meet your requirements, please add policies here.
+    2. policyitem: The fields type, name, path, desc is required, and the fields rule, group, filefilter is optional,the default value is:
+    <policyitem type="" name="" path="" desc="" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter"/>
+    3. policyitem type:
+        "compatibility" is used to check license compatibility in the specified path;
+        "license" is used to check source license header in the specified path;
+        "copyright" is used to check source copyright header in the specified path;
+        "import" is used to check source dependency in the specified path, such as import ... ,include ...
+        "filetype" is used to check file type in the specified path, supported file types: archive, binary
+        "filename" is used to check whether the specified file exists in the specified path(projectroot means the root dir of the project), supported file names: LICENSE, README, README.OpenSource
+    4. policyitem name: This field is used for define the license, copyright, "*" means match all, the "!" prefix means could not match this value. For example, "!GPL" means can not use GPL license.
+    5. policyitem path: This field is used for define the source file scope to apply this policyitem, the "!" prefix means exclude the files. For example, "!.*/lib/.*" means files in lib dir will be exclude while process this policyitem.
+    6. policyitem rule and group: These two fields are used together to merge policy results. "may" policyitems in the same group means any one in this group passed, the result will be passed.
+    7. policyitem filefilter: Used to bind filefilter which define filter rules.
+    7. policyitem desc: Used to describe the reason of this policy item, committers will check this while merging the code.
+    8. filefilter: Filter rules, the type filename is used to filter file name, the type filepath is used to filter file path.
+
+    Note:If the text contains special characters, please escape them according to the following rules:
+    " == &quot;
+    & == &amp;
+    ' == &apos;
+    < == &lt;
+    > == &gt;
+-->
+
+<configuration>
+    <oatconfig>
+        <licensefile></licensefile>
+        <policylist>
+            <policy name="projectPolicy" desc="">
+                <policyitem type="compatibility" name="Unicode-TOU" path=".*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="FTL" path=".*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="Khronos License" path=".*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="Adobe-2006" path=".*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="Zlib" path="third_party/externals/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="LicenseRef-scancode-khronos" path="third_party/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="Adobe Systems" path="third_party/externals/dng_sdk/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="NTP" path="third_party/externals/egl-registry/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="IJG" path="third_party/externals/libjpeg-turbo/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="zlib-acknowledgement" path="third_party/externals/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="GPLStyleLicense" path="third_party/externals/.*" desc="not use."/>
+                <policyitem type="compatibility" name="GPL-2.0+" path="third_party/externals/.*" desc="not use."/>
+                <policyitem type="compatibility" name="GPL-3.0+" path="third_party/externals/.*" desc="not use."/>
+                <policyitem type="compatibility" name="Libpng" path="third_party/externals/libpng/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="LGPL-2.1+" path="third_party/externals/.*" desc="not use."/>
+                <policyitem type="compatibility" name="GFDL-1.3" path="third_party/externals/microhttpd/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="ISC" path="third_party/externals/microhttpd/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="MPL-1.1" path="third_party/externals/libgifcodec/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="Spencer-94" path="third_party/externals/swiftshader/third_party/llvm-10.0/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="LicenseRef-scancode-other-permissive" path="third_party/externals/libpng/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="BD-style" path="gm/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="FSF Unlimited License" path="third_party/externals/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="PublicDomainLicense" path="tools/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="XConsortiumLicense" path="third_party/externals/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="GFDL-1.1" path="third_party/externals/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="CC0-1.0" path="third_party/externals/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="NAIST-2003" path="third_party/externals/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="Info-ZIP" path="third_party/externals/.*" desc="宽松型许可证."/>
+                <policyitem type="compatibility" name="OFL-1.1-no-RFN" path="third_party/externals/.*" desc="宽松型许可证."/>
+            </policy>
+        </policylist>
+
+        <filefilterlist>
+            <filefilter name="defaultFilter" desc="Files not to check">
+                <filteritem type="filename" name="*.txt|*.jpg|*.gif|*.png|*.ttf|*.otf" desc="desc files"/>
+                <filteritem type="filepath" name="third_party/externals/angle2/tools/flex-bison/third_party/skeletons/yacc.c" desc="not use"/>
+                <filteritem type="filepath" name="third_party/externals/libpng/compile" desc="not use"/>
+                <filteritem type="filepath" name=".*/BUILD" desc="编译规则文件"/>
+                <filteritem type="filepath" name=".*/README.*" desc="README文件"/>
+                <filteritem type="filepath" name=".*/README.*" desc="README文件"/>
+                <filteritem type="filepath" name="third_party/externals/libpng/config.guess" desc="not use"/>
+                <filteritem type="filepath" name="third_party/externals/freetype/src/base/md5.h" desc="No copyright is claimed, and the software is hereby placed in the public domain."/>
+                <filteritem type="filepath" name="third_party/externals/harfbuzz/docs/usermanual-install-harfbuzz.xml" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/harfbuzz/docs/usermanual-integration.xml" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/imgui/imgui.cpp" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/libpng/example.c" desc="To the extent possible under law, the authors have waived all copyright and related or neighboring rights to this file."/>
+                <filteritem type="filepath" name="third_party/externals/libwebp/PATENTS" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/opengl-registry/api/GLES/1.0/gl.h" desc="not use"/>
+                <filteritem type="filepath" name="third_party/externals/imgui/backends/imgui_impl_opengl3_loader.h" desc="This is free and unencumbered software released into the public domain."/>
+                <filteritem type="filepath" name="third_party/externals/oboe/prefab/oboe-VERSION.pom" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/spirv-cross/.*/.*.comp" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/swiftshader/third_party/SPIRV-Headers/BUILD.bazel" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/libpng/ANNOUNCE" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/.*/MD5.h" desc="No copyright is claimed, and the software is hereby placed in the public domain."/>
+                <filteritem type="filepath" name="third_party/externals/libpng/contrib/pngminim/preader/makefile" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/.*/LICENSE.TXT" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/egl-registry/api/1.1/EGL/egl.h" desc=" use"/>
+                <filteritem type="filepath" name="third_party/externals/freetype/src/tools/make_distribution_archives.py" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/opengl-registry/api/GLSC/1.0/gl.h" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/spirv-headers/BUILD.bazel" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/spirv-cross/LICENSES/CC-BY-4.0.txt" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/libpng/contrib/gregbook/makevms.com" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/libpng/TRADEMARK" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/microhttpd/src/testcurl/gauger.h" desc="This software is in the public domain"/>
+                <filteritem type="filepath" name="tools/doxygen/mainpage/mainpage.dox" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/egl-registry/sdk/docs/man/reference.xml" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/egl-registry/sdk/docs/man/xhtml/copyright.inc.xsl" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/freetype/docs/PROBLEMS" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/oboe/samples/RhythmGame/third_party/glm/gtc/random.hpp" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/swiftshader/third_party/llvm-10.0/Android.bp" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/egl-registry/specs/legal.xhtml" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/spirv-cross/CODE_OF_CONDUCT.adoc" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/swiftshader/third_party/SPIRV-Tools/BUILD.bazel" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="go.mod" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/zlib/contrib/minizip/crypt.h" desc="source package can be freely distributed, including from the USA"/>
+                <filteritem type="filepath" name="third_party/externals/brotli/java/org/brotli/pom.xml" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/egl-registry/sdk/docs/man/docbook4/reference.xml" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/markupsafe/get_markupsafe.sh" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/spirv-tools/BUILD.bazel" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/opengl-registry/api/GLSC/1.0.1/gl.h" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/libpng/INSTALL" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/libpng/contrib/gregbook/Makefile.sgi" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/oboe/samples/RhythmGame/third_party/glm/gtc/ulp.inl" desc="software is freely granted"/>
+                <filteritem type="filepath" name="third_party/externals/libpng/contrib/gregbook/Makefile.unx" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="bin/compare" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/freetype/docs/oldlogs/ChangeLog.21" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/libpng/autogen.sh" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/abseil-cpp/conanfile.py" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/egl-registry/sdk/docs/man/copyright.xml" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name="third_party/externals/abseil-cpp/absl/random/gaussian_distribution.cc" desc="License matcher rules, not license header"/>
+            </filefilter>
+
+            <filefilter name="defaultPolicyFilter" desc="Filters for compatibility，license header policies">
+                <filteritem type="filepath" name="src/main/java/ohos/oat/analysis/headermatcher/.*"
+                        desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name= "README.chromium" desc="License matcher rules, not license header"/> 
+                <filteritem type="filepath" name= "third_party/externals/brotli/js/decode.min.js " desc="License matcher rules, not license header"/> 
+                <filteritem type="filepath" name= "third_party/externals/dawn/README.chromium" desc="License matcher rules, not license header"/>
+                <filteritem type="filepath" name= "third_party/externals/egl-registry/sdk/docs/man/xhtml/ctop.xsl" desc="W3C License"/>
+                <filteritem type="filepath" name= "third_party/externals/imgui/imstb_textedit.h" desc="mit or public domain"/>  	
+            </filefilter>
+
+            <filefilter name="copyrightPolicyFilter" desc="Filters for copyright header policies">
+                
+            </filefilter>
+
+            <filefilter name="licenseFileNamePolicyFilter" desc="Filters for LICENSE file policies">
+            
+            </filefilter>
+            
+            <filefilter name="readmeFileNamePolicyFilter" desc="Filters for README file policies">
+            </filefilter>
+            <filefilter name="readmeOpenSourcefileNamePolicyFilter" desc="Filters for README.OpenSource file policies">
+            </filefilter>
+            <filefilter name="binaryFileTypePolicyFilter" desc="Filters for binary file policies">
+            <filteritem type="filepath" name="third_party/externals/abseil-cpp/absl/time/internal/cctz" desc="test files"/>
+            <filteritem type="filepath" name="third_party/externals/harfbuzz/test" desc="test files"/>
+            <filteritem type="filepath" name="third_party/externals/abseil-cpp/absl/time/internal/cctz/testdata" desc="test files"/>
+            <filteritem type="filepath" name="third_party/externals/harfbuzz/test/fuzzing" desc="test files"/>
+            <filteritem type="filepath" name="third_party/externals/abseil-cpp/absl/time/internal/cctz/testdata" desc="test files"/>
+            <filteritem type="filepath" name="third_party/externals/.*" desc="二进制文件不参与编译"/>
+            <filteritem type="filepath" name="resources/.*" desc="二进制文件不参与编译"/>
+            <filteritem type="filepath" name="buildtools/third_party/eu-strip/bin/eu-strip" desc="开源文件"/>
+            <filteritem type="filepath" name="modules/canvaskit/tests/assets/red_line.skp" desc="上游原生"/>
+            <filteritem type="filepath" name="modules/canvaskit/tests/assets/test.ttc" desc="上游原生"/>
+            <filteritem type="filepath" name="platform_tools/android/bin/mac/perfhost" desc="上游原生"/>
+            <filteritem type="filepath" name="site/docs/dev/tools/calendar.mskp" desc="上游原生"/>
+            <filteritem type="filepath" name="buildtools/mac/gn" desc="上游原生"/>
+            <filteritem type="filepath" name="platform_tools/android/apps/gradle/wrapper/gradle-wrapper.jar" desc="上游原生"/>
+            <filteritem type="filepath" name="infra/bots/tools/luci-go/win64/isolate.exe.sha1" desc="上游原生"/>
+            <filteritem type="filepath" name="tools/perf-canvaskit-puppeteer/canvas_perf_assets/Roboto-Regular.woff" desc="上游原生"/>
+            <filteritem type="filepath" name="tools/perf-canvaskit-puppeteer/canvas_perf_assets/Roboto-Regular.woff2" desc="上游原生"/>
+            <filteritem type="filepath" name="experimental/wasm-skp-debugger/debugger/anim.mskp" desc="上游原生"/>
+            <filteritem type="filepath" name="modules/canvaskit/tests/assets/Roboto-Regular.woff" desc="上游原生"/>
+            <filteritem type="filepath" name="platform_tools/android/apps/skottie/perfetto_config.pb" desc="上游原生"/>
+            <filteritem type="filepath" name="experimental/wasm-skp-debugger/debugger/sample.skp" desc="上游原生"/>
+            <filteritem type="filepath" name="modules/canvaskit/tests/assets/Roboto-Regular.woff2" desc="上游原生"/>
+            <filteritem type="filepath" name="bin/gn" desc="上游原生"/>
+            <filteritem type="filepath" name="buildtools/win/clang-format.exe.sha1" desc="上游原生"/>
+            <filteritem type="filepath" name="modules/canvaskit/tests/assets/color_wheel.webp" desc="上游原生"/>
+            <filteritem type="filepath" name="platform_tools/android/bin/linux/perfhost" desc="上游原生"/>
+            <filteritem type="filepath" name="tools/skiaserve/favicon.ico" desc="上游原生"/> 
+            </filefilter>
+        </filefilterlist>
+        <licensematcherlist>
+        <licensematcher name="Adobe-2006" desc="License for dngsdk">
+            <licensetext name="
+                // NOTICE:  Adobe permits you to use, modify, and distribute this file in
+                // accordance with the terms of the Adobe license agreement accompanying it.
+                " desc=""/>
+            <licensetext name="
+                Adobe Systems Incorporated provides the Software and Documentation for use under
+                the terms of this Agreement. Any download, installation, use, reproduction,
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="Zlib" desc="License for freetpye">
+            <licensetext name="
+                 * For conditions of distribution and use, see copyright notice in zlib.h    
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="MIT" desc="License for freetpye">
+            <licensetext name="
+                * Permission to use, copy, modify, distribute, and sell this software and its
+                * documentation for any purpose is hereby granted without fee, provided that
+                " desc=""/>
+            <licensetext name="
+                * This library is distributed under the MIT License. See notice at the end of this file.
+                " desc=""/>
+            <licensetext name="
+                /* This file is part of volk library; see volk.h for version/license details */
+                " desc=""/>
+        </licensematcher> 
+        <licensematcher name="LicenseRef-scancode-khronos" desc="License for freetpye">
+            <licensetext name="
+                Permission is hereby granted, free of charge, to any person obtaining a
+                ** copy of this software and/or associated documentation files (the
+                ** &quot;Materials&quot;), to deal in the Materials without restriction, including
+                ** without limitation the rights to use, copy, modify, merge, publish,
+                ** distribute, sublicense, and/or sell copies of the Materials, and to
+                ** permit persons to whom the Materials are furnished to do so, subject to
+                ** the following conditions:
+                **
+                ** The above copyright notice and this permission notice shall be included
+                ** in all copies or substantial portions of the Materials.
+                **
+                ** THE MATERIALS ARE PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+                ** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+                ** MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+                ** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+                ** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+                ** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+                ** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+                " desc=""/>
+        </licensematcher> 
+        <licensematcher name="Adobe Systems" desc="License for freetpye">
+            <licensetext name="
+                This product includes DNG technology under license by Adobe Systems
+                Incorporated.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="NTP" desc="License for freetpye">
+            <licensetext name="
+                # Permission to use, copy, modify and distribute this stylesheet
+                # and its accompanying documentation for any purpose and without fee
+                # is hereby granted in perpetuity, provided that the above copyright
+                # notice and this paragraph appear in all copies. The copyright
+                # holders make no representation about the suitability of the schema
+                # for any purpose. It is provided &quot;as is&quot; without expressed or implied
+                # warranty.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="IJG" desc="License for freetpye">
+            <licensetext name="
+                * For conditions of distribution and use, see the accompanying README.ijg
+                * file.
+                " desc=""/>
+            <licensetext name="
+                IJG is not affiliated with the ISO/IEC JTC1/SC29/WG1 standards committee
+                (also known as JPEG, together with ITU-T SG16).
+                " desc=""/>
+            <licensetext name="
+                * For conditions of distribution and use, see copyright notice in jsimdext.inc
+                " desc=""/>    
+        </licensematcher>
+        <licensematcher name="NCSA" desc="License for freetpye">
+            <licensetext name="
+                The LLVM software contains code written by third parties.  Such software will
+                have its own individual LICENSE.TXT file in the directory in which it appears.
+                This file will describe the copyrights, license, and restrictions which apply
+                to that code.
+
+                The disclaimer of warranty in the University of Illinois Open Source License
+                applies to all code in the LLVM Distribution, and nothing in any of the
+                other licenses gives permission to use the names of the LLVM Team or the
+                University of Illinois to endorse or promote products derived from this
+                Software.
+                " desc=""/>
+                <licensetext name="
+                |* This file is distributed under the University of Illinois Open Source      *|
+                |* License. See LICENSE.TXT for details.
+                " desc=""/>   
+        </licensematcher>
+        <licensematcher name="FSFAP" desc="License for freetpye">
+            <licensetext name="
+                Copying and distribution of this file, with or without modification,
+                are permitted in any medium without royalty provided the copyright
+                notice and this notice are preserved.  This file is offered as-is,
+                without warranty of any kind.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="Unicode-DFS-2016" desc="License for freetpye">
+            <licensetext name="
+                Permission is hereby granted, free of charge, to any person obtaining
+                a copy of the Unicode data files and any associated documentation
+                (the &quot;Data Files&quot;) or Unicode software and any associated documentation
+                (the &quot;Software&quot;) to deal in the Data Files or Software
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="FSF Unlimited License No Warranty" desc="License for freetpye">
+            <licensetext name="
+                dnl This file is free software; as a special exception the author gives
+                dnl unlimited permission to copy and/or distribute it, with or without
+                dnl modifications, as long as this notice is preserved.
+                dnl
+                dnl This file is distributed in the hope that it will be useful, but
+                dnl WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+                dnl implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="GNU Free Documentation License" desc="License for freetpye">
+            <licensetext name="
+                Permission is granted to copy, distribute and/or modify this
+                document under the terms of the GNU Free Documentation License,
+                Version 1.3 or any later version published by the Free Software
+                Foundation; with no Invariant Sections, no Front-Cover Texts, and
+                no Back-Cover Texts.  A copy of the license is included in the
+                section entitled &quot;GNU Free Documentation License&quot;.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="ISC" desc="License for freetpye">
+            <licensetext name="
+                * Permission to use, copy, modify, and distribute this software for any
+                * purpose with or without fee is hereby granted, provided that the above
+                * copyright notice and this permission notice appear in all copies.
+                *
+                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot; AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+                * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+                * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+                * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+                * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+                * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+                * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="BSD" desc="License for freetpye">
+            <licensetext name="
+                :license: BSD, see LICENSE for more details.
+                " desc=""/>
+                <licensetext name="
+                * :license: BSD.
+                " desc=""/>     
+        </licensematcher>
+         <licensematcher name="OFL1.1" desc="License for freetpye">
+            <licensetext name="
+                The goals of the Open Font License (OFL) are to stimulate worldwide
+                development of collaborative font projects, to support the font
+                creation efforts of academic and linguistic communities, and to
+                provide a free and open framework in which fonts may be shared and
+                improved in partnership with others.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="MPL-1.1" desc="License for freetpye">
+            <licensetext name="
+                * Alternatively, the contents of this file may be used under the terms of
+                * either the GNU General Public License Version 2 or later (the &quot;GPL&quot;), or
+                * the GNU Lesser General Public License Version 2.1 or later (the &quot;LGPL&quot;),
+                * in which case the provisions of the GPL or the LGPL are applicable instead
+                * of those above. If you wish to allow use of your version of this file only
+                * under the terms of either the GPL or the LGPL, and not to allow others to
+                * use your version of this file under the terms of the MPL, indicate your
+                * decision by deleting the provisions above and replace them with the notice
+                * and other provisions required by the GPL or the LGPL. If you do not delete
+                * the provisions above, a recipient may use your version of this file under
+                * the terms of any one of the MPL, the GPL or the LGPL.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="FSFAP" desc="License for freetpye">
+            <licensetext name="
+                # Copying and distribution of this file, with or without modification,
+                # is permitted in any medium without royalty provided the copyright
+                # notice and this notice are preserved.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="LicenseRef-scancode-other-permissive" desc="License for freetpye">
+            <licensetext name="
+                This software may be modified only if its author and version
+                information is updated accurately, and may be redistributed
+                only if accompanied by this unaltered notice.  Subject to those
+                restrictions, permission is granted to anyone to do anything
+                with this software.  The copyright holders make no guarantees
+                regarding this software, and are not responsible for any damage
+                resulting from its use.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="BD-style" desc="License for freetpye">
+            <licensetext name="
+                * Use of this source code is governed by a BD-style license that can be
+                * found in the LICENSE file.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="BSD-3-Clause" desc="License for freetpye">
+            <licensetext name="
+                // Use of this source code is governed by the BSD-3-Clause license that can be
+                " desc=""/>
+            <licensetext name="
+                Redistribution and use in source and binary forms, with or without
+                modification, are permitted provided that the following conditions are
+                met:
+                " desc=""/>
+            <licensetext name="
+                * Redistributions of source code must retain the above copyright
+                notice, this list of conditions and the following disclaimer.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="GFDL-1.1" desc="License for freetpye">
+            <licensetext name="
+                this file is copyrighted under the GNU Free Documentation License 1.1
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="CC0-1.0" desc="License for freetpye">
+            <licensetext name="
+                * Licensed under the CC0 Public Domain Dedication license.
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="CC0-1.0" desc="License for freetpye">
+            <licensetext name="
+                CC BY-NC-SA 3.0
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="Info-ZIP" desc="License for freetpye">
+            <licensetext name="
+                See the accompanying file LICENSE, version 2000-Apr-09 or later
+                (the contents of which are also included in zip.h) for terms of use.
+                If, for some reason, all these files are missing, the Info-ZIP license
+                also may be found at:  ftp://ftp.info-zip.org/pub/infozip/license.html
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="Libpng" desc="License for freetpye">
+            <licensetext name="
+                The software is supplied &quot;as is&quot;, without warranty of any kind,
+                express or implied, including, without limitation, the warranties
+                of merchantability, fitness for a particular purpose, title, and
+                non-infringement.  In no event shall the Copyright owners, or
+                " desc=""/>
+        </licensematcher>
+        <licensematcher name="OFL-1.1" desc="License for freetpye">
+            <licensetext name="
+                This Font Software is licensed under the SIL Open Font License,
+                Version 1.1.
+                " desc=""/>
+        </licensematcher>
+        </licensematcherlist>
+    </oatconfig>
+</configuration>
