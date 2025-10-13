@@ -362,6 +362,8 @@ private:
     void computeNextPaintGlyphRange(ClipContext& context, const TextRange& lastGlyphRange, StyleType styleType) const;
     SkRect computeShadowRect(SkScalar x, SkScalar y, const TextStyle& style, const ClipContext& context) const;
     SkRect getAllShadowsRect(SkScalar x, SkScalar y) const;
+    void refreshLineRuns();
+    void refreshLineEllipsis();
 #endif
 
     ParagraphImpl* fOwner;
