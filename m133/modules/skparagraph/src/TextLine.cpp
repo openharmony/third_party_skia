@@ -2094,7 +2094,9 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
         TextRange testRange(run->fClusterStart, run->fClusterStart + run->textRange().width());
         
 #ifdef ENABLE_TEXT_ENHANCE
-        for (BlockIndex index = fBlockRange.start; index < fBlockRange.end + 1; ++index) {
+        BlockIndex blockRangeEnd = (fBlockRange.end < fOwner->styles().size())
+            ? fBlockRange.end + 1 : fOwner->styles().size();
+        for (BlockIndex index = fBlockRange.start; index < blockRangeEnd; ++index) {
             auto block = fOwner->styles().begin() + index;
             TextRange intersect = intersected(
                     block->fRange, TextRange(run->textRange().start, run->textRange().end));
