@@ -174,4 +174,11 @@ const FontInfo* SkTypeface_OHOS::getFontInfo() const
     return fontInfo.get();
 }
 
+void SkTypeface_OHOS::updateStream(std::unique_ptr<SkStreamAsset> stream)
+{
+    if (fontInfo) {
+        fontInfo->stream = std::move(stream);
+    }
+}
+
 #endif // ENABLE_TEXT_ENHANCE
