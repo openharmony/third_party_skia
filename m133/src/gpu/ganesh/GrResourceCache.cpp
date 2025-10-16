@@ -1044,6 +1044,40 @@ void GrResourceCache::purgeUnlockedResources(const skgpu::StdSteadyClock::time_p
 #endif
 }
 
+void GrResourceCache::purgeUnlockAndSafeCacheGpuResources() {
+#if defined (SKIA_OHOS) && defined (SKIA_DFX_FOR_OHOS)
+    SimpleCacheInfo simpleCacheInfo;
+    traceBeforePurgeUnlockRes("purgeUnlockAndSafeCacheGpuResources", simpleCacheInfo);
+#endif
+    fThreadSafeCache->dropUniqueRefs(nullptr);
+    // Sort the queue
+    fPurgeableQueue.sort();
+
+    // Make a list of the scratch resources to delete
+    SkTDArray<GrGpuResource*> scratchResources;
+    for (int i = 0; i < fPurgeableQueue.count(); i++) {
+        GrGpuResource* resource = fPurgeableQueue.at(i);
+        if (!resource) {
+            continue;
+        }
+        SkASSERT(resource->resourcePriv().isPurgeable());
+        if (!resource->getUniqueKey().isValid()) {
+            *scratchResources.append() = resource;
+        }
+    }
+
+    //Delete the scatch resource. This must be done as a separate pass
+    //to avoid messing up the sorted order of the queue
+    for (int i = 0; i < scratchResources.size(); i++) {
+        scratchResources[i]->cacheAccess().release();
+    }
+
+    this->validate();
+#if defined (SKIA_OHOS) && defined (SKIA_DFX_FOR_OHOS)
+    traceAfterPurgeUnlockRes("purgeUnlockAndSafeCacheGpuResources", simpleCacheInfo);
+#endif
+}
+
 void GrResourceCache::purgeUnlockedResourcesByPid(bool scratchResourceOnly, const std::set<int>& exitedPidSet) {
 #if defined (SKIA_OHOS) && defined (SKIA_DFX_FOR_OHOS)
     SimpleCacheInfo simpleCacheInfo;

@@ -390,6 +390,23 @@ void GrDirectContext::purgeUnlockedResourcesByTag(bool scratchResourceseOnly, co
     this->getTextBlobRedrawCoordinator()->purgeStaleBlobs();
 }
 
+void GrDirectContext::purgeUnlockAndSafeCacheGpuResources() {
+    ASSERT_SINGLE_OWNER
+
+    if (this->abandoned()) {
+        return;
+    }
+
+    fResourceCache->purgeUnlockAndSafeCacheGpuResources();
+    fResourceCache->purgeAsNeeded();
+
+    // The textBlob Cache doesn't actually hold any GPU resource but this is a convenient
+    // place to purge stale blobs
+    this->getTextBlobRedrawCoordinator()->purgeStaleBlobs();
+
+    fGpu->releaseUnlockedBackendObjects();
+}
+
 void GrDirectContext::purgeUnlockedResourcesByPid(bool scratchResourcesOnly, const std::set<int>& exitedPidSet) {
     ASSERT_SINGLE_OWNER
     fResourceCache->purgeUnlockedResourcesByPid(scratchResourcesOnly, exitedPidSet);
