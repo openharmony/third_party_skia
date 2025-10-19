@@ -447,9 +447,9 @@ void GrResourceCache::insertResource(GrGpuResource* resource)
     }
     SkASSERT(!resource->cacheAccess().isUsableAsScratch());
 #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-    if (fBudgetedBytes >= fMaxBytes) {
-        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over fBudgetedBytes:(%u),fMaxBytes:(%u)",
-            fBudgetedBytes, fMaxBytes);
+    if (fBudgetedBytes >= fMaxBytes || fPurgeableQueue.count() >= fPurgeableMaxCount) {
+        HITRACE_METER_FMT(HITRACE_TAG_GRAPHIC_AGP, "cache over fBudgetedBytes:(%u),fMaxBytes:(%u), "
+            "purgeableCount(%u)", fBudgetedBytes, fMaxBytes, fPurgeableQueue.count());
 #ifdef SKIA_DFX_FOR_OHOS
         SimpleCacheInfo simpleCacheInfo;
         traceBeforePurgeUnlockRes("insertResource", simpleCacheInfo);
@@ -637,6 +637,14 @@ std::set<GrGpuResourceTag> GrResourceCache::getAllGrGpuResourceTags() const {
     }
     return result;
 }
+
+#ifdef SKIA_OHOS
+// OH ISSUE: set purgeable resource max count limit.
+void GrResourceCache::setPurgeableResourceLimit(int purgeableMaxCount)
+{
+    fPurgeableMaxCount = purgeableMaxCount;
+}
+#endif
 
 // OH ISSUE: get the memory information of the updated pid.
 void GrResourceCache::getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out)

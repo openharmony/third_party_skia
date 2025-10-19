@@ -241,7 +241,15 @@ public:
      */
     bool purgeToMakeHeadroom(size_t desiredHeadroomBytes);
 
-    bool overBudget() const { return fBudgetedBytes > fMaxBytes; }
+    bool overBudget() const
+    {
+#ifdef SKIA_OHOS
+        return (fBudgetedBytes > fMaxBytes) ||
+            (fPurgeableQueue.count() > fPurgeableMaxCount); // OH ISSUE: purgeable resources count limit.
+#else
+        return fBudgetedBytes > fMaxBytes;
+#endif
+    }
 
     /**
      * Purge unlocked resources from the cache until the the provided byte count has been reached
@@ -323,6 +331,11 @@ public:
 
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const; // Get the tag of all GPU resources
 
+#ifdef SKIA_OHOS
+    // OH ISSUE: set purgeable resource max count limit.
+    void setPurgeableResourceLimit(int purgeableMaxCount);
+#endif
+
     // OH ISSUE: get the memory information of the updated pid.
     void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
 
@@ -399,7 +412,15 @@ private:
     void addToNonpurgeableArray(GrGpuResource*);
     void removeFromNonpurgeableArray(GrGpuResource*);
 
-    bool wouldFit(size_t bytes) const { return fBudgetedBytes+bytes <= fMaxBytes; }
+    bool wouldFit(size_t bytes) const
+    {
+#ifdef SKIA_OHOS
+        return fBudgetedBytes + bytes <= fMaxBytes &&
+            (fPurgeableQueue.count() + 1 <= fPurgeableMaxCount);
+#else
+        return fBudgetedBytes + bytes <= fMaxBytes;
+#endif
+    }
 
     uint32_t getNextTimestamp();
 
@@ -499,6 +520,11 @@ private:
 
     // our budget, used in purgeAsNeeded()
     size_t                              fMaxBytes = kDefaultMaxSize;
+
+#ifdef SKIA_OHOS
+    // OH ISSUE: purgeable queue max count limit, used in purgeAsNeeded()
+    int                                 fPurgeableMaxCount = INT32_MAX;
+#endif
 
 #if GR_CACHE_STATS
     int                                 fHighWaterCount = 0;
