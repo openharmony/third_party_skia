@@ -978,6 +978,11 @@ public:
      */
     std::set<GrGpuResourceTag> getAllGrGpuResourceTags() const;
 
+#ifdef SKIA_OHOS
+    // OH ISSUE: set purgeable resource max count limit.
+    void setPurgeableResourceLimit(int purgeableMaxCount);
+#endif
+
     // OH ISSUE: get the memory information of the updated pid.
     void getUpdatedMemoryMap(std::unordered_map<int32_t, size_t> &out);
 
