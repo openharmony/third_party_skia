@@ -1551,7 +1551,8 @@ void TextWrapper::formatCurrentLine(const AddLineToParagraph& addLine) {
 
 bool TextWrapper::determineIfEllipsisNeeded() {
     fIsLastLine = (fFormattingContext.hasEllipsis && fFormattingContext.unlimitedLines) ||
-                    fLineNumber >= fFormattingContext.maxLines;
+                    (fLineNumber == fFormattingContext.maxLines &&
+                    fLineStretches.size() > fFormattingContext.maxLines);
     bool needEllipsis =
             fFormattingContext.hasEllipsis && !fFormattingContext.endlessLine && fIsLastLine;
 
