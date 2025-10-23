@@ -631,9 +631,6 @@ public:
         if (SkUnicode_icu::isEllipsis(unichar)) {
             results->at(i) |= SkUnicode::kEllipsis;
         }
-        if (SkUnicode_icu::isCustomSoftBreak(unichar)) {
-            results->at(i) |= SkUnicode::kSoftLineBreakBefore;
-        }
     }
 
     bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs, const char locale[],
