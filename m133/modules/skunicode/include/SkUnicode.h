@@ -186,7 +186,8 @@ class SKUNICODE_API SkUnicode : public SkRefCnt {
                                   int utf8Units,
                                   const char* locale,
                                   std::vector<Position>* results) = 0;
-#ifdef ENABLE_TEXT_ENHANCE
+// Remove punctuation break
+#if 0
         virtual bool computeCodeUnitFlags(
                 char utf8[], int utf8Units, bool replaceTabs, const char locale[],
                 skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results) = 0;
@@ -305,7 +306,8 @@ class SKUNICODE_API SkUnicode : public SkRefCnt {
         }
 
         template <typename Callback>
-#ifdef ENABLE_TEXT_ENHANCE
+// Remove punctuation break
+#if 0
         void forEachBreak(const char16_t utf16[], int utf16Units, SkUnicode::BreakType type,
             const char locale[], Callback&& callback) {
             auto iter = makeBreakIterator(type);
