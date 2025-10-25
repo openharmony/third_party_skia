@@ -736,6 +736,14 @@ public:
                 if (this->isIdeographic(unichar)) {
                     results->at(i) |= SkUnicode::kIdeographic;
                 }
+#ifdef ENABLE_TEXT_ENHANCE
+                processPunctuationAndEllipsis(results, i, unichar);
+            }
+
+            if (SkUnicode_icu::isGraphemeExtend(unichar)) {
+                // Current unichar is a combining one.
+                results->at(before) |= SkUnicode::kCombine;
+#endif
             }
         }
 
