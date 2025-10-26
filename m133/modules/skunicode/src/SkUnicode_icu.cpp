@@ -376,7 +376,8 @@ class SkUnicode_icu : public SkUnicode {
         return true;
     }
 
-#ifdef ENABLE_TEXT_ENHANCE
+// Remove punctuation break
+#if 0
     static bool extractPositions(const char utf8[], int utf8Units, BreakType type,
         const char locale[], std::function<void(int, int)> setBreak) {
 #else
@@ -631,11 +632,11 @@ public:
         if (SkUnicode_icu::isEllipsis(unichar)) {
             results->at(i) |= SkUnicode::kEllipsis;
         }
-        if (SkUnicode_icu::isCustomSoftBreak(unichar)) {
-            results->at(i) |= SkUnicode::kSoftLineBreakBefore;
-        }
     }
+#endif
 
+// Remove punctuation break
+#if 0
     bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs, const char locale[],
                               TArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->clear();
@@ -735,6 +736,14 @@ public:
                 if (this->isIdeographic(unichar)) {
                     results->at(i) |= SkUnicode::kIdeographic;
                 }
+#ifdef ENABLE_TEXT_ENHANCE
+                processPunctuationAndEllipsis(results, i, unichar);
+            }
+
+            if (SkUnicode_icu::isGraphemeExtend(unichar)) {
+                // Current unichar is a combining one.
+                results->at(before) |= SkUnicode::kCombine;
+#endif
             }
         }
 
@@ -742,7 +751,8 @@ public:
     }
 #endif
 
-#ifdef ENABLE_TEXT_ENHANCE
+// Remove punctuation break
+#if 0
     bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs, const char locale[],
 #else
     bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs,
@@ -777,7 +787,8 @@ public:
         this->forEachBreak((char16_t*)&utf16[0],
                            utf16Units,
                            SkUnicode::BreakType::kGraphemes,
-#ifdef ENABLE_TEXT_ENHANCE
+// Remove punctuation break
+#if 0
                            locale,
 #endif
                            [results](SkBreakIterator::Position pos, SkBreakIterator::Status) {
@@ -788,7 +799,8 @@ public:
                 (char16_t*)&utf16[0],
                 utf16Units,
                 SkUnicode::BreakType::kLines,
-#ifdef ENABLE_TEXT_ENHANCE
+// Remove punctuation break
+#if 0
                 locale,
 #endif
                 [results](SkBreakIterator::Position pos, SkBreakIterator::Status status) {
