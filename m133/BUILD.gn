@@ -1941,6 +1941,8 @@ optional("png_decode_libpng") {
 
   if (skia_use_system_lib) {
     external_deps = [ "libpng:libpng" ]
+  } else if (build_ohos_sdk) {
+    external_deps = [ "libpng:libpng_static" ]
   } else {
     deps = [ "${skia_third_party_dir}/libpng" ]
   }
@@ -1959,6 +1961,8 @@ optional("png_encode") {
   public = skia_encode_png_public
   if (skia_use_system_lib) {
     external_deps = [ "libpng:libpng" ]
+  } else if (build_ohos_sdk) {
+    external_deps = [ "libpng:libpng_static" ]
   } else {
     deps = [ "${skia_third_party_dir}/libpng" ]
   }
