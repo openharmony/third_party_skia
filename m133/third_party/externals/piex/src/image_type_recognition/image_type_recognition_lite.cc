@@ -201,6 +201,64 @@ class ArwTypeChecker : public TypeChecker {
   }
 };
 
+// Optimized Checker for Sony RAW format.
+class OptimizedArwTypeChecker : public TypeChecker {
+ public:
+  RawImageTypes Type() const override { return kArwImage; }
+
+  size_t RequestedSize() const override { return 9999; }
+
+  size_t SonyRequestedSize() const { return 500; }
+
+  bool IsMyType(const RangeCheckedBytePtr& source) const override {
+    RangeCheckedBytePtr limited_source = LimitSource(source);
+
+    // Valid endianness at the beginning of the file
+    bool use_big_endian;
+    if (!DetermineEndianness(limited_source, &use_big_endian)) {
+      return false;
+    }
+
+    static const unsigned short kTiffMagic = 0x2A;  // NOLINT
+    if (!CheckUInt16Value(limited_source, 2 /* offset */, use_big_endian, kTiffMagic)) {
+      return false;
+    }
+
+    // Search for kSignatureSony in first requested bytes
+    static const string kSignatureSony("SONY");
+    if (!IsSignatureFound(limited_source, 0 /* offset */, SonyRequestedSize(), kSignatureSony, NULL)) {
+      return false;
+    }
+
+    // Search for kSignatureFileTypeSection in first requested bytes
+    static const string kSignatureSection("\x00\xb0\x01\x00\x04\x00\x00\x00", 8);
+    size_t sonySectionPos = 0;
+    if (!IsSignatureFound(limited_source, 0 /* offset */, RequestedSize(), kSignatureSection, &sonySectionPos)) {
+      return false;
+    }
+
+    // Check for kSignatureVersions
+    size_t sonyVersionPos = sonySectionPos + kSignatureSection.size();
+    if (sonyVersionPos + 2 > RequestedSize()) {
+      return false;
+    }
+    static const std::vector<string> kSignatureVersions = {
+        string("\x02\x00", 2),  // ARW 1.0
+        string("\x03\x00", 2),  // ARW 2.0
+        string("\x03\x01", 2),  // ARW 2.1
+        string("\x03\x02", 2),  // ARW 2.2
+        string("\x03\x03", 2),  // ARW 2.3
+        string("\x04\x00", 2),  // ARW 4.0
+        string("\x05\x00", 2),  // ARW 5.0
+    };
+    bool matched = false;
+    for (auto const &kSignatureVersion : kSignatureVersions) {
+      matched |= IsSignatureMatched(limited_source, sonyVersionPos /* offset */, kSignatureVersion);
+    }
+    return matched;
+  }
+};
+
 // Canon RAW (CR2 extension).
 class Cr2TypeChecker : public TypeChecker {
  public:
@@ -749,6 +807,7 @@ class TypeCheckerList {
   TypeCheckerList() {
     // Add all supported RAW type checkers here.
     checkers_.push_back(new ArwTypeChecker());
+    checkers_.push_back(new OptimizedArwTypeChecker());
     checkers_.push_back(new Cr2TypeChecker());
     checkers_.push_back(new CrwTypeChecker());
     checkers_.push_back(new DcrTypeChecker());

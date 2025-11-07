@@ -669,8 +669,14 @@ std::unique_ptr<SkCodec> SkRawCodec::MakeFromStream(std::unique_ptr<SkStream> st
     // Does not take the ownership of rawStream.
     SkPiexStream piexStream(rawStream.get());
     ::piex::PreviewImageData imageData;
+#ifdef SK_ENABLE_OHOS_CODEC
+    ::piex::image_type_recognition::RawImageTypes rawType = ::piex::image_type_recognition::kNonRawImage;
+    ::piex::Error error = ::piex::GetPreviewImageData(&piexStream, &imageData, &rawType);
+    if (::piex::image_type_recognition::IsRaw(rawType)) {
+#else
     if (::piex::IsRaw(&piexStream)) {
         ::piex::Error error = ::piex::GetPreviewImageData(&piexStream, &imageData);
+#endif
         if (error == ::piex::Error::kFail) {
             *result = kInvalidInput;
             return nullptr;
