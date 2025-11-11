@@ -324,10 +324,15 @@ SkUniqueCFRef<CFArrayRef> SkCTFontManagerCopyAvailableFontFamilyNames() {
 }
 
 } // namespace
-
+#if defined(CROSS_PLATFORM)
+const std::string HM_SYMBOL_FAMILY_NAME = "HM Symbol";
+#endif
 class SkFontMgr_Mac : public SkFontMgr {
     SkUniqueCFRef<CFArrayRef> fNames;
     int fCount;
+#if defined(CROSS_PLATFORM)
+    mutable bool fSymbolGlyphsLoaded = false;
+#endif
 
     CFStringRef getFamilyNameAt(int index) const {
         SkASSERT((unsigned)index < (unsigned)fCount);
@@ -355,8 +360,11 @@ public:
         , fCount(fNames ? SkToInt(CFArrayGetCount(fNames.get())) : 0)
         , fFontCollection(fontCollection ? (CTFontCollectionRef)CFRetain(fontCollection)
                                          : CTFontCollectionCreateFromAvailableFonts(nullptr))
-    {
+    {}
+
 #if defined(CROSS_PLATFORM)
+    void GetSystemFontFamiliesForSymbol() const
+    {
         std::string path(SkFontMgr::containerFontPath);
         if (path.empty()) {
             return;
@@ -387,8 +395,21 @@ public:
             return;
         }
         CTFontManagerRegisterGraphicsFont(cgFont.get(), nullptr);
-#endif
     }
+
+    void LoadSymbolGlyphs(const char familyName[]) const {
+        if (!familyName) {
+            return;
+        }
+        if (!fSymbolGlyphsLoaded) {
+            std::string compStr(familyName);
+            if (compStr == HM_SYMBOL_FAMILY_NAME) {
+                GetSystemFontFamiliesForSymbol();
+                fSymbolGlyphsLoaded = true;
+            }
+        }
+    }
+#endif
 
 protected:
     int onCountFamilies() const override {
@@ -414,6 +435,9 @@ protected:
         if (!familyName) {
             return nullptr;
         }
+#if defined(CROSS_PLATFORM)
+        LoadSymbolGlyphs(familyName);
+#endif
         SkUniqueCFRef<CFStringRef> cfName = make_CFString(familyName);
         return CreateSet(cfName.get());
     }
@@ -436,6 +460,9 @@ protected:
                                                   const SkFontStyle& style,
                                                   const char* bcp47[], int bcp47Count,
                                                   SkUnichar character) const override {
+#if defined(CROSS_PLATFORM)
+        LoadSymbolGlyphs(familyName);
+#endif
         SkUniqueCFRef<CTFontDescriptorRef> desc = create_descriptor(familyName, style);
         SkUniqueCFRef<CTFontRef> familyFont(CTFontCreateWithFontDescriptor(desc.get(), 0, nullptr));
 
