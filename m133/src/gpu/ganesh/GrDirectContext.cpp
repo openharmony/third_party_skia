@@ -488,7 +488,8 @@ skgpu::ganesh::SmallPathAtlasMgr* GrDirectContext::onGetSmallPathAtlasMgr() {
 }
 #endif
 
-void GrDirectContext::registerVulkanErrorCallback(const std::function<void()>& vulkanErrorCallback)
+void GrDirectContext::registerVulkanErrorCallback(
+    const std::function<void(const std::vector<int>&, const std::string&, bool)>& vulkanErrorCallback)
 {
     vulkanErrorCallback_ = vulkanErrorCallback;
 }
@@ -496,7 +497,10 @@ void GrDirectContext::registerVulkanErrorCallback(const std::function<void()>& v
 void GrDirectContext::processVulkanError()
 {
     if (vulkanErrorCallback_) {
-        vulkanErrorCallback_();
+        std::vector<int> pidsToKill;
+        std::string reason;
+        bool needKillProcess = false;
+        vulkanErrorCallback_(pidsToKill, reason, needKillProcess);
     }
 }
 
