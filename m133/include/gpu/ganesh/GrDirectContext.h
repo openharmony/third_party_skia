@@ -917,7 +917,8 @@ public:
     // same way as the one used in step #4, and the same GrContextOptions are specified.
     // Using cached shader blobs on a different device or driver are undefined.
     bool precompileShader(const SkData& key, const SkData& data);
-    void registerVulkanErrorCallback(const std::function<void()>& vulkanErrorCallback);
+    void registerVulkanErrorCallback(
+        const std::function<void(const std::vector<int>&, const std::string&, bool)>& vulkanErrorCallback);
     void processVulkanError();
 
 #ifdef SK_ENABLE_DUMP_GPU
@@ -1072,7 +1073,7 @@ private:
 
     std::unique_ptr<GrClientMappedBufferManager> fMappedBufferManager;
     std::unique_ptr<GrAtlasManager> fAtlasManager;
-    std::function<void()> vulkanErrorCallback_;
+    std::function<void(const std::vector<int>&, const std::string&, bool)> vulkanErrorCallback_;
 
 #if !defined(SK_ENABLE_OPTIMIZE_SIZE)
     std::unique_ptr<skgpu::ganesh::SmallPathAtlasMgr> fSmallPathAtlasMgr;
