@@ -649,7 +649,8 @@ bool IsRaw(StreamInterface* data) {
 }
 
 Error GetPreviewImageData(StreamInterface* data,
-                          PreviewImageData* preview_image_data) {
+                          PreviewImageData* preview_image_data,
+                          RawImageTypes* output_type) {
   const size_t bytes = BytesRequiredForIsRaw();
   if (data == nullptr || bytes == 0) {
     return kFail;
@@ -662,7 +663,9 @@ Error GetPreviewImageData(StreamInterface* data,
   }
   RangeCheckedBytePtr header_buffer(file_header.data(), file_header.size());
 
-  switch (RecognizeRawImageTypeLite(header_buffer)) {
+  RawImageTypes type = RecognizeRawImageTypeLite(header_buffer);
+  if (output_type != nullptr) *output_type = type;
+  switch (type) {
     case image_type_recognition::kArwImage:
       return ArwGetPreviewData(data, preview_image_data);
     case image_type_recognition::kCr2Image:
