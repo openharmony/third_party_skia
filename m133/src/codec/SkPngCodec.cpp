@@ -194,7 +194,16 @@ bool AutoCleanPng::decodeBounds() {
             this->infoCallback(length);
             return true;
         }
-
+#ifdef SK_DISABLE_PARSE_PNG_ITXT_TRUNK
+        if (is_chunk(chunk, "iTXt")) {
+            if (fStream->skip(length + 4) < (length + 4)) {
+                // We have read to the end of the input without decoding bounds.
+                break;
+            }
+            SkCodecPrintf("%s skip iTXt trunk", __func__);
+            continue;
+        }
+#endif
         png_process_data(fPng_ptr, fInfo_ptr, chunk, 8);
         // Process the full chunk + CRC.
         if (!process_data(fPng_ptr, fInfo_ptr, fStream, buffer, kBufferSize, length + 4)) {

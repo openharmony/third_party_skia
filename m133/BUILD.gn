@@ -180,6 +180,10 @@ config("skia_public") {
     defines += [ "TURBO_PNG_MULTY_LINE_OPT" ]
   }
 
+  if (is_ohos) {
+    defines += [ "SK_DISABLE_PARSE_PNG_ITXT_TRUNK" ]
+  }
+
   if (skia_vk_enable_partialrender) {
     defines += [ "SK_VK_PARTIALRENDER" ]
   }
