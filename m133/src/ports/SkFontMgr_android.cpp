@@ -32,6 +32,7 @@
 
 #if defined(CROSS_PLATFORM)
 std::string SkFontMgr::runtimeOS = "";
+const std::string HM_SYMBOL_FAMILY_NAME = "HM Symbol";
 #endif
 using namespace skia_private;
 constexpr char ORIGIN_MY_LOCALE[] = "my-Qaag";
@@ -291,9 +292,6 @@ public:
             SkFontMgr_Android_Parser::GetCustomFontFamilies(
                 families, base, custom->fFontsXml, custom->fFallbackFontsXml);
         }
-#if defined(CROSS_PLATFORM)
-        SkFontMgr_Android_Parser::GetSystemFontFamiliesForSymbol(families);
-#endif
         this->buildNameToFamilyMap(families, custom ? custom->fIsolated : false);
         this->findDefaultStyleSet();
         for (FontFamily* p : families) {
@@ -301,6 +299,27 @@ public:
         }
         families.reset();
     }
+
+#if defined(CROSS_PLATFORM)
+    void LoadSymbolGlyphs(const char familyName[]) const {
+        if (!familyName) {
+            return;
+        }
+        if (!fSymbolGlyphsLoaded) {
+            std::string compStr(familyName);
+            if (compStr == HM_SYMBOL_FAMILY_NAME) {
+                SkTDArray<FontFamily*> families;
+                SkFontMgr_Android_Parser::GetSystemFontFamiliesForSymbol(families);
+                this->buildNameToFamilyMapForSymbolGlyph(families, false);
+                for (FontFamily* p : families) {
+                    delete p;
+                }
+                families.reset();
+                fSymbolGlyphsLoaded = true;
+            }
+        }
+    }
+#endif
 
 protected:
     /** Returns not how many families we have, but how many unique names
@@ -329,6 +348,9 @@ protected:
         if (!familyName) {
             return nullptr;
         }
+#if defined(CROSS_PLATFORM)
+        LoadSymbolGlyphs(familyName);
+#endif
         SkAutoAsciiToLC tolc(familyName);
         for (int i = 0; i < fNameToFamilyMap.size(); ++i) {
             if (fNameToFamilyMap[i].name.equals(tolc.lc())) {
@@ -396,6 +418,9 @@ protected:
         // As a result, it is not possible to know the variant context from the font alone.
         // TODO: add 'is_elegant' and 'is_compact' bits to 'style' request.
 
+#if defined(CROSS_PLATFORM)
+        LoadSymbolGlyphs(familyName);
+#endif
         SkString familyNameString(familyName);
         for (const SkString& currentFamilyName : { familyNameString, SkString() }) {
             // The first time match anything elegant, second time anything not elegant.
@@ -466,12 +491,44 @@ private:
 
     std::unique_ptr<SkFontScanner> fScanner;
 
+#if defined(CROSS_PLATFORM)
+    mutable TArray<sk_sp<SkFontStyleSet_Android>> fStyleSets;
+    sk_sp<SkFontStyleSet> fDefaultStyleSet;
+    mutable TArray<NameToFamily, true> fNameToFamilyMap;
+    mutable TArray<NameToFamily, true> fFallbackNameToFamilyMap;
+    mutable bool fSymbolGlyphsLoaded = false;
+#else
     TArray<sk_sp<SkFontStyleSet_Android>> fStyleSets;
     sk_sp<SkFontStyleSet> fDefaultStyleSet;
 
     TArray<NameToFamily, true> fNameToFamilyMap;
     TArray<NameToFamily, true> fFallbackNameToFamilyMap;
+#endif
 
+#if defined(CROSS_PLATFORM)
+    void addFamily(FontFamily& family, const bool isolated, int familyIndex) const {
+        TArray<NameToFamily, true>* nameToFamily = &fNameToFamilyMap;
+        if (family.fIsFallbackFont) {
+            nameToFamily = &fFallbackNameToFamilyMap;
+
+            if (family.fNames.empty()) {
+                SkString& fallbackName = family.fNames.push_back();
+                fallbackName.printf("%.2x##fallback", (uint32_t)familyIndex);
+            }
+        }
+
+        sk_sp<SkFontStyleSet_Android> newSet =
+            sk_make_sp<SkFontStyleSet_Android>(family, fScanner.get(), isolated);
+        if (0 == newSet->count()) {
+            return;
+        }
+
+        for (const SkString& name : family.fNames) {
+            nameToFamily->emplace_back(NameToFamily{name, newSet.get()});
+        }
+        fStyleSets.emplace_back(std::move(newSet));
+    }
+#else
     void addFamily(FontFamily& family, const bool isolated, int familyIndex) {
         TArray<NameToFamily, true>* nameToFamily = &fNameToFamilyMap;
         if (family.fIsFallbackFont) {
@@ -494,6 +551,8 @@ private:
         }
         fStyleSets.emplace_back(std::move(newSet));
     }
+#endif
+
     void buildNameToFamilyMap(const SkTDArray<FontFamily*>& families, const bool isolated) {
         int familyIndex = 0;
         for (FontFamily* family : families) {
@@ -503,6 +562,18 @@ private:
             }
         }
     }
+
+#if defined(CROSS_PLATFORM)
+    void buildNameToFamilyMapForSymbolGlyph(const SkTDArray<FontFamily*>& families, const bool isolated) const {
+        int familyIndex = onCountFamilies();
+        for (FontFamily* family : families) {
+            addFamily(*family, isolated, familyIndex++);
+            for (const auto& [unused, fallbackFamily] : family->fallbackFamilies) {
+                addFamily(*fallbackFamily, isolated, familyIndex++);
+            }
+        }
+    }
+#endif
 
     void findDefaultStyleSet() {
         static const char* defaultNames[] = { "sans-serif" };
