@@ -95,7 +95,7 @@ public:
                                const SkPoint3& zPlaneParams, const SkPoint3& lightPos,
                                SkScalar lightRadius, uint32_t flags, SkRect* bounds);
 
-#ifdef OHOS_SUPPORT
+#ifdef SK_OHOS_EXTENSION
     static bool GetLocalBounds(const SkMatrix& ctm, const SkPath& path,
                                const SkPoint3& zPlaneParams, const SkPoint3& lightPos,
                                SkScalar lightRadius, uint32_t flags, bool isLimitElevation, SkRect* bounds);
