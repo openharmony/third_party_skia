@@ -599,6 +599,23 @@ bool SkShadowUtils::GetLocalBounds(const SkMatrix& ctm, const SkPath& path,
     return true;
 }
 
+#ifdef OHOS_SUPPORT
+bool SkShadowUtils::GetLocalBounds(const SkMatrix& ctm, const SkPath& path,
+                                   const SkPoint3& zPlaneParams, const SkPoint3& lightPos,
+                                   SkScalar lightRadius, uint32_t flags, bool isLimitElevation, SkRect* bounds) {
+    SkDrawShadowRec rec;
+    rec.isLimitElevation = isLimitElevation;
+    if (!fill_shadow_rec(path, zPlaneParams, lightPos, lightRadius, SK_ColorBLACK, SK_ColorBLACK,
+                         flags, ctm, &rec)) {
+        return false;
+    }
+
+    SkDrawShadowMetrics::GetLocalBounds(path, rec, ctm, bounds);
+
+    return true;
+}
+#endif
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 static bool validate_rec(const SkDrawShadowRec& rec) {

@@ -95,6 +95,12 @@ public:
                                const SkPoint3& zPlaneParams, const SkPoint3& lightPos,
                                SkScalar lightRadius, uint32_t flags, SkRect* bounds);
 
+#ifdef OHOS_SUPPORT
+    static bool GetLocalBounds(const SkMatrix& ctm, const SkPath& path,
+                               const SkPoint3& zPlaneParams, const SkPoint3& lightPos,
+                               SkScalar lightRadius, uint32_t flags, bool isLimitElevation, SkRect* bounds);
+#endif
+
     /**
      * Helper routine to compute color values for one-pass tonal alpha.
      *
