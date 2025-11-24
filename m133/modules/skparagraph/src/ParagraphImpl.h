@@ -230,11 +230,6 @@ public:
     void updateSplitRunClusterInfo(const Run& run, bool isSplitRun);
     void refreshLines();
     bool isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated);
-    void generateSplitPoint(
-        std::vector<SplitPoint>& splitPoints, const Run& run, ClusterRange lineRange, size_t lineIndex);
-    void generateSplitPoints(std::vector<SplitPoint>& splitPoints);
-    void generateRunsBySplitPoints(std::vector<SplitPoint>& splitPoints, skia_private::TArray<Run, false>& runs);
-    void splitRuns();
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }
@@ -409,6 +404,12 @@ private:
     size_t prefixByteCountUntilChar(size_t index);
     void copyProperties(const ParagraphImpl& source);
     std::string_view GetState() const;
+    void splitRuns(std::deque<SplitPoint>& splitPoints);
+    void generateSplitPoint(
+        std::deque<SplitPoint>& splitPoints, const Run& run, ClusterRange lineRange, size_t lineIndex);
+    void generateSplitPointsByLines(std::deque<SplitPoint>& splitPoints);
+    void generateRunsBySplitPoints(std::deque<SplitPoint>& splitPoints, skia_private::TArray<Run, false>& runs);
+    SplitPoint generateSplitPoint(ClusterRange clusterRange);
 #endif
 
     // Input

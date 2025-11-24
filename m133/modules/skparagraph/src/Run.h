@@ -178,7 +178,7 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     Run(const Run& run, size_t runIndex);
     size_t findSplitClusterPos(size_t target);
-    void updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex);
+    void updateSplitRunRangeInfo(Run& splitRun, size_t headIndex, size_t tailIndex);
     void updateSplitRunMesureInfo(Run& splitRun, size_t startClusterPos, size_t endClusterPos);
     void generateSplitRun(Run& splitRun, const SplitPoint& splitPoint);
     void updatePlaceholderAlignmentIfNeeded(PlaceholderAlignment& alignment, TextVerticalAlign paragraphAlignment);

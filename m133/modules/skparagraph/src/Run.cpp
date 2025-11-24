@@ -376,12 +376,10 @@ size_t Run::globalClusterIndex(size_t pos) const {
     return fClusterStart + fClusterIndexes[pos + 1];
 }
 
-void Run::updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex) {
-    splitRun.fTextRange.start = std::max(headIndex,
-        fOwner->cluster(splitLine.clustersWithSpaces().start).textRange().start);
+void Run::updateSplitRunRangeInfo(Run& splitRun, size_t headIndex, size_t tailIndex) {
+    splitRun.fTextRange.start = headIndex;
     splitRun.fClusterRange.start = fOwner->clusterIndex(headIndex);
-    splitRun.fTextRange.end = std::min(tailIndex,
-        fOwner->cluster(splitLine.clustersWithSpaces().end-1).textRange().end);
+    splitRun.fTextRange.end = tailIndex;
     splitRun.fUtf8Range = {splitRun.fTextRange.start, splitRun.fTextRange.width()};
     splitRun.fClusterRange.end = fOwner->clusterIndex(tailIndex);
 }
@@ -424,8 +422,7 @@ void Run::generateSplitRun(Run& splitRun, const SplitPoint& splitPoint) {
     }
     size_t tailIndex = splitPoint.tailClusterIndex;
     size_t headIndex = splitPoint.headClusterIndex;
-    const TextLine& splitLine = fOwner->lines()[splitPoint.lineIndex];
-    updateSplitRunRangeInfo(splitRun, splitLine, headIndex, tailIndex);
+    updateSplitRunRangeInfo(splitRun, headIndex, tailIndex);
     size_t startClusterPos = findSplitClusterPos(headIndex - fClusterStart);
     size_t endClusterPos = findSplitClusterPos(tailIndex - fClusterStart);
     if (endClusterPos >= clusterIndexes().size() || startClusterPos >= clusterIndexes().size()) {
