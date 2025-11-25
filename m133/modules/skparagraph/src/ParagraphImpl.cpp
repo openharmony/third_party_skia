@@ -456,7 +456,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 #ifdef ENABLE_TEXT_ENHANCE
         if (paragraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE &&
             paragraphStyle().getMaxLines() > 1) {
-            splitRuns();
+            // Collect split info for crossing line's run
+            std::deque<SplitPoint> splitPoints;
+            generateSplitPointsByLines(splitPoints);
+            splitRuns(splitPoints);
         }
 #endif
 
@@ -534,7 +537,7 @@ bool ParagraphImpl::isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd
 }
 
 void ParagraphImpl::generateSplitPoint(
-    std::vector<SplitPoint>& splitPoints, const Run& run, ClusterRange lineRange, size_t lineIndex) {
+    std::deque<SplitPoint>& splitPoints, const Run& run, ClusterRange lineRange, size_t lineIndex) {
     size_t startIndex =
         std::max(cluster(lineRange.start).textRange().start, cluster(run.clusterRange().start).textRange().start);
     size_t endIndex =
@@ -543,12 +546,12 @@ void ParagraphImpl::generateSplitPoint(
     splitPoints.push_back({lineIndex, run.index(), startIndex, endIndex});
 }
 
-void ParagraphImpl::generateSplitPoints(std::vector<SplitPoint>& splitPoints) {
-    for (size_t lineIndex = 0; lineIndex < fLines.size(); ++lineIndex) {
+void ParagraphImpl::generateSplitPointsByLines(std::deque<SplitPoint>& splitPoints) {
+    for (size_t lineIndex = 0; lineIndex < (size_t)fLines.size(); ++lineIndex) {
         const TextLine& line = fLines[lineIndex];
         ClusterRange lineClusterRange = line.clustersWithSpaces();
         // Avoid abnormal split of the last line
-        if (lineIndex == fLines.size() - 1) {
+        if (lineIndex == (size_t)fLines.size() - 1) {
             size_t lineEnd = line.clusters().end == 0 ? 0 : line.clusters().end - 1;
             lineClusterRange.end = cluster(lineEnd).run().clusterRange().end;
         }
@@ -577,13 +580,34 @@ void ParagraphImpl::generateSplitPoints(std::vector<SplitPoint>& splitPoints) {
     }
 }
 
-void ParagraphImpl::generateRunsBySplitPoints(std::vector<SplitPoint>& splitPoints,
+std::optional<SplitPoint> ParagraphImpl::generateSplitPoint(const ClusterRange& clusterRange) {
+    if (clusterRange.empty()) {
+        return std::nullopt;
+    }
+
+    const Cluster& startCluster = cluster(clusterRange.start);
+    const Cluster& endCluster = cluster(clusterRange.end - 1);
+    if (startCluster.runIndex() != endCluster.runIndex()) {
+        return std::nullopt;
+    }
+
+    SplitPoint splitPoint;
+    splitPoint.runIndex = startCluster.run().index();
+    splitPoint.headClusterIndex = startCluster.textRange().start;
+    splitPoint.tailClusterIndex = endCluster.textRange().end;
+    auto it = std::find_if(fLines.begin(), fLines.end(), [&](const TextLine& line) {
+        return line.clustersWithSpaces().contains(clusterRange);
+    });
+    splitPoint.lineIndex = (it != fLines.end()) ? std::distance(fLines.begin(), it) : -1;
+    return splitPoint;
+}
+
+void ParagraphImpl::generateRunsBySplitPoints(std::deque<SplitPoint>& splitPoints,
     skia_private::TArray<Run, false>& runs) {
-    std::reverse(splitPoints.begin(), splitPoints.end());
     size_t newRunGlobalIndex = 0;
-    for (size_t runIndex = 0; runIndex < fRuns.size(); ++runIndex) {
+    for (size_t runIndex = 0; runIndex < (size_t)fRuns.size(); ++runIndex) {
         Run& run = fRuns[runIndex];
-        if (splitPoints.empty() || splitPoints.back().runIndex != run.fIndex) {
+        if (splitPoints.empty() || splitPoints.front().runIndex != run.fIndex) {
             // No need to split
             run.fIndex = newRunGlobalIndex++;
             updateSplitRunClusterInfo(run, false);
@@ -592,7 +616,7 @@ void ParagraphImpl::generateRunsBySplitPoints(std::vector<SplitPoint>& splitPoin
         }
 
         while (!splitPoints.empty()) {
-            SplitPoint& splitPoint = splitPoints.back();
+            SplitPoint& splitPoint = splitPoints.front();
             size_t splitRunIndex = splitPoint.runIndex;
             if (splitRunIndex != runIndex) {
                 break;
@@ -602,15 +626,12 @@ void ParagraphImpl::generateRunsBySplitPoints(std::vector<SplitPoint>& splitPoin
             run.generateSplitRun(splitRun, splitPoint);
             updateSplitRunClusterInfo(splitRun, true);
             runs.push_back(std::move(splitRun));
-            splitPoints.pop_back();
+            splitPoints.pop_front();
         }
     }
 }
 
-void ParagraphImpl::splitRuns() {
-    // Collect split info for crossing line's run
-    std::vector<SplitPoint> splitPoints{};
-    generateSplitPoints(splitPoints);
+void ParagraphImpl::splitRuns(std::deque<SplitPoint>& splitPoints) {
     if (splitPoints.empty()) {
         return;
     }
