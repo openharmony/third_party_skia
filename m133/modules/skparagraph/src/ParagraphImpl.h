@@ -27,11 +27,14 @@
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
+#include "modules/skshaper/include/SkShaper_harfbuzz.h"
+#include "modules/skshaper/include/SkShaper_skunicode.h"
 #include "modules/skunicode/include/SkUnicode.h"
 #include "src/base/SkBitmaskEnum.h"
 #include "src/core/SkTHash.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -230,11 +233,53 @@ public:
     void updateSplitRunClusterInfo(const Run& run, bool isSplitRun);
     void refreshLines();
     bool isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated);
-    void generateSplitPoint(
-        std::vector<SplitPoint>& splitPoints, const Run& run, ClusterRange lineRange, size_t lineIndex);
-    void generateSplitPoints(std::vector<SplitPoint>& splitPoints);
-    void generateRunsBySplitPoints(std::vector<SplitPoint>& splitPoints, skia_private::TArray<Run, false>& runs);
-    void splitRuns();
+
+    void splitRunsWhenCompressPunction(ClusterIndex clusterIndex);
+    bool IsShapedCompressHeadPunctuation(ClusterIndex clusterIndex);
+    std::unique_ptr<Run> shapeString(const SkString& str, const TextStyle& textStyle,
+        const SkShaper::Feature* features = nullptr, size_t featuresSize = 0);
+    skia_private::TArray<SkShaper::Feature> getAdjustedFontFeature(Block& compressBlock,
+        TextRange headPunctuationRange);
+    
+    void resetIsRealCompressedHeadPunctuation() { fIsRealCompressedHeadPunctuation = false; };
+    void updateIsRealCompressedHeadPunctuation(bool state) { fIsRealCompressedHeadPunctuation |= state; };
+    bool IsRealCompressedHeadPunctuation() const { return fIsRealCompressedHeadPunctuation; }
+    SkScalar getLayoutRawWidth() const { return fLayoutRawWidth; }
+    bool needBreakShapedTextIntoLines();
+    class ShapeHandler final : public SkShaper::RunHandler {
+    public:
+        ShapeHandler(SkScalar lineHeight, bool useHalfLeading, SkScalar baselineShift, const SkString& str)
+            : fRun(nullptr), fLineHeight(lineHeight), fUseHalfLeading(useHalfLeading),
+            fBaselineShift(baselineShift), fStr(str) {}
+        std::unique_ptr<Run> run() & { return std::move(fRun); }
+
+    private:
+        void beginLine() override {}
+
+        void runInfo(const RunInfo&) override {}
+
+        void commitRunInfo() override {}
+
+        Buffer runBuffer(const RunInfo& info) override {
+            SkASSERT(!fRun);
+            fRun = std::make_unique<Run>(nullptr, info, 0, fLineHeight, fUseHalfLeading, fBaselineShift, 0, 0);
+            return fRun->newRunBuffer();
+        }
+
+        void commitRunBuffer(const RunInfo& info) override {
+            fRun->fAdvance.fX = info.fAdvance.fX;
+            fRun->fAdvance.fY = fRun->advance().fY;
+            fRun->fPlaceholderIndex = std::numeric_limits<size_t>::max();
+        }
+
+        void commitLine() override {}
+
+        std::unique_ptr<Run> fRun;
+        SkScalar fLineHeight;
+        bool fUseHalfLeading;
+        SkScalar fBaselineShift;
+        SkString fStr;
+    };
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }
@@ -409,6 +454,12 @@ private:
     size_t prefixByteCountUntilChar(size_t index);
     void copyProperties(const ParagraphImpl& source);
     std::string_view GetState() const;
+    void splitRuns(std::deque<SplitPoint>& splitPoints);
+    void generateSplitPoint(
+        std::deque<SplitPoint>& splitPoints, const Run& run, ClusterRange lineRange, size_t lineIndex);
+    void generateSplitPointsByLines(std::deque<SplitPoint>& splitPoints);
+    void generateRunsBySplitPoints(std::deque<SplitPoint>& splitPoints, skia_private::TArray<Run, false>& runs);
+    std::optional<SplitPoint> generateSplitPoint(ClusterRange clusterRange);
 #endif
 
     // Input
@@ -471,6 +522,7 @@ private:
     bool fSkipTextBlobDrawing{false};
     int fEllipsisRunIndexOffset{0};
     bool fIsEllipsisReplaceFitCluster{false};
+    bool fIsRealCompressedHeadPunctuation{false};
 #endif
 };
 }  // namespace textlayout

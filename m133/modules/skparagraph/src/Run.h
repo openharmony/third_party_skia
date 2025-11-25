@@ -77,10 +77,10 @@ enum class ScaleOP {
 };
 
 struct SplitPoint {
-    size_t lineIndex;
-    size_t runIndex;
-    size_t headClusterIndex;
-    size_t tailClusterIndex;
+    size_t lineIndex{EMPTY_INDEX};
+    size_t runIndex{EMPTY_INDEX};
+    size_t headClusterIndex{EMPTY_INDEX};
+    size_t tailClusterIndex{EMPTY_INDEX};
 };
 
 void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op);
@@ -178,10 +178,11 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     Run(const Run& run, size_t runIndex);
     size_t findSplitClusterPos(size_t target);
-    void updateSplitRunRangeInfo(Run& splitRun, const TextLine& splitLine, size_t headIndex, size_t tailIndex);
+    void updateSplitRunRangeInfo(Run& splitRun, size_t headIndex, size_t tailIndex);
     void updateSplitRunMesureInfo(Run& splitRun, size_t startClusterPos, size_t endClusterPos);
     void generateSplitRun(Run& splitRun, const SplitPoint& splitPoint);
     void updatePlaceholderAlignmentIfNeeded(PlaceholderAlignment& alignment, TextVerticalAlign paragraphAlignment);
+    void updateCompressedRunMeasureInfo(Run& headCompressPuncRun);
 #endif
     SkScalar calculateHeight(LineMetricStyle ascentStyle, LineMetricStyle descentStyle) const {
         auto ascent = ascentStyle == LineMetricStyle::Typographic ? this->ascent()
@@ -519,6 +520,8 @@ public:
     void setBadgeType(TextBadgeType badgeType) {
         fBadgeType = badgeType;
     }
+    bool isChinesePunctuation() const { return fNeedCompressPunctuation; }
+    void updateWidth(SkScalar updateWidth) { fWidth = updateWidth; }
 #endif
 
     bool isSoftBreak() const;
@@ -582,6 +585,7 @@ private:
     bool fIsPunctuation{false};
     bool fIsEllipsis{false};
     bool fNeedAutoSpacing{false}; // depend on last cluster flag
+    bool fNeedCompressPunctuation{false};
     bool fHyphenBreak{false};
     TextBadgeType fBadgeType{TextBadgeType::BADGE_NONE};
 #endif
