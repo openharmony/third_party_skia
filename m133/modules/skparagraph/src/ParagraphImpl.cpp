@@ -458,7 +458,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
             paragraphStyle().getMaxLines() > 1) {
             // Collect split info for crossing line's run
             std::deque<SplitPoint> splitPoints;
-            // generateRunsBySplitPoints(splitPoints);
+            generateSplitPointsByLines(splitPoints);
             splitRuns(splitPoints);
         }
 #endif
@@ -580,18 +580,18 @@ void ParagraphImpl::generateSplitPointsByLines(std::deque<SplitPoint>& splitPoin
     }
 }
 
-SplitPoint ParagraphImpl::generateSplitPoint(ClusterRange clusterRange) {
-    SplitPoint splitPoint;
+std::optional<SplitPoint> ParagraphImpl::generateSplitPoint(ClusterRange clusterRange) {
     if (clusterRange.empty()) {
-        return splitPoint;
+        return std::nullopt;
     }
 
     const Cluster& startCluster = cluster(clusterRange.start);
     const Cluster& endCluster = cluster(clusterRange.end - 1);
     if (startCluster.runIndex() != endCluster.runIndex()) {
-        return splitPoint;
+        return std::nullopt;
     }
 
+    SplitPoint splitPoint;
     splitPoint.runIndex = startCluster.run().index();
     splitPoint.headClusterIndex = startCluster.textRange().start;
     splitPoint.tailClusterIndex = endCluster.textRange().end;

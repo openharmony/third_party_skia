@@ -77,10 +77,10 @@ enum class ScaleOP {
 };
 
 struct SplitPoint {
-    size_t lineIndex;
-    size_t runIndex;
-    size_t headClusterIndex;
-    size_t tailClusterIndex;
+    size_t lineIndex{EMPTY_INDEX};
+    size_t runIndex{EMPTY_INDEX};
+    size_t headClusterIndex{EMPTY_INDEX};
+    size_t tailClusterIndex{EMPTY_INDEX};
 };
 
 void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op);
