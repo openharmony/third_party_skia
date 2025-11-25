@@ -670,7 +670,7 @@ void ParagraphImpl::splitRunsWhenCompressPunction(ClusterIndex clusterIndex)
 bool ParagraphImpl::IsShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
 {
     Cluster& originCluster = cluster(clusterIndex);
-    if ((!ParagraphStyle().getCompressHeadPunctuation()) || (!originCluster.isChinesePunctuation())) {
+    if ((!paragraphStyle().getCompressHeadPunctuation()) || (!originCluster.isChinesePunctuation())) {
         return false;
     }
     // Shape a single cluster to get compressed glyph information.
