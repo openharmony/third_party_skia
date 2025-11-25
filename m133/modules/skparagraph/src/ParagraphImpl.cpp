@@ -580,7 +580,7 @@ void ParagraphImpl::generateSplitPointsByLines(std::deque<SplitPoint>& splitPoin
     }
 }
 
-std::optional<SplitPoint> ParagraphImpl::generateSplitPoint(ClusterRange clusterRange) {
+std::optional<SplitPoint> ParagraphImpl::generateSplitPoint(const ClusterRange& clusterRange) {
     if (clusterRange.empty()) {
         return std::nullopt;
     }
