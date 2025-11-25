@@ -695,13 +695,14 @@ bool ParagraphImpl::IsShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
     }
     // Split runs and replace run information in split02.
     splitRunsWhenCompressPunction(clusterIndex);
-    TextRange splitedRange(originRun.clusterIndexes()[0] + originRun.fClusterStart,
-        originRun.clusterIndexes()[1] + originRun.fClusterStart);
+    Run& fixedRun = originCluster.run();
+    TextRange splitedRange(fixedRun.clusterIndexes()[0] + fixedRun.fClusterStart,
+        fixedRun.clusterIndexes()[1] + fixedRun.fClusterStart);
     if (splitedRange.start == originCluster.textRange().start && splitedRange.end == originCluster.textRange().end) {
         SkScalar spacing = headCompressPuncRun->advances()[0].x() - originCluster.width();
         originCluster.updateWidth(originCluster.width() + spacing);
-        originRun.setWidth(originRun.fAdvanceX() + spacing);
-        originRun.updateCompressedRunMeasureInfo(*headCompressPuncRun);
+        fixedRun.setWidth(fixedRun.fAdvanceX() + spacing);
+        fixedRun.updateCompressedRunMeasureInfo(*headCompressPuncRun);
     }
     return true;
 }
