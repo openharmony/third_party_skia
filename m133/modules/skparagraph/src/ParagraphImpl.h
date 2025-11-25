@@ -459,7 +459,7 @@ private:
         std::deque<SplitPoint>& splitPoints, const Run& run, ClusterRange lineRange, size_t lineIndex);
     void generateSplitPointsByLines(std::deque<SplitPoint>& splitPoints);
     void generateRunsBySplitPoints(std::deque<SplitPoint>& splitPoints, skia_private::TArray<Run, false>& runs);
-    std::optional<SplitPoint> generateSplitPoint(ClusterRange clusterRange);
+    std::optional<SplitPoint> generateSplitPoint(const ClusterRange& clusterRange);
 #endif
 
     // Input
