@@ -235,15 +235,12 @@ public:
     bool isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated);
 
     void splitRunsWhenCompressPunction(ClusterIndex clusterIndex);
-    bool IsShapedCompressHeadPunctuation(ClusterIndex clusterIndex);
+    bool isShapedCompressHeadPunctuation(ClusterIndex clusterIndex);
     std::unique_ptr<Run> shapeString(const SkString& str, const TextStyle& textStyle,
         const SkShaper::Feature* features = nullptr, size_t featuresSize = 0);
     skia_private::TArray<SkShaper::Feature> getAdjustedFontFeature(Block& compressBlock,
         TextRange headPunctuationRange);
-    
-    void resetIsRealCompressedHeadPunctuation() { fIsRealCompressedHeadPunctuation = false; };
-    void updateIsRealCompressedHeadPunctuation(bool state) { fIsRealCompressedHeadPunctuation |= state; };
-    bool IsRealCompressedHeadPunctuation() const { return fIsRealCompressedHeadPunctuation; }
+
     SkScalar getLayoutRawWidth() const { return fLayoutRawWidth; }
     bool needBreakShapedTextIntoLines();
     class ShapeHandler final : public SkShaper::RunHandler {
@@ -522,7 +519,6 @@ private:
     bool fSkipTextBlobDrawing{false};
     int fEllipsisRunIndexOffset{0};
     bool fIsEllipsisReplaceFitCluster{false};
-    bool fIsRealCompressedHeadPunctuation{false};
 #endif
 };
 }  // namespace textlayout

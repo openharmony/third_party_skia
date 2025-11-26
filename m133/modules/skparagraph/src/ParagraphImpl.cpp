@@ -644,33 +644,32 @@ void ParagraphImpl::splitRuns(std::deque<SplitPoint>& splitPoints) {
     refreshLines();
 }
 
-void ParagraphImpl::splitRunsWhenCompressPunction(ClusterIndex clusterIndex)
-{
+void ParagraphImpl::splitRunsWhenCompressPunction(ClusterIndex clusterIndex) {
     // Splits the head cluster of each line into a separate run.
     std::deque<SplitPoint> splitPoints;
-    if(clusterIndex > 0){
-        ClusterRange lastClusterRunClusterRange = cluster(clusterIndex-1).run().clusterRange();
-        ClusterRange split01ClusterRange = ClusterRange(lastClusterRunClusterRange.start, clusterIndex);//左闭右开
+    if (clusterIndex > 0) {
+        ClusterRange lastClusterRunClusterRange = cluster(clusterIndex - 1).run().clusterRange();
+        ClusterRange split01ClusterRange = ClusterRange(lastClusterRunClusterRange.start, clusterIndex);
         std::optional<SplitPoint> mySplitPont01 = generateSplitPoint(split01ClusterRange);
         splitPoints.push_back(*mySplitPont01);
     }
     ClusterRange split02ClusterRange = ClusterRange(clusterIndex, clusterIndex + 1);
-    std::optional<SplitPoint> mySplitPont02 = generateSplitPoint(split02ClusterRange);  
+    std::optional<SplitPoint> mySplitPont02 = generateSplitPoint(split02ClusterRange);
     splitPoints.push_back(*mySplitPont02);
     // The clusters size includes one extra element at the paragraph end.
-    if(clusterIndex + 1 < clusters().size() - 1) {
+    if (clusterIndex + 1 < clusters().size() - 1) {
         ClusterRange nextClusterRunClusterRange = cluster(clusterIndex + 1).run().clusterRange();
         ClusterRange split03ClusterRange = ClusterRange(clusterIndex + 1, nextClusterRunClusterRange.end);
-        std::optional<SplitPoint> mySplitPont03 = generateSplitPoint(split03ClusterRange);     
+        std::optional<SplitPoint> mySplitPont03 = generateSplitPoint(split03ClusterRange);
         splitPoints.push_back(*mySplitPont03);
     }
     splitRuns(splitPoints);
 }
 
-bool ParagraphImpl::IsShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
+bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
 {
     Cluster& originCluster = cluster(clusterIndex);
-    if ((!paragraphStyle().getCompressHeadPunctuation()) || (!originCluster.isChinesePunctuation())) {
+    if ((!paragraphStyle().getCompressHeadPunctuation()) || (!originCluster.isCompressPunctuation())) {
         return false;
     }
     // Shape a single cluster to get compressed glyph information.
@@ -793,7 +792,7 @@ TArray<SkShaper::Feature> ParagraphImpl::getAdjustedFontFeature(Block& compressB
 bool ParagraphImpl::needBreakShapedTextIntoLines()
 {
     Cluster& headCluster = cluster(0);
-    if (paragraphStyle().getCompressHeadPunctuation() && headCluster.isChinesePunctuation()) {
+    if (paragraphStyle().getCompressHeadPunctuation() && headCluster.isCompressPunctuation()) {
         return true;
     }
     return false;
@@ -1419,7 +1418,6 @@ SkScalar ParagraphImpl::detectIndents(size_t index)
 
 void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     resetAutoSpacing();
-    resetIsRealCompressedHeadPunctuation();
     // This is a short version of a line breaking when we know that:
     // 1. We have only one line of text
     // 2. It's shaped into a single run
@@ -2889,7 +2887,6 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fTrailingSpaces = this->fTrailingSpaces;
     paragraph->fLineNumber = this->fLineNumber;
     paragraph->fEllipsisRange = this->fEllipsisRange;
-    paragraph->fIsRealCompressedHeadPunctuation = this->fIsRealCompressedHeadPunctuation;
 
     for (auto& run : paragraph->fRuns) {
         run.setOwner(paragraph.get());

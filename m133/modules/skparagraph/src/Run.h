@@ -520,7 +520,7 @@ public:
     void setBadgeType(TextBadgeType badgeType) {
         fBadgeType = badgeType;
     }
-    bool isChinesePunctuation() const { return fNeedCompressPunctuation; }
+    bool isCompressPunctuation() const { return fNeedCompressPunctuation; }
     void updateWidth(SkScalar updateWidth) { fWidth = updateWidth; }
 #endif
 

@@ -177,8 +177,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     for (auto cluster = fEndLine.endCluster(); cluster < endOfClusters; ++cluster) {
         if (cluster == fEndLine.endCluster()) {
             ClusterIndex headClusterIndex = cluster->getOwner()->clusterIndex(cluster->textRange().start);
-            bool isprocessedHeadPunc = cluster->getOwner()->IsShapedCompressHeadPunctuation(headClusterIndex);
-            cluster->getOwner()->updateIsRealCompressedHeadPunctuation(isprocessedHeadPunc);
+            cluster->getOwner()->isShapedCompressHeadPunctuation(headClusterIndex);
         }
         totalFakeSpacing += (cluster->needAutoSpacing() && cluster != fEndLine.endCluster()) ?
             (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
