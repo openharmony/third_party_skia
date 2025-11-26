@@ -749,7 +749,7 @@ std::unique_ptr<Run> ParagraphImpl::shapeString(const SkString& str, const TextS
             return run;
         }
     }
-    return std::unique_ptr<Run>();
+    return nullptr;
 }
 
 TArray<SkShaper::Feature> ParagraphImpl::getAdjustedFontFeature(Block& compressBlock,
