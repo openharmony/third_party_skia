@@ -135,7 +135,6 @@ public:
     size_t maxlines;
     bool hasEllipsis;
     EllipsisModal ellipsisModal;
-    bool fIsRealCompressedHeadPunctuation;
 #endif
 };
 
@@ -462,11 +461,7 @@ void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
 }
 
 void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value) {
-    value->fIsRealCompressedHeadPunctuation = paragraph.IsRealCompressedHeadPunctuation();
-    if (paragraph.paragraphStyle().getCompressHeadPunctuation() && paragraph.IsRealCompressedHeadPunctuation()) {
-        value->fRuns = paragraph.fRuns;
-        value->fClusters = paragraph.fClusters;
-    } else if (paragraph.fRuns.size() == value->fRuns.size()) {
+    if (paragraph.fRuns.size() == value->fRuns.size()) {
         // update PlaceholderRun metrics cache value for placeholder alignment
         for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
             value->fRuns[idx].fAutoSpacings = paragraph.fRuns[idx].fAutoSpacings;
@@ -477,6 +472,10 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
             value->fRuns[idx].fCorrectAscent = paragraph.fRuns[idx].fCorrectAscent;
             value->fRuns[idx].fCorrectDescent = paragraph.fRuns[idx].fCorrectDescent;
         }
+    } else {
+        // Scenario of splitting runs during line breaking.
+        value->fRuns = paragraph.fRuns;
+        value->fClusters = paragraph.fClusters;
     }
     value->fLines.clear();
     value->indents.clear();
@@ -522,17 +521,7 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
     if (value->fLines.empty()) {
         return false;
     }
-    paragraph.fIsRealCompressedHeadPunctuation = value->fIsRealCompressedHeadPunctuation;
-    if (paragraph.paragraphStyle().getCompressHeadPunctuation() && value->fIsRealCompressedHeadPunctuation) {
-        paragraph.fRuns = value->fRuns;
-        for (auto& run : paragraph.fRuns) {
-            run.setOwner(&paragraph);
-        }
-        paragraph.fClusters = value->fClusters;
-        for (auto& cluster : paragraph.fClusters) {
-            cluster.setOwner(&paragraph);
-        }
-    } else if (paragraph.fRuns.size() == value->fRuns.size()) {
+    if (paragraph.fRuns.size() == value->fRuns.size()) {
         // get PlaceholderRun metrics for placeholder alignment
         for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
             paragraph.fRuns[idx].fAutoSpacings = value->fRuns[idx].fAutoSpacings;
