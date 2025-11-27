@@ -45,7 +45,8 @@ namespace textlayout {
 namespace {
 #ifdef ENABLE_TEXT_ENHANCE
 constexpr ParagraphPainter::PaintID INVALID_PAINT_ID = -1;
-constexpr int FEATURE_NAME_INDEX_TWO = 2, FEATURE_NAME_INDEX_THREE = 3;
+constexpr int FEATURE_NAME_INDEX_TWO = 2;
+constexpr int FEATURE_NAME_INDEX_THREE = 3;
 #endif
 
 SkScalar littleRound(SkScalar a) {
@@ -1483,7 +1484,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     TEXT_TRACE_FUNC();
     resetAutoSpacing();
-    resetIsNeedUpdateRunCache();
+    setNeedUpdateRunCache(false);
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
             this,

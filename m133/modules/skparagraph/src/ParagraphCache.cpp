@@ -135,7 +135,6 @@ public:
     size_t maxlines;
     bool hasEllipsis;
     EllipsisModal ellipsisModal;
-    bool isNeedUpdateRunCache;
 #endif
 };
 
@@ -462,8 +461,7 @@ void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
 }
 
 void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value) {
-    value->isNeedUpdateRunCache = paragraph.IsNeedUpdateRunCache();
-    if(value->isNeedUpdateRunCache) {
+    if(paragraph.isNeedUpdateRunCache()) {
         // Scenario of splitting runs during line breaking.
         value->fRuns = paragraph.fRuns;
         value->fClusters = paragraph.fClusters;

@@ -236,9 +236,8 @@ public:
 
     void splitRunsWhenCompressPunction(ClusterIndex clusterIndex);
     bool isShapedCompressHeadPunctuation(ClusterIndex clusterIndex);
-    void resetIsNeedUpdateRunCache() { fIsNeedUpdateRunCache = false; };
-    void updateIsNeedUpdateRunCache(bool state) { fIsNeedUpdateRunCache |= state; };
-    bool IsNeedUpdateRunCache() const { return fIsNeedUpdateRunCache; }
+    void setNeedUpdateRunCache(bool state) { fIsNeedUpdateRunCache = state; };
+    bool isNeedUpdateRunCache() const { return fIsNeedUpdateRunCache; }
     std::unique_ptr<Run> shapeString(const SkString& str, const TextStyle& textStyle,
         const SkShaper::Feature* features = nullptr, size_t featuresSize = 0);
     skia_private::TArray<SkShaper::Feature> getAdjustedFontFeature(Block& compressBlock,
