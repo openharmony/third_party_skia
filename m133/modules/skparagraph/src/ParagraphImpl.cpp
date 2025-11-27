@@ -649,19 +649,19 @@ void ParagraphImpl::splitRunsWhenCompressPunction(ClusterIndex clusterIndex) {
     std::deque<SplitPoint> splitPoints;
     if (clusterIndex > 0) {
         ClusterRange lastClusterRunClusterRange = cluster(clusterIndex - 1).run().clusterRange();
-        ClusterRange split01ClusterRange = ClusterRange(lastClusterRunClusterRange.start, clusterIndex);
-        std::optional<SplitPoint> mySplitPont01 = generateSplitPoint(split01ClusterRange);
-        splitPoints.push_back(*mySplitPont01);
+        ClusterRange beforePuncSplitClusterRange = ClusterRange(lastClusterRunClusterRange.start, clusterIndex);
+        std::optional<SplitPoint> beforePuncSplitPoint = generateSplitPoint(beforePuncSplitClusterRange);
+        splitPoints.push_back(*beforePuncSplitPoint);
     }
-    ClusterRange split02ClusterRange = ClusterRange(clusterIndex, clusterIndex + 1);
-    std::optional<SplitPoint> mySplitPont02 = generateSplitPoint(split02ClusterRange);
-    splitPoints.push_back(*mySplitPont02);
+    ClusterRange puncSplitClusterRange = ClusterRange(clusterIndex, clusterIndex + 1);
+    std::optional<SplitPoint> puncSplitPoint = generateSplitPoint(puncSplitClusterRange);
+    splitPoints.push_back(*puncSplitPoint);
     // The clusters size includes one extra element at the paragraph end.
     if (clusterIndex + 1 < clusters().size() - 1) {
         ClusterRange nextClusterRunClusterRange = cluster(clusterIndex + 1).run().clusterRange();
-        ClusterRange split03ClusterRange = ClusterRange(clusterIndex + 1, nextClusterRunClusterRange.end);
-        std::optional<SplitPoint> mySplitPont03 = generateSplitPoint(split03ClusterRange);
-        splitPoints.push_back(*mySplitPont03);
+        ClusterRange afterPuncSplitClusterRange = ClusterRange(clusterIndex + 1, nextClusterRunClusterRange.end);
+        std::optional<SplitPoint> afterPuncSplitPoint = generateSplitPoint(afterPuncSplitClusterRange);
+        splitPoints.push_back(*afterPuncSplitPoint);
     }
     splitRuns(splitPoints);
 }
@@ -678,14 +678,14 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
     Block& compressBlock = block(headPuncBlockRange.start);
     TArray<SkShaper::Feature> adjustedFeatures = getAdjustedFontFeature(compressBlock, headPuncRange);
     Run& originRun = originCluster.run();
-    std::vector<SkString> families = { SkString(originRun.fFont.GetTypeface()->GetFamilyName()) };
+    std::vector<SkString> families = {SkString(originRun.fFont.GetTypeface()->GetFamilyName())};
     TextStyle updateTextStyle = compressBlock.fStyle;
     updateTextStyle.setFontFamilies(families);
 
     SkSpan<const char> headPuncSpan = text(headPuncRange);
     SkString headPuncStr = SkString(headPuncSpan.data(), headPuncSpan.size());
     std::unique_ptr<Run> headCompressPuncRun = shapeString(headPuncStr, updateTextStyle,
-        adjustedFeatures.data(),adjustedFeatures.size());
+        adjustedFeatures.data(), adjustedFeatures.size());
     if (headCompressPuncRun == nullptr) {
         return false;
     }
