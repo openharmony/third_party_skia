@@ -45,7 +45,7 @@ namespace textlayout {
 namespace {
 #ifdef ENABLE_TEXT_ENHANCE
 constexpr ParagraphPainter::PaintID INVALID_PAINT_ID = -1;
-constexpr int INDEX_TWO = 2, INDEX_THREE = 3;
+constexpr int FEATURE_NAME_INDEX_TWO = 2, FEATURE_NAME_INDEX_THREE = 3;
 #endif
 
 SkScalar littleRound(SkScalar a) {
@@ -692,7 +692,7 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
     if (nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) {
         return false;
     }
-    // Split runs and replace run information in split02.
+    // Split runs and replace run information in punctuation split.
     splitRunsWhenCompressPunction(clusterIndex);
     Run& fixedRun = originCluster.run();
     TextRange splitedRange(fixedRun.clusterIndexes()[0] + fixedRun.fClusterStart,
@@ -756,7 +756,7 @@ TArray<SkShaper::Feature> ParagraphImpl::getAdjustedFontFeature(Block& compressB
     TextRange headPunctuationRange)
 {
     TArray<SkShaper::Feature> features;
-    TextStyle updateTextStyle  = compressBlock.fStyle;
+    const TextStyle& updateTextStyle  = compressBlock.fStyle;
 
     for (auto& ff : updateTextStyle.getFontFeatures()) {
         //  Font Feature size always is 4.
@@ -765,7 +765,8 @@ TArray<SkShaper::Feature> ParagraphImpl::getAdjustedFontFeature(Block& compressB
             continue;
         }
         SkShaper::Feature feature = {
-            SkSetFourByteTag(ff.fName[0], ff.fName[1], ff.fName[INDEX_TWO], ff.fName[INDEX_THREE]),
+            SkSetFourByteTag(ff.fName[0], ff.fName[1], ff.fName[FEATURE_NAME_INDEX_TWO],
+                ff.fName[FEATURE_NAME_INDEX_THREE]),
             SkToU32(ff.fValue),
             compressBlock.fRange.start,
             compressBlock.fRange.end
@@ -1482,6 +1483,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     TEXT_TRACE_FUNC();
     resetAutoSpacing();
+    resetIsNeedUpdateRunCache();
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
             this,

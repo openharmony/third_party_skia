@@ -135,6 +135,7 @@ public:
     size_t maxlines;
     bool hasEllipsis;
     EllipsisModal ellipsisModal;
+    bool isNeedUpdateRunCache;
 #endif
 };
 
@@ -172,8 +173,8 @@ void ParagraphCacheKey::computeHashMix(uint32_t& hash) const {
             hash = mix(hash, SkGoodHash()(ff));
         }
     }
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getCompressHeadPunctuation()));
     if (fParagraphStyle.getCompressHeadPunctuation()) {
-        hash = mix(hash, SkGoodHash()(fParagraphStyle.getCompressHeadPunctuation()));
         hash = mix(hash, SkGoodHash()(relax(fLayoutRawWidth)));
     }
 }
@@ -461,7 +462,12 @@ void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
 }
 
 void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value) {
-    if (paragraph.fRuns.size() == value->fRuns.size()) {
+    value->isNeedUpdateRunCache = paragraph.IsNeedUpdateRunCache();
+    if(value->isNeedUpdateRunCache) {
+        // Scenario of splitting runs during line breaking.
+        value->fRuns = paragraph.fRuns;
+        value->fClusters = paragraph.fClusters;
+    } else if (paragraph.fRuns.size() == value->fRuns.size()) {
         // update PlaceholderRun metrics cache value for placeholder alignment
         for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
             value->fRuns[idx].fAutoSpacings = paragraph.fRuns[idx].fAutoSpacings;
@@ -472,10 +478,6 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
             value->fRuns[idx].fCorrectAscent = paragraph.fRuns[idx].fCorrectAscent;
             value->fRuns[idx].fCorrectDescent = paragraph.fRuns[idx].fCorrectDescent;
         }
-    } else {
-        // Scenario of splitting runs during line breaking.
-        value->fRuns = paragraph.fRuns;
-        value->fClusters = paragraph.fClusters;
     }
     value->fLines.clear();
     value->indents.clear();
