@@ -508,6 +508,24 @@ class SkUnicode_icu : public SkUnicode {
         }
         return false;
     }
+    static bool isNeedCompressHeadPunctuation(SkUnichar unichar)
+    {
+        static const std::unordered_set<SkUnichar> compressionChars {
+            0x201C, // “: LEFT DOUBLE QUOTATION MARK
+            0x2018, // ‘: LEFT SINGLE QUOTATION MARK
+            0x3008, //〈: LEFT ANGLE BRACKET
+            0x300A, // 《:LEFT DOUBLE ANGLE BRACKET
+            0x300C, // 「: LEFT CORNER BRACKET
+            0x300E, // 『: LEFT WHITE CORNER BRACKET
+            0x3010, // 【: LEFT BLACK LENTICULAR BRACKET
+            0x3014, // 〔: LEFT TORTOISE SHELL BRACKET
+            0x3016, // 〖: LEFT WHITE LENTICULAR BRACKET
+            0xFF08, // （: FULLWIDTH LEFT PARENTHESIS
+            0xFF3B, // ［: FULLWIDTH LEFT SQUARE BRACKET
+            0xFF5B, // ｛: FULLWIDTH LEFT CURLY BRACKET
+        };
+        return compressionChars.count(unichar) > 0;
+    }
     static bool isEllipsis(SkUnichar unichar) { return (unichar == 0x2026 || unichar == 0x002E); }
     static bool isGraphemeExtend(SkUnichar unichar) {
         return sk_u_hasBinaryProperty(unichar, UCHAR_GRAPHEME_EXTEND);
@@ -631,6 +649,9 @@ public:
         }
         if (SkUnicode_icu::isEllipsis(unichar)) {
             results->at(i) |= SkUnicode::kEllipsis;
+        }
+        if (SkUnicode_icu::isNeedCompressHeadPunctuation(unichar)) {
+            results->at(i) |= SkUnicode::kNeedCompressHeadPunctuation;
         }
     }
 #endif

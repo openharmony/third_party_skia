@@ -45,6 +45,8 @@ namespace textlayout {
 namespace {
 #ifdef ENABLE_TEXT_ENHANCE
 constexpr ParagraphPainter::PaintID INVALID_PAINT_ID = -1;
+constexpr int FEATURE_NAME_INDEX_TWO = 2;
+constexpr int FEATURE_NAME_INDEX_THREE = 3;
 #endif
 
 SkScalar littleRound(SkScalar a) {
@@ -436,10 +438,9 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->fLines.clear();
 #ifdef ENABLE_TEXT_ENHANCE
         // fast path
-        if (!fHasLineBreaks &&
-            !fHasWhitespacesInside &&
-            fPlaceholders.size() == 1 &&
-            (fRuns.size() == 1 && preCalculateSingleRunAutoSpaceWidth(floorWidth))) {
+        if (!fHasLineBreaks && !fHasWhitespacesInside && fPlaceholders.size() == 1 &&
+            (fRuns.size() == 1 && preCalculateSingleRunAutoSpaceWidth(floorWidth)) &&
+            !needBreakShapedTextIntoLines()) {
             positionShapedTextIntoLine(floorWidth);
         } else if (!paragraphCache->GetStoredLayout(*this)) {
             breakShapedTextIntoLines(floorWidth);
@@ -642,6 +643,161 @@ void ParagraphImpl::splitRuns(std::deque<SplitPoint>& splitPoints) {
     }
     fRuns = std::move(newRuns);
     refreshLines();
+}
+
+void ParagraphImpl::splitRunsWhenCompressPunction(ClusterIndex clusterIndex) {
+    // Splits the head cluster of each line into a separate run.
+    std::deque<SplitPoint> splitPoints;
+    if (clusterIndex > 0) {
+        ClusterRange lastClusterRunClusterRange = cluster(clusterIndex - 1).run().clusterRange();
+        ClusterRange beforePuncSplitClusterRange = ClusterRange(lastClusterRunClusterRange.start, clusterIndex);
+        std::optional<SplitPoint> beforePuncSplitPoint = generateSplitPoint(beforePuncSplitClusterRange);
+        splitPoints.push_back(*beforePuncSplitPoint);
+    }
+    ClusterRange puncSplitClusterRange = ClusterRange(clusterIndex, clusterIndex + 1);
+    std::optional<SplitPoint> puncSplitPoint = generateSplitPoint(puncSplitClusterRange);
+    splitPoints.push_back(*puncSplitPoint);
+    // The clusters size includes one extra element at the paragraph end.
+    if (clusterIndex + 1 < clusters().size() - 1) {
+        ClusterRange nextClusterRunClusterRange = cluster(clusterIndex + 1).run().clusterRange();
+        ClusterRange afterPuncSplitClusterRange = ClusterRange(clusterIndex + 1, nextClusterRunClusterRange.end);
+        std::optional<SplitPoint> afterPuncSplitPoint = generateSplitPoint(afterPuncSplitClusterRange);
+        splitPoints.push_back(*afterPuncSplitPoint);
+    }
+    splitRuns(splitPoints);
+}
+
+bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
+{
+    Cluster& originCluster = cluster(clusterIndex);
+    if ((!paragraphStyle().getCompressHeadPunctuation()) || (!originCluster.isCompressPunctuation())) {
+        return false;
+    }
+    // Shape a single cluster to get compressed glyph information.
+    TextRange headPuncRange = originCluster.textRange();
+    BlockRange headPuncBlockRange = findAllBlocks(headPuncRange);
+    Block& compressBlock = block(headPuncBlockRange.start);
+    TArray<SkShaper::Feature> adjustedFeatures = getAdjustedFontFeature(compressBlock, headPuncRange);
+    Run& originRun = originCluster.run();
+    std::vector<SkString> families = {SkString(originRun.fFont.GetTypeface()->GetFamilyName())};
+    TextStyle updateTextStyle = compressBlock.fStyle;
+    updateTextStyle.setFontFamilies(families);
+
+    SkSpan<const char> headPuncSpan = text(headPuncRange);
+    SkString headPuncStr = SkString(headPuncSpan.data(), headPuncSpan.size());
+    std::unique_ptr<Run> headCompressPuncRun = shapeString(headPuncStr, updateTextStyle,
+        adjustedFeatures.data(), adjustedFeatures.size());
+    if (headCompressPuncRun == nullptr) {
+        return false;
+    }
+    if (nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) {
+        return false;
+    }
+    // Split runs and replace run information in punctuation split.
+    splitRunsWhenCompressPunction(clusterIndex);
+    Run& fixedRun = originCluster.run();
+    TextRange splitedRange(fixedRun.clusterIndexes()[0] + fixedRun.fClusterStart,
+        fixedRun.clusterIndexes()[1] + fixedRun.fClusterStart);
+    if (splitedRange.start == originCluster.textRange().start && splitedRange.end == originCluster.textRange().end) {
+        SkScalar spacing = headCompressPuncRun->advances()[0].x() - originCluster.width();
+        originCluster.updateWidth(originCluster.width() + spacing);
+        fixedRun.setWidth(fixedRun.fAdvanceX() + spacing);
+        fixedRun.updateCompressedRunMeasureInfo(*headCompressPuncRun);
+    }
+    return true;
+}
+
+std::unique_ptr<Run> ParagraphImpl::shapeString(const SkString& str, const TextStyle& textStyle,
+    const SkShaper::Feature* features, size_t featuresSize)
+{
+    auto shaped = [&](std::shared_ptr<RSTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
+        ShapeHandler handler(textStyle.getHeight(), textStyle.getHalfLeading(), textStyle.getTotalVerticalShift(), str);
+        RSFont font(typeface, textStyle.getCorrectFontSize(), 1, 0);
+        font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
+        font.SetHinting(RSDrawing::FontHinting::SLIGHT);
+        font.SetSubpixel(true);
+        std::unique_ptr<SkShaper> shaper = SkShapers::HB::ShapeDontWrapOrReorder(this->getUnicode(),
+            fallback ? RSFontMgr::CreateDefaultFontMgr() : RSFontMgr::CreateDefaultFontMgr());
+        const SkBidiIterator::Level defaultLevel = SkBidiIterator::kLTR;
+        const char* utf8 = str.c_str();
+        size_t utf8Bytes = str.size();
+
+        std::unique_ptr<SkShaper::BiDiRunIterator> bidi = SkShapers::unicode::BidiRunIterator(this->getUnicode(), utf8,
+            utf8Bytes, defaultLevel);
+        SkASSERT(bidi);
+        std::unique_ptr<SkShaper::LanguageRunIterator> language = SkShaper::MakeStdLanguageRunIterator(utf8, utf8Bytes);
+        SkASSERT(language);
+        std::unique_ptr<SkShaper::ScriptRunIterator> script = SkShapers::HB::ScriptRunIterator(utf8, utf8Bytes);
+        SkASSERT(script);
+        std::unique_ptr<SkShaper::FontRunIterator> fontRuns = SkShaper::MakeFontMgrRunIterator(utf8, utf8Bytes, font,
+            RSFontMgr::CreateDefaultFontMgr());
+        SkASSERT(fontRuns);
+
+        shaper->shape(utf8, utf8Bytes, *fontRuns, *bidi, *script, *language, features, featuresSize,
+                      std::numeric_limits<SkScalar>::max(), &handler);
+        auto shapedRun = handler.run();
+
+        shapedRun->fTextRange = TextRange(0, str.size());
+        shapedRun->fOwner = this;
+        return shapedRun;
+    };
+    // Check all allowed fonts.
+    auto typefaces = this->fontCollection()->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(),
+        textStyle.getFontArguments());
+    for (const auto& typeface : typefaces) {
+        auto run = shaped(typeface, false);
+        if (run->isResolved()) {
+            return run;
+        }
+    }
+    return nullptr;
+}
+
+TArray<SkShaper::Feature> ParagraphImpl::getAdjustedFontFeature(Block& compressBlock,
+    TextRange headPunctuationRange)
+{
+    TArray<SkShaper::Feature> features;
+    const TextStyle& updateTextStyle  = compressBlock.fStyle;
+
+    for (auto& ff : updateTextStyle.getFontFeatures()) {
+        //  Font Feature size always is 4.
+        if (ff.fName.size() != 4) {
+            TEXT_LOGW("Incorrect font feature: %{public}s = %{public}d", ff.fName.c_str(), ff.fValue);
+            continue;
+        }
+        SkShaper::Feature feature = {
+            SkSetFourByteTag(ff.fName[0], ff.fName[1], ff.fName[FEATURE_NAME_INDEX_TWO],
+                ff.fName[FEATURE_NAME_INDEX_THREE]),
+            SkToU32(ff.fValue),
+            compressBlock.fRange.start,
+            compressBlock.fRange.end
+        };
+        features.emplace_back(feature);
+    }
+    features.emplace_back(SkShaper::Feature{
+        // Apply ss08 font feature to compress punctuation.
+        SkSetFourByteTag('s', 's', '0', '8'), 1, compressBlock.fRange.start, compressBlock.fRange.end
+    });
+    // Map the block's features to subranges within the unresolved range.
+    TArray<SkShaper::Feature> adjustedFeatures(features.size());
+    for (const SkShaper::Feature& feature : features) {
+        SkRange<size_t> featureRange(feature.start, feature.end);
+        if (headPunctuationRange.intersects(featureRange)) {
+            SkRange<size_t> adjustedRange = headPunctuationRange.intersection(featureRange);
+            adjustedRange.Shift(-static_cast<std::make_signed_t<size_t>>(headPunctuationRange.start));
+            adjustedFeatures.push_back({feature.tag, feature.value, adjustedRange.start, adjustedRange.end});
+        }
+    }
+    return adjustedFeatures;
+}
+
+bool ParagraphImpl::needBreakShapedTextIntoLines()
+{
+    Cluster& headCluster = cluster(0);
+    if (paragraphStyle().getCompressHeadPunctuation() && headCluster.isCompressPunctuation()) {
+        return true;
+    }
+    return false;
 }
 #endif
 
@@ -967,6 +1123,8 @@ Cluster::Cluster(ParagraphImpl* owner,
 #ifdef ENABLE_TEXT_ENHANCE
             fIsPunctuation = fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kPunctuation) | fIsPunctuation;
             fIsEllipsis = fOwner->codeUnitHasProperty(i, SkUnicode::CodeUnitFlags::kEllipsis) | fIsEllipsis;
+            fNeedCompressPunctuation = fOwner->codeUnitHasProperty(i,
+                SkUnicode::CodeUnitFlags::kNeedCompressHeadPunctuation);
 #endif
         }
     }
@@ -1326,6 +1484,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     TEXT_TRACE_FUNC();
     resetAutoSpacing();
+    setNeedUpdateRunCache(false);
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
             this,

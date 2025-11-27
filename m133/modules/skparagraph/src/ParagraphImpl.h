@@ -27,6 +27,8 @@
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
+#include "modules/skshaper/include/SkShaper_harfbuzz.h"
+#include "modules/skshaper/include/SkShaper_skunicode.h"
 #include "modules/skunicode/include/SkUnicode.h"
 #include "src/base/SkBitmaskEnum.h"
 #include "src/core/SkTHash.h"
@@ -231,6 +233,52 @@ public:
     void updateSplitRunClusterInfo(const Run& run, bool isSplitRun);
     void refreshLines();
     bool isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated);
+
+    void splitRunsWhenCompressPunction(ClusterIndex clusterIndex);
+    bool isShapedCompressHeadPunctuation(ClusterIndex clusterIndex);
+    void setNeedUpdateRunCache(bool state) { fIsNeedUpdateRunCache = state; };
+    bool isNeedUpdateRunCache() const { return fIsNeedUpdateRunCache; }
+    std::unique_ptr<Run> shapeString(const SkString& str, const TextStyle& textStyle,
+        const SkShaper::Feature* features = nullptr, size_t featuresSize = 0);
+    skia_private::TArray<SkShaper::Feature> getAdjustedFontFeature(Block& compressBlock,
+        TextRange headPunctuationRange);
+
+    SkScalar getLayoutRawWidth() const { return fLayoutRawWidth; }
+    bool needBreakShapedTextIntoLines();
+    class ShapeHandler final : public SkShaper::RunHandler {
+    public:
+        ShapeHandler(SkScalar lineHeight, bool useHalfLeading, SkScalar baselineShift, const SkString& str)
+            : fRun(nullptr), fLineHeight(lineHeight), fUseHalfLeading(useHalfLeading),
+            fBaselineShift(baselineShift), fStr(str) {}
+        std::unique_ptr<Run> run() & { return std::move(fRun); }
+
+    private:
+        void beginLine() override {}
+
+        void runInfo(const RunInfo&) override {}
+
+        void commitRunInfo() override {}
+
+        Buffer runBuffer(const RunInfo& info) override {
+            SkASSERT(!fRun);
+            fRun = std::make_unique<Run>(nullptr, info, 0, fLineHeight, fUseHalfLeading, fBaselineShift, 0, 0);
+            return fRun->newRunBuffer();
+        }
+
+        void commitRunBuffer(const RunInfo& info) override {
+            fRun->fAdvance.fX = info.fAdvance.fX;
+            fRun->fAdvance.fY = fRun->advance().fY;
+            fRun->fPlaceholderIndex = std::numeric_limits<size_t>::max();
+        }
+
+        void commitLine() override {}
+
+        std::unique_ptr<Run> fRun;
+        SkScalar fLineHeight;
+        bool fUseHalfLeading;
+        SkScalar fBaselineShift;
+        SkString fStr;
+    };
 #endif
 
     bool strutEnabled() const { return paragraphStyle().getStrutStyle().getStrutEnabled(); }
@@ -473,6 +521,7 @@ private:
     bool fSkipTextBlobDrawing{false};
     int fEllipsisRunIndexOffset{0};
     bool fIsEllipsisReplaceFitCluster{false};
+    bool fIsNeedUpdateRunCache{false};
 #endif
 };
 }  // namespace textlayout

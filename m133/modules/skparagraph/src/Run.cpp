@@ -431,6 +431,19 @@ void Run::generateSplitRun(Run& splitRun, const SplitPoint& splitPoint) {
     }
     updateSplitRunMesureInfo(splitRun, startClusterPos, endClusterPos);
 }
+
+void Run::updateCompressedRunMeasureInfo(Run& headCompressPuncRun) {
+    fGlyphs[0] = headCompressPuncRun.glyphs()[0];
+    fOffsets[0] = headCompressPuncRun.offsets()[0];
+    fGlyphAdvances[0] = headCompressPuncRun.advances()[0];
+    fPositions[1].fX = fPositions[0].fX + fGlyphAdvances[0].fX ;
+
+    fGlyphData->glyphs[0] = fGlyphs[0];
+    fGlyphData->offsets[0] = fOffsets[0];
+    fGlyphData->advances[0] = fGlyphAdvances[0];
+    fGlyphData->positions[1].set(fPositions[1].fX, fPositions[1].fY);
+}
+
 #endif
 
 SkShaper::RunHandler::Buffer Run::newRunBuffer() {

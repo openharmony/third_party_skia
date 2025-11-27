@@ -175,6 +175,13 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     bool attemptedHyphenate = false;
 
     for (auto cluster = fEndLine.endCluster(); cluster < endOfClusters; ++cluster) {
+        if (cluster == fEndLine.endCluster()) {
+            ClusterIndex headClusterIndex = cluster->getOwner()->clusterIndex(cluster->textRange().start);
+            bool isProcessedHeadPunc = fParent->isShapedCompressHeadPunctuation(headClusterIndex);
+            if (isProcessedHeadPunc) {
+                fParent->setNeedUpdateRunCache(true);
+            }
+        }
         totalFakeSpacing += (cluster->needAutoSpacing() && cluster != fEndLine.endCluster()) ?
             (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
         SkScalar widthBeforeCluster = fWords.width() + fClusters.width() + totalFakeSpacing;

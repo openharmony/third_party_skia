@@ -40,7 +40,8 @@ public:
         : fText(paragraph->fText.c_str(), paragraph->fText.size())
         , fPlaceholders(paragraph->fPlaceholders)
         , fTextStyles(paragraph->fTextStyles)
-        , fParagraphStyle(paragraph->paragraphStyle()) {
+        , fParagraphStyle(paragraph->paragraphStyle())
+        , fLayoutRawWidth (paragraph->getLayoutRawWidth()) {
         fHash = computeHash();
     }
 
@@ -51,7 +52,8 @@ public:
         , fPlaceholders(std::move(other.fPlaceholders))
         , fTextStyles(std::move(other.fTextStyles))
         , fParagraphStyle(std::move(other.fParagraphStyle))
-        , fHash(other.fHash) {
+        , fHash(other.fHash)
+        , fLayoutRawWidth (other.fLayoutRawWidth) {
         other.fHash = 0;
     }
 
@@ -77,6 +79,7 @@ private:
     TArray<Block, true> fTextStyles;
     ParagraphStyle fParagraphStyle;
     uint32_t fHash;
+    SkScalar fLayoutRawWidth;
 };
 
 class ParagraphCacheValue {
@@ -168,6 +171,10 @@ void ParagraphCacheKey::computeHashMix(uint32_t& hash) const {
         for (auto& ff : strutStyle.getFontFamilies()) {
             hash = mix(hash, SkGoodHash()(ff));
         }
+    }
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getCompressHeadPunctuation()));
+    if (fParagraphStyle.getCompressHeadPunctuation()) {
+        hash = mix(hash, SkGoodHash()(relax(fLayoutRawWidth)));
     }
 }
 
@@ -454,7 +461,11 @@ void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
 }
 
 void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value) {
-    if (paragraph.fRuns.size() == value->fRuns.size()) {
+    if(paragraph.isNeedUpdateRunCache()) {
+        // Scenario of splitting runs during line breaking.
+        value->fRuns = paragraph.fRuns;
+        value->fClusters = paragraph.fClusters;
+    } else if (paragraph.fRuns.size() == value->fRuns.size()) {
         // update PlaceholderRun metrics cache value for placeholder alignment
         for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
             value->fRuns[idx].fAutoSpacings = paragraph.fRuns[idx].fAutoSpacings;
@@ -529,9 +540,8 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
     }
     paragraph.setSize(value->fHeight, value->fWidth, value->fLongestLine);
     paragraph.setLongestLineWithIndent(value->fLongestLineWithIndent);
-    paragraph.setIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
-        value->fAlphabeticBaseline, value->fIdeographicBaseline,
-        value->fExceededMaxLines);
+    paragraph.setIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth, value->fAlphabeticBaseline,
+        value->fIdeographicBaseline, value->fExceededMaxLines);
     return true;
 }
 #endif

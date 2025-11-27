@@ -182,6 +182,7 @@ public:
     void updateSplitRunMesureInfo(Run& splitRun, size_t startClusterPos, size_t endClusterPos);
     void generateSplitRun(Run& splitRun, const SplitPoint& splitPoint);
     void updatePlaceholderAlignmentIfNeeded(PlaceholderAlignment& alignment, TextVerticalAlign paragraphAlignment);
+    void updateCompressedRunMeasureInfo(Run& headCompressPuncRun);
 #endif
     SkScalar calculateHeight(LineMetricStyle ascentStyle, LineMetricStyle descentStyle) const {
         auto ascent = ascentStyle == LineMetricStyle::Typographic ? this->ascent()
@@ -519,6 +520,8 @@ public:
     void setBadgeType(TextBadgeType badgeType) {
         fBadgeType = badgeType;
     }
+    bool isCompressPunctuation() const { return fNeedCompressPunctuation; }
+    void updateWidth(SkScalar updateWidth) { fWidth = updateWidth; }
 #endif
 
     bool isSoftBreak() const;
@@ -582,6 +585,7 @@ private:
     bool fIsPunctuation{false};
     bool fIsEllipsis{false};
     bool fNeedAutoSpacing{false}; // depend on last cluster flag
+    bool fNeedCompressPunctuation{false};
     bool fHyphenBreak{false};
     TextBadgeType fBadgeType{TextBadgeType::BADGE_NONE};
 #endif

@@ -94,6 +94,7 @@ class SKUNICODE_API SkUnicode : public SkRefCnt {
             kCombine = 0x1000,
             kPunctuation = 0x2000,
             kEllipsis = 0x4000,
+            kNeedCompressHeadPunctuation = 0x8000,
 #endif
         };
         enum class TextDirection {
