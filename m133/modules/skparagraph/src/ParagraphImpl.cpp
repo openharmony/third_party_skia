@@ -47,6 +47,8 @@ namespace {
 constexpr ParagraphPainter::PaintID INVALID_PAINT_ID = -1;
 constexpr int FEATURE_NAME_INDEX_TWO = 2;
 constexpr int FEATURE_NAME_INDEX_THREE = 3;
+const SkString DEFAULT_FONT_FAMILY_NAME = SkString("HarmonyOS Sans");
+const SkString FONT_PADDING_SHAPE_STRING = SkString("a");
 #endif
 
 SkScalar littleRound(SkScalar a) {

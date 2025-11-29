@@ -42,11 +42,6 @@ class SkCanvas;
 
 namespace skia {
 namespace textlayout {
-#ifdef ENABLE_OHOS_ENHANCE
-const SkString DEFAULT_FONT_FAMILY_NAME = SkString("HarmonyOS Sans");
-const SkString FONT_PADDING_SHAPE_STRING = SkString("a");
-#endif
-
 class LineMetrics;
 class TextLine;
 
