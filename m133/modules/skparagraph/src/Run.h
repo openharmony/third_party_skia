@@ -132,6 +132,8 @@ public:
     SkScalar correctLeading() const { return fCorrectLeading; }
 #ifdef ENABLE_TEXT_ENHANCE
     const RSFont& font() const { return fFont; }
+    SkScalar top() const { return fFontMetrics.fTop + fBaselineShift; }
+    SkScalar bottom() const { return fFontMetrics.fBottom + fBaselineShift; }
 #else
     const SkFont& font() const { return fFont; }
 #endif
@@ -717,6 +719,16 @@ public:
     SkScalar runTop(const Run* run, LineMetricStyle ascentStyle) const {
         return fLeading / 2 - fAscent + (ascentStyle == LineMetricStyle::Typographic ?
             run->ascent() : run->correctAscent() + run->getVerticalAlignShift()) + delta();
+    }
+
+    void extendMetricsTop(Run* run) {
+        fAscent -= abs(run->top() - run->ascent());
+        fRawAscent -= abs(run->top() - run->ascent());
+    }
+
+    void extendMetricsBottom(Run* run) {
+        fDescent += abs(run->bottom() - run->descent());
+        fRawDescent += abs(run->bottom() - run->descent());
     }
 #else
     SkScalar runTop(const Run* run, LineMetricStyle ascentStyle) const {

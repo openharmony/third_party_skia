@@ -1069,6 +1069,9 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
             parent->strutMetrics().updateLineMetrics(fEndLine.metrics());
         }
 
+        fParent->includeFontPadding(firstLine, lastLine || (startLine == end && !fHardLineBreak),
+            fEndLine.metrics(), text);
+
         SkScalar lineHeight = fEndLine.metrics().height();
         if (needLineSpacing) {
             lineHeight += lineSpacing;
@@ -1669,6 +1672,7 @@ SkScalar TextWrapper::calculateLineHeight() {
 void TextWrapper::addFormattedLineToParagraph(const AddLineToParagraph& addLine,
                                               bool needEllipsis) {
     LineTextRanges ranges = calculateLineTextRanges();
+    fParent->includeFontPadding(fFirstLine, fIsLastLine, fEndLine.metrics(), ranges.text);
     SkScalar lineHeight = calculateLineHeight();
     SkScalar offsetX = fParent->detectIndents(fLineNumber - 1);
 

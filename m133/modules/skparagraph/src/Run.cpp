@@ -254,6 +254,9 @@ void Run::calculateMetricsWithoutHeightScale() {
     }
     SkScalar originRunHeight = fCorrectDescent - fCorrectAscent;
     SkScalar runHeight = std::min(std::max(originRunHeight, getMinLineHeight()), getMaxLineHeight());
+    if (runHeight < originRunHeight && owner() && owner()->paragraphStyle().getFallbackLineSpacing()) {
+        runHeight = originRunHeight;
+    }
     const auto multiplier = nearlyZero(originRunHeight) ? 0 : runHeight / originRunHeight;
     fCorrectAscent *= multiplier;
     fCorrectDescent *= multiplier;
@@ -280,6 +283,9 @@ void Run::calculateMetrics() {
     // If the maxLineHeight is less than 0, it is meaningless and the it is set to max of type float
     if (runHeight >= 0) {
         runHeight = std::min(std::max(runHeight, getMinLineHeight()), getMaxLineHeight());
+    }
+    if (runHeight < fontIntrinsicHeight && owner() && owner()->paragraphStyle().getFallbackLineSpacing()) {
+        runHeight = fontIntrinsicHeight;
     }
 #else
     if (SkScalarNearlyZero(fHeightMultiplier)) {

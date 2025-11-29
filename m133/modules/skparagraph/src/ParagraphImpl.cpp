@@ -508,6 +508,38 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
+void ParagraphImpl::includeFontPadding(bool isFirstLine, bool isLastLine, InternalLineMetrics& metrics,
+    TextRange textRange) {
+    if (!paragraphStyle().getIncludeFontPadding()) {
+        return;
+    }
+    TextStyle textStyle = paragraphStyle().getTextStyle();
+    BlockRange blockRange = findAllBlocks(textRange);
+    if (!blockRange.empty()) {
+        textStyle = styles()[blockRange.start].fStyle;
+    }
+    for (size_t blockIndex = blockRange.start; blockIndex < blockRange.end; ++blockIndex) {
+        const Block& block = styles()[blockIndex];
+        if (block.fStyle.getCorrectFontSize() <= textStyle.getCorrectFontSize()) {
+            continue;
+        }
+        textStyle = block.fStyle;
+    }
+    textStyle.setFontFamilies({DEFAULT_FONT_FAMILY_NAME});
+    std::unique_ptr<Run> run = shapeString(FONT_PADDING_SHAPE_STRING, textStyle);
+    if (run == nullptr) {
+        LOGE("Failed to shape font padding string");
+        return;
+    }
+
+    if (isFirstLine && run) {
+        metrics.extendMetricsTop(run.get());
+    }
+    if (isLastLine && run) {
+        metrics.extendMetricsBottom(run.get());
+    }
+}
+
 void ParagraphImpl::updateSplitRunClusterInfo(const Run& run, bool isSplitRun) {
     size_t posOffset = run.leftToRight() ? cluster(run.clusterRange().start).startPos() :
         cluster(run.clusterRange().end - 1).startPos();
@@ -1446,6 +1478,7 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     if (this->strutEnabled()) {
         this->strutMetrics().updateLineMetrics(metrics);
     }
+    includeFontPadding(true, true, metrics, textRange);
     ClusterIndex trailingSpaces = fClusters.size();
     do {
         --trailingSpaces;

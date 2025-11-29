@@ -166,6 +166,8 @@ struct ParagraphStyle {
                this->fEnableAutoSpace == rhs.fEnableAutoSpace &&
                this->fCompressHeadPunctuation == rhs.fCompressHeadPunctuation &&
                this->fVerticalAlignment == rhs.fVerticalAlignment &&
+               this->fIncludeFontPadding == rhs.fIncludeFontPadding &&
+               this->fFallbackLineSpacing == rhs.fFallbackLineSpacing &&
                nearlyEqual(this->fLineSpacing, rhs.fLineSpacing) &&
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
 #else
@@ -258,6 +260,10 @@ struct ParagraphStyle {
     }
     SkScalar getLineSpacing() const { return fLineSpacing; }
     void setLineSpacing(SkScalar lineSpacing) { fLineSpacing = lineSpacing; }
+    bool getIncludeFontPadding() const { return fIncludeFontPadding; }
+    void setIncludeFontPadding(bool includeFontPadding) { fIncludeFontPadding = includeFontPadding; }
+    bool getFallbackLineSpacing() const { return fFallbackLineSpacing; }
+    void setFallbackLineSpacing(bool fallbackLineSpacing) { fFallbackLineSpacing = fallbackLineSpacing; }
 #endif
     bool getApplyRoundingHack() const { return fApplyRoundingHack; }
     void setApplyRoundingHack(bool value) { fApplyRoundingHack = value; }
@@ -287,6 +293,8 @@ private:
     bool fCompressHeadPunctuation{false};
     TextVerticalAlign fVerticalAlignment{TextVerticalAlign::BASELINE};
     SkScalar fLineSpacing{0.0f};
+    bool fIncludeFontPadding{false};
+    bool fFallbackLineSpacing{false};
 #endif
 };
 }  // namespace textlayout

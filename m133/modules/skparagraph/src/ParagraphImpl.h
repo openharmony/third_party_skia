@@ -42,6 +42,10 @@ class SkCanvas;
 
 namespace skia {
 namespace textlayout {
+#ifdef ENABLE_OHOS_ENHANCE
+const SkString DEFAULT_FONT_FAMILY_NAME = SkString("HarmonyOS Sans");
+const SkString FONT_PADDING_SHAPE_STRING = SkString("a");
+#endif
 
 class LineMetrics;
 class TextLine;
@@ -230,6 +234,7 @@ public:
     bool isAutoSpaceEnabled() const;
     SkScalar clusterUsingAutoSpaceWidth(const Cluster& cluster) const;
     const SkString& getText() const { return fText; }
+    void includeFontPadding(bool isFirstLine, bool isLastLine, InternalLineMetrics& metrics, TextRange textRange);
     void updateSplitRunClusterInfo(const Run& run, bool isSplitRun);
     void refreshLines();
     bool isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated);
