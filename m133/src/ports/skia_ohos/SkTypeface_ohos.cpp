@@ -181,4 +181,13 @@ void SkTypeface_OHOS::updateStream(std::unique_ptr<SkStreamAsset> stream)
     }
 }
 
+int32_t SkTypeface_OHOS::getFontIndex() const
+{
+    int32_t index = 0;
+    if (fontInfo != nullptr) {
+        index = fontInfo->index;
+    }
+    return index;
+}
+
 #endif // ENABLE_TEXT_ENHANCE
