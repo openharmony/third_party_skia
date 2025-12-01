@@ -49,15 +49,7 @@ GrVkTexture::GrVkTexture(GrVkGpu* gpu,
     SkASSERT(!fTexture->ycbcrConversionInfo().isValid() ||
              !fTexture->ycbcrConversionInfo().fExternalFormat);
     SkASSERT(SkToBool(fTexture->vkUsageFlags() & VK_IMAGE_USAGE_SAMPLED_BIT));
-#ifdef SKIA_OHOS
-    if (fTexture->GetBudgeted() == skgpu::Budgeted::kYes) {
-        this->registerWithCache(skgpu::Budgeted::kNo);
-    } else {
-        this->registerWithCache(budgeted);
-    }
-#else
     this->registerWithCache(budgeted);
-#endif
     if (skgpu::VkFormatIsCompressed(fTexture->imageFormat())) {
         this->setReadOnly();
     }
