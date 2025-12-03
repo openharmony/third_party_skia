@@ -208,14 +208,6 @@ class TextWrapper {
         void shiftWidth(SkScalar width) {
             fWidth += width;
         }
-
-        void extendMetricsTop(Run* run) {
-            fMetrics.extendMetricsTop(run);
-        }
-
-        void extendMetricsBottom(Run* run) {
-            fMetrics.extendMetricsBottom(run);
-        }
 #endif
     private:
         ClusterPos fStart;

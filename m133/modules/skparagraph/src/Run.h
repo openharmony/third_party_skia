@@ -721,14 +721,14 @@ public:
             run->ascent() : run->correctAscent() + run->getVerticalAlignShift()) + delta();
     }
 
-    void extendMetricsTop(Run* run) {
-        fAscent -= abs(run->top() - run->ascent());
-        fRawAscent -= abs(run->top() - run->ascent());
+    void extendMetricsTop(float padding) {
+        fAscent -= padding;
+        fRawAscent -= padding;
     }
 
-    void extendMetricsBottom(Run* run) {
-        fDescent += abs(run->bottom() - run->descent());
-        fRawDescent += abs(run->bottom() - run->descent());
+    void extendMetricsBottom(float padding) {
+        fDescent += padding;
+        fRawDescent += padding;
     }
 #else
     SkScalar runTop(const Run* run, LineMetricStyle ascentStyle) const {

@@ -47,8 +47,10 @@ namespace {
 constexpr ParagraphPainter::PaintID INVALID_PAINT_ID = -1;
 constexpr int FEATURE_NAME_INDEX_TWO = 2;
 constexpr int FEATURE_NAME_INDEX_THREE = 3;
-const SkString DEFAULT_FONT_FAMILY_NAME = SkString("HarmonyOS Sans");
-const SkString FONT_PADDING_SHAPE_STRING = SkString("a");
+constexpr float DEFAULT_FONT_TOP_PADDING_RATION = 0.128f;
+constexpr float DEFAULT_FONT_BOTTOM_PADDING_RATION = 0.027f;
+constexpr float TOP_PADDING_SCALE_RATION = 2.0f;
+constexpr float BOTTOM_PADDING_SCALE_RATION = 4.0f;
 #endif
 
 SkScalar littleRound(SkScalar a) {
@@ -510,35 +512,33 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
-void ParagraphImpl::includeFontPadding(bool isFirstLine, bool isLastLine, InternalLineMetrics& metrics,
-    TextRange textRange) {
-    if (!paragraphStyle().getIncludeFontPadding()) {
+void ParagraphImpl::includeFontPadding(
+    bool isFirstLine, bool isLastLine, InternalLineMetrics& metrics, const TextRange& textRange) {
+    if (!paragraphStyle().getIncludeFontPadding() || !(isFirstLine || isLastLine)) {
         return;
     }
+
     TextStyle textStyle = paragraphStyle().getTextStyle();
     BlockRange blockRange = findAllBlocks(textRange);
-    if (!blockRange.empty()) {
-        textStyle = styles()[blockRange.start].fStyle;
+    const SkSpan<Block>& blocks = styles();
+    if (!blocks.empty() && blockRange.start < blocks.size()) {
+        textStyle = blocks[blockRange.start].fStyle;
     }
     for (size_t blockIndex = blockRange.start; blockIndex < blockRange.end; ++blockIndex) {
-        const Block& block = styles()[blockIndex];
+        const Block& block = blocks[blockIndex];
         if (block.fStyle.getCorrectFontSize() <= textStyle.getCorrectFontSize()) {
             continue;
         }
         textStyle = block.fStyle;
     }
-    textStyle.setFontFamilies({DEFAULT_FONT_FAMILY_NAME});
-    std::unique_ptr<Run> run = shapeString(FONT_PADDING_SHAPE_STRING, textStyle);
-    if (run == nullptr) {
-        LOGE("Failed to shape font padding string");
-        return;
-    }
 
-    if (isFirstLine && run) {
-        metrics.extendMetricsTop(run.get());
+    if (isFirstLine) {
+        metrics.extendMetricsTop(
+            textStyle.getCorrectFontSize() * DEFAULT_FONT_TOP_PADDING_RATION * TOP_PADDING_SCALE_RATION);
     }
-    if (isLastLine && run) {
-        metrics.extendMetricsBottom(run.get());
+    if (isLastLine) {
+        metrics.extendMetricsBottom(
+            textStyle.getCorrectFontSize() * DEFAULT_FONT_BOTTOM_PADDING_RATION * BOTTOM_PADDING_SCALE_RATION);
     }
 }
 

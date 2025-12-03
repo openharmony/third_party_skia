@@ -229,7 +229,8 @@ public:
     bool isAutoSpaceEnabled() const;
     SkScalar clusterUsingAutoSpaceWidth(const Cluster& cluster) const;
     const SkString& getText() const { return fText; }
-    void includeFontPadding(bool isFirstLine, bool isLastLine, InternalLineMetrics& metrics, TextRange textRange);
+    void includeFontPadding(
+        bool isFirstLine, bool isLastLine, InternalLineMetrics& metrics, const TextRange& textRange);
     void updateSplitRunClusterInfo(const Run& run, bool isSplitRun);
     void refreshLines();
     bool isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated);
