@@ -24,6 +24,7 @@ public:
     ~SkTypeface_OHOS() override = default;
     const FontInfo* getFontInfo() const;
     void updateStream(std::unique_ptr<SkStreamAsset> stream) override;
+    int32_t getFontIndex() const override;
 protected:
     std::unique_ptr<SkStreamAsset> onOpenStream(int* ttcIndex) const override;
     std::unique_ptr<SkFontData> onMakeFontData() const override;
