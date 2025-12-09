@@ -722,8 +722,11 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
     if (headCompressPuncRun == nullptr) {
         return false;
     }
-    if ((nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) ||
-        (originRun.fFont.GetTypeface()->GetFamilyName() != headCompressPuncRun->fFont.GetTypeface()->GetFamilyName())) {
+    if (nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) {
+        return false;
+    }
+    if (originRun.fFont.GetTypeface()->GetFamilyName() != headCompressPuncRun->fFont.GetTypeface()->GetFamilyName()) {
+        TEXT_LOGI_LIMIT3_MIN("Typeface familyname different");
         return false;
     }
     // Split runs and replace run information in punctuation split.
