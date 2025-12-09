@@ -726,7 +726,7 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
         return false;
     }
     if (originRun.fFont.GetTypeface()->GetFamilyName() != headCompressPuncRun->fFont.GetTypeface()->GetFamilyName()) {
-        TEXT_LOGI_LIMIT3_MIN("Typeface familyname different");
+        TEXT_LOGI_LIMIT3_MIN("Compress Punctuation Typeface familyname is different");
         return false;
     }
     // Split runs and replace run information in punctuation split.
