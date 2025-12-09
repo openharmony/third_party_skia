@@ -713,9 +713,7 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
     Block& compressBlock = block(headPuncBlockRange.start);
     TArray<SkShaper::Feature> adjustedFeatures = getAdjustedFontFeature(compressBlock, headPuncRange);
     Run& originRun = originCluster.run();
-    std::vector<SkString> families = {SkString(originRun.fFont.GetTypeface()->GetFamilyName())};
     TextStyle updateTextStyle = compressBlock.fStyle;
-    updateTextStyle.setFontFamilies(families);
 
     SkSpan<const char> headPuncSpan = text(headPuncRange);
     SkString headPuncStr = SkString(headPuncSpan.data(), headPuncSpan.size());
@@ -724,7 +722,8 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
     if (headCompressPuncRun == nullptr) {
         return false;
     }
-    if (nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) {
+    if ((nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) ||
+        (originRun.fFont.GetTypeface() != headCompressPuncRun->fFont.GetTypeface())) {
         return false;
     }
     // Split runs and replace run information in punctuation split.
