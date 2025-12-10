@@ -240,7 +240,7 @@ public:
     void setNeedUpdateRunCache(bool state) { fIsNeedUpdateRunCache = state; };
     bool isNeedUpdateRunCache() const { return fIsNeedUpdateRunCache; }
     std::unique_ptr<Run> shapeString(const SkString& str, const TextStyle& textStyle,
-        const SkShaper::Feature* features = nullptr, size_t featuresSize = 0);
+        std::shared_ptr<RSTypeface> typeface, const SkShaper::Feature* features = nullptr, size_t featuresSize = 0);
     skia_private::TArray<SkShaper::Feature> getAdjustedFontFeature(Block& compressBlock,
         TextRange headPunctuationRange);
 

@@ -717,7 +717,7 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
 
     SkSpan<const char> headPuncSpan = text(headPuncRange);
     SkString headPuncStr = SkString(headPuncSpan.data(), headPuncSpan.size());
-    std::unique_ptr<Run> headCompressPuncRun = shapeString(headPuncStr, updateTextStyle,
+    std::unique_ptr<Run> headCompressPuncRun = shapeString(headPuncStr, updateTextStyle, originRun.fFont.GetTypeface(),
         adjustedFeatures.data(), adjustedFeatures.size());
     if (headCompressPuncRun == nullptr) {
         return false;
@@ -725,8 +725,8 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
     if (nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) {
         return false;
     }
-    if (originRun.fFont.GetTypeface()->GetFamilyName() != headCompressPuncRun->fFont.GetTypeface()->GetFamilyName()) {
-        TEXT_LOGI_LIMIT3_MIN("Compress Punctuation Typeface familyname is different");
+    if (originRun.fFont.GetTypeface() != headCompressPuncRun->fFont.GetTypeface()) {
+        TEXT_LOGI_LIMIT3_MIN("Compress Punctuation Typeface is different");
         return false;
     }
     // Split runs and replace run information in punctuation split.
@@ -744,7 +744,7 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
 }
 
 std::unique_ptr<Run> ParagraphImpl::shapeString(const SkString& str, const TextStyle& textStyle,
-    const SkShaper::Feature* features, size_t featuresSize)
+    std::shared_ptr<RSTypeface> typeface, const SkShaper::Feature* features, size_t featuresSize)
 {
     auto shaped = [&](std::shared_ptr<RSTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
         ShapeHandler handler(textStyle.getHeight(), textStyle.getHalfLeading(), textStyle.getTotalVerticalShift(), str);
@@ -777,14 +777,10 @@ std::unique_ptr<Run> ParagraphImpl::shapeString(const SkString& str, const TextS
         shapedRun->fOwner = this;
         return shapedRun;
     };
-    // Check all allowed fonts.
-    auto typefaces = this->fontCollection()->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(),
-        textStyle.getFontArguments());
-    for (const auto& typeface : typefaces) {
-        auto run = shaped(typeface, false);
-        if (run->isResolved()) {
-            return run;
-        }
+    // Using the specified typeface.
+    auto run = shaped(typeface, false);
+    if (run->isResolved()) {
+        return run;
     }
     return nullptr;
 }
