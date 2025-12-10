@@ -725,10 +725,6 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
     if (nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) {
         return false;
     }
-    if (originRun.fFont.GetTypeface() != headCompressPuncRun->fFont.GetTypeface()) {
-        TEXT_LOGI_LIMIT3_MIN("Compress Punctuation Typeface is different");
-        return false;
-    }
     // Split runs and replace run information in punctuation split.
     splitRunsWhenCompressPunction(clusterIndex);
     Run& fixedRun = originCluster.run();
