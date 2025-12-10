@@ -1353,9 +1353,6 @@ void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
             startWidth += usingAutoSpaceWidth(&fOwner->cluster(startIndex++));
         } else {
             endWidth += usingAutoSpaceWidth(&fOwner->cluster(endIndex--));
-            if (fOwner->cluster(endIndex).isStartCombineBreak()) {
-                continue;
-            }
         }
         if (ellipsisRun != nullptr && (startWidth + endWidth + ellipsisRun->advance().fX) >= maxWidth) {
             break;
