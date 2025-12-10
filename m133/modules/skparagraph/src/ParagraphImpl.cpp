@@ -713,13 +713,11 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
     Block& compressBlock = block(headPuncBlockRange.start);
     TArray<SkShaper::Feature> adjustedFeatures = getAdjustedFontFeature(compressBlock, headPuncRange);
     Run& originRun = originCluster.run();
-    std::vector<SkString> families = {SkString(originRun.fFont.GetTypeface()->GetFamilyName())};
     TextStyle updateTextStyle = compressBlock.fStyle;
-    updateTextStyle.setFontFamilies(families);
 
     SkSpan<const char> headPuncSpan = text(headPuncRange);
     SkString headPuncStr = SkString(headPuncSpan.data(), headPuncSpan.size());
-    std::unique_ptr<Run> headCompressPuncRun = shapeString(headPuncStr, updateTextStyle,
+    std::unique_ptr<Run> headCompressPuncRun = shapeString(headPuncStr, updateTextStyle, originRun.fFont.GetTypeface(),
         adjustedFeatures.data(), adjustedFeatures.size());
     if (headCompressPuncRun == nullptr) {
         return false;
@@ -742,7 +740,7 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
 }
 
 std::unique_ptr<Run> ParagraphImpl::shapeString(const SkString& str, const TextStyle& textStyle,
-    const SkShaper::Feature* features, size_t featuresSize)
+    std::shared_ptr<RSTypeface> typeface, const SkShaper::Feature* features, size_t featuresSize)
 {
     auto shaped = [&](std::shared_ptr<RSTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
         ShapeHandler handler(textStyle.getHeight(), textStyle.getHalfLeading(), textStyle.getTotalVerticalShift(), str);
@@ -775,14 +773,10 @@ std::unique_ptr<Run> ParagraphImpl::shapeString(const SkString& str, const TextS
         shapedRun->fOwner = this;
         return shapedRun;
     };
-    // Check all allowed fonts.
-    auto typefaces = this->fontCollection()->findTypefaces(textStyle.getFontFamilies(), textStyle.getFontStyle(),
-        textStyle.getFontArguments());
-    for (const auto& typeface : typefaces) {
-        auto run = shaped(typeface, false);
-        if (run->isResolved()) {
-            return run;
-        }
+    // Using the specified typeface.
+    auto run = shaped(typeface, false);
+    if (run->isResolved()) {
+        return run;
     }
     return nullptr;
 }
