@@ -424,11 +424,20 @@ public:
 
     ::piex::Error GetData(const size_t offset, const size_t length,
                           uint8* data) override {
+        size_t sum;
+        if (!safe_add_to_size_t(offset, length, &sum)) {
+            return ::piex::Error::kFail;
+        }
+        if (sum > maxMemorySize) {
+            return ::piex::Error::kFail;
+        }
         return fStream->read(static_cast<void*>(data), offset, length) ?
             ::piex::Error::kOk : ::piex::Error::kFail;
     }
 
 private:
+    // Max memory size limit 2G
+    const size_t maxMemorySize = 2147483648;
     SkRawStream* fStream;
 };
 
