@@ -1,25 +1,58 @@
 /*
- * jdhuff.h
- *
- * This file was part of the Independent JPEG Group's software:
- * Copyright (C) 1991-1997, Thomas G. Lane.
- * libjpeg-turbo Modifications:
- * Copyright (C) 2010-2011, 2015-2016, 2021, D. R. Commander.
- * Copyright (C) 2018, Matthias Räncker.
- * For conditions of distribution and use, see the accompanying README.ijg
- * file.
- *
- * This file contains declarations for Huffman entropy decoding routines
- * that are shared between the sequential decoder (jdhuff.c) and the
- * progressive decoder (jdphuff.c).  No other modules need to see these.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
  */
+
+#ifndef JDHUFF_OPT_H
+#define JDHUFF_OPT_H
 
 #include "jconfigint.h"
 
+#define HUFF_LOOKAHEAD  8
 
+// OH ISSUE: jpeg optimize
 /* Derived data constructed for each Huffman table */
+#define MAX_HUFF_CODE_LEN 16
 
-#define HUFF_LOOKAHEAD  8       /* # of bits of lookahead */
+#define HUFF_LOOKAHEAD_OPT  10      /* # of bits of lookahead  9-13 maybe */
+#define HUFF_AC_SYMBOLS 192
+
+#define HUFF_L_REM (16 - HUFF_LOOKAHEAD_OPT)
+#define HUFF_L_DUP ((1 << HUFF_L_REM) - (HUFF_L_REM + 1))
+#define HUFF_L_UNUSED ((1 << HUFF_L_REM) - (1 << ((HUFF_L_REM)/2)) - (1 << ((HUFF_L_REM + 1)/2)) + 1)
+#define HUFF_L_SIZE (HUFF_AC_SYMBOLS + HUFF_L_DUP + HUFF_L_UNUSED)
+#define HUFF_CODE_LARGE_LONG_ALIGNED (HUFF_L_SIZE + (-HUFF_L_SIZE & 0xf))
+
+#define COEF_BITS_OFFSET 0
+#define COEF_BITS_BITS 4
+#define ZERO_NUM1_OFFSET 4
+#define ZERO_NUM_BITS 7
+#define NB_OFFSET 11
+#define NB_BITS 5
+#define COEF1_OFFSET 16
+#define COEF_VALUE_BITS 16
+
+#define EXTRA_BITS_OFFSET COEF_BITS_OFFSET  // 2nd table offset bits
+#define EXTRA_BITS_BITS COEF_BITS_BITS
+
+#define SYM_OFFSET COEF_BITS_OFFSET
+
+#define MAKE_BITS(x, s)  (x) << (s)
+#define GETS_BITS(x, s, l)  (((x) >> (s)) & ((0x1L << (l)) - 1))
+
+#define MAKE_ZERO_NUM1(x) MAKE_BITS((x), ZERO_NUM1_OFFSET)
+#define MAKE_COEF_BITS(x) MAKE_BITS((x), COEF_BITS_OFFSET)
+#define MAKE_SYM(x) MAKE_BITS((x), SYM_OFFSET)
+#define MAKE_NB(x) MAKE_BITS((x), NB_OFFSET)
+#define MAKE_COEF1(x) (unsigned long long) MAKE_BITS((UINT16) (x), COEF1_OFFSET)
+#define MAKE_BASE(x) MAKE_BITS((x), COEF1_OFFSET)
+#define MAKE_EXTRA_BITS(x) MAKE_BITS((x), EXTRA_BITS_OFFSET)
+
+#define GET_ZERO_NUM1(x) GETS_BITS((x), ZERO_NUM1_OFFSET, ZERO_NUM_BITS)
+#define GET_COEF_BITS(x) GETS_BITS((x), COEF_BITS_OFFSET, COEF_BITS_BITS)
+#define GET_NB(x) GETS_BITS((x), NB_OFFSET, NB_BITS)
+#define GET_COEF1(x) GETS_BITS((x), COEF1_OFFSET, COEF_VALUE_BITS)
+#define GET_BASE(x) GETS_BITS((x), COEF1_OFFSET, COEF_VALUE_BITS)
+#define GET_EXTRA_BITS(x) GETS_BITS((x), EXTRA_BITS_OFFSET, EXTRA_BITS_BITS)
 
 typedef struct {
   /* Basic tables: (element [0] of each array is unused) */
@@ -46,6 +79,13 @@ typedef struct {
    */
   int lookup[1 << HUFF_LOOKAHEAD];
 } d_derived_tbl;
+
+typedef struct {
+  JLONG maxcode[18];            /* largest code of length k (-1 if none) */
+  JLONG valoffset[18];          /* huffval[] offset for codes of length k */
+  JHUFF_TBL *pub;
+  int lookup[(1 << HUFF_LOOKAHEAD_OPT) + HUFF_CODE_LARGE_LONG_ALIGNED];
+} d_derived_tbl2;
 
 /* Expand a Huffman table definition into the derived format */
 EXTERN(void) jpeg_make_d_derived_tbl(j_decompress_ptr cinfo, boolean isDC,
@@ -124,17 +164,17 @@ typedef struct {                /* Bitreading working state within an MCU */
   bitread_working_state br_state
 
 #define BITREAD_LOAD_STATE(cinfop, permstate) \
-  br_state.cinfo = cinfop; \
-  br_state.next_input_byte = cinfop->src->next_input_byte; \
-  br_state.bytes_in_buffer = cinfop->src->bytes_in_buffer; \
-  get_buffer = permstate.get_buffer; \
-  bits_left = permstate.bits_left;
+  br_state.cinfo = (cinfop); \
+  br_state.next_input_byte = (cinfop)->src->next_input_byte; \
+  br_state.bytes_in_buffer = (cinfop)->src->bytes_in_buffer; \
+  get_buffer = (permstate).get_buffer; \
+  bits_left = (permstate).bits_left
 
 #define BITREAD_SAVE_STATE(cinfop, permstate) \
-  cinfop->src->next_input_byte = br_state.next_input_byte; \
-  cinfop->src->bytes_in_buffer = br_state.bytes_in_buffer; \
-  permstate.get_buffer = get_buffer; \
-  permstate.bits_left = bits_left
+  (cinfop)->src->next_input_byte = br_state.next_input_byte; \
+  (cinfop)->src->bytes_in_buffer = br_state.bytes_in_buffer; \
+  (permstate).get_buffer = get_buffer; \
+  (permstate).bits_left = bits_left
 
 /*
  * These macros provide the in-line portion of bit fetching.
@@ -194,54 +234,65 @@ EXTERN(boolean) jpeg_fill_bit_buffer(bitread_working_state *state,
  * 3. jpeg_huff_decode returns -1 if forced to suspend.
  */
 
-#define HUFF_DECODE(result, state, htbl, failaction, slowlabel) { \
+#define HUFF_DECODE0(result, state, htbl, failaction, slowlabel, lookahead) { \
   register int nb, look; \
-  if (bits_left < HUFF_LOOKAHEAD) { \
-    if (!jpeg_fill_bit_buffer(&state, get_buffer, bits_left, 0)) \
+  if (bits_left < (lookahead)) { \
+    if (!jpeg_fill_bit_buffer(&(state), get_buffer, bits_left, 0)) \
       { failaction; } \
-    get_buffer = state.get_buffer;  bits_left = state.bits_left; \
-    if (bits_left < HUFF_LOOKAHEAD) { \
+    get_buffer = (state).get_buffer;  bits_left = (state).bits_left; \
+    if (bits_left < (lookahead)) { \
       nb = 1;  goto slowlabel; \
     } \
   } \
-  look = PEEK_BITS(HUFF_LOOKAHEAD); \
-  if ((nb = (htbl->lookup[look] >> HUFF_LOOKAHEAD)) <= HUFF_LOOKAHEAD) { \
+  look = PEEK_BITS((lookahead)); \
+  if ((nb = ((htbl)->lookup[look] >> (lookahead))) <= (lookahead)) { \
     DROP_BITS(nb); \
-    result = htbl->lookup[look] & ((1 << HUFF_LOOKAHEAD) - 1); \
+    result = (htbl)->lookup[look] & ((1 << (lookahead)) - 1); \
   } else { \
 slowlabel: \
-    if ((result = \
-         jpeg_huff_decode(&state, get_buffer, bits_left, htbl, nb)) < 0) \
+    if (((result) = \
+         jpeg_huff_decode(&(state), get_buffer, bits_left, htbl, nb)) < 0) \
       { failaction; } \
-    get_buffer = state.get_buffer;  bits_left = state.bits_left; \
+    get_buffer = (state).get_buffer;  bits_left = (state).bits_left; \
   } \
 }
 
-#define HUFF_DECODE_FAST(s, nb, htbl) \
+#define HUFF_DECODE(result, state, htbl, failaction, slowlabel) \
+    HUFF_DECODE0(result, state, htbl, failaction, slowlabel, HUFF_LOOKAHEAD)
+
+#define HUFF_DECODE_TBL2(result, state, htbl, failaction, slowlabel) \
+    HUFF_DECODE0(result, state, htbl, failaction, slowlabel, HUFF_LOOKAHEAD_OPT)
+
+#define HUFF_DECODE_FAST0(s, nb, htbl, lookahead) \
   FILL_BIT_BUFFER_FAST; \
-  s = PEEK_BITS(HUFF_LOOKAHEAD); \
-  s = htbl->lookup[s]; \
-  nb = s >> HUFF_LOOKAHEAD; \
-  /* Pre-execute the common case of nb <= HUFF_LOOKAHEAD */ \
-  DROP_BITS(nb); \
-  s = s & ((1 << HUFF_LOOKAHEAD) - 1); \
-  if (nb > HUFF_LOOKAHEAD) { \
+  (s) = PEEK_BITS(lookahead); \
+  (s) = (htbl)->lookup[s]; \
+  (nb) = (s) >> (lookahead); \
+  /* Pre-execute the common case of nb <= lookahead */ \
+  DROP_BITS((nb)); \
+  (s) = (s) & ((1 << (lookahead)) - 1); \
+  if ((nb) > (lookahead)) { \
     /* Equivalent of jpeg_huff_decode() */ \
     /* Don't use GET_BITS() here because we don't want to modify bits_left */ \
-    s = (get_buffer >> bits_left) & ((1 << (nb)) - 1); \
-    while (s > htbl->maxcode[nb]) { \
-      s <<= 1; \
-      s |= GET_BITS(1); \
-      nb++; \
+    (s) = (get_buffer >> bits_left) & ((1 << (nb)) - 1); \
+    while ((s) > (htbl)->maxcode[nb]) { \
+      (s) <<= 1; \
+      (s) |= GET_BITS(1); \
+      (nb)++; \
     } \
-    if (nb > 16) \
-      s = 0; \
+    if ((nb) > 16) \
+      (s) = 0; \
     else \
-      s = htbl->pub->huffval[(int)(s + htbl->valoffset[nb]) & 0xFF]; \
+      (s) = (htbl)->pub->huffval[(int)((s) + (htbl)->valoffset[(nb)]) & 0xFF]; \
   }
+
+#define HUFF_DECODE_FAST(s, nb, htbl) HUFF_DECODE_FAST0(s, nb, htbl, HUFF_LOOKAHEAD)
+#define HUFF_DECODE_FAST_TBL2(s, nb, htbl) HUFF_DECODE_FAST0(s, nb, htbl, HUFF_LOOKAHEAD_OPT)
 
 /* Out-of-line case for Huffman code fetching */
 EXTERN(int) jpeg_huff_decode(bitread_working_state *state,
                              register bit_buf_type get_buffer,
                              register int bits_left, d_derived_tbl *htbl,
                              int min_bits);
+
+#endif
