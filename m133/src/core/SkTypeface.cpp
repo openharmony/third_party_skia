@@ -66,11 +66,7 @@ SkTypeface::SkTypeface(const SkFontStyle& style, bool isFixedPitch)
 std::function<void(uint32_t)> SkTypeface::fTypefaceDestroyed = nullptr;
 SkTypeface::~SkTypeface() {
     if (fTypefaceDestroyed) {
-        if (GetFd() == -1) {
-            fTypefaceDestroyed(uniqueID());
-        } else {
-            fTypefaceDestroyed(GetHash());
-        }
+        fTypefaceDestroyed(uniqueID());
     }
 }
 void SkTypeface::RegisterOnTypefaceDestroyed(std::function<void(uint32_t)> cb) {
