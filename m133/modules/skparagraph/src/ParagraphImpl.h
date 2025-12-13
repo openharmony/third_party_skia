@@ -51,6 +51,9 @@ template <typename T> bool operator<=(const SkSpan<T>& a, const SkSpan<T>& b) {
     return a.begin() >= b.begin() && a.end() <= b.end();
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+using BlockVisitor = std::function<void(const Block& block, const ClusterRange& clusterRange)>;
+#endif
 template <typename TStyle>
 struct StyleBlock {
     StyleBlock() : fRange(EMPTY_RANGE), fStyle() { }
@@ -361,6 +364,14 @@ public:
     void setEllipsisRunIndexOffset(int offset) { fEllipsisRunIndexOffset = offset; }
     bool IsEllipsisReplaceFitCluster() const { return fIsEllipsisReplaceFitCluster; }
     void setIsEllipsisReplaceFitCluster(bool state) { fIsEllipsisReplaceFitCluster = state; }
+    // Add path information for a specific line and cluster range.
+    void addPathInfoFromLine(const TextLine& line, const ClusterRange& range, std::vector<PathInfo>& pathInfo);
+    /**
+     * Get the text path information for a specific cluster range.
+     * @param range The cluster range of glyphs to include.
+     * @return A vector of PathInfo objects representing the text paths for the specified cluster range.
+     */
+    std::vector<PathInfo> getTextPathByClusterRange(SkRange<size_t> range) override;
 #endif
 private:
     friend class ParagraphBuilder;
