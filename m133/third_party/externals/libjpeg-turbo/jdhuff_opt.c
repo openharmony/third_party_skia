@@ -24,10 +24,12 @@
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
-#include "jdhuff.h"             /* Declarations shared with jdphuff.c */
+#include "jdhuff_opt.h"             /* Declarations shared with jdphuff.c */
 #include "jpegcomp.h"
 #include "jstdhuff.c"
 
+#define SMALL_IMAGE_WIDTH_THRESHOLD  512
+#define SMALL_IMAGE_HEIGHT_THRESHOLD 512
 
 /*
  * Expanded entropy decoder object for Huffman decoding.
@@ -99,16 +101,22 @@ static const int extend_offset[16] = { /* entry n is (-1 << n) + 1 */
 
 #endif /* AVOID_TABLES */
 
+#define FORCE_INLINE static __attribute__((always_inline))
+
+METHODDEF(void)
+jpeg_make_d_derived_tbl2(j_decompress_ptr cinfo, boolean isDC, int tblno,
+                         d_derived_tbl2 **pdtbl);
+
 /*
  * Initialize for a Huffman-compressed scan.
  */
 
-METHODDEF(void)
-start_pass_huff_decoder(j_decompress_ptr cinfo)
+FORCE_INLINE void
+start_pass_huff_decoder_common(j_decompress_ptr cinfo, int use_tbl2)
 {
   huff_entropy_ptr entropy = (huff_entropy_ptr)cinfo->entropy;
   int ci, blkn, dctbl, actbl;
-  d_derived_tbl **pdtbl;
+  void **pdtbl;
   jpeg_component_info *compptr;
 
   /* Check that the scan parameters Ss, Se, Ah/Al are OK for sequential JPEG.
@@ -125,10 +133,18 @@ start_pass_huff_decoder(j_decompress_ptr cinfo)
     actbl = compptr->ac_tbl_no;
     /* Compute derived values for Huffman tables */
     /* We may do this more than once for a table, but it's not expensive */
-    pdtbl = (d_derived_tbl **)(entropy->dc_derived_tbls) + dctbl;
-    jpeg_make_d_derived_tbl(cinfo, TRUE, dctbl, pdtbl);
-    pdtbl = (d_derived_tbl **)(entropy->ac_derived_tbls) + actbl;
-    jpeg_make_d_derived_tbl(cinfo, FALSE, actbl, pdtbl);
+    if (use_tbl2) {
+      pdtbl = (void **)(entropy->dc_derived_tbls) + dctbl;
+      jpeg_make_d_derived_tbl2(cinfo, TRUE, dctbl, (d_derived_tbl2 **)pdtbl);
+      pdtbl = (void **)(entropy->ac_derived_tbls) + actbl;
+      jpeg_make_d_derived_tbl2(cinfo, FALSE, actbl, (d_derived_tbl2 **)pdtbl);
+    } else {
+      pdtbl = (void **)(entropy->dc_derived_tbls) + dctbl;
+      jpeg_make_d_derived_tbl(cinfo, TRUE, dctbl, (d_derived_tbl **)pdtbl);
+      pdtbl = (void **)(entropy->ac_derived_tbls) + actbl;
+      jpeg_make_d_derived_tbl(cinfo, FALSE, actbl, (d_derived_tbl **)pdtbl);
+    }
+
     /* Initialize DC predictions to 0 */
     entropy->saved.last_dc_val[ci] = 0;
   }
@@ -159,8 +175,20 @@ start_pass_huff_decoder(j_decompress_ptr cinfo)
   entropy->restarts_to_go = cinfo->restart_interval;
 }
 
+METHODDEF(void)
+start_pass_huff_decoder(j_decompress_ptr cinfo)
+{
+  start_pass_huff_decoder_common(cinfo, 0);
+}
+
+METHODDEF(void)
+start_pass_huff_decoder_tbl2(j_decompress_ptr cinfo)
+{
+  start_pass_huff_decoder_common(cinfo, 1);
+}
+
 LOCAL(void)
-jpeg_make_d_ac_derived_tbl(JHUFF_TBL *htbl, d_derived_tbl *dtbl, const unsigned int* huffcode)
+jpeg_make_d_ac_derived_tbl(JHUFF_TBL *htbl, d_derived_tbl2 *dtbl, const unsigned int* huffcode)
 {
   // Look up tables for AC, index is huffman code, value is the symbol and the length
   // htbl->bits[l], number of symbol that of which the code length is l
@@ -169,18 +197,18 @@ jpeg_make_d_ac_derived_tbl(JHUFF_TBL *htbl, d_derived_tbl *dtbl, const unsigned 
   // nb <= LOOKAHEAD
   p = 0;
   int coef0;
-  for (l = 1; l <= HUFF_LOOKAHEAD; l++) {
+  for (l = 1; l <= HUFF_LOOKAHEAD_OPT; l++) {
     for (i = 1; i <= (int)htbl->bits[l]; i++, p++) {
       /* l = current code's length, p = its index in huffcode[] & huffval[]. */
       /* Generate left-justified code followed by all possible bit sequences */
       UINT8 rs = htbl->huffval[p]; // run length symbol (zero num + coeff bits)
       UINT8 coef_bits = rs & 0x0F;
-      if ((l + coef_bits) <= HUFF_LOOKAHEAD) {
+      if ((l + coef_bits) <= HUFF_LOOKAHEAD_OPT) {
         // save DCT coeffs in higher bits
         for (coef0 = 0; coef0 < (1 << coef_bits); coef0++) {
           INT16 coef_value = HUFF_EXTEND(coef0, coef_bits);  // save value after extended.
-          lookbits = (huffcode[p] << (HUFF_LOOKAHEAD - l)) | (coef0 << (HUFF_LOOKAHEAD - l - coef_bits));
-          for (ctr = 1 << (HUFF_LOOKAHEAD - l - coef_bits); ctr > 0; ctr--) {
+          lookbits = (huffcode[p] << (HUFF_LOOKAHEAD_OPT - l)) | (coef0 << (HUFF_LOOKAHEAD_OPT - l - coef_bits));
+          for (ctr = 1 << (HUFF_LOOKAHEAD_OPT - l - coef_bits); ctr > 0; ctr--) {
             if (coef_bits == 0 && (rs >> 4) != 0xF) { // the low 4 bits are number of coef bits
               // use 63 to exit the loop when symbol is 00
               dtbl->lookup[lookbits] = MAKE_COEF1(coef_value) | MAKE_NB(l + coef_bits) | MAKE_ZERO_NUM1(63);
@@ -193,8 +221,8 @@ jpeg_make_d_ac_derived_tbl(JHUFF_TBL *htbl, d_derived_tbl *dtbl, const unsigned 
         }
       } else {
         // same as the original lookup table
-        lookbits = huffcode[p] << (HUFF_LOOKAHEAD - l);
-        for (ctr = 1 << (HUFF_LOOKAHEAD - l); ctr > 0; ctr--) {
+        lookbits = huffcode[p] << (HUFF_LOOKAHEAD_OPT - l);
+        for (ctr = 1 << (HUFF_LOOKAHEAD_OPT - l); ctr > 0; ctr--) {
           dtbl->lookup[lookbits] = MAKE_NB(l) | MAKE_SYM(rs);
           lookbits++;
         }
@@ -203,9 +231,9 @@ jpeg_make_d_ac_derived_tbl(JHUFF_TBL *htbl, d_derived_tbl *dtbl, const unsigned 
   }
   // nb > LOOKAHEAD
   int offset = 0;
-  int base = 1 << HUFF_LOOKAHEAD;
+  int base = 1 << HUFF_LOOKAHEAD_OPT;
   int short_tbl_index = 0xFFFFFFFF;
-  int cur_long_tbl_base = 1 << HUFF_LOOKAHEAD;
+  int cur_long_tbl_base = 1 << HUFF_LOOKAHEAD_OPT;
   int left;
   int offset_bit = 0;
   int first = p;  // the index of the first code of this length.
@@ -215,22 +243,22 @@ jpeg_make_d_ac_derived_tbl(JHUFF_TBL *htbl, d_derived_tbl *dtbl, const unsigned 
         break;
     }
   }
-  for (l = HUFF_LOOKAHEAD + 1; l <= MAX_HUFF_CODE_LEN; l++) {
+  for (l = HUFF_LOOKAHEAD_OPT + 1; l <= MAX_HUFF_CODE_LEN; l++) {
     for (i = 1; i <= (int)htbl->bits[l]; i++, p++) {
       UINT8 rs = htbl->huffval[p]; // run length symbol (zero num + coeff bits)
       UINT8 coef_bits = rs & 0x0f;
       // similar as 1st table as before
-      lookbits = huffcode[p] >> (l - HUFF_LOOKAHEAD); // index in 1st table
+      lookbits = huffcode[p] >> (l - HUFF_LOOKAHEAD_OPT); // index in 1st table
       // check if a new 2nd tbl should be created
       if (lookbits != short_tbl_index) {
         short_tbl_index = lookbits;
         cur_long_tbl_base += offset;
         offset = 0;
-        offset_bit = l - HUFF_LOOKAHEAD;
+        offset_bit = l - HUFF_LOOKAHEAD_OPT;
         left = (1 << offset_bit) - (htbl->bits[l] - (p - first));
-        while (offset_bit + HUFF_LOOKAHEAD < max_code_len && left > 0) {
+        while (offset_bit + HUFF_LOOKAHEAD_OPT < max_code_len && left > 0) {
           offset_bit++;
-          left = (left << 1) - htbl->bits[offset_bit + HUFF_LOOKAHEAD];
+          left = (left << 1) - htbl->bits[offset_bit + HUFF_LOOKAHEAD_OPT];
         }
       }
       base = cur_long_tbl_base;
@@ -238,7 +266,7 @@ jpeg_make_d_ac_derived_tbl(JHUFF_TBL *htbl, d_derived_tbl *dtbl, const unsigned 
       dtbl->lookup[lookbits] = MAKE_BASE(base) | MAKE_NB(l) | MAKE_EXTRA_BITS(offset_bit);
       // set 2nd table value
       // index is guarenteed to be valid
-      for (ctr = 0; ctr < (1 << (offset_bit - (l - HUFF_LOOKAHEAD))); ctr++) {
+      for (ctr = 0; ctr < (1 << (offset_bit - (l - HUFF_LOOKAHEAD_OPT))); ctr++) {
         if (coef_bits == 0) {
           dtbl->lookup[base + offset] = MAKE_NB(l) | MAKE_SYM(rs) | MAKE_COEF_BITS(0xF);
         } else {
@@ -258,9 +286,9 @@ jpeg_make_d_ac_derived_tbl(JHUFF_TBL *htbl, d_derived_tbl *dtbl, const unsigned 
  * Note this is also used by jdphuff.c.
  */
 
-GLOBAL(void)
-jpeg_make_d_derived_tbl(j_decompress_ptr cinfo, boolean isDC, int tblno,
-                        d_derived_tbl **pdtbl)
+FORCE_INLINE void
+jpeg_make_d_derived_tbl_common(j_decompress_ptr cinfo, boolean isDC, int tblno,
+                        void **pdtbl, int use_tbl2)
 {
   JHUFF_TBL *htbl;
   d_derived_tbl *dtbl;
@@ -283,10 +311,16 @@ jpeg_make_d_derived_tbl(j_decompress_ptr cinfo, boolean isDC, int tblno,
     ERREXIT1(cinfo, JERR_NO_HUFF_TABLE, tblno);
 
   /* Allocate a workspace if we haven't already done so. */
-  if (*pdtbl == NULL)
-    *pdtbl = (d_derived_tbl *)
-      (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
-                                  sizeof(d_derived_tbl));
+  if (*pdtbl == NULL) {
+    if (use_tbl2) {
+      *pdtbl = (*cinfo->mem->alloc_small)((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                      sizeof(d_derived_tbl2));
+    } else {
+      *pdtbl = (*cinfo->mem->alloc_small)((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                      sizeof(d_derived_tbl));
+    }
+  }
+
   dtbl = *pdtbl;
   dtbl->pub = htbl;             /* fill in back link */
 
@@ -348,18 +382,37 @@ jpeg_make_d_derived_tbl(j_decompress_ptr cinfo, boolean isDC, int tblno,
    * with that code.
    */
 
-  for (i = 0; i < (1 << HUFF_LOOKAHEAD); i++) {
-    dtbl->lookup[i] = (HUFF_LOOKAHEAD + 1) << HUFF_LOOKAHEAD;
-  }
-  for (; i < (1 << HUFF_LOOKAHEAD) + HUFF_CODE_LARGE_LONG_ALIGNED; i++) {
-    dtbl->lookup[i] = 0;
-  }
+  if (use_tbl2) {
+    d_derived_tbl2 *dtbl2 = (d_derived_tbl2 *)dtbl;
+    for (i = 0; i < (1 << HUFF_LOOKAHEAD_OPT); i++) {
+      dtbl2->lookup[i] = (HUFF_LOOKAHEAD_OPT + 1) << HUFF_LOOKAHEAD_OPT;
+    }
+    for (; i < (1 << HUFF_LOOKAHEAD_OPT) + HUFF_CODE_LARGE_LONG_ALIGNED; i++) {
+      dtbl2->lookup[i] = 0;
+    }
 
-  if (!isDC) {
-    jpeg_make_d_ac_derived_tbl(htbl, dtbl, huffcode);
+    if (!isDC) {
+      jpeg_make_d_ac_derived_tbl(htbl, dtbl2, huffcode);
+    } else {
+      for (i = 0; i < (1 << HUFF_LOOKAHEAD_OPT); i++)
+        dtbl2->lookup[i] = (HUFF_LOOKAHEAD_OPT + 1) << HUFF_LOOKAHEAD_OPT;
+      p = 0;
+      for (l = 1; l <= HUFF_LOOKAHEAD_OPT; l++) {
+        for (i = 1; i <= (int)htbl->bits[l]; i++, p++) {
+          /* l = current code's length, p = its index in huffcode[] & huffval[]. */
+          /* Generate left-justified code followed by all possible bit sequences */
+          lookbits = huffcode[p] << (HUFF_LOOKAHEAD_OPT - l);
+          for (ctr = 1 << (HUFF_LOOKAHEAD_OPT - l); ctr > 0; ctr--) {
+            dtbl2->lookup[lookbits] = (l << HUFF_LOOKAHEAD_OPT) | htbl->huffval[p];
+            lookbits++;
+          }
+        }
+      }
+    }
   } else {
     for (i = 0; i < (1 << HUFF_LOOKAHEAD); i++)
       dtbl->lookup[i] = (HUFF_LOOKAHEAD + 1) << HUFF_LOOKAHEAD;
+
     p = 0;
     for (l = 1; l <= HUFF_LOOKAHEAD; l++) {
       for (i = 1; i <= (int)htbl->bits[l]; i++, p++) {
@@ -389,6 +442,19 @@ jpeg_make_d_derived_tbl(j_decompress_ptr cinfo, boolean isDC, int tblno,
   }
 }
 
+GLOBAL(void)
+jpeg_make_d_derived_tbl(j_decompress_ptr cinfo, boolean isDC, int tblno,
+                        d_derived_tbl **pdtbl)
+{
+  jpeg_make_d_derived_tbl_common(cinfo, isDC, tblno, (void **)pdtbl, 0);
+}
+
+METHODDEF(void)
+jpeg_make_d_derived_tbl2(j_decompress_ptr cinfo, boolean isDC, int tblno,
+                         d_derived_tbl2 **pdtbl)
+{
+  jpeg_make_d_derived_tbl_common(cinfo, isDC, tblno, (void **)pdtbl, 1);
+}
 
 /*
  * Out-of-line code for bit fetching (shared with jdphuff.c).
@@ -682,7 +748,117 @@ decode_mcu_slow(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
        * behavior is, to the best of our understanding, innocuous, and it is
        * unclear how to work around it without potentially affecting
        * performance.  Thus, we (hopefully temporarily) suppress UBSan integer
-       * overflow errors for this function.
+       * overflow errors for this function and decode_mcu_fast().
+       */
+      s += state.last_dc_val[ci];
+      state.last_dc_val[ci] = s;
+      if (block) {
+        /* Output the DC coefficient (assumes jpeg_natural_order[0] = 0) */
+        (*block)[0] = (JCOEF)s;
+      }
+    }
+
+    if (entropy->ac_needed[blkn] && block) {
+
+      /* Section F.2.2.2: decode the AC coefficients */
+      /* Since zeroes are skipped, output area must be cleared beforehand */
+      for (k = 1; k < DCTSIZE2; k++) {
+        HUFF_DECODE(s, br_state, actbl, return FALSE, label2);
+
+        r = s >> 4;
+        s &= 15;
+
+        if (s) {
+          k += r;
+          CHECK_BIT_BUFFER(br_state, s, return FALSE);
+          r = GET_BITS(s);
+          s = HUFF_EXTEND(r, s);
+          /* Output coefficient in natural (dezigzagged) order.
+           * Note: the extra entries in jpeg_natural_order[] will save us
+           * if k >= DCTSIZE2, which could happen if the data is corrupted.
+           */
+          (*block)[jpeg_natural_order[k]] = (JCOEF)s;
+        } else {
+          if (r != 15)
+            break;
+          k += 15;
+        }
+      }
+
+    } else {
+
+      /* Section F.2.2.2: decode the AC coefficients */
+      /* In this path we just discard the values */
+      for (k = 1; k < DCTSIZE2; k++) {
+        HUFF_DECODE(s, br_state, actbl, return FALSE, label3);
+
+        r = s >> 4;
+        s &= 15;
+
+        if (s) {
+          k += r;
+          CHECK_BIT_BUFFER(br_state, s, return FALSE);
+          DROP_BITS(s);
+        } else {
+          if (r != 15)
+            break;
+          k += 15;
+        }
+      }
+    }
+  }
+
+  /* Completed MCU, so update state */
+  BITREAD_SAVE_STATE(cinfo, entropy->bitstate);
+  entropy->saved = state;
+  return TRUE;
+}
+
+#if defined(__has_feature)
+#if __has_feature(undefined_behavior_sanitizer)
+__attribute__((no_sanitize("signed-integer-overflow"),
+               no_sanitize("unsigned-integer-overflow")))
+#endif
+#endif
+LOCAL(boolean)
+decode_mcu_slow_tbl2(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+{
+  huff_entropy_ptr entropy = (huff_entropy_ptr)cinfo->entropy;
+  BITREAD_STATE_VARS;
+  int blkn;
+  savable_state state;
+  /* Outer loop handles each block in the MCU */
+
+  /* Load up working state */
+  BITREAD_LOAD_STATE(cinfo, entropy->bitstate);
+  state = entropy->saved;
+
+  for (blkn = 0; blkn < cinfo->blocks_in_MCU; blkn++) {
+    JBLOCKROW block = MCU_data ? MCU_data[blkn] : NULL;
+    d_derived_tbl *dctbl = entropy->dc_cur_tbls[blkn];
+    d_derived_tbl *actbl = entropy->ac_cur_tbls[blkn];
+    register int s, k, r;
+
+    /* Decode a single block's worth of coefficients */
+
+    /* Section F.2.2.1: decode the DC coefficient difference */
+    HUFF_DECODE_TBL2(s, br_state, dctbl, return FALSE, label1);
+    if (s) {
+      CHECK_BIT_BUFFER(br_state, s, return FALSE);
+      r = GET_BITS(s);
+      s = HUFF_EXTEND(r, s);
+    }
+
+    if (entropy->dc_needed[blkn]) {
+      /* Convert DC difference to actual value, update last_dc_val */
+      int ci = cinfo->MCU_membership[blkn];
+      /* Certain malformed JPEG images produce repeated DC coefficient
+       * differences of 2047 or -2047, which causes state.last_dc_val[ci] to
+       * grow until it overflows or underflows a 32-bit signed integer.  This
+       * behavior is, to the best of our understanding, innocuous, and it is
+       * unclear how to work around it without potentially affecting
+       * performance.  Thus, we (hopefully temporarily) suppress UBSan integer
+       * overflow errors for this function and decode_mcu_fast().
        */
       s += state.last_dc_val[ci];
       state.last_dc_val[ci] = s;
@@ -697,25 +873,25 @@ decode_mcu_slow(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
       /* Since zeroes are skipped, output area must be cleared beforehand */
       for (k = 1; k < DCTSIZE2; k++) {
         register int nb, look;
-        if (bits_left < HUFF_LOOKAHEAD) {
+        if (bits_left < HUFF_LOOKAHEAD_OPT) {
           if (!jpeg_fill_bit_buffer(&br_state, get_buffer, bits_left, 0)) {
             return FALSE;
           }
           get_buffer = br_state.get_buffer;
           bits_left = br_state.bits_left;
-          if (bits_left < HUFF_LOOKAHEAD) {
+          if (bits_left < HUFF_LOOKAHEAD_OPT) {
             nb = 1;
             goto slowlabel;
           }
         }
-        look = PEEK_BITS(HUFF_LOOKAHEAD);
+        look = PEEK_BITS(HUFF_LOOKAHEAD_OPT);
         r = actbl->lookup[look];
         nb = GET_NB(r);
         unsigned int zero_num;
         unsigned int coef_bits = GET_COEF_BITS(r);
-        if (nb <= HUFF_LOOKAHEAD) {
+        if (nb <= HUFF_LOOKAHEAD_OPT) {
           DROP_BITS(nb);
-          s = actbl->lookup[look] & ((1 << HUFF_LOOKAHEAD) - 1);
+          s = actbl->lookup[look] & ((1 << HUFF_LOOKAHEAD_OPT) - 1);
           zero_num = GET_ZERO_NUM1(r);
           k += zero_num;
           if (coef_bits == 0) {
@@ -759,25 +935,25 @@ decode_mcu_slow(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
       /* In this path we just discard the values */
       for (k = 1; k < DCTSIZE2; k++) {
         register int nb, look;
-        if (bits_left < HUFF_LOOKAHEAD) {
+        if (bits_left < HUFF_LOOKAHEAD_OPT) {
           if (!jpeg_fill_bit_buffer(&br_state, get_buffer, bits_left, 0)) {
             return FALSE;
           }
           get_buffer = br_state.get_buffer;
           bits_left = br_state.bits_left;
-          if (bits_left < HUFF_LOOKAHEAD) {
+          if (bits_left < HUFF_LOOKAHEAD_OPT) {
             nb = 1;
             goto slowlabel2;
           }
         }
-        look = PEEK_BITS(HUFF_LOOKAHEAD);
+        look = PEEK_BITS(HUFF_LOOKAHEAD_OPT);
         r = actbl->lookup[look];
         nb = GET_NB(r);
         unsigned int zero_num;
         unsigned int coef_bits = GET_COEF_BITS(r);
-        if (nb <= HUFF_LOOKAHEAD) {
+        if (nb <= HUFF_LOOKAHEAD_OPT) {
           DROP_BITS(nb);
-          s = actbl->lookup[look] & ((1 << HUFF_LOOKAHEAD) - 1);
+          s = actbl->lookup[look] & ((1 << HUFF_LOOKAHEAD_OPT) - 1);
           zero_num = GET_ZERO_NUM1(r);
           k += zero_num;
           if (coef_bits != 0) {
@@ -814,7 +990,12 @@ decode_mcu_slow(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   return TRUE;
 }
 
-
+#if defined(__has_feature)
+#if __has_feature(undefined_behavior_sanitizer)
+__attribute__((no_sanitize("signed-integer-overflow"),
+               no_sanitize("unsigned-integer-overflow")))
+#endif
+#endif
 LOCAL(boolean)
 decode_mcu_fast(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 {
@@ -845,6 +1026,104 @@ decode_mcu_fast(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
 
     if (entropy->dc_needed[blkn]) {
       int ci = cinfo->MCU_membership[blkn];
+      /* Refer to the comment in decode_mcu_slow() regarding the supression of
+       * a UBSan integer overflow error in this line of code.
+       */
+      s += state.last_dc_val[ci];
+      state.last_dc_val[ci] = s;
+      if (block)
+        (*block)[0] = (JCOEF)s;
+    }
+
+    if (entropy->ac_needed[blkn] && block) {
+
+      for (k = 1; k < DCTSIZE2; k++) {
+        HUFF_DECODE_FAST(s, l, actbl);
+        r = s >> 4;
+        s &= 15;
+
+        if (s) {
+          k += r;
+          FILL_BIT_BUFFER_FAST
+          r = GET_BITS(s);
+          s = HUFF_EXTEND(r, s);
+          (*block)[jpeg_natural_order[k]] = (JCOEF)s;
+        } else {
+          if (r != 15) break;
+          k += 15;
+        }
+      }
+
+    } else {
+
+      for (k = 1; k < DCTSIZE2; k++) {
+        HUFF_DECODE_FAST(s, l, actbl);
+        r = s >> 4;
+        s &= 15;
+
+        if (s) {
+          k += r;
+          FILL_BIT_BUFFER_FAST
+          DROP_BITS(s);
+        } else {
+          if (r != 15) break;
+          k += 15;
+        }
+      }
+    }
+  }
+
+  if (cinfo->unread_marker != 0) {
+    cinfo->unread_marker = 0;
+    return FALSE;
+  }
+
+  br_state.bytes_in_buffer -= (buffer - br_state.next_input_byte);
+  br_state.next_input_byte = buffer;
+  BITREAD_SAVE_STATE(cinfo, entropy->bitstate);
+  entropy->saved = state;
+  return TRUE;
+}
+
+#if defined(__has_feature)
+#if __has_feature(undefined_behavior_sanitizer)
+__attribute__((no_sanitize("signed-integer-overflow"),
+               no_sanitize("unsigned-integer-overflow")))
+#endif
+#endif
+LOCAL(boolean)
+decode_mcu_fast_tbl2(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+{
+  huff_entropy_ptr entropy = (huff_entropy_ptr)cinfo->entropy;
+  BITREAD_STATE_VARS;
+  JOCTET *buffer;
+  int blkn;
+  savable_state state;
+  /* Outer loop handles each block in the MCU */
+
+  /* Load up working state */
+  BITREAD_LOAD_STATE(cinfo, entropy->bitstate);
+  buffer = (JOCTET *)br_state.next_input_byte;
+  state = entropy->saved;
+
+  for (blkn = 0; blkn < cinfo->blocks_in_MCU; blkn++) {
+    JBLOCKROW block = MCU_data ? MCU_data[blkn] : NULL;
+    d_derived_tbl *dctbl = entropy->dc_cur_tbls[blkn];
+    d_derived_tbl *actbl = entropy->ac_cur_tbls[blkn];
+    register int s, k, r, l;
+
+    HUFF_DECODE_FAST_TBL2(s, l, dctbl);
+    if (s) {
+      FILL_BIT_BUFFER_FAST
+      r = GET_BITS(s);
+      s = HUFF_EXTEND(r, s);
+    }
+
+    if (entropy->dc_needed[blkn]) {
+      int ci = cinfo->MCU_membership[blkn];
+      /* Refer to the comment in decode_mcu_slow() regarding the supression of
+       * a UBSan integer overflow error in this line of code.
+       */
       s += state.last_dc_val[ci];
       state.last_dc_val[ci] = s;
       if (block)
@@ -854,13 +1133,13 @@ decode_mcu_fast(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
     if (entropy->ac_needed[blkn] && block) {
       for (k = 1; k < DCTSIZE2; k++) {
         FILL_BIT_BUFFER_FAST;
-        r = PEEK_BITS(HUFF_LOOKAHEAD);
+        r = PEEK_BITS(HUFF_LOOKAHEAD_OPT);
         r = actbl->lookup[r];
         l = GET_NB(r);
         unsigned int zero_num;
         unsigned int coef_bits = GET_COEF_BITS(r);
 
-        if (l <= HUFF_LOOKAHEAD) {
+        if (l <= HUFF_LOOKAHEAD_OPT) {
           zero_num = GET_ZERO_NUM1(r);
           DROP_BITS(l);
           if (coef_bits == 0) {
@@ -901,13 +1180,13 @@ decode_mcu_fast(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
     } else {
       for (k = 1; k < DCTSIZE2; k++) {
         FILL_BIT_BUFFER_FAST;
-        r = PEEK_BITS(HUFF_LOOKAHEAD);
+        r = PEEK_BITS(HUFF_LOOKAHEAD_OPT);
         r = actbl->lookup[r];
         l = GET_NB(r);
         unsigned int zero_num;
         unsigned int coef_bits = GET_COEF_BITS(r);
 
-        if (l <= HUFF_LOOKAHEAD) {
+        if (l <= HUFF_LOOKAHEAD_OPT) {
           zero_num = GET_ZERO_NUM1(r);
           DROP_BITS(l);
           if (coef_bits == 0) {
@@ -995,11 +1274,50 @@ decode_mcu(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
    * This way, we return uniform gray for the remainder of the segment.
    */
   if (!entropy->pub.insufficient_data) {
+
     if (usefast) {
       if (!decode_mcu_fast(cinfo, MCU_data)) goto use_slow;
     } else {
 use_slow:
       if (!decode_mcu_slow(cinfo, MCU_data)) return FALSE;
+    }
+
+  }
+
+  /* Account for restart interval (no-op if not using restarts) */
+  if (cinfo->restart_interval)
+    entropy->restarts_to_go--;
+
+  return TRUE;
+}
+
+METHODDEF(boolean)
+decode_mcu_tbl2(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
+{
+  huff_entropy_ptr entropy = (huff_entropy_ptr)cinfo->entropy;
+  int usefast = 1;
+
+  /* Process restart marker if needed; may have to suspend */
+  if (cinfo->restart_interval) {
+    if (entropy->restarts_to_go == 0)
+      if (!process_restart(cinfo))
+        return FALSE;
+    usefast = 0;
+  }
+
+  if (cinfo->src->bytes_in_buffer < BUFSIZE * (size_t)cinfo->blocks_in_MCU ||
+      cinfo->unread_marker != 0)
+    usefast = 0;
+
+  /* If we've run out of data, just leave the MCU set to zeroes.
+   * This way, we return uniform gray for the remainder of the segment.
+   */
+  if (!entropy->pub.insufficient_data) {
+    if (usefast) {
+      if (!decode_mcu_fast_tbl2(cinfo, MCU_data)) goto use_slow;
+    } else {
+use_slow:
+      if (!decode_mcu_slow_tbl2(cinfo, MCU_data)) return FALSE;
     }
   }
 
@@ -1031,8 +1349,13 @@ jinit_huff_decoder(j_decompress_ptr cinfo)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(huff_entropy_decoder));
   cinfo->entropy = (struct jpeg_entropy_decoder *)entropy;
-  entropy->pub.start_pass = start_pass_huff_decoder;
-  entropy->pub.decode_mcu = decode_mcu;
+  if (cinfo->image_height > SMALL_IMAGE_HEIGHT_THRESHOLD && cinfo->image_width > SMALL_IMAGE_WIDTH_THRESHOLD) {
+    entropy->pub.start_pass = start_pass_huff_decoder_tbl2;
+    entropy->pub.decode_mcu = decode_mcu_tbl2;
+  } else {
+    entropy->pub.start_pass = start_pass_huff_decoder;
+    entropy->pub.decode_mcu = decode_mcu;
+  }
 
   /* Mark tables unallocated */
   for (i = 0; i < NUM_HUFF_TBLS; i++) {

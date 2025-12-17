@@ -104,7 +104,7 @@ if (skia_use_system_libjpeg_turbo2) {
     ]
 
     # OH ISSUE: jpeg optimize
-    if (target_platform == "pc") {
+    if (target_platform == "pc" || target_platform == "phone" || target_platform == "tablet") {
       defines += [ "HUFF_DECODE_OPT" ]
       sources += [ "../externals/libjpeg-turbo/jdhuff_opt.c" ]
     } else {
