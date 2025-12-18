@@ -20,6 +20,9 @@
 #include "src/core/SkRasterPipeline.h"
 #include "src/core/SkRasterPipelineOpContexts.h"
 #include "src/core/SkSwizzlePriv.h"
+#ifdef SK_USE_HISPEED_PLUGIN
+#include "src/utils/SkHispeedPluginManager.h"
+#endif
 
 #include <cstdint>
 #include <cstring>
@@ -64,8 +67,15 @@ static bool swizzle_or_premul(const SkImageInfo& dstInfo,       void* dstPixels,
     void (*fn)(uint32_t*, const uint32_t*, int) = nullptr;
 
     if (steps.flags.premul) {
+#ifdef SK_USE_HISPEED_PLUGIN
+        fn = swapRB ? ((SkHispeedPluginManager::GetInstance().GetFunc_RGBA_to_bgrA() != nullptr) ?
+                    SkHispeedPluginManager::GetInstance().GetFunc_RGBA_to_bgrA() : SkOpts::RGBA_to_bgrA)
+                    : ((SkHispeedPluginManager::GetInstance().GetFunc_RGBA_to_rgbA() != nullptr) ?
+                    SkHispeedPluginManager::GetInstance().GetFunc_RGBA_to_rgbA() : SkOpts::RGBA_to_rgbA);
+#else
         fn = swapRB ? SkOpts::RGBA_to_bgrA
                     : SkOpts::RGBA_to_rgbA;
+#endif
     } else if (steps.flags.unpremul) {
         fn = swapRB ? SkOpts::rgbA_to_BGRA
                     : SkOpts::rgbA_to_RGBA;
