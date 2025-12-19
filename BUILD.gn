@@ -284,6 +284,11 @@ if (is_arkui_x) {
     if (skia_use_no_webp_encode) {
       sources += skia_no_encode_webp_srcs
     }
+    if (is_ohos && skia_feature_hispeed_plugin) {
+      sources += [ "${skia_root_dir}/src/utils/SkHispeedPluginManager.cpp" ]
+      defines += [ "SK_USE_HISPEED_PLUGIN" ]
+    }
+
     if (is_arkui_x) {
       defines += [ "ARKUI_X_ENABLE" ]
     }
@@ -612,6 +617,10 @@ if (is_arkui_x) {
     }
     if (skia_use_no_webp_encode) {
       sources += skia_no_encode_webp_srcs
+    }
+    if (is_ohos && skia_feature_hispeed_plugin) {
+      sources += [ "${skia_root_dir}/src/utils/SkHispeedPluginManager.cpp" ]
+      defines += [ "SK_USE_HISPEED_PLUGIN" ]
     }
 
     sources += [ "${skia_root_dir}/src/ports/SkOSFile_posix.cpp" ]
