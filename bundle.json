@@ -83,6 +83,9 @@
                     "name": "//third_party/skia/m133/third_party/expat:expatm133"
                 },
                 {
+                    "name": "//third_party/skia/m133/third_party/dng_sdk:dng_sdk"
+                },
+                {
                     "name": "//third_party/skia/m133/modules/skparagraph:skia_paragraph_ohos_new"
                 },
                 {
