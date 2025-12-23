@@ -24,10 +24,7 @@ constexpr SkScalar DEFAULT_TOP = -1.056;
 constexpr SkScalar DEFAULT_BOTTOM = 0.271;
 constexpr SkScalar DEFAULT_ASCENT = -0.928;
 constexpr SkScalar DEFAULT_DESCENT = 0.244;
-struct ScaleParam {
-    SkScalar fontScale;
-    SkScalar baselineShiftScale;
-};
+constexpr SkScalar TIBETAN_BASELINE_SHIFT_SCALE = 0.0;
 // unordered_map<familyName, ScaleParam>: compress <familyName> font height, shift font baseline.
 // target font size = font size * ScaleParam.scale.
 // target baseline = baseline - height * font size * ScaleParam.baselineShiftScale.
@@ -39,7 +36,6 @@ const std::unordered_map<std::string, ScaleParam> FONT_FAMILY_COMPRESSION_WITH_H
     {"Noto Serif Tibetan", ScaleParam{ .fontScale = 0.85, .baselineShiftScale = 0.11 }},
     {"Noto Sans Tibetan", ScaleParam{ .fontScale = 0.85, .baselineShiftScale = 0.11 }},
 };
-const ScaleParam DEFAULT_SCALE_PARAM = ScaleParam{ .fontScale = 0, .baselineShiftScale = 0 };
 enum FontCompressionStatus {
     UNDEFINED,
     COMPRESSED,
@@ -131,8 +127,13 @@ void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font)
 
 void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op)
 {
+    auto param = findCompressionConfigWithFont(font);
+    scaleFontWithCompressionConfig(font, op, param);
+}
+
+void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op, const ScaleParam& config)
+{
     SkScalar fontSize = font.GetSize();
-    auto config = findCompressionConfigWithFont(font);
     if (SkScalarNearlyZero(config.fontScale)) {
         return;
     }
@@ -189,17 +190,13 @@ Run::Run(ParagraphImpl* owner,
     fGlyphAdvances.push_back_n(info.glyphCount + 1);
     fHalfLetterspacings.push_back_n(info.glyphCount + 1);
     std::fill(fHalfLetterspacings.begin(), fHalfLetterspacings.end(), 0.0);
-    info.fFont.GetMetrics(&fFontMetrics);
+    fScaleParam = findCompressionConfigWithFont(font());
 #else
     info.fFont.getMetrics(&fFontMetrics);
 #endif
 
 #ifdef ENABLE_TEXT_ENHANCE
-    auto decompressFont = info.fFont;
-    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
-    metricsIncludeFontPadding(&fFontMetrics, decompressFont);
-    auto config = findCompressionConfigWithFont(decompressFont);
-    fCompressionBaselineShift = (fFontMetrics.fDescent - fFontMetrics.fAscent) * config.baselineShiftScale;
+    handleAdapterHeight();
     initLimitHeightParam();
 #endif
 
@@ -225,6 +222,23 @@ Run::Run(ParagraphImpl* owner,
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
+void Run::handleAdapterHeight() {
+    RSFont decompressFont = font();
+    if (fOwner && fOwner->getParagraphStyle().getFallbackLineSpacing()) {
+        scaleFontWithCompressionConfig(decompressFont, ScaleOP::COMPRESS, getScaleParam());
+        decompressFont.GetMetrics(&fFontMetrics);
+        if (!SkScalarNearlyZero(getScaleParam().fontScale)) {
+            fCompressionBaselineShift = (fFontMetrics.fDescent - fFontMetrics.fAscent) * TIBETAN_BASELINE_SHIFT_SCALE;
+        }
+        return;
+    }
+
+    fFont.GetMetrics(&fFontMetrics);
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS, getScaleParam());
+    metricsIncludeFontPadding(&fFontMetrics, decompressFont);
+    fCompressionBaselineShift = (fFontMetrics.fDescent - fFontMetrics.fAscent) * getScaleParam().baselineShiftScale;
+}
+
 void Run::initRunHeightNominal() {
     fRunHeightNominal = nearlyEqual(calculateHeight(LineMetricStyle::Typographic, LineMetricStyle::Typographic),
         calculateHeight(LineMetricStyle::CSS, LineMetricStyle::CSS));
@@ -273,7 +287,7 @@ void Run::calculateMetrics() {
         return;
     }
     auto decompressFont = fFont;
-    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS);
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS, getScaleParam());
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
     if (nearlyZero(fontIntrinsicHeight)) {
         return;
