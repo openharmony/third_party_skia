@@ -24,7 +24,7 @@ constexpr SkScalar DEFAULT_TOP = -1.056;
 constexpr SkScalar DEFAULT_BOTTOM = 0.271;
 constexpr SkScalar DEFAULT_ASCENT = -0.928;
 constexpr SkScalar DEFAULT_DESCENT = 0.244;
-constexpr SkScalar TIBETAN_BASELINE_SHIFT_SCALE = 0.0;
+constexpr SkScalar TIBETAN_FALLBACKLINESPCING_HEIGHT_SCALE = 0.8;
 // unordered_map<familyName, ScaleParam>: compress <familyName> font height, shift font baseline.
 // target font size = font size * ScaleParam.scale.
 // target baseline = baseline - height * font size * ScaleParam.baselineShiftScale.
@@ -225,11 +225,10 @@ Run::Run(ParagraphImpl* owner,
 void Run::handleAdapterHeight() {
     RSFont decompressFont = font();
     if (fOwner && fOwner->getParagraphStyle().getFallbackLineSpacing()) {
-        scaleFontWithCompressionConfig(decompressFont, ScaleOP::COMPRESS, getScaleParam());
-        decompressFont.GetMetrics(&fFontMetrics);
         if (!SkScalarNearlyZero(getScaleParam().fontScale)) {
-            fCompressionBaselineShift = (fFontMetrics.fDescent - fFontMetrics.fAscent) * TIBETAN_BASELINE_SHIFT_SCALE;
+            decompressFont.SetSize(font().GetSize() * TIBETAN_FALLBACKLINESPCING_HEIGHT_SCALE);
         }
+        decompressFont.GetMetrics(&fFontMetrics);
         return;
     }
 
