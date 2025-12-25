@@ -84,8 +84,8 @@ struct SplitPoint {
 };
 
 struct ScaleParam {
-    SkScalar fontScale;
-    SkScalar baselineShiftScale;
+    SkScalar fontScale{0.0f};
+    SkScalar baselineShiftScale{0.0f};
 };
 
 void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op);
