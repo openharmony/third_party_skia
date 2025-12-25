@@ -290,7 +290,6 @@ public:
     bool isRunHeightNominal() const { return fRunHeightNominal; }
     void initRunHeightNominal();
     void handleAdapterHeight();
-    const ScaleParam& getScaleParam() const { return fScaleParam; }
 #endif
 private:
     friend class ParagraphImpl;

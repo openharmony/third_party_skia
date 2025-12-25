@@ -225,7 +225,7 @@ Run::Run(ParagraphImpl* owner,
 void Run::handleAdapterHeight() {
     RSFont decompressFont = font();
     if (fOwner && fOwner->getParagraphStyle().getFallbackLineSpacing()) {
-        if (!SkScalarNearlyZero(getScaleParam().fontScale)) {
+        if (!SkScalarNearlyZero(fScaleParam.fontScale)) {
             decompressFont.SetSize(font().GetSize() * TIBETAN_FALLBACKLINESPCING_HEIGHT_SCALE);
         }
         decompressFont.GetMetrics(&fFontMetrics);
@@ -233,9 +233,9 @@ void Run::handleAdapterHeight() {
     }
 
     fFont.GetMetrics(&fFontMetrics);
-    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS, getScaleParam());
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS, fScaleParam);
     metricsIncludeFontPadding(&fFontMetrics, decompressFont);
-    fCompressionBaselineShift = (fFontMetrics.fDescent - fFontMetrics.fAscent) * getScaleParam().baselineShiftScale;
+    fCompressionBaselineShift = (fFontMetrics.fDescent - fFontMetrics.fAscent) * fScaleParam.baselineShiftScale;
 }
 
 void Run::initRunHeightNominal() {
@@ -286,7 +286,7 @@ void Run::calculateMetrics() {
         return;
     }
     auto decompressFont = fFont;
-    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS, getScaleParam());
+    scaleFontWithCompressionConfig(decompressFont, ScaleOP::DECOMPRESS, fScaleParam);
     const auto fontIntrinsicHeight = fCorrectDescent - fCorrectAscent;
     if (nearlyZero(fontIntrinsicHeight)) {
         return;
