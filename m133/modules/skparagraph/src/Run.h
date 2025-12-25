@@ -83,8 +83,16 @@ struct SplitPoint {
     size_t tailClusterIndex{EMPTY_INDEX};
 };
 
+struct ScaleParam {
+    SkScalar fontScale{0.0f};
+    SkScalar baselineShiftScale{0.0f};
+};
+
 void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op);
+void scaleFontWithCompressionConfig(RSFont& font, ScaleOP op, const ScaleParam& param);
 void metricsIncludeFontPadding(RSFontMetrics* metrics, const RSFont& font);
+
+const ScaleParam DEFAULT_SCALE_PARAM = ScaleParam{ .fontScale = 0, .baselineShiftScale = 0 };
 #endif
 
 class Run {
@@ -281,6 +289,7 @@ public:
     void setLineHeightStyle(LineHeightStyle lineHeightStyle) { fLineHeightStyle = lineHeightStyle; }
     bool isRunHeightNominal() const { return fRunHeightNominal; }
     void initRunHeightNominal();
+    void handleAdapterHeight();
 #endif
 private:
     friend class ParagraphImpl;
@@ -353,6 +362,7 @@ private:
     SkScalar fMinLineHeight{0.0f};
     LineHeightStyle fLineHeightStyle{LineHeightStyle::kFontSize};
     bool fRunHeightNominal{true};
+    ScaleParam fScaleParam{DEFAULT_SCALE_PARAM};
 #endif
 };
 
