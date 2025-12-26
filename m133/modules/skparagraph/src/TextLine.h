@@ -169,6 +169,8 @@ public:
     SkScalar baseline() const { return fSizes.baseline(); }
 #ifdef ENABLE_TEXT_ENHANCE
     void extendCoordinateRange(PositionWithAffinity& positionWithAffinity);
+    PositionWithAffinity getCharacterPositionAtCoordinate(SkScalar dx,
+        TextEncoding encoding = TextEncoding::UTF8);
 #endif
 
     using RunVisitor = std::function<bool(

@@ -131,6 +131,12 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     void paint(ParagraphPainter* canvas, RSPath* path, SkScalar hOffset, SkScalar vOffset) override;
     std::string GetDumpInfo() const override;
+    PositionWithAffinity getCharacterPositionAtCoordinate(SkScalar dx, SkScalar dy,
+        TextEncoding encoding = TextEncoding::UTF8) override;
+    TextRange getCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd,
+        GlyphRange* actualGlyphRange = nullptr, TextEncoding encoding = TextEncoding::UTF8) override;
+    GlyphRange getGlyphRangeForCharacterRange(size_t charStart, size_t charEnd,
+        TextRange* actualCharRange = nullptr, TextEncoding encoding = TextEncoding::UTF8) override;
 #endif // ENABLE_TEXT_ENHANCE
     std::vector<TextBox> getRectsForRange(unsigned start,
                                           unsigned end,
@@ -200,6 +206,16 @@ public:
             return fUTF16IndexForUTF8Index.back();
         }
         return fUTF16IndexForUTF8Index[index];
+    }
+
+    size_t getUTF8Index(TextIndex index) const {
+        if (fUTF8IndexForUTF16Index.empty()) {
+            return 0;
+        }
+        if (index >= fUTF8IndexForUTF16Index.size()) {
+            index = fUTF8IndexForUTF16Index.size() - 1;
+        }
+        return fUTF8IndexForUTF16Index[index];
     }
     WordBreakType getWordBreakType() const;
     LineBreakStrategy getLineBreakStrategy() const;
@@ -428,6 +444,21 @@ private:
     friend class OneLineShaper;
     void computeEmptyMetrics();
 #ifdef ENABLE_TEXT_ENHANCE
+    // Helper struct to accumulate range values
+    struct RangeAccumulator {
+        size_t start = SIZE_MAX;
+        size_t end = 0;
+        void updateRange(size_t s, size_t e) {
+            start = std::min(start, s);
+            end = std::max(end, e);
+        }
+    };
+    // Helper struct for processing context
+    struct ProcessingContext {
+        RangeAccumulator targetRange;
+        RangeAccumulator actualRange;
+    };
+
     friend struct TextWrapScorer;
     TextRange resetRangeWithDeletedRange(const TextRange& sourceRange,
         const TextRange& deletedRange, const size_t& ellSize);
@@ -459,6 +490,31 @@ private:
     void generateSplitPointsByLines(std::deque<SplitPoint>& splitPoints);
     void generateRunsBySplitPoints(std::deque<SplitPoint>& splitPoints, skia_private::TArray<Run, false>& runs);
     std::optional<SplitPoint> generateSplitPoint(const ClusterRange& clusterRange);
+
+    // Result structure for char-to-glyph conversion
+    struct CharToGlyphResult {
+        GlyphRange glyphRange;
+        size_t adjustedCharStart;
+        size_t adjustedCharEnd;
+    };
+
+    // Template helper: find glyph range for char-to-glyph conversion
+    template <typename Iterator>
+    CharToGlyphResult findGlyphRangeForCharToGlyph(Iterator begin, Iterator end,
+        TextRange charRange, size_t clusterStart, size_t currentGlyphIndex) const;
+
+    // Template helper: find glyph range for glyph-to-char conversion
+    template <typename Iterator>
+    GlyphRange findGlyphRangeForGlyphToChar(Iterator begin, Iterator end,
+        TextRange charRange, size_t clusterStart, size_t currentGlyphIndex) const;
+
+    // Unified glyph-to-char range processing (handles both LTR and RTL)
+    void processGlyphToCharRange(const Run& run, GlyphRange localGlyphRange,
+        size_t currentGlyphIndex, ProcessingContext& context);
+
+    // Unified char-to-glyph range processing (handles both LTR and RTL)
+    void processCharToGlyphRange(const Run& run, size_t overlapStart, size_t overlapEnd,
+        size_t currentGlyphIndex, ProcessingContext& context);
 #endif
 
     // Input

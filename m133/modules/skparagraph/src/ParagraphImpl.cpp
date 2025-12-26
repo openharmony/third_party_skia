@@ -3159,6 +3159,236 @@ bool ParagraphImpl::containsColorFontOrBitmap(SkTextBlob* textBlob) {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
+PositionWithAffinity ParagraphImpl::getCharacterPositionAtCoordinate(SkScalar dx, SkScalar dy, TextEncoding encoding) {
+    if (fText.isEmpty()) {
+        return {0, Affinity::kDownstream};
+    }
+    this->ensureUTF16Mapping();
+    for (auto& line : fLines) {
+        auto offsetY = line.offset().fY;
+        if ((dy >= (offsetY + line.height())) && (&line != &fLines.back())) {
+            continue;
+        }
+        auto result = line.getCharacterPositionAtCoordinate(dx, encoding);
+        return result;
+    }
+    return {0, Affinity::kDownstream};
+}
+
+// Template helper: find glyph range for char-to-glyph conversion
+template <typename Iterator>
+ParagraphImpl::CharToGlyphResult ParagraphImpl::findGlyphRangeForCharToGlyph(Iterator begin, Iterator end,
+    TextRange charRange, size_t clusterStart, size_t currentGlyphIndex) const
+{
+    size_t globalFirstGlyph = currentGlyphIndex;
+    size_t globalLastGlyph = currentGlyphIndex;
+    size_t adjustedCharStart = charRange.start;
+    size_t adjustedCharEnd = charRange.end;
+
+    auto it_start = std::upper_bound(begin, end, charRange.start - clusterStart);
+    if (it_start != begin) {
+        --it_start;
+    }
+    if (it_start != end) {
+        globalFirstGlyph = currentGlyphIndex + static_cast<size_t>(it_start - begin);
+        adjustedCharStart = *it_start + clusterStart;
+    }
+
+    auto it_end = std::lower_bound(it_start, end, charRange.end - clusterStart);
+    if (it_end != end) {
+        globalLastGlyph = currentGlyphIndex + static_cast<size_t>(it_end - begin);
+        adjustedCharEnd = *it_end + clusterStart;
+    }
+
+    CharToGlyphResult result;
+    result.glyphRange = GlyphRange(globalFirstGlyph, globalLastGlyph);
+    result.adjustedCharStart = adjustedCharStart;
+    result.adjustedCharEnd = adjustedCharEnd;
+    return result;
+}
+
+// Template helper: find glyph range for glyph-to-char conversion
+template <typename Iterator>
+GlyphRange ParagraphImpl::findGlyphRangeForGlyphToChar(Iterator begin, Iterator end,
+    TextRange charRange, size_t clusterStart, size_t currentGlyphIndex) const
+{
+    size_t adjustedGlyphStart = currentGlyphIndex;
+    size_t adjustedGlyphEnd = currentGlyphIndex;
+
+    auto it_start = std::lower_bound(begin, end, charRange.start - clusterStart);
+    if (it_start != end) {
+        adjustedGlyphStart = currentGlyphIndex + static_cast<size_t>(it_start - begin);
+    }
+
+    auto it_end = std::lower_bound(it_start, end, charRange.end - clusterStart);
+    if (it_end != end) {
+        adjustedGlyphEnd = currentGlyphIndex + static_cast<size_t>(it_end - begin);
+    }
+    return GlyphRange(adjustedGlyphStart, adjustedGlyphEnd);
+}
+
+// Unified glyph-to-char range processing (handles both LTR and RTL)
+void ParagraphImpl::processGlyphToCharRange(const Run& run, GlyphRange localGlyphRange,
+    size_t currentGlyphIndex, ProcessingContext& context)
+{
+    const uint32_t* clusterIndexes = run.fGlyphData->clusterIndexes.data();
+    const size_t clusterSize = run.fGlyphData->clusterIndexes.size();
+    const size_t clusterStart = run.fClusterStart;
+
+    // Calculate char range from glyph positions
+    size_t firstChar = clusterStart + clusterIndexes[localGlyphRange.start];
+    size_t lastChar = clusterStart + clusterIndexes[localGlyphRange.end];
+
+    // In RTL, cluster indexes are reversed
+    if (!run.leftToRight()) {
+        firstChar = clusterStart + clusterIndexes[clusterSize - 1 - localGlyphRange.start];
+        lastChar = clusterStart + clusterIndexes[clusterSize - 1 - localGlyphRange.end];
+    }
+
+    // Adjust to grapheme boundaries
+    size_t adjustedFirstChar = this->findPreviousGraphemeBoundary(firstChar);
+    size_t adjustedLastChar = this->findNextGraphemeBoundary(lastChar);
+    context.targetRange.updateRange(adjustedFirstChar, adjustedLastChar);
+
+    // Find corresponding glyph range
+    TextRange adjustedCharRange(adjustedFirstChar, adjustedLastChar);
+    GlyphRange glyphRange;
+    if (run.leftToRight()) {
+        glyphRange = findGlyphRangeForGlyphToChar(clusterIndexes, clusterIndexes + clusterSize,
+            adjustedCharRange, clusterStart, currentGlyphIndex);
+    } else {
+        glyphRange = findGlyphRangeForGlyphToChar(std::make_reverse_iterator(clusterIndexes + clusterSize),
+            std::make_reverse_iterator(clusterIndexes), adjustedCharRange, clusterStart, currentGlyphIndex);
+    }
+    context.actualRange.updateRange(glyphRange.start, glyphRange.end);
+}
+
+
+// Unified char-to-glyph range processing (handles both LTR and RTL)
+void ParagraphImpl::processCharToGlyphRange(const Run& run, size_t overlapStart,
+    size_t overlapEnd, size_t currentGlyphIndex, ProcessingContext& context)
+{
+    const uint32_t* clusterIndexes = run.fGlyphData->clusterIndexes.data();
+    const size_t clusterSize = run.fGlyphData->clusterIndexes.size();
+    const size_t clusterStart = run.fClusterStart;
+
+    // Adjust to grapheme boundaries
+    size_t adjustedStart = this->findPreviousGraphemeBoundary(overlapStart);
+    size_t adjustedEnd = this->findNextGraphemeBoundary(overlapEnd);
+
+    // Find corresponding glyph range and cluster-based character range
+    TextRange adjustedCharRange(adjustedStart, adjustedEnd);
+    CharToGlyphResult result;
+    if (run.leftToRight()) {
+        result = findGlyphRangeForCharToGlyph(clusterIndexes, clusterIndexes + clusterSize,
+            adjustedCharRange, clusterStart, currentGlyphIndex);
+    } else {
+        result = findGlyphRangeForCharToGlyph(std::make_reverse_iterator(clusterIndexes + clusterSize),
+            std::make_reverse_iterator(clusterIndexes), adjustedCharRange, clusterStart, currentGlyphIndex);
+    }
+
+    context.targetRange.updateRange(result.glyphRange.start, result.glyphRange.end);
+    context.actualRange.updateRange(result.adjustedCharStart, result.adjustedCharEnd);
+}
+
+TextRange ParagraphImpl::getCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd,
+    GlyphRange* actualGlyphRange, TextEncoding encoding) {
+    if (fText.isEmpty() || fRuns.empty()) {
+        if (actualGlyphRange != nullptr) {
+            *actualGlyphRange = EMPTY_RANGE;
+        }
+        return EMPTY_RANGE;
+    }
+
+    ProcessingContext context;
+    size_t currentGlyphIndex = 0;
+    // Iterate through each run to find overlapping glyphs
+    for (const auto& run : fRuns) {
+        // Calculate the overlap between the requested glyph range and this run's glyph range
+        const size_t overlapStart = std::max(currentGlyphIndex, glyphStart);
+        const size_t overlapEnd = std::min(currentGlyphIndex + run.size(), glyphEnd);
+        if (overlapStart < overlapEnd) {
+            const size_t localGlyphStart = overlapStart - currentGlyphIndex;
+            const size_t localGlyphEnd = overlapEnd - currentGlyphIndex;
+            const size_t clusterSize = run.fGlyphData->clusterIndexes.size();
+            if (localGlyphEnd < clusterSize && localGlyphStart < clusterSize) {
+                processGlyphToCharRange(run, GlyphRange(localGlyphStart, localGlyphEnd), currentGlyphIndex, context);
+            }
+        }
+        currentGlyphIndex += run.size();
+        if (currentGlyphIndex >= glyphEnd) {
+            break;
+        }
+    }
+    if (context.targetRange.start == SIZE_MAX) {
+        if (actualGlyphRange != nullptr) {
+            *actualGlyphRange = EMPTY_RANGE;
+        }
+        return EMPTY_RANGE;
+    }
+    if (actualGlyphRange != nullptr) {
+        *actualGlyphRange = GlyphRange(context.actualRange.start, context.actualRange.end);
+    }
+    if (encoding == TextEncoding::UTF16) {
+        this->ensureUTF16Mapping();
+        return TextRange(
+            this->getUTF16IndexWithOverflowCheck(context.targetRange.start),
+            this->getUTF16IndexWithOverflowCheck(context.targetRange.end)
+        );
+    }
+    return TextRange(context.targetRange.start, context.targetRange.end);
+}
+
+GlyphRange ParagraphImpl::getGlyphRangeForCharacterRange(size_t charStart, size_t charEnd,
+    TextRange* actualCharRange, TextEncoding encoding) {
+    if (fText.isEmpty() || fRuns.empty()) {
+        if (actualCharRange != nullptr) {
+            *actualCharRange = EMPTY_RANGE;
+        }
+        return EMPTY_RANGE;
+    }
+
+    if (encoding == TextEncoding::UTF16) {
+        this->ensureUTF16Mapping();
+        charStart = this->getUTF8Index(charStart);
+        charEnd = this->getUTF8Index(charEnd);
+    }
+
+    ProcessingContext context;
+    size_t currentGlyphIndex = 0;
+    // Iterate through each run to find overlapping characters
+    for (const auto& run : fRuns) {
+        const TextRange runTextRange = run.textRange();
+        const size_t overlapStart = std::max(runTextRange.start, charStart);
+        const size_t overlapEnd = std::min(runTextRange.end, charEnd);
+        if (overlapStart < overlapEnd) {
+            processCharToGlyphRange(run, overlapStart, overlapEnd, currentGlyphIndex, context);
+        }
+        currentGlyphIndex += run.size();
+        if (runTextRange.start >= charEnd) {
+            break;
+        }
+    }
+
+    if (context.targetRange.start == SIZE_MAX) {
+        if (actualCharRange != nullptr) {
+            *actualCharRange = EMPTY_RANGE;
+        }
+        return EMPTY_RANGE;
+    }
+    if (actualCharRange != nullptr) {
+        if (encoding == TextEncoding::UTF16) {
+            *actualCharRange = TextRange(
+                this->getUTF16IndexWithOverflowCheck(context.actualRange.start),
+                this->getUTF16IndexWithOverflowCheck(context.actualRange.end)
+            );
+        } else {
+            *actualCharRange = TextRange(context.actualRange.start, context.actualRange.end);
+        }
+    }
+    return GlyphRange(context.targetRange.start, context.targetRange.end);
+}
+
 std::string_view ParagraphImpl::GetState() const
 {
     static std::unordered_map<InternalState, std::string_view> state = {

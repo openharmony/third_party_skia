@@ -25,6 +25,9 @@ namespace skia {
 namespace textlayout {
 
 #ifdef ENABLE_TEXT_ENHANCE
+// Type alias for glyph range
+using GlyphRange = SkRange<size_t>;
+
 enum InternalState {
   kUnknown = 0,
   kIndexed = 1,     // Text is indexed
@@ -114,6 +117,17 @@ public:
     virtual bool canPaintAllText() const = 0;
 
     virtual std::string GetDumpInfo() const = 0;
+
+    virtual PositionWithAffinity getCharacterPositionAtCoordinate(SkScalar dx, SkScalar dy,
+        TextEncoding encoding = TextEncoding::UTF8) = 0;
+
+    // Returns the character range corresponding to the given glyph range
+    virtual TextRange getCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd,
+        GlyphRange* actualGlyphRange = nullptr, TextEncoding encoding = TextEncoding::UTF8) = 0;
+
+    // Returns the glyph range corresponding to the given character range
+    virtual GlyphRange getGlyphRangeForCharacterRange(size_t charStart, size_t charEnd,
+        TextRange* actualCharRange = nullptr, TextEncoding encoding = TextEncoding::UTF8) = 0;
 #endif
 
     bool didExceedMaxLines() { return fExceededMaxLines; }
