@@ -5002,6 +5002,9 @@ ohos_static_library("sksl_ext_static") {
     libs = []
 
     defines = skia_common_defines
+    if (is_arkui_x) {
+      defines += [ "ARKUI_X_ENABLE" ]
+    }
     cflags = skia_common_cflags
 
     if (skia_build_for_debugger) {
