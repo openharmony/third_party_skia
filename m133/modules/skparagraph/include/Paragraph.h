@@ -38,6 +38,12 @@ enum class UtfEncodeType {
     kUtf8,
     kUtf16
 };
+
+struct PathInfo {
+    RSPath path;
+    TextStyle textStyle;
+    RSPoint point;
+};
 #endif
 
 class ParagraphPainter;
@@ -367,6 +373,7 @@ public:
     virtual RSFontMetrics measureText() = 0;
     virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
         std::vector<RSFontMetrics>& fontMetrics) = 0;
+    virtual std::vector<PathInfo> getTextPathByClusterRange(SkRange<size_t> range) = 0;
 #else
     /** Returns the font that is used to shape the text at the position
      *
