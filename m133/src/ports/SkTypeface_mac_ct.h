@@ -126,6 +126,9 @@ protected:
     sk_sp<SkTypeface> onMakeClone(const SkFontArguments&) const override;
 
     void* onGetCTFontRef() const override { return (void*)fFontRef.get(); }
+#if defined(CROSS_PLATFORM)
+    void onGetFontPath(SkString* path) const override;
+#endif
 
 private:
     mutable std::unique_ptr<SkStreamAsset> fStream;

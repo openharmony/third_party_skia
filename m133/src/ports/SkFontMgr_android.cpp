@@ -33,6 +33,7 @@
 #if defined(CROSS_PLATFORM)
 std::string SkFontMgr::runtimeOS = "";
 const std::string HM_SYMBOL_FAMILY_NAME = "HM Symbol";
+const std::string HM_NOTDEF_FAMILY_NAME = "notdef";
 #endif
 using namespace skia_private;
 constexpr char ORIGIN_MY_LOCALE[] = "my-Qaag";
@@ -141,6 +142,14 @@ protected:
     bool onGetFixedPitch() const override {
         return SkTypeface::onGetFixedPitch();
     }
+
+#if defined(CROSS_PLATFORM)
+    void onGetFontPath(SkString* path) const override {
+        if (path) {
+            *path = fPathName;
+        }
+    }
+#endif
 };
 
 template <typename D, typename S> sk_sp<D> sk_sp_static_cast(sk_sp<S>&& s) {
@@ -319,6 +328,26 @@ public:
             }
         }
     }
+    void LoadNotDefGlyphs(const char familyName[]) const {
+        if (!familyName) {
+            return;
+        }
+        if (!fNotDefGlyphsLoaded) {
+            std::string compStr(familyName);
+            if (compStr == HM_NOTDEF_FAMILY_NAME) {
+                SkTDArray<FontFamily*> families;
+                SkFontMgr_Android_Parser::GetSystemFontFamiliesForNotDef(families);
+                this->buildNameToFamilyMapForSymbolGlyph(families, false);
+                for (FontFamily* p : families) {
+                    if (p) {
+                        delete p;
+                    }
+                }
+                families.reset();
+                fNotDefGlyphsLoaded = true;
+            }
+        }
+    }
 #endif
 
 protected:
@@ -350,6 +379,7 @@ protected:
         }
 #if defined(CROSS_PLATFORM)
         LoadSymbolGlyphs(familyName);
+        LoadNotDefGlyphs(familyName);
 #endif
         SkAutoAsciiToLC tolc(familyName);
         for (int i = 0; i < fNameToFamilyMap.size(); ++i) {
@@ -420,6 +450,7 @@ protected:
 
 #if defined(CROSS_PLATFORM)
         LoadSymbolGlyphs(familyName);
+        LoadNotDefGlyphs(familyName);
 #endif
         SkString familyNameString(familyName);
         for (const SkString& currentFamilyName : { familyNameString, SkString() }) {
@@ -486,6 +517,17 @@ protected:
         return SkTypeface::MakeEmpty();
     }
 
+#if defined(CROSS_PLATFORM)
+    std::vector<sk_sp<SkTypeface>> onGetSystemFonts() const override {
+        std::vector<sk_sp<SkTypeface>> skTypefaces;
+        for (const auto& iter : fStyleSets) {
+            for (int i = 0; i < iter->count(); ++i) {
+                skTypefaces.emplace_back(iter->createTypeface(i));
+            }
+        }
+        return skTypefaces;
+    }
+#endif
 
 private:
 
@@ -497,6 +539,7 @@ private:
     mutable TArray<NameToFamily, true> fNameToFamilyMap;
     mutable TArray<NameToFamily, true> fFallbackNameToFamilyMap;
     mutable bool fSymbolGlyphsLoaded = false;
+    mutable bool fNotDefGlyphsLoaded = false;
 #else
     TArray<sk_sp<SkFontStyleSet_Android>> fStyleSets;
     sk_sp<SkFontStyleSet> fDefaultStyleSet;

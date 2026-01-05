@@ -93,6 +93,9 @@ SK_GETCFTYPEID(CFArray);
 SK_GETCFTYPEID(CFBoolean);
 SK_GETCFTYPEID(CFDictionary);
 SK_GETCFTYPEID(CFNumber);
+#if defined(CROSS_PLATFORM)
+SK_GETCFTYPEID(CFURL);
+#endif
 
 /* Checked dynamic downcast of CFTypeRef.
  *
@@ -1397,5 +1400,24 @@ int SkTypeface_Mac::onGetVariationDesignParameters(SkFontParameters::Variation::
     }
     return axisCount;
 }
+
+#if defined(CROSS_PLATFORM)
+void SkTypeface_Mac::onGetFontPath(SkString* path) const {
+    if (!path) {
+        return;
+    }
+    path->reset();
+    SkUniqueCFRef<CFTypeRef> fontUrlRef(CTFontCopyAttribute(fFontRef.get(), kCTFontURLAttribute));
+    CFURLRef fontUrl;
+    if (!SkCFDynamicCast(fontUrlRef.get(), &fontUrl, "Font URL")) {
+        return;
+    }
+    SkUniqueCFRef<CFStringRef> cfPath(
+        CFURLCopyFileSystemPath(fontUrl, kCFURLPOSIXPathStyle));
+    if (cfPath) {
+        SkStringFromCFString(cfPath.get(), path);
+    }
+}
+#endif
 
 #endif

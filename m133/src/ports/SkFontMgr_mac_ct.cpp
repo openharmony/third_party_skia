@@ -530,6 +530,27 @@ protected:
         });
         return sk_ref_sp(gDefaultFace);
     }
+
+#if defined(CROSS_PLATFORM)
+     std::vector<sk_sp<SkTypeface>> onGetSystemFonts() const override {
+        std::vector<sk_sp<SkTypeface>> typefaces;
+        typefaces.reserve(fCount);
+        for (int i = 0; i < fCount; ++i) {
+            auto styleSet = CreateSet(this->getFamilyNameAt(i));
+            if (!styleSet) {
+                continue;
+            }
+            const int styleCount = styleSet->count();
+            for (int j = 0; j < styleCount; ++j) {
+                auto typeface = styleSet->createTypeface(j);
+                if (typeface) {
+                    typefaces.emplace_back(std::move(typeface));
+                }
+            }
+        }
+        return typefaces;
+    }
+#endif
 };
 
 sk_sp<SkFontMgr> SkFontMgr_New_CoreText(CTFontCollectionRef fontCollection) {

@@ -110,6 +110,7 @@ void GetSystemFontFamilies(SkTDArray<FontFamily*>& fontFamilies);
 #if defined(CROSS_PLATFORM)
 /** Parses system font configuration files and appends result to fontFamilies. */
 void GetSystemFontFamiliesForSymbol(SkTDArray<FontFamily *> &fontFamilies);
+void GetSystemFontFamiliesForNotDef(SkTDArray<FontFamily *> &fontFamilies);
 #endif
 
 /** Parses font configuration files and appends result to fontFamilies. */

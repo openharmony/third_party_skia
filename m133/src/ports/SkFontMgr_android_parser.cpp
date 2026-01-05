@@ -36,6 +36,7 @@ using namespace skia_private;
 #define VENDOR_FONTS_FILE "/vendor/etc/fallback_fonts.xml"
 #if defined(CROSS_PLATFORM)
 #define SK_FONT_CONFIG_FILE_NAME "hwsymbol.xml"
+#define SK_NOT_DEF_FONTS_CONFIG_FILE_NAME "hwnotdef.xml"
 #endif
 #define LOCALE_FALLBACK_FONTS_SYSTEM_DIR "/system/etc"
 #define LOCALE_FALLBACK_FONTS_VENDOR_DIR "/vendor/etc"
@@ -841,6 +842,17 @@ void SkFontMgr_Android_Parser::GetSystemFontFamiliesForSymbol(SkTDArray<FontFami
     std::string lmpSystemFontsFile = containerFontBasePath.append(SK_FONT_CONFIG_FILE_NAME);
     skia::text::HmSymbolConfig_OHOS::LoadSymbolConfig("hm_symbol_config_next.json", basePath);
     append_system_font_families(fontFamilies, basePath);
+    parse_config_file(lmpSystemFontsFile.c_str(), fontFamilies, basePath, false);
+}
+
+void SkFontMgr_Android_Parser::GetSystemFontFamiliesForNotDef(SkTDArray<FontFamily*>& fontFamilies)
+{
+    std::string containerFontBasePath = SkFontMgr::containerFontPath;
+    if (containerFontBasePath.empty()) {
+        return;
+    }
+    SkString basePath(containerFontBasePath.c_str());
+    std::string lmpSystemFontsFile = containerFontBasePath.append(SK_NOT_DEF_FONTS_CONFIG_FILE_NAME);
     parse_config_file(lmpSystemFontsFile.c_str(), fontFamilies, basePath, false);
 }
 #endif
