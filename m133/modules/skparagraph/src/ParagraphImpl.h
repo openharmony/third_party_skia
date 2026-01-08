@@ -400,7 +400,10 @@ public:
     sk_sp<SkUnicode> getUnicode() { return fUnicode; }
 
 #ifdef ENABLE_TEXT_ENHANCE
-    bool needCreateMiddleEllipsis();
+    bool needCreateOneLineMiddleEllipsis();
+    bool needCreateOneLineHeadEllipsis();
+    bool needCreateMultiLineMiddleEllipsis();
+    bool needCreateMultiLineHeadEllipsis();
     Placeholder* getPlaceholderByIndex(size_t placeholderIndex);
     bool IsPlaceholderAlignedFollowParagraph(size_t placeholderIndex);
     bool setPlaceholderAlignment(size_t placeholderIndex, PlaceholderAlignment alignment);

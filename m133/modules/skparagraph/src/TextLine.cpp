@@ -1130,26 +1130,23 @@ void TextLine::ellipsisNotFitProcess(EllipsisModal ellipsisModal) {
     }
 
     // Weird situation: ellipsis does not fit; no ellipsis then
-    switch (ellipsisModal) {
-        case EllipsisModal::TAIL:
-            fClusterRange.end = fClusterRange.start;
-            fGhostClusterRange.end = fClusterRange.start;
-            fText.end = fText.start;
-            fTextIncludingNewlines.end = fTextIncludingNewlines.start;
-            fTextExcludingSpaces.end = fTextExcludingSpaces.start;
-            fAdvance.fX = 0;
-            break;
-        case EllipsisModal::HEAD:
-            fClusterRange.start = fClusterRange.end;
-            fGhostClusterRange.start = fClusterRange.end;
-            fText.start = fText.end;
-            fTextIncludingNewlines.start = fTextIncludingNewlines.end;
-            fTextExcludingSpaces.start = fTextExcludingSpaces.end;
-            fAdvance.fX = 0;
-            break;
-        default:
-            return;
+    if(ellipsisModal == EllipsisModal::TAIL) {
+        fClusterRange.end = fClusterRange.start;
+        fGhostClusterRange.end = fClusterRange.start;
+        fText.end = fText.start;
+        fTextIncludingNewlines.end = fTextIncludingNewlines.start;
+        fTextExcludingSpaces.end = fTextExcludingSpaces.start;
+        fAdvance.fX = 0;
+    } else if (ellipsisModal == EllipsisModal::HEAD || ellipsisModal == EllipsisModal::MULTILINE_HEAD) {
+        fClusterRange.start = fClusterRange.end;
+        fGhostClusterRange.start = fClusterRange.end;
+        fText.start = fText.end;
+        fTextIncludingNewlines.start = fTextIncludingNewlines.end;
+        fTextExcludingSpaces.start = fTextExcludingSpaces.end;
+        fAdvance.fX = 0;
     }
+
+    return;
 }
 
 void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType) {
@@ -1166,7 +1163,7 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
 
     if (fClusterRange.width() == 0 && fGhostClusterRange.width() > 0) {
         // Only be entered when line is empty.
-        handleTailEllipsisInEmptyLine(ellipsisRun, ellipsis, width, wordBreakType);
+        handleTailEllipsisInEmptyLine(ellipsisRun, ellipsis, width);
         return;
     }
 
@@ -1215,8 +1212,8 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
         }
 
         // Update the ellipsis attributes and line attributes.
-        TailEllipsisUpdateEllipsis(cluster, ellipsisRun, ellipsis, width);
-        TailEllipsisUpdateLine(cluster, width, clusterIndex, wordBreakType);
+        tailEllipsisUpdateEllipsis(cluster, ellipsisRun, ellipsis, width);
+        tailEllipsisUpdateLine(cluster, width, clusterIndex);
         // Update the ellipsis info for the paragraph that has been split runs.
         if (fEllipsis && fOwner->getParagraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE) {
             fOwner->setEllipsisRunIndexOffset(cluster.runIndex() - fEllipsisIndex);
@@ -1230,22 +1227,21 @@ void TextLine::createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
     ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
 
-void TextLine::handleTailEllipsisInEmptyLine(std::unique_ptr<Run>& ellipsisRun,
-                                             const SkString& ellipsis,
-                                             SkScalar width,
-                                             WordBreakType wordBreakType) {
+void TextLine::handleTailEllipsisInEmptyLine(std::unique_ptr<Run>& ellipsisRun, const SkString& ellipsis,
+    SkScalar width)
+{
     auto& cluster = fOwner->cluster(fClusterRange.start);
     ellipsisRun = this->shapeEllipsis(ellipsis, &cluster);
     fEllipsis = std::move(ellipsisRun);
     fEllipsis->fTextRange = TextRange(cluster.textRange().start, cluster.textRange().start + ellipsis.size());
     fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().start, fOwner->text().size());
-    TailEllipsisUpdateLine(cluster, width, fGhostClusterRange.end, wordBreakType);
+    tailEllipsisUpdateLine(cluster, width, fGhostClusterRange.end);
     fWidthWithSpaces = width;
     ellipsisNotFitProcess(EllipsisModal::TAIL);
 }
 
-void TextLine::TailEllipsisUpdateEllipsis(Cluster& cluster, std::unique_ptr<Run>& ellipsisRun,
-    const SkString& ellipsis, float width)
+void TextLine::tailEllipsisUpdateEllipsis(Cluster& cluster, std::unique_ptr<Run>& ellipsisRun,
+    const SkString& ellipsis, SkScalar width)
 {
     // Update the ellipsis style to that of the first cluster when maxwidth is less than or equal to 0.
     if (width <= 0) {
@@ -1260,7 +1256,7 @@ void TextLine::TailEllipsisUpdateEllipsis(Cluster& cluster, std::unique_ptr<Run>
     fTextRangeReplacedByEllipsis = TextRange(cluster.textRange().end, fOwner->text().size());
 }
 
-void TextLine::TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType)
+void TextLine::tailEllipsisUpdateLine(Cluster& cluster, SkScalar width, size_t clusterIndex)
 {
     // We found enough room for the ellipsis
     fAdvance.fX = width;
@@ -1282,7 +1278,8 @@ void TextLine::TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clus
     }
 }
 
-void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool) {
+void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, EllipsisModal ellipsisMode)
+{
     if (fAdvance.fX <= maxWidth) {
         return;
     }
@@ -1300,34 +1297,55 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, b
             width -= usingAutoSpaceWidth(&cluster);
             // Continue if the ellipsis does not fit
             if (std::floor(width) > 0) {
+                if (clusterIndex == fGhostClusterRange.end - 1 && ellipsisMode == EllipsisModal::MULTILINE_HEAD) {
+                    width += usingAutoSpaceWidth(&cluster);
+                }
                 continue;
+            }
+            // Fall back when width is very small, only one cluster with ellipsis in line.
+            if (ellipsisMode == EllipsisModal::MULTILINE_HEAD) {
+                width += usingAutoSpaceWidth(&cluster);
             }
         }
 
-        // Get the last run directions after clipping
-        fEllipsisIndex = cluster.runIndex();
-        fLastClipRunLtr = fOwner->run(fEllipsisIndex).leftToRight();
-
-        // We found enough room for the ellipsis
-        fAdvance.fX = width + ellipsisRun->advance().fX;
-        fEllipsis = std::move(ellipsisRun);
-        fEllipsis->setOwner(fOwner);
-        fTextRangeReplacedByEllipsis = TextRange(0, cluster.textRange().start);
-        fClusterRange.start = clusterIndex;
-        fGhostClusterRange.start = fClusterRange.start;
-        fEllipsis->fClusterStart = 0;
-        fText.start = cluster.textRange().start;
-        fTextIncludingNewlines.start = cluster.textRange().start;
-        fTextExcludingSpaces.start = cluster.textRange().start;
+        // Update the ellipsis attributes and line attributes.
+        headEllipsisUpdateLine(ellipsisRun, width, clusterIndex, ellipsisMode);
         break;
     }
-
-    fWidthWithSpaces = width;
 
     ellipsisNotFitProcess(EllipsisModal::HEAD);
 }
 
-void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis) {
+void TextLine::headEllipsisUpdateLine(std::unique_ptr<Run>& ellipsisRun, SkScalar width, ClusterIndex clusterIndex,
+    EllipsisModal ellipsisMode)
+{
+    const Cluster& originHeadCluster = fOwner->cluster(fGhostClusterRange.start);
+    const Cluster& updateHeadCluster = fOwner->cluster(clusterIndex);
+    
+    // We found enough room for the ellipsis
+    // HEAD mode adds extra ellipsis width, which is unmodifiable. The new MULTILINE_HEAD mode will fix this.
+    fAdvance.fX = (ellipsisMode == EllipsisModal::HEAD) ? (width + ellipsisRun->advance().fX) : width;
+    fWidthWithSpaces = width;
+
+    fEllipsis = std::move(ellipsisRun);
+    fEllipsis->setOwner(fOwner);
+    fEllipsis->fClusterStart = originHeadCluster.textRange().start;
+    fEllipsis->fTextRange = TextRange(originHeadCluster.textRange().start,
+        originHeadCluster.textRange().start + fEllipsis->size());
+
+    fEllipsisIndex = updateHeadCluster.runIndex();
+    fLastClipRunLtr = fOwner->run(fEllipsisIndex).leftToRight();
+
+    fTextRangeReplacedByEllipsis = TextRange(originHeadCluster.textRange().start, updateHeadCluster.textRange().start);
+    fClusterRange.start = clusterIndex;
+    fGhostClusterRange.start = fClusterRange.start;
+    fText.start = updateHeadCluster.textRange().start;
+    fTextIncludingNewlines.start = updateHeadCluster.textRange().start;
+    fTextExcludingSpaces.start = updateHeadCluster.textRange().start;
+}
+
+void TextLine::createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis)
+{
     if (fAdvance.fX <= maxWidth) {
         return;
     }
@@ -1684,7 +1702,9 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
 void TextLine::measureTextWithSpacesAtTheEnd(ClipContext& context, bool includeGhostSpaces) const {
     // Special judgment for the middle ellipsis, reason: inconsistent width behavior between
     // the middle tail ellipsis and the head ellipsis
-    SkScalar lineWidth = fOwner->needCreateMiddleEllipsis() ? width() : fAdvance.fX;
+    bool needAdjustWidth = fOwner->needCreateOneLineMiddleEllipsis() || fOwner->needCreateMultiLineMiddleEllipsis()
+        || fOwner->needCreateMultiLineHeadEllipsis();
+    SkScalar lineWidth = needAdjustWidth ? width() : fAdvance.fX;
     if (compareRound(context.clip.fRight, lineWidth, fOwner->getApplyRoundingHack()) > 0 && !includeGhostSpaces
         && lineWidth > 0) {
         // There are few cases when we need it.
@@ -2253,10 +2273,16 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
                                         const RunVisitor& visitor) const {
     IterateRunsContext context;
     if (fEllipsis != nullptr) {
-        if (fOwner->needCreateMiddleEllipsis()) {
+        if (fOwner->needCreateOneLineMiddleEllipsis()) {
             context.ellipsisMode = EllipsisModal::MIDDLE;
-        } else if (fIsTextLineEllipsisHeadModal || fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
+        } else if (fOwner->needCreateMultiLineMiddleEllipsis()) {
+            context.ellipsisMode = EllipsisModal::MULTILINE_MIDDLE;
+        } else if (fOwner->needCreateOneLineHeadEllipsis() ||
+            fCreateTruncatedLineEllipsisModel == EllipsisModal::HEAD) {
             context.ellipsisMode = EllipsisModal::HEAD;
+        } else if (fOwner->needCreateMultiLineHeadEllipsis() ||
+            fCreateTruncatedLineEllipsisModel == EllipsisModal::MULTILINE_HEAD) {
+            context.ellipsisMode = EllipsisModal::MULTILINE_HEAD;
         }
     }
     auto textRange = includingGhostSpaces ? this->textWithNewlines() : this->trimmedText();
@@ -2281,9 +2307,9 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
         context.runIndex = runIndex;
         // add the lastClipRun's left ellipsis if necessary
         if (!context.isAlreadyUseEllipsis && fEllipsisIndex == runIndex &&
-            ((!fLastClipRunLtr && context.ellipsisMode != EllipsisModal::HEAD &&
-            context.ellipsisMode != EllipsisModal::MIDDLE) ||
-            (context.ellipsisMode == EllipsisModal::HEAD && fLastClipRunLtr))) {
+            ((!fLastClipRunLtr && context.ellipsisMode == EllipsisModal::TAIL) ||
+            (context.ellipsisMode == EllipsisModal::HEAD && fLastClipRunLtr) ||
+            (context.ellipsisMode == EllipsisModal::MULTILINE_HEAD && fLastClipRunLtr))) {
             if (!processEllipsisRun(context, ellipsisReadStrategy, visitor, context.width)) {
                 return;
             }
@@ -2310,7 +2336,7 @@ void TextLine::iterateThroughVisualRuns(EllipsisReadStrategy ellipsisReadStrateg
                 context.runOffset -= whitespacesLen;
             }
         }
-        if (context.ellipsisMode == EllipsisModal::MIDDLE) {
+        if (context.ellipsisMode == EllipsisModal::MIDDLE || context.ellipsisMode == EllipsisModal::MULTILINE_MIDDLE) {
             if (!handleMiddleEllipsisMode(run, context, ellipsisReadStrategy, visitor)) {
                 return;
             }
@@ -3061,26 +3087,31 @@ size_t TextLine::getGlyphCount() const
 std::unique_ptr<TextLineBase> TextLine::createTruncatedLine(double width, EllipsisModal ellipsisMode,
     const std::string& ellipsisStr)
 {
-    if (width > 0 && (ellipsisMode == EllipsisModal::HEAD || ellipsisMode == EllipsisModal::TAIL)) {
-        TextLine textLine = CloneSelf();
-        SkScalar widthVal = static_cast<SkScalar>(width);
-        if (widthVal < widthWithEllipsisSpaces() && !ellipsisStr.empty()) {
-            if (ellipsisMode == EllipsisModal::HEAD) {
-                textLine.fIsTextLineEllipsisHeadModal = true;
-                textLine.setTextBlobCachePopulated(false);
-                textLine.createHeadEllipsis(widthVal, SkString(ellipsisStr), true);
-            } else if (ellipsisMode == EllipsisModal::TAIL) {
-                textLine.fIsTextLineEllipsisHeadModal = false;
-                textLine.setTextBlobCachePopulated(false);
-                int endWhitespaceCount = getEndWhitespaceCount(fGhostClusterRange, fOwner);
-                textLine.fGhostClusterRange.end -= static_cast<size_t>(endWhitespaceCount);
-                textLine.createTailEllipsis(widthVal, SkString(ellipsisStr), true, fOwner->getWordBreakType());
-            }
-        }
-        return std::make_unique<TextLineBaseImpl>(std::make_unique<TextLine>(std::move(textLine)));
+    if (width <= 0 || (ellipsisMode != EllipsisModal::HEAD && ellipsisMode != EllipsisModal::MULTILINE_HEAD &&
+        ellipsisMode != EllipsisModal::TAIL)) {
+        return nullptr;
     }
 
-    return nullptr;
+    TextLine textLine = CloneSelf();
+    SkScalar widthVal = static_cast<SkScalar>(width);
+    if (widthVal < widthWithEllipsisSpaces() && !ellipsisStr.empty()) {
+        if (ellipsisMode == EllipsisModal::HEAD) {
+            textLine.fCreateTruncatedLineEllipsisModel = EllipsisModal::HEAD;
+            textLine.setTextBlobCachePopulated(false);
+            textLine.createHeadEllipsis(widthVal, SkString(ellipsisStr), ellipsisMode);
+        } else if (ellipsisMode == EllipsisModal::MULTILINE_HEAD) {
+            textLine.fCreateTruncatedLineEllipsisModel = EllipsisModal::MULTILINE_HEAD;
+            textLine.setTextBlobCachePopulated(false);
+            textLine.createHeadEllipsis(widthVal, SkString(ellipsisStr), ellipsisMode);
+        } else if (ellipsisMode == EllipsisModal::TAIL) {
+            textLine.fCreateTruncatedLineEllipsisModel = EllipsisModal::TAIL;
+            textLine.setTextBlobCachePopulated(false);
+            int endWhitespaceCount = getEndWhitespaceCount(fGhostClusterRange, fOwner);
+            textLine.fGhostClusterRange.end -= static_cast<size_t>(endWhitespaceCount);
+            textLine.createTailEllipsis(widthVal, SkString(ellipsisStr), true, fOwner->getWordBreakType());
+        }
+    }
+    return std::make_unique<TextLineBaseImpl>(std::make_unique<TextLine>(std::move(textLine)));
 }
 
 double TextLine::getTrailingSpaceWidth() const
@@ -3633,7 +3664,7 @@ TextLine TextLine::CloneSelf()
     textLine.fDescentStyle = this->fDescentStyle;
     textLine.fTextBlobCachePopulated = this->fTextBlobCachePopulated;
     textLine.fOwner = this->fOwner;
-    textLine.fIsTextLineEllipsisHeadModal = this->fIsTextLineEllipsisHeadModal;
+    textLine.fCreateTruncatedLineEllipsisModel = this->fCreateTruncatedLineEllipsisModel;
     textLine.fEllipsisString = this->fEllipsisString;
     textLine.fBreakWithHyphen = this->fBreakWithHyphen;
     if (this->fHyphenRun) {

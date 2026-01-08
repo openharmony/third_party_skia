@@ -114,10 +114,35 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
     return result;
 }
 
-bool ParagraphImpl::needCreateMiddleEllipsis()
+bool ParagraphImpl::needCreateOneLineMiddleEllipsis()
 {
     if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
         fParagraphStyle.ellipsized()) {
+        return true;
+    }
+    return false;
+}
+
+bool ParagraphImpl::needCreateOneLineHeadEllipsis()
+{
+    if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.getEllipsisMod() == EllipsisModal::HEAD &&
+        fParagraphStyle.ellipsized()) {
+        return true;
+    }
+    return false;
+}
+
+bool ParagraphImpl::needCreateMultiLineMiddleEllipsis()
+{
+    if (fParagraphStyle.getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE && fParagraphStyle.ellipsized()) {
+        return true;
+    }
+    return false;
+}
+
+bool ParagraphImpl::needCreateMultiLineHeadEllipsis()
+{
+    if (fParagraphStyle.getEllipsisMod() == EllipsisModal::MULTILINE_HEAD && fParagraphStyle.ellipsized()) {
         return true;
     }
     return false;
@@ -1552,10 +1577,9 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 line.autoSpacing();
                 if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
                     line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
-                } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
-                    line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
-                }
-                else if (needCreateMiddleEllipsis()) {
+                } else if (addEllipsis && (needCreateOneLineHeadEllipsis() || needCreateMultiLineHeadEllipsis())) {
+                    line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), fParagraphStyle.getEllipsisMod());
+                } else if (needCreateOneLineMiddleEllipsis() || (addEllipsis && needCreateMultiLineMiddleEllipsis())) {
                     line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
                 } else if (textWrapper.brokeLineWithHyphen()
                            || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
@@ -2332,7 +2356,7 @@ bool ParagraphImpl::isAutoSpaceEnabled() const
 
 SkScalar ParagraphImpl::clusterUsingAutoSpaceWidth(const Cluster& cluster) const
 {
-    if(!isAutoSpaceEnabled()){
+    if(!isAutoSpaceEnabled() || cluster.runIndex() == EMPTY_RUN){
         return cluster.width();
     }
     Run& run = cluster.run();
