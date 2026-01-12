@@ -991,7 +991,7 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
     SkScalar noIndentWidth = maxWidth;
     while (fEndLine.endCluster() != end) {
         noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
-        if (isNewWidthSetMax(parent)) {
+        if (isNewWidthSetMax()) {
             newWidth = FLT_MAX;
         } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
             newWidth = balancedWidths[fLineNumber - 1];
@@ -1236,17 +1236,14 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
     }
 }
 
-bool TextWrapper::isNewWidthSetMax(ParagraphImpl* parent) {
-    if (parent == nullptr) {
-        return false;
-    }
-    if (parent->paragraphStyle().getMaxLines() == 1 &&
-        parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
+bool TextWrapper::isNewWidthSetMax() {
+    if (fParent->paragraphStyle().getMaxLines() == 1 &&
+        fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
         return true;
-    } else if (parent->needCreateOneLineMiddleEllipsis()) {
+    } else if (fParent->needCreateOneLineMiddleEllipsis()) {
         return true;
-    } else if (fLineNumber >= parent->paragraphStyle().getMaxLines() &&
-        (parent->needCreateMultiLineHeadEllipsis() || parent->needCreateMultiLineMiddleEllipsis())) {
+    } else if (fLineNumber >= fParent->paragraphStyle().getMaxLines() &&
+        (fParent->needCreateMultiLineHeadEllipsis() || fParent->needCreateMultiLineMiddleEllipsis())) {
         return true;
     }
 
