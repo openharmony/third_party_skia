@@ -1240,7 +1240,10 @@ bool TextWrapper::isNewWidthSetMax(ParagraphImpl* parent) {
     if (parent == nullptr) {
         return false;
     }
-    if (parent->needCreateOneLineHeadEllipsis() || parent->needCreateOneLineMiddleEllipsis()) {
+    if (parent->paragraphStyle().getMaxLines() == 1 &&
+        parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
+        return true;
+    } else if (parent->needCreateOneLineMiddleEllipsis()) {
         return true;
     } else if (fLineNumber >= parent->paragraphStyle().getMaxLines() &&
         (parent->needCreateMultiLineHeadEllipsis() || parent->needCreateMultiLineMiddleEllipsis())) {
