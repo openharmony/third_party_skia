@@ -3195,16 +3195,21 @@ void addPathInfo(const Run* run, const ClusterRange& range, const SkPoint& offse
     const SkSpan<const SkPoint>& positions = run->positions();
     const RSFont& font = run->font();
     for (size_t i = 0; i < glyphs.size(); i++) {
-        if (i >= (range.end - run->clusterRange().start)) {
-            break;
+        size_t glyphIndex = EMPTY_INDEX;
+        if (run->leftToRight()) {
+            glyphIndex = run->clusterRange().start + i;
+        } else {
+            glyphIndex = run->clusterRange().end - 1 - i;
         }
-        if (i >= (range.start - run->clusterRange().start)) {
-            RSPath path;
-            if (font.GetPathForGlyph(glyphs[i], &path)) {
-                pathInfo.push_back({path, textStyle, {offset.fX + offsets[i].fX + positions[i].fX, offset.fY}});
-            } else {
-                TEXT_LOGE("Failed to get path for glyph [%{public}d]", glyphs[i]);
-            }
+        if (glyphIndex < range.start || glyphIndex >= range.end) {
+            continue;
+        }
+        
+        RSPath path;
+        if (font.GetPathForGlyph(glyphs[i], &path)) {
+            pathInfo.push_back({path, textStyle, {offset.fX + offsets[i].fX + positions[i].fX, offset.fY}});
+        } else {
+            TEXT_LOGE("Failed to get path for glyph [%{public}d]", glyphs[i]);
         }
     }
 }
@@ -3212,7 +3217,7 @@ void addPathInfo(const Run* run, const ClusterRange& range, const SkPoint& offse
 void ParagraphImpl::addPathInfoFromLine(
     const TextLine& line, const ClusterRange& range, std::vector<PathInfo>& pathInfo)
 {
-    line.iterateThroughVisualRuns(TextLine::EllipsisReadStrategy::READ_REPLACED_WORD, true,
+    line.iterateThroughVisualRuns(TextLine::EllipsisReadStrategy::READ_REPLACED_WORD, false,
         [this, &line, &range, &pathInfo](
             const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* width){
             if (run->placeholderStyle() != nullptr) {
