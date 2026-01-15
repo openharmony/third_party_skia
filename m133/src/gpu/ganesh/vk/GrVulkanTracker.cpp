@@ -18,8 +18,9 @@
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
 
 #include <deque>
+#ifndef CROSS_PLATFORM
 #include <parameters.h>
-
+#endif
 static thread_local ParallelDebug::VkImageInvokeRecord g_caller;
 static thread_local std::deque<ParallelDebug::VkImageDestroyRecord> g_delete;
 static constexpr size_t DESTROY_RECORD_CAPACITY = 1000;
@@ -31,12 +32,14 @@ static inline int64_t GetNanoSeconds()
     return ts.tv_sec * 100000000LL + ts.tv_nsec;
 }
 
+#ifndef CROSS_PLATFORM
 bool ParallelDebug::IsVkImageDfxEnabled()
 {
     static const bool dfxEnabled =
         std::atoi(OHOS::system::GetParameter("persist.sys.graphic.openVkImageMemoryDfx", "0").c_str()) != 0;
     return dfxEnabled;
 }
+#endif
 
 uint64_t ParallelDebug::GetNodeId()
 {
@@ -92,7 +95,11 @@ void ParallelDebug::DumpAllDestroyVkImage(std::stringstream& ss)
 
 void ParallelDebug::DumpDestroyVkImageByObjHandle(std::stringstream& ss, uint64_t objHandle)
 {
+#ifndef CROSS_PLATFORM
     VkImage vkImage = reinterpret_cast<VkImage>(static_cast<uintptr_t>(objHandle));
+#else
+    VkImage vkImage = reinterpret_cast<VkImage>(objHandle);
+#endif
     for (auto& del : g_delete) {
         if (del.image_ != vkImage) {
             continue;

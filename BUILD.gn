@@ -132,7 +132,7 @@ if (is_arkui_x) {
 
     public_external_deps = []
 
-    if (skia_use_vulkan) {
+    if (skia_use_vulkan && !is_arkui_x) {
       public_external_deps += [ "vulkan-headers:vulkan_headers" ]
     }
 
@@ -285,7 +285,7 @@ if (is_arkui_x) {
       sources += skia_no_encode_webp_srcs
     }
     if (is_arkui_x) {
-      defines += [ "ARKUI_X_ENABLE" ]
+      defines += [ "CROSS_PLATFORM" ]
     }
 
     if (is_win) {
@@ -502,7 +502,7 @@ if (is_arkui_x) {
 
     public_external_deps = []
 
-    if (skia_use_vulkan) {
+    if (skia_use_vulkan && !is_arkui_x) {
       public_external_deps += [ "vulkan-headers:vulkan_headers" ]
     }
 

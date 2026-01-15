@@ -1485,9 +1485,14 @@ optional("gpu_shared") {
 
   if (skia_use_vulkan) {
     public_defines += [ "SK_VULKAN" ]
+    if (is_arkui_x) {
+      defines = [ "CROSS_PLATFORM" ]
+    }
     sources += skia_shared_vk_sources
     configs += [ ":use_skia_vulkan_headers" ]
-    external_deps += [ "vulkan-headers:vulkan_headers" ]
+    if (!is_arkui_x) {
+      external_deps += [ "vulkan-headers:vulkan_headers" ]
+    }
     if (skia_enable_vulkan_debug_layers) {
       public_defines += [ "SK_ENABLE_VK_LAYERS" ]
     }
@@ -1625,10 +1630,15 @@ optional("gpu") {
   }
 
   if (skia_use_vulkan) {
+    if (is_arkui_x) {
+      defines = [ "CROSS_PLATFORM" ]
+    }
     public += skia_gpu_vk_public
     sources += skia_gpu_vk_private
     configs += [ ":use_skia_vulkan_headers" ]
-    external_deps += [ "vulkan-headers:vulkan_headers" ]
+    if (!is_arkui_x) {
+      external_deps += [ "vulkan-headers:vulkan_headers" ]
+    }
     if (is_ohos) {
       external_deps += [ "hilog:libhilog" ]
     }
@@ -2375,7 +2385,7 @@ skia_component("skia") {
   libs = []
   
   if (is_arkui_x) {
-      defines += [ "ARKUI_X_ENABLE" ]
+      defines += [ "CROSS_PLATFORM" ]
   }
 
   if (skia_build_for_debugger) {

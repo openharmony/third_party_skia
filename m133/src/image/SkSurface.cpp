@@ -26,6 +26,7 @@
 
 #ifdef SK_VK_PARTIALRENDER
 #include "src/gpu/vk/GrVkDrawAreaManager.h"
+#include <vector>
 #endif
 
 #include <cstddef>

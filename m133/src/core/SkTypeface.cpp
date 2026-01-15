@@ -369,7 +369,7 @@ void SkTypeface::serialize(SkWStream* wstream, SerializeBehavior behavior) const
 
     bool shouldSerializeData = false;
 
-#ifdef ARKUI_X_ENABLE
+#ifdef CROSS_PLATFORM
     // Prohibiting serializes typeface when arkui-x use custom's font
     isLocalData = false;
 #endif
