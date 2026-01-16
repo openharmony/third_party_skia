@@ -28,5 +28,9 @@
 // version (as of Oct 2023, blocked on version mismatch in G3)
 #include <cstdio>
 
+#ifndef CROSS_PLATFORM
 #include <vulkan/vulkan_core.h>
+#else
+#include "include/third_party/vulkan/vulkan/vulkan_core.h"
+#endif
 #include "src/gpu/vk/vulkanmemoryallocator/VulkanMemoryAllocatorWrapper.h"
