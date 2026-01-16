@@ -14,13 +14,17 @@ source_set("vulkanmemoryallocator") {
 
   include_dirs = [ "${skia_root_dir}" ]
   deps = [ "${skia_third_party_dir}/vulkanmemoryallocator:vulkan_memoryallocator" ]
-  external_deps = [ "vulkan-headers:vulkan_headers" ]
+  if (!is_arkui_x) {
+    external_deps = [ "vulkan-headers:vulkan_headers" ]
+  }
   defines = [ "SK_USE_INTERNAL_VULKAN_HEADERS" ]
 
   if (skia_disable_vma_stl_shared_mutex) {
     defines += [ "VMA_USE_STL_SHARED_MUTEX=0" ]
   }
-
+  if (is_arkui_x) {
+    defines += [ "CROSS_PLATFORM" ]
+  }
   sources = [
     "VulkanMemoryAllocatorWrapper.cpp",
     "VulkanMemoryAllocatorWrapper.h",

@@ -219,6 +219,7 @@ sk_sp<GrVkBuffer> GrVkBuffer::Make(GrVkGpu* gpu,
             /*label=*/"MakeVkBuffer"));
 }
 
+#ifndef CROSS_PLATFORM
 sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
                                                      OH_NativeBuffer *nativeBuffer,
                                                      size_t bufferSize,
@@ -282,6 +283,7 @@ sk_sp<GrVkBuffer> GrVkBuffer::MakeFromOHNativeBuffer(GrVkGpu* gpu,
             gpu, bufferSize, bufferType, accessPattern, buffer, alloc, nullptr,
             /*label=*/"MakeVkBufferFromOHNativeBuffer"));
 }
+#endif
 
 void GrVkBuffer::vkMap(size_t readOffset, size_t readSize) {
     SkASSERT(!fMapPtr);

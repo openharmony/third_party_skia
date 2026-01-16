@@ -77,6 +77,7 @@ bool VulkanMemory::AllocBufferMemory(VulkanMemoryAllocator* allocator,
     return true;
 }
 
+#ifndef CROSS_PLATFORM
 bool VulkanMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
                                            OH_NativeBuffer *nativeBuffer,
                                            VkBuffer buffer,
@@ -134,6 +135,7 @@ bool VulkanMemory::ImportAndBindBufferMemory(GrVkGpu* gpu,
 
     return true;
 }
+#endif
 
 void VulkanMemory::FreeBufferMemory(VulkanMemoryAllocator* allocator, const VulkanAlloc& alloc) {
     SkASSERT(alloc.fBackendMemory);

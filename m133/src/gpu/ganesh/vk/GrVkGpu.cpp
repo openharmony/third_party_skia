@@ -8,7 +8,7 @@
 #include "src/gpu/ganesh/vk/GrVkGpu.h"
 
 #include "include/core/SkImageInfo.h"
-#ifdef SKIA_DFX_FOR_RECORD_VKIMAGE
+#if defined(SKIA_DFX_FOR_RECORD_VKIMAGE) || defined(CROSS_PLATFORM)
 #include "include/core/SkLog.h"
 #endif
 #include "include/core/SkPoint.h"
@@ -1170,7 +1170,7 @@ bool GrVkGpu::uploadTexDataCompressed(GrVkImage* uploadTexture,
 
     return true;
 }
-
+#ifndef CROSS_PLATFORM
 bool GrVkGpu::uploadTexDataCompressed(GrVkImage* uploadTexture,
                                       SkTextureCompressionType compression, VkFormat vkFormat,
                                       SkISize dimensions, skgpu::Mipmapped mipMapped,
@@ -1218,6 +1218,7 @@ bool GrVkGpu::uploadTexDataCompressed(GrVkImage* uploadTexture,
 
     return true;
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // TODO: make this take a skgpu::Mipmapped

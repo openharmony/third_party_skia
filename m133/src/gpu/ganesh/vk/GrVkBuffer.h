@@ -27,12 +27,13 @@ public:
                                   size_t size,
                                   GrGpuBufferType bufferType,
                                   GrAccessPattern accessPattern);
-
+#ifndef CROSS_PLATFORM
     static sk_sp<GrVkBuffer> MakeFromOHNativeBuffer(GrVkGpu* gpu,
                                                     OH_NativeBuffer *nativeBuffer,
                                                     size_t bufferSize,
                                                     GrGpuBufferType bufferType,
                                                     GrAccessPattern accessPattern);
+#endif
 
     VkBuffer vkBuffer() const { return fBuffer; }
 
