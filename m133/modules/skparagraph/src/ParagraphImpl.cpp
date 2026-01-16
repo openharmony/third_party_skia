@@ -123,30 +123,6 @@ bool ParagraphImpl::needCreateOneLineMiddleEllipsis()
     return false;
 }
 
-bool ParagraphImpl::needCreateOneLineHeadEllipsis()
-{
-    if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.getEllipsisMod() == EllipsisModal::HEAD &&
-        fParagraphStyle.ellipsized()) {
-        return true;
-    }
-    return false;
-}
-
-bool ParagraphImpl::needCreateMultiLineMiddleEllipsis()
-{
-    if (fParagraphStyle.getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE && fParagraphStyle.ellipsized()) {
-        return true;
-    }
-    return false;
-}
-
-bool ParagraphImpl::needCreateMultiLineHeadEllipsis()
-{
-    if (fParagraphStyle.getEllipsisMod() == EllipsisModal::MULTILINE_HEAD && fParagraphStyle.ellipsized()) {
-        return true;
-    }
-    return false;
-}
 
 Placeholder* ParagraphImpl::getPlaceholderByIndex(size_t placeholderIndex)
 {
@@ -1575,12 +1551,22 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines,
                     clusters, clustersWithGhosts, widthWithSpaces, metrics);
                 line.autoSpacing();
-                if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
-                    line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
-                } else if (addEllipsis && (needCreateOneLineHeadEllipsis() || needCreateMultiLineHeadEllipsis())) {
-                    line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), fParagraphStyle.getEllipsisMod());
-                } else if (needCreateOneLineMiddleEllipsis() || (addEllipsis && needCreateMultiLineMiddleEllipsis())) {
-                    line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
+                if (addEllipsis) {
+                    switch (this->paragraphStyle().getEllipsisMod()) {
+                        case EllipsisModal::TAIL:
+                            line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
+                            break;
+                        case EllipsisModal::HEAD:
+                        case EllipsisModal::MULTILINE_HEAD:
+                            line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), fParagraphStyle.getEllipsisMod());
+                            break;
+                        case EllipsisModal::MIDDLE:
+                        case EllipsisModal::MULTILINE_MIDDLE:
+                            line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
+                            break;
+                        default:
+                            break;
+                    }
                 } else if (textWrapper.brokeLineWithHyphen()
                            || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
                                && (clusters.end < this->fUnicodeText.size())

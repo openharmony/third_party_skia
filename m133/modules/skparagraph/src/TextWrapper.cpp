@@ -991,7 +991,7 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
     SkScalar noIndentWidth = maxWidth;
     while (fEndLine.endCluster() != end) {
         noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
-        if (isNewWidthSetMax()) {
+        if (isNewWidthToBeSetMax()) {
             newWidth = FLT_MAX;
         } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
             newWidth = balancedWidths[fLineNumber - 1];
@@ -1005,7 +1005,8 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
 
         this->moveForward(needEllipsis, parent->getWordBreakType() == WordBreakType::BREAK_ALL);
         if (fEndLine.endCluster() >= fEndLine.startCluster() || maxLines > 1) {
-            if (parent->needCreateMultiLineHeadEllipsis() || parent->needCreateMultiLineMiddleEllipsis()) {
+            if (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+                || parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE) {
                 needEllipsis &= fLineNumber >= maxLines;
             } else {
                 // Only if we have some text to ellipsize.
@@ -1023,7 +1024,8 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
         std::tie(startLine, pos, widthWithSpaces) = this->trimStartSpaces(end);
 
         if (needEllipsis && !fHardLineBreak &&
-            !(fParent->needCreateMultiLineHeadEllipsis() || fParent->needCreateMultiLineMiddleEllipsis())) {
+            !(parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+            || parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)) {
             // This is what we need to do to preserve a space before the ellipsis
             fEndLine.restoreBreak();
             widthWithSpaces = fEndLine.widthWithGhostSpaces();
@@ -1099,6 +1101,9 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
             if (needEllipsis) {
                 fHardLineBreak = false;
             }
+        }
+        if (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MIDDLE && hasEllipsis) {
+            needEllipsis = maxLines <= 1;
         }
 
         SkScalar offsetX = parent->detectIndents(fLineNumber - 1);
@@ -1236,14 +1241,13 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
     }
 }
 
-bool TextWrapper::isNewWidthSetMax() {
-    if (fParent->paragraphStyle().getMaxLines() == 1 &&
-        fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
+bool TextWrapper::isNewWidthToBeSetMax() {
+    if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
+        fParent->paragraphStyle().getMaxLines() == 1) || fParent->needCreateOneLineMiddleEllipsis()) {
         return true;
-    } else if (fParent->needCreateOneLineMiddleEllipsis()) {
-        return true;
-    } else if (fLineNumber >= fParent->paragraphStyle().getMaxLines() &&
-        (fParent->needCreateMultiLineHeadEllipsis() || fParent->needCreateMultiLineMiddleEllipsis())) {
+    } else if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)
+        && fLineNumber >= fParent->paragraphStyle().getMaxLines() && fParent->paragraphStyle().ellipsized()) {
         return true;
     }
 
@@ -1581,16 +1585,21 @@ bool TextWrapper::determineIfEllipsisNeeded() {
     fIsLastLine = (fFormattingContext.hasEllipsis && fFormattingContext.unlimitedLines) ||
         (fLineNumber >= fFormattingContext.maxLines && fLineStretches.size() > fFormattingContext.maxLines);
     bool needEllipsis = fFormattingContext.hasEllipsis && !fFormattingContext.endlessLine && fIsLastLine;
-    if (fParent->needCreateMultiLineHeadEllipsis() || fParent->needCreateMultiLineMiddleEllipsis()) {
+    if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)
+        && fFormattingContext.hasEllipsis) {
         needEllipsis = fFormattingContext.hasEllipsis && fLineNumber >= fFormattingContext.maxLines;
     }
 
-    if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
-        fFormattingContext.hasEllipsis) {
+    if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD && fFormattingContext.hasEllipsis) {
         needEllipsis = fFormattingContext.maxLines <= 1;
         if (needEllipsis) {
             fHardLineBreak = false;
         }
+    }
+
+    if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MIDDLE && fFormattingContext.hasEllipsis) {
+        needEllipsis = fFormattingContext.maxLines <= 1;
     }
 
     return needEllipsis;
@@ -1604,7 +1613,8 @@ void TextWrapper::trimLineSpaces() {
 
 void TextWrapper::handleSpecialCases(bool needEllipsis) {
     if (needEllipsis && !fHardLineBreak &&
-        !(fParent->needCreateMultiLineHeadEllipsis() || fParent->needCreateMultiLineMiddleEllipsis())) {
+        !(fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)) {
         fEndLine.restoreBreak();
         fCurrentLineWidthWithSpaces = fEndLine.widthWithGhostSpaces();
     } else if (fBrokeLineWithHyphen) {
@@ -1884,8 +1894,9 @@ void TextWrapper::preProcessingForLineStretches() {
         fLineStretches.push_back(merged);
     }
 
-    if ((fParent->needCreateMultiLineHeadEllipsis() || fParent->needCreateMultiLineMiddleEllipsis()) &&
-        fLineStretches.size() > style.getMaxLines()) {
+    if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)
+        && fParent->paragraphStyle().ellipsized() && fLineStretches.size() > style.getMaxLines()) {
         std::vector<TextStretch> multiEllipsisLineStretches;
         
         // Put content exceeding maxline in a single line for subsequent ellipsis generation in one line.
