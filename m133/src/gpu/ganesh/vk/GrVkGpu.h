@@ -450,10 +450,11 @@ private:
                                  skgpu::Mipmapped mipmapped,
                                  const void* data,
                                  size_t dataSize);
+#ifndef CROSS_PLATFORM
     bool uploadTexDataCompressed(GrVkImage* tex, SkTextureCompressionType compression,
                                  VkFormat vkFormat, SkISize dimensions, skgpu::Mipmapped mipMapped,
                                  OH_NativeBuffer* nativeBuffer, size_t bufferSize);
-
+#endif
     void resolveImage(GrSurface* dst, GrVkRenderTarget* src, const SkIRect& srcRect,
                       const SkIPoint& dstPoint);
 

@@ -17,6 +17,10 @@ declare_args() {
   skia_feature_use_vulkan = false
 }
 
+if (is_ios && is_arkui_x) {
+  skia_feature_use_vulkan = false
+}
+
 if (skia_feature_upgrade) {
   skia_root_dir = "//third_party/skia/m133"
 } else {
