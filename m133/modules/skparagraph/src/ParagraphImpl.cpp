@@ -123,7 +123,6 @@ bool ParagraphImpl::needCreateOneLineMiddleEllipsis()
     return false;
 }
 
-
 Placeholder* ParagraphImpl::getPlaceholderByIndex(size_t placeholderIndex)
 {
     if (fPlaceholders.size() <= placeholderIndex) {
@@ -338,6 +337,32 @@ void ParagraphImpl::resetPlaceholderRange(const TextRange& deletedRange)
         ph.fTextBefore = newTextRange;
         fPlaceholders.emplace_back(ph);
     }
+}
+
+void ParagraphImpl::setIntrinsicSize(SkScalar maxIntrinsicWidth, SkScalar minIntrinsicWidth,
+    SkScalar alphabeticBaseline, SkScalar ideographicBaseline, bool exceededMaxLines)
+{
+    fMaxIntrinsicWidth = maxIntrinsicWidth;
+    fMinIntrinsicWidth = minIntrinsicWidth;
+    fAlphabeticBaseline = alphabeticBaseline;
+    fIdeographicBaseline = ideographicBaseline;
+    fExceededMaxLines = exceededMaxLines;
+    if ((paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD ||
+        paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE) && fLines.size() > 0) {
+        if (fLines[fLines.size() - 1].ellipsis() != nullptr) {
+            fExceededMaxLines = true;
+        }
+    }
+}
+
+void ParagraphImpl::getIntrinsicSize(SkScalar& maxIntrinsicWidth, SkScalar& minIntrinsicWidth,
+    SkScalar& alphabeticBaseline, SkScalar& ideographicBaseline, bool& exceededMaxLines)
+{
+    maxIntrinsicWidth = fMaxIntrinsicWidth;
+    minIntrinsicWidth = fMinIntrinsicWidth;
+    alphabeticBaseline = fAlphabeticBaseline ;
+    ideographicBaseline = fIdeographicBaseline;
+    exceededMaxLines = fExceededMaxLines;
 }
 #endif
 
