@@ -400,7 +400,7 @@ public:
     sk_sp<SkUnicode> getUnicode() { return fUnicode; }
 
 #ifdef ENABLE_TEXT_ENHANCE
-    bool needCreateMiddleEllipsis();
+    bool needCreateOneLineMiddleEllipsis();
     Placeholder* getPlaceholderByIndex(size_t placeholderIndex);
     bool IsPlaceholderAlignedFollowParagraph(size_t placeholderIndex);
     bool setPlaceholderAlignment(size_t placeholderIndex, PlaceholderAlignment alignment);
@@ -444,21 +444,9 @@ private:
         longestLine = fLongestLine;
     }
     void setIntrinsicSize(SkScalar maxIntrinsicWidth, SkScalar minIntrinsicWidth, SkScalar alphabeticBaseline,
-                          SkScalar ideographicBaseline, bool exceededMaxLines) {
-        fMaxIntrinsicWidth = maxIntrinsicWidth;
-        fMinIntrinsicWidth = minIntrinsicWidth;
-        fAlphabeticBaseline = alphabeticBaseline;
-        fIdeographicBaseline = ideographicBaseline;
-        fExceededMaxLines = exceededMaxLines;
-    }
+        SkScalar ideographicBaseline, bool exceededMaxLines);
     void getIntrinsicSize(SkScalar& maxIntrinsicWidth, SkScalar& minIntrinsicWidth, SkScalar& alphabeticBaseline,
-                          SkScalar& ideographicBaseline, bool& exceededMaxLines) {
-        maxIntrinsicWidth = fMaxIntrinsicWidth;
-        minIntrinsicWidth = fMinIntrinsicWidth;
-        alphabeticBaseline = fAlphabeticBaseline ;
-        ideographicBaseline = fIdeographicBaseline;
-        exceededMaxLines = fExceededMaxLines;
-    }
+        SkScalar& ideographicBaseline, bool& exceededMaxLines);
 
     ParagraphPainter::PaintID updateTextStyleColorAndForeground(TextStyle& TextStyle, SkColor color);
     TextBox getEmptyTextRect(RectHeightStyle rectHeightStyle) const;

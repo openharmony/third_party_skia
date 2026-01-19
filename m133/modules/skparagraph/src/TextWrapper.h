@@ -345,8 +345,8 @@ private:
     void pushToWordStretchesBatch();
     void layoutLinesBalanced(
         ParagraphImpl* parent, SkScalar maxWidth, const AddLineToParagraph& addLine);
-    void layoutLinesSimple(
-        ParagraphImpl* parent, SkScalar maxWidth, const AddLineToParagraph& addLine);
+    void layoutLinesSimple(ParagraphImpl* parent, SkScalar maxWidth, const AddLineToParagraph& addLine);
+    bool isNewWidthToBeSetMax();
     std::vector<SkScalar> generateWordsWidthInfo(const std::vector<TextStretch>& wordStretches);
     std::vector<std::pair<size_t, size_t>> generateLinesGroupInfo(
         const std::vector<float>& clustersWidth, SkScalar maxWidth);

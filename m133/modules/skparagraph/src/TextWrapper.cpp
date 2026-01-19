@@ -955,7 +955,7 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
     if (span.empty()) {
         return;
     }
-    auto maxLines = parent->paragraphStyle().getMaxLines();
+    const size_t maxLines = parent->paragraphStyle().getMaxLines();
     auto align = parent->paragraphStyle().effective_align();
     auto unlimitedLines = maxLines == std::numeric_limits<size_t>::max();
     auto endlessLine = !SkIsFinite(maxWidth);
@@ -991,9 +991,7 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
     SkScalar noIndentWidth = maxWidth;
     while (fEndLine.endCluster() != end) {
         noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
-        if (maxLines == 1 &&
-            (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD ||
-            parent->needCreateMiddleEllipsis())) {
+        if (isNewWidthToBeSetMax()) {
             newWidth = FLT_MAX;
         } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
             newWidth = balancedWidths[fLineNumber - 1];
@@ -1007,7 +1005,13 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
 
         this->moveForward(needEllipsis, parent->getWordBreakType() == WordBreakType::BREAK_ALL);
         if (fEndLine.endCluster() >= fEndLine.startCluster() || maxLines > 1) {
-            needEllipsis &= fEndLine.endCluster() < end - 1; // Only if we have some text to ellipsize
+            if (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+                || parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE) {
+                needEllipsis &= fLineNumber >= maxLines;
+            } else {
+                // Only if we have some text to ellipsize.
+                needEllipsis &= fEndLine.endCluster() < end - 1;
+            }
         }
 
         // Do not trim end spaces on the naturally last line of the left aligned text
@@ -1019,7 +1023,9 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
         SkScalar widthWithSpaces;
         std::tie(startLine, pos, widthWithSpaces) = this->trimStartSpaces(end);
 
-        if (needEllipsis && !fHardLineBreak) {
+        if (needEllipsis && !fHardLineBreak &&
+            !(parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+            || parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)) {
             // This is what we need to do to preserve a space before the ellipsis
             fEndLine.restoreBreak();
             widthWithSpaces = fEndLine.widthWithGhostSpaces();
@@ -1095,6 +1101,9 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
             if (needEllipsis) {
                 fHardLineBreak = false;
             }
+        }
+        if (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MIDDLE && hasEllipsis) {
+            needEllipsis = maxLines <= 1;
         }
 
         SkScalar offsetX = parent->detectIndents(fLineNumber - 1);
@@ -1230,6 +1239,19 @@ void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
     if (disableLastDescent) {
         parent->lines().back().setDescentStyle(LineMetricStyle::Typographic);
     }
+}
+
+bool TextWrapper::isNewWidthToBeSetMax() {
+    if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
+        fParent->paragraphStyle().getMaxLines() == 1) || fParent->needCreateOneLineMiddleEllipsis()) {
+        return true;
+    } else if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)
+        && fLineNumber >= fParent->paragraphStyle().getMaxLines() && fParent->paragraphStyle().ellipsized()) {
+        return true;
+    }
+
+    return false;
 }
 
 std::vector<uint8_t> TextWrapper::findBreakPositions(Cluster* startCluster,
@@ -1561,17 +1583,23 @@ void TextWrapper::formatCurrentLine(const AddLineToParagraph& addLine) {
 
 bool TextWrapper::determineIfEllipsisNeeded() {
     fIsLastLine = (fFormattingContext.hasEllipsis && fFormattingContext.unlimitedLines) ||
-                    (fLineNumber >= fFormattingContext.maxLines &&
-                    fLineStretches.size() > fFormattingContext.maxLines);
-    bool needEllipsis =
-            fFormattingContext.hasEllipsis && !fFormattingContext.endlessLine && fIsLastLine;
+        (fLineNumber >= fFormattingContext.maxLines && fLineStretches.size() > fFormattingContext.maxLines);
+    bool needEllipsis = fFormattingContext.hasEllipsis && !fFormattingContext.endlessLine && fIsLastLine;
+    if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)
+        && fFormattingContext.hasEllipsis) {
+        needEllipsis = fFormattingContext.hasEllipsis && fLineNumber >= fFormattingContext.maxLines;
+    }
 
-    if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
-        fFormattingContext.hasEllipsis) {
+    if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD && fFormattingContext.hasEllipsis) {
         needEllipsis = fFormattingContext.maxLines <= 1;
         if (needEllipsis) {
             fHardLineBreak = false;
         }
+    }
+
+    if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MIDDLE && fFormattingContext.hasEllipsis) {
+        needEllipsis = fFormattingContext.maxLines <= 1;
     }
 
     return needEllipsis;
@@ -1584,7 +1612,9 @@ void TextWrapper::trimLineSpaces() {
 }
 
 void TextWrapper::handleSpecialCases(bool needEllipsis) {
-    if (needEllipsis && !fHardLineBreak) {
+    if (needEllipsis && !fHardLineBreak &&
+        !(fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)) {
         fEndLine.restoreBreak();
         fCurrentLineWidthWithSpaces = fEndLine.widthWithGhostSpaces();
     } else if (fBrokeLineWithHyphen) {
@@ -1862,6 +1892,38 @@ void TextWrapper::preProcessingForLineStretches() {
         }
         fLineStretches.clear();
         fLineStretches.push_back(merged);
+    }
+
+    if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
+        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)
+        && fParent->paragraphStyle().ellipsized() && fLineStretches.size() > style.getMaxLines()) {
+        std::vector<TextStretch> multiEllipsisLineStretches;
+        
+        // Put content exceeding maxline in a single line for subsequent ellipsis generation in one line.
+        for (size_t i = 0; i < fLineStretches.size(); ++i) {
+            if (i < style.getMaxLines() - 1) {
+                multiEllipsisLineStretches.push_back(fLineStretches[i]);
+                continue;
+            } else if (i == style.getMaxLines() - 1) {
+                TextStretch merged = fLineStretches[i];
+                bool lastLineStretchesBreak = fLineStretches[i].endCluster() == nullptr ?
+                    false : fLineStretches[i].endCluster()->isHardBreak();
+                for (size_t j = i + 1; j < fLineStretches.size(); ++j) {
+                    if (lastLineStretchesBreak) {
+                        break;
+                    }
+                    // Update previous line's hard break flag.
+                    lastLineStretchesBreak = fLineStretches[j].endCluster() == nullptr ?
+                        false : fLineStretches[j].endCluster()->isHardBreak();
+                    // Merge subsequent line stretches into the current line.
+                    merged.extend(fLineStretches[j]);
+                }
+
+                multiEllipsisLineStretches.push_back(merged);
+                break;
+            }
+        }
+        fLineStretches = multiEllipsisLineStretches;
     }
 }
 

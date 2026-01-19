@@ -114,7 +114,7 @@ std::vector<SkUnichar> ParagraphImpl::convertUtf8ToUnicode(const SkString& utf8)
     return result;
 }
 
-bool ParagraphImpl::needCreateMiddleEllipsis()
+bool ParagraphImpl::needCreateOneLineMiddleEllipsis()
 {
     if (fParagraphStyle.getMaxLines() == 1 && fParagraphStyle.getEllipsisMod() == EllipsisModal::MIDDLE &&
         fParagraphStyle.ellipsized()) {
@@ -337,6 +337,32 @@ void ParagraphImpl::resetPlaceholderRange(const TextRange& deletedRange)
         ph.fTextBefore = newTextRange;
         fPlaceholders.emplace_back(ph);
     }
+}
+
+void ParagraphImpl::setIntrinsicSize(SkScalar maxIntrinsicWidth, SkScalar minIntrinsicWidth,
+    SkScalar alphabeticBaseline, SkScalar ideographicBaseline, bool exceededMaxLines)
+{
+    fMaxIntrinsicWidth = maxIntrinsicWidth;
+    fMinIntrinsicWidth = minIntrinsicWidth;
+    fAlphabeticBaseline = alphabeticBaseline;
+    fIdeographicBaseline = ideographicBaseline;
+    fExceededMaxLines = exceededMaxLines;
+    if ((paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD ||
+        paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE) && fLines.size() > 0) {
+        if (fLines[fLines.size() - 1].ellipsis() != nullptr) {
+            fExceededMaxLines = true;
+        }
+    }
+}
+
+void ParagraphImpl::getIntrinsicSize(SkScalar& maxIntrinsicWidth, SkScalar& minIntrinsicWidth,
+    SkScalar& alphabeticBaseline, SkScalar& ideographicBaseline, bool& exceededMaxLines)
+{
+    maxIntrinsicWidth = fMaxIntrinsicWidth;
+    minIntrinsicWidth = fMinIntrinsicWidth;
+    alphabeticBaseline = fAlphabeticBaseline ;
+    ideographicBaseline = fIdeographicBaseline;
+    exceededMaxLines = fExceededMaxLines;
 }
 #endif
 
@@ -1550,13 +1576,22 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 auto& line = this->addLine(offset, advance, textExcludingSpaces, text, textWithNewlines,
                     clusters, clustersWithGhosts, widthWithSpaces, metrics);
                 line.autoSpacing();
-                if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::TAIL) {
-                    line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
-                } else if (addEllipsis && this->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD) {
-                    line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), true);
-                }
-                else if (needCreateMiddleEllipsis()) {
-                    line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
+                if (addEllipsis) {
+                    switch (this->paragraphStyle().getEllipsisMod()) {
+                        case EllipsisModal::TAIL:
+                            line.createTailEllipsis(noIndentWidth, this->getEllipsis(), true, this->getWordBreakType());
+                            break;
+                        case EllipsisModal::HEAD:
+                        case EllipsisModal::MULTILINE_HEAD:
+                            line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), fParagraphStyle.getEllipsisMod());
+                            break;
+                        case EllipsisModal::MIDDLE:
+                        case EllipsisModal::MULTILINE_MIDDLE:
+                            line.createMiddleEllipsis(noIndentWidth, this->getEllipsis());
+                            break;
+                        default:
+                            break;
+                    }
                 } else if (textWrapper.brokeLineWithHyphen()
                            || ((clusters.end == clustersWithGhosts.end) && (clusters.end >= 1)
                                && (clusters.end < this->fUnicodeText.size())
@@ -2332,7 +2367,7 @@ bool ParagraphImpl::isAutoSpaceEnabled() const
 
 SkScalar ParagraphImpl::clusterUsingAutoSpaceWidth(const Cluster& cluster) const
 {
-    if(!isAutoSpaceEnabled()){
+    if(!isAutoSpaceEnabled() || cluster.runIndex() == EMPTY_RUN){
         return cluster.width();
     }
     Run& run = cluster.run();

@@ -43,7 +43,7 @@ struct IterateRunsContext {
     SkScalar totalWidth{0};
     bool isAlreadyUseEllipsis{false};
     TextRange lineIntersection;
-    EllipsisModal ellipsisMode{EllipsisModal::NONE};
+    EllipsisModal ellipsisMode{EllipsisModal::TAIL};
 };
 #endif
 class TextLine {
@@ -222,18 +222,20 @@ public:
     void setParagraphImpl(ParagraphImpl* newpara) { fOwner = newpara; }
     void setBlockRange(const BlockRange& blockRange) { fBlockRange = blockRange; }
     void countWord(int& wordCount, bool& inWord);
-    void ellipsisNotFitProcess(EllipsisModal ellipsisModal);
 
+    void ellipsisNotFitProcess(EllipsisModal ellipsisModal);
     void createTailEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr, WordBreakType wordBreakType);
-    void handleTailEllipsisInEmptyLine(std::unique_ptr<Run>& ellipsisRun, const SkString& ellipsis,
-        SkScalar width, WordBreakType wordBreakType);
-    void TailEllipsisUpdateEllipsis(Cluster& cluster, std::unique_ptr<Run>& ellipsisRun,
-    const SkString& ellipsis, float width);
-    void TailEllipsisUpdateLine(Cluster& cluster, float width, size_t clusterIndex, WordBreakType wordBreakType);
-    void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
-    void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
+    void handleTailEllipsisInEmptyLine(std::unique_ptr<Run>& ellipsisRun, const SkString& ellipsis, SkScalar width);
+    void tailEllipsisUpdateEllipsis(Cluster& cluster, std::unique_ptr<Run>& ellipsisRun, const SkString& ellipsis,
+        SkScalar width);
+    void tailEllipsisUpdateLine(Cluster& cluster, SkScalar width, size_t clusterIndex);
+    void createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, EllipsisModal ellipsisMode);
+    void headEllipsisUpdateLine(std::unique_ptr<Run>& ellipsisRun, SkScalar width, ClusterIndex clusterIndex,
+        EllipsisModal ellipsisMode);
     void createMiddleEllipsis(SkScalar maxWidth, const SkString& ellipsis);
     void middleEllipsisUpdateLine(ClusterIndex& indexS, ClusterIndex& indexE, SkScalar width);
+
+    void paint(ParagraphPainter* painter, const RSPath* path, SkScalar hOffset, SkScalar vOffset);
     bool isLineHeightDominatedByRun(const Run& run);
     SkScalar updateBlobShift(const Run& run, SkScalar verticalShift, bool isReset);
     void updateBlobShift(const Run& run, SkScalar& verticalShift);
@@ -420,7 +422,7 @@ private:
 #ifdef ENABLE_TEXT_ENHANCE
     DecorationContext fDecorationContext;
     std::vector<RoundRectAttr> fRoundRectAttrs = {};
-    bool fIsTextLineEllipsisHeadModal = false;
+    EllipsisModal fCreateTruncatedLineEllipsisModel = EllipsisModal::TAIL;
 #endif
 public:
     std::vector<TextBlobRecord> fTextBlobCache;
