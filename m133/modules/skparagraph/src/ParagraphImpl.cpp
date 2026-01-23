@@ -1583,7 +1583,8 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                             break;
                         case EllipsisModal::HEAD:
                         case EllipsisModal::MULTILINE_HEAD:
-                            line.createHeadEllipsis(noIndentWidth, this->getEllipsis(), fParagraphStyle.getEllipsisMod());
+                            line.createHeadEllipsis(noIndentWidth, this->getEllipsis(),
+                                fParagraphStyle.getEllipsisMod());
                             break;
                         case EllipsisModal::MIDDLE:
                         case EllipsisModal::MULTILINE_MIDDLE:

@@ -1287,22 +1287,22 @@ void TextLine::tailEllipsisUpdateLine(Cluster& cluster, SkScalar width, size_t c
 bool TextLine::adjustHeadEllipsisWidth(Cluster& cluster, SkScalar& width, ClusterIndex clusterIndex,
                                         EllipsisModal ellipsisMode) const
 {
+    // Adjust width when ellipsis doesn't fit, returns true to continue to next cluster.
     width -= usingAutoSpaceWidth(&cluster);
 
-    // Continue if the ellipsis does not fit
     if (std::floor(width) > 0) {
-        // Special case: last cluster with MULTILINE_HEAD mode
+        // Last cluster with MULTILINE_HEAD mode: restore width to avoid truncating.
         if (clusterIndex == fGhostClusterRange.end - 1 && ellipsisMode == EllipsisModal::MULTILINE_HEAD) {
             width += usingAutoSpaceWidth(&cluster);
         }
-        return true;  // Continue to next cluster
+        return true;
     }
 
-    // Fall back when width is very small, only one cluster with ellipsis in line.
+    // Width too small: restore for MULTILINE_HEAD mode to allow fallback.
     if (ellipsisMode == EllipsisModal::MULTILINE_HEAD) {
         width += usingAutoSpaceWidth(&cluster);
     }
-    return false;  // Don't continue
+    return false;
 }
 
 void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, EllipsisModal ellipsisMode)
@@ -1319,7 +1319,8 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, E
 
     for (auto clusterIndex = fGhostClusterRange.start; clusterIndex < fGhostClusterRange.end; ++clusterIndex) {
         Cluster& cluster = fOwner->cluster(clusterIndex);
-        // See if it fits
+
+        // Check if ellipsis fits within max width
         if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
             bool shouldContinue = adjustHeadEllipsisWidth(cluster, width, clusterIndex, ellipsisMode);
             if (shouldContinue) {
@@ -1327,7 +1328,7 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, E
             }
         }
 
-        // Update the ellipsis attributes and line attributes.
+        // Found fitting position: update ellipsis and line attributes
         headEllipsisUpdateLine(ellipsisRun, width, clusterIndex, ellipsisMode);
         break;
     }

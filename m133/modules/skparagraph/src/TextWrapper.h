@@ -355,6 +355,7 @@ private:
         std::vector<TextStretch>& wordStretches);
     void preProcessingForLineStretches();
     void handleMultiLineEllipsis(size_t maxLines);
+    void mergeStretchesUntilHardBreak(TextStretch& merged, size_t startIndex);
     void extendCommonCluster(Cluster* cluster, TextTabAlign& textTabAlign,
         SkScalar& totalFakeSpacing, WordBreakType wordBreakType);
     SkScalar getTextStretchTrimmedEndSpaceWidth(const TextStretch& stretch);
