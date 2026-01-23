@@ -1284,6 +1284,27 @@ void TextLine::tailEllipsisUpdateLine(Cluster& cluster, SkScalar width, size_t c
     }
 }
 
+bool TextLine::adjustHeadEllipsisWidth(Cluster& cluster, SkScalar& width, ClusterIndex clusterIndex,
+                                        EllipsisModal ellipsisMode) const
+{
+    width -= usingAutoSpaceWidth(&cluster);
+
+    // Continue if the ellipsis does not fit
+    if (std::floor(width) > 0) {
+        // Special case: last cluster with MULTILINE_HEAD mode
+        if (clusterIndex == fGhostClusterRange.end - 1 && ellipsisMode == EllipsisModal::MULTILINE_HEAD) {
+            width += usingAutoSpaceWidth(&cluster);
+        }
+        return true;  // Continue to next cluster
+    }
+
+    // Fall back when width is very small, only one cluster with ellipsis in line.
+    if (ellipsisMode == EllipsisModal::MULTILINE_HEAD) {
+        width += usingAutoSpaceWidth(&cluster);
+    }
+    return false;  // Don't continue
+}
+
 void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, EllipsisModal ellipsisMode)
 {
     if (fAdvance.fX <= maxWidth) {
@@ -1300,17 +1321,9 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, E
         Cluster& cluster = fOwner->cluster(clusterIndex);
         // See if it fits
         if (ellipsisRun && width + ellipsisRun->advance().fX > maxWidth) {
-            width -= usingAutoSpaceWidth(&cluster);
-            // Continue if the ellipsis does not fit
-            if (std::floor(width) > 0) {
-                if (clusterIndex == fGhostClusterRange.end - 1 && ellipsisMode == EllipsisModal::MULTILINE_HEAD) {
-                    width += usingAutoSpaceWidth(&cluster);
-                }
+            bool shouldContinue = adjustHeadEllipsisWidth(cluster, width, clusterIndex, ellipsisMode);
+            if (shouldContinue) {
                 continue;
-            }
-            // Fall back when width is very small, only one cluster with ellipsis in line.
-            if (ellipsisMode == EllipsisModal::MULTILINE_HEAD) {
-                width += usingAutoSpaceWidth(&cluster);
             }
         }
 
