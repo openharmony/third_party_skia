@@ -1897,33 +1897,41 @@ void TextWrapper::preProcessingForLineStretches() {
     if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
         || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)
         && fParent->paragraphStyle().ellipsized() && fLineStretches.size() > style.getMaxLines()) {
-        std::vector<TextStretch> multiEllipsisLineStretches;
-        
-        // Put content exceeding maxline in a single line for subsequent ellipsis generation in one line.
-        for (size_t i = 0; i < fLineStretches.size(); ++i) {
-            if (i < style.getMaxLines() - 1) {
-                multiEllipsisLineStretches.push_back(fLineStretches[i]);
-                continue;
-            } else if (i == style.getMaxLines() - 1) {
-                TextStretch merged = fLineStretches[i];
-                bool lastLineStretchesBreak = fLineStretches[i].endCluster() == nullptr ?
-                    false : fLineStretches[i].endCluster()->isHardBreak();
-                for (size_t j = i + 1; j < fLineStretches.size(); ++j) {
-                    if (lastLineStretchesBreak) {
-                        break;
-                    }
-                    // Update previous line's hard break flag.
-                    lastLineStretchesBreak = fLineStretches[j].endCluster() == nullptr ?
-                        false : fLineStretches[j].endCluster()->isHardBreak();
-                    // Merge subsequent line stretches into the current line.
-                    merged.extend(fLineStretches[j]);
-                }
+        handleMultiLineEllipsis(style.getMaxLines());
+    }
+}
 
-                multiEllipsisLineStretches.push_back(merged);
-                break;
-            }
+void TextWrapper::handleMultiLineEllipsis(size_t maxLines) {
+    std::vector<TextStretch> multiEllipsisLineStretches;
+
+    // Put content exceeding maxline in a single line for subsequent ellipsis generation in one line.
+    for (size_t i = 0; i < fLineStretches.size(); ++i) {
+        if (i < maxLines - 1) {
+            multiEllipsisLineStretches.push_back(fLineStretches[i]);
+            continue;
+        } else if (i == maxLines - 1) {
+            TextStretch merged = fLineStretches[i];
+            mergeStretchesUntilHardBreak(merged, i);
+            multiEllipsisLineStretches.push_back(merged);
+            break;
         }
-        fLineStretches = multiEllipsisLineStretches;
+    }
+    fLineStretches = multiEllipsisLineStretches;
+}
+
+void TextWrapper::mergeStretchesUntilHardBreak(TextStretch& merged, size_t startIndex) {
+    bool lastLineStretchesBreak = fLineStretches[startIndex].endCluster() == nullptr ?
+        false : fLineStretches[startIndex].endCluster()->isHardBreak();
+
+    for (size_t j = startIndex + 1; j < fLineStretches.size(); ++j) {
+        if (lastLineStretchesBreak) {
+            break;
+        }
+        // Update previous line's hard break flag.
+        lastLineStretchesBreak = fLineStretches[j].endCluster() == nullptr ?
+            false : fLineStretches[j].endCluster()->isHardBreak();
+        // Merge subsequent line stretches into the current line.
+        merged.extend(fLineStretches[j]);
     }
 }
 

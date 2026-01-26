@@ -331,6 +331,8 @@ private:
     };
 #endif
     void justify(SkScalar maxWidth);
+    bool adjustHeadEllipsisWidth(Cluster& cluster, SkScalar& width, ClusterIndex clusterIndex,
+                                  EllipsisModal ellipsisMode) const;
 
     void buildTextBlob(TextRange textRange, const TextStyle& style, const ClipContext& context);
     void paintBackground(ParagraphPainter* painter,
