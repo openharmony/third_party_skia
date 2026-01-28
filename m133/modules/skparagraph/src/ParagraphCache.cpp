@@ -42,7 +42,8 @@ public:
         , fTextStyles(paragraph->fTextStyles)
 #ifdef ENABLE_TEXT_ENHANCE
         , fParagraphStyle(paragraph->paragraphStyle())
-        , fLayoutRawWidth (paragraph->getLayoutRawWidth()) {
+        , fLayoutRawWidth(paragraph->getLayoutRawWidth())
+        , fLayoutConstraintsHeight(paragraph->fConstraintsHeight) {
 #else
         , fParagraphStyle(paragraph->paragraphStyle()) {
 #endif
@@ -55,10 +56,11 @@ public:
         : fText(std::move(other.fText))
         , fPlaceholders(std::move(other.fPlaceholders))
         , fTextStyles(std::move(other.fTextStyles))
-        , fParagraphStyle(std::move(other.fParagraphStyle))
 #ifdef ENABLE_TEXT_ENHANCE
+        , fParagraphStyle(std::move(other.fParagraphStyle))
         , fHash(other.fHash)
-        , fLayoutRawWidth (other.fLayoutRawWidth) {
+        , fLayoutRawWidth(other.fLayoutRawWidth)
+        , fLayoutConstraintsHeight(other.fLayoutConstraintsHeight) {
 #else
         , fHash(other.fHash) {
 #endif
@@ -89,6 +91,7 @@ private:
     uint32_t fHash;
 #ifdef ENABLE_TEXT_ENHANCE
     SkScalar fLayoutRawWidth;
+    SkScalar fLayoutConstraintsHeight;
 #endif
 };
 
@@ -106,7 +109,8 @@ public:
         , fHasWhitespacesInside(paragraph->fHasWhitespacesInside)
         , fTrailingSpaces(paragraph->fTrailingSpaces)
 #ifdef ENABLE_TEXT_ENHANCE
-        , fLayoutRawWidth(paragraph->fLayoutRawWidth) { }
+        , fLayoutRawWidth(paragraph->fLayoutRawWidth)
+        , fLayoutConstraintsHeight(paragraph->fConstraintsHeight) {}
 #else
         { }
 #endif
@@ -142,6 +146,7 @@ public:
     WordBreakType wordBreakType;
     std::vector<SkScalar> indents;
     SkScalar fLayoutRawWidth;
+    SkScalar fLayoutConstraintsHeight;
     size_t maxlines;
     bool hasEllipsis;
     EllipsisModal ellipsisModal;
@@ -188,6 +193,7 @@ void ParagraphCacheKey::computeHashMix(uint32_t& hash) const {
     if (fParagraphStyle.getCompressHeadPunctuation()) {
         hash = mix(hash, SkGoodHash()(relax(fLayoutRawWidth)));
     }
+    hash = mix(hash, SkGoodHash()(relax(fLayoutConstraintsHeight)));
 }
 
 uint32_t ParagraphCacheKey::computeHash() const {
@@ -447,6 +453,7 @@ bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const Parag
         paragraph.getLineBreakStrategy() == value->linebreakStrategy &&
         paragraph.getWordBreakType() == value->wordBreakType &&
         abs(paragraph.fLayoutRawWidth - value->fLayoutRawWidth) < 1.f &&
+        nearlyEqual(paragraph.fConstraintsHeight, value->fLayoutConstraintsHeight) &&
         paragraph.fParagraphStyle.getMaxLines() == value->maxlines &&
         paragraph.fParagraphStyle.ellipsized() == value->hasEllipsis &&
         paragraph.fParagraphStyle.getEllipsisMod() == value->ellipsisModal &&
@@ -506,6 +513,7 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
     value->linebreakStrategy = paragraph.getLineBreakStrategy();
     value->wordBreakType = paragraph.getWordBreakType();
     value->fLayoutRawWidth = paragraph.fLayoutRawWidth;
+    value->fLayoutConstraintsHeight = paragraph.fConstraintsHeight;
     value->maxlines = paragraph.fParagraphStyle.getMaxLines();
     value->hasEllipsis = paragraph.fParagraphStyle.ellipsized();
     value->ellipsisModal = paragraph.fParagraphStyle.getEllipsisMod();

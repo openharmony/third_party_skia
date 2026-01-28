@@ -369,6 +369,9 @@ void ParagraphImpl::getIntrinsicSize(SkScalar& maxIntrinsicWidth, SkScalar& minI
 void ParagraphImpl::layout(SkScalar rawWidth) {
 #ifdef ENABLE_TEXT_ENHANCE
     TEXT_TRACE_FUNC();
+    if (fUseLayoutConstraints) {
+        rawWidth = fConstraintsWidth;
+    }
     fLineNumber = 1;
     fLayoutRawWidth = rawWidth;
 #endif
@@ -921,6 +924,11 @@ void ParagraphImpl::paint(ParagraphPainter* painter, RSPath* path, SkScalar hOff
     for (auto& line : fLines) {
         line.paint(painter, path, hOffset, vOffset);
     }
+}
+
+TextRange ParagraphImpl::getUtf16TextRange() {
+    this->ensureUTF16Mapping();
+    return TextRange(0, getUTF16Index(fTextStyles.back().fRange.end));
 }
 
 TextRange ParagraphImpl::getEllipsisTextRange() {
@@ -1534,6 +1542,9 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     if (this->paragraphStyle().getIsEndAddParagraphSpacing() &&
         this->paragraphStyle().getParagraphSpacing() > 0) {
         heightWithParagraphSpacing += this->paragraphStyle().getParagraphSpacing();
+    }
+    if (fUseLayoutConstraints && heightWithParagraphSpacing > fConstraintsHeight) {
+        return;
     }
     auto clusterRange = ClusterRange(0, trailingSpaces);
     auto clusterRangeWithGhosts = ClusterRange(0, this->clusters().size() - 1);
@@ -2583,6 +2594,14 @@ bool ParagraphImpl::getLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) c
     }
     return true;
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+TextRange ParagraphImpl::getLineUtf16TextRange(int lineNumber, bool includeSpaces) {
+    ensureUTF16Mapping();
+    TextRange lineRange = getActualTextRange(lineNumber, includeSpaces);
+    return {getUTF16IndexWithOverflowCheck(lineRange.start), getUTF16IndexWithOverflowCheck(lineRange.end)};
+}
+#endif
 
 TextRange ParagraphImpl::getActualTextRange(int lineNumber, bool includeSpaces) const {
     if (lineNumber < 0 || lineNumber >= fLines.size()) {

@@ -150,6 +150,7 @@ public:
     bool getApplyRoundingHack() const { return false; }
     size_t lineNumber() override { return fLineNumber; }
     TextRange getEllipsisTextRange() override;
+    TextRange getUtf16TextRange() override;
     bool isRunCombinated() const override { return fRuns.size() < fTextStyles.size(); }
 #else
     bool getApplyRoundingHack() const { return fParagraphStyle.getApplyRoundingHack(); }
@@ -225,6 +226,7 @@ public:
         UtfEncodeType encodeType) override;
     SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
     skia_private::TArray<Block, true>& exportTextStyles() override { return fTextStyles; }
+    skia_private::TArray<TextLine, false>& exportTextLines() { return fLines; }
     bool preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth);
     void setIndents(const std::vector<SkScalar>& indents) override;
     SkScalar detectIndents(size_t index) override;
@@ -433,6 +435,7 @@ public:
      * @return A vector of PathInfo objects representing the text paths for the specified cluster range.
      */
     std::vector<PathInfo> getTextPathByClusterRange(SkRange<size_t> range) override;
+    TextRange getLineUtf16TextRange(int lineNumber, bool includeSpaces) override;
 #endif
 private:
     friend class ParagraphBuilder;

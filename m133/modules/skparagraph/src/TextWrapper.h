@@ -34,6 +34,19 @@ class TextTabAlign;
 #endif
 
 class TextWrapper {
+#ifdef ENABLE_TEXT_ENHANCE
+    enum class TriggerFlag {
+        TRIGGERED,
+        NOT_TIRGGERED,
+        SKIP
+    };
+
+    enum class LayoutMode {
+        SIMPLE,
+        OPTIMIZE,
+    };
+#endif
+
     class ClusterPos {
     public:
         ClusterPos() : fCluster(nullptr), fPos(0) {}
@@ -267,6 +280,7 @@ private:
         TextAlign align{TextAlign::kLeft};
         bool needLineSpacing{false};
         SkScalar lineSpacing{0.0f};
+        LayoutMode layoutMode{LayoutMode::SIMPLE};
     };
 
     struct LineTextRanges {
@@ -317,15 +331,12 @@ private:
         fBrokeLineWithHyphen = false;
         fWordStretches.clear();
         fLineStretches.clear();
-        fStart = nullptr;
-        fEnd = nullptr;
 #endif
     }
 
 #ifdef ENABLE_TEXT_ENHANCE
-    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType,
-                   bool needEllipsis);
-    void moveForward(bool hasEllipsis, bool breakAll); // breakAll = true, break occurs after each character
+    void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType);
+    void moveForward(bool breakAll); // breakAll = true, break occurs after each character
     bool lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBeforeCluster, SkScalar maxWidth);
     uint64_t CalculateBestScore(std::vector<SkScalar>& widthOut,
         SkScalar maxWidth, ParagraphImpl* parent, size_t maxLines);
@@ -343,14 +354,16 @@ private:
     void initParent(ParagraphImpl* parent) { fParent = parent; }
     void pushToWordStretches();
     void pushToWordStretchesBatch();
-    void layoutLinesBalanced(
-        ParagraphImpl* parent, SkScalar maxWidth, const AddLineToParagraph& addLine);
-    void layoutLinesSimple(ParagraphImpl* parent, SkScalar maxWidth, const AddLineToParagraph& addLine);
+    void layoutLinesBalanced(SkScalar maxWidth, const AddLineToParagraph& addLine);
+    void layoutLinesSimple(SkScalar maxWidth, const AddLineToParagraph& addLine);
+    TriggerFlag triggerConstraintsLayout();
+    SkScalar calculateMaxLineLayoutWidth(const std::vector<SkScalar>& balancedWidths, SkScalar maxWidth);
+    std::vector<SkScalar> generateBalancedLayoutWidths();
     bool isNewWidthToBeSetMax();
     std::vector<SkScalar> generateWordsWidthInfo(const std::vector<TextStretch>& wordStretches);
     std::vector<std::pair<size_t, size_t>> generateLinesGroupInfo(
         const std::vector<float>& clustersWidth, SkScalar maxWidth);
-    void generateWordStretches(const SkSpan<Cluster>& span, WordBreakType wordBreakType);
+    void generateWordStretches(WordBreakType wordBreakType);
     void generateLineStretches(const std::vector<std::pair<size_t, size_t>>& linesGroupInfo,
         std::vector<TextStretch>& wordStretches);
     void preProcessingForLineStretches();
@@ -360,24 +373,26 @@ private:
         SkScalar& totalFakeSpacing, WordBreakType wordBreakType);
     SkScalar getTextStretchTrimmedEndSpaceWidth(const TextStretch& stretch);
     void formalizedClusters(std::vector<TextStretch>& clusters, SkScalar limitWidth);
-    void generateTextLines(SkScalar maxWidth,
-                            const AddLineToParagraph& addLine,
-                            const SkSpan<Cluster>& span);
+    void generateTextLines(SkScalar maxWidth, const AddLineToParagraph& addLine);
     void initializeFormattingState(SkScalar maxWidth, const SkSpan<Cluster>& span);
     void processLineStretches(SkScalar maxWidth, const AddLineToParagraph& addLine);
     void finalizeTextLayout(const AddLineToParagraph& addLine);
     void prepareLineForFormatting(TextStretch& line);
     void formatCurrentLine(const AddLineToParagraph& addLine);
-    bool determineIfEllipsisNeeded();
+    void determineIfEllipsisNeeded();
+    void checkIsLastLine();
+    void checkNeedEllipsisByLastLine();
+    bool checkNeedEllipsisByMultiLineEllipsis();
+    void checkHardLineBreakByEllipsis();
     void trimLineSpaces();
-    void handleSpecialCases(bool needEllipsis);
+    void handleSpecialCases();
     void updateLineMetrics();
     void updatePlaceholderMetrics();
     void adjustLineMetricsForFirstLastLine();
     void applyStrutMetrics();
     LineTextRanges calculateLineTextRanges();
     SkScalar calculateLineHeight();
-    void addFormattedLineToParagraph(const AddLineToParagraph& addLine, bool needEllipsis);
+    void addFormattedLineToParagraph(const AddLineToParagraph& addLine);
     void updateIntrinsicWidths();
     bool shouldBreakFormattingLoop();
     bool isLastLine() const;
@@ -412,6 +427,10 @@ private:
     Cluster* fStart{nullptr};
     Cluster* fEnd{nullptr};
     bool fIsLastLine{false};
+    bool fNeedEllipsis{false};
+    size_t fParentOriMaxLines{0};
+    SkScalar fTotalLineStretchesHeight{0.0f};
+    bool fCheckBalancedConstraintsLayout{false};
 #endif
 };
 }  // namespace textlayout
