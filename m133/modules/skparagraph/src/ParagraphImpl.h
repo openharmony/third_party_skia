@@ -22,13 +22,13 @@
 #include "modules/skparagraph/include/ParagraphStyle.h"
 #ifdef ENABLE_TEXT_ENHANCE
 #include "modules/skparagraph/include/TextLineBase.h"
+#include "modules/skshaper/include/SkShaper_harfbuzz.h"
+#include "modules/skshaper/include/SkShaper_skunicode.h"
 #endif
 #include "modules/skparagraph/include/TextShadow.h"
 #include "modules/skparagraph/include/TextStyle.h"
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skparagraph/src/TextLine.h"
-#include "modules/skshaper/include/SkShaper_harfbuzz.h"
-#include "modules/skshaper/include/SkShaper_skunicode.h"
 #include "modules/skunicode/include/SkUnicode.h"
 #include "src/base/SkBitmaskEnum.h"
 #include "src/core/SkTHash.h"
