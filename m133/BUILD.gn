@@ -52,6 +52,7 @@ config("skia_wno") {
     if (enhanced_opt) {
       cflags += [ "-fwhole-program-vtables" ]
       if (skia_feature_enable_pgo && skia_feature_product != "default") {
+        inputs = [ "${skia_feature_pgo_path}/libskia_canvaskit.profdata" ]
         cflags += [
           "-fprofile-use=" +
               rebase_path("${skia_feature_pgo_path}/libskia_canvaskit.profdata",
