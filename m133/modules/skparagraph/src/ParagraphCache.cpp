@@ -40,8 +40,12 @@ public:
         : fText(paragraph->fText.c_str(), paragraph->fText.size())
         , fPlaceholders(paragraph->fPlaceholders)
         , fTextStyles(paragraph->fTextStyles)
+#ifdef ENABLE_TEXT_ENHANCE
         , fParagraphStyle(paragraph->paragraphStyle())
         , fLayoutRawWidth (paragraph->getLayoutRawWidth()) {
+#else
+        , fParagraphStyle(paragraph->paragraphStyle()) {
+#endif
         fHash = computeHash();
     }
 
@@ -52,8 +56,12 @@ public:
         , fPlaceholders(std::move(other.fPlaceholders))
         , fTextStyles(std::move(other.fTextStyles))
         , fParagraphStyle(std::move(other.fParagraphStyle))
+#ifdef ENABLE_TEXT_ENHANCE
         , fHash(other.fHash)
         , fLayoutRawWidth (other.fLayoutRawWidth) {
+#else
+        , fHash(other.fHash) {
+#endif
         other.fHash = 0;
     }
 
@@ -79,7 +87,9 @@ private:
     TArray<Block, true> fTextStyles;
     ParagraphStyle fParagraphStyle;
     uint32_t fHash;
+#ifdef ENABLE_TEXT_ENHANCE
     SkScalar fLayoutRawWidth;
+#endif
 };
 
 class ParagraphCacheValue {
