@@ -231,14 +231,6 @@ std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std
     fTypefaces.emplace(familyKey, typefaces);
     return typefaces;
 }
-
-void FontCollection::removeCacheByUniqueId(uint32_t uniqueId) {
-    SkGraphics::RemoveCacheByUniqueId(uniqueId);
-    SkShapers::HB::RemoveCacheByUniqueId(uniqueId);
-    std::unique_lock writeLock(mutex_);
-    fTypefaces.clear();
-    fParagraphCache.reset();
-}
 #else
 std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames,
     SkFontStyle fontStyle, const std::optional<FontArguments>& fontArgs) {
@@ -456,6 +448,19 @@ public:
         fLRUCache.reset();
     }
 
+    void removeByUniqueId(uint32_t uniqueId) {
+        std::vector<uint32_t> lruKeysToRemove;
+        fLRUCache.foreach([&lruKeysToRemove, uniqueId](uint32_t* cacheHash, std::shared_ptr<RSTypeface>* typeface) {
+            if (*typeface && (*typeface)->GetUniqueID() == uniqueId) {
+                lruKeysToRemove.push_back(*cacheHash);
+            }
+        });
+
+        for (const auto& key : lruKeysToRemove) {
+            fLRUCache.removePublic(key);
+        }
+    }
+
 private:
     SkLRUCache<uint32_t, std::shared_ptr<RSTypeface>>& fLRUCache;
     SkMutex& fMutex;
@@ -469,7 +474,9 @@ static SkLRUCacheMgr GetLRUCacheInstance() {
 
 std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSTypeface> typeface,
     const std::optional<FontArguments>& fontArgs) {
-    if (!typeface || !fontArgs || typeface->IsCustomTypeface()) {
+    // 修改：移除 IsCustomTypeface 限制，支持自定义字体的 variation
+    // 应用侧和RS侧都使用相同的可变字体，确保文本度量与渲染一致
+    if (!typeface || !fontArgs) {
         return typeface;
     }
 
@@ -489,6 +496,15 @@ std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSType
         GetLRUCacheInstance().insert(hash, varTypeface);
         return varTypeface;
     }
+}
+
+void FontCollection::removeCacheByUniqueId(uint32_t uniqueId) {
+    SkGraphics::RemoveCacheByUniqueId(uniqueId);
+    SkShapers::HB::RemoveCacheByUniqueId(uniqueId);
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    fTypefaces.clear();
+    GetLRUCacheInstance().removeByUniqueId(uniqueId);
+    fParagraphCache.reset();
 }
 #endif
 
