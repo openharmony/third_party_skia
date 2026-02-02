@@ -1578,7 +1578,7 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
     auto shaped = [&](std::shared_ptr<RSTypeface> typeface, bool fallback) -> std::unique_ptr<Run> {
         ShapeHandler handler(run.heightMultiplier(), run.useHalfLeading(), run.baselineShift(), str);
         RSFont font(typeface, textStyle.getCorrectFontSize(), 1, 0);
-        font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
+        font.SetEdging(textStyle.getFontEdging());
         font.SetHinting(RSDrawing::FontHinting::SLIGHT);
         font.SetSubpixel(true);
         std::unique_ptr<SkShaper> shaper = SkShapers::HB::ShapeDontWrapOrReorder(fOwner->getUnicode(), 

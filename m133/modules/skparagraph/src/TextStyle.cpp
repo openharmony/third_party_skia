@@ -52,6 +52,7 @@ TextStyle TextStyle::cloneForPlaceholder() {
     result.fBackgroundRect = fBackgroundRect;
     result.fStyleId = fStyleId;
     result.fTextStyleUid = fTextStyleUid;
+    result.fFontEdging = fFontEdging;
 #endif
     return result;
 }
@@ -97,7 +98,8 @@ bool TextStyle::equalsByShape(const TextStyle& other) const {
            nearlyEqual(fMaxLineHeight, other.fMaxLineHeight) &&
            nearlyEqual(fMinLineHeight, other.fMinLineHeight) &&
            fLineHeightStyle == other.fLineHeightStyle &&
-           fBadgeType == other.fBadgeType;
+           fBadgeType == other.fBadgeType &&
+           fFontEdging == other.fFontEdging;
 }
 
 bool TextStyle::equals(const TextStyle& other) const {
@@ -204,7 +206,8 @@ bool TextStyle::equalsByFonts(const TextStyle& that) const {
 #ifdef ENABLE_TEXT_ENHANCE
            fLocale == that.fLocale &&
            fStyleId == that.fStyleId &&
-           fBackgroundRect == that.fBackgroundRect;
+           fBackgroundRect == that.fBackgroundRect &&
+           fFontEdging == that.fFontEdging;
 #else
            fLocale == that.fLocale;
 #endif
@@ -296,7 +299,7 @@ void TextStyle::getFontMetrics(SkFontMetrics* metrics) const {
 #endif
 #ifdef ENABLE_TEXT_ENHANCE
     RSFont font(fTypeface, fFontSize, 1, 0);
-    font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
+    font.SetEdging(fFontEdging);
     font.SetHinting(RSDrawing::FontHinting::SLIGHT);
     font.SetSubpixel(true);
     auto compressFont = font;

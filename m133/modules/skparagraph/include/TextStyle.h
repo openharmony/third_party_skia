@@ -286,6 +286,8 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     RSFontStyle getFontStyle() const { return fFontStyle; }
     void setFontStyle(RSFontStyle fontStyle) { fFontStyle = fontStyle; }
+    RSFontEdging getFontEdging() const { return fFontEdging; }
+    void setFontEdging(RSFontEdging edging) { fFontEdging = edging; }
 #else
     SkFontStyle getFontStyle() const { return fFontStyle; }
     void setFontStyle(SkFontStyle fontStyle) { fFontStyle = fontStyle; }
@@ -452,6 +454,7 @@ private:
     SkScalar fMaxLineHeight{std::numeric_limits<float>::max()};
     SkScalar fMinLineHeight{0.0f};
     LineHeightStyle fLineHeightStyle{LineHeightStyle::kFontSize};
+    RSFontEdging fFontEdging = RSDrawing::FontEdging::ANTI_ALIAS;
 #endif
 
     TextBaseline fTextBaseline = TextBaseline::kAlphabetic;
