@@ -2816,6 +2816,18 @@ void TextLine::extendCoordinateRange(PositionWithAffinity& positionWithAffinity)
         }
     }
 }
+
+PositionWithAffinity TextLine::getCharacterPositionAtCoordinate(SkScalar dx, TextEncoding encoding) {
+    PositionWithAffinity utf16UnitPos = this->getGlyphPositionAtCoordinate(dx);
+    // UTF-16: return directly
+    if (encoding == TextEncoding::UTF16) {
+        return utf16UnitPos;
+    }
+    // UTF-8: convert from UTF-16 position
+    fOwner->ensureUTF16Mapping();
+    size_t utf8Index = fOwner->getUTF8Index(utf16UnitPos.position);
+    return {SkToS32(utf8Index), utf16UnitPos.affinity};
+}
 #endif
 
 PositionWithAffinity TextLine::getGlyphPositionAtCoordinate(SkScalar dx) {
