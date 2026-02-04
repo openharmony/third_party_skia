@@ -56,12 +56,14 @@ skia_common_cflags = [
   "-Wno-c++17-extensions",
   "-Wno-unknown-warning-option",
 ]
+skia_common_inputs = []
 
 if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
   skia_common_cflags += [ "-flto=thin" ]
   if (enhanced_opt) {
     skia_common_cflags += [ "-fwhole-program-vtables" ]
     if (skia_feature_enable_pgo && skia_feature_product != "default") {
+      skia_common_inputs += [ "${skia_feature_pgo_path}/libskia_canvaskit.profdata" ]
       skia_common_cflags += [
         "-fprofile-use=" +
             rebase_path("${skia_feature_pgo_path}/libskia_canvaskit.profdata",
