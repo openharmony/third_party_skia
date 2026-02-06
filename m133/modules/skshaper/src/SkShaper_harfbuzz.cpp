@@ -434,14 +434,6 @@ HBFont create_typeface_hb_font(const SkTypeface& typeface) {
                                    axis_count);
         }
     }
-#else
-    int axisCount = typeface.GetVariationDesignPosition(nullptr, 0);
-    if (axisCount > 0) {
-        AutoSTMalloc<4, RSFontArguments::VariationPosition::Coordinate> axisValues(axisCount);
-        if (typeface.GetVariationDesignPosition(axisValues, axisCount) == axisCount) {
-            hb_font_set_variations(otFont.get(), reinterpret_cast<hb_variation_t*>(axisValues.get()), axisCount);
-        }
-    }
 #endif
 
     return otFont;
