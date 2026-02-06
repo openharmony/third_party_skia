@@ -951,6 +951,7 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     }
 
     layoutLinesSimple(maxWidth, addLine);
+    fParent->fParagraphStyle.setMaxLines(fParentOriMaxLines);
 }
 
 void TextWrapper::layoutLinesSimple(SkScalar maxWidth, const AddLineToParagraph& addLine) {
@@ -1357,7 +1358,7 @@ void TextWrapper::initializeFormattingState(SkScalar maxWidth, const SkSpan<Clus
     fEnd = span.end() - 1;
     fStart = span.begin();
     fParentOriMaxLines = fFormattingContext.maxLines;
-    fCheckBalancedConstraintsLayout = fParent->fUseLayoutConstraints ? true : false;
+    fCheckBalancedConstraintsLayout = fParent->fUseLayoutConstraints;
 }
 
 void TextWrapper::processLineStretches(SkScalar maxWidth, const AddLineToParagraph& addLine) {
