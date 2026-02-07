@@ -1011,7 +1011,14 @@ bool TextWrapper::isNewWidthToBeSetMax() {
 }
 
 TextWrapper::TriggerFlag TextWrapper::triggerConstraintsLayout() {
-    if (!fParent->fUseLayoutConstraints || fHeight + fEndLine.metrics().height() < fParent->fConstraintsHeight) {
+    SkScalar endLineHeight = fEndLine.metrics().height();
+    if (fFormattingContext.needLineSpacing && !fFormattingContext.disableLastDescent) {
+        endLineHeight += fFormattingContext.lineSpacing;
+    }
+    if (fFormattingContext.disableLastDescent) {
+        endLineHeight -= fEndLine.metrics().descent() - fEndLine.metrics().rawDescent();
+    }
+    if (!fParent->fUseLayoutConstraints || fHeight + endLineHeight < fParent->fConstraintsHeight) {
         return TriggerFlag::NOT_TIRGGERED;
     }
 
@@ -1021,9 +1028,6 @@ TextWrapper::TriggerFlag TextWrapper::triggerConstraintsLayout() {
     }
     TextLine& lastLine = lines.back();
     fHeight -= lastLine.height();
-    if (fFormattingContext.needLineSpacing) {
-        fHeight -= fFormattingContext.lineSpacing;
-    }
 
     // Update fEndLine and rooback pre line.
     fFormattingContext.maxLines = lines.size();
@@ -1106,8 +1110,39 @@ void TextWrapper::pushToWordStretchesBatch() {
     fWordWidthGroups.clear();
 }
 
+void TextWrapper::checkConstraintsLayoutByTextStretch(TextStretch& lineStretch) {
+    fTotalLineStretchesHeight += lineStretch.metrics().height();
+    if (fFormattingContext.needLineSpacing) {
+        fTotalLineStretchesHeight += fFormattingContext.lineSpacing;
+    }
+
+    size_t assumeLineCnt = fLineStretches.size();
+    if (assumeLineCnt == 1 && fFormattingContext.disableFirstAscent) {
+        fTotalLineStretchesHeight -= lineStretch.metrics().rawAscent() - lineStretch.metrics().ascent();
+    }
+
+    SkScalar lastDescent = 0.0;
+    if (fFormattingContext.disableLastDescent) {
+        lastDescent = lineStretch.metrics().descent() - lineStretch.metrics().rawDescent();
+        if (fFormattingContext.needLineSpacing) {
+            lastDescent += fFormattingContext.lineSpacing;
+        }
+    }
+
+    if (fTotalLineStretchesHeight - lastDescent > fParent->fConstraintsHeight) {
+        fFormattingContext.maxLines = assumeLineCnt - 1;
+        fParent->fParagraphStyle.setMaxLines(fFormattingContext.maxLines);
+        fCheckBalancedConstraintsLayout = false;
+    }
+}
+
 void TextWrapper::generateLineStretches(const std::vector<std::pair<size_t, size_t>>& linesGroupInfo,
     std::vector<TextStretch>& wordStretches) {
+    if (fParent->paragraphStyle().getIsEndAddParagraphSpacing() &&
+        fParent->paragraphStyle().getParagraphSpacing() > 0) {
+        fTotalLineStretchesHeight += fParent->paragraphStyle().getParagraphSpacing();
+    }
+
     for (const std::pair<size_t, size_t>& pair : linesGroupInfo) {
         TextStretch endLine{};
         for (size_t i = pair.first; i <= pair.second; ++i) {
@@ -1121,13 +1156,7 @@ void TextWrapper::generateLineStretches(const std::vector<std::pair<size_t, size
         if (!fCheckBalancedConstraintsLayout) {
             continue;
         }
-
-        fTotalLineStretchesHeight += endLine.metrics().height();
-        if (fTotalLineStretchesHeight > fParent->fConstraintsHeight) {
-            fFormattingContext.maxLines = fLineStretches.size() - 1;
-            fParent->fParagraphStyle.setMaxLines(fFormattingContext.maxLines);
-            fCheckBalancedConstraintsLayout = false;
-        }
+        checkConstraintsLayoutByTextStretch(endLine);
     }
 }
 

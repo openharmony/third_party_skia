@@ -357,6 +357,7 @@ private:
     void layoutLinesBalanced(SkScalar maxWidth, const AddLineToParagraph& addLine);
     void layoutLinesSimple(SkScalar maxWidth, const AddLineToParagraph& addLine);
     TriggerFlag triggerConstraintsLayout();
+    void checkConstraintsLayoutByTextStretch(TextStretch& lineStretch);
     SkScalar calculateMaxLineLayoutWidth(const std::vector<SkScalar>& balancedWidths, SkScalar maxWidth);
     std::vector<SkScalar> generateBalancedLayoutWidths();
     bool isNewWidthToBeSetMax();
