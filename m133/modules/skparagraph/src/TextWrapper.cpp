@@ -1011,6 +1011,10 @@ bool TextWrapper::isNewWidthToBeSetMax() {
 }
 
 TextWrapper::TriggerFlag TextWrapper::triggerConstraintsLayout() {
+    if (!fParent->fUseLayoutConstraints) {
+        return TriggerFlag::NOT_TIRGGERED;
+    }
+
     SkScalar endLineHeight = fEndLine.metrics().height();
     if (fFormattingContext.needLineSpacing && !fFormattingContext.disableLastDescent) {
         endLineHeight += fFormattingContext.lineSpacing;
@@ -1018,7 +1022,7 @@ TextWrapper::TriggerFlag TextWrapper::triggerConstraintsLayout() {
     if (fFormattingContext.disableLastDescent) {
         endLineHeight -= fEndLine.metrics().descent() - fEndLine.metrics().rawDescent();
     }
-    if (!fParent->fUseLayoutConstraints || fHeight + endLineHeight < fParent->fConstraintsHeight) {
+    if (fHeight + endLineHeight < fParent->fConstraintsHeight) {
         return TriggerFlag::NOT_TIRGGERED;
     }
 
