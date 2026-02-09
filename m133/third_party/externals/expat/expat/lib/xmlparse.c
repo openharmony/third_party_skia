@@ -3479,7 +3479,6 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
         const char *fromPtr = tag->rawName;
         toPtr = (XML_Char *)tag->buf;
         for (;;) {
-          int bufSize;
           int convLen;
           const enum XML_Convert_Result convert_res
               = XmlConvert(enc, &fromPtr, rawNameEnd, (ICHAR **)&toPtr,
@@ -3490,7 +3489,9 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
             tag->name.strLen = convLen;
             break;
           }
-          bufSize = (int)(tag->bufEnd - tag->buf) << 1;
+          if (SIZE_MAX / 2 < (size_t)(tag->bufEnd - tag->buf))
+            return XML_ERROR_NO_MEMORY;
+          const size_t bufSize = (size_t)(tag->bufEnd - tag->buf) * 2;
           {
             char *temp = (char *)REALLOC(parser, tag->buf, bufSize);
             if (temp == NULL)
