@@ -157,7 +157,7 @@ bool TextWrapper::lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBefore
 // Since we allow cluster clipping when they don't fit
 // we have to work with stretches - parts of clusters
 void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack,
-                            WordBreakType wordBreakType, bool needEllipsis) {
+                            WordBreakType wordBreakType) {
 
     reset();
     fEndLine.metrics().clean();
@@ -195,7 +195,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
                 breaker.breakLine(width)) {
             // if the hyphenator has already run as balancing algorithm, use the cluster information
-            if (cluster->isHyphenBreak() && !needEllipsis) {
+            if (cluster->isHyphenBreak() && !fNeedEllipsis) {
                 // we dont want to add the current cluster as the hyphenation algorithm marks breaks before a cluster
                 // however, if we cannot fit anything to a line, we need to break out here
                 if (fWords.empty() && fClusters.empty()) {
@@ -210,7 +210,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 }
                 // let hyphenator try before this if it is enabled
             } else if (cluster->isWhitespaceBreak() && ((wordBreakType != WordBreakType::BREAK_HYPHEN) ||
-                       (wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate && !needEllipsis))) {
+                       (wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate && !fNeedEllipsis))) {
                 // It's the end of the word
                 isFirstWord = false;
                 fClusters.extend(cluster);
@@ -249,7 +249,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
 
             // should do this only if hyphenation is enabled
             if (wordBreakType == WordBreakType::BREAK_HYPHEN && !attemptedHyphenate && !fClusters.empty() &&
-                !needEllipsis) {
+                !fNeedEllipsis) {
                 attemptedHyphenate = true;
                 if (!lookAheadByHyphen(endOfClusters, widthBeforeCluster, breaker.fUpper)) {
                     break;
@@ -370,7 +370,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     }
 }
 
-void TextWrapper::moveForward(bool hasEllipsis, bool breakAll) {
+void TextWrapper::moveForward(bool breakAll) {
 
     // We normally break lines by words.
     // The only way we may go to clusters is if the word is too long or
@@ -380,9 +380,9 @@ void TextWrapper::moveForward(bool hasEllipsis, bool breakAll) {
     if (!fWords.empty()) {
         fEndLine.extend(fWords);
 #ifdef SK_IGNORE_SKPARAGRAPH_ELLIPSIS_FIX
-        if (!fTooLongWord || hasEllipsis) { // Ellipsis added to a word
+        if (!fTooLongWord || fNeedEllipsis) { // Ellipsis added to a word
 #else
-        if (!fTooLongWord && !hasEllipsis) { // Ellipsis added to a grapheme
+        if (!fTooLongWord && !fNeedEllipsis) { // Ellipsis added to a grapheme
 #endif
             return;
         }
@@ -936,322 +936,139 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
                                      SkScalar maxWidth,
                                      const AddLineToParagraph& addLine) {
     initParent(parent);
+    auto span = fParent->clusters();
+    if (span.empty()) {
+        return;
+    }
+    initializeFormattingState(maxWidth, span);
 
     if (fParent->getLineBreakStrategy() == LineBreakStrategy::BALANCED &&
         fParent->getWordBreakType() != WordBreakType::BREAK_ALL &&
         fParent->getWordBreakType() != WordBreakType::BREAK_HYPHEN &&
         (fParent->getParagraphStyle().getTextTab().location < 0)) {
-        layoutLinesBalanced(parent, maxWidth, addLine);
+        layoutLinesBalanced(maxWidth, addLine);
         return;
     }
 
-    layoutLinesSimple(parent, maxWidth, addLine);
+    layoutLinesSimple(maxWidth, addLine);
+    fParent->fParagraphStyle.setMaxLines(fParentOriMaxLines);
 }
 
-void TextWrapper::layoutLinesSimple(ParagraphImpl* parent,
-                                     SkScalar maxWidth,
-                                     const AddLineToParagraph& addLine) {
-    auto span = parent->clusters();
-    if (span.empty()) {
-        return;
-    }
-    const size_t maxLines = parent->paragraphStyle().getMaxLines();
-    auto align = parent->paragraphStyle().effective_align();
-    auto unlimitedLines = maxLines == std::numeric_limits<size_t>::max();
-    auto endlessLine = !SkIsFinite(maxWidth);
-    auto hasEllipsis = parent->paragraphStyle().ellipsized();
-
-    auto disableFirstAscent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent;
-    auto disableLastDescent = parent->paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent;
-    bool firstLine = true; // We only interested in fist line if we have to disable the first ascent
-    SkScalar lineSpacing = parent->paragraphStyle().getLineSpacing();
-    bool needLineSpacing = lineSpacing > 0;
-
+void TextWrapper::layoutLinesSimple(SkScalar maxWidth, const AddLineToParagraph& addLine) {
+    auto span = fParent->clusters();
     // Resolve balanced line widths
-    std::vector<SkScalar> balancedWidths;
-
-    // if word breaking strategy is nontrivial (balanced / optimal), AND word break mode is not BREAK_ALL
-    if (parent->getWordBreakType() != WordBreakType::BREAK_ALL &&
-        parent->getLineBreakStrategy() != LineBreakStrategy::GREEDY) {
-        if (CalculateBestScore(balancedWidths, maxWidth, parent, maxLines) < 0) {
-            // if the line breaking strategy returns a negative score, the algorithm could not fit or break the text
-            // fall back to default, greedy algorithm
-            balancedWidths.clear();
-        }
-        LOGD("Got %{public}lu", static_cast<unsigned long>(balancedWidths.size()));
-    }
-
-    SkScalar softLineMaxIntrinsicWidth = 0;
-    fEndLine = TextStretch(span.begin(), span.begin(), parent->strutForceHeight() && parent->strutEnabled());
-    auto end = span.end() - 1;
-    auto start = span.begin();
-    InternalLineMetrics maxRunMetrics;
-    bool needEllipsis = false;
+    std::vector<SkScalar> balancedWidths = generateBalancedLayoutWidths();
+    fEndLine = TextStretch(span.begin(), span.begin(), fParent->strutForceHeight() && fParent->strutEnabled());
     SkScalar newWidth = maxWidth;
-    SkScalar noIndentWidth = maxWidth;
-    while (fEndLine.endCluster() != end) {
-        noIndentWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
-        if (isNewWidthToBeSetMax()) {
-            newWidth = FLT_MAX;
-        } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
-            newWidth = balancedWidths[fLineNumber - 1];
-        } else {
-            newWidth = maxWidth - parent->detectIndents(fLineNumber - 1);
-        }
-        auto lastLine = (hasEllipsis && unlimitedLines) || fLineNumber >= maxLines;
-        needEllipsis = hasEllipsis && !endlessLine && lastLine;
+    while (fEndLine.endCluster() != fEnd) {
+        newWidth = calculateMaxLineLayoutWidth(balancedWidths, maxWidth);
+        checkIsLastLine();
+        checkNeedEllipsisByLastLine();
 
-        this->lookAhead(newWidth, end, parent->getApplyRoundingHack(), parent->getWordBreakType(), needEllipsis);
+        this->lookAhead(newWidth, fEnd, fParent->getApplyRoundingHack(), fParent->getWordBreakType());
 
-        this->moveForward(needEllipsis, parent->getWordBreakType() == WordBreakType::BREAK_ALL);
-        if (fEndLine.endCluster() >= fEndLine.startCluster() || maxLines > 1) {
-            if (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
-                || parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE) {
-                needEllipsis &= fLineNumber >= maxLines;
-            } else {
+        this->moveForward(fParent->getWordBreakType() == WordBreakType::BREAK_ALL);
+        if (fEndLine.endCluster() >= fEndLine.startCluster() || fFormattingContext.maxLines > 1) {
+            if (!checkNeedEllipsisByMultiLineEllipsis()) {
                 // Only if we have some text to ellipsize.
-                needEllipsis &= fEndLine.endCluster() < end - 1;
+                fNeedEllipsis &= fEndLine.endCluster() < fEnd - 1;
             }
         }
 
-        // Do not trim end spaces on the naturally last line of the left aligned text
-        this->trimEndSpaces(align);
+        trimLineSpaces();
+        handleSpecialCases();
+        updateLineMetrics();
+        checkHardLineBreakByEllipsis();
 
-        // For soft line breaks add to the line all the spaces next to it
-        Cluster* startLine;
-        size_t pos;
-        SkScalar widthWithSpaces;
-        std::tie(startLine, pos, widthWithSpaces) = this->trimStartSpaces(end);
-
-        if (needEllipsis && !fHardLineBreak &&
-            !(parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
-            || parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)) {
-            // This is what we need to do to preserve a space before the ellipsis
-            fEndLine.restoreBreak();
-            widthWithSpaces = fEndLine.widthWithGhostSpaces();
-        } else if (fBrokeLineWithHyphen) {
-            fEndLine.shiftWidth(fEndLine.endCluster()->width());
-        }
-
-        // If the line is empty with the hard line break, let's take the paragraph font (flutter???)
-        if (fEndLine.metrics().isClean()) {
-            fEndLine.setMetrics(parent->getEmptyMetrics());
-        }
-
-        std::vector<Run*> runs;
-        updateMetricsWithPlaceholder(runs, true);
-        // update again for some case
-        // such as :
-        //      placeholderA(width: 100, height: 100, align: bottom) placeholderB(width: 200, height: 200, align: top)
-        // without second update: the placeholderA bottom will be set 0, and placeholderB bottom will be set 100
-        // so the fEndline bottom will be set 100, is not equal placeholderA bottom
-        updateMetricsWithPlaceholder(runs, false);
-        // Before we update the line metrics with struts,
-        // let's save it for GetRectsForRange(RectHeightStyle::kMax)
-        maxRunMetrics = fEndLine.metrics();
-        maxRunMetrics.fForceStrut = false;
-
-        // TODO: keep start/end/break info for text and runs but in a better way that below
-        TextRange textExcludingSpaces(fEndLine.startCluster()->textRange().start, fEndLine.endCluster()->textRange().end);
-        TextRange text(fEndLine.startCluster()->textRange().start, fEndLine.breakCluster()->textRange().start);
-        TextRange textIncludingNewlines(fEndLine.startCluster()->textRange().start, startLine->textRange().start);
-        if (startLine == end) {
-            textIncludingNewlines.end = parent->text().size();
-            text.end = parent->text().size();
-        }
-        ClusterRange clusters(fEndLine.startCluster() - start, fEndLine.endCluster() - start + 1);
-        ClusterRange clustersWithGhosts(fEndLine.startCluster() - start, startLine - start);
-
-        if (disableFirstAscent && firstLine) {
-            fEndLine.metrics().fAscent = fEndLine.metrics().fRawAscent;
-        }
-        if (disableLastDescent && (lastLine || (startLine == end && !fHardLineBreak))) {
-            fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
-            needLineSpacing = false;
-        }
-
-        if (parent->strutEnabled()) {
-            // Make sure font metrics are not less than the strut
-            parent->strutMetrics().updateLineMetrics(fEndLine.metrics());
-        }
-
-        fParent->includeFontPadding(firstLine, lastLine || (startLine == end && !fHardLineBreak),
-            fEndLine.metrics(), text);
-
-        SkScalar lineHeight = fEndLine.metrics().height();
-        if (needLineSpacing) {
-            lineHeight += lineSpacing;
-        }
-        if (fHardLineBreak && !lastLine && parent->paragraphStyle().getParagraphSpacing() > 0) {
-            lineHeight += parent->paragraphStyle().getParagraphSpacing();
-        }
-        firstLine = false;
-
-        if (fEndLine.empty()) {
-            // Correct text and clusters (make it empty for an empty line)
-            textExcludingSpaces.end = textExcludingSpaces.start;
-            clusters.end = clusters.start;
-        }
-
-        // In case of a force wrapping we don't have a break cluster and have to use the end cluster
-        text.end = std::max(text.end, textExcludingSpaces.end);
-
-        if (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD && hasEllipsis) {
-            needEllipsis = maxLines <= 1;
-            if (needEllipsis) {
-                fHardLineBreak = false;
-            }
-        }
-        if (parent->paragraphStyle().getEllipsisMod() == EllipsisModal::MIDDLE && hasEllipsis) {
-            needEllipsis = maxLines <= 1;
-        }
-
-        SkScalar offsetX = parent->detectIndents(fLineNumber - 1);
-        addLine(textExcludingSpaces,
-                text,
-                textIncludingNewlines, clusters, clustersWithGhosts, widthWithSpaces,
-                fEndLine.startPos(),
-                fEndLine.endPos(),
-                SkVector::Make(offsetX, fHeight),
-                SkVector::Make(fEndLine.width(), lineHeight),
-                fEndLine.metrics(),
-                needEllipsis,
-                offsetX,
-                noIndentWidth);
-
-        softLineMaxIntrinsicWidth += widthWithSpaces;
-
-        fMaxIntrinsicWidth = std::max(fMaxIntrinsicWidth, softLineMaxIntrinsicWidth);
-        if (fHardLineBreak) {
-            softLineMaxIntrinsicWidth = 0;
-        }
-        // Start a new line
-        fHeight += lineHeight;
-        if (!fHardLineBreak || startLine != end) {
-            fEndLine.clean();
-        }
-        fEndLine.startFrom(startLine, pos);
-        parent->fMaxWidthWithTrailingSpaces = std::max(parent->fMaxWidthWithTrailingSpaces, widthWithSpaces);
-
-        if (hasEllipsis && unlimitedLines) {
-            // There is one case when we need an ellipsis on a separate line
-            // after a line break when width is infinite
-            if (!fHardLineBreak) {
-                break;
-            }
-        } else if (lastLine) {
-            // There is nothing more to draw
-            fHardLineBreak = false;
+        TriggerFlag triggerFlag = triggerConstraintsLayout();
+        if (triggerFlag == TriggerFlag::TRIGGERED) {
+            continue;
+        } else if (triggerFlag == TriggerFlag::SKIP) {
             break;
         }
 
+        addFormattedLineToParagraph(addLine);
+        advanceToNextLine();
+        if (shouldBreakFormattingLoop()) {
+            break;
+        }
         ++fLineNumber;
     }
-    if (parent->paragraphStyle().getIsEndAddParagraphSpacing() &&
-        parent->paragraphStyle().getParagraphSpacing() > 0) {
-        fHeight += parent->paragraphStyle().getParagraphSpacing();
-    }
-
-    // We finished formatting the text but we need to scan the rest for some numbers
-    // TODO: make it a case of a normal flow
-    if (fEndLine.endCluster() != nullptr) {
-        auto lastWordLength = 0.0f;
-        auto cluster = fEndLine.endCluster();
-        while (cluster != end || cluster->endPos() < end->endPos()) {
-            fExceededMaxLines = true;
-            if (cluster->isHardBreak()) {
-                // Hard line break ends the word and the line
-                fMaxIntrinsicWidth = std::max(fMaxIntrinsicWidth, softLineMaxIntrinsicWidth);
-                softLineMaxIntrinsicWidth = 0;
-                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, lastWordLength);
-                lastWordLength = 0;
-            } else if (cluster->isWhitespaceBreak()) {
-                // Whitespaces end the word
-                softLineMaxIntrinsicWidth += cluster->width();
-                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, lastWordLength);
-                lastWordLength = 0;
-            } else if (cluster->run().isPlaceholder()) {
-                // Placeholder ends the previous word and creates a separate one
-                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, lastWordLength);
-                // Placeholder width now counts in fMinIntrinsicWidth
-                softLineMaxIntrinsicWidth += cluster->width();
-                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, cluster->width());
-                lastWordLength = 0;
-            } else {
-                // Nothing out of ordinary - just add this cluster to the word and to the line
-                softLineMaxIntrinsicWidth += cluster->width();
-                lastWordLength += cluster->width();
-            }
-            ++cluster;
-        }
-        fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, lastWordLength);
-        fMaxIntrinsicWidth = std::max(fMaxIntrinsicWidth, softLineMaxIntrinsicWidth);
-
-        if (parent->lines().empty()) {
-            // In case we could not place even a single cluster on the line
-            if (disableFirstAscent) {
-                fEndLine.metrics().fAscent = fEndLine.metrics().fRawAscent;
-            }
-            if (disableLastDescent && !fHardLineBreak) {
-                fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
-            }
-            fHeight = std::max(fHeight, fEndLine.metrics().height());
-        }
-    }
-
-    if (fHardLineBreak) {
-        if (disableLastDescent) {
-            fEndLine.metrics().fDescent = fEndLine.metrics().fRawDescent;
-        }
-
-        // Last character is a line break
-        if (parent->strutEnabled()) {
-            // Make sure font metrics are not less than the strut
-            parent->strutMetrics().updateLineMetrics(fEndLine.metrics());
-        }
-
-        ClusterRange clusters(fEndLine.breakCluster() - start, fEndLine.endCluster() - start);
-        addLine(fEndLine.breakCluster()->textRange(),
-                fEndLine.breakCluster()->textRange(),
-                fEndLine.endCluster()->textRange(),
-                clusters,
-                clusters,
-                0,
-                0,
-                0,
-                SkVector::Make(0, fHeight),
-                SkVector::Make(0, fEndLine.metrics().height()),
-                fEndLine.metrics(),
-                needEllipsis,
-                parent->detectIndents(fLineNumber - 1),
-                noIndentWidth);
-        fHeight += fEndLine.metrics().height();
-        parent->lines().back().setMaxRunMetrics(maxRunMetrics);
-    }
-
-    if (parent->lines().empty()) {
-        return;
-    }
-    // Correct line metric styles for the first and for the last lines if needed
-    if (disableFirstAscent) {
-        parent->lines().front().setAscentStyle(LineMetricStyle::Typographic);
-    }
-    if (disableLastDescent) {
-        parent->lines().back().setDescentStyle(LineMetricStyle::Typographic);
-    }
+    finalizeTextLayout(addLine);
 }
 
 bool TextWrapper::isNewWidthToBeSetMax() {
     if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD &&
         fParent->paragraphStyle().getMaxLines() == 1) || fParent->needCreateOneLineMiddleEllipsis()) {
-        return true;
-    } else if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
-        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)
-        && fLineNumber >= fParent->paragraphStyle().getMaxLines() && fParent->paragraphStyle().ellipsized()) {
-        return true;
+            return true;
+    } else if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD ||
+        fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE) &&
+        fLineNumber >= fParent->paragraphStyle().getMaxLines() && fParent->paragraphStyle().ellipsized()) {
+            return true;
     }
 
     return false;
+}
+
+TextWrapper::TriggerFlag TextWrapper::triggerConstraintsLayout() {
+    if (!fParent->fUseLayoutConstraints) {
+        return TriggerFlag::NOT_TIRGGERED;
+    }
+
+    SkScalar endLineHeight = fEndLine.metrics().height();
+    if (fFormattingContext.needLineSpacing && !fFormattingContext.disableLastDescent) {
+        endLineHeight += fFormattingContext.lineSpacing;
+    }
+    if (fFormattingContext.disableLastDescent) {
+        endLineHeight -= fEndLine.metrics().descent() - fEndLine.metrics().rawDescent();
+    }
+    if (fHeight + endLineHeight < fParent->fConstraintsHeight) {
+        return TriggerFlag::NOT_TIRGGERED;
+    }
+
+    auto& lines = fParent->exportTextLines();
+    if (lines.empty()) {
+        return TriggerFlag::SKIP;
+    }
+    TextLine& lastLine = lines.back();
+    fHeight -= lastLine.height();
+
+    // Update fEndLine and rooback pre line.
+    fFormattingContext.maxLines = lines.size();
+    fParent->getParagraphStyle().setMaxLines(fFormattingContext.maxLines);
+    fEndLine.clean();
+    Cluster* cluster = &fParent->cluster(lastLine.clusters().start);
+    fEndLine.startFrom(cluster, cluster->startPos());
+    lines.pop_back();
+    --fLineNumber;
+
+    return TriggerFlag::TRIGGERED;
+}
+
+SkScalar TextWrapper::calculateMaxLineLayoutWidth(const std::vector<SkScalar>& balancedWidths, SkScalar maxWidth) {
+    fNoIndentWidth = maxWidth - fParent->detectIndents(fLineNumber - 1);
+    if (isNewWidthToBeSetMax()) {
+        return FLT_MAX;
+    } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
+        return balancedWidths[fLineNumber - 1];
+    } else {
+        return fNoIndentWidth;
+    }
+}
+
+std::vector<SkScalar> TextWrapper::generateBalancedLayoutWidths() {
+    std::vector<SkScalar> balancedWidths;
+
+    // if word breaking strategy is nontrivial (balanced / optimal), AND word break mode is not BREAK_ALL
+    if (fParent->getWordBreakType() != WordBreakType::BREAK_ALL &&
+        fParent->getLineBreakStrategy() != LineBreakStrategy::GREEDY) {
+        if (CalculateBestScore(balancedWidths, fNoIndentWidth, fParent, fFormattingContext.maxLines) < 0) {
+            // if the line breaking strategy returns a negative score, the algorithm could not fit or break the text
+            // fall back to default, greedy algorithm
+            balancedWidths.clear();
+        }
+    }
+    return balancedWidths;
 }
 
 std::vector<uint8_t> TextWrapper::findBreakPositions(Cluster* startCluster,
@@ -1297,8 +1114,39 @@ void TextWrapper::pushToWordStretchesBatch() {
     fWordWidthGroups.clear();
 }
 
+void TextWrapper::checkConstraintsLayoutByTextStretch(TextStretch& lineStretch) {
+    fTotalLineStretchesHeight += lineStretch.metrics().height();
+    if (fFormattingContext.needLineSpacing) {
+        fTotalLineStretchesHeight += fFormattingContext.lineSpacing;
+    }
+
+    size_t assumeLineCnt = fLineStretches.size();
+    if (assumeLineCnt == 1 && fFormattingContext.disableFirstAscent) {
+        fTotalLineStretchesHeight -= lineStretch.metrics().rawAscent() - lineStretch.metrics().ascent();
+    }
+
+    SkScalar lastDescent = 0.0;
+    if (fFormattingContext.disableLastDescent) {
+        lastDescent = lineStretch.metrics().descent() - lineStretch.metrics().rawDescent();
+        if (fFormattingContext.needLineSpacing) {
+            lastDescent += fFormattingContext.lineSpacing;
+        }
+    }
+
+    if (fTotalLineStretchesHeight - lastDescent > fParent->fConstraintsHeight) {
+        fFormattingContext.maxLines = assumeLineCnt - 1;
+        fParent->fParagraphStyle.setMaxLines(fFormattingContext.maxLines);
+        fCheckBalancedConstraintsLayout = false;
+    }
+}
+
 void TextWrapper::generateLineStretches(const std::vector<std::pair<size_t, size_t>>& linesGroupInfo,
     std::vector<TextStretch>& wordStretches) {
+    if (fParent->paragraphStyle().getIsEndAddParagraphSpacing() &&
+        fParent->paragraphStyle().getParagraphSpacing() > 0) {
+        fTotalLineStretchesHeight += fParent->paragraphStyle().getParagraphSpacing();
+    }
+
     for (const std::pair<size_t, size_t>& pair : linesGroupInfo) {
         TextStretch endLine{};
         for (size_t i = pair.first; i <= pair.second; ++i) {
@@ -1308,6 +1156,11 @@ void TextWrapper::generateLineStretches(const std::vector<std::pair<size_t, size
             endLine.extend(wordStretches[i]);
         }
         fLineStretches.push_back(endLine);
+
+        if (!fCheckBalancedConstraintsLayout) {
+            continue;
+        }
+        checkConstraintsLayoutByTextStretch(endLine);
     }
 }
 
@@ -1335,14 +1188,8 @@ void TextWrapper::extendCommonCluster(Cluster* cluster, TextTabAlign& textTabAli
     }
 }
 
-void TextWrapper::generateWordStretches(const SkSpan<Cluster>& span, WordBreakType wordBreakType) {
+void TextWrapper::generateWordStretches(WordBreakType wordBreakType) {
     fEndLine.metrics().clean();
-
-    if (fStart == nullptr) {
-        fStart = span.begin();
-        fEnd = span.end() - 1;
-    }
-
     fClusters.startFrom(fStart, fStart->startPos());
     fClip.startFrom(fStart, fStart->startPos());
 
@@ -1350,9 +1197,10 @@ void TextWrapper::generateWordStretches(const SkSpan<Cluster>& span, WordBreakTy
     textTabAlign.init(MAX_LINES_LIMIT, fStart);
 
     SkScalar totalFakeSpacing = 0.0;
+    Cluster* start = fStart;
 
-    for (Cluster* cluster = fStart; cluster < fEnd; ++cluster) {
-        totalFakeSpacing += (cluster->needAutoSpacing() && cluster != fStart)
+    for (Cluster* cluster = start; cluster < fEnd; ++cluster) {
+        totalFakeSpacing += (cluster->needAutoSpacing() && cluster != start)
                                     ? (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO
                                     : 0;
         if (cluster->run().isPlaceholder()) {
@@ -1371,7 +1219,7 @@ void TextWrapper::generateWordStretches(const SkSpan<Cluster>& span, WordBreakTy
         }
 
         if (cluster->isHardBreak()) {
-            fStart = cluster;
+            start = cluster;
             pushToWordStretchesBatch();
         }
     }
@@ -1518,10 +1366,7 @@ void TextWrapper::formalizedClusters(std::vector<TextStretch>& clusters, SkScala
     }
 }
 
-void TextWrapper::generateTextLines(SkScalar maxWidth,
-                                    const AddLineToParagraph& addLine,
-                                    const SkSpan<Cluster>& span) {
-    initializeFormattingState(maxWidth, span);
+void TextWrapper::generateTextLines(SkScalar maxWidth, const AddLineToParagraph& addLine) {
     processLineStretches(maxWidth, addLine);
     finalizeTextLayout(addLine);
 }
@@ -1535,14 +1380,18 @@ void TextWrapper::initializeFormattingState(SkScalar maxWidth, const SkSpan<Clus
                           style.getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent,
                           style.getMaxLines(),
                           style.effective_align(),
-                          fParent->paragraphStyle().getLineSpacing() > 0,
-                          fParent->paragraphStyle().getLineSpacing()};
+                          style.getLineSpacing() > 0,
+                          style.getLineSpacing(),
+                          style.getStrutStyle().getLineBreakStrategy() == LineBreakStrategy::BALANCED ?
+                              LayoutMode::OPTIMIZE : LayoutMode::SIMPLE};
 
     fFirstLine = true;
     fSoftLineMaxIntrinsicWidth = 0;
     fNoIndentWidth = maxWidth;
     fEnd = span.end() - 1;
     fStart = span.begin();
+    fParentOriMaxLines = fFormattingContext.maxLines;
+    fCheckBalancedConstraintsLayout = fParent->fUseLayoutConstraints;
 }
 
 void TextWrapper::processLineStretches(SkScalar maxWidth, const AddLineToParagraph& addLine) {
@@ -1574,47 +1423,70 @@ void TextWrapper::prepareLineForFormatting(TextStretch& line) {
 }
 
 void TextWrapper::formatCurrentLine(const AddLineToParagraph& addLine) {
-    bool needEllipsis = determineIfEllipsisNeeded();
+    determineIfEllipsisNeeded();
     trimLineSpaces();
-    handleSpecialCases(needEllipsis);
+    handleSpecialCases();
     updateLineMetrics();
-    addFormattedLineToParagraph(addLine, needEllipsis);
+    addFormattedLineToParagraph(addLine);
 }
 
-bool TextWrapper::determineIfEllipsisNeeded() {
-    fIsLastLine = (fFormattingContext.hasEllipsis && fFormattingContext.unlimitedLines) ||
-        (fLineNumber >= fFormattingContext.maxLines && fLineStretches.size() > fFormattingContext.maxLines);
-    bool needEllipsis = fFormattingContext.hasEllipsis && !fFormattingContext.endlessLine && fIsLastLine;
-    if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
-        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)
-        && fFormattingContext.hasEllipsis) {
-        needEllipsis = fFormattingContext.hasEllipsis && fLineNumber >= fFormattingContext.maxLines;
-    }
-
+void TextWrapper::checkHardLineBreakByEllipsis() {
     if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::HEAD && fFormattingContext.hasEllipsis) {
-        needEllipsis = fFormattingContext.maxLines <= 1;
-        if (needEllipsis) {
+        fNeedEllipsis = fFormattingContext.maxLines <= 1;
+        if (fNeedEllipsis) {
             fHardLineBreak = false;
         }
     }
-
     if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MIDDLE && fFormattingContext.hasEllipsis) {
-        needEllipsis = fFormattingContext.maxLines <= 1;
+        fNeedEllipsis = fFormattingContext.maxLines <= 1;
     }
+}
 
-    return needEllipsis;
+bool TextWrapper::checkNeedEllipsisByMultiLineEllipsis() {
+    if (fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD ||
+        fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE) {
+        if (fFormattingContext.layoutMode != LayoutMode::OPTIMIZE) {
+            fNeedEllipsis &= fLineNumber >= fFormattingContext.maxLines;
+            return true;
+        }
+
+        if (fFormattingContext.hasEllipsis) {
+            fNeedEllipsis = fFormattingContext.hasEllipsis && fLineNumber >= fFormattingContext.maxLines;
+            return true;
+        }
+    }
+    return false;
+}
+
+void TextWrapper::checkNeedEllipsisByLastLine() {
+    fNeedEllipsis = fFormattingContext.hasEllipsis && !fFormattingContext.endlessLine && fIsLastLine;
+}
+
+void TextWrapper::checkIsLastLine() {
+    fIsLastLine = (fFormattingContext.hasEllipsis && fFormattingContext.unlimitedLines) ||
+        fLineNumber >= fFormattingContext.maxLines;
+}
+
+void TextWrapper::determineIfEllipsisNeeded() {
+    checkIsLastLine();
+    checkNeedEllipsisByLastLine();
+    checkNeedEllipsisByMultiLineEllipsis();
+    checkHardLineBreakByEllipsis();
 }
 
 void TextWrapper::trimLineSpaces() {
+    // Do not trim end spaces on the naturally last line of the left aligned text
     this->trimEndSpaces(fFormattingContext.align);
+    // For soft line breaks add to the line all the spaces next to it
     std::tie(fCurrentStartLine, fCurrentStartPos, fCurrentLineWidthWithSpaces) =
             this->trimStartSpaces(fEnd);
 }
 
-void TextWrapper::handleSpecialCases(bool needEllipsis) {
-    if (needEllipsis && !fHardLineBreak &&
-        !(fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
-        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)) {
+void TextWrapper::handleSpecialCases() {
+    // This is what we need to do to preserve a space before the ellipsis
+    if (fNeedEllipsis && !fHardLineBreak &&
+        !(fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD ||
+        fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)) {
         fEndLine.restoreBreak();
         fCurrentLineWidthWithSpaces = fEndLine.widthWithGhostSpaces();
     } else if (fBrokeLineWithHyphen) {
@@ -1634,7 +1506,14 @@ void TextWrapper::updateLineMetrics() {
 void TextWrapper::updatePlaceholderMetrics() {
     std::vector<Run*> runs;
     updateMetricsWithPlaceholder(runs, true);
+    // update again for some case
+    // such as :
+    //      placeholderA(width: 100, height: 100, align: bottom) placeholderB(width: 200, height: 200, align: top)
+    // without second update: the placeholderA bottom will be set 0, and placeholderB bottom will be set 100
+    // so the fEndline bottom will be set 100, is not equal placeholderA bottom
     updateMetricsWithPlaceholder(runs, false);
+    // Before we update the line metrics with struts,
+    // let's save it for GetRectsForRange(RectHeightStyle::kMax)
     fMaxRunMetrics = fEndLine.metrics();
     fMaxRunMetrics.fForceStrut = false;
 }
@@ -1660,10 +1539,8 @@ TextWrapper::LineTextRanges TextWrapper::calculateLineTextRanges() {
 
     ranges.textExcludingSpaces = TextRange(fEndLine.startCluster()->textRange().start,
                                            fEndLine.endCluster()->textRange().end);
-
     ranges.text = TextRange(fEndLine.startCluster()->textRange().start,
                             fEndLine.breakCluster()->textRange().start);
-
     ranges.textIncludingNewlines = TextRange(fEndLine.startCluster()->textRange().start,
                                              fCurrentStartLine->textRange().start);
 
@@ -1672,17 +1549,15 @@ TextWrapper::LineTextRanges TextWrapper::calculateLineTextRanges() {
         ranges.text.end = fParent->text().size();
     }
 
-    ranges.clusters =
-            ClusterRange(fEndLine.startCluster() - fStart, fEndLine.endCluster() - fStart + 1);
-
-    ranges.clustersWithGhosts =
-            ClusterRange(fEndLine.startCluster() - fStart, fCurrentStartLine - fStart);
+    ranges.clusters = ClusterRange(fEndLine.startCluster() - fStart, fEndLine.endCluster() - fStart + 1);
+    ranges.clustersWithGhosts = ClusterRange(fEndLine.startCluster() - fStart, fCurrentStartLine - fStart);
 
     if (fEndLine.empty()) {
         ranges.textExcludingSpaces.end = ranges.textExcludingSpaces.start;
         ranges.clusters.end = ranges.clusters.start;
     }
 
+    // In case of a force wrapping we don't have a break cluster and have to use the end cluster
     ranges.text.end = std::max(ranges.text.end, ranges.textExcludingSpaces.end);
 
     return ranges;
@@ -1699,10 +1574,10 @@ SkScalar TextWrapper::calculateLineHeight() {
     return height;
 }
 
-void TextWrapper::addFormattedLineToParagraph(const AddLineToParagraph& addLine,
-                                              bool needEllipsis) {
+void TextWrapper::addFormattedLineToParagraph(const AddLineToParagraph& addLine) {
     LineTextRanges ranges = calculateLineTextRanges();
-    fParent->includeFontPadding(fFirstLine, fIsLastLine, fEndLine.metrics(), ranges.text);
+    fParent->includeFontPadding(fFirstLine, fIsLastLine || (fCurrentStartLine == fEnd && !fHardLineBreak),
+        fEndLine.metrics(), ranges.text);
     SkScalar lineHeight = calculateLineHeight();
     SkScalar offsetX = fParent->detectIndents(fLineNumber - 1);
 
@@ -1717,9 +1592,11 @@ void TextWrapper::addFormattedLineToParagraph(const AddLineToParagraph& addLine,
             SkVector::Make(offsetX, fHeight),
             SkVector::Make(fEndLine.width(), lineHeight),
             fEndLine.metrics(),
-            needEllipsis,
+            fNeedEllipsis,
             offsetX,
             fNoIndentWidth);
+    fHeight += lineHeight;
+    fFirstLine = false;
 
     updateIntrinsicWidths();
 }
@@ -1734,10 +1611,12 @@ void TextWrapper::updateIntrinsicWidths() {
 
 bool TextWrapper::shouldBreakFormattingLoop() {
     if (fFormattingContext.hasEllipsis && fFormattingContext.unlimitedLines) {
+        // There is one case when we need an ellipsis on a separate line
+        // after a line break when width is infinite
         if (!fHardLineBreak) {
             return true;
         }
-    } else if (isLastLine()) {
+    } else if (fIsLastLine) {
         fHardLineBreak = false;
         return true;
     }
@@ -1748,11 +1627,9 @@ bool TextWrapper::isLastLine() const { return fLineNumber >= fFormattingContext.
 
 void TextWrapper::advanceToNextLine() {
     prepareForNextLine();
-    fFirstLine = false;
 }
 
 void TextWrapper::prepareForNextLine() {
-    fHeight += calculateLineHeight();
     if (!fHardLineBreak || fCurrentStartLine != fEnd) {
         fEndLine.clean();
     }
@@ -1894,9 +1771,9 @@ void TextWrapper::preProcessingForLineStretches() {
         fLineStretches.push_back(merged);
     }
 
-    if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD
-        || fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE)
-        && fParent->paragraphStyle().ellipsized() && fLineStretches.size() > style.getMaxLines()) {
+    if ((fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD ||
+        fParent->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_MIDDLE) &&
+        fParent->paragraphStyle().ellipsized() && fLineStretches.size() > style.getMaxLines()) {
         handleMultiLineEllipsis(style.getMaxLines());
     }
 }
@@ -1935,17 +1812,11 @@ void TextWrapper::mergeStretchesUntilHardBreak(TextStretch& merged, size_t start
     }
 }
 
-void TextWrapper::layoutLinesBalanced(ParagraphImpl* parent,
-                                      SkScalar maxWidth,
-                                      const AddLineToParagraph& addLine) {
+void TextWrapper::layoutLinesBalanced(SkScalar maxWidth, const AddLineToParagraph& addLine) {
     reset();
-    SkSpan<Cluster> span = parent->clusters();
-    if (span.empty()) {
-        return;
-    }
 
     // Generate word stretches
-    generateWordStretches(span, parent->getWordBreakType());
+    generateWordStretches(fParent->getWordBreakType());
 
     for (std::vector<TextStretch>& wordStretches : fWordStretchesBatch) {
         // Trimming a word that is longer than the line width
@@ -1962,7 +1833,7 @@ void TextWrapper::layoutLinesBalanced(ParagraphImpl* parent,
 
     preProcessingForLineStretches();
 
-    generateTextLines(maxWidth, addLine, span);
+    generateTextLines(maxWidth, addLine);
 }
 #else
 // Since we allow cluster clipping when they don't fit

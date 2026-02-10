@@ -93,6 +93,8 @@ public:
 
     ParagraphStyle& getParagraphStyle() { return fParagraphStyle; }
 
+    virtual TextRange getUtf16TextRange() = 0;
+
     virtual skia_private::TArray<Block, true>& exportTextStyles() = 0;
 
     virtual void setState(InternalState state) = 0;
@@ -388,6 +390,11 @@ public:
     virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
         std::vector<RSFontMetrics>& fontMetrics) = 0;
     virtual std::vector<PathInfo> getTextPathByClusterRange(SkRange<size_t> range) = 0;
+    virtual TextRange getLineUtf16TextRange(int lineNumber, bool includeSpaces) = 0;
+
+    void setLayoutConstraintsFlag(bool useLayoutConstraints) { fUseLayoutConstraints = useLayoutConstraints; }
+    void setLayoutConstraintsWidth(SkScalar width) { fConstraintsWidth = width; }
+    void setLayoutConstraintsHeight(SkScalar height) { fConstraintsHeight = height; }
 #else
     /** Returns the font that is used to shape the text at the position
      *
@@ -415,6 +422,9 @@ protected:
     SkScalar fGlyphsBoundsBottom;
     SkScalar fGlyphsBoundsLeft;
     SkScalar fGlyphsBoundsRight;
+    bool fUseLayoutConstraints{false};
+    SkScalar fConstraintsWidth{FLT_MAX};
+    SkScalar fConstraintsHeight{FLT_MAX};
 #endif
     bool fExceededMaxLines;
 };
