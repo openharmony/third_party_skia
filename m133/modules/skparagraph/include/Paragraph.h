@@ -121,15 +121,15 @@ public:
     virtual std::string GetDumpInfo() const = 0;
 
     virtual PositionWithAffinity getCharacterPositionAtCoordinate(SkScalar dx, SkScalar dy,
-        TextEncoding encoding = TextEncoding::UTF8) = 0;
+        RSDrawing::TextEncoding encoding = RSDrawing::TextEncoding::UTF8) = 0;
 
     // Returns the character range corresponding to the given glyph range
     virtual TextRange getCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd,
-        GlyphRange* actualGlyphRange = nullptr, TextEncoding encoding = TextEncoding::UTF8) = 0;
+        GlyphRange* actualGlyphRange = nullptr, RSDrawing::TextEncoding encoding = RSDrawing::TextEncoding::UTF8) = 0;
 
     // Returns the glyph range corresponding to the given character range
     virtual GlyphRange getGlyphRangeForCharacterRange(size_t charStart, size_t charEnd,
-        TextRange* actualCharRange = nullptr, TextEncoding encoding = TextEncoding::UTF8) = 0;
+        TextRange* actualCharRange = nullptr, RSDrawing::TextEncoding encoding = RSDrawing::TextEncoding::UTF8) = 0;
 #endif
 
     bool didExceedMaxLines() { return fExceededMaxLines; }

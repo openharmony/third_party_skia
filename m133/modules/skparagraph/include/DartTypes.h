@@ -71,7 +71,6 @@ enum class EllipsisModal {
     MULTILINE_HEAD = 3,
     MULTILINE_MIDDLE = 4,
 };
-using TextEncoding = RSDrawing::TextEncoding;
 #endif
 
 struct PositionWithAffinity {

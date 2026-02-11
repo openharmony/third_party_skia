@@ -170,7 +170,7 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     void extendCoordinateRange(PositionWithAffinity& positionWithAffinity);
     PositionWithAffinity getCharacterPositionAtCoordinate(SkScalar dx,
-        TextEncoding encoding = TextEncoding::UTF8);
+        RSDrawing::TextEncoding encoding = RSDrawing::TextEncoding::UTF8);
 #endif
 
     using RunVisitor = std::function<bool(
