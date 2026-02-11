@@ -148,8 +148,8 @@ public:
     SkScalar fLayoutRawWidth;
     SkScalar fLayoutConstraintsHeight;
     size_t maxlines;
-    bool hasEllipsis;
     EllipsisModal ellipsisModal;
+    std::u16string ellipsisUtf16;
 #endif
 };
 
@@ -343,6 +343,10 @@ bool ParagraphCacheKey::operator==(const ParagraphCacheKey& other) const {
         return false;
     }
 
+    if (fParagraphStyle.getEllipsisUtf16() != other.fParagraphStyle.getEllipsisUtf16()) {
+        return false;
+    }
+
     for (int i = 0; i < fTextStyles.size(); ++i) {
         auto& tsa = fTextStyles[i];
         auto& tsb = other.fTextStyles[i];
@@ -455,8 +459,8 @@ bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const Parag
         abs(paragraph.fLayoutRawWidth - value->fLayoutRawWidth) < 1.f &&
         nearlyEqual(paragraph.fConstraintsHeight, value->fLayoutConstraintsHeight) &&
         paragraph.fParagraphStyle.getMaxLines() == value->maxlines &&
-        paragraph.fParagraphStyle.ellipsized() == value->hasEllipsis &&
         paragraph.fParagraphStyle.getEllipsisMod() == value->ellipsisModal &&
+        paragraph.fParagraphStyle.getEllipsisUtf16() == value->ellipsisUtf16 &&
         paragraph.fText.size() == value->fKey.text().size()) {
         return true;
     }
@@ -515,8 +519,8 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
     value->fLayoutRawWidth = paragraph.fLayoutRawWidth;
     value->fLayoutConstraintsHeight = paragraph.fConstraintsHeight;
     value->maxlines = paragraph.fParagraphStyle.getMaxLines();
-    value->hasEllipsis = paragraph.fParagraphStyle.ellipsized();
     value->ellipsisModal = paragraph.fParagraphStyle.getEllipsisMod();
+    value->ellipsisUtf16 = paragraph.fParagraphStyle.getEllipsisUtf16();
 }
 
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
