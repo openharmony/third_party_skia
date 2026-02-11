@@ -21,4 +21,7 @@ third_party("piexm133") {
     "../externals/piex/src/tiff_directory/tiff_directory.cc",
     "../externals/piex/src/tiff_parser.cc",
   ]
+  if (is_ohos) {
+    defines += [ "SK_ENABLE_OHOS_CODEC" ]
+  }
 }

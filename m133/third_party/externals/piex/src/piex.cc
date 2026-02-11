@@ -35,6 +35,56 @@ using tiff_directory::Endian;
 using tiff_directory::TiffDirectory;
 
 const std::uint32_t kRafOffsetToPreviewOffset = 84;
+#ifdef SK_ENABLE_OHOS_CODEC
+const std::uint32_t kRafOffsetToRawDataOffset = 100;
+
+template <class T>
+bool safe_add_to_size_t(T arg1, T arg2, size_t* result) {
+    if (arg1 >= 0 && arg2 <= std::numeric_limits<T>::max() - arg1) {
+        T sum = arg1 + arg2;
+        if (sum <= std::numeric_limits<size_t>::max()) {
+            *result = static_cast<size_t>(sum);
+            return true;
+        }
+    }
+    return false;
+}
+
+class SubStream : public StreamInterface {
+public:
+    SubStream(StreamInterface* base, size_t start, size_t length)
+        : base_(base), start_(start), length_(length){}
+
+    ~SubStream() override {}
+
+    Error GetData(const size_t offset, const size_t length,
+                          std::uint8_t* data) override {
+        size_t sum;
+        if (!safe_add_to_size_t(offset, length, &sum)) {
+            return kFail;
+        }
+
+        if (offset > length_ || sum > length_) {
+            return kFail;
+        }
+
+        size_t real_offset;
+        if (!safe_add_to_size_t(start_, offset, &real_offset)) {
+            return kFail;
+        }
+
+        if (base_ == nullptr) {
+            return kFail;
+        }
+
+        return base_->GetData(real_offset, length, data);
+    }
+private:
+    StreamInterface* base_;
+    size_t start_;
+    size_t length_;
+};
+#endif
 
 bool GetDngInformation(const tiff_directory::TiffDirectory& tiff_directory,
                        std::uint32_t* width, std::uint32_t* height,
@@ -578,6 +628,20 @@ Error RafGetPreviewData(StreamInterface* stream,
   return kOk;
 }
 
+#ifdef SK_ENABLE_OHOS_CODEC
+Error RafGetPreviewDataFromSubStream(StreamInterface* stream,
+                                      PreviewImageData* preview_image_data) {
+  const Endian endian = tiff_directory::kBigEndian;
+  std::uint32_t sub_stream_length = 0;
+  if (!Get32u(stream, kRafOffsetToRawDataOffset, endian, &sub_stream_length)) {
+    return kFail;  
+  }
+
+  SubStream subStream(stream, 0, sub_stream_length);
+  return RafGetPreviewData(&subStream, preview_image_data);
+}
+#endif
+
 Error Rw2GetPreviewData(StreamInterface* stream,
                         PreviewImageData* preview_image_data) {
   const TagSet extended_tags = {kPanaTagTopBorder,     kPanaTagLeftBorder,
@@ -680,7 +744,11 @@ Error GetPreviewImageData(StreamInterface* data,
     case image_type_recognition::kPefImage:
       return PefGetPreviewData(data, preview_image_data);
     case image_type_recognition::kRafImage:
+#ifdef SK_ENABLE_OHOS_CODEC
+      return RafGetPreviewDataFromSubStream(data, preview_image_data);
+#else
       return RafGetPreviewData(data, preview_image_data);
+#endif
     case image_type_recognition::kRw2Image:
       return Rw2GetPreviewData(data, preview_image_data);
     case image_type_recognition::kSrwImage:
