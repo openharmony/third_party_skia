@@ -2817,10 +2817,10 @@ void TextLine::extendCoordinateRange(PositionWithAffinity& positionWithAffinity)
     }
 }
 
-PositionWithAffinity TextLine::getCharacterPositionAtCoordinate(SkScalar dx, TextEncoding encoding) {
+PositionWithAffinity TextLine::getCharacterPositionAtCoordinate(SkScalar dx, RSDrawing::TextEncoding encoding) {
     PositionWithAffinity utf16UnitPos = this->getGlyphPositionAtCoordinate(dx);
     // UTF-16: return directly
-    if (encoding == TextEncoding::UTF16) {
+    if (encoding == RSDrawing::TextEncoding::UTF16) {
         return utf16UnitPos;
     }
     // UTF-8: convert from UTF-16 position

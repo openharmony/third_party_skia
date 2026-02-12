@@ -3179,7 +3179,8 @@ bool ParagraphImpl::containsColorFontOrBitmap(SkTextBlob* textBlob) {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
-PositionWithAffinity ParagraphImpl::getCharacterPositionAtCoordinate(SkScalar dx, SkScalar dy, TextEncoding encoding) {
+PositionWithAffinity ParagraphImpl::getCharacterPositionAtCoordinate(SkScalar dx, SkScalar dy,
+    RSDrawing::TextEncoding encoding) {
     if (fText.isEmpty()) {
         return {0, Affinity::kDownstream};
     }
@@ -3312,7 +3313,7 @@ void ParagraphImpl::processCharToGlyphRange(const Run& run, size_t overlapStart,
 }
 
 TextRange ParagraphImpl::getCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd,
-    GlyphRange* actualGlyphRange, TextEncoding encoding) {
+    GlyphRange* actualGlyphRange, RSDrawing::TextEncoding encoding) {
     if (fText.isEmpty() || fRuns.empty()) {
         if (actualGlyphRange != nullptr) {
             *actualGlyphRange = EMPTY_RANGE;
@@ -3349,7 +3350,7 @@ TextRange ParagraphImpl::getCharacterRangeForGlyphRange(size_t glyphStart, size_
     if (actualGlyphRange != nullptr) {
         *actualGlyphRange = GlyphRange(context.actualRange.start, context.actualRange.end);
     }
-    if (encoding == TextEncoding::UTF16) {
+    if (encoding == RSDrawing::TextEncoding::UTF16) {
         this->ensureUTF16Mapping();
         return TextRange(
             this->getUTF16IndexWithOverflowCheck(context.targetRange.start),
@@ -3360,7 +3361,7 @@ TextRange ParagraphImpl::getCharacterRangeForGlyphRange(size_t glyphStart, size_
 }
 
 GlyphRange ParagraphImpl::getGlyphRangeForCharacterRange(size_t charStart, size_t charEnd,
-    TextRange* actualCharRange, TextEncoding encoding) {
+    TextRange* actualCharRange, RSDrawing::TextEncoding encoding) {
     if (fText.isEmpty() || fRuns.empty()) {
         if (actualCharRange != nullptr) {
             *actualCharRange = EMPTY_RANGE;
@@ -3368,7 +3369,7 @@ GlyphRange ParagraphImpl::getGlyphRangeForCharacterRange(size_t charStart, size_
         return EMPTY_RANGE;
     }
 
-    if (encoding == TextEncoding::UTF16) {
+    if (encoding == RSDrawing::TextEncoding::UTF16) {
         this->ensureUTF16Mapping();
         charStart = this->getUTF8Index(charStart);
         charEnd = this->getUTF8Index(charEnd);
@@ -3397,7 +3398,7 @@ GlyphRange ParagraphImpl::getGlyphRangeForCharacterRange(size_t charStart, size_
         return EMPTY_RANGE;
     }
     if (actualCharRange != nullptr) {
-        if (encoding == TextEncoding::UTF16) {
+        if (encoding == RSDrawing::TextEncoding::UTF16) {
             *actualCharRange = TextRange(
                 this->getUTF16IndexWithOverflowCheck(context.actualRange.start),
                 this->getUTF16IndexWithOverflowCheck(context.actualRange.end)

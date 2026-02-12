@@ -132,11 +132,13 @@ public:
     void paint(ParagraphPainter* canvas, RSPath* path, SkScalar hOffset, SkScalar vOffset) override;
     std::string GetDumpInfo() const override;
     PositionWithAffinity getCharacterPositionAtCoordinate(SkScalar dx, SkScalar dy,
-        TextEncoding encoding = TextEncoding::UTF8) override;
+        RSDrawing::TextEncoding encoding = RSDrawing::TextEncoding::UTF8) override;
     TextRange getCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd,
-        GlyphRange* actualGlyphRange = nullptr, TextEncoding encoding = TextEncoding::UTF8) override;
+        GlyphRange* actualGlyphRange = nullptr,
+        RSDrawing::TextEncoding encoding = RSDrawing::TextEncoding::UTF8) override;
     GlyphRange getGlyphRangeForCharacterRange(size_t charStart, size_t charEnd,
-        TextRange* actualCharRange = nullptr, TextEncoding encoding = TextEncoding::UTF8) override;
+        TextRange* actualCharRange = nullptr,
+        RSDrawing::TextEncoding encoding = RSDrawing::TextEncoding::UTF8) override;
 #endif // ENABLE_TEXT_ENHANCE
     std::vector<TextBox> getRectsForRange(unsigned start,
                                           unsigned end,
