@@ -956,7 +956,7 @@ bool OneLineShaper::shape() {
             auto typefaceVisitor = [&](std::shared_ptr<RSTypeface> typeface) {
                 // Create one more font to try
                 RSFont font(std::move(typeface), block.fStyle.getCorrectFontSize(), 1, 0);
-                font.SetEdging(RSDrawing::FontEdging::ANTI_ALIAS);
+                font.SetEdging(block.fStyle.getFontEdging());
                 font.SetHinting(RSDrawing::FontHinting::NONE);
                 font.SetSubpixel(true);
                 font.SetBaselineSnap(false);
