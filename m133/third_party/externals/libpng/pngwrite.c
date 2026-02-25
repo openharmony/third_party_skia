@@ -1645,7 +1645,7 @@ png_write_image_16bit(png_voidp argument)
       }
 
       png_write_row(png_ptr, png_voidcast(png_const_bytep, display->local_row));
-      input_row += (png_uint_16)display->row_bytes/(sizeof (png_uint_16));
+      input_row += display->row_bytes / 2;
    }
 
    return 1;
@@ -1771,7 +1771,7 @@ png_write_image_8bit(png_voidp argument)
 
          png_write_row(png_ptr, png_voidcast(png_const_bytep,
              display->local_row));
-         input_row += (png_uint_16)display->row_bytes/(sizeof (png_uint_16));
+         input_row += display->row_bytes / 2;
       } /* while y */
    }
 
@@ -1796,7 +1796,7 @@ png_write_image_8bit(png_voidp argument)
          }
 
          png_write_row(png_ptr, output_row);
-         input_row += (png_uint_16)display->row_bytes/(sizeof (png_uint_16));
+         input_row += display->row_bytes / 2;
       }
    }
 
@@ -2115,7 +2115,7 @@ png_image_write_main(png_voidp argument)
       ptrdiff_t row_bytes = display->row_stride;
 
       if (linear != 0)
-         row_bytes *= (sizeof (png_uint_16));
+         row_bytes *= 2;
 
       if (row_bytes < 0)
          row += (image->height-1) * (-row_bytes);
