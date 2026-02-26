@@ -39,6 +39,9 @@ private:
     std::vector<SkFontArguments::VariationPosition::Coordinate> fCoordinates;
     int fPaletteIndex;
     std::vector<SkFontArguments::Palette::Override> fPaletteOverrides;
+#ifdef ENABLE_TEXT_ENHANCE
+    std::vector<uint32_t> fNormalizationListIndex;
+#endif
 };
 
 }  // namespace textlayout
