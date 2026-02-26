@@ -469,8 +469,17 @@ static SkLRUCacheMgr GetLRUCacheInstance() {
 
 std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSTypeface> typeface,
     const std::optional<FontArguments>& fontArgs) {
-    if (!typeface || !fontArgs || typeface->IsCustomTypeface()) {
+    if (!typeface || !fontArgs) {
         return typeface;
+    }
+
+    // For custom typeface, use callback to handle cloning
+    if (typeface->IsCustomTypeface()) {
+        if (fCloneTypefaceCallback_ == nullptr) {
+            return typeface;
+        }
+        auto result = fCloneTypefaceCallback_(typeface, fontArgs);
+        return result.value_or(typeface);
     }
 
     size_t hash = 0;

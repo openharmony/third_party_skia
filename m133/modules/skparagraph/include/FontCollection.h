@@ -9,6 +9,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
+#include <functional>
 #include "drawing.h"
 #endif
 #include "include/core/SkFontMgr.h"
@@ -55,6 +56,16 @@ public:
     std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface,
         const std::optional<FontArguments>& fontArgs);
     void removeCacheByUniqueId(uint32_t uniqueId);
+
+    // Callback type for custom typeface cloning
+    // Parameters: original typeface, font arguments (variable args)
+    // Returns: optional containing cloned typeface, or nullopt to use original typeface
+    using CloneTypefaceCallback = std::function<std::optional<std::shared_ptr<RSTypeface>>(
+        std::shared_ptr<RSTypeface> typeface,
+        const std::optional<FontArguments>& fontArgs)>;
+    void registerCloneTypefaceCallback(CloneTypefaceCallback callback) {
+        fCloneTypefaceCallback_ = std::move(callback);
+    }
 #else
     void setAssetFontManager(sk_sp<SkFontMgr> fontManager);
     void setDynamicFontManager(sk_sp<SkFontMgr> fontManager);
@@ -161,6 +172,7 @@ private:
 #ifdef ENABLE_TEXT_ENHANCE
     std::mutex fMutex;
     mutable std::shared_mutex mutex_;
+    CloneTypefaceCallback fCloneTypefaceCallback_{nullptr};
 #endif
 };
 }  // namespace textlayout
