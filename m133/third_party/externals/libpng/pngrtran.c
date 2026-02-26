@@ -440,8 +440,8 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
       int i;
 
       png_ptr->quantize_index = (png_bytep)png_malloc(png_ptr,
-          (png_alloc_size_t)num_palette);
-      for (i = 0; i < num_palette; i++)
+          PNG_MAX_PALETTE_LENGTH);
+      for (i = 0; i < PNG_MAX_PALETTE_LENGTH; i++)
          png_ptr->quantize_index[i] = (png_byte)i;
    }
 
