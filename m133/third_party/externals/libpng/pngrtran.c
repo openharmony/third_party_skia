@@ -639,8 +639,8 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
                          break;
 
                      t->next = hash[d];
-                     t->left = (png_byte)i;
-                     t->right = (png_byte)j;
+                     t->left = png_ptr->palette_to_index[i];
+                     t->right = png_ptr->palette_to_index[j];
                      hash[d] = t;
                   }
                }
