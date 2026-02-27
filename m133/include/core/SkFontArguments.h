@@ -13,6 +13,9 @@
 #include "include/core/SkTypes.h"
 
 #include <cstdint>
+#ifdef ENABLE_TEXT_ENHANCE
+#include <vector>
+#endif
 
 /** Represents a set of actual arguments for a font. */
 struct SkFontArguments {
@@ -87,10 +90,18 @@ struct SkFontArguments {
 
     Palette getPalette() const { return fPalette; }
 
+#ifdef ENABLE_TEXT_ENHANCE
+    void setNormalizationList(std::vector<SkFourByteTag> list) { fNormalizationList = std::move(list); }
+    std::vector<SkFourByteTag> getNormalizationList() const { return fNormalizationList; }
+#endif
+
 private:
     int fCollectionIndex;
     VariationPosition fVariationDesignPosition;
     Palette fPalette;
+#ifdef ENABLE_TEXT_ENHANCE
+    std::vector<SkFourByteTag> fNormalizationList;
+#endif
 };
 
 #endif
