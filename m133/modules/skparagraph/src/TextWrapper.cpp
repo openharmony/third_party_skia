@@ -1022,7 +1022,7 @@ TextWrapper::TriggerFlag TextWrapper::triggerConstraintsLayout() {
     if (fFormattingContext.disableLastDescent) {
         endLineHeight -= fEndLine.metrics().descent() - fEndLine.metrics().rawDescent();
     }
-    if (fHeight + endLineHeight < fParent->fConstraintsHeight) {
+    if (fHeight + endLineHeight <= fParent->fConstraintsHeight) {
         return TriggerFlag::NOT_TIRGGERED;
     }
 
