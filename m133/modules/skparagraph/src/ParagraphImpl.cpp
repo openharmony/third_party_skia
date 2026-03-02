@@ -637,6 +637,14 @@ void ParagraphImpl::generateSplitPointsByLines(std::deque<SplitPoint>& splitPoin
         if (lineClusterRange.empty()) {
             continue;
         }
+
+        if (line.ellipsis() != nullptr) {
+            ClusterRange ellipsisClusterRange;
+            ellipsisClusterRange.start = clusterIndex(line.getTextRangeReplacedByEllipsis().start);
+            ellipsisClusterRange.end = clusterIndex(line.getTextRangeReplacedByEllipsis().end);
+            lineClusterRange.start = std::min(lineClusterRange.start, ellipsisClusterRange.start);
+            lineClusterRange.end = std::max(lineClusterRange.end, ellipsisClusterRange.end);
+        }
         size_t lineStart = lineClusterRange.start;
         size_t lineEnd = lineClusterRange.end;
         // The next line's starting cluster index
