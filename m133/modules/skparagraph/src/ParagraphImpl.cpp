@@ -3179,6 +3179,15 @@ bool ParagraphImpl::containsColorFontOrBitmap(SkTextBlob* textBlob) {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
+size_t ParagraphImpl::findNextUTF8Position(size_t utf8Pos) const
+{
+    // Use binary search to find the first UTF-8 position greater than utf8Pos.
+    auto it = std::upper_bound(fUTF8IndexForUTF16Index.begin(),
+                               fUTF8IndexForUTF16Index.end(),
+                               utf8Pos);
+    return (it != fUTF8IndexForUTF16Index.end()) ? *it : fText.size();
+}
+
 PositionWithAffinity ParagraphImpl::getCharacterPositionAtCoordinate(SkScalar dx, SkScalar dy,
     RSDrawing::TextEncoding encoding) {
     if (fText.isEmpty()) {
@@ -3373,6 +3382,12 @@ GlyphRange ParagraphImpl::getGlyphRangeForCharacterRange(size_t charStart, size_
         this->ensureUTF16Mapping();
         charStart = this->getUTF8Index(charStart);
         charEnd = this->getUTF8Index(charEnd);
+
+        // If conversion resulted in collapsed range (e.g., surrogate pair),
+        // extend charEnd to the next UTF-8 position
+        if (charStart == charEnd) {
+            charEnd = this->findNextUTF8Position(charEnd);
+        }
     }
 
     ProcessingContext context;
