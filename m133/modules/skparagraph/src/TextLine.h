@@ -145,8 +145,11 @@ public:
     Run* ellipsis() const { return fEllipsis.get(); }
     InternalLineMetrics sizes() const { return fSizes; }
     bool empty() const { return fTextExcludingSpaces.empty(); }
-
+#ifdef ENABLE_TEXT_ENHANCE
+    SkScalar spacesWidth() const { return widthWithEllipsisSpaces() - width(); }
+#else
     SkScalar spacesWidth() const { return fWidthWithSpaces - width(); }
+#endif
     SkScalar height() const { return fAdvance.fY; }
     SkScalar width() const {
         return fAdvance.fX + (fEllipsis != nullptr ? fEllipsis->fAdvance.fX : 0);
