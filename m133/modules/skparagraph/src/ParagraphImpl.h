@@ -503,6 +503,10 @@ private:
         size_t adjustedCharEnd;
     };
 
+    // Helper function to find the next UTF-8 position after the given one
+    // This is used to extend charEnd when it equals charStart (e.g., for surrogate pairs)
+    size_t findNextUTF8Position(size_t utf8Pos) const;
+
     // Template helper: find glyph range for char-to-glyph conversion
     template <typename Iterator>
     CharToGlyphResult findGlyphRangeForCharToGlyph(Iterator begin, Iterator end,
