@@ -14,6 +14,7 @@
 #include <libgen.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <future>
 #include <unistd.h>
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
@@ -31,6 +32,9 @@
 
 using namespace ErrorCode;
 static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
+
+// Default to DEFERRED mode
+SymbolLoadMode FontConfig_OHOS::fSymbolLoadMode = SymbolLoadMode::IMMEDIATE;
 
 #ifdef SK_BUILD_FONT_MGR_FOR_OHOS
 static const bool G_IS_HMSYMBOL_ENABLE =
@@ -518,14 +522,26 @@ int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypefac
 
 void FontConfig_OHOS::loadHMSymbol()
 {
-    if (!G_IS_HMSYMBOL_ENABLE) {
+    if (!G_IS_HMSYMBOL_ENABLE || fSymbolLoadMode == SymbolLoadMode::NONE) {
         return;
     }
-    for (auto& dir : fFontDir) {
-        if (skia::text::HmSymbolConfig_OHOS::LoadSymbolConfig(
-            "hm_symbol_config_next.json", SkString(dir.c_str())) == NO_ERROR) {
-            return;
+    // Copy the font directories to be used in the task
+    auto fontDirs = fFontDir;
+    auto loadSymbol = [fontDirs]() {
+        for (auto& dir : fontDirs) {
+            if (skia::text::HmSymbolConfig_OHOS::LoadSymbolConfig(
+                "hm_symbol_config_next.json", SkString(dir.c_str())) == NO_ERROR) {
+                return;
+            }
         }
+    };
+
+    if (fSymbolLoadMode == SymbolLoadMode::IMMEDIATE) {
+        // Load synchronously immediately
+        loadSymbol();
+    } else {
+        // DEFERRED: spawn async task to load symbol config
+        skia::text::HmSymbolConfig_OHOS::SetLoadFuture(std::async(std::launch::async, loadSymbol));
     }
 }
 

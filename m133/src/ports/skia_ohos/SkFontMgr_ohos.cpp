@@ -461,6 +461,11 @@ int SkFontMgr_OHOS::GetFontFullName(int fontFd, std::vector<SkByteArray> &fullna
     return errorCode;
 }
 
+void SkFontMgr_OHOS::SetSymbolLoadMode(SymbolLoadMode mode)
+{
+    FontConfig_OHOS::SetSymbolLoadMode(mode);
+}
+
 /*! To create SkFontMgr object for Harmony platform
  * \param fname the full name of system font configuration documents
  * \return The object of SkFontMgr_OHOS

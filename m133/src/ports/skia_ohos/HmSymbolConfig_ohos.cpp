@@ -18,6 +18,18 @@
 namespace skia::text {
 std::function<int(const char* filePath)> HmSymbolConfig_OHOS::fLoadSymbolConfigFunc;
 std::mutex HmSymbolConfig_OHOS::fMutex;
+std::future<void> HmSymbolConfig_OHOS::fLoadFuture;
+
+void HmSymbolConfig_OHOS::SetLoadFuture(std::future<void>&& future)
+{
+    std::lock_guard<std::mutex> lock(fMutex);
+    fLoadFuture = std::move(future);
+}
+
+std::future<void>& HmSymbolConfig_OHOS::GetLoadFuture()
+{
+    return fLoadFuture;
+}
 
 void HmSymbolConfig_OHOS::SetLoadSymbolConfig(std::function<int(const char* filePath)>& loadSymbolConfigFunc)
 {
