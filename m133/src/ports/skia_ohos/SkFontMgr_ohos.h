@@ -47,6 +47,8 @@ protected:
 
     std::vector<sk_sp<SkTypeface>> onGetSystemFonts() const override;
 
+    static void SetSymbolLoadMode(SymbolLoadMode mode);
+
 private:
     std::shared_ptr<FontConfig_OHOS> fFontConfig = nullptr; // the pointer of FontConfig_OHOS
     SkFontScanner_FreeType fFontScanner; // the scanner to parse a font file

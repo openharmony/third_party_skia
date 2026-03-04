@@ -113,6 +113,7 @@ public:
 
     static sk_sp<SkTypeface_OHOS> matchFontStyle(
         const std::vector<sk_sp<SkTypeface_OHOS>>& typefaceSet, const SkFontStyle& pattern);
+    static void SetSymbolLoadMode(SymbolLoadMode mode) { fSymbolLoadMode = mode; }
 
 private:
     struct FontCollection {
@@ -139,6 +140,10 @@ private:
 
     int loadFont(const char* fname, FontJson& font, sk_sp<SkTypeface_OHOS>& typeface);
     void loadHMSymbol();
+
+    // Symbol config load mode
+    static SymbolLoadMode fSymbolLoadMode;
+
     static bool containRange(const UnicodeRange& range, size_t index);
     static void sortTypefaceSet(std::vector<sk_sp<SkTypeface_OHOS>>& typefaceSet);
     static uint32_t getFontStyleDifference(const SkFontStyle& style1, const SkFontStyle& style2);

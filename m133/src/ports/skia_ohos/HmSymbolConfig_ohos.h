@@ -16,6 +16,7 @@
 #ifndef LIB_HW_SYMBOL_CONFIG_H
 #define LIB_HW_SYMBOL_CONFIG_H
 #include <functional>
+#include <future>
 #include <mutex>
 
 #include "include/core/SkString.h"
@@ -32,9 +33,15 @@ public:
     static void ClearLoadSymbolConfig();
     static int LoadSymbolConfig(const char* fileName, SkString fileDir);
 
+    // Set the future from async loading task
+    static void SetLoadFuture(std::future<void>&& future);
+    // Get the future to join (wait for) the async loading task
+    static std::future<void>& GetLoadFuture();
+
 private:
     static std::function<int(const char* filePath)> fLoadSymbolConfigFunc;
     static std::mutex fMutex;
+    static std::future<void> fLoadFuture;
 };
 } // namespace skia::text
 #endif
