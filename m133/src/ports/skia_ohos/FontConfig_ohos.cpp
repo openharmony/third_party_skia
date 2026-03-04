@@ -33,9 +33,6 @@
 using namespace ErrorCode;
 static const char* PRODUCT_DEFAULT_CONFIG = "/system/etc/productfontconfig.json";
 
-// Default to DEFERRED mode
-SymbolLoadMode FontConfig_OHOS::fSymbolLoadMode = SymbolLoadMode::IMMEDIATE;
-
 #ifdef SK_BUILD_FONT_MGR_FOR_OHOS
 static const bool G_IS_HMSYMBOL_ENABLE =
     (std::atoi(OHOS::system::GetParameter("persist.sys.graphic.hmsymbolcfg.enable", "1").c_str()) != 0);
@@ -522,7 +519,7 @@ int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypefac
 
 void FontConfig_OHOS::loadHMSymbol()
 {
-    if (!G_IS_HMSYMBOL_ENABLE || fSymbolLoadMode == SymbolLoadMode::NONE) {
+    if (!G_IS_HMSYMBOL_ENABLE || gSymbolLoadMode == SymbolLoadMode::NONE) {
         return;
     }
     // Copy the font directories to be used in the task
@@ -536,7 +533,7 @@ void FontConfig_OHOS::loadHMSymbol()
         }
     };
 
-    if (fSymbolLoadMode == SymbolLoadMode::IMMEDIATE) {
+    if (gSymbolLoadMode == SymbolLoadMode::IMMEDIATE) {
         // Load synchronously immediately
         loadSymbol();
     } else {

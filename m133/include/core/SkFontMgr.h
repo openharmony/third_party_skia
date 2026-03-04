@@ -33,6 +33,7 @@ enum class SymbolLoadMode {
     NONE        // Do not load symbol config
 };
 
+static inline SymbolLoadMode gSymbolLoadMode;
 struct SkByteArray {
     std::unique_ptr<uint8_t[]> strData = nullptr; // A byte array in UTF-16BE encoding
     uint32_t strLen = 0;
@@ -195,7 +196,7 @@ public:
      *  Set the symbol load mode for text enhance feature.
      *  This is a global setting and must be called before creating SkFontMgr.
      */
-    static void SetSymbolLoadMode(SymbolLoadMode mode);
+    static void SetSymbolLoadMode(SymbolLoadMode mode) { gSymbolLoadMode = mode; };
 #endif
 
 protected:
