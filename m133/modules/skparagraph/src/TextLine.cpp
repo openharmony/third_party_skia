@@ -1330,6 +1330,15 @@ void TextLine::createHeadEllipsis(SkScalar maxWidth, const SkString& ellipsis, E
 
         // Found fitting position: update ellipsis and line attributes
         headEllipsisUpdateLine(ellipsisRun, width, clusterIndex, ellipsisMode);
+        if (fEllipsis && fOwner->getParagraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE) {
+            size_t runIndexOffset = cluster.runIndex() - fEllipsisIndex;
+            // In case the ellipsis is boundary of the run's last cluster.
+            if (cluster.textRange().end == getTextRangeReplacedByEllipsis().end) {
+                runIndexOffset++;
+            }
+            fOwner->setEllipsisRunIndexOffset(runIndexOffset);
+            fOwner->setIsEllipsisReplaceFitCluster(cluster.textRange().end == getTextRangeReplacedByEllipsis().end);
+        }
         break;
     }
 
@@ -3516,8 +3525,13 @@ void TextLine::refreshLineEllipsis() {
         return;
     }
 
-    TextIndex replaceTextIndex = fOwner->IsEllipsisReplaceFitCluster() ?
-        ellipsis()->textRange().start : ellipsis()->textRange().start - 1;
+    TextIndex replaceTextIndex = 0;
+    if (fOwner->paragraphStyle().getEllipsisMod() == EllipsisModal::MULTILINE_HEAD) {
+        replaceTextIndex = getTextRangeReplacedByEllipsis().end;
+    } else {
+        replaceTextIndex = fOwner->IsEllipsisReplaceFitCluster() ?
+            ellipsis()->textRange().start : ellipsis()->textRange().start - 1;
+    }
     ClusterIndex clusterIndex = fOwner->clusterIndex(replaceTextIndex);
     size_t runIndex = fOwner->cluster(clusterIndex).runIndex() + fOwner->getEllipsisRunIndexOffset();
     ellipsis()->fIndex = runIndex;
