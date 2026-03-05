@@ -945,6 +945,24 @@ PlaceholderStyle* Run::placeholderStyle() const {
     }
 }
 
+TextStyle Run::GetTextStyle() const {
+    if (fOwner == nullptr) {
+        return TextStyle();
+    }
+    const auto& styles = fOwner->styles();
+    if (styles.empty()) {
+        return fOwner->paragraphStyle().getTextStyle();
+    }
+    // Find the style that matches this run's text range
+    for (const auto& block : styles) {
+        if (fTextRange.start >= block.fRange.start && fTextRange.start < block.fRange.end) {
+            return block.fStyle;
+        }
+    }
+    // Fallback to default style
+    return fOwner->paragraphStyle().getTextStyle();
+}
+
 bool Run::isResolved() const {
     for (auto& glyph :fGlyphs) {
         if (glyph == 0) {

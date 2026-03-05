@@ -18,6 +18,7 @@
 #ifdef ENABLE_TEXT_ENHANCE
 #include "modules/skparagraph/include/DartTypes.h"
 #include "modules/skparagraph/include/ParagraphPainter.h"
+#include "modules/skparagraph/include/TextStyle.h"
 
 namespace skia {
 namespace textlayout {
@@ -41,6 +42,7 @@ public:
     virtual RSRect getImageBounds() const = 0;
     virtual std::vector<RSPoint> getPositions(int64_t start, int64_t length) const = 0;
     virtual void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) = 0;
+    virtual TextStyle GetTextStyle() const = 0;
 };
 }  // namespace textlayout
 }  // namespace skia

@@ -52,6 +52,7 @@ public:
     RSRect getImageBounds() const override;
     std::vector<RSPoint> getPositions(int64_t start, int64_t length) const override;
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) override;
+    TextStyle GetTextStyle() const override;
 
     size_t getVisitorPos() const;
     size_t getVisitorSize() const;
