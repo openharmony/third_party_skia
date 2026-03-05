@@ -163,6 +163,11 @@ std::vector<sk_sp<SkTypeface>> SkFontMgr::onGetSystemFonts() const
 {
     return {};
 }
+
+SymbolLoadMode& SkFontMgr::GetSymbolLoadMode() {
+    static SymbolLoadMode mode = SymbolLoadMode::IMMEDIATE;
+    return mode;
+}
 #endif
 
 sk_sp<SkFontMgr> SkFontMgr::RefEmpty() {

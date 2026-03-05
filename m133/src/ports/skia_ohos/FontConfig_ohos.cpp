@@ -14,6 +14,7 @@
 #include <libgen.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <future>
 #include <unistd.h>
 
 #if defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN) or defined(SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC) or \
@@ -46,14 +47,14 @@ static const char* OHOS_DEFAULT_CONFIG = "fontconfig_ohos.json";
  * \param fname the full name of system font configuration document.
  *     \n The default value is '/system/etc/fontconfig_ohos.json', if fname is given null
  */
-FontConfig_OHOS::FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname)
+FontConfig_OHOS::FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname, SymbolLoadMode mode)
     : fFontScanner(fontScanner)
 {
     int err = parseConfig(fname);
     if (err != NO_ERROR) {
         return;
     }
-    loadHMSymbol();
+    loadHMSymbol(mode);
 }
 #else
 static const char* OHOS_DEFAULT_CONFIG = "/system/etc/fontconfig_ohos.json";
@@ -62,14 +63,14 @@ static const char* OHOS_DEFAULT_CONFIG = "/system/etc/fontconfig_ohos.json";
  * \param fname the full name of system font configuration document.
  *     \n The default value is '/system/etc/fontconfig_ohos.json', if fname is given null
  */
-FontConfig_OHOS::FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname)
+FontConfig_OHOS::FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname, SymbolLoadMode mode)
     : fFontScanner(fontScanner)
 {
     int err = checkProductFile(fname);
     if (err != NO_ERROR) {
         return;
     }
-    loadHMSymbol();
+    loadHMSymbol(mode);
 }
 #endif
 
@@ -516,16 +517,28 @@ int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypefac
     return NO_ERROR;
 }
 
-void FontConfig_OHOS::loadHMSymbol()
+void FontConfig_OHOS::loadHMSymbol(SymbolLoadMode mode)
 {
-    if (!G_IS_HMSYMBOL_ENABLE) {
+    if (!G_IS_HMSYMBOL_ENABLE || mode == SymbolLoadMode::NONE) {
         return;
     }
-    for (auto& dir : fFontDir) {
-        if (skia::text::HmSymbolConfig_OHOS::LoadSymbolConfig(
-            "hm_symbol_config_next.json", SkString(dir.c_str())) == NO_ERROR) {
-            return;
+    // Copy the font directories to be used in the task
+    auto fontDirs = fFontDir;
+    auto loadSymbol = [fontDirs]() {
+        for (auto& dir : fontDirs) {
+            if (skia::text::HmSymbolConfig_OHOS::LoadSymbolConfig(
+                "hm_symbol_config_next.json", SkString(dir.c_str())) == NO_ERROR) {
+                return;
+            }
         }
+    };
+
+    if (mode == SymbolLoadMode::IMMEDIATE) {
+        // Load synchronously immediately
+        loadSymbol();
+    } else {
+        // DEFERRED: spawn async task to load symbol config
+        skia::text::HmSymbolConfig_OHOS::SetLoadFuture(std::async(std::launch::async, loadSymbol));
     }
 }
 
