@@ -16,7 +16,7 @@ using namespace ErrorCode;
  */
 SkFontMgr_OHOS::SkFontMgr_OHOS(const char* path)
 {
-    fFontConfig = std::make_shared<FontConfig_OHOS>(fFontScanner, path);
+    fFontConfig = std::make_shared<FontConfig_OHOS>(fFontScanner, path, GetSymbolLoadMode());
     fFamilyCount = fFontConfig->getFamilyCount();
 }
 
