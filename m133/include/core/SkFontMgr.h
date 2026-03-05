@@ -195,7 +195,7 @@ public:
      *  Set the symbol load mode for text enhance feature.
      *  This is a global setting and must be called before creating SkFontMgr.
      */
-    static void SetSymbolLoadMode(SymbolLoadMode mode) { GetSymbolLoadMode() = mode; };
+    static void SetSymbolLoadMode(SymbolLoadMode mode) { GetSymbolLoadMode() = mode; }
 #endif
 
 protected:
