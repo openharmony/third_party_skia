@@ -47,14 +47,14 @@ static const char* OHOS_DEFAULT_CONFIG = "fontconfig_ohos.json";
  * \param fname the full name of system font configuration document.
  *     \n The default value is '/system/etc/fontconfig_ohos.json', if fname is given null
  */
-FontConfig_OHOS::FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname)
+FontConfig_OHOS::FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname, SymbolLoadMode mode)
     : fFontScanner(fontScanner)
 {
     int err = parseConfig(fname);
     if (err != NO_ERROR) {
         return;
     }
-    loadHMSymbol();
+    loadHMSymbol(mode);
 }
 #else
 static const char* OHOS_DEFAULT_CONFIG = "/system/etc/fontconfig_ohos.json";
@@ -63,14 +63,14 @@ static const char* OHOS_DEFAULT_CONFIG = "/system/etc/fontconfig_ohos.json";
  * \param fname the full name of system font configuration document.
  *     \n The default value is '/system/etc/fontconfig_ohos.json', if fname is given null
  */
-FontConfig_OHOS::FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname)
+FontConfig_OHOS::FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname, SymbolLoadMode mode)
     : fFontScanner(fontScanner)
 {
     int err = checkProductFile(fname);
     if (err != NO_ERROR) {
         return;
     }
-    loadHMSymbol();
+    loadHMSymbol(mode);
 }
 #endif
 
@@ -517,9 +517,9 @@ int FontConfig_OHOS::loadFont(const char* fname, FontJson& info, sk_sp<SkTypefac
     return NO_ERROR;
 }
 
-void FontConfig_OHOS::loadHMSymbol()
+void FontConfig_OHOS::loadHMSymbol(SymbolLoadMode mode)
 {
-    if (!G_IS_HMSYMBOL_ENABLE || gSymbolLoadMode == SymbolLoadMode::NONE) {
+    if (!G_IS_HMSYMBOL_ENABLE || mode == SymbolLoadMode::NONE) {
         return;
     }
     // Copy the font directories to be used in the task
@@ -533,7 +533,7 @@ void FontConfig_OHOS::loadHMSymbol()
         }
     };
 
-    if (gSymbolLoadMode == SymbolLoadMode::IMMEDIATE) {
+    if (mode == SymbolLoadMode::IMMEDIATE) {
         // Load synchronously immediately
         loadSymbol();
     } else {

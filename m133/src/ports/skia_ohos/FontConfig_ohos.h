@@ -91,7 +91,8 @@ public:
         explicit Font(FontJson& info);
     };
 
-    explicit FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner, const char* fname = nullptr);
+    explicit FontConfig_OHOS(const SkFontScanner_FreeType& fontScanner,
+                             const char* fname = nullptr, SymbolLoadMode mode = SymbolLoadMode::IMMEDIATE);
     virtual ~FontConfig_OHOS() = default;
     sk_sp<SkTypeface> matchFallback(SkUnichar character, const SkFontStyle& style) const;
     sk_sp<SkTypeface> matchFallback(size_t index, SkUnichar character, const SkFontStyle& style) const;
@@ -138,7 +139,7 @@ private:
     int parseFonts(const Json::Value& root);
 
     int loadFont(const char* fname, FontJson& font, sk_sp<SkTypeface_OHOS>& typeface);
-    void loadHMSymbol();
+    void loadHMSymbol(SymbolLoadMode mode);
 
     static bool containRange(const UnicodeRange& range, size_t index);
     static void sortTypefaceSet(std::vector<sk_sp<SkTypeface_OHOS>>& typefaceSet);
