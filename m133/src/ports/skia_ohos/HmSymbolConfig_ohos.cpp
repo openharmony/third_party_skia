@@ -22,7 +22,6 @@ std::future<void> HmSymbolConfig_OHOS::fLoadFuture;
 
 void HmSymbolConfig_OHOS::SetLoadFuture(std::future<void>&& future)
 {
-    std::lock_guard<std::mutex> lock(fMutex);
     fLoadFuture = std::move(future);
 }
 
