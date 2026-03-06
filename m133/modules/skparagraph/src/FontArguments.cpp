@@ -49,7 +49,7 @@ FontArguments::FontArguments(const SkFontArguments& args)
     for (auto tag : args.getNormalizationList()) {
         for (uint32_t i = 0; i < fCoordinates.size(); i++) {
             if (fCoordinates[i].axis == tag) {
-                fNormalizationListIndex.push_back(tag);
+                fNormalizationListIndex.push_back(i);
                 break;
             }
         }
