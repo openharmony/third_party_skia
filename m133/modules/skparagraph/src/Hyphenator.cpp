@@ -17,11 +17,11 @@
 #ifdef _WIN32
 #include <cstdlib>
 #else
-#include <cstddef>
 #include <climits>
+#include <cstddef>
 #endif
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <unicode/utf.h>
 #include <unicode/utf8.h>
 #include <unordered_set>
@@ -173,6 +173,7 @@ struct HyphenFindBreakParam {
     HyphenSubTable hyphenSubTable;
     uint16_t code{0};
     uint16_t offset{0};
+    size_t dataSize{0};  // Total size of HPB data for bounds checking
 };
 
 void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer) {
@@ -379,14 +380,35 @@ void findBreakByType(HyphenFindBreakParam& param, const size_t& targetIndex, std
     TEXT_LOGD("TopLevel:%{public}zu", targetIndex);
     auto [staticOffset, nextOffset, type] = param.hyphenSubTable;
     uint32_t index = 0; // used in inner loop to traverse path further (backwards)
+
+    // Calculate the data size in uint16_t units for bounds checking
+    // staticOffset is a pointer to uint16_t, so we convert dataSize to same units
+    size_t maxOffset = param.dataSize / sizeof(uint16_t);
+    uint16_t* headerAsU16 = reinterpret_cast<uint16_t*>(const_cast<HyphenatorHeader*>(param.header));
+
     while (true) {
+        // Bounds check: ensure staticOffset + nextOffset is within valid data range
+        // Convert header to uint16_t* for valid comparison with staticOffset
+        if (staticOffset == nullptr || (staticOffset + nextOffset) >= (headerAsU16 + maxOffset)) {
+            TEXT_LOGE("Hyphenator: Out-of-bounds access detected, staticOffset=%{public}p, "
+                "nextOffset=%{public}u, maxOffset=%{public}zu",
+                static_cast<void*>(staticOffset), nextOffset, maxOffset);
+            break;
+        }
+
         TEXT_LOGD("Loop:%{public}zu %{public}u", targetIndex, index);
         // there is always at 16bit of pattern address before next node data
         uint16_t pOffset = *(staticOffset + nextOffset);
         // from binary version 2 onwards, we have common nodes with 16bit offset (not bound to code points)
         if (type == PathType::PATTERN && (param.header->version >> 0x18) > 1) {
-            pOffset =
-                *(reinterpret_cast<const uint16_t*>(param.header) + nextOffset + (param.header->version & 0xffff));
+            // Also check bounds for the version-based offset access
+            size_t versionOffset = nextOffset + (param.header->version & 0xffff);
+            if (versionOffset >= maxOffset) {
+                TEXT_LOGE("Hyphenator: Version offset out of bounds, versionOffset=%{public}zu, "
+                    "maxOffset=%{public}zu", versionOffset, maxOffset);
+                break;
+            }
+            pOffset = *(reinterpret_cast<const uint16_t*>(param.header) + versionOffset);
         }
         nextOffset++;
         if (pOffset > 0) {
@@ -441,7 +463,7 @@ void findBreaks(const std::vector<uint8_t>& hyphenatorData, std::vector<uint16_t
             if (!hyphenSubTable.initHyphenSubTableInfo(code, offset, hyphenInfo)) {
                 continue;
             }
-            HyphenFindBreakParam param{header, hyphenSubTable, code, offset};
+            HyphenFindBreakParam param{header, hyphenSubTable, code, offset, hyphenatorData.size()};
             findBreakByType(param, i, target, result);
         }
     }
@@ -542,7 +564,7 @@ std::vector<uint8_t> Hyphenator::findBreakPositions(const SkString& locale, cons
             result.resize(word.size(), defaultValue);
             findBreaks(hyphenatorData, word, result);
             formatResult(result, leadingHyphmins, trailingHyphmins, offsets);
-        }    
+        }
     }
     return result;
 }
