@@ -162,6 +162,7 @@ public:
     void setLineOffsetX(SkScalar x) {
         fOffset.set(x, fOffset.y());
     }
+    void shiftOffsetY(SkScalar offsetY) { fOffset.fY += offsetY; }
 #endif
 
     SkScalar alphabeticBaseline() const { return fSizes.alphabeticBaseline(); }
@@ -321,6 +322,10 @@ public:
     void setBreakWithHyphen(bool breakWithHyphen);
     bool getBreakWithHyphen() const;
     void updateTextLinePaintAttributes();
+    void trimLine(size_t trimStart);
+    void reflowFromPreviousLine(size_t wordBoundaryStart);
+    bool startWithIdeographic() const;
+    bool endWithIdeographic() const;
 #endif
 private:
 #ifdef ENABLE_TEXT_ENHANCE
@@ -370,6 +375,7 @@ private:
     SkRect getAllShadowsRect(SkScalar x, SkScalar y) const;
     void refreshLineRuns();
     void refreshLineEllipsis();
+    void refreshLineMetrics();
 #endif
 
     ParagraphImpl* fOwner;

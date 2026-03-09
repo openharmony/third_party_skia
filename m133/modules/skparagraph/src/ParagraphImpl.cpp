@@ -502,6 +502,13 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 
     if (fState == kLineBroken) {
 #ifdef ENABLE_TEXT_ENHANCE
+        if (!fTextStyles.empty() &&
+            fTextStyles.begin()->fStyle.getLocale().contains("zh-Han") &&
+            paragraphStyle().getOrphanCharOptimization() &&
+            paragraphStyle().getStrutStyle().getWordBreakType() != WordBreakType::BREAK_ALL) {
+                fixOrphanedWords();
+        }
+
         if (paragraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE &&
             paragraphStyle().getMaxLines() > 1) {
             // Collect split info for crossing line's run
@@ -555,6 +562,101 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
+BlockIndex ParagraphImpl::findBlockByTextIndexReverse(TextIndex textIndex) {
+    for (int index = fTextStyles.size() - 1; index >= 0; --index) {
+        const auto& block = fTextStyles[index];
+        if (block.fRange.start > textIndex) {
+            continue;
+        }
+        return index;
+    }
+    return EMPTY_INDEX;
+}
+
+float ParagraphImpl::getClusterRangeWidth(ClusterRange clusterRange) {
+    size_t start = clusterRange.start;
+    size_t end = clusterRange.end;
+    if (start >= end || end >= clusters().size()) {
+        return 0;
+    }
+
+    float totalClusterWidth = 0.0f;
+    for (size_t i = start; i < end; ++i) {
+        totalClusterWidth += cluster(i).width();
+    }
+    return totalClusterWidth;
+}
+
+bool ParagraphImpl::shouldApplyOrphanByWidth(int applyLineIndex, ClusterIndex orphanWordStartClusterIndex) {
+    // The feature of orphan char is not triggering:
+    // 1.first line.
+    // 2.line index is out of range.
+    // 3.orphan word cross three lines.
+    if (applyLineIndex < 1 || applyLineIndex >= fLines.size() ||
+        orphanWordStartClusterIndex < fLines[applyLineIndex - 1].clustersWithSpaces().start) {
+        return false;
+    }
+
+    // Balanced line: adjacent lines have the similar width
+    // The feature of orphan char is not triggering for balanced line
+    if (applyLineIndex >= BALANCED_LINE_START_INDEX && nearlyEqual(fLines[applyLineIndex - 1].width(),
+        fLines[applyLineIndex - BALANCED_LINE_START_INDEX].width(),
+        fLines[applyLineIndex - 1].width() * ORPHAN_BALANCED_LINE_WIDTH_RATIO)) {
+        return false;
+    }
+
+    float prePartOrphanWordWidth = getClusterRangeWidth({orphanWordStartClusterIndex,
+        fLines[applyLineIndex - 1].clustersWithSpaces().end});
+    float applyLineLastClusterWidth = cluster(fLines[applyLineIndex].clustersWithSpaces().end - 1).width();
+    float orphanedLinesWidthDiff = fLines[applyLineIndex].width() + 2 * prePartOrphanWordWidth -
+        fLines[applyLineIndex - 1].width() - ORPHAN_APPLICABLE_WIDTH_RATIO * applyLineLastClusterWidth;
+    if (orphanedLinesWidthDiff > 0) {
+        return false;
+    }
+    return true;
+}
+
+bool ParagraphImpl::needsOrphanFixForLine(int lineIndex) const {
+    if (lineIndex == 0) {
+        return false;
+    }
+
+    const TextLine& line = fLines[lineIndex];
+    if (fLines[lineIndex].ellipsis()) {
+        return false;
+    }
+
+    // 处理角标越界
+    if ((line.isLastLine() || line.endsWithHardLineBreak()) &&
+        (line.startWithIdeographic() || fLines[lineIndex - 1].endWithIdeographic())) {
+        return true;
+    }
+    return false;
+}
+
+void ParagraphImpl::fixOrphanedWords() {
+    if (fLines.size() <= 1) {
+        return;
+    }
+
+    for (int lineIndex = 1; lineIndex < fLines.size(); ++lineIndex) {
+        if (!needsOrphanFixForLine(lineIndex)) {
+            continue;
+        }
+
+        size_t firstWordStartOfLine = getWordBoundary(fLines[lineIndex].clustersWithSpaces().start).start;
+        if (firstWordStartOfLine == 0 || !shouldApplyOrphanByWidth(lineIndex, firstWordStartOfLine)) {
+            continue;
+        }
+
+        fLines[lineIndex].reflowFromPreviousLine(firstWordStartOfLine);
+        SkScalar preOriLineHeight = fLines[lineIndex - 1].sizes().height();
+        fLines[lineIndex - 1].trimLine(firstWordStartOfLine);
+        SkScalar preAfterLineHeight = fLines[lineIndex - 1].sizes().height();
+        fLines[lineIndex].shiftOffsetY(preAfterLineHeight - preOriLineHeight);
+    }
+}
+
 void ParagraphImpl::includeFontPadding(
     bool isFirstLine, bool isLastLine, InternalLineMetrics& metrics, const TextRange& textRange) {
     if (!paragraphStyle().getIncludeFontPadding() || !(isFirstLine || isLastLine)) {

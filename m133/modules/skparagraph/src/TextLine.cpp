@@ -3731,6 +3731,78 @@ void TextLine::updateTextLinePaintAttributes() {
         }
     }
 }
+
+void TextLine::trimLine(size_t trimStart) {
+    if (trimStart > fGhostClusterRange.end || trimStart <= fGhostClusterRange.start) {
+        return;
+    }
+
+    for (size_t start = trimStart; start < fGhostClusterRange.end; ++start) {
+        fAdvance.fX -= fOwner->cluster(start).width();
+        fWidthWithSpaces -= fOwner->cluster(start).width();
+    }
+
+    fGhostClusterRange.end = trimStart;
+    fClusterRange.end = trimStart;
+    size_t lineEnd = fOwner->cluster(trimStart).textRange().start;
+    fText.end = lineEnd;
+    fTextExcludingSpaces.end = lineEnd;
+    fTextIncludingNewlines.end = lineEnd;
+
+    refresh();
+    refreshLineMetrics();
+}
+
+void TextLine::refreshLineMetrics() {
+    if (fGhostClusterRange == EMPTY_RANGE) {
+        return;
+    }
+
+    fSizes.clean();
+    fMaxRunMetrics.clean();
+    for (size_t clusterIndex = fGhostClusterRange.start; clusterIndex < fGhostClusterRange.end; ++clusterIndex) {
+        Run& run = fOwner->cluster(clusterIndex).run();
+        fSizes.add(&run);
+        fMaxRunMetrics.add(InternalLineMetrics(run.correctAscent(), run.correctDescent(), run.fFontMetrics.fLeading));
+    }
+
+    fAdvance.fY = fSizes.height();
+}
+
+void TextLine::reflowFromPreviousLine(size_t wordBoundaryStart) {
+    if (wordBoundaryStart >= fGhostClusterRange.start) {
+        return;
+    }
+
+    for (size_t start = wordBoundaryStart; start < fGhostClusterRange.start; ++start) {
+        fAdvance.fX += fOwner->cluster(start).width();
+        fWidthWithSpaces += fOwner->cluster(start).width();
+    }
+
+    fGhostClusterRange.start = wordBoundaryStart;
+    fClusterRange.start = wordBoundaryStart;
+    size_t lineStart = fOwner->cluster(fGhostClusterRange.start).textRange().start;
+    fText.start = lineStart;
+    fTextExcludingSpaces.start = lineStart;
+    fTextIncludingNewlines.start = lineStart;
+
+    BlockIndex lineBlockStartIndex = fOwner->findBlockByTextIndexReverse(lineStart);
+    if (lineBlockStartIndex == EMPTY_INDEX) {
+        LOGE("Reflow wrong block index");
+    }
+    fBlockRange.start = lineBlockStartIndex;
+
+    refresh();
+    refreshLineMetrics();
+}
+
+bool TextLine::startWithIdeographic() const {
+    return fOwner->cluster(clustersWithSpaces().start).isIdeographic();
+}
+
+bool TextLine::endWithIdeographic() const {
+    return fOwner->cluster(clustersWithSpaces().end - 1).isIdeographic();
+}
 #endif
 }  // namespace textlayout
 }  // namespace skia
