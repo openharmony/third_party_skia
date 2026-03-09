@@ -375,6 +375,23 @@ bool processPairs(const ArrayOf16bits* data, HyphenFindBreakParam& param, uint16
     return match;
 }
 
+bool isOutOfBounds(uint16_t* staticOffset, uint32_t nextOffset, uint16_t* headerAsU16, size_t maxOffset) {
+    if (staticOffset == nullptr || (staticOffset + nextOffset) >= (headerAsU16 + maxOffset)) {
+        TEXT_LOGE("Hyphenator: Out-of-bounds access detected, nextOffset=%{public}u", nextOffset);
+        return true;
+    }
+    return false;
+}
+
+void handlePatternLogic(HyphenFindBreakParam& param, uint32_t index, std::vector<uint16_t>& target,
+                        std::vector<uint8_t>& result, uint16_t pOffset) {
+    // if we have reached pattern, apply it to result
+    uint16_t count = (pOffset >> 0xc);
+    pOffset = 0xfff & pOffset;
+    auto p = reinterpret_cast<const Pattern*>(reinterpret_cast<const uint8_t*>(param.header) + pOffset);
+    processPattern(p, count, index, target, result);
+}
+
 void findBreakByType(HyphenFindBreakParam& param, const size_t& targetIndex, std::vector<uint16_t>& target,
                      std::vector<uint8_t>& result) {
     TEXT_LOGD("TopLevel:%{public}zu", targetIndex);
@@ -389,10 +406,7 @@ void findBreakByType(HyphenFindBreakParam& param, const size_t& targetIndex, std
     while (true) {
         // Bounds check: ensure staticOffset + nextOffset is within valid data range
         // Convert header to uint16_t* for valid comparison with staticOffset
-        if (staticOffset == nullptr || (staticOffset + nextOffset) >= (headerAsU16 + maxOffset)) {
-            TEXT_LOGE("Hyphenator: Out-of-bounds access detected, staticOffset=%{public}p, "
-                "nextOffset=%{public}u, maxOffset=%{public}zu",
-                static_cast<void*>(staticOffset), nextOffset, maxOffset);
+        if (isOutOfBounds(staticOffset, nextOffset, headerAsU16, maxOffset)) {
             break;
         }
 
@@ -402,22 +416,18 @@ void findBreakByType(HyphenFindBreakParam& param, const size_t& targetIndex, std
         // from binary version 2 onwards, we have common nodes with 16bit offset (not bound to code points)
         if (type == PathType::PATTERN && (param.header->version >> 0x18) > 1) {
             // Also check bounds for the version-based offset access
-            size_t versionOffset = nextOffset + (param.header->version & 0xffff);
-            if (versionOffset >= maxOffset) {
-                TEXT_LOGE("Hyphenator: Version offset out of bounds, versionOffset=%{public}zu, "
-                    "maxOffset=%{public}zu", versionOffset, maxOffset);
+            size_t vOffset = nextOffset + (param.header->version & 0xffff);
+            if (vOffset >= maxOffset) {
                 break;
             }
-            pOffset = *(reinterpret_cast<const uint16_t*>(param.header) + versionOffset);
+            pOffset = *(reinterpret_cast<const uint16_t*>(param.header) + vOffset);
         }
+
         nextOffset++;
         if (pOffset > 0) {
-            // if we have reached pattern, apply it to result
-            uint16_t count = (pOffset >> 0xc);
-            pOffset = 0xfff & pOffset;
-            auto p = reinterpret_cast<const Pattern*>(reinterpret_cast<const uint8_t*>(param.header) + pOffset);
-            processPattern(p, count, targetIndex - index, target, result);
+            handlePatternLogic(param, targetIndex - index, target, result, pOffset);
         }
+
         if (type == PathType::PATTERN) {
             // just break the loop
             break;
