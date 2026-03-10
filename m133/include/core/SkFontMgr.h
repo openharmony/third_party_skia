@@ -26,6 +26,13 @@ enum FontCheckCode {
     ERROR_TYPE_OTHER           = 2  /** other reasons, such as empty input parameters or other internal reasons */
 };
 
+// Symbol config load mode
+enum class SymbolLoadMode {
+    IMMEDIATE,  // Load symbol config synchronously immediately
+    DEFERRED,   // Load symbol config asynchronously (deferred)
+    NONE        // Do not load symbol config
+};
+
 struct SkByteArray {
     std::unique_ptr<uint8_t[]> strData = nullptr; // A byte array in UTF-16BE encoding
     uint32_t strLen = 0;
@@ -183,6 +190,12 @@ public:
     {
         return ERROR_PARSE_CONFIG_FAILED;
     }
+    
+    /** 
+     *  Set the symbol load mode for text enhance feature.
+     *  This is a global setting and must be called before creating SkFontMgr.
+     */
+    static void SetSymbolLoadMode(SymbolLoadMode mode) { GetSymbolLoadMode() = mode; }
 #endif
 
 protected:
@@ -211,6 +224,8 @@ protected:
 
 #ifdef ENABLE_TEXT_ENHANCE
     virtual std::vector<sk_sp<SkTypeface>> onGetSystemFonts() const;
+
+    static SymbolLoadMode& GetSymbolLoadMode();
 #endif
 
 private:
