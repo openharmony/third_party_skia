@@ -62,17 +62,9 @@ if (skia_enable_skshaper) {
     }
     if (skia_use_harfbuzz && skia_enable_skunicode) {
       sources += skia_shaper_harfbuzz_sources
+      external_deps = [ "harfbuzz:harfbuzz_static" ]
       if (!use_oh_skia) {
-        deps += [
-          "../skunicode",
-          "${skia_third_party_dir}/harfbuzz",
-        ]
-      } else {
-        if (skia_use_system_lib) {
-          external_deps = [ "harfbuzz:harfbuzz_static_for_skia" ]
-        } else {
-          deps += [ "${skia_third_party_dir}/harfbuzz" ]
-        }
+        deps += [ "../skunicode" ]
       }
     }
     configs += [ "../../:skia_private" ]
