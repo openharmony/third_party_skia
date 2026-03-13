@@ -15,7 +15,36 @@ static bool operator==(const SkFontArguments::Palette::Override& a,
 }
 
 namespace std {
+#ifdef ENABLE_TEXT_ENHANCE
+template <class T>
+void hash_combine(std::size_t& seed, const T& v) {
+    // Golden ratio reciprocal (0x9e3779b9) helps spread bits evenly when combining hashes
+    uint32_t goldenRatio = 0x9e3779b9;
+    // Both 6 and 2 are interference positions
+    seed ^= std::hash<T>()(v) + goldenRatio + (seed << 6) + (seed >> 2);
+}
 
+size_t hash<skia::textlayout::FontArguments>::operator()(const skia::textlayout::FontArguments& args) const {
+    size_t seed = 0;
+    hash_combine(seed, args.fCollectionIndex);
+    auto sortedCoords = args.fCoordinates;
+    std::sort(sortedCoords.begin(), sortedCoords.end(),
+              [](const auto& a, const auto& b) { return a.axis < b.axis; });
+    for (const auto& coord : sortedCoords) {
+        hash_combine(seed, coord.axis);
+        hash_combine(seed, coord.value);
+    }
+    hash_combine(seed, args.fPaletteIndex);
+    auto sortedOverrides = args.fPaletteOverrides;
+    std::sort(sortedOverrides.begin(), sortedOverrides.end(),
+              [](const auto& a, const auto& b) { return a.index < b.index; });
+    for (const auto& override : sortedOverrides) {
+        hash_combine(seed, override.index);
+        hash_combine(seed, override.color);
+    }
+    return seed;
+}
+#else
 size_t hash<skia::textlayout::FontArguments>::operator()(const skia::textlayout::FontArguments& args) const {
     size_t hash = 0;
     hash ^= std::hash<int>()(args.fCollectionIndex);
@@ -30,6 +59,7 @@ size_t hash<skia::textlayout::FontArguments>::operator()(const skia::textlayout:
     }
     return hash;
 }
+#endif
 
 }  // namespace std
 
