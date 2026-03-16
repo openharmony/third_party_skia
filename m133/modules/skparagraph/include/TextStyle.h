@@ -385,6 +385,9 @@ public:
 
     void setCustomSymbol(bool state) { fIsCustomSymbol = state; }
 
+    bool isFakeBoldEnabled() const { return fIsFakeBoldEnabled; }
+    void setFakeBoldEnabled(bool enabled) { fIsFakeBoldEnabled = enabled; }
+
     TextBadgeType getTextBadgeType() const { return fBadgeType; }
 
     void setTextBadgeType(TextBadgeType badgeType) { fBadgeType = badgeType; }
@@ -469,6 +472,7 @@ private:
 
 #ifdef ENABLE_TEXT_ENHANCE
     bool fIsCustomSymbol{false};
+    bool fIsFakeBoldEnabled{true};
     std::shared_ptr<RSTypeface> fTypeface;
 #else
     sk_sp<SkTypeface> fTypeface;
