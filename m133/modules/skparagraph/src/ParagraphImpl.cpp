@@ -599,17 +599,18 @@ bool ParagraphImpl::shouldApplyOrphanByWidth(int applyLineIndex, ClusterIndex or
 
     // Balanced line: adjacent lines have the similar width
     // The feature of orphan char is not triggering for balanced line
-    if (applyLineIndex >= BALANCED_LINE_START_INDEX && nearlyEqual(fLines[applyLineIndex - 1].width(),
+    SkScalar preLineWidth = fLines[applyLineIndex - 1].width();
+    if (applyLineIndex >= BALANCED_LINE_START_INDEX && nearlyEqual(preLineWidth,
         fLines[applyLineIndex - BALANCED_LINE_START_INDEX].width(),
-        fLines[applyLineIndex - 1].width() * ORPHAN_BALANCED_LINE_WIDTH_RATIO)) {
+        preLineWidth * ORPHAN_BALANCED_LINE_WIDTH_RATIO)) {
         return false;
     }
 
-    float prePartOrphanWordWidth = getClusterRangeWidth({orphanWordStartClusterIndex,
+    SkScalar prePartOrphanWordWidth = getClusterRangeWidth({orphanWordStartClusterIndex,
         fLines[applyLineIndex - 1].clustersWithSpaces().end});
-    float applyLineLastClusterWidth = cluster(fLines[applyLineIndex].clustersWithSpaces().end - 1).width();
-    float orphanedLinesWidthDiff = fLines[applyLineIndex].width() + 2 * prePartOrphanWordWidth -
-        fLines[applyLineIndex - 1].width() - ORPHAN_APPLICABLE_WIDTH_RATIO * applyLineLastClusterWidth;
+    SkScalar applyLineLastClusterWidth = cluster(fLines[applyLineIndex].clustersWithSpaces().end - 1).width();
+    SkScalar orphanedLinesWidthDiff = fLines[applyLineIndex].width() + 2 * prePartOrphanWordWidth -
+        preLineWidth - ORPHAN_APPLICABLE_WIDTH_RATIO * applyLineLastClusterWidth;
     if (orphanedLinesWidthDiff > 0) {
         return false;
     }
