@@ -749,10 +749,15 @@ static constexpr SkScalar kCubicToleranceSqd = kCubicTolerance * kCubicTolerance
 #endif
 static constexpr SkScalar kConicTolerance = 0.25f;
 
-// clamps the point to the nearest 16th of a pixel
+// clamps the point to the nearest 32th of a pixel
 static void sanitize_point(const SkPoint& in, SkPoint* out) {
+#ifdef SKIA_OHOS
+    out->fX = SkScalarRoundToScalar(32.f*in.fX)*0.03125f;
+    out->fY = SkScalarRoundToScalar(32.f*in.fY)*0.03125f;
+#else
     out->fX = SkScalarRoundToScalar(16.f*in.fX)*0.0625f;
     out->fY = SkScalarRoundToScalar(16.f*in.fY)*0.0625f;
+#endif
 }
 
 void SkBaseShadowTessellator::handleLine(const SkPoint& p) {
