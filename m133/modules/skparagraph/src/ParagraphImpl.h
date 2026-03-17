@@ -45,14 +45,6 @@ namespace textlayout {
 class LineMetrics;
 class TextLine;
 
-#ifdef ENABLE_TEXT_ENHANCE
-const float ORPHAN_APPLICABLE_WIDTH_RATIO = 0.5;
-// Line index from which to consider lines as "balanced" (avoiding optimization)
-const int BALANCED_LINE_START_INDEX = 2;
-// Maximum width ratio difference to consider lines as balanced (0.5%)
-const float ORPHAN_BALANCED_LINE_WIDTH_RATIO = 0.005;
-#endif
-
 template <typename T> bool operator==(const SkSpan<T>& a, const SkSpan<T>& b) {
     return a.size() == b.size() && a.begin() == b.begin();
 }

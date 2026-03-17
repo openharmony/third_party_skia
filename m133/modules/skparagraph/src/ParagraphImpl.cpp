@@ -53,6 +53,11 @@ constexpr float DEFAULT_FONT_TOP_PADDING_RATION = 0.128f;
 constexpr float DEFAULT_FONT_BOTTOM_PADDING_RATION = 0.027f;
 constexpr float TOP_PADDING_SCALE_RATION = 2.0f;
 constexpr float BOTTOM_PADDING_SCALE_RATION = 4.0f;
+const float ORPHAN_APPLICABLE_WIDTH_RATIO = 0.5;
+// Line index from which to consider lines as "balanced" (avoiding optimization)
+const int BALANCED_LINE_START_INDEX = 2;
+// Maximum width ratio difference to consider lines as balanced (0.5%)
+const float ORPHAN_BALANCED_LINE_WIDTH_RATIO = 0.005;
 #endif
 
 SkScalar littleRound(SkScalar a) {
@@ -588,12 +593,8 @@ float ParagraphImpl::getClusterRangeWidth(ClusterRange clusterRange) {
 }
 
 bool ParagraphImpl::shouldApplyOrphanByWidth(int applyLineIndex, ClusterIndex orphanWordStartClusterIndex) {
-    // The feature of orphan char is not triggering:
-    // 1.first line.
-    // 2.line index is out of range.
-    // 3.orphan word cross three lines.
-    if (applyLineIndex < 1 || applyLineIndex >= fLines.size() ||
-        orphanWordStartClusterIndex < fLines[applyLineIndex - 1].clustersWithSpaces().start) {
+    // The feature of orphan char is not triggering: orphan word cross three lines.
+    if (orphanWordStartClusterIndex < fLines[applyLineIndex - 1].clustersWithSpaces().start) {
         return false;
     }
 
@@ -618,10 +619,6 @@ bool ParagraphImpl::shouldApplyOrphanByWidth(int applyLineIndex, ClusterIndex or
 }
 
 bool ParagraphImpl::needsOrphanFixForLine(int lineIndex) const {
-    if (lineIndex == 0) {
-        return false;
-    }
-
     const TextLine& line = fLines[lineIndex];
     if (fLines[lineIndex].ellipsis()) {
         return false;
