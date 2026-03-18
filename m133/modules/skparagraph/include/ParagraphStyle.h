@@ -168,6 +168,7 @@ struct ParagraphStyle {
                this->fVerticalAlignment == rhs.fVerticalAlignment &&
                this->fIncludeFontPadding == rhs.fIncludeFontPadding &&
                this->fFallbackLineSpacing == rhs.fFallbackLineSpacing &&
+               this->fOrphanCharOptimization == rhs.fOrphanCharOptimization &&
                nearlyEqual(this->fLineSpacing, rhs.fLineSpacing) &&
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
 #else
@@ -264,6 +265,8 @@ struct ParagraphStyle {
     void setIncludeFontPadding(bool includeFontPadding) { fIncludeFontPadding = includeFontPadding; }
     bool getFallbackLineSpacing() const { return fFallbackLineSpacing; }
     void setFallbackLineSpacing(bool fallbackLineSpacing) { fFallbackLineSpacing = fallbackLineSpacing; }
+    bool getOrphanCharOptimization() const { return fOrphanCharOptimization; }
+    void setOrphanCharOptimization(bool orphanCharOptimization) { fOrphanCharOptimization = orphanCharOptimization; }
 #endif
     bool getApplyRoundingHack() const { return fApplyRoundingHack; }
     void setApplyRoundingHack(bool value) { fApplyRoundingHack = value; }
@@ -295,6 +298,7 @@ private:
     SkScalar fLineSpacing{0.0f};
     bool fIncludeFontPadding{false};
     bool fFallbackLineSpacing{false};
+    bool fOrphanCharOptimization{false};
 #endif
 };
 }  // namespace textlayout

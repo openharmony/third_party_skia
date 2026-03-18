@@ -438,6 +438,7 @@ public:
      */
     std::vector<PathInfo> getTextPathByClusterRange(SkRange<size_t> range) override;
     TextRange getLineUtf16TextRange(int lineNumber, bool includeSpaces) override;
+    BlockIndex findBlockByTextIndexReverse(TextIndex textIndex);
 #endif
 private:
     friend class ParagraphBuilder;
@@ -524,6 +525,15 @@ private:
     // Unified char-to-glyph range processing (handles both LTR and RTL)
     void processCharToGlyphRange(const Run& run, size_t overlapStart, size_t overlapEnd,
         size_t currentGlyphIndex, ProcessingContext& context);
+
+    void fixOrphanedWords();
+
+    bool shouldApplyOrphanByWidth(int applyLineIndex, ClusterIndex orphanWordStartClusterIndex);
+
+    bool needsOrphanFixForLine(int lineIndex) const;
+
+    float getClusterRangeWidth(ClusterRange clusterRange);
+
 #endif
 
     // Input

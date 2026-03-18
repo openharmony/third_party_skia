@@ -53,6 +53,11 @@ constexpr float DEFAULT_FONT_TOP_PADDING_RATION = 0.128f;
 constexpr float DEFAULT_FONT_BOTTOM_PADDING_RATION = 0.027f;
 constexpr float TOP_PADDING_SCALE_RATION = 2.0f;
 constexpr float BOTTOM_PADDING_SCALE_RATION = 4.0f;
+const float ORPHAN_APPLICABLE_WIDTH_RATIO = 0.5;
+// Line index from which to consider lines as "balanced" (avoiding optimization)
+const int BALANCED_LINE_START_INDEX = 2;
+// Maximum width ratio difference to consider lines as balanced (0.5%)
+const float ORPHAN_BALANCED_LINE_WIDTH_RATIO = 0.005;
 #endif
 
 SkScalar littleRound(SkScalar a) {
@@ -502,6 +507,13 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 
     if (fState == kLineBroken) {
 #ifdef ENABLE_TEXT_ENHANCE
+        if (!fTextStyles.empty() &&
+            fTextStyles.begin()->fStyle.getLocale().contains("zh-Han") &&
+            paragraphStyle().getOrphanCharOptimization() &&
+            paragraphStyle().getStrutStyle().getWordBreakType() != WordBreakType::BREAK_ALL) {
+                fixOrphanedWords();
+        }
+
         if (paragraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE &&
             paragraphStyle().getMaxLines() > 1) {
             // Collect split info for crossing line's run
@@ -555,6 +567,94 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
+BlockIndex ParagraphImpl::findBlockByTextIndexReverse(TextIndex textIndex) {
+    for (int index = fTextStyles.size() - 1; index >= 0; --index) {
+        const auto& block = fTextStyles[index];
+        if (block.fRange.start > textIndex) {
+            continue;
+        }
+        return index;
+    }
+    return EMPTY_INDEX;
+}
+
+float ParagraphImpl::getClusterRangeWidth(ClusterRange clusterRange) {
+    size_t start = clusterRange.start;
+    size_t end = clusterRange.end;
+    if (start >= end || end >= clusters().size()) {
+        return 0;
+    }
+
+    float totalClusterWidth = 0.0f;
+    for (size_t i = start; i < end; ++i) {
+        totalClusterWidth += cluster(i).width();
+    }
+    return totalClusterWidth;
+}
+
+bool ParagraphImpl::shouldApplyOrphanByWidth(int applyLineIndex, ClusterIndex orphanWordStartClusterIndex) {
+    // The feature of orphan char is not triggering: orphan word cross three lines.
+    if (orphanWordStartClusterIndex < fLines[applyLineIndex - 1].clustersWithSpaces().start) {
+        return false;
+    }
+
+    // Balanced line: adjacent lines have the similar width
+    // The feature of orphan char is not triggering for balanced line
+    SkScalar preLineWidth = fLines[applyLineIndex - 1].width();
+    if (applyLineIndex >= BALANCED_LINE_START_INDEX && nearlyEqual(preLineWidth,
+        fLines[applyLineIndex - BALANCED_LINE_START_INDEX].width(),
+        preLineWidth * ORPHAN_BALANCED_LINE_WIDTH_RATIO)) {
+        return false;
+    }
+
+    SkScalar prePartOrphanWordWidth = getClusterRangeWidth({orphanWordStartClusterIndex,
+        fLines[applyLineIndex - 1].clustersWithSpaces().end});
+    SkScalar applyLineLastClusterWidth = cluster(fLines[applyLineIndex].clustersWithSpaces().end - 1).width();
+    SkScalar orphanedLinesWidthDiff = fLines[applyLineIndex].width() + 2 * prePartOrphanWordWidth -
+        preLineWidth - ORPHAN_APPLICABLE_WIDTH_RATIO * applyLineLastClusterWidth;
+    if (orphanedLinesWidthDiff > 0) {
+        return false;
+    }
+    return true;
+}
+
+bool ParagraphImpl::needsOrphanFixForLine(int lineIndex) const {
+    const TextLine& line = fLines[lineIndex];
+    if (fLines[lineIndex].ellipsis()) {
+        return false;
+    }
+
+    // 处理角标越界
+    if ((line.isLastLine() || line.endsWithHardLineBreak()) &&
+        (line.startWithIdeographic() || fLines[lineIndex - 1].endWithIdeographic())) {
+        return true;
+    }
+    return false;
+}
+
+void ParagraphImpl::fixOrphanedWords() {
+    if (fLines.size() <= 1) {
+        return;
+    }
+
+    for (int lineIndex = 1; lineIndex < fLines.size(); ++lineIndex) {
+        if (!needsOrphanFixForLine(lineIndex)) {
+            continue;
+        }
+
+        size_t firstWordStartOfLine = getWordBoundary(fLines[lineIndex].clustersWithSpaces().start).start;
+        if (firstWordStartOfLine == 0 || !shouldApplyOrphanByWidth(lineIndex, firstWordStartOfLine)) {
+            continue;
+        }
+
+        fLines[lineIndex].reflowFromPreviousLine(firstWordStartOfLine);
+        SkScalar preOriLineHeight = fLines[lineIndex - 1].sizes().height();
+        fLines[lineIndex - 1].trimLine(firstWordStartOfLine);
+        SkScalar preAfterLineHeight = fLines[lineIndex - 1].sizes().height();
+        fLines[lineIndex].shiftOffsetY(preAfterLineHeight - preOriLineHeight);
+    }
+}
+
 void ParagraphImpl::includeFontPadding(
     bool isFirstLine, bool isLastLine, InternalLineMetrics& metrics, const TextRange& textRange) {
     if (!paragraphStyle().getIncludeFontPadding() || !(isFirstLine || isLastLine)) {
