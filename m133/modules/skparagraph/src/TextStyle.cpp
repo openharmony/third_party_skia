@@ -99,7 +99,8 @@ bool TextStyle::equalsByShape(const TextStyle& other) const {
            nearlyEqual(fMinLineHeight, other.fMinLineHeight) &&
            fLineHeightStyle == other.fLineHeightStyle &&
            fBadgeType == other.fBadgeType &&
-           fFontEdging == other.fFontEdging;
+           fFontEdging == other.fFontEdging &&
+           fIsFakeBoldEnabled == other.fIsFakeBoldEnabled;
 }
 
 bool TextStyle::equals(const TextStyle& other) const {

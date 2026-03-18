@@ -241,6 +241,7 @@ uint32_t ParagraphCacheKey::computeHash() const {
         hash = mix(hash, SkGoodHash()(relax(ts.fStyle.getMinLineHeight())));
         hash = mix(hash, SkGoodHash()(ts.fStyle.getLineHeightStyle()));
         hash = mix(hash, SkGoodHash()(ts.fStyle.getFontEdging()));
+        hash = mix(hash, SkGoodHash()(ts.fStyle.isFakeBoldEnabled()));
     }
 
     computeHashMix(hash);
