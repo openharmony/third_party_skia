@@ -984,7 +984,7 @@ void TextWrapper::layoutLinesSimple(SkScalar maxWidth, const AddLineToParagraph&
         if (triggerFlag == TriggerFlag::TRIGGERED) {
             continue;
         } else if (triggerFlag == TriggerFlag::SKIP) {
-            break;
+            return;
         }
 
         addFormattedLineToParagraph(addLine);
