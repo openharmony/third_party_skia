@@ -604,7 +604,7 @@ if (is_arkui_x) {
 
     defines = skia_common_defines
     if (is_arkui_x) {
-      defines += [ "ARKUI_X_ENABLE" ]
+      defines += [ "CROSS_PLATFORM" ]
     }
     cflags = skia_common_cflags
 
