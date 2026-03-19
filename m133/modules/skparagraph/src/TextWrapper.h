@@ -37,7 +37,7 @@ class TextWrapper {
 #ifdef ENABLE_TEXT_ENHANCE
     enum class TriggerFlag {
         TRIGGERED,
-        NOT_TIRGGERED,
+        NOT_TRIGGERED,
         SKIP
     };
 

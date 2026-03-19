@@ -1012,7 +1012,7 @@ bool TextWrapper::isNewWidthToBeSetMax() {
 
 TextWrapper::TriggerFlag TextWrapper::triggerConstraintsLayout() {
     if (!fParent->fUseLayoutConstraints) {
-        return TriggerFlag::NOT_TIRGGERED;
+        return TriggerFlag::NOT_TRIGGERED;
     }
 
     SkScalar endLineHeight = fEndLine.metrics().height();
@@ -1023,7 +1023,7 @@ TextWrapper::TriggerFlag TextWrapper::triggerConstraintsLayout() {
         endLineHeight -= fEndLine.metrics().descent() - fEndLine.metrics().rawDescent();
     }
     if (fHeight + endLineHeight <= fParent->fConstraintsHeight) {
-        return TriggerFlag::NOT_TIRGGERED;
+        return TriggerFlag::NOT_TRIGGERED;
     }
 
     auto& lines = fParent->exportTextLines();
