@@ -412,6 +412,8 @@ private:
     void moveForward(bool hasEllipsis);
 #endif
     void trimEndSpaces(TextAlign align);
+    bool handlePunctuationOverflow(Cluster* cluster, Cluster* endOfClusters,
+                                    SkScalar widthBeforeCluster, SkScalar maxWidth);
     std::tuple<Cluster*, size_t, SkScalar> trimStartSpaces(Cluster* endOfClusters);
     SkScalar getClustersTrimmedWidth();
 
