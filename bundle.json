@@ -44,7 +44,11 @@
                 "libpng",
                 "freetype",
                 "faultloggerd",
-                "harfbuzz"
+                "harfbuzz",
+                "freetype",
+                "system_resources",
+                "noto_cjk",
+                "notofonts"
             ],
             "third_party": [
                 "vulkan-headers"
