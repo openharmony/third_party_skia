@@ -376,8 +376,7 @@ class SkUnicode_icu : public SkUnicode {
         return true;
     }
 
-// Remove punctuation break
-#if 0
+#ifdef ENABLE_TEXT_ENHANCE
     static bool extractPositions(const char utf8[], int utf8Units, BreakType type,
         const char locale[], std::function<void(int, int)> setBreak) {
 #else
@@ -482,8 +481,11 @@ class SkUnicode_icu : public SkUnicode {
     }
 
 #ifdef ENABLE_TEXT_ENHANCE
-    static bool isPunctuation(SkUnichar unichar)
-    {
+    static bool isDot(SkUnichar unichar) { return unichar == 0x002E; } // '.' (period)
+
+    static bool isAtSign(SkUnichar unichar) { return unichar == 0x0040; } // '@' (at sign)
+
+    static bool isPunctuation(SkUnichar unichar) {
         if (sk_u_ispunct(unichar)) {
             return true;
         }
@@ -508,8 +510,8 @@ class SkUnicode_icu : public SkUnicode {
         }
         return false;
     }
-    static bool isNeedCompressHeadPunctuation(SkUnichar unichar)
-    {
+
+    static bool isNeedCompressHeadPunctuation(SkUnichar unichar) {
         static const std::unordered_set<SkUnichar> compressionChars {
             0x201C, // “: LEFT DOUBLE QUOTATION MARK
             0x2018, // ‘: LEFT SINGLE QUOTATION MARK
@@ -526,16 +528,19 @@ class SkUnicode_icu : public SkUnicode {
         };
         return compressionChars.count(unichar) > 0;
     }
+
     static bool isEllipsis(SkUnichar unichar) { return (unichar == 0x2026 || unichar == 0x002E); }
+
     static bool isGraphemeExtend(SkUnichar unichar) {
         return sk_u_hasBinaryProperty(unichar, UCHAR_GRAPHEME_EXTEND);
     }
+
     static bool isCustomSoftBreak(SkUnichar unichar) {
-        // ‘ “ ( [ { < « — – • – – $ £ € + = × \ % ° # * @ _ § © ®
+        // ‘ “ ( [ { < « — – • – – $ £ € + = × \ % # * @ § © ®
         static const std::unordered_set<SkUnichar> kBreakTriggerCodePoints {
             0x2018, 0x201C, 0x0028, 0x005B, 0x007B, 0x003C, 0x00AB, 0x2014, 0x2013,
             0x2022, 0x0024, 0x00A3, 0x20AC, 0x002B, 0x003D, 0x00D7, 0x005C, 0x0025,
-            0x00B0, 0x0023, 0x002A, 0x0040, 0x005F, 0x00A7, 0x00A9, 0x00AE
+            0x0023, 0x002A, 0x0040, 0x00A7, 0x00A9, 0x00AE
         };
 
         return kBreakTriggerCodePoints.count(unichar) > 0;
@@ -642,6 +647,17 @@ public:
     }
 
 #ifdef ENABLE_TEXT_ENHANCE
+    void processEmail(skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results,
+        int i, SkUnichar unichar) {
+        if (!fSawAtSign && isAtSign(unichar)) {
+            fSawAtSign = true;
+            return;
+        }
+        if (fSawAtSign && isDot(unichar)) {
+            results->at(i) |= SkUnicode::kSoftLineBreakBefore;
+        }
+    }
+
     void processPunctuationAndEllipsis(skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results,
         int i, SkUnichar unichar) {
         if (SkUnicode_icu::isPunctuation(unichar)) {
@@ -656,8 +672,7 @@ public:
     }
 #endif
 
-// Remove punctuation break
-#if 0
+#ifdef ENABLE_TEXT_ENHANCE
     bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs, const char locale[],
                               TArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->clear();
@@ -683,10 +698,8 @@ public:
             auto after = current - utf8;
             if (replaceTabs && this->isTabulation(unichar)) {
                 results->at(before) |= SkUnicode::kTabulation;
-                if (replaceTabs) {
-                    unichar = ' ';
-                    utf8[before] = ' ';
-                }
+                unichar = ' ';
+                utf8[before] = ' ';
             }
             for (auto i = before; i < after; ++i) {
                 if (this->isSpace(unichar)) {
@@ -702,6 +715,9 @@ public:
                     results->at(i) |= SkUnicode::kIdeographic;
                 }
                 processPunctuationAndEllipsis(results, i, unichar);
+                if (locale) {
+                    processEmail(results, i, unichar);
+                }
             }
 
             if (SkUnicode_icu::isGraphemeExtend(unichar)) {
@@ -711,6 +727,11 @@ public:
         }
 
         return true;
+    }
+
+    bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs,
+                              TArray<SkUnicode::CodeUnitFlags, true>* results) override {
+        return this->computeCodeUnitFlags(utf8, utf8Units, replaceTabs, nullptr, results);
     }
 #else
     bool computeCodeUnitFlags(char utf8[], int utf8Units, bool replaceTabs,
@@ -739,10 +760,8 @@ public:
             auto after = current - utf8;
             if (replaceTabs && this->isTabulation(unichar)) {
                 results->at(before) |= SkUnicode::kTabulation;
-                if (replaceTabs) {
-                    unichar = ' ';
-                    utf8[before] = ' ';
-                }
+                unichar = ' ';
+                utf8[before] = ' ';
             }
             for (auto i = before; i < after; ++i) {
                 if (this->isSpace(unichar)) {
@@ -772,12 +791,8 @@ public:
     }
 #endif
 
-// Remove punctuation break
-#if 0
+#ifdef ENABLE_TEXT_ENHANCE
     bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs, const char locale[],
-#else
-    bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs,
-#endif
                           TArray<SkUnicode::CodeUnitFlags, true>* results) override {
         results->clear();
         results->push_back_n(utf16Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
@@ -788,10 +803,8 @@ public:
                 for (auto i = start; i < end; ++i) {
                     if (replaceTabs && this->isTabulation(unichar)) {
                         results->at(i) |= SkUnicode::kTabulation;
-                    if (replaceTabs) {
-                            unichar = ' ';
-                            utf16[start] = ' ';
-                        }
+                        unichar = ' ';
+                        utf16[start] = ' ';
                     }
                     if (this->isSpace(unichar)) {
                         results->at(i) |= SkUnicode::kPartOfIntraWordBreak;
@@ -808,10 +821,7 @@ public:
         this->forEachBreak((char16_t*)&utf16[0],
                            utf16Units,
                            SkUnicode::BreakType::kGraphemes,
-// Remove punctuation break
-#if 0
                            locale,
-#endif
                            [results](SkBreakIterator::Position pos, SkBreakIterator::Status) {
                                (*results)[pos] |= CodeUnitFlags::kGraphemeStart;
                            });
@@ -820,10 +830,7 @@ public:
                 (char16_t*)&utf16[0],
                 utf16Units,
                 SkUnicode::BreakType::kLines,
-// Remove punctuation break
-#if 0
                 locale,
-#endif
                 [results](SkBreakIterator::Position pos, SkBreakIterator::Status status) {
                     if (status ==
                         (SkBreakIterator::Status)SkUnicode::LineBreakType::kHardLineBreak) {
@@ -838,6 +845,63 @@ public:
         return true;
     }
 
+    bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs,
+                          TArray<SkUnicode::CodeUnitFlags, true>* results) override {
+        return this->computeCodeUnitFlags(utf16, utf16Units, replaceTabs, nullptr, results);
+    }
+#else
+    bool computeCodeUnitFlags(char16_t utf16[], int utf16Units, bool replaceTabs,
+                          TArray<SkUnicode::CodeUnitFlags, true>* results) override {
+        results->clear();
+        results->push_back_n(utf16Units + 1, CodeUnitFlags::kNoCodeUnitFlag);
+
+        // Get white spaces
+        this->forEachCodepoint((char16_t*)&utf16[0], utf16Units,
+           [this, results, replaceTabs, &utf16](SkUnichar unichar, int32_t start, int32_t end) {
+                for (auto i = start; i < end; ++i) {
+                    if (replaceTabs && this->isTabulation(unichar)) {
+                        results->at(i) |= SkUnicode::kTabulation;
+                        unichar = ' ';
+                        utf16[start] = ' ';
+                    }
+                    if (this->isSpace(unichar)) {
+                        results->at(i) |= SkUnicode::kPartOfIntraWordBreak;
+                    }
+                    if (this->isWhitespace(unichar)) {
+                        results->at(i) |= SkUnicode::kPartOfWhiteSpaceBreak;
+                    }
+                    if (this->isControl(unichar)) {
+                        results->at(i) |= SkUnicode::kControl;
+                    }
+                }
+           });
+        // Get graphemes
+        this->forEachBreak((char16_t*)&utf16[0],
+                           utf16Units,
+                           SkUnicode::BreakType::kGraphemes,
+                           [results](SkBreakIterator::Position pos, SkBreakIterator::Status) {
+                               (*results)[pos] |= CodeUnitFlags::kGraphemeStart;
+                           });
+        // Get line breaks
+        this->forEachBreak(
+                (char16_t*)&utf16[0],
+                utf16Units,
+                SkUnicode::BreakType::kLines,
+                [results](SkBreakIterator::Position pos, SkBreakIterator::Status status) {
+                    if (status ==
+                        (SkBreakIterator::Status)SkUnicode::LineBreakType::kHardLineBreak) {
+                        // Hard line breaks clears off all the other flags
+                        // TODO: Treat \n as a formatting mark and do not pass it to SkShaper
+                        (*results)[pos-1] = CodeUnitFlags::kHardLineBreakBefore;
+                    } else {
+                        (*results)[pos] |= CodeUnitFlags::kSoftLineBreakBefore;
+                    }
+                });
+
+        return true;
+    }
+#endif
+
     void reorderVisual(const BidiLevel runLevels[],
                        int levelsCount,
                        int32_t logicalFromVisual[]) override {
@@ -846,6 +910,9 @@ public:
 
 private:
     sk_sp<SkBidiFactory> fBidiFact = sk_make_sp<SkBidiICUFactory>();
+#ifdef ENABLE_TEXT_ENHANCE
+    bool fSawAtSign{false};
+#endif
 };
 
 namespace SkUnicodes::ICU {

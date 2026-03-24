@@ -175,6 +175,7 @@ void ParagraphCacheKey::computeHashMix(uint32_t& hash) const {
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getIncludeFontPadding()));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getFallbackLineSpacing()));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getOrphanCharOptimization()));
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getUseLocaleForTextBreak()));
 
     auto& strutStyle = fParagraphStyle.getStrutStyle();
     if (strutStyle.getStrutEnabled()) {
