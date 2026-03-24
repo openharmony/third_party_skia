@@ -77,9 +77,9 @@ if (is_arkui_x) {
           "${skia_root_dir}:harfbuzz_config",
           "${skia_root_dir}:icu_config",
         ]
-        public_deps = [ ":skia_canvaskit_static" ]
+        deps = [ ":skia_canvaskit_static" ]
       } else {
-        public_deps = [ ":skia_canvaskit" ]
+        deps = [ ":skia_canvaskit" ]
       }
     }
   }
