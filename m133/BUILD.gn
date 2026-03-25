@@ -605,7 +605,7 @@ optional("fontmgr_symbol_load") {
 }
 
 group("fontmgr_factory") {
-  deps = [ skia_fontmgr_factory ]
+  public_deps = [ skia_fontmgr_factory ]
 }
 
 optional("fontmgr_custom") {
@@ -1500,10 +1500,8 @@ optional("gpu_shared") {
     }
     if (skia_use_vma) {
       sources += skia_vma_sources
-      deps += [
-        "${skia_third_party_dir}/vulkanmemoryallocator:vulkan_memoryallocator",
-        "src/gpu/vk/vulkanmemoryallocator"
-      ]
+      deps += [ "${skia_third_party_dir}/vulkanmemoryallocator:vulkan_memoryallocator" ]
+      public_deps += [ "src/gpu/vk/vulkanmemoryallocator" ]
     }
     if (skia_vk_enable_partialrender) {
       public_defines += [ "SK_VK_PARTIALRENDER" ]
@@ -2842,7 +2840,7 @@ if (skia_enable_tools) {
     # include/third_party/vulkan on our path so they're always available.
     configs = [ ":use_skia_vulkan_headers" ]
     if (is_ios || is_android) {
-      external_deps += [ "vulkan-headers:vulkan_headers" ]
+      public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     } else {
       external_deps = []
       if (skia_use_vulkan) {
@@ -3037,24 +3035,18 @@ if (skia_enable_tools) {
       "tools/flags/CommonFlagsConfig.cpp",
       "tools/flags/CommonFlagsConfig.h",
     ]
-    deps = [
-      ":flags",
-      ":gpu_tool_utils"
-    ]
+    deps = [ ":flags" ]
+    public_deps = [ ":gpu_tool_utils" ]
   }
   test_lib("common_flags_gpu") {
     sources = [ "tools/flags/CommonFlagsGanesh.cpp" ]
-    deps = [
-      ":flags",
-      ":gpu_tool_utils"
-    ]
+    deps = [ ":flags" ]
+    public_deps = [ ":gpu_tool_utils" ]
   }
   test_lib("common_flags_graphite") {
     sources = [ "tools/flags/CommonFlagsGraphite.cpp" ]
-    deps = [
-      ":flags",
-      ":gpu_tool_utils"
-    ]
+    deps = [ ":flags" ]
+    public_deps = [ ":gpu_tool_utils" ]
   }
   test_lib("common_flags_images") {
     sources = [ "tools/flags/CommonFlagsImages.cpp" ]
@@ -3193,8 +3185,8 @@ if (skia_enable_tools) {
     if (skia_enable_svg) {
       deps += [ "modules/svg" ]
     }
-    deps += [
-      ":xml",
+    deps += [ ":xml" ]
+    public_deps = [
       ":gpu_tool_utils",
       "modules/jsonreader",
     ]
@@ -3257,7 +3249,7 @@ if (skia_enable_tools) {
       sources += [ "gm/fiddle.cpp" ]
       deps += [ ":skia.h" ]
     }
-    deps += [ ":gpu_tool_utils" ]
+    public_deps = [ ":gpu_tool_utils" ]
 
     if (skia_use_ffmpeg) {
       deps += [ "experimental/ffmpeg:video_decoder" ]
@@ -3279,6 +3271,8 @@ if (skia_enable_tools) {
       ":flags",
       ":skia",
       ":tool_utils",
+    ]
+    public_deps = [
       ":gpu_tool_utils",  # Test.h #includes headers from this target.
     ]
     if (is_ohos) {
@@ -3480,7 +3474,7 @@ if (skia_enable_tools) {
       sources = [ "tools/imgcvt.cpp" ]
       configs = [ ":use_skia_vulkan_headers" ]
       if (is_ios || is_android) {
-        deps = [ "vulkan-headers:vulkan_headers" ]
+        public_deps = [ "//third_party/vulkan-headers:vulkan_headers" ]
       } else {
         if (skia_use_vulkan) {
           external_deps = [ "vulkan-headers:vulkan_headers" ]
