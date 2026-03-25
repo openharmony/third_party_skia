@@ -74,7 +74,7 @@ if (skia_use_system_zlib) {
 
     public_configs = [ ":zlib_adler32_simd_config" ]
 
-    deps = [ ":zlib_common_headers" ]
+    public_deps = [ ":zlib_common_headers" ]
   }
 
   if (use_arm_neon_optimizations) {
@@ -118,7 +118,7 @@ if (skia_use_system_zlib) {
 
       configs += [ ":zlib_arm_crc32_config" ]
 
-      deps = [ ":zlib_common_headers" ]
+      public_deps = [ ":zlib_common_headers" ]
     }
   }
 
@@ -161,7 +161,7 @@ if (skia_use_system_zlib) {
 
     public_configs = [ ":zlib_inflate_chunk_simd_config" ]
 
-    deps = [ ":zlib_common_headers" ]
+    public_deps = [ ":zlib_common_headers" ]
   }
 
   config("zlib_crc32_simd_config") {
@@ -192,7 +192,7 @@ if (skia_use_system_zlib) {
 
     configs += [ ":zlib_crc32_simd_config" ]
 
-    deps = [ ":zlib_common_headers" ]
+    public_deps = [ ":zlib_common_headers" ]
   }
 
   config("zlib_slide_hash_simd_config") {
@@ -220,7 +220,7 @@ if (skia_use_system_zlib) {
 
     public_configs = [ ":zlib_slide_hash_simd_config" ]
 
-    deps = [ ":zlib_common_headers" ]
+    public_deps = [ ":zlib_common_headers" ]
   }
 
   config("zlib_warnings") {
@@ -313,5 +313,5 @@ third_party("compression_utils_portable") {
     "../externals/zlib/google/compression_utils_portable.cc",
     "../externals/zlib/google/compression_utils_portable.h",
   ]
-  deps = [ ":zlib" ]  # either system or from source
+  public_deps = [ ":zlib" ]  # either system or from source
 }
