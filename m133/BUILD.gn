@@ -170,6 +170,13 @@ config("skia_public") {
     }
   }
 
+  if (is_ios && is_arkui_x) {
+    defines += [
+      "VK_NO_PROTOTYPES=1",
+      "VK_USE_PLATFORM_IOS_MVK=1",
+    ]
+  }
+
   if (is_win) {
     defines += [ "SK_BUILD_FOR_WIN" ]
   }
