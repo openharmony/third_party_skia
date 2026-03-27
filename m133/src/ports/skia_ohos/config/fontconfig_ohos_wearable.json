@@ -159,6 +159,12 @@
       "lang": "und-Zsym",
       "family": "HM Symbol",
       "file": "HMSymbolVF.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Arab",
+      "family": "Noto Naskh Arabic UI",
+      "file": "NotoNaskhArabicUI[wght].ttf"
     }
   ]
 }

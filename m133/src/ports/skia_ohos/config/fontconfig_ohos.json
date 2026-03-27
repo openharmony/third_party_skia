@@ -1061,6 +1061,13 @@
       "alias": "notdef",
       "family": "HarmonyOS Sans Notdef",
       "file": "HarmonyOS_Sans_Notdef.ttf"
+    },
+    {
+      "type": 1,
+      "lang": "und-Arab",
+      "family": "Noto Naskh Arabic UI",
+      "file": "NotoNaskhArabicUI[wght].ttf",
+      "range": [2117743, 0, 4199744, 128, 134217728, 2, 0, 0, 0, 0, 0]
     }
   ]
 }
