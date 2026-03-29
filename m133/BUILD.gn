@@ -603,7 +603,6 @@ optional("fontmgr_symbol_load") {
       deps += [ ":ohos_fontconfig_wearable_lite.json" ]
     }
   }
-
   public = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.h" ]
   sources = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
 }
