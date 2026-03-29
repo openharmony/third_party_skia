@@ -18,6 +18,7 @@ declare_args() {
   skia_feature_enable_pgo = false
   skia_feature_pgo_path = ""
   skia_feature_wuji_enable = false
+  skia_feature_cfp_enable = false
 }
 
 skia_common_defines = [
