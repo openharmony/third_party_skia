@@ -599,10 +599,11 @@ optional("fontmgr_symbol_load") {
   ]
   if (skia_feature_product == "wearable") {
     deps += [ ":ohos_fontconfig_wearable.json" ]
+    if (skia_feature_cfp_enable) {
+      deps += [ ":ohos_fontconfig_wearable_lite.json" ]
+    }
   }
-  if (skia_feature_cfp_enable) {
-    deps += [ ":ohos_fontconfig_wearable_lite.json" ]
-  }
+
   public = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.h" ]
   sources = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
 }
@@ -1007,9 +1008,9 @@ if (use_oh_skia && !is_arkui_x) {
     ]
     if (skia_feature_product == "wearable") {
       deps += [ ":ohos_fontconfig_wearable.json" ]
-    }
-    if (skia_feature_cfp_enable) {
-      deps += [ ":ohos_fontconfig_wearable_lite.json" ]
+      if (skia_feature_cfp_enable) {
+        deps += [ ":ohos_fontconfig_wearable_lite.json" ]
+      }
     }
 
     if (skia_feature_wuji_enable) {
