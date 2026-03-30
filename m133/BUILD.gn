@@ -598,7 +598,11 @@ optional("fontmgr_symbol_load") {
     ":ohos_fontconfig_old.json",
   ]
   if (skia_feature_product == "wearable") {
-    deps += [ ":ohos_fontconfig_wearable.json" ]
+    if (skia_feature_cfp_enable) {
+      deps += [ ":ohos_fontconfig_wearable_lite.json" ]
+    } else {
+      deps += [ ":ohos_fontconfig_wearable.json" ]
+    }
   }
   public = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.h" ]
   sources = [ "src/ports/skia_ohos/HmSymbolConfig_ohos.cpp" ]
@@ -947,6 +951,12 @@ if (use_oh_skia && !is_arkui_x) {
     subsystem_name = "thirdparty"
   }
 
+  ohos_prebuilt_etc("ohos_fontconfig_wearable_lite.json") {
+    source = "${skia_root_dir}/src/ports/skia_ohos/config/wearable_lite/fontconfig_ohos.json"
+    part_name = "skia"
+    subsystem_name = "thirdparty"
+  }
+
   optional("fontmgr_ohos") {
     enabled = skia_enable_fontmgr_ohos
 
@@ -996,7 +1006,11 @@ if (use_oh_skia && !is_arkui_x) {
       ":ohos_fontconfig_old.json",
     ]
     if (skia_feature_product == "wearable") {
-      deps += [ ":ohos_fontconfig_wearable.json" ]
+      if (skia_feature_cfp_enable) {
+        deps += [ ":ohos_fontconfig_wearable_lite.json" ]
+      } else {
+        deps += [ ":ohos_fontconfig_wearable.json" ]
+      }
     }
 
     if (skia_feature_wuji_enable) {
