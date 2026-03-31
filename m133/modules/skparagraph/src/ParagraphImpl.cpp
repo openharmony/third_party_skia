@@ -632,6 +632,12 @@ bool ParagraphImpl::needsOrphanFixForLine(int lineIndex) const {
     return false;
 }
 
+SkRange<size_t> ParagraphImpl::getWordBoundaryClusterRange(unsigned offset) {
+    SkRange<size_t> wordUtf16Range = getWordBoundary(offset);
+    ensureUTF16Mapping();
+    return {clusterIndex(getUTF8Index(wordUtf16Range.start)), clusterIndex(getUTF8Index(wordUtf16Range.end))};
+}
+
 void ParagraphImpl::fixOrphanedWords() {
     if (fLines.size() <= 1) {
         return;
@@ -642,7 +648,7 @@ void ParagraphImpl::fixOrphanedWords() {
             continue;
         }
 
-        size_t firstWordStartOfLine = getWordBoundary(fLines[lineIndex].clustersWithSpaces().start).start;
+        size_t firstWordStartOfLine = getWordBoundaryClusterRange(fLines[lineIndex].clustersWithSpaces().start).start;
         if (firstWordStartOfLine == 0 || !shouldApplyOrphanByWidth(lineIndex, firstWordStartOfLine)) {
             continue;
         }
