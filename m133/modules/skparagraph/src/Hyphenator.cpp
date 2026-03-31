@@ -17,11 +17,11 @@
 #ifdef _WIN32
 #include <cstdlib>
 #else
-#include <cstddef>
 #include <climits>
+#include <cstddef>
 #endif
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <unicode/utf.h>
 #include <unicode/utf8.h>
 #include <unordered_set>
@@ -173,6 +173,7 @@ struct HyphenFindBreakParam {
     HyphenSubTable hyphenSubTable;
     uint16_t code{0};
     uint16_t offset{0};
+    size_t dataSize{0};  // Total size of HPB data for bounds checking
 };
 
 void ReadBinaryFile(const std::string& filePath, std::vector<uint8_t>& buffer) {
@@ -374,28 +375,59 @@ bool processPairs(const ArrayOf16bits* data, HyphenFindBreakParam& param, uint16
     return match;
 }
 
+bool isOutOfBounds(uint16_t* staticOffset, uint32_t nextOffset, uint16_t* headerAsU16, size_t maxOffset) {
+    if (staticOffset == nullptr || (staticOffset + nextOffset) >= (headerAsU16 + maxOffset)) {
+        TEXT_LOGE("Hyphenator: Out-of-bounds access detected, nextOffset=%{public}u", nextOffset);
+        return true;
+    }
+    return false;
+}
+
+void handlePatternLogic(HyphenFindBreakParam& param, uint32_t index, std::vector<uint16_t>& target,
+                        std::vector<uint8_t>& result, uint16_t pOffset) {
+    // if we have reached pattern, apply it to result
+    uint16_t count = (pOffset >> 0xc);
+    pOffset = 0xfff & pOffset;
+    auto p = reinterpret_cast<const Pattern*>(reinterpret_cast<const uint8_t*>(param.header) + pOffset);
+    processPattern(p, count, index, target, result);
+}
+
 void findBreakByType(HyphenFindBreakParam& param, const size_t& targetIndex, std::vector<uint16_t>& target,
                      std::vector<uint8_t>& result) {
     TEXT_LOGD("TopLevel:%{public}zu", targetIndex);
     auto [staticOffset, nextOffset, type] = param.hyphenSubTable;
     uint32_t index = 0; // used in inner loop to traverse path further (backwards)
+
+    // Calculate the data size in uint16_t units for bounds checking
+    // staticOffset is a pointer to uint16_t, so we convert dataSize to same units
+    size_t maxOffset = param.dataSize / sizeof(uint16_t);
+    uint16_t* headerAsU16 = reinterpret_cast<uint16_t*>(const_cast<HyphenatorHeader*>(param.header));
+
     while (true) {
+        // Bounds check: ensure staticOffset + nextOffset is within valid data range
+        // Convert header to uint16_t* for valid comparison with staticOffset
+        if (isOutOfBounds(staticOffset, nextOffset, headerAsU16, maxOffset)) {
+            break;
+        }
+
         TEXT_LOGD("Loop:%{public}zu %{public}u", targetIndex, index);
         // there is always at 16bit of pattern address before next node data
         uint16_t pOffset = *(staticOffset + nextOffset);
         // from binary version 2 onwards, we have common nodes with 16bit offset (not bound to code points)
         if (type == PathType::PATTERN && (param.header->version >> 0x18) > 1) {
-            pOffset =
-                *(reinterpret_cast<const uint16_t*>(param.header) + nextOffset + (param.header->version & 0xffff));
+            // Also check bounds for the version-based offset access
+            size_t vOffset = nextOffset + (param.header->version & 0xffff);
+            if (vOffset >= maxOffset) {
+                break;
+            }
+            pOffset = *(reinterpret_cast<const uint16_t*>(param.header) + vOffset);
         }
+
         nextOffset++;
         if (pOffset > 0) {
-            // if we have reached pattern, apply it to result
-            uint16_t count = (pOffset >> 0xc);
-            pOffset = 0xfff & pOffset;
-            auto p = reinterpret_cast<const Pattern*>(reinterpret_cast<const uint8_t*>(param.header) + pOffset);
-            processPattern(p, count, targetIndex - index, target, result);
+            handlePatternLogic(param, targetIndex - index, target, result, pOffset);
         }
+
         if (type == PathType::PATTERN) {
             // just break the loop
             break;
@@ -441,7 +473,7 @@ void findBreaks(const std::vector<uint8_t>& hyphenatorData, std::vector<uint16_t
             if (!hyphenSubTable.initHyphenSubTableInfo(code, offset, hyphenInfo)) {
                 continue;
             }
-            HyphenFindBreakParam param{header, hyphenSubTable, code, offset};
+            HyphenFindBreakParam param{header, hyphenSubTable, code, offset, hyphenatorData.size()};
             findBreakByType(param, i, target, result);
         }
     }
@@ -542,7 +574,7 @@ std::vector<uint8_t> Hyphenator::findBreakPositions(const SkString& locale, cons
             result.resize(word.size(), defaultValue);
             findBreaks(hyphenatorData, word, result);
             formatResult(result, leadingHyphmins, trailingHyphmins, offsets);
-        }    
+        }
     }
     return result;
 }
