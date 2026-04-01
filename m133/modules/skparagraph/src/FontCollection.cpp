@@ -515,6 +515,16 @@ void FontCollection::enableFontFallback() {
     fEnableFontFallback = true;
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+void FontCollection::setCachesEnabled(bool enable) {
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    fParagraphCache.turnOn(enable);
+    if (!enable) {
+        fParagraphCache.reset();
+    }
+}
+#endif
+
 void FontCollection::clearCaches() {
 #ifdef ENABLE_TEXT_ENHANCE
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
