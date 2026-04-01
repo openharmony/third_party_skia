@@ -3596,9 +3596,10 @@ std::string ParagraphImpl::GetDumpInfo() const
  * @param textStyle The text style associated with the run.
  * @param pathInfo The vector to store the path information.
  */
-void addPathInfo(const Run* run, const ClusterRange& range, const SkPoint& offset, const TextStyle& textStyle,
+bool addPathInfo(const Run* run, const ClusterRange& range, const SkPoint& offset, const TextStyle& textStyle,
     std::vector<PathInfo>& pathInfo)
 {
+    bool allSuccess = true;
     const SkSpan<const SkGlyphID>& glyphs = run->glyphs();
     const SkSpan<const SkPoint>& offsets = run->offsets();
     const SkSpan<const SkPoint>& positions = run->positions();
@@ -3613,21 +3614,24 @@ void addPathInfo(const Run* run, const ClusterRange& range, const SkPoint& offse
         if (glyphIndex < range.start || glyphIndex >= range.end) {
             continue;
         }
-        
+
         RSPath path;
         if (font.GetPathForGlyph(glyphs[i], &path)) {
             pathInfo.push_back({path, textStyle, {offset.fX + offsets[i].fX + positions[i].fX, offset.fY}});
         } else {
             TEXT_LOGE("Failed to get path for glyph [%{public}d]", glyphs[i]);
+            allSuccess = false;
         }
     }
+    return allSuccess;
 }
 
-void ParagraphImpl::addPathInfoFromLine(
+bool ParagraphImpl::addPathInfoFromLine(
     const TextLine& line, const ClusterRange& range, std::vector<PathInfo>& pathInfo)
 {
+    bool allSuccess = true;
     line.iterateThroughVisualRuns(TextLine::EllipsisReadStrategy::READ_REPLACED_WORD, false,
-        [this, &line, &range, &pathInfo](
+        [this, &line, &range, &pathInfo, &allSuccess](
             const Run* run, SkScalar runOffsetInLine, TextRange textRange, SkScalar* width){
             if (run->placeholderStyle() != nullptr) {
                 *width = run->advance().fX;
@@ -3635,7 +3639,7 @@ void ParagraphImpl::addPathInfoFromLine(
             }
             *width = line.iterateThroughSingleRunByStyles(TextLine::TextAdjustment::GlyphCluster, run,
                 runOffsetInLine, textRange, StyleType::kForeground,
-                [this, &line, &range, run, &pathInfo](
+                [this, &line, &range, run, &pathInfo, &allSuccess](
                 TextRange textRange, const TextStyle& style, const TextLine::ClipContext& context) {
                     ClusterRange boxClusterRange = {clusterIndex(textRange.start), clusterIndex(textRange.end)};
                     const auto& mixClusterRange = intersection(range, boxClusterRange);
@@ -3651,25 +3655,31 @@ void ParagraphImpl::addPathInfoFromLine(
                     SkPoint fOffset = SkPoint::Make(line.offset().fX + context.fTextShift,
                         line.offset().fY + correctedBaseline -
                         (context.run ? context.run->fCompressionBaselineShift : 0));
-                    addPathInfo(run, mixClusterRange, fOffset, style, pathInfo);
+                    if (!addPathInfo(run, mixClusterRange, fOffset, style, pathInfo)) {
+                        allSuccess = false;
+                    }
             });
             return true;
         });
+    return allSuccess;
 }
 
-std::vector<PathInfo> ParagraphImpl::getTextPathByClusterRange(SkRange<size_t> range)
+std::pair<std::vector<PathInfo>, bool> ParagraphImpl::getTextPathByClusterRange(SkRange<size_t> range)
 {
     std::vector<PathInfo> pathInfo;
     if (range.start > range.end) {
-        return pathInfo;
+        return {pathInfo, false};
     }
     if (range.end > SkToSizeT(fClusters.size())) {
         range.end = SkToSizeT(fClusters.size());
     }
+    bool allSuccess = true;
     for (int i = 0; i < fLines.size(); i++) {
-        addPathInfoFromLine(fLines[i], range, pathInfo);
+        if (!addPathInfoFromLine(fLines[i], range, pathInfo)) {
+            allSuccess = false;
+        }
     }
-    return pathInfo;
+    return {pathInfo, allSuccess};
 }
 #endif
 

@@ -430,13 +430,13 @@ public:
     bool IsEllipsisReplaceFitCluster() const { return fIsEllipsisReplaceFitCluster; }
     void setIsEllipsisReplaceFitCluster(bool state) { fIsEllipsisReplaceFitCluster = state; }
     // Add path information for a specific line and cluster range.
-    void addPathInfoFromLine(const TextLine& line, const ClusterRange& range, std::vector<PathInfo>& pathInfo);
+    bool addPathInfoFromLine(const TextLine& line, const ClusterRange& range, std::vector<PathInfo>& pathInfo);
     /**
      * Get the text path information for a specific cluster range.
      * @param range The cluster range of glyphs to include.
      * @return A vector of PathInfo objects representing the text paths for the specified cluster range.
      */
-    std::vector<PathInfo> getTextPathByClusterRange(SkRange<size_t> range) override;
+    std::pair<std::vector<PathInfo>, bool> getTextPathByClusterRange(SkRange<size_t> range) override;
     TextRange getLineUtf16TextRange(int lineNumber, bool includeSpaces) override;
     BlockIndex findBlockByTextIndexReverse(TextIndex textIndex);
 #endif

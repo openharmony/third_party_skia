@@ -389,7 +389,7 @@ public:
     virtual RSFontMetrics measureText() = 0;
     virtual bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
         std::vector<RSFontMetrics>& fontMetrics) = 0;
-    virtual std::vector<PathInfo> getTextPathByClusterRange(SkRange<size_t> range) = 0;
+    virtual std::pair<std::vector<PathInfo>, bool> getTextPathByClusterRange(SkRange<size_t> range) = 0;
     virtual TextRange getLineUtf16TextRange(int lineNumber, bool includeSpaces) = 0;
 
     void setLayoutConstraintsFlag(bool useLayoutConstraints) { fUseLayoutConstraints = useLayoutConstraints; }
