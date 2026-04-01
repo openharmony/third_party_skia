@@ -149,6 +149,7 @@ public:
     PositionWithAffinity getGlyphPositionAtCoordinate(SkScalar dx, SkScalar dy) override;
     SkRange<size_t> getWordBoundary(unsigned offset) override;
 #ifdef ENABLE_TEXT_ENHANCE
+    SkRange<size_t> getWordBoundaryClusterRange(unsigned offset);
     bool getApplyRoundingHack() const { return false; }
     size_t lineNumber() override { return fLineNumber; }
     TextRange getEllipsisTextRange() override;
