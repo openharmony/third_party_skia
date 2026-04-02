@@ -266,6 +266,12 @@ struct ParagraphStyle {
     void setIncludeFontPadding(bool includeFontPadding) { fIncludeFontPadding = includeFontPadding; }
     bool getFallbackLineSpacing() const { return fFallbackLineSpacing; }
     void setFallbackLineSpacing(bool fallbackLineSpacing) { fFallbackLineSpacing = fallbackLineSpacing; }
+    SkScalar getFirstLineIndent() const { return fFirstLineIndent; }
+    void setFirstLineIndent(SkScalar indent) { fFirstLineIndent = indent; }
+    const std::vector<double>& getTailIndents() const { return fTailIndents; }
+    void setTailIndents(const std::vector<double>& indents) { fTailIndents = indents; }
+    const std::vector<double>& getHeadIndents() const { return fHeadIndents; }
+    void setHeadIndents(const std::vector<double>& indents) { fHeadIndents = indents; }
     bool getOrphanCharOptimization() const { return fOrphanCharOptimization; }
     void setOrphanCharOptimization(bool orphanCharOptimization) { fOrphanCharOptimization = orphanCharOptimization; }
     bool getUseLocaleForTextBreak() const { return fUseLocaleForTextBreak; }
@@ -299,6 +305,9 @@ private:
     bool fCompressHeadPunctuation{false};
     TextVerticalAlign fVerticalAlignment{TextVerticalAlign::BASELINE};
     SkScalar fLineSpacing{0.0f};
+    SkScalar fFirstLineIndent{-1.0f};
+    std::vector<double> fTailIndents;
+    std::vector<double> fHeadIndents;
     bool fIncludeFontPadding{false};
     bool fFallbackLineSpacing{false};
     bool fOrphanCharOptimization{false};

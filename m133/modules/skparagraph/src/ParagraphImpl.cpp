@@ -489,6 +489,8 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
         this->computeEmptyMetrics();
         this->fLines.clear();
 #ifdef ENABLE_TEXT_ENHANCE
+        // Initialize indents from ParagraphStyle
+        initIndentsFromStyle();
         // fast path
         if (!fHasLineBreaks && !fHasWhitespacesInside && fPlaceholders.size() == 1 &&
             (fRuns.size() == 1 && preCalculateSingleRunAutoSpaceWidth(floorWidth)) &&
@@ -1612,19 +1614,53 @@ bool ParagraphImpl::shapeTextIntoEndlessLine() {
 #ifdef ENABLE_TEXT_ENHANCE
 void ParagraphImpl::setIndents(const std::vector<SkScalar>& indents)
 {
-    fIndents = indents;
+    fHeadIndents = std::vector<double>{indents.begin(), indents.end()};
+    fParagraphStyle.setHeadIndents(fHeadIndents);
+}
+
+void ParagraphImpl::initIndentsFromStyle()
+{
+    fFirstLineIndent = fParagraphStyle.getFirstLineIndent();
+    fTailIndents = fParagraphStyle.getTailIndents();
+    fHeadIndents = fParagraphStyle.getHeadIndents();
+    fParagraphStartLines.clear();
+    fParagraphStartLines.push_back(0);
+}
+
+bool ParagraphImpl::isParagraphFirstLine(size_t lineIndex) const
+{
+    return std::binary_search(fParagraphStartLines.begin(),
+                              fParagraphStartLines.end(),
+                              lineIndex);
 }
 
 SkScalar ParagraphImpl::detectIndents(size_t index)
 {
-    SkScalar indent = 0.0;
-    if (fIndents.size() > 0 && index < fIndents.size()) {
-        indent = fIndents[index];
-    } else {
-        indent = fIndents.size() > 0 ? fIndents.back() : 0.0;
+    // Priority 1: first line indent (highest priority)
+    if (fFirstLineIndent >= 0 && isParagraphFirstLine(index)) {
+        return fFirstLineIndent;
     }
 
-    return indent;
+    // Priority 2: left indent array
+    if (!fHeadIndents.empty()) {
+        if (index < fHeadIndents.size()) {
+            return fHeadIndents[index];
+        }
+        return fHeadIndents.back();
+    }
+
+    return 0.0;
+}
+
+SkScalar ParagraphImpl::detectTailIndents(size_t index)
+{
+    if (fTailIndents.empty()) {
+        return 0.0;
+    }
+    if (index < fTailIndents.size()) {
+        return fTailIndents[index];
+    }
+    return fTailIndents.back();
 }
 
 void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
@@ -1687,7 +1723,8 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
     auto spacing = line.autoSpacing();
     auto longestLine = std::max(run.advance().fX, advance.fX) + spacing;
     setSize(heightWithParagraphSpacing, maxWidth, longestLine);
-    setLongestLineWithIndent(longestLine + offsetX);
+    SkScalar endIndent = detectTailIndents(0);
+    setLongestLineWithIndent(longestLine + offsetX + endIndent);
     setIntrinsicSize(run.advance().fX, advance.fX,
         fLines.empty() ? fEmptyMetrics.alphabeticBaseline() : fLines.front().alphabeticBaseline(),
         fLines.empty() ? fEmptyMetrics.ideographicBaseline() : fLines.front().ideographicBaseline(),
@@ -1745,7 +1782,8 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 }
                 auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces());
                 fLongestLine = std::max(fLongestLine, longestLine);
-                fLongestLineWithIndent = std::max(fLongestLineWithIndent, longestLine + indent);
+                SkScalar endIndent = detectTailIndents(fLines.size() > 0 ? fLines.size() - 1 : 0);
+                fLongestLineWithIndent = std::max(fLongestLineWithIndent, longestLine + indent + endIndent);
             });
     setSize(textWrapper.height(), maxWidth, fLongestLine);
     setIntrinsicSize(textWrapper.maxIntrinsicWidth(), textWrapper.minIntrinsicWidth(),
@@ -1870,7 +1908,8 @@ void ParagraphImpl::formatLines(SkScalar maxWidth) {
 #ifdef ENABLE_TEXT_ENHANCE
     size_t iLineNumber = 0;
     for (auto& line : fLines) {
-        SkScalar noIndentWidth = maxWidth - detectIndents(iLineNumber++);
+        SkScalar noIndentWidth = maxWidth - detectIndents(iLineNumber) - detectTailIndents(iLineNumber);
+        iLineNumber++;
         if (fParagraphStyle.getTextDirection() == TextDirection::kRtl) {
             line.setLineOffsetX(0);
         }
@@ -2530,7 +2569,7 @@ bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
 {
     SkScalar singleRunWidth = fRuns[0].fAdvance.fX;
     if (!isAutoSpaceEnabled()) {
-        return singleRunWidth <= floorWidth - this->detectIndents(0);
+        return singleRunWidth <= floorWidth - this->detectIndents(0) - this->detectTailIndents(0);
     }
     SkScalar totalFakeSpacing = 0.0f;
     ClusterIndex endOfClusters = fClusters.size();
@@ -2539,7 +2578,7 @@ bool ParagraphImpl::preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth)
             ? fClusters[cluster - 1].getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
     }
     singleRunWidth += totalFakeSpacing;
-    return singleRunWidth <= floorWidth - this->detectIndents(0);
+    return singleRunWidth <= floorWidth - this->detectIndents(0) - this->detectTailIndents(0);
 }
 
 std::vector<TextBlobRecordInfo> ParagraphImpl::getTextBlobRecordInfo()
@@ -3094,7 +3133,10 @@ std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()
     paragraph->fClustersIndexFromCodeUnit = this->fClustersIndexFromCodeUnit;
 
     paragraph->fWords = this->fWords;
-    paragraph->fIndents = this->fIndents;
+    paragraph->fFirstLineIndent = this->fFirstLineIndent;
+    paragraph->fTailIndents = this->fTailIndents;
+    paragraph->fHeadIndents = this->fHeadIndents;
+    paragraph->fParagraphStartLines = this->fParagraphStartLines;
     paragraph->fBidiRegions = this->fBidiRegions;
 
     paragraph->fUTF8IndexForUTF16Index = this->fUTF8IndexForUTF16Index;

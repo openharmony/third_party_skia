@@ -144,7 +144,9 @@ public:
     // hash could be used to check if the entry has cached layout available
     LineBreakStrategy linebreakStrategy;
     WordBreakType wordBreakType;
-    std::vector<SkScalar> indents;
+    std::vector<double> indents;
+    std::vector<double> fTailIndents;
+    SkScalar fFirstLineIndent{-1.0f};
     SkScalar fLayoutRawWidth;
     SkScalar fLayoutConstraintsHeight;
     size_t maxlines;
@@ -457,7 +459,9 @@ void ParagraphCache::reset() {
 
 #ifdef ENABLE_TEXT_ENHANCE
 bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const ParagraphCacheValue* value) {
-    if (value && value->indents == paragraph.fIndents &&
+    if (value && value->indents == paragraph.fHeadIndents &&
+        value->fTailIndents == paragraph.fTailIndents &&
+        nearlyEqual(paragraph.fFirstLineIndent, value->fFirstLineIndent) &&
         paragraph.getLineBreakStrategy() == value->linebreakStrategy &&
         paragraph.getWordBreakType() == value->wordBreakType &&
         abs(paragraph.fLayoutRawWidth - value->fLayoutRawWidth) < 1.f &&
@@ -506,6 +510,8 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
     }
     value->fLines.clear();
     value->indents.clear();
+    value->fTailIndents.clear();
+    value->fFirstLineIndent = paragraph.fFirstLineIndent;
 
     for (auto& line : paragraph.fLines) {
         value->fLines.emplace_back(line.CloneSelf());
@@ -515,8 +521,11 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
     paragraph.getIntrinsicSize(value->fMaxIntrinsicWidth, value->fMinIntrinsicWidth,
         value->fAlphabeticBaseline, value->fIdeographicBaseline,
         value->fExceededMaxLines);
-    for (auto& indent : paragraph.fIndents) {
+    for (auto& indent : paragraph.fHeadIndents) {
         value->indents.push_back(indent);
+    }
+    for (auto& tailIndent : paragraph.fTailIndents) {
+        value->fTailIndents.push_back(tailIndent);
     }
     value->linebreakStrategy = paragraph.getLineBreakStrategy();
     value->wordBreakType = paragraph.getWordBreakType();
