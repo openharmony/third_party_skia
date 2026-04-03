@@ -44,7 +44,7 @@ enum class UtfEncodeType {
 
 struct PathInfo {
     RSPath path;
-    TextStyle textStyle;
+    SkColor color;
     RSPoint point;
 };
 #endif

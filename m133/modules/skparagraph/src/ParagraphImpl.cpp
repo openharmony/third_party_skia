@@ -3623,7 +3623,7 @@ bool addPathInfo(const Run* run, const ClusterRange& range, const SkPoint& offse
 
         RSPath path;
         if (font.GetPathForGlyph(glyphs[i], &path)) {
-            pathInfo.push_back({path, textStyle, {offset.fX + offsets[i].fX + positions[i].fX, offset.fY}});
+            pathInfo.push_back({path, textStyle.getColor(), {offset.fX + offsets[i].fX + positions[i].fX, offset.fY}});
         } else {
             TEXT_LOGE("Failed to get path for glyph [%{public}d]", glyphs[i]);
             allSuccess = false;
