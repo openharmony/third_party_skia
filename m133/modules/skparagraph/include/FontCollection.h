@@ -56,6 +56,7 @@ public:
     std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface,
         const std::optional<FontArguments>& fontArgs);
     void removeCacheByUniqueId(uint32_t uniqueId);
+    void setCachesEnabled(bool enable);
 
     // Callback type for custom typeface cloning
     // Parameters: original typeface, font arguments (variable args)
