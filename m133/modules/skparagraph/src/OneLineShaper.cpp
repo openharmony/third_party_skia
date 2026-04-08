@@ -7,6 +7,7 @@
 #ifdef ENABLE_TEXT_ENHANCE
 #include "src/Run.h"
 #include "include/TextGlobalConfig.h"
+#include "log.h"
 #include "trace.h"
 #endif
 
@@ -26,11 +27,81 @@ namespace textlayout {
 #ifdef ENABLE_TEXT_ENHANCE
 constexpr uint8_t UBIDI_LTR = 0;
 constexpr uint8_t UBIDI_MIXED = 2;
+
+// Check if a character is zero-width, format control, or BiDi control character
+// These characters may not have glyphs in some fonts, causing shaping failures
+// Reference: Unicode Standard Annex #44 (Unicode Character Database)
+static bool needsFallbackForMissingGlyph(SkUnichar unichar)
+{
+    static const std::unordered_set<SkUnichar> gCharsNeedingFallback = {
+        // Zero-Width Characters
+        0x200B,  // U+200B ZERO WIDTH SPACE (ZWSP)
+        0x200C,  // U+200C ZERO WIDTH NON-JOINER (ZWNJ)
+        0x200D,  // U+200D ZERO WIDTH JOINER (ZWJ)
+        0x2060,  // U+2060 WORD JOINER
+        0xFEFF,  // U+FEFF ZERO WIDTH NO-BREAK SPACE (BOM/ZWNBSP)
+
+        // Format Control Characters
+        0x00AD,  // U+00AD SOFT HYPHEN (SHY)
+        0x034F,  // U+034F COMBINING GRAPHEME JOINER (CGJ)
+        0x180E,  // U+180E MONGOLIAN VOWEL SEPARATOR
+
+        // BiDi Control Characters
+        0x200E,  // U+200E LEFT-TO-RIGHT MARK
+        0x200F,  // U+200F RIGHT-TO-LEFT MARK
+        0x202A,  // U+202A LEFT-TO-RIGHT EMBEDDING
+        0x202B,  // U+202B RIGHT-TO-LEFT EMBEDDING
+        0x202C,  // U+202C POP DIRECTIONAL FORMATTING
+        0x202D,  // U+202D LEFT-TO-RIGHT OVERRIDE
+        0x202E,  // U+202E RIGHT-TO-LEFT OVERRIDE
+    };
+
+    return gCharsNeedingFallback.count(unichar) > 0;
+}
+
+// Check if text range contains characters needing fallback
+// (zero-width or format control characters)
+static bool containsCharsNeedingFallback(const SkString& text, size_t start, size_t end)
+{
+    const char* ptr = text.c_str() + start;
+    const char* textEnd = text.c_str() + std::min(end, text.size());
+
+    while (ptr < textEnd) {
+        SkUnichar uni = SkUTF::NextUTF8(&ptr, textEnd);
+        if (uni < 0) {
+            break;
+        }
+        if (needsFallbackForMissingGlyph(uni)) {
+            return true;
+        }
+    }
+
+    return false;
+}
 #endif
 
 void OneLineShaper::commitRunBuffer(const RunInfo&) {
 
     fCurrentRun->commit();
+
+#ifdef ENABLE_TEXT_ENHANCE
+    // Check if run contains zero-width or format control characters with no glyphs
+    // These characters may be missing in some fonts, triggering fallback
+    bool needsFallbackForMissingChars = false;
+    if (fCurrentRun->size() == 0) {
+        needsFallbackForMissingChars = containsCharsNeedingFallback(
+            fParagraph->fText,
+            fCurrentRun->fTextRange.start,
+            fCurrentRun->fTextRange.end
+        );
+
+        if (needsFallbackForMissingChars) {
+            TEXT_LOGD("commitRunBuffer: Zero-width/format control character detected with no glyphs, "
+                      "forcing fallback for textRange=[%{public}zu,%{public}zu)",
+                      fCurrentRun->fTextRange.start, fCurrentRun->fTextRange.end);
+        }
+    }
+#endif
 
     auto oldUnresolvedCount = fUnresolvedBlocks.size();
 /*
@@ -46,6 +117,19 @@ void OneLineShaper::commitRunBuffer(const RunInfo&) {
         }
         addUnresolvedWithRun(block);
     });
+
+#ifdef ENABLE_TEXT_ENHANCE
+    // For runs containing zero-width/format control characters with no glyphs,
+    // force add to unresolved blocks to trigger fallback instead of calling
+    // addFullyResolved (which would skip processing)
+    if (needsFallbackForMissingChars && oldUnresolvedCount == fUnresolvedBlocks.size()) {
+        TEXT_LOGI("commitRunBuffer: Forcing fallback for zero-width/format control character");
+        // Create an unresolved block to let fallback process handle it
+        RunBlock unresolvedBlock(fCurrentRun->fTextRange);
+        fUnresolvedBlocks.push_front(unresolvedBlock);
+        return;  // Don't call addFullyResolved, let matchResolvedFonts handle it
+    }
+#endif
 
     // Fill all the gaps between unresolved blocks with resolved ones
     if (oldUnresolvedCount == fUnresolvedBlocks.size()) {
