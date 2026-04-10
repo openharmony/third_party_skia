@@ -23,6 +23,7 @@
     ((c1) << 24 | (c2) << 16 | (c3) << 8 | (c4))
 
 const static char *HEIF_IMPL_SO_NAME = "libheifimpl.z.so";
+const static char *AVIF_IMPL_SO_NAME = "libavifimpl.z.so";
 
 bool SkHeifCodec::IsSupported(const void* buffer, size_t bytesRead,
                               SkEncodedImageFormat* format) {
@@ -163,11 +164,6 @@ std::unique_ptr<SkCodec> SkHeifCodec::MakeFromStream(std::unique_ptr<SkStream> s
         *result = SkCodec::kInvalidInput;
         return nullptr;
     }
-    std::unique_ptr<HeifDecoder> heifDecoder(createHeifDecoder());
-    if (heifDecoder == nullptr) {
-        *result = SkCodec::kInternalError;
-        return nullptr;
-    }
 
     constexpr size_t bytesToRead = MinBufferedBytesNeeded();
     char buffer[bytesToRead];
@@ -186,6 +182,30 @@ std::unique_ptr<SkCodec> SkHeifCodec::MakeFromStream(std::unique_ptr<SkStream> s
     SkEncodedImageFormat format;
     if (!SkHeifCodec::IsSupported(buffer, bytesRead, &format)) {
         SkCodecPrintf("Failed to get format despite earlier detecting it");
+        *result = SkCodec::kInternalError;
+        return nullptr;
+    }
+
+    HeifDecoder* decoder = nullptr;
+    switch (format) {
+        case SkEncodedImageFormat::kHEIF:
+            decoder = createHeifDecoder();
+            break;
+        case SkEncodedImageFormat::kAVIF:
+            decoder = createAvifDecoder();
+            break;
+        default:
+            break;
+    }
+    if (decoder == nullptr) {
+        SkCodecPrintf("Failed to create decoder");
+        *result = SkCodec::kInternalError;
+        return nullptr;
+    }
+
+    std::unique_ptr<HeifDecoder> heifDecoder(decoder);
+    decoder = nullptr;
+    if (heifDecoder == nullptr) {
         *result = SkCodec::kInternalError;
         return nullptr;
     }
@@ -563,6 +583,27 @@ HeifDecoder* SkHeifCodec::createHeifDecoder() {
     typedef HeifDecoder* (*CreateHeifDecoderImplT)();
     HeifDecoder* decoder = nullptr;
     CreateHeifDecoderImplT func = (CreateHeifDecoderImplT)dlsym(heifImplHandle, "CreateHeifDecoderImpl");
+    if (func) {
+        decoder = func();
+    }
+    return decoder != nullptr ? decoder : new StubHeifDecoder();
+#else
+    return new StubHeifDecoder();
+#endif
+}
+
+void *SkHeifCodec::avifImplHandle = nullptr;
+HeifDecoder* SkHeifCodec::createAvifDecoder() {
+#if !defined(WIN32) && !defined(_WIN32) && !defined(__WIN32__)
+    if (!avifImplHandle) {
+        avifImplHandle = dlopen(AVIF_IMPL_SO_NAME, RTLD_LAZY);
+    }
+    if (!avifImplHandle) {
+        return new StubHeifDecoder();
+    }
+    typedef HeifDecoder* (*CreateAvifDecoderImplT)();
+    HeifDecoder* decoder = nullptr;
+    CreateAvifDecoderImplT func = (CreateAvifDecoderImplT)dlsym(avifImplHandle, "CreateAvifDecoderImpl");
     if (func) {
         decoder = func();
     }
