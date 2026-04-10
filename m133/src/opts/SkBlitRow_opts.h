@@ -90,6 +90,23 @@
 
 #if defined(SK_ARM_HAS_NEON)
     #include <arm_neon.h>
+    static inline uint8x16_t SkMulDiv255Round_neon16(uint8x16_t x, uint8x16_t y) {
+        uint16x8_t low = vmull_u8(vget_low_u8(x), vget_low_u8(y));
+        uint16x8_t high = vmull_u8(vget_high_u8(x), vget_high_u8(y));
+        uint8x8_t low_result = vraddhn_u16(low, vrshrq_n_u16(low, 8));
+        uint8x8_t high_result = vraddhn_u16(high, vrshrq_n_u16(high, 8));
+        return vcombine_u8(low_result, high_result);
+    }
+
+    static inline uint8x16x4_t SkPMSrcOver_neon16(uint8x16x4_t dst, uint8x16x4_t src) {
+        uint8x16_t nalphas = vmvnq_u8(src.val[3]);
+        return {
+            vqaddq_u8(src.val[0], SkMulDiv255Round_neon16(nalphas,  dst.val[0])),
+            vqaddq_u8(src.val[1], SkMulDiv255Round_neon16(nalphas,  dst.val[1])),
+            vqaddq_u8(src.val[2], SkMulDiv255Round_neon16(nalphas,  dst.val[2])),
+            vqaddq_u8(src.val[3], SkMulDiv255Round_neon16(nalphas,  dst.val[3])),
+        };
+    }
 
     // SkMulDiv255Round() applied to each lane.
     static inline uint8x8_t SkMulDiv255Round_neon8(uint8x8_t x, uint8x8_t y) {
@@ -187,6 +204,14 @@ inline void blit_row_s32a_opaque(SkPMColor* dst, const SkPMColor* src, int len, 
 #endif
 
 #if defined(SK_ARM_HAS_NEON)
+    while (len >= 16) {
+        vst4q_u8((uint8_t*)dst, SkPMSrcOver_neon16(vld4q_u8((const uint8_t*)dst),
+                                                   vld4q_u8((const uint8_t*)src)));
+        src += 16;
+        dst += 16;
+        len -= 16;
+    }
+
     while (len >= 8) {
         vst4_u8((uint8_t*)dst, SkPMSrcOver_neon8(vld4_u8((const uint8_t*)dst),
                                                  vld4_u8((const uint8_t*)src)));
