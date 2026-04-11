@@ -170,7 +170,8 @@ struct ParagraphStyle {
                this->fFallbackLineSpacing == rhs.fFallbackLineSpacing &&
                this->fOrphanCharOptimization == rhs.fOrphanCharOptimization &&
                nearlyEqual(this->fLineSpacing, rhs.fLineSpacing) &&
-               nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio);
+               nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio) &&
+               this->fUseLocaleForTextBreak == rhs.fUseLocaleForTextBreak;
 #else
         return this->fHeight == rhs.fHeight &&
                this->fEllipsis == rhs.fEllipsis &&
@@ -267,6 +268,8 @@ struct ParagraphStyle {
     void setFallbackLineSpacing(bool fallbackLineSpacing) { fFallbackLineSpacing = fallbackLineSpacing; }
     bool getOrphanCharOptimization() const { return fOrphanCharOptimization; }
     void setOrphanCharOptimization(bool orphanCharOptimization) { fOrphanCharOptimization = orphanCharOptimization; }
+    bool getUseLocaleForTextBreak() const { return fUseLocaleForTextBreak; }
+    void setUseLocaleForTextBreak(bool useLocaleForTextBreak) { fUseLocaleForTextBreak = useLocaleForTextBreak; }
 #endif
     bool getApplyRoundingHack() const { return fApplyRoundingHack; }
     void setApplyRoundingHack(bool value) { fApplyRoundingHack = value; }
@@ -299,6 +302,7 @@ private:
     bool fIncludeFontPadding{false};
     bool fFallbackLineSpacing{false};
     bool fOrphanCharOptimization{false};
+    bool fUseLocaleForTextBreak{false};
 #endif
 };
 }  // namespace textlayout

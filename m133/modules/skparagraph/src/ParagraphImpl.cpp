@@ -1099,17 +1099,36 @@ bool ParagraphImpl::computeCodeUnitProperties() {
 
     // Collect all spaces and some extra information
     // (and also substitute \t with a space while we are at it)
+#ifdef ENABLE_TEXT_ENHANCE
+    if (this->paragraphStyle().getUseLocaleForTextBreak()) {
+        // Use locale for text breaking when enabled
+        SkString locale = this->paragraphStyle().getTextStyle().getLocale();
+        if (!fUnicode->computeCodeUnitFlags(&fText[0],
+                                            fText.size(),
+                                            this->paragraphStyle().getReplaceTabCharacters() ||
+                                            (!(this->paragraphStyle().getTextTab().location < 1.0)),
+                                            locale.c_str(),
+                                            &fCodeUnitProperties)) {
+            return false;
+        }
+    } else {
+        // Don't use locale for text breaking
+        if (!fUnicode->computeCodeUnitFlags(&fText[0],
+                                            fText.size(),
+                                            this->paragraphStyle().getReplaceTabCharacters() ||
+                                            (!(this->paragraphStyle().getTextTab().location < 1.0)),
+                                            &fCodeUnitProperties)) {
+            return false;
+        }
+    }
+#else
     if (!fUnicode->computeCodeUnitFlags(&fText[0],
                                         fText.size(),
-#ifdef ENABLE_TEXT_ENHANCE
-                                        this->paragraphStyle().getReplaceTabCharacters() ||
-                                        (!(this->paragraphStyle().getTextTab().location < 1.0)),
-#else
                                         this->paragraphStyle().getReplaceTabCharacters(),
-#endif
                                         &fCodeUnitProperties)) {
         return false;
     }
+#endif
 
     // Get some information about trailing spaces / hard line breaks
     fTrailingSpaces = fText.size();
