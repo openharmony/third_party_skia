@@ -233,6 +233,10 @@ public:
     bool preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth);
     void setIndents(const std::vector<SkScalar>& indents) override;
     SkScalar detectIndents(size_t index) override;
+    SkScalar detectTailIndents(size_t index);
+    void initIndentsFromStyle();
+    bool isParagraphFirstLine(size_t lineIndex) const;
+    size_t findParagraphByLine(size_t lineIndex) const;
     SkScalar getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); }
     std::vector<std::unique_ptr<TextLineBase>> GetTextLines() override;
     std::unique_ptr<Paragraph> CloneSelf() override;
@@ -582,7 +586,10 @@ private:
     TextIndex fTrailingSpaces;
 
 #ifdef ENABLE_TEXT_ENHANCE
-    std::vector<SkScalar> fIndents;
+    SkScalar fFirstLineIndent{-1.0f};
+    std::vector<double> fTailIndents;
+    std::vector<double> fHeadIndents;
+    std::vector<size_t> fParagraphStartLines;
     std::vector<SkUnichar> fUnicodeText;
     skia_private::TArray<size_t, true> fUnicodeIndexForUTF8Index;
     SkScalar fLayoutRawWidth{0};

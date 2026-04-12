@@ -364,6 +364,8 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
         }
 
         if ((fHardLineBreak = cluster->isHardBreak())) {
+            // Maintain paragraph start lines mapping for first-line indent support
+            fParent->fParagraphStartLines.push_back(fLineNumber);
             // Stop at the hard line break
             break;
         }
@@ -642,7 +644,8 @@ struct TextWrapScorer {
         }
 
         // This should come precalculated
-        param.currentMax = maxWidth_ - parent_.detectIndents(param.lineNumber);
+        param.currentMax = maxWidth_ - parent_.detectIndents(param.lineNumber) -
+            parent_.detectTailIndents(param.lineNumber);
         if (nearlyZero(param.currentMax)) {
             return BEST_LOCAL_SCORE;
         }
@@ -1046,7 +1049,8 @@ TextWrapper::TriggerFlag TextWrapper::triggerConstraintsLayout() {
 }
 
 SkScalar TextWrapper::calculateMaxLineLayoutWidth(const std::vector<SkScalar>& balancedWidths, SkScalar maxWidth) {
-    fNoIndentWidth = maxWidth - fParent->detectIndents(fLineNumber - 1);
+    fNoIndentWidth = maxWidth - fParent->detectIndents(fLineNumber - 1) -
+        fParent->detectTailIndents(fLineNumber - 1);
     if (isNewWidthToBeSetMax()) {
         return FLT_MAX;
     } else if (!balancedWidths.empty() && fLineNumber - 1 < balancedWidths.size()) {
@@ -1593,7 +1597,7 @@ void TextWrapper::addFormattedLineToParagraph(const AddLineToParagraph& addLine)
             SkVector::Make(fEndLine.width(), lineHeight),
             fEndLine.metrics(),
             fNeedEllipsis,
-            offsetX,
+            offsetX + fParent->detectTailIndents(fLineNumber - 1),
             fNoIndentWidth);
     fHeight += lineHeight;
     fFirstLine = false;
