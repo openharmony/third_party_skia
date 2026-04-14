@@ -3624,6 +3624,14 @@ std::string ParagraphImpl::GetDumpInfo() const
     for (auto& run : fRuns) {
         paragraphInfo << "Run" << runIndex << " glyph sz:" << run.size()
                       << ",rng[" << run.textRange().start << "-" << run.textRange().end << "),";
+        // Add typeface file path and font family
+        auto typeface = run.font().GetTypeface();
+        if (typeface) {
+            paragraphInfo << "family:" << typeface->GetFamilyName()
+                          << ",id:" << typeface->GetUniqueID() << ",";
+        } else {
+            paragraphInfo << "family:null,id:0,";
+        }
         runIndex++;
         glyphSize += run.size();
     }
