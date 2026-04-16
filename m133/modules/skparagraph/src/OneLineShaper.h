@@ -58,6 +58,9 @@ private:
         std::shared_ptr<Run> fRun;
         TextRange fText;
         GlyphRange fGlyphs;
+#ifdef ENABLE_TEXT_ENHANCE
+        bool fIsZeroWidth{false};  // Mark zero-width characters to skip fallback
+#endif
         bool isFullyResolved() { return fRun != nullptr && fGlyphs.width() == fRun->size(); }
     };
 
@@ -133,6 +136,12 @@ private:
     void fillGaps(size_t);
 #ifdef ENABLE_TEXT_ENHANCE
 	BlockRange generateBlockRange(const Block& block, const TextRange& textRange);
+    std::shared_ptr<Run> createZeroWidthRun(const Block& block, TextRange textRange, SkScalar currentAdvanceX);
+    // Helper methods for zero-width run creation
+    std::shared_ptr<RSTypeface> obtainTypefaceForPlaceholder(const TextStyle& style);
+    RSFont createConfiguredFont(std::shared_ptr<RSTypeface> typeface, const TextStyle& style);
+    SkGlyphID obtainSpaceGlyphId(const RSFont& font);
+    void fillRunWithZeroWidthData(Run* run, SkGlyphID spaceGlyph, size_t charCount);
 #endif
 
     ParagraphImpl* fParagraph;

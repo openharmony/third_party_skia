@@ -27,81 +27,11 @@ namespace textlayout {
 #ifdef ENABLE_TEXT_ENHANCE
 constexpr uint8_t UBIDI_LTR = 0;
 constexpr uint8_t UBIDI_MIXED = 2;
-
-// Check if a character is zero-width, format control, or BiDi control character
-// These characters may not have glyphs in some fonts, causing shaping failures
-// Reference: Unicode Standard Annex #44 (Unicode Character Database)
-static bool needsFallbackForMissingGlyph(SkUnichar unichar)
-{
-    static const std::unordered_set<SkUnichar> gCharsNeedingFallback = {
-        // Zero-Width Characters
-        0x200B,  // U+200B ZERO WIDTH SPACE (ZWSP)
-        0x200C,  // U+200C ZERO WIDTH NON-JOINER (ZWNJ)
-        0x200D,  // U+200D ZERO WIDTH JOINER (ZWJ)
-        0x2060,  // U+2060 WORD JOINER
-        0xFEFF,  // U+FEFF ZERO WIDTH NO-BREAK SPACE (BOM/ZWNBSP)
-
-        // Format Control Characters
-        0x00AD,  // U+00AD SOFT HYPHEN (SHY)
-        0x034F,  // U+034F COMBINING GRAPHEME JOINER (CGJ)
-        0x180E,  // U+180E MONGOLIAN VOWEL SEPARATOR
-
-        // BiDi Control Characters
-        0x200E,  // U+200E LEFT-TO-RIGHT MARK
-        0x200F,  // U+200F RIGHT-TO-LEFT MARK
-        0x202A,  // U+202A LEFT-TO-RIGHT EMBEDDING
-        0x202B,  // U+202B RIGHT-TO-LEFT EMBEDDING
-        0x202C,  // U+202C POP DIRECTIONAL FORMATTING
-        0x202D,  // U+202D LEFT-TO-RIGHT OVERRIDE
-        0x202E,  // U+202E RIGHT-TO-LEFT OVERRIDE
-    };
-
-    return gCharsNeedingFallback.count(unichar) > 0;
-}
-
-// Check if text range contains characters needing fallback
-// (zero-width or format control characters)
-static bool containsCharsNeedingFallback(const SkString& text, size_t start, size_t end)
-{
-    const char* ptr = text.c_str() + start;
-    const char* textEnd = text.c_str() + std::min(end, text.size());
-
-    while (ptr < textEnd) {
-        SkUnichar uni = SkUTF::NextUTF8(&ptr, textEnd);
-        if (uni < 0) {
-            break;
-        }
-        if (needsFallbackForMissingGlyph(uni)) {
-            return true;
-        }
-    }
-
-    return false;
-}
 #endif
 
 void OneLineShaper::commitRunBuffer(const RunInfo&) {
 
     fCurrentRun->commit();
-
-#ifdef ENABLE_TEXT_ENHANCE
-    // Check if run contains zero-width or format control characters with no glyphs
-    // These characters may be missing in some fonts, triggering fallback
-    bool needsFallbackForMissingChars = false;
-    if (fCurrentRun->size() == 0) {
-        needsFallbackForMissingChars = containsCharsNeedingFallback(
-            fParagraph->fText,
-            fCurrentRun->fTextRange.start,
-            fCurrentRun->fTextRange.end
-        );
-
-        if (needsFallbackForMissingChars) {
-            TEXT_LOGD("commitRunBuffer: Zero-width/format control character detected with no glyphs, "
-                      "forcing fallback for textRange=[%{public}zu,%{public}zu)",
-                      fCurrentRun->fTextRange.start, fCurrentRun->fTextRange.end);
-        }
-    }
-#endif
 
     auto oldUnresolvedCount = fUnresolvedBlocks.size();
 /*
@@ -120,14 +50,15 @@ void OneLineShaper::commitRunBuffer(const RunInfo&) {
 
 #ifdef ENABLE_TEXT_ENHANCE
     // For runs containing zero-width/format control characters with no glyphs,
-    // force add to unresolved blocks to trigger fallback instead of calling
-    // addFullyResolved (which would skip processing)
-    if (needsFallbackForMissingChars && oldUnresolvedCount == fUnresolvedBlocks.size()) {
-        TEXT_LOGI("commitRunBuffer: Forcing fallback for zero-width/format control character");
-        // Create an unresolved block to let fallback process handle it
+    // mark them to skip fallback and create zero-width runs later
+    if (fCurrentRun->size() == 0 && oldUnresolvedCount == fUnresolvedBlocks.size()) {
+        LOGI("Failed to commit runBuffer, marking zero width run to skip fallback, textRange [%{public}zu,%{public}zu)",
+            fCurrentRun->fTextRange.start, fCurrentRun->fTextRange.end);
+        // Create an unresolved block with zero-width marker
         RunBlock unresolvedBlock(fCurrentRun->fTextRange);
-        fUnresolvedBlocks.push_front(unresolvedBlock);
-        return;  // Don't call addFullyResolved, let matchResolvedFonts handle it
+        unresolvedBlock.fIsZeroWidth = true;
+        fUnresolvedBlocks.push_back(unresolvedBlock);
+        return;  // Don't call addFullyResolved, will be handled in finish()
     }
 #endif
 
@@ -338,9 +269,17 @@ void OneLineShaper::shapeUnresolvedTextSeparatelyFromUnresolvedBlock(
     TEXT_TRACE_FUNC();
     std::deque<OneLineShaper::RunBlock> stagedUnresolvedBlocks;
     size_t unresolvedBlockCount = fUnresolvedBlocks.size();
+    bool requiresShaping = false;
     while (unresolvedBlockCount-- > 0) {
         RunBlock unresolvedBlock = fUnresolvedBlocks.front();
         fUnresolvedBlocks.pop_front();
+
+        // Skip zero-width marked blocks - keep them in staged without processing
+        if (unresolvedBlock.fIsZeroWidth) {
+            stagedUnresolvedBlocks.emplace_back(unresolvedBlock);
+            continue;
+        }
+        requiresShaping = true;
 
         if (unresolvedBlock.fText.width() <= 1 || unresolvedBlock.fRun == nullptr) {
             stagedUnresolvedBlocks.emplace_back(unresolvedBlock);
@@ -350,13 +289,95 @@ void OneLineShaper::shapeUnresolvedTextSeparatelyFromUnresolvedBlock(
         splitUnresolvedBlockAndStageResolvedSubBlock(stagedUnresolvedBlocks, unresolvedBlock);
     }
 
-    this->matchResolvedFonts(textStyle, visitor);
+    if (requiresShaping) {
+        this->matchResolvedFonts(textStyle, visitor);
+    }
 
     while (!stagedUnresolvedBlocks.empty()) {
         auto block = stagedUnresolvedBlocks.front();
         stagedUnresolvedBlocks.pop_front();
         fUnresolvedBlocks.emplace_back(block);
     }
+}
+#endif
+
+#ifdef ENABLE_TEXT_ENHANCE
+std::shared_ptr<RSTypeface> OneLineShaper::obtainTypefaceForPlaceholder(const TextStyle& style) {
+    // Use system default fallback for cross-platform compatibility
+    // Pass space character as it's universally available across fonts
+    std::shared_ptr<RSTypeface> typeface =
+        fParagraph->fFontCollection->defaultFallback(' ', style.getFontStyle(), style.getLocale());
+
+    if (typeface != nullptr) {
+        return typeface;
+    }
+
+    // If defaultFallback fails, try to get any available typeface
+    std::vector<std::shared_ptr<RSTypeface>> typefaces =
+        fParagraph->fFontCollection->findTypefaces({}, style.getFontStyle(), style.getFontArguments());
+
+    if (typefaces.empty()) {
+        return nullptr;
+    }
+
+    TEXT_LOGW("Failed to find default fallback typeface, using first available typeface");
+    return typefaces.front();
+}
+
+RSFont OneLineShaper::createConfiguredFont(
+    std::shared_ptr<RSTypeface> typeface, const TextStyle& style) {
+    RSFont font(typeface, style.getFontSize(), 1, 0);
+    font.SetEdging(style.getFontEdging());
+    font.SetHinting(RSDrawing::FontHinting::NONE);
+    font.SetSubpixel(true);
+    font.SetBaselineSnap(false);
+    return font;
+}
+
+SkGlyphID OneLineShaper::obtainSpaceGlyphId(const RSFont& font) {
+    SkGlyphID spaceGlyph = font.UnicharToGlyph(' ');
+    if (spaceGlyph == 0) {
+        // If even space glyph is not available, use .notdef (glyph 0)
+        TEXT_LOGW("Font has no space glyph, using .notdef");
+    }
+    return spaceGlyph;
+}
+
+void OneLineShaper::fillRunWithZeroWidthData(
+    Run* run, SkGlyphID spaceGlyph, size_t charCount) {
+    for (size_t i = 0; i < charCount; ++i) {
+        run->fGlyphs[i] = spaceGlyph;
+        run->fPositions[i] = SkPoint::Make(0, 0);
+        run->fOffsets[i] = SkPoint::Make(0, 0);
+        run->fClusterIndexes[i] = i;
+        run->fGlyphAdvances[i] = SkPoint::Make(0, 0);
+    }
+}
+
+std::shared_ptr<Run> OneLineShaper::createZeroWidthRun(
+    const Block& block, TextRange textRange, SkScalar currentAdvanceX) {
+    const TextStyle& style = block.fStyle;
+    // Obtain typeface
+    std::shared_ptr<RSTypeface> typeface = this->obtainTypefaceForPlaceholder(style);
+    if (typeface == nullptr) {
+        TEXT_LOGE("Failed to find suitable typeface for zero width run, text range [%{public}zu,%{public}zu)",
+            textRange.start, textRange.end);
+        return nullptr;
+    }
+
+    RSFont font = this->createConfiguredFont(typeface, style);
+    SkGlyphID spaceGlyph = this->obtainSpaceGlyphId(font);
+    size_t charCount = textRange.width();
+    SkShaper::RunHandler::RunInfo info {
+        font, 0, SkVector::Make(0, 0), charCount, SkShaper::RunHandler::Range(0, textRange.width())};
+    auto run = std::make_shared<Run>(
+        fParagraph, info, textRange.start, fHeight, fUseHalfLeading, fBaselineShift, ++fUniqueRunId, currentAdvanceX);
+    // Manually fill run data with zero-width properties
+    this->fillRunWithZeroWidthData(run.get(), spaceGlyph, charCount);
+    TEXT_LOGD("Succeed in creating zero width run for "
+        "text range [%{public}zu,%{public}zu), char count %{public}zu, space glyph %{public}u",
+        textRange.start, textRange.end, charCount, spaceGlyph);
+    return run;
 }
 #endif
 
@@ -370,6 +391,17 @@ void OneLineShaper::finish(const Block& block, SkScalar height, SkScalar& advanc
         if (unresolved.fText.width() == 0) {
             continue;
         }
+
+#ifdef ENABLE_TEXT_ENHANCE
+        // Fallback: Create zero-width run for unshapeable characters
+        // This happens when characters (like zero-width chars) cannot be shaped in any available font
+        if (unresolved.fRun == nullptr) {
+            unresolved.fRun = this->createZeroWidthRun(block, unresolved.fText, advanceX);
+            // Set glyph range to contain all characters (but with zero width)
+            unresolved.fGlyphs = GlyphRange(0, unresolved.fText.width());
+        }
+#endif
+
         fResolvedBlocks.emplace_back(unresolved);
         fUnresolvedGlyphs += unresolved.fGlyphs.width();
         fParagraph->addUnresolvedCodepoints(unresolved.fText);
@@ -690,6 +722,16 @@ void OneLineShaper::matchResolvedFontsFindTypeface(const TextStyle& textStyle, s
 void OneLineShaper::matchResolvedFontsByUnicode(const TextStyle& textStyle, const TypefaceVisitor& visitor,
     std::vector<RunBlock>& hopelessBlocks) {
     auto unresolvedRange = fUnresolvedBlocks.front().fText;
+    // Skip fallback for marked zero-width characters
+    // They will be handled in finish() as zero-width runs
+    if (fUnresolvedBlocks.front().fIsZeroWidth) {
+        LOGI("Failed to match resolved fonts: Skipping fallback for marked zero-width run");
+        // Mark as hopeless - will be handled in finish() as zero-width run
+        hopelessBlocks.push_back(fUnresolvedBlocks.front());
+        fUnresolvedBlocks.pop_front();
+        return;
+    }
+
     auto unresolvedText = fParagraph->text(unresolvedRange);
     const char* ch = unresolvedText.begin();
     // We have the global cache for all already found typefaces for SkUnichar
