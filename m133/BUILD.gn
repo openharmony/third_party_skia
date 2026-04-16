@@ -2028,17 +2028,19 @@ optional("typeface_freetype") {
     enabled = skia_use_freetype
   }
 
+  deps = []
+  external_deps = []
   public_defines = [ "SK_TYPEFACE_FACTORY_FREETYPE" ]
   if (skia_use_system_lib || ((is_official_build || sanitize_skia != "MSAN") &&
         !is_fuchsia && !is_wasm)) {
-    external_deps = [ "freetype:freetype_static" ]
+    external_deps += [ "freetype:freetype_static" ]
   } else {
-    deps = [ "${skia_third_party_dir}/freetype2" ]
+    deps += [ "${skia_third_party_dir}/freetype2" ]
   }
-  if (defined(external_deps)) {
-    external_deps += [ "bounds_checking_function:libsec_shared" ]
+  if (is_arkui_x) {
+    deps += [ "//third_party/bounds_checking_function:libsec_static" ]
   } else {
-    external_deps = [ "bounds_checking_function:libsec_shared" ]
+    external_deps += [ "bounds_checking_function:libsec_shared" ]
   }
 
   sources = skia_ports_freetype_sources
