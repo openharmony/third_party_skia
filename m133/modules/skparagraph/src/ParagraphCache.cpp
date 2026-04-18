@@ -569,6 +569,17 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
             paragraph.fRuns[idx].fCorrectAscent = value->fRuns[idx].fCorrectAscent;
             paragraph.fRuns[idx].fCorrectDescent = value->fRuns[idx].fCorrectDescent;
         }
+    } else {
+        paragraph.fRuns.clear();
+        paragraph.fRuns = value->fRuns;
+        for (auto& run : paragraph.fRuns) {
+            run.setOwner(&paragraph);
+        }
+        paragraph.fClusters.clear();
+        paragraph.fClusters = value->fClusters;
+        for (auto& cluster : paragraph.fClusters) {
+            cluster.setOwner(&paragraph);
+        }
     }
     paragraph.fLines.clear();
     for (auto& line : value->fLines) {
