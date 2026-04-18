@@ -96,6 +96,8 @@ private:
         SkUnichar& unicode);
     void matchResolvedFontsByUnicode(const TextStyle& textStyle, const TypefaceVisitor& visitor,
         std::vector<RunBlock>& hopelessBlocks);
+    void processUnresolvedBlockWithFallback(
+        const TextStyle& textStyle, const TypefaceVisitor& visitor, std::vector<RunBlock>& hopelessBlocks);
 #endif
 
 #ifdef SK_DEBUG

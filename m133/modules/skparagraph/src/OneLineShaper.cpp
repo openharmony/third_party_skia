@@ -52,8 +52,8 @@ void OneLineShaper::commitRunBuffer(const RunInfo&) {
     // For runs containing zero-width/format control characters with no glyphs,
     // mark them to skip fallback and create zero-width runs later
     if (fCurrentRun->size() == 0 && oldUnresolvedCount == fUnresolvedBlocks.size()) {
-        LOGI("Failed to commit runBuffer, marking zero width run to skip fallback, textRange [%{public}zu,%{public}zu)",
-            fCurrentRun->fTextRange.start, fCurrentRun->fTextRange.end);
+        TEXT_LOGI("Failed to commit runBuffer, marking zero width run to skip fallback, "
+            "textRange [%{public}zu,%{public}zu)", fCurrentRun->fTextRange.start, fCurrentRun->fTextRange.end);
         // Create an unresolved block with zero-width marker
         RunBlock unresolvedBlock(fCurrentRun->fTextRange);
         unresolvedBlock.fIsZeroWidth = true;
@@ -721,23 +721,30 @@ void OneLineShaper::matchResolvedFontsFindTypeface(const TextStyle& textStyle, s
 
 void OneLineShaper::matchResolvedFontsByUnicode(const TextStyle& textStyle, const TypefaceVisitor& visitor,
     std::vector<RunBlock>& hopelessBlocks) {
-    auto unresolvedRange = fUnresolvedBlocks.front().fText;
     // Skip fallback for marked zero-width characters
     // They will be handled in finish() as zero-width runs
     if (fUnresolvedBlocks.front().fIsZeroWidth) {
-        LOGI("Failed to match resolved fonts: Skipping fallback for marked zero-width run");
+        TEXT_LOGI("Failed to match resolved fonts, skipping fallback for marked zero width run");
         // Mark as hopeless - will be handled in finish() as zero-width run
         hopelessBlocks.push_back(fUnresolvedBlocks.front());
         fUnresolvedBlocks.pop_front();
         return;
     }
 
+    processUnresolvedBlockWithFallback(textStyle, visitor, hopelessBlocks);
+}
+
+// Process unresolved block by trying different typefaces based on unicode codepoints
+void OneLineShaper::processUnresolvedBlockWithFallback(
+    const TextStyle& textStyle, const TypefaceVisitor& visitor, std::vector<RunBlock>& hopelessBlocks) {
+    auto unresolvedRange = fUnresolvedBlocks.front().fText;
     auto unresolvedText = fParagraph->text(unresolvedRange);
     const char* ch = unresolvedText.begin();
     // We have the global cache for all already found typefaces for SkUnichar
     // but we still need to keep track of all SkUnichars used in this unresolved block
     THashSet<SkUnichar> alreadyTriedCodepoints;
     THashSet<SkTypefaceID> alreadyTriedTypefaces;
+
     while (true) {
         if (ch == unresolvedText.end()) {
             // Not a single codepoint could be resolved but we finished the block
@@ -745,6 +752,7 @@ void OneLineShaper::matchResolvedFontsByUnicode(const TextStyle& textStyle, cons
             fUnresolvedBlocks.pop_front();
             break;
         }
+
         // See if we can switch to the next DIFFERENT codepoint
         SkUnichar unicode = -1;
         while (ch != unresolvedText.end()) {
