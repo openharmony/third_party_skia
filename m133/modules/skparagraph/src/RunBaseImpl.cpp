@@ -116,10 +116,10 @@ void RunBaseImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y)
     }
 }
 
-TextStyle RunBaseImpl::GetTextStyle() const
+const TextStyle* RunBaseImpl::GetTextStyle() const
 {
     if (fVisitorRun == nullptr) {
-        return TextStyle();
+        return nullptr;
     }
     return fVisitorRun->GetTextStyle();
 }

@@ -945,22 +945,22 @@ PlaceholderStyle* Run::placeholderStyle() const {
     }
 }
 
-TextStyle Run::GetTextStyle() const {
+const TextStyle* Run::GetTextStyle() const {
     if (fOwner == nullptr) {
-        return TextStyle();
+        return nullptr;
     }
     const auto& styles = fOwner->styles();
     if (styles.empty()) {
-        return fOwner->paragraphStyle().getTextStyle();
+        return &fOwner->paragraphStyle().getTextStyle();
     }
     // Find the style that matches this run's text range
     for (const auto& block : styles) {
         if (fTextRange.start >= block.fRange.start && fTextRange.start < block.fRange.end) {
-            return block.fStyle;
+            return &block.fStyle;
         }
     }
     // Fallback to default style
-    return fOwner->paragraphStyle().getTextStyle();
+    return &fOwner->paragraphStyle().getTextStyle();
 }
 
 bool Run::isResolved() const {
