@@ -171,7 +171,10 @@ struct ParagraphStyle {
                this->fOrphanCharOptimization == rhs.fOrphanCharOptimization &&
                nearlyEqual(this->fLineSpacing, rhs.fLineSpacing) &&
                nearlyEqual(this->fTextSplitRatio, rhs.fTextSplitRatio) &&
-               this->fUseLocaleForTextBreak == rhs.fUseLocaleForTextBreak;
+               this->fUseLocaleForTextBreak == rhs.fUseLocaleForTextBreak &&
+               nearlyEqual(this->fFirstLineIndent, rhs.fFirstLineIndent) &&
+               this->fTailIndents == rhs.fTailIndents &&
+               this->fHeadIndents == rhs.fHeadIndents;
 #else
         return this->fHeight == rhs.fHeight &&
                this->fEllipsis == rhs.fEllipsis &&
