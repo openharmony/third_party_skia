@@ -1573,6 +1573,10 @@ bool SkCanvas::isClipRect() const {
     return this->topDevice()->isClipRect();
 }
 
+bool SkCanvas::isOpaque() const {
+    return this->topDevice()->isOpaque();
+}
+
 bool SkCanvas::quickReject(const SkRect& src) const {
 #ifdef SK_DEBUG
     // Verify that fQuickRejectBounds are set properly.
