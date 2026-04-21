@@ -71,3 +71,9 @@ bool SkUnicode::hasControlFlag(SkUnicode::CodeUnitFlags flags) {
 bool SkUnicode::hasPartOfWhiteSpaceBreakFlag(SkUnicode::CodeUnitFlags flags) {
     return (flags & SkUnicode::kPartOfWhiteSpaceBreak) == SkUnicode::kPartOfWhiteSpaceBreak;
 }
+
+#ifdef ENABLE_TEXT_ENHANCE
+bool SkUnicode::hasPartOfPunctuationFlag(SkUnicode::CodeUnitFlags flags) {
+    return (flags & SkUnicode::kPunctuation) == SkUnicode::kPunctuation;
+}
+#endif

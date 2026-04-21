@@ -404,6 +404,10 @@ private:
     void handleWhitespaceBreak(Cluster* cluster, float& lastWordLength);
     void handlePlaceholder(Cluster* cluster, float& lastWordLength);
     void handleRegularCluster(Cluster* cluster, float& lastWordLength);
+    bool handleHighQualityBreakAllPunctuation(Cluster* cluster,
+                                              Cluster* endOfClusters,
+                                              SkScalar widthBeforeCluster,
+                                              SkScalar maxWidth);
     void adjustMetricsForEmptyParagraph();
     void addFinalLineBreakIfNeeded(const AddLineToParagraph& addLine);
     void adjustFirstLastLineMetrics();

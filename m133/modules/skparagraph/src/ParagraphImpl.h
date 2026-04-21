@@ -368,6 +368,9 @@ public:
     void resolveStrut();
 
     bool computeCodeUnitProperties();
+#ifdef ENABLE_TEXT_ENHANCE
+    void processCodeUnitsWithEnhancements();
+#endif
     void applySpacingAndBuildClusterTable();
     void buildClusterTable();
     bool shapeTextIntoEndlessLine();

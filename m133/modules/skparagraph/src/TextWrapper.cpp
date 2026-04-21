@@ -130,6 +130,42 @@ size_t TextWrapper::tryBreakWord(Cluster *startCluster, Cluster *endOfClusters,
     return endPos;
 }
 
+bool TextWrapper::handleHighQualityBreakAllPunctuation(Cluster* cluster,
+                                                       Cluster* endOfClusters,
+                                                       SkScalar widthBeforeCluster,
+                                                       SkScalar maxWidth) {
+    if (!fParent->getParagraphStyle().getUseLocaleForTextBreak() ||
+        fParent->getParagraphStyle().getStrutStyle().getWordBreakType() != WordBreakType::BREAK_ALL ||
+        fParent->getLineBreakStrategy() != LineBreakStrategy::HIGH_QUALITY ||
+        cluster->isPunctuation()) {
+        return false;
+    }
+
+    auto nextCluster = cluster + 1;
+    if (nextCluster >= endOfClusters ||
+        !nextCluster->isPunctuation() ||
+        cluster == fEndLine.endCluster() ||
+        cluster->isSoftBreak()) {
+        return false;
+    }
+
+    SkScalar punctWidth = 0;
+    auto scanCluster = nextCluster;
+    while (scanCluster < endOfClusters && scanCluster->isPunctuation()) {
+        if (scanCluster > nextCluster && (scanCluster - 1)->isSoftBreak()) {
+            break;
+        }
+        punctWidth += scanCluster->width();
+        scanCluster++;
+    }
+    SkScalar groupWidth = cluster->width() + punctWidth;
+    if (widthBeforeCluster + groupWidth > maxWidth && groupWidth <= maxWidth) {
+        fClusters.trim(cluster);
+        return true;
+    }
+    return false;
+}
+
 bool TextWrapper::lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBeforeCluster, SkScalar maxWidth)
 {
     auto startCluster = fClusters.startCluster();
@@ -357,6 +393,10 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 } else {
                     if (textTabAlign.processCluster(fWords, fClusters, cluster, totalFakeSpacing)) {
                         fClusters.trim(cluster);
+                        break;
+                    }
+
+                    if (handleHighQualityBreakAllPunctuation(cluster, endOfClusters, widthBeforeCluster, maxWidth)) {
                         break;
                     }
                 }
