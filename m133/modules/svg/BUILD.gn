@@ -60,12 +60,11 @@ if (skia_enable_svg && skia_use_expat) {
         sources = [ "utils/SvgTool.cpp" ]
 
         deps = [
+          ":svg",
           "../..:flags",
           "../..:skia",
           "../..:tool_utils",
         ]
-
-        public_deps = [ ":svg" ]
       }
     }
 
