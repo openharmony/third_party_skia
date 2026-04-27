@@ -155,7 +155,6 @@ public:
 #endif
     SkScalar baselineShift() const { return fBaselineShift; }
     PlaceholderStyle* placeholderStyle() const;
-    const TextStyle* GetTextStyle() const;
     bool isPlaceholder() const { return fPlaceholderIndex != std::numeric_limits<size_t>::max(); }
     size_t clusterIndex(size_t pos) const { return fClusterIndexes[pos]; }
 #ifdef ENABLE_TEXT_ENHANCE

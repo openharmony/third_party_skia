@@ -34,7 +34,8 @@ public:
         size_t visitorPos,
         size_t visitorGlobalPos,
         size_t trailSpaces,
-        size_t visitorSize
+        size_t visitorSize,
+        TextStyle textStyle
     );
 
     const RSFont& font() const override;
@@ -74,6 +75,7 @@ private:
     size_t     fVisitorGlobalPos = 0;
     size_t     fTrailSpaces = 0;
     size_t     fVisitorSize;
+    TextStyle fTextStyle;
 };
 }  // namespace textlayout
 }  // namespace skia
