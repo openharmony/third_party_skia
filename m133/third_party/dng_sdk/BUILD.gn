@@ -40,11 +40,7 @@ third_party("dng_sdk") {
   if (skia_feature_zlib != "") {
     external_deps += [ skia_feature_zlib ]
   } else {
-    if (skia_use_system_lib) {
-      external_deps += [ "zlib:libz" ]
-    } else {
-      deps += [ "${skia_third_party_dir}/zlib" ]
-    }
+    external_deps += [ "zlib:libz" ]
   }
 
   sources = [

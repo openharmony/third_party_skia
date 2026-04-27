@@ -56,7 +56,7 @@ if (skia_use_system_freetype2) {
     if (skia_use_freetype_zlib) {
       public_defines += [ "FT_CONFIG_OPTION_USE_ZLIB" ]
       if (!skia_use_freetype_zlib_bundled) {
-        deps += [ "${skia_third_party_dir}/zlib" ]
+        external_deps += [ "zlib:libz" ]
         public_defines += [ "FT_CONFIG_OPTION_SYSTEM_ZLIB" ]
       }
     }

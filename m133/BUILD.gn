@@ -1916,11 +1916,7 @@ optional("pdf") {
     if (skia_feature_zlib != "") {
       external_deps += [ skia_feature_zlib ]
     } else {
-      if (skia_use_system_lib) {
-        external_deps += [ "zlib:libz" ]
-      } else {
-        deps += [ "${skia_third_party_dir}/zlib" ]
-      }
+      external_deps += [ "zlib:libz" ]
     }
   }
   if (is_ohos) {
@@ -3380,15 +3376,14 @@ if (skia_enable_tools) {
     } else {
       external_deps = []
     }
+    external_deps += [ "zlib:libz" ]
     if (skia_use_system_lib) {
       external_deps += [
         "libpng:libpng",
-        "zlib:libz",
       ]
     } else {
       deps += [
         "${skia_third_party_dir}/libpng",
-        "${skia_third_party_dir}/zlib",
       ]
     }
     if (gm_test_enable_font) {

@@ -4,7 +4,7 @@
 _src = "../externals/icu/source"
 
 declare_args() {
-  skia_use_system_icu = is_official_build && !is_wasm
+  skia_use_system_icu = true
 }
 
 icu_sources = [
