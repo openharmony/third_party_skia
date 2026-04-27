@@ -2264,6 +2264,12 @@ public:
     */
     virtual bool isClipRect() const;
 
+    /** Returns true if the current layer that drawn into the device is opaque.
+
+        @return  true if the current layer that drawn into the device is opaque
+    */
+    virtual bool isOpaque() const;
+
     /** Returns the current transform from local coordinates to the 'device', which for most
      *  purposes means pixels.
      *
