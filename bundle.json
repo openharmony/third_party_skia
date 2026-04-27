@@ -44,6 +44,7 @@
                 "graphic_2d",
                 "libpng",
                 "freetype",
+                "vulkan-headers",
                 "faultloggerd"
             ],
             "third_party": [
