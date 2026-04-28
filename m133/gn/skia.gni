@@ -28,11 +28,11 @@ declare_args() {
   skia_enable_fontmgr_fuchsia = is_fuchsia
   skia_enable_fontmgr_win = is_win || is_mingw
   skia_enable_gpu_debug_layers = is_skia_dev_build && is_debug
-  skia_enable_optimize_size = false
+  skia_enable_optimize_size = is_arkui_x
   skia_enable_pdf = false
-  skia_enable_precompile = true
+  skia_enable_precompile = !is_arkui_x
   skia_enable_sksl = true
-  skia_enable_skottie = !is_component_build
+  skia_enable_skottie = !is_component_build && !is_arkui_x
   skia_enable_svg = !is_skia_component_build
   skia_enable_tools = is_skia_dev_build
   skia_disable_tracing = is_official_build
@@ -67,25 +67,25 @@ declare_args() {
   skia_use_jpeg_gainmaps = is_skia_dev_build
   skia_use_libavif = false
   skia_use_libgrapheme = false
-  skia_use_libheif = is_skia_dev_build
+  skia_use_libheif = is_skia_dev_build && !is_arkui_x
   skia_use_libjpeg_turbo_decode = true
-  skia_use_libjpeg_turbo_encode = true
-  skia_use_no_jpeg_encode = false
+  skia_use_libjpeg_turbo_encode = !is_arkui_x
+  skia_use_no_jpeg_encode = is_arkui_x
   skia_use_libjxl_decode = false
   skia_use_libpng_decode = true
   skia_use_libpng_encode = true
   skia_use_no_png_encode = false
   skia_use_libwebp_decode = true
-  skia_use_libwebp_encode = !is_wasm
-  skia_use_no_webp_encode = false
+  skia_use_libwebp_encode = !is_wasm && !is_arkui_x
+  skia_use_no_webp_encode = is_arkui_x
   skia_use_lua = is_skia_dev_build && !is_ios
   skia_use_metal = false
   skia_use_ndk_images = is_android && defined(ndk_api) && ndk_api >= 30
-  skia_use_perfetto = is_linux || is_mac || is_android
+  skia_use_perfetto = (is_linux || is_mac || is_android) && !is_arkui_x
 
   # Currently only supported in Android framework
   skia_android_framework_use_perfetto = false
-  skia_use_piex = !(is_win || is_mingw) && !is_wasm
+  skia_use_piex = !(is_win || is_mingw) && !is_wasm && !is_arkui_x
   skia_use_rust_png_decode = false
   skia_use_rust_png_encode = false
   skia_use_sfml = false
@@ -93,7 +93,7 @@ declare_args() {
   skia_use_webgpu = is_wasm
   skia_use_wuffs = true
   skia_use_x11 = is_linux
-  skia_use_xps = true
+  skia_use_xps = !is_arkui_x
 
   # Use the safe mode for libcxx
   # See: https://libcxx.llvm.org/UsingLibcxx.html#enabling-the-safe-libc-mode
@@ -191,7 +191,7 @@ declare_args() {
       skia_use_freetype && skia_use_fontconfig
   skia_enable_spirv_validation = is_skia_dev_build && is_debug && !skia_use_dawn
   skia_use_dng_sdk =
-      !is_fuchsia && !is_wasm && skia_use_libjpeg_turbo_decode && skia_use_zlib
+      !is_fuchsia && !is_wasm && !is_arkui_x && skia_use_libjpeg_turbo_decode && skia_use_zlib
   skia_enable_vulkan_debug_layers = skia_enable_gpu_debug_layers
   skia_enable_direct3d_debug_layer = skia_enable_gpu_debug_layers
   skia_enable_metal_debug_info = skia_enable_gpu_debug_layers
