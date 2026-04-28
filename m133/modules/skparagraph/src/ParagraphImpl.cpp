@@ -1634,6 +1634,17 @@ bool ParagraphImpl::isParagraphFirstLine(size_t lineIndex) const
                               lineIndex);
 }
 
+bool ParagraphImpl::hasLegalHeadIndents()
+{
+    for (float indent: fHeadIndents) {
+        if (SkScalarNearlyZero(indent)) {
+            continue;
+        }
+        return true;
+    }
+    return false;
+}
+
 SkScalar ParagraphImpl::detectIndents(size_t index)
 {
     // Priority 1: first line indent (highest priority)

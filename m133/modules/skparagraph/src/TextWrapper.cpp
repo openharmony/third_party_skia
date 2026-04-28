@@ -948,7 +948,11 @@ void TextWrapper::breakTextIntoLines(ParagraphImpl* parent,
     if (fParent->getLineBreakStrategy() == LineBreakStrategy::BALANCED &&
         fParent->getWordBreakType() != WordBreakType::BREAK_ALL &&
         fParent->getWordBreakType() != WordBreakType::BREAK_HYPHEN &&
-        (fParent->getParagraphStyle().getTextTab().location < 0)) {
+        fParent->getParagraphStyle().getTextTab().location < 0 &&
+        fParent->GetMaxLines() > 1 &&
+        fParent->fFirstLineIndent < 0 &&
+        !fParent->hasLegalHeadIndents() &&
+        fParent->fTailIndents.empty()) {
         layoutLinesBalanced(maxWidth, addLine);
         return;
     }
@@ -1474,7 +1478,9 @@ void TextWrapper::checkIsLastLine() {
 void TextWrapper::determineIfEllipsisNeeded() {
     checkIsLastLine();
     checkNeedEllipsisByLastLine();
-    checkNeedEllipsisByMultiLineEllipsis();
+    if (!checkNeedEllipsisByMultiLineEllipsis()) {
+        fNeedEllipsis &= (fEndLine.endCluster() < (fEnd - 1));
+    };
     checkHardLineBreakByEllipsis();
 }
 

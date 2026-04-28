@@ -231,6 +231,7 @@ public:
     skia_private::TArray<Block, true>& exportTextStyles() override { return fTextStyles; }
     skia_private::TArray<TextLine, false>& exportTextLines() { return fLines; }
     bool preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth);
+    bool hasLegalHeadIndents();
     void setIndents(const std::vector<SkScalar>& indents) override;
     SkScalar detectIndents(size_t index) override;
     SkScalar detectTailIndents(size_t index);
