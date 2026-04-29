@@ -2354,8 +2354,8 @@ void ParagraphImpl::setState(InternalState state) {
     }
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
 void ParagraphImpl::computeEmptyMetrics() {
-
     // The empty metrics is used to define the height of the empty lines
     // Unfortunately, Flutter has 2 different cases for that:
     // 1. An empty line inside the text
@@ -2368,24 +2368,26 @@ void ParagraphImpl::computeEmptyMetrics() {
         textStyle = fTextStyles.back().fStyle;
     }
 
-    auto typefaces = fontCollection()->findTypefaces(
-      textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
-    auto typeface = typefaces.empty() ? nullptr : typefaces.front();
+    // Priority 1: Use fontTypefaces if provided (takes precedence over font families)
+    std::shared_ptr<RSTypeface> typeface = nullptr;
+    const auto& fontTypefaces = textStyle.getFontTypefaces();
+    if (!fontTypefaces.empty()) {
+        typeface = fontTypefaces.front();
+    }
 
-#ifdef ENABLE_TEXT_ENHANCE
+    // Priority 2: Use font families (fallback)
+    if (typeface == nullptr) {
+        auto typefaces = fontCollection()->findTypefaces(
+            textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
+        typeface = typefaces.empty() ? nullptr : typefaces.front();
+    }
+
     RSFont font(typeface, textStyle.getFontSize(), 1, 0);
-#else
-    SkFont font(typeface, textStyle.getFontSize());
-#endif
     fEmptyMetrics = InternalLineMetrics(font, paragraphStyle().getStrutStyle().getForceStrutHeight());
 
     if (!paragraphStyle().getStrutStyle().getForceStrutHeight() &&
         textStyle.getHeightOverride()) {
-#ifdef ENABLE_TEXT_ENHANCE
         const auto intrinsicHeight = fEmptyMetrics.fDescent - fEmptyMetrics.fAscent + fEmptyMetrics.fLeading;
-#else
-        const auto intrinsicHeight = fEmptyMetrics.height();
-#endif
         const auto strutHeight = textStyle.getHeight() * textStyle.getFontSize();
         if (paragraphStyle().getStrutStyle().getHalfLeading()) {
             fEmptyMetrics.update(
@@ -2405,8 +2407,12 @@ void ParagraphImpl::computeEmptyMetrics() {
         // For an empty text we apply both TextHeightBehaviour flags
         // In case of non-empty paragraph TextHeightBehaviour flags will be applied at the appropriate place
         // We have to do it here because we skip wrapping for an empty text
-        auto disableFirstAscent = (paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent) == TextHeightBehavior::kDisableFirstAscent;
-        auto disableLastDescent = (paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent) == TextHeightBehavior::kDisableLastDescent;
+        auto disableFirstAscent =
+            (paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent) ==
+            TextHeightBehavior::kDisableFirstAscent;
+        auto disableLastDescent =
+            (paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent) ==
+            TextHeightBehavior::kDisableLastDescent;
         fEmptyMetrics.update(
             disableFirstAscent ? fEmptyMetrics.rawAscent() : fEmptyMetrics.ascent(),
             disableLastDescent ? fEmptyMetrics.rawDescent() : fEmptyMetrics.descent(),
@@ -2417,6 +2423,67 @@ void ParagraphImpl::computeEmptyMetrics() {
         fStrutMetrics.updateLineMetrics(fEmptyMetrics);
     }
 }
+#else
+void ParagraphImpl::computeEmptyMetrics() {
+
+    // The empty metrics is used to define the height of the empty lines
+    // Unfortunately, Flutter has 2 different cases for that:
+    // 1. An empty line inside the text
+    // 2. An empty paragraph
+    // In the first case SkParagraph takes the metrics from the default paragraph style
+    // In the second case it should take it from the current text style
+    bool emptyParagraph = fRuns.empty();
+    TextStyle textStyle = paragraphStyle().getTextStyle();
+    if (emptyParagraph && !fTextStyles.empty()) {
+        textStyle = fTextStyles.back().fStyle;
+    }
+
+    auto typefaces = fontCollection()->findTypefaces(
+        textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
+    auto typeface = typefaces.empty() ? nullptr : typefaces.front();
+
+    SkFont font(typeface, textStyle.getFontSize());
+    fEmptyMetrics = InternalLineMetrics(font, paragraphStyle().getStrutStyle().getForceStrutHeight());
+
+    if (!paragraphStyle().getStrutStyle().getForceStrutHeight() &&
+        textStyle.getHeightOverride()) {
+        const auto intrinsicHeight = fEmptyMetrics.height();
+        const auto strutHeight = textStyle.getHeight() * textStyle.getFontSize();
+        if (paragraphStyle().getStrutStyle().getHalfLeading()) {
+            fEmptyMetrics.update(
+                fEmptyMetrics.ascent(),
+                fEmptyMetrics.descent(),
+                fEmptyMetrics.leading() + strutHeight - intrinsicHeight);
+        } else {
+            const auto multiplier = strutHeight / intrinsicHeight;
+            fEmptyMetrics.update(
+                fEmptyMetrics.ascent() * multiplier,
+                fEmptyMetrics.descent() * multiplier,
+                fEmptyMetrics.leading() * multiplier);
+        }
+    }
+
+    if (emptyParagraph) {
+        // For an empty text we apply both TextHeightBehaviour flags
+        // In case of non-empty paragraph TextHeightBehaviour flags will be applied at the appropriate place
+        // We have to do it here because we skip wrapping for an empty text
+        auto disableFirstAscent =
+            (paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableFirstAscent) ==
+            TextHeightBehavior::kDisableFirstAscent;
+        auto disableLastDescent =
+            (paragraphStyle().getTextHeightBehavior() & TextHeightBehavior::kDisableLastDescent) ==
+            TextHeightBehavior::kDisableLastDescent;
+        fEmptyMetrics.update(
+            disableFirstAscent ? fEmptyMetrics.rawAscent() : fEmptyMetrics.ascent(),
+            disableLastDescent ? fEmptyMetrics.rawDescent() : fEmptyMetrics.descent(),
+            fEmptyMetrics.leading());
+    }
+
+    if (fParagraphStyle.getStrutStyle().getStrutEnabled()) {
+        fStrutMetrics.updateLineMetrics(fEmptyMetrics);
+    }
+}
+#endif
 
 SkString ParagraphImpl::getEllipsis() const {
 

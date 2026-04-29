@@ -353,6 +353,10 @@ public:
     RSTypeface* getTypeface() const { return fTypeface.get(); }
     std::shared_ptr<RSTypeface> refTypeface() const { return fTypeface; }
     void setTypeface(std::shared_ptr<RSTypeface> typeface) { fTypeface = std::move(typeface); }
+
+    // Font typefaces for priority shaping (takes precedence over font families)
+    const std::vector<std::shared_ptr<RSTypeface>>& getFontTypefaces() const { return fFontTypefaces; }
+    void setFontTypefaces(const std::vector<std::shared_ptr<RSTypeface>>& typefaces) { fFontTypefaces = typefaces; }
 #else
     SkTypeface* getTypeface() const { return fTypeface.get(); }
     sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
@@ -474,6 +478,7 @@ private:
     bool fIsCustomSymbol{false};
     bool fIsFakeBoldEnabled{true};
     std::shared_ptr<RSTypeface> fTypeface;
+    std::vector<std::shared_ptr<RSTypeface>> fFontTypefaces;
 #else
     sk_sp<SkTypeface> fTypeface;
 #endif

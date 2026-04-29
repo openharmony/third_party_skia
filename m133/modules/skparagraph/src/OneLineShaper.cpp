@@ -805,6 +805,21 @@ void OneLineShaper::processUnresolvedBlockWithFallback(
 
 void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
                                        const TypefaceVisitor& visitor) {
+    // Priority 1: Use fontTypefaces if provided (takes precedence over font families)
+    if (!textStyle.getFontTypefaces().empty()) {
+        const auto& fontTypefaces = textStyle.getFontTypefaces();
+        for (const auto& typeface : fontTypefaces) {
+            if (typeface == nullptr) {
+                continue;
+            }
+            if (visitor(typeface) == Resolved::Everything) {
+                // All text resolved with priority typefaces
+                return;
+            }
+        }
+    }
+
+    // Priority 2: Use font families (normal flow)
     std::vector<std::shared_ptr<RSTypeface>> typefaces = fParagraph->fFontCollection->findTypefaces(
         textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
     for (const auto& typeface : typefaces) {

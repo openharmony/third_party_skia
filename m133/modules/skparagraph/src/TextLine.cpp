@@ -1505,6 +1505,24 @@ void TextLine::createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool)
     }
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+template <typename RunT, typename ShapedCallback>
+static std::unique_ptr<RunT> tryShapeWithSpecifiedTypefaces(const TextStyle& textStyle, ShapedCallback shaped) {
+    if (textStyle.getFontTypefaces().empty()) {
+        return nullptr;
+    }
+
+    const auto& fontTypefaces = textStyle.getFontTypefaces();
+    for (const auto& typeface : fontTypefaces) {
+        auto run = shaped(typeface, false);
+        if (run->isResolved()) {
+            return run;
+        }
+    }
+    return nullptr;
+}
+#endif
+
 std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Cluster* cluster) {
 #ifdef ENABLE_TEXT_ENHANCE
     fEllipsisString = ellipsis;
@@ -1650,7 +1668,12 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
         return ellipsisRun;
     };
 #ifdef ENABLE_TEXT_ENHANCE
-    // Check all allowed fonts
+    // First, check if there are specified typefaces in TextStyle (priority shaping)
+    if (auto run = tryShapeWithSpecifiedTypefaces<Run>(textStyle, shaped)) {
+        return run;
+    }
+
+    // If specified typefaces failed or not set, check all allowed fonts
     auto typefaces = fOwner->fontCollection()->findTypefaces(
             textStyle.getFontFamilies(), textStyle.getFontStyle(), textStyle.getFontArguments());
     for (const auto& typeface : typefaces) {
