@@ -41,6 +41,37 @@ if (is_arkui_x) {
       "${skia_modules_dir}/skcms:skcms_TransformSkx",
     ]
   }
+  if (is_arkui_x) {
+    skia_effective_defines = skia_common_defines
+    if (!skia_use_gl) {
+      skia_effective_defines -= [ "SK_GL" ]
+    }
+    if (!skia_enable_svg) {
+      skia_effective_defines -= [ "SK_ENABLE_SVG" ]
+    }
+    if (!defined(skia_enable_skshaper) || !skia_enable_skshaper) {
+      skia_effective_defines -= [ "SKSHAPER_IMPLEMENTATION=1" ]
+    }
+    if (!skia_use_harfbuzz) {
+      skia_effective_defines -= [ "SK_SHAPER_HARFBUZZ_AVAILABLE" ]
+    }
+    if (!skia_enable_skunicode) {
+      skia_effective_defines -= [
+        "SK_UNICODE_AVAILABLE",
+        "SKUNICODE_IMPLEMENTATION=1",
+      ]
+    }
+    if (!skia_use_libjpeg_turbo_decode) {
+      skia_effective_defines -= [ "SK_CODEC_DECODES_JPEG" ]
+    }
+    if (!skia_use_libpng_decode) {
+      skia_effective_defines -= [ "SK_CODEC_DECODES_PNG" ]
+    }
+    if (!skia_use_libwebp_decode) {
+      skia_effective_defines -= [ "SK_CODEC_DECODES_WEBP" ]
+    }
+  }
+
   config("skia_config") {
     include_dirs = [
       "${skia_root_dir}",
@@ -48,7 +79,11 @@ if (is_arkui_x) {
       "${skia_root_dir}/src/core",
     ]
 
-    defines = skia_common_defines
+    if (is_arkui_x) {
+      defines = skia_effective_defines
+    } else {
+      defines = skia_common_defines
+    }
   }
 
   config("oboe_config") {
@@ -248,7 +283,11 @@ if (is_arkui_x) {
 
     libs = []
 
-    defines = skia_common_defines
+    if (is_arkui_x) {
+      defines = skia_effective_defines
+    } else {
+      defines = skia_common_defines
+    }
     cflags = skia_common_cflags
     inputs = skia_common_inputs
 
@@ -570,6 +609,51 @@ if (is_arkui_x) {
       "${skia_root_dir}:xml",
       "//third_party/skia:skcms",
     ]
+
+    if (is_arkui_x) {
+      deps -= [
+        "${skia_root_dir}:graphite",
+        "${skia_root_dir}:jpegxl_decode",
+        "${skia_root_dir}:raw",
+        "${skia_root_dir}:vello",
+      ]
+
+      deps -= [
+        "${skia_root_dir}:fontmgr_FontConfigInterface",
+        "${skia_root_dir}:fontmgr_custom_directory",
+        "${skia_root_dir}:fontmgr_custom_embedded",
+        "${skia_root_dir}:fontmgr_custom_empty",
+        "${skia_root_dir}:fontmgr_fontations_empty",
+        "${skia_root_dir}:fontmgr_fontconfig",
+        "${skia_root_dir}:fontmgr_fuchsia",
+      ]
+
+      deps -= [
+        "${skia_root_dir}:avif",
+        "${skia_root_dir}:crabbyavif",
+        "${skia_root_dir}:heif",
+      ]
+
+      deps -= [
+        "${skia_root_dir}:xps",
+      ]
+
+      deps -= [
+        "${skia_root_dir}:typeface_fontations",
+        "${skia_root_dir}:xml",
+        "${skia_root_dir}:minify_sksl",
+      ]
+
+      deps -= [
+        "${skia_root_dir}:jpeg_encode",
+        "${skia_root_dir}:webp_encode",
+      ]
+
+      deps -= [
+        "${skia_root_dir}:android_utils",
+        "${skia_root_dir}:ndk_images",
+      ]
+    }
     public = skia_core_public
     public += skia_codec_public
     public += skia_utils_public
@@ -604,10 +688,13 @@ if (is_arkui_x) {
 
     libs = []
 
-    defines = skia_common_defines
     if (is_arkui_x) {
+      defines = skia_effective_defines
       defines += [ "CROSS_PLATFORM" ]
+    } else {
+      defines = skia_common_defines
     }
+
     cflags = skia_common_cflags
     inputs = skia_common_inputs
 
