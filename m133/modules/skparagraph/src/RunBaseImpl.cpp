@@ -28,7 +28,8 @@ RunBaseImpl::RunBaseImpl(
     size_t visitorPos,
     size_t visitorGlobalPos,
     size_t trailSpaces,
-    size_t visitorSize)
+    size_t visitorSize,
+    TextStyle textStyle)
     : fBlob(blob),
     fOffset(offset),
     fClippingNeeded(clippingNeeded),
@@ -37,7 +38,8 @@ RunBaseImpl::RunBaseImpl(
     fVisitorPos(visitorPos),
     fVisitorGlobalPos(visitorGlobalPos),
     fTrailSpaces(trailSpaces),
-    fVisitorSize(visitorSize)
+    fVisitorSize(visitorSize),
+    fTextStyle(textStyle)
 {
     if (std::holds_alternative<SkPaint>(paint)) {
         fPaint = std::get<SkPaint>(paint);
@@ -114,6 +116,14 @@ void RunBaseImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y)
     if (fClippingNeeded) {
         painter->restore();
     }
+}
+
+const TextStyle* RunBaseImpl::GetTextStyle() const
+{
+    if (fVisitorRun == nullptr) {
+        return nullptr;
+    }
+    return &fTextStyle;
 }
 
 size_t RunBaseImpl::getVisitorPos() const

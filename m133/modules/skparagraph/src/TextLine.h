@@ -418,6 +418,7 @@ private:
         void paint(ParagraphPainter* painter);
         std::shared_ptr<RSTextBlob> fBlob;
         size_t fVisitor_Size;
+        TextStyle fTextStyle;
 #else
         sk_sp<SkTextBlob> fBlob;
 #endif

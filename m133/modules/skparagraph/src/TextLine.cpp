@@ -697,6 +697,7 @@ void TextLine::buildTextBlob(TextRange textRange,
     } else {
         std::get<SkPaint>(record.fPaint).setColor(style.getColor());
     }
+    record.fTextStyle = style;
     record.fVisitor_Run = context.run;
     record.fVisitor_Pos = context.pos;
     record.fVisitor_Size = context.size;
@@ -3651,7 +3652,7 @@ std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
         }
         std::unique_ptr<RunBaseImpl> runBaseImplPtr = std::make_unique<RunBaseImpl>(
             blob.fBlob, blob.fOffset, blob.fPaint, blob.fClippingNeeded, blob.fClipRect,
-            blob.fVisitor_Run, blob.fVisitor_Pos, pos, trailSpaces, blob.fVisitor_Size);
+            blob.fVisitor_Run, blob.fVisitor_Pos, pos, trailSpaces, blob.fVisitor_Size, blob.fTextStyle);
 
         // Calculate the position of each blob, relative to the entire paragraph
         pos += blob.fVisitor_Size;

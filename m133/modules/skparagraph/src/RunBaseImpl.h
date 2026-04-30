@@ -34,7 +34,8 @@ public:
         size_t visitorPos,
         size_t visitorGlobalPos,
         size_t trailSpaces,
-        size_t visitorSize
+        size_t visitorSize,
+        TextStyle textStyle
     );
 
     const RSFont& font() const override;
@@ -52,6 +53,7 @@ public:
     RSRect getImageBounds() const override;
     std::vector<RSPoint> getPositions(int64_t start, int64_t length) const override;
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) override;
+    const TextStyle* GetTextStyle() const override;
 
     size_t getVisitorPos() const;
     size_t getVisitorSize() const;
@@ -73,6 +75,7 @@ private:
     size_t     fVisitorGlobalPos = 0;
     size_t     fTrailSpaces = 0;
     size_t     fVisitorSize;
+    TextStyle fTextStyle;
 };
 }  // namespace textlayout
 }  // namespace skia
