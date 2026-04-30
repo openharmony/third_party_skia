@@ -16,6 +16,9 @@ declare_args() {
   paragraph_bench_enabled = false
 }
 
+if (is_arkui_x) {
+  skia_enable_skparagraph = false
+}
 config("skia_paragraph_config") {
   include_dirs = [
     "$skia_modules_root/skunicode",
