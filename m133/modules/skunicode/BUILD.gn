@@ -70,7 +70,9 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
         ]
       } else {
         deps = [ ":skunicode_core" ]
-        include_dirs = [ "${skia_root_dir}" ]
+        include_dirs = [
+          "${skia_root_dir}",
+        ]
       }
       configs += [
         ":module",
@@ -97,8 +99,14 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
         deps += [ "${skia_third_party_dir}/icu:headers" ]
       } else {
         sources += skia_unicode_builtin_icu_sources
-        if (skia_use_system_lib) {
-          external_deps = [ "icu:static_icu_for_skia" ]
+        if (skia_use_system_icu) {
+          external_deps = [
+            "icu:static_icu",
+            "icu:shared_icuuc",
+          ]
+          if (!is_mingw) {
+            external_deps += [ "icu:icundk" ]
+          }
         } else {
           deps += [ "${skia_third_party_dir}/icu" ]
         }
