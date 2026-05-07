@@ -8,13 +8,10 @@ import("../third_party.gni")
 import("icu.gni")
 
 if (skia_use_system_icu) {
-   source_set("icu") {
-     external_deps = [
-       "icu:static_icu",
-       "icu:icundk"
-     ]
-     defines = [ "U_USING_ICU_NAMESPACE=0" ]
-   }
+  system("icu") {
+    libs = [ "icuuc" ]
+    defines = [ "U_USING_ICU_NAMESPACE=0" ]
+  }
 } else {
   if (target_cpu == "wasm") {
     data_assembly = "$target_gen_dir/icudtl_dat.cpp"
