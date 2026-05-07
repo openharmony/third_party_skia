@@ -100,20 +100,18 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
       } else {
         sources += skia_unicode_builtin_icu_sources
         if (skia_use_system_icu) {
-          external_deps = [
-            "icu:static_icu",
-            "icu:shared_icuuc",
-          ]
-          if (!is_mingw) {
-            external_deps += [ "icu:icundk" ]
+          if (!is_arkui_x) {
+            external_deps = [
+              "icu:static_icuuc",
+            ]
+          } else {
+            deps += [ "//third_party/icu/icu4c:static_icuuc" ]
           }
         } else {
           deps += [ "${skia_third_party_dir}/icu" ]
         }
         if (is_arkui_x) {
           defines += [ "U_DISABLE_RENAMING=0" ]
-          deps -= [ "${skia_third_party_dir}/icu" ]
-          deps += [ "//third_party/icu/icu4c:static_icuuc" ]
           include_dirs += [
             "//third_party/icu/icu4c/source/common",
             "//third_party/icu/icu4c"
