@@ -3209,7 +3209,7 @@ std::vector<std::unique_ptr<TextLineBase>> ParagraphImpl::GetTextLines() {
     std::vector<std::unique_ptr<TextLineBase>> textLineBases;
     for (auto& line: fLines) {
         std::unique_ptr<TextLineBaseImpl> textLineBaseImplPtr =
-            std::make_unique<TextLineBaseImpl>(std::make_unique<TextLine>(std::move(line)));
+            std::make_unique<TextLineBaseImpl>(std::make_unique<TextLine>(line.CloneSelf()));
         textLineBases.emplace_back(std::move(textLineBaseImplPtr));
     }
 
