@@ -520,10 +520,15 @@ optional("fontmgr_android") {
     ":typeface_freetype",
     ":typeface_proxy",
   ]
+  external_deps = []
   if (skia_feature_upgrade) {
-    deps += ["${skia_third_party_dir}/expat:expatm133"]
+    if (is_arkui_x) {
+      deps += [ "//third_party/expat:expat_static" ]
+    } else {
+      external_deps += [ "expat:expat" ]
+    }
   } else {
-    deps += ["${skia_third_party_dir}/expat"]
+    deps += [ "${skia_third_party_dir}/expat" ]
   }
   public_defines = [ "SK_FONTMGR_ANDROID_AVAILABLE" ]
   public = skia_ports_fontmgr_android_public
@@ -573,23 +578,30 @@ optional("fontmgr_symbol_load") {
   deps = [
     ":typeface_freetype",
   ]
-  if (skia_feature_upgrade) {
-    deps += ["${skia_third_party_dir}/expat:expatm133"]
-  } else {
-    deps += ["${skia_third_party_dir}/expat"]
-  }
+  external_deps = []
+
   if (is_arkui_x) {
     deps += [
       "//third_party/bounds_checking_function:libsec_static",
       "//third_party/jsoncpp:jsoncpp_static",
     ]
   } else {
-    external_deps = [ "jsoncpp:jsoncpp" ]
+    external_deps += [ "jsoncpp:jsoncpp" ]
     if (is_component_build) {
       external_deps += [ "bounds_checking_function:libsec_shared" ]
     } else {
       external_deps += [ "bounds_checking_function:libsec_static" ]
     }
+  }
+
+  if (skia_feature_upgrade) {
+    if (is_arkui_x) {
+      deps += [ "//third_party/expat:expat_static" ]
+    } else {
+      external_deps += [ "expat:expat" ]
+    }
+  } else {
+    deps += ["${skia_third_party_dir}/expat"]
   }
 
   deps += [
@@ -886,6 +898,7 @@ optional("fontmgr_win") {
   ]
   public = skia_ports_windows_fonts_public
   sources = skia_ports_windows_fonts_sources
+  external_deps = []
   if (skia_dwritecore_sdk != "") {
     defines = [ "DWRITE_CORE" ]
     if (is_win && is_clang) {
@@ -915,11 +928,17 @@ optional("fontmgr_win") {
     deps = [
       ":fontmgr_symbol_load",
     ]
-    deps += ["${skia_third_party_dir}/expat:expatm133"]
+
     if (is_arkui_x) {
-      deps += [ "//third_party/jsoncpp:jsoncpp_static" ]
+      deps += [
+        "//third_party/jsoncpp:jsoncpp_static",
+        "//third_party/expat:expat_static"
+      ]
     } else {
-      external_deps = [ "jsoncpp:jsoncpp" ]
+      external_deps += [
+        "jsoncpp:jsoncpp",
+        "expat:expat"
+      ]
     }
   }
 }
@@ -988,16 +1007,22 @@ if (use_oh_skia && !is_arkui_x) {
       ":fontmgr_symbol_load",
       ":typeface_freetype",
     ]
-    if (skia_feature_upgrade) {
-      deps += ["${skia_third_party_dir}/expat:expatm133"]
-    } else {
-      deps += ["${skia_third_party_dir}/expat"]
-    }
+
     external_deps = [ "jsoncpp:jsoncpp" ]
     if (is_component_build) {
       external_deps += [ "bounds_checking_function:libsec_shared" ]
     } else {
       external_deps += [ "bounds_checking_function:libsec_static" ]
+    }
+
+    if (skia_feature_upgrade) {
+      if (is_arkui_x) {
+        deps += [ "//third_party/expat:expat_static" ]
+      } else {
+        external_deps += [ "expat:expat" ]
+      }
+    } else {
+      deps += ["${skia_third_party_dir}/expat"]
     }
 
     deps += [
@@ -2278,9 +2303,15 @@ optional("wuffs") {
 optional("xml") {
   enabled = skia_use_expat || skia_use_jpeg_gainmaps
   public_defines = [ "SK_XML" ]
+  external_deps = []
+  deps = []
 
   if (skia_feature_upgrade) {
-    deps = ["${skia_third_party_dir}/expat:expatm133"]
+    if (is_arkui_x) {
+      deps += [ "//third_party/expat:expat_static" ]
+    } else {
+      external_deps += [ "expat:expat" ]
+    }
   } else {
     deps = ["${skia_third_party_dir}/expat"]
   }
@@ -2365,6 +2396,8 @@ skia_component("skia") {
     "modules/skcms",
   ]
 
+  external_deps = []
+
   public = skia_core_public
   public += skia_codec_public
   public += skia_utils_public
@@ -2445,7 +2478,11 @@ skia_component("skia") {
 
   if (is_android) {
     if (skia_feature_upgrade) {
-      deps += ["${skia_third_party_dir}/expat:expatm133"]
+      if (is_arkui_x) {
+        deps += [ "//third_party/expat:expat_static" ]
+      } else {
+        external_deps += [ "expat:expat" ]
+      }
     } else {
       deps += ["${skia_third_party_dir}/expat"]
     }

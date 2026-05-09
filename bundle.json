@@ -72,9 +72,6 @@
                     "name": "//third_party/skia:skia_canvaskit_static"
                 },
                 {
-                    "name": "//third_party/skia/m133/third_party/expat:expatm133"
-                },
-                {
                     "name": "//third_party/skia/m133/third_party/dng_sdk:dng_sdk"
                 },
                 {
