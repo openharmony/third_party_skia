@@ -197,6 +197,10 @@ void ParagraphCacheKey::computeHashMix(uint32_t& hash) const {
     if (fParagraphStyle.getCompressHeadPunctuation()) {
         hash = mix(hash, SkGoodHash()(relax(fLayoutRawWidth)));
     }
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getPunctuationOverflow()));
+    if (fParagraphStyle.getPunctuationOverflow()) {
+        hash = mix(hash, SkGoodHash()(relax(fLayoutRawWidth)));
+    }
     hash = mix(hash, SkGoodHash()(relax(fLayoutConstraintsHeight)));
 }
 

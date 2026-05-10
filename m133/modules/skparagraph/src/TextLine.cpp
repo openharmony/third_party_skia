@@ -585,11 +585,37 @@ void TextLine::ensureTextBlobCachePopulated() {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
+// Check if RTL punctuation hanging should apply
+// Only returns true when all conditions are met:
+// 1. Punctuation overflow feature is enabled
+// 2. Paragraph text direction is RTL
+// 3. delta < 0 (content overflows maxWidth)
+// 4. Actual content width exceeds maxWidth
+bool TextLine::isRTLPunctuationHanging(SkScalar delta, SkScalar maxWidth) {
+    if (!fOwner->paragraphStyle().getPunctuationOverflow() ||
+        fOwner->paragraphStyle().getTextDirection() != TextDirection::kRtl ||
+        delta >= 0 || this->width() <= maxWidth) {
+        return false;
+    }
+    if (fGhostClusterRange.empty()) {
+        TEXT_LOGW("Ghost cluster range is empty");
+        return false;
+    }
+    return true;
+}
+
 void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal) {
     SkScalar delta = maxWidth - this->widthWithEllipsisSpaces();
     if (fOwner->paragraphStyle().getTrailingSpaceOptimized()) {
         delta = maxWidth - this->width();
     }
+
+    // RTL punctuation hanging: use original delta directly and return
+    if (isRTLPunctuationHanging(delta, maxWidth)) {
+        fShift = delta;
+        return;
+    }
+
     delta = (delta < 0) ? 0 : delta;
 #else
 void TextLine::format(TextAlign align, SkScalar maxWidth) {

@@ -215,6 +215,7 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
     SkScalar autoSpacing();
+    bool isRTLPunctuationHanging(SkScalar delta, SkScalar maxWidth);
 #else
 	void format(TextAlign align, SkScalar maxWidth);
 #endif

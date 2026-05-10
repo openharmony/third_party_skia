@@ -14,6 +14,7 @@
 #include "modules/skparagraph/include/Hyphenator.h"
 #include "modules/skparagraph/src/TextTabAlign.h"
 #include "TextParameter.h"
+#include "src/base/SkUTF.h"
 #endif
 
 namespace skia {
@@ -21,6 +22,97 @@ namespace textlayout {
 
 namespace {
 #ifdef ENABLE_TEXT_ENHANCE
+constexpr SkUnichar INVALID_UNICODE = 0;
+
+// Get the Unicode character corresponding to the Cluster
+SkUnichar getClusterUnicode(const Cluster* cluster)
+{
+    TextRange textRange = cluster->textRange();
+    if (textRange.width() == 0) {
+        TEXT_LOGW("TextRange width is 0");
+        return INVALID_UNICODE;
+    }
+
+    SkSpan<const char> text = cluster->owner()->text();
+    size_t start = textRange.start;
+    size_t end = std::min(textRange.end, static_cast<size_t>(text.size()));
+
+    const char* ptr = text.begin() + start;
+    const char* textEnd = text.begin() + end;
+    return SkUTF::NextUTF8(&ptr, textEnd);
+}
+
+// Check if the unicode character is in the hanging punctuation whitelist.
+// Reference: W3C CSS Text Module Level 3, Section 8.2.1 "stops and commas"
+// Only punctuation in the whitelist is allowed to hang at line end.
+bool isInHangingWhitelist(SkUnichar unicode)
+{
+    static const std::unordered_set<SkUnichar> HANGING_PUNCTUATION = {
+        // W3C CSS Text Level 3 "stops and commas" (allow-end/force-end)
+        0x002C,  // , COMMA
+        0x002E,  // . FULL STOP
+        0x060C,  // ، ARABIC COMMA
+        0x06D4,  // ۔ ARABIC FULL STOP
+        0x3001,  // 、 IDEOGRAPHIC COMMA
+        0x3002,  // 。 IDEOGRAPHIC FULL STOP
+        0xFF0C,  // ，FULLWIDTH COMMA
+        0xFF0E,  // ．FULLWIDTH FULL STOP
+        0xFE50,  // ﹐ SMALL COMMA
+        0xFE51,  // ﹑ SMALL IDEOGRAPHIC COMMA
+        0xFE52,  // ﹒ SMALL FULL STOP
+        0xFF61,  // ｡ HALFWIDTH IDEOGRAPHIC FULL STOP
+        0xFF64,  // ､ HALFWIDTH IDEOGRAPHIC COMMA
+
+        // W3C CSS Text Level 3 "quotation marks"（line-end）
+        0x0022,  // " QUOTATION MARK
+        0x0027,  // ' APOSTROPHE
+        0x00AB,  // « LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+        0x00BB,  // » RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+        0x2018,  // ' LEFT SINGLE QUOTATION MARK
+        0x2019,  // ' RIGHT SINGLE QUOTATION MARK
+        0x201B,  // ‛ SINGLE HIGH-REVERSED-9 QUOTATION MARK
+        0x201C,  // " LEFT DOUBLE QUOTATION MARK
+        0x201D,  // " RIGHT DOUBLE QUOTATION MARK
+        0x201F,  // ‟ DOUBLE HIGH-REVERSED-9 QUOTATION MARK
+        0x2039,  // ‹ SINGLE LEFT-POINTING ANGLE QUOTATION MARK
+        0x203A,  // › SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
+        0x276F,  // ❯ HEAVY RIGHT-POINTING ANGLE QUOTATION MARK ORNAMENT
+        0x2E1C,  // ⸜ LEFT LOW PARAPHRASE BRACKET
+        0x2E1D,  // ⸝ RIGHT LOW PARAPHRASE BRACKET
+        0x300D,  // 」 RIGHT CORNER BRACKET
+        0x300F,  // 』 RIGHT WHITE CORNER BRACKET
+        0x301E,  // 〞 REVERSED DOUBLE PRIME QUOTATION MARK
+        0x301F,  // 〟 LOW REVERSED DOUBLE PRIME QUOTATION MARK
+        0xFF63,  // ｣ HALFWIDTH RIGHT CORNER BRACKET
+
+        // Common Chinese punctuation at line end
+        0xFF01,  // ！ FULLWIDTH EXCLAMATION MARK
+        0xFF1F,  // ？ FULLWIDTH QUESTION MARK
+        0xFF1A,  // ： FULLWIDTH COLON
+        0xFF1B,  // ； FULLWIDTH SEMICOLON
+        0xFF09,  // ） FULLWIDTH RIGHT PARENTHESIS
+        0x3011,  // 】 RIGHT BLACK LENTICULAR BRACKET
+        0x300B,  // 》 RIGHT DOUBLE ANGLE BRACKET
+    };
+
+    return HANGING_PUNCTUATION.find(unicode) != HANGING_PUNCTUATION.end();
+}
+
+// Check if the punctuation cluster supports line-end hanging.
+// Uses a whitelist approach: only explicitly listed punctuation is allowed to hang.
+bool isHangingPunctuation(const Cluster* cluster)
+{
+    if (cluster == nullptr || !cluster->isPunctuation()) {
+        return false;
+    }
+
+    SkUnichar unicode = getClusterUnicode(cluster);
+    if (unicode == INVALID_UNICODE) {
+        return false;
+    }
+
+    return isInHangingWhitelist(unicode);
+}
 const size_t BREAK_NUM_TWO = 2;
 #endif
 struct LineBreakerWithLittleRounding {
@@ -154,6 +246,56 @@ bool TextWrapper::lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBefore
     return true;
 }
 
+// Called when a cluster would cause the line to exceed maxWidth.
+// If the overflowing cluster is a single hanging punctuation (not consecutive),
+// allow it to hang over the line boundary instead of breaking the line.
+// Returns true if the punctuation was allowed to hang.
+bool TextWrapper::handlePunctuationOverflow(Cluster* cluster, Cluster* endOfClusters,
+                                             SkScalar widthBeforeCluster, SkScalar maxWidth) {
+    if (!fParent->paragraphStyle().getPunctuationOverflow()) {
+        return false;
+    }
+
+    // The cluster causing overflow must itself be a hanging punctuation
+    if (!isHangingPunctuation(cluster)) {
+        return false;
+    }
+
+    // Punctuation hanging only makes sense when the punctuation is at the visual line end.
+    // For LTR paragraph, visual end is RIGHT → punctuation run should be LTR.
+    // For RTL paragraph, visual end is LEFT → punctuation run should be RTL.
+    // Mismatched directions would cause the punctuation to hang in the wrong direction.
+    bool isParaRTL = fParent->paragraphStyle().getTextDirection() == TextDirection::kRtl;
+    bool isRunRTL = !cluster->run().leftToRight();
+    if (isParaRTL != isRunRTL) {
+        return false;
+    }
+
+    // Only the punctuation itself should overflow, not preceding text.
+    // widthBeforeCluster must fit within maxWidth.
+    if (widthBeforeCluster > maxWidth) {
+        return false;
+    }
+
+    // Consecutive punctuations are not allowed to hang (per GB/T 15834-2011)
+    if (cluster > fEndLine.endCluster()) {
+        Cluster* prevCluster = cluster - 1;
+        if (isHangingPunctuation(prevCluster)) {
+            return false;
+        }
+    }
+    Cluster* nextCluster = cluster + 1;
+    if (nextCluster < endOfClusters && isHangingPunctuation(nextCluster)) {
+        return false;
+    }
+
+    // Single punctuation causing overflow - allow it to hang
+    fClusters.extend(cluster);
+    fWords.extend(fClusters);
+
+    return true;
+}
+
 // Since we allow cluster clipping when they don't fit
 // we have to work with stretches - parts of clusters
 void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack,
@@ -194,6 +336,12 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
                 SkScalar width = cluster->width() + widthBeforeCluster;
                 (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
                 breaker.breakLine(width)) {
+            // Check if the overflowing cluster is a single hanging punctuation
+            // that can be allowed to hang over the line boundary instead of breaking
+            if (handlePunctuationOverflow(cluster, endOfClusters, widthBeforeCluster, maxWidth)) {
+                continue;
+            }
+
             // if the hyphenator has already run as balancing algorithm, use the cluster information
             if (cluster->isHyphenBreak() && !fNeedEllipsis) {
                 // we dont want to add the current cluster as the hyphenation algorithm marks breaks before a cluster

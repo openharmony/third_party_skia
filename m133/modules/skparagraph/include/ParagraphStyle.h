@@ -165,6 +165,7 @@ struct ParagraphStyle {
                this->fIsTrailingSpaceOptimized == rhs.fIsTrailingSpaceOptimized &&
                this->fEnableAutoSpace == rhs.fEnableAutoSpace &&
                this->fCompressHeadPunctuation == rhs.fCompressHeadPunctuation &&
+               this->fPunctuationOverflow == rhs.fPunctuationOverflow &&
                this->fVerticalAlignment == rhs.fVerticalAlignment &&
                this->fIncludeFontPadding == rhs.fIncludeFontPadding &&
                this->fFallbackLineSpacing == rhs.fFallbackLineSpacing &&
@@ -263,6 +264,11 @@ struct ParagraphStyle {
     {
         fCompressHeadPunctuation = compressHeadPunctuation;
     }
+    bool getPunctuationOverflow() const { return fPunctuationOverflow; }
+    void setPunctuationOverflow(bool punctuationOverflow)
+    {
+        fPunctuationOverflow = punctuationOverflow;
+    }
     SkScalar getLineSpacing() const { return fLineSpacing; }
     void setLineSpacing(SkScalar lineSpacing) { fLineSpacing = lineSpacing; }
     bool getIncludeFontPadding() const { return fIncludeFontPadding; }
@@ -306,6 +312,7 @@ private:
     bool fIsTrailingSpaceOptimized{false};
     bool fEnableAutoSpace{false};
     bool fCompressHeadPunctuation{false};
+    bool fPunctuationOverflow{false};
     TextVerticalAlign fVerticalAlignment{TextVerticalAlign::BASELINE};
     SkScalar fLineSpacing{0.0f};
     SkScalar fFirstLineIndent{-1.0f};
