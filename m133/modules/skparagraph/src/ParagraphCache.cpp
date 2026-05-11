@@ -82,6 +82,8 @@ private:
     static uint32_t mix(uint32_t hash, uint32_t data);
     uint32_t computeHash() const;
 #ifdef ENABLE_TEXT_ENHANCE
+    void computeHashPlaceholders(uint32_t& hash) const;
+    void computeHashTextStyles(uint32_t& hash) const;
     void computeHashMix(uint32_t& hash) const;
 #endif
     SkString fText;
@@ -207,6 +209,15 @@ void ParagraphCacheKey::computeHashMix(uint32_t& hash) const {
 uint32_t ParagraphCacheKey::computeHash() const {
     uint32_t hash = 0;
     hash = mix(hash, SkGoodHash()(TextGlobalConfig::UndefinedGlyphDisplayUseTofu()));
+    computeHashPlaceholders(hash);
+    computeHashTextStyles(hash);
+    computeHashMix(hash);
+    hash = mix(hash, SkGoodHash()(fText));
+    return hash;
+}
+
+void ParagraphCacheKey::computeHashPlaceholders(uint32_t& hash) const
+{
     for (auto& ph : fPlaceholders) {
         if (ph.fRange.width() == 0) {
             continue;
@@ -220,7 +231,10 @@ uint32_t ParagraphCacheKey::computeHash() const {
             hash = mix(hash, SkGoodHash()(relax(ph.fStyle.fBaselineOffset)));
         }
     }
+}
 
+void ParagraphCacheKey::computeHashTextStyles(uint32_t& hash) const
+{
     for (auto& ts : fTextStyles) {
         if (ts.fStyle.isPlaceholder()) {
             continue;
@@ -234,6 +248,10 @@ uint32_t ParagraphCacheKey::computeHash() const {
 
         for (auto& ff : ts.fStyle.getFontFamilies()) {
             hash = mix(hash, SkGoodHash()(ff));
+        }
+        // Hash fontTypefaces for priority font shaping
+        for (const auto& typeface : ts.fStyle.getFontTypefaces()) {
+            hash = mix(hash, std::hash<std::shared_ptr<RSTypeface>>()(typeface));
         }
         for (auto& ff : ts.fStyle.getFontFeatures()) {
             hash = mix(hash, SkGoodHash()(ff.fValue));
@@ -251,11 +269,6 @@ uint32_t ParagraphCacheKey::computeHash() const {
         hash = mix(hash, SkGoodHash()(ts.fStyle.getFontEdging()));
         hash = mix(hash, SkGoodHash()(ts.fStyle.isFakeBoldEnabled()));
     }
-
-    computeHashMix(hash);
-
-    hash = mix(hash, SkGoodHash()(fText));
-    return hash;
 }
 #else
 uint32_t ParagraphCacheKey::computeHash() const {

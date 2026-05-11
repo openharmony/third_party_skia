@@ -53,6 +53,7 @@ TextStyle TextStyle::cloneForPlaceholder() {
     result.fStyleId = fStyleId;
     result.fTextStyleUid = fTextStyleUid;
     result.fFontEdging = fFontEdging;
+    result.fFontTypefaces = fFontTypefaces;
 #endif
     return result;
 }
@@ -100,7 +101,8 @@ bool TextStyle::equalsByShape(const TextStyle& other) const {
            fLineHeightStyle == other.fLineHeightStyle &&
            fBadgeType == other.fBadgeType &&
            fFontEdging == other.fFontEdging &&
-           fIsFakeBoldEnabled == other.fIsFakeBoldEnabled;
+           fIsFakeBoldEnabled == other.fIsFakeBoldEnabled &&
+           fFontTypefaces == other.fFontTypefaces;
 }
 
 bool TextStyle::equals(const TextStyle& other) const {
