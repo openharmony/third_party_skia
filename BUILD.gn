@@ -403,7 +403,7 @@ if (is_arkui_x) {
 
     if (is_android) {
       if (skia_feature_upgrade) {
-        deps += [ "${skia_third_party_dir}/expat:expatm133" ]
+        deps += [ "//third_party/expat:expat_static" ]
       } else {
         deps += [ "${skia_third_party_dir}/expat" ]
       }
@@ -737,7 +737,7 @@ if (is_arkui_x) {
 
     if (is_android) {
       if (skia_feature_upgrade) {
-        deps += [ "${skia_third_party_dir}/expat:expatm133" ]
+        deps += [ "//third_party/expat:expat_static" ]
       } else {
         deps += [ "${skia_third_party_dir}/expat" ]
       }
