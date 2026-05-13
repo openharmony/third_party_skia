@@ -28,6 +28,9 @@ size_t hash<skia::textlayout::FontArguments>::operator()(const skia::textlayout:
     size_t seed = 0;
     hash_combine(seed, args.fCollectionIndex);
     auto sortedCoords = args.fCoordinates;
+    for (uint32_t i : args.fNormalizationListIndex) {
+        hash_combine(seed, i);
+    }
     std::sort(sortedCoords.begin(), sortedCoords.end(),
               [](const auto& a, const auto& b) { return a.axis < b.axis; });
     for (const auto& coord : sortedCoords) {
