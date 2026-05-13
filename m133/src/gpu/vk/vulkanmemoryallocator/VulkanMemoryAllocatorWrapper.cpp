@@ -15,8 +15,6 @@
 #define VMA_NULLABLE
 #define VMA_NOT_NULL
 
-#define VMA_IMPLEMENTATION
-
 // On windows, vk_mem_alloc.h uses Windows SRWLock, which is normally included by vulkan.h, and so
 // the relevant symbols/defines need to be included here.
 #ifdef _WIN32

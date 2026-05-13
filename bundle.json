@@ -48,7 +48,8 @@
                 "harfbuzz"
             ],
             "third_party": [
-                "vulkan-headers"
+                "vulkan-headers",
+                "vma"
             ]
         },
         "build": {
