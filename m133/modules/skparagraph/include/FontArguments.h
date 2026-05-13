@@ -24,6 +24,9 @@ public:
 
 #ifdef ENABLE_TEXT_ENHANCE
     std::shared_ptr<RSTypeface> CloneTypeface(std::shared_ptr<RSTypeface> typeface) const;
+    const std::vector<SkFontArguments::VariationPosition::Coordinate>& getCoordinates() const {
+        return fCoordinates;
+    }
 #else
     sk_sp<SkTypeface> CloneTypeface(const sk_sp<SkTypeface>& typeface) const;
 #endif
