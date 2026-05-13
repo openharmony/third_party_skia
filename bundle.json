@@ -41,6 +41,7 @@
                 "opengles",
                 "faultloggerd",
                 "icu",
+                "expat",
                 "graphic_2d",
                 "libpng",
                 "freetype",
