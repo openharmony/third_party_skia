@@ -27,6 +27,9 @@ public:
     const std::vector<SkFontArguments::VariationPosition::Coordinate>& getCoordinates() const {
         return fCoordinates;
     }
+    const std::vector<uint32_t>& getNormalizationListIndex() const {
+        return fNormalizationListIndex;
+    }
 #else
     sk_sp<SkTypeface> CloneTypeface(const sk_sp<SkTypeface>& typeface) const;
 #endif
