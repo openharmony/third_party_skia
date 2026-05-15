@@ -61,7 +61,11 @@ declare_args() {
   skia_use_fonthost_mac = is_mac || is_ios
   skia_use_freetype = is_android || is_fuchsia || is_linux || is_wasm
   skia_use_harfbuzz = true
-  skia_use_gl = !is_fuchsia
+  if (is_linux && (sdk_platform == "arm64" || ndk_platform == "arm64")) {
+    skia_use_gl = false
+  } else {
+    skia_use_gl = !is_fuchsia
+  }
   skia_use_icu = !is_fuchsia
   skia_use_icu4x = false
   skia_use_jpeg_gainmaps = is_skia_dev_build
