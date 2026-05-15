@@ -648,7 +648,7 @@ optional("fontmgr_custom_directory_factory") {
   enabled = skia_enable_fontmgr_custom_directory
   deps = [ ":fontmgr_custom_directory" ]
   sources = [ "src/ports/SkFontMgr_custom_directory_factory.cpp" ]
-  if (use_linux) {
+  if (use_linux_x64_arm64) {
     defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
   }
   if (is_arkui_x) {
@@ -1048,7 +1048,7 @@ if (use_oh_skia && !is_arkui_x) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_WIN" ]
     } else if (use_mac) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_MAC" ]
-    } else if (use_linux) {
+    } else if (use_linux_x64_arm64) {
       defines = [ "SK_BUILD_FONT_MGR_FOR_PREVIEW_LINUX" ]
     } else if (is_ohos) {
       external_deps += [ "init:libbegetutil" ]
