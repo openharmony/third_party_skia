@@ -166,6 +166,7 @@ public:
         fOffset.set(x, fOffset.y());
     }
     void shiftOffsetY(SkScalar offsetY) { fOffset.fY += offsetY; }
+    size_t getLineIndex() const { return fLineIndex; }
 #endif
 
     SkScalar alphabeticBaseline() const { return fSizes.alphabeticBaseline(); }
@@ -215,6 +216,7 @@ public:
 #ifdef ENABLE_TEXT_ENHANCE
     void format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsisModal);
     SkScalar autoSpacing();
+    void resetLineAutoSpacing(size_t resetStart);
     bool isRTLPunctuationHanging(SkScalar delta, SkScalar maxWidth);
 #else
 	void format(TextAlign align, SkScalar maxWidth);
@@ -326,8 +328,8 @@ public:
     void setBreakWithHyphen(bool breakWithHyphen);
     bool getBreakWithHyphen() const;
     void updateTextLinePaintAttributes();
-    void trimLine(size_t trimStart);
-    void reflowFromPreviousLine(size_t wordBoundaryStart);
+    void trimLine(size_t trimStart, SkScalar decreaseWidth);
+    SkScalar reflowFromPreviousLine(size_t wordBoundaryStart);
     bool startWithIdeographic() const;
     bool endWithIdeographic() const;
 #endif
@@ -407,6 +409,7 @@ private:
     bool fIsArcText;
     bool fArcTextState;
     bool fLastClipRunLtr;
+    size_t fLineIndex{EMPTY_INDEX};
 #endif
 
     LineMetricStyle fAscentStyle;

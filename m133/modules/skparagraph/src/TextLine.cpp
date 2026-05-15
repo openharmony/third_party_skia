@@ -248,6 +248,7 @@ TextLine::TextLine(ParagraphImpl* owner,
     fEllipsisIndex = EMPTY_INDEX;
     fHyphenIndex = EMPTY_INDEX;
     fLastClipRunLtr = false;
+    fLineIndex = fOwner->lines().size();
 #else
     for (auto cluster = &start; cluster <= &end; ++cluster) {
         if (!cluster->run().isPlaceholder()) {
@@ -668,6 +669,23 @@ SkScalar TextLine::autoSpacing() {
     this->fWidthWithSpaces += spacing;
     this->fAdvance.fX += spacing;
     return spacing;
+}
+
+void TextLine::resetLineAutoSpacing(size_t resetStart) {
+    for (auto clusterIndex = resetStart; clusterIndex < fGhostClusterRange.end; ++clusterIndex) {
+        auto& cluster = fOwner->cluster(clusterIndex);
+        auto& run = cluster.run();
+        auto start = cluster.startPos();
+        auto end = cluster.endPos();
+        if (end == run.size()) {
+            ++end;
+        }
+        for (size_t pos = start; pos < end; ++pos) {
+            if (pos < static_cast<size_t>(run.fAutoSpacings.size())) {
+                run.fAutoSpacings[pos] = {0, 0};
+            }
+        }
+    }
 }
 #endif
 
@@ -3802,23 +3820,20 @@ void TextLine::updateTextLinePaintAttributes() {
     }
 }
 
-void TextLine::trimLine(size_t trimStart) {
+void TextLine::trimLine(size_t trimStart, SkScalar decreaseWidth) {
     if (trimStart > fGhostClusterRange.end || trimStart <= fGhostClusterRange.start) {
         return;
     }
 
-    for (size_t start = trimStart; start < fGhostClusterRange.end; ++start) {
-        fAdvance.fX -= fOwner->cluster(start).width();
-        fWidthWithSpaces -= fOwner->cluster(start).width();
-    }
-
+    resetLineAutoSpacing(trimStart);
+    fAdvance.fX -= decreaseWidth;
+    fWidthWithSpaces -= decreaseWidth;
     fGhostClusterRange.end = trimStart;
     fClusterRange.end = trimStart;
     size_t lineEnd = fOwner->cluster(trimStart).textRange().start;
     fText.end = lineEnd;
     fTextExcludingSpaces.end = lineEnd;
     fTextIncludingNewlines.end = lineEnd;
-
     refresh();
     refreshLineMetrics();
 }
@@ -3839,16 +3854,18 @@ void TextLine::refreshLineMetrics() {
     fAdvance.fY = fSizes.height();
 }
 
-void TextLine::reflowFromPreviousLine(size_t wordBoundaryStart) {
+SkScalar TextLine::reflowFromPreviousLine(size_t wordBoundaryStart) {
     if (wordBoundaryStart >= fGhostClusterRange.start) {
-        return;
+        return 0.0f;
     }
 
+    SkScalar increaWidth = 0.0f;
     for (size_t start = wordBoundaryStart; start < fGhostClusterRange.start; ++start) {
-        fAdvance.fX += fOwner->cluster(start).width();
-        fWidthWithSpaces += fOwner->cluster(start).width();
+        increaWidth += fOwner->cluster(start).width();
     }
 
+    fAdvance.fX += increaWidth;
+    fWidthWithSpaces += increaWidth;
     fGhostClusterRange.start = wordBoundaryStart;
     fClusterRange.start = wordBoundaryStart;
     size_t lineStart = fOwner->cluster(fGhostClusterRange.start).textRange().start;
@@ -3864,6 +3881,7 @@ void TextLine::reflowFromPreviousLine(size_t wordBoundaryStart) {
 
     refresh();
     refreshLineMetrics();
+    return increaWidth;
 }
 
 bool TextLine::startWithIdeographic() const {
