@@ -18,7 +18,9 @@
 
 #include "src/gpu/ganesh/vk/GrVkImage.h"
 
+#ifndef SK_BUILD_FOR_IOS
 #include <vulkan/vulkan_core.h>
+#endif
 #include <sstream>
 
 namespace ParallelDebug {
