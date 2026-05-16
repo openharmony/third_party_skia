@@ -9,7 +9,7 @@
 #define SkiaVulkan_DEFINED
 
 #include "include/core/SkTypes.h"
-#ifndef SK_BUILD_FOR_ANDROID
+#if !defined(SK_BUILD_FOR_ANDROID) && !defined(SK_BUILD_FOR_IOS)
 #include "vulkan/vulkan_core.h"
 #else
 #include "include/third_party/vulkan/vulkan/vulkan_core.h"
