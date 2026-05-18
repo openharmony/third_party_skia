@@ -1,6 +1,6 @@
 import("../third_party.gni")
 
 third_party("vulkan_memoryallocator") {
-    public_include_dirs = [ "../externals/vulkanmemoryallocator/include" ]
-    sources = [ "../externals/vulkanmemoryallocator/include/vk_mem_alloc.h" ]
+    public_include_dirs = [ "//third_party/vma/include" ]
+    sources = [ "//third_party/vma/include/vk_mem_alloc.h" ]
 }

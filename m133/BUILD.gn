@@ -1542,6 +1542,11 @@ optional("gpu_shared") {
       deps += [
         "src/gpu/vk/vulkanmemoryallocator"
       ]
+      if (!is_arkui_x) {
+        external_deps += [ "vma:vma" ]
+      } else {
+        deps += [ "//third_party/vma:vma_static" ]
+      }
     }
     if (skia_vk_enable_partialrender) {
       public_defines += [ "SK_VK_PARTIALRENDER" ]
@@ -2676,6 +2681,10 @@ config("use_skia_vulkan_headers") {
   defines = [ "SK_USE_INTERNAL_VULKAN_HEADERS" ]
 }
 
+config("vulkan_memory_allocator") {
+  include_dirs = [ "${skia_third_party_dir}/vulkanmemoryallocator" ]
+}
+
 # Targets guarded by skia_enable_tools may use ${skia_third_party_dir} freely.
 if (skia_enable_tools) {
   skia_public_includes = [
@@ -2988,7 +2997,11 @@ if (skia_enable_tools) {
       sources += [ "tools/gpu/vk/VkTestUtils.cpp" ]
       sources += [ "tools/gpu/vk/VkYcbcrSamplerHelper.h" ]
       sources += [ "tools/gpu/vk/VkYcbcrSamplerHelper.cpp" ]
-      external_deps += [ "vma:vma" ]
+      if (!is_arkui_x) {
+        external_deps += [ "vma:vma" ]
+      } else {
+        deps += [ "//third_party/vma:vma_static" ]
+      }
     }
     if (skia_use_metal) {
       sources += [ "tools/gpu/mtl/MtlTestContext.mm" ]
@@ -4183,6 +4196,7 @@ if (skia_enable_tools) {
       # include/third_party/vulkan on our path so they're always available.
       configs = [
         ":use_skia_vulkan_headers",
+        ":vulkan_memory_allocator",
       ]
       external_deps = [ "vulkan-headers:vulkan_headers" ]
       sources = [ "example/VulkanBasic.cpp" ]
@@ -4194,7 +4208,11 @@ if (skia_enable_tools) {
         ":load_dynamic_library",
         ":skia",
       ]
-      external_deps += [ "vma:vma" ]
+      if (!is_arkui_x) {
+        external_deps += [ "vma:vma" ]
+      } else {
+        deps += [ "//third_party/vma:vma_static" ]
+      }
     }
   }
 

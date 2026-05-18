@@ -6,16 +6,21 @@
 import("../../../../gn/skia.gni")
 
 config("vulkanmemoryallocator_public") {
-  include_dirs = [ "." ]
+  include_dirs = [
+    ".",
+    "//third_party/vma/include",
+  ]
 }
 
 source_set("vulkanmemoryallocator") {
   public_configs = [ ":vulkanmemoryallocator_public" ]
 
   include_dirs = [ "${skia_root_dir}" ]
-  external_deps = [ "vma:vma" ]
   if (!is_arkui_x) {
-    external_deps += [ "vulkan-headers:vulkan_headers" ]
+    external_deps = [
+      "vma:vma",
+      "vulkan-headers:vulkan_headers"
+    ]
   }
   defines = [ "SK_USE_INTERNAL_VULKAN_HEADERS" ]
 
@@ -24,6 +29,7 @@ source_set("vulkanmemoryallocator") {
   }
   if (is_arkui_x) {
     defines += [ "CROSS_PLATFORM" ]
+    deps = [ "//third_party/vma:vma_static" ]
   }
   sources = [
     "VulkanMemoryAllocatorWrapper.cpp",
