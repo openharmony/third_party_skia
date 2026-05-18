@@ -3741,6 +3741,24 @@ std::string ParagraphImpl::GetDumpInfo() const
     return paragraphInfo.str();
 }
 
+bool TypefaceHasWghtAxis(const RSFont& font)
+{
+    auto typeface = font.GetTypeface();
+    if (typeface == nullptr) {
+        return false;
+    }
+    int axisCount = typeface->GetVariationDesignPosition(nullptr, 0);
+    if (axisCount <= 0) {
+        return false;
+    }
+    std::vector<RSFontArguments::VariationPosition::Coordinate> coords(axisCount);
+    typeface->GetVariationDesignPosition(coords.data(), axisCount);
+    SkFourByteTag wghtTag = SkSetFourByteTag('w', 'g', 'h', 't');
+    return std::any_of(coords.begin(), coords.end(), [wghtTag](const auto& coord) {
+        return coord.axis == wghtTag;
+    });
+}
+
 /**
  * Add path information for a specific run and glyph range.
  * @param run The run to add path information for.
@@ -3757,19 +3775,17 @@ bool addPathInfo(const Run* run, const ClusterRange& range, const SkPoint& offse
     const SkSpan<const SkPoint>& offsets = run->offsets();
     const SkSpan<const SkPoint>& positions = run->positions();
     const RSFont& font = run->font();
+    RSFont pathFont = font;
+    pathFont.SetEmbolden(TypefaceHasWghtAxis(font) ? false : font.IsEmbolden());
     for (size_t i = 0; i < glyphs.size(); i++) {
         size_t glyphIndex = EMPTY_INDEX;
-        if (run->leftToRight()) {
-            glyphIndex = run->clusterRange().start + i;
-        } else {
-            glyphIndex = run->clusterRange().end - 1 - i;
-        }
+        glyphIndex = run->leftToRight() ? (run->clusterRange().start + i) : (run->clusterRange().end - 1 - i);
         if (glyphIndex < range.start || glyphIndex >= range.end) {
             continue;
         }
 
         RSPath path;
-        if (font.GetPathForGlyph(glyphs[i], &path)) {
+        if (pathFont.GetPathForGlyph(glyphs[i], &path)) {
             pathInfo.push_back({path, textStyle.getColor(), {offset.fX + offsets[i].fX + positions[i].fX, offset.fY}});
         } else {
             TEXT_LOGE("Failed to get path for glyph [%{public}d]", glyphs[i]);
