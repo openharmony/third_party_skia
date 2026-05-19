@@ -639,11 +639,23 @@ SkRange<size_t> ParagraphImpl::getWordBoundaryClusterRange(unsigned offset) {
     return {clusterIndex(getUTF8Index(wordUtf16Range.start)), clusterIndex(getUTF8Index(wordUtf16Range.end))};
 }
 
+void ParagraphImpl::refreshLongestLine() {
+    fLongestLine = 0;
+    fLongestLineWithIndent = 0;
+    for (const auto& line: fLines) {
+        auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces());
+        fLongestLine = std::max(fLongestLine, longestLine);
+        fLongestLineWithIndent = std::max(fLongestLineWithIndent, longestLine + detectIndents(line.getLineIndex()) +
+            detectTailIndents(line.getLineIndex()));
+    }
+}
+
 void ParagraphImpl::fixOrphanedWords() {
     if (fLines.size() <= 1) {
         return;
     }
 
+    bool modified = false;
     for (int lineIndex = 1; lineIndex < fLines.size(); ++lineIndex) {
         if (!needsOrphanFixForLine(lineIndex)) {
             continue;
@@ -654,12 +666,20 @@ void ParagraphImpl::fixOrphanedWords() {
             continue;
         }
 
-        fLines[lineIndex].reflowFromPreviousLine(firstWordStartOfLine);
+        SkScalar adjustClusterWidth = fLines[lineIndex].reflowFromPreviousLine(firstWordStartOfLine);
         SkScalar preOriLineHeight = fLines[lineIndex - 1].sizes().height();
-        fLines[lineIndex - 1].trimLine(firstWordStartOfLine);
+        fLines[lineIndex - 1].trimLine(firstWordStartOfLine, adjustClusterWidth);
         SkScalar preAfterLineHeight = fLines[lineIndex - 1].sizes().height();
         fLines[lineIndex].shiftOffsetY(preAfterLineHeight - preOriLineHeight);
+
+        modified = true;
     }
+
+    if (!modified) {
+        return;
+    }
+
+    refreshLongestLine();
 }
 
 void ParagraphImpl::includeFontPadding(

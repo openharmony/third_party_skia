@@ -540,6 +540,7 @@ private:
 
     float getClusterRangeWidth(ClusterRange clusterRange);
 
+    void refreshLongestLine();
 #endif
 
     // Input
