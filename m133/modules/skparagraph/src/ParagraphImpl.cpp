@@ -516,8 +516,7 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
                 fixOrphanedWords();
         }
 
-        if (paragraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE &&
-            paragraphStyle().getMaxLines() > 1) {
+        if (paragraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE && fLines.size() > 1) {
             // Collect split info for crossing line's run
             std::deque<SplitPoint> splitPoints;
             generateSplitPointsByLines(splitPoints);
@@ -746,13 +745,6 @@ void ParagraphImpl::generateSplitPointsByLines(std::deque<SplitPoint>& splitPoin
             continue;
         }
 
-        if (line.ellipsis() != nullptr) {
-            ClusterRange ellipsisClusterRange;
-            ellipsisClusterRange.start = clusterIndex(line.getTextRangeReplacedByEllipsis().start);
-            ellipsisClusterRange.end = clusterIndex(line.getTextRangeReplacedByEllipsis().end);
-            lineClusterRange.start = std::min(lineClusterRange.start, ellipsisClusterRange.start);
-            lineClusterRange.end = std::max(lineClusterRange.end, ellipsisClusterRange.end);
-        }
         size_t lineStart = lineClusterRange.start;
         size_t lineEnd = lineClusterRange.end;
         // The next line's starting cluster index
