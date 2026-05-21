@@ -46,11 +46,11 @@
                 "libpng",
                 "freetype",
                 "faultloggerd",
-                "harfbuzz"
+                "harfbuzz",
+                "vma"
             ],
             "third_party": [
-                "vulkan-headers",
-                "vma"
+                "vulkan-headers"
             ]
         },
         "build": {
