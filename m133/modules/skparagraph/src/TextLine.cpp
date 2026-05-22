@@ -611,9 +611,9 @@ void TextLine::format(TextAlign align, SkScalar maxWidth, EllipsisModal ellipsis
         delta = maxWidth - this->width();
     }
 
-    // RTL punctuation hanging: use original delta directly and return
+    // RTL punctuation hanging: shift by actual content overflow (width), not including ghost spaces
     if (isRTLPunctuationHanging(delta, maxWidth)) {
-        fShift = delta;
+        fShift = maxWidth - this->width();
         return;
     }
 
