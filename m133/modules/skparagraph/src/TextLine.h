@@ -228,6 +228,9 @@ public:
     void visit(SkScalar x, SkScalar y);
 #ifdef ENABLE_TEXT_ENHANCE
     void ensureTextBlobCachePopulated(bool needTextStyle = false);
+    bool isSimpleTextBlobCase() const;
+    void buildSimpleTextBlobCache();
+    void buildComplexTextBlobCache();
 #else
 	void ensureTextBlobCachePopulated();
 #endif
@@ -443,6 +446,11 @@ private:
         const Run* fVisitor_Run;
         size_t     fVisitor_Pos;
     };
+#ifdef ENABLE_TEXT_ENHANCE
+    void initRecordFields(TextBlobRecord& record, const TextStyle& style, const ClipContext& context);
+    void fillRecordGeometry(TextBlobRecord& record, const TextStyle& style, const ClipContext& context);
+    void detectAndSetEmoji(TextBlobRecord& record);
+#endif
     bool fTextBlobCachePopulated;
 #ifdef ENABLE_TEXT_ENHANCE
     bool fCacheHasTextStyle = false;
