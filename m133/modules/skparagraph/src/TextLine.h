@@ -21,6 +21,9 @@
 #include <stddef.h>
 #include <functional>
 #include <memory>
+#ifdef ENABLE_TEXT_ENHANCE
+#include <optional>
+#endif
 #include <vector>
 
 class SkString;
@@ -223,7 +226,11 @@ public:
 #endif
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
     void visit(SkScalar x, SkScalar y);
-    void ensureTextBlobCachePopulated();
+#ifdef ENABLE_TEXT_ENHANCE
+    void ensureTextBlobCachePopulated(bool needTextStyle = false);
+#else
+	void ensureTextBlobCachePopulated();
+#endif
 
     void createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
 
@@ -422,7 +429,7 @@ private:
         void paint(ParagraphPainter* painter);
         std::shared_ptr<RSTextBlob> fBlob;
         size_t fVisitor_Size;
-        TextStyle fTextStyle;
+        std::optional<TextStyle> fTextStyle;
 #else
         sk_sp<SkTextBlob> fBlob;
 #endif
@@ -438,6 +445,7 @@ private:
     };
     bool fTextBlobCachePopulated;
 #ifdef ENABLE_TEXT_ENHANCE
+    bool fCacheHasTextStyle = false;
     DecorationContext fDecorationContext;
     std::vector<RoundRectAttr> fRoundRectAttrs = {};
     EllipsisModal fCreateTruncatedLineEllipsisModel = EllipsisModal::TAIL;

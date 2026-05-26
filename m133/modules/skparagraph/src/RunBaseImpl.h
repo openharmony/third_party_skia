@@ -19,6 +19,7 @@
 #ifdef ENABLE_TEXT_ENHANCE
 #include "modules/skparagraph/include/RunBase.h"
 #include "modules/skparagraph/src/Run.h"
+#include <optional>
 
 namespace skia {
 namespace textlayout {
@@ -35,7 +36,7 @@ public:
         size_t visitorGlobalPos,
         size_t trailSpaces,
         size_t visitorSize,
-        TextStyle textStyle
+        std::optional<TextStyle> textStyle
     );
 
     const RSFont& font() const override;
@@ -75,7 +76,7 @@ private:
     size_t     fVisitorGlobalPos = 0;
     size_t     fTrailSpaces = 0;
     size_t     fVisitorSize;
-    TextStyle fTextStyle;
+    std::optional<TextStyle> fTextStyle;
 };
 }  // namespace textlayout
 }  // namespace skia

@@ -504,12 +504,20 @@ void TextLine::prepareRoundRect() {
 }
 #endif
 
+#ifdef ENABLE_TEXT_ENHANCE
+void TextLine::ensureTextBlobCachePopulated(bool needTextStyle) {
+#else
 void TextLine::ensureTextBlobCachePopulated() {
+#endif
 #ifdef ENABLE_TEXT_ENHANCE
     if (fTextBlobCachePopulated && fArcTextState == fIsArcText) {
-        return;
+        if (!needTextStyle || fCacheHasTextStyle) {
+            return;
+        }
+        // Cache exists but missing textStyle - rebuild
+        fTextBlobCache.clear();
     }
-    fTextBlobCache.clear();
+    fCacheHasTextStyle = needTextStyle;
 #else
     if (fTextBlobCachePopulated) {
         return;
@@ -741,7 +749,9 @@ void TextLine::buildTextBlob(TextRange textRange,
     } else {
         std::get<SkPaint>(record.fPaint).setColor(style.getColor());
     }
-    record.fTextStyle = style;
+    if (fCacheHasTextStyle) {
+        record.fTextStyle = style;
+    }
     record.fVisitor_Run = context.run;
     record.fVisitor_Pos = context.pos;
     record.fVisitor_Size = context.size;
