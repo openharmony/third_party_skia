@@ -1431,6 +1431,9 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
         SkScalar shift = 0;
         run.iterateThroughClusters([this, &run, &shift, &style](Cluster* cluster) {
             run.shift(cluster, shift);
+            if (codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+                return;
+            }
             shift += run.addSpacesEvenly(style.getLetterSpacing(), cluster);
         });
 #else
@@ -1495,7 +1498,12 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                 }
             }
             // Process letter spacing
+#ifdef ENABLE_TEXT_ENHANCE
+            if (currentStyle->fStyle.getLetterSpacing() != 0 &&
+                !codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+#else
             if (currentStyle->fStyle.getLetterSpacing() != 0) {
+#endif
                 shift += run.addSpacesEvenly(currentStyle->fStyle.getLetterSpacing(), cluster);
             }
 
