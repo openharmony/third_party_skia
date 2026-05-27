@@ -567,8 +567,8 @@ void TextLine::ensureTextBlobCachePopulated(bool needTextStyle) {
         if (!needTextStyle || fCacheHasTextStyle) {
             return;
         }
-        fTextBlobCache.clear();
     }
+    fTextBlobCache.clear();
     fCacheHasTextStyle = needTextStyle;
     if (isSimpleTextBlobCase()) {
         if (fClusterRange.width() == 0) {
