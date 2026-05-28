@@ -720,7 +720,7 @@ void OneLineShaper::matchResolvedFontsFindTypeface(const TextStyle& textStyle, s
 }
 
 void OneLineShaper::matchResolvedFontsByUnicode(const TextStyle& textStyle, const TypefaceVisitor& visitor,
-    std::vector<RunBlock>& hopelessBlocks) {
+    std::vector<RunBlock>& hopelessBlocks, THashSet<SkTypefaceID>& alreadyTriedTypefaces) {
     // Skip fallback for marked zero-width characters
     // They will be handled in finish() as zero-width runs
     if (fUnresolvedBlocks.front().fIsZeroWidth) {
@@ -731,19 +731,19 @@ void OneLineShaper::matchResolvedFontsByUnicode(const TextStyle& textStyle, cons
         return;
     }
 
-    processUnresolvedBlockWithFallback(textStyle, visitor, hopelessBlocks);
+    processUnresolvedBlockWithFallback(textStyle, visitor, hopelessBlocks, alreadyTriedTypefaces);
 }
 
 // Process unresolved block by trying different typefaces based on unicode codepoints
 void OneLineShaper::processUnresolvedBlockWithFallback(
-    const TextStyle& textStyle, const TypefaceVisitor& visitor, std::vector<RunBlock>& hopelessBlocks) {
+    const TextStyle& textStyle, const TypefaceVisitor& visitor, std::vector<RunBlock>& hopelessBlocks, 
+    THashSet<SkTypefaceID>& alreadyTriedTypefaces) {
     auto unresolvedRange = fUnresolvedBlocks.front().fText;
     auto unresolvedText = fParagraph->text(unresolvedRange);
     const char* ch = unresolvedText.begin();
     // We have the global cache for all already found typefaces for SkUnichar
     // but we still need to keep track of all SkUnichars used in this unresolved block
     THashSet<SkUnichar> alreadyTriedCodepoints;
-    THashSet<SkTypefaceID> alreadyTriedTypefaces;
 
     while (true) {
         if (ch == unresolvedText.end()) {
@@ -833,8 +833,9 @@ void OneLineShaper::matchResolvedFonts(const TextStyle& textStyle,
         // Give fallback a clue
         // Some unresolved subblocks might be resolved with different fallback fonts
         std::vector<RunBlock> hopelessBlocks;
+        THashSet<SkTypefaceID> alreadyTriedTypefaces;
         while (!fUnresolvedBlocks.empty()) {
-            matchResolvedFontsByUnicode(textStyle, visitor, hopelessBlocks);
+            matchResolvedFontsByUnicode(textStyle, visitor, hopelessBlocks, alreadyTriedTypefaces);
         }
 
         // Return hopeless blocks back
