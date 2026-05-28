@@ -95,9 +95,10 @@ private:
     void matchResolvedFontsFindTypeface(const TextStyle& textStyle, std::shared_ptr<RSTypeface>& typeface,
         SkUnichar& unicode);
     void matchResolvedFontsByUnicode(const TextStyle& textStyle, const TypefaceVisitor& visitor,
-        std::vector<RunBlock>& hopelessBlocks);
-    void processUnresolvedBlockWithFallback(
-        const TextStyle& textStyle, const TypefaceVisitor& visitor, std::vector<RunBlock>& hopelessBlocks);
+        std::vector<RunBlock>& hopelessBlocks, skia_private::THashSet<SkTypefaceID>& alreadyTriedTypefaces);
+    void processUnresolvedBlockWithFallback(const TextStyle& textStyle,
+        const TypefaceVisitor& visitor, std::vector<RunBlock>& hopelessBlocks,
+        skia_private::THashSet<SkTypefaceID>& alreadyTriedTypefaces);
 #endif
 
 #ifdef SK_DEBUG
