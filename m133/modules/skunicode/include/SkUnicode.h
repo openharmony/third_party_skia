@@ -164,6 +164,7 @@ class SKUNICODE_API SkUnicode : public SkRefCnt {
         static bool hasControlFlag(SkUnicode::CodeUnitFlags flags);
         static bool hasPartOfWhiteSpaceBreakFlag(SkUnicode::CodeUnitFlags flags);
 #ifdef ENABLE_TEXT_ENHANCE
+        static bool hasPartOfPunctuationFlag(SkUnicode::CodeUnitFlags flags);
         static bool isPunctuation(SkUnichar utf8);
         static bool isEllipsis(SkUnichar utf8);
 #endif

@@ -1094,15 +1094,112 @@ void ParagraphImpl::resetContext() {
     fExceededMaxLines = false;
 }
 
-// shapeTextIntoEndlessLine is the thing that calls this method
-bool ParagraphImpl::computeCodeUnitProperties() {
 #ifdef ENABLE_TEXT_ENHANCE
-    TEXT_TRACE_FUNC();
+// Structure to hold email word enhancement state
+struct EmailWordEnhancementState {
+    size_t wordStart = 0;
+    bool foundAt = false;
+    bool foundDotAfterAt = false;
+};
+
+// Helper function to add soft line breaks for email word characters
+static void addSoftBreaksForEmailWord(
+    skia_private::TArray<SkUnicode::CodeUnitFlags, true>& properties, size_t wordStart, size_t wordEnd)
+{
+    for (size_t j = wordStart + 1; j < wordEnd; ++j) {
+        properties[j] |= SkUnicode::CodeUnitFlags::kSoftLineBreakBefore;
+    }
+}
+
+// Apply HighQuality + ByWord enhancement (email detection) for a single code unit
+static void applyHighQualityByWordEnhancementInLoop(
+    int textIndex,
+    const SkString& text,
+    skia_private::TArray<SkUnicode::CodeUnitFlags, true>& codeUnitProperties,
+    EmailWordEnhancementState& emailState)
+{
+    // Check if we hit a word boundary (space or end of text)
+    if (SkUnicode::hasSoftLineBreakFlag(codeUnitProperties[textIndex])) {
+        // Check if the word is an email (contains @ followed by .)
+        if (emailState.foundAt && emailState.foundDotAfterAt) {
+            // This is an email word, add soft breaks before each character (except first)
+            addSoftBreaksForEmailWord(codeUnitProperties, emailState.wordStart, textIndex);
+        }
+        // Reset for next word
+        emailState.wordStart = textIndex + 1;
+        emailState.foundAt = false;
+        emailState.foundDotAfterAt = false;
+    } else {
+        // Check for @ and . characters in order
+        if (textIndex < static_cast<int>(text.size())) {
+            if (text[textIndex] == '@') {
+                emailState.foundAt = true;
+            } else if (emailState.foundAt && text[textIndex] == '.') {
+                emailState.foundDotAfterAt = true;
+            }
+        }
+    }
+}
+
+// Process code unit properties with enhancements - member function version
+void ParagraphImpl::processCodeUnitsWithEnhancements() {
+    // Get some information about trailing spaces / hard line breaks
+    fTrailingSpaces = fText.size();
+    TextIndex firstWhitespace = EMPTY_INDEX;
+
+    // Initialize enhancement state and flags
+    EmailWordEnhancementState emailState;
+    bool useLocaleForTextBreak = this->paragraphStyle().getUseLocaleForTextBreak();
+    bool enableHighQuality = useLocaleForTextBreak &&
+        getLineBreakStrategy() == LineBreakStrategy::HIGH_QUALITY;
+
+    // Process all code units in a single loop
+    for (int i = 0; i < fCodeUnitProperties.size(); ++i) {
+        auto flags = fCodeUnitProperties[i];
+
+        // Track trailing spaces and whitespace
+        if (SkUnicode::hasPartOfWhiteSpaceBreakFlag(flags)) {
+            if (fTrailingSpaces == fText.size()) {
+                fTrailingSpaces = i;
+            }
+            if (firstWhitespace == EMPTY_INDEX) {
+                firstWhitespace = i;
+            }
+        } else {
+            fTrailingSpaces = fText.size();
+        }
+
+        // Track hard line breaks
+        if (SkUnicode::hasHardLineBreakFlag(flags)) {
+            fHasLineBreaks = true;
+        }
+        // Apply HighQuality + ByWord enhancement (email detection)
+        if (enableHighQuality) {
+            applyHighQualityByWordEnhancementInLoop(i, fText, fCodeUnitProperties, emailState);
+        }
+    }
+
+    // Handle end of text for email word enhancement
+    if (enableHighQuality && fText.size() > 0 && emailState.foundAt && emailState.foundDotAfterAt) {
+        // This is an email word, add soft breaks before each character (except first)
+        addSoftBreaksForEmailWord(fCodeUnitProperties, emailState.wordStart, fText.size());
+    }
+
+    if (firstWhitespace < fTrailingSpaces) {
+        fHasWhitespacesInside = true;
+    }
+}
 #endif
+
+// shapeTextIntoEndlessLine is the thing that calls this method
+#ifdef ENABLE_TEXT_ENHANCE
+bool ParagraphImpl::computeCodeUnitProperties() {
+    TEXT_TRACE_FUNC();
     if (nullptr == fUnicode) {
         return false;
     }
 
+    fBidiRegions.clear();
     // Get bidi regions
     auto textDirection = fParagraphStyle.getTextDirection() == TextDirection::kLtr
                               ? SkUnicode::TextDirection::kLTR
@@ -1113,7 +1210,6 @@ bool ParagraphImpl::computeCodeUnitProperties() {
 
     // Collect all spaces and some extra information
     // (and also substitute \t with a space while we are at it)
-#ifdef ENABLE_TEXT_ENHANCE
     if (this->paragraphStyle().getUseLocaleForTextBreak()) {
         // Use locale for text breaking when enabled
         SkString locale = this->paragraphStyle().getTextStyle().getLocale();
@@ -1135,14 +1231,34 @@ bool ParagraphImpl::computeCodeUnitProperties() {
             return false;
         }
     }
+
+    // Process code units with all enhancements in a single loop
+    processCodeUnitsWithEnhancements();
+
+    return true;
+}
 #else
+bool ParagraphImpl::computeCodeUnitProperties() {
+    if (nullptr == fUnicode) {
+        return false;
+    }
+
+    // Get bidi regions
+    auto textDirection = fParagraphStyle.getTextDirection() == TextDirection::kLtr
+                              ? SkUnicode::TextDirection::kLTR
+                              : SkUnicode::TextDirection::kRTL;
+    if (!fUnicode->getBidiRegions(fText.c_str(), fText.size(), textDirection, &fBidiRegions)) {
+        return false;
+    }
+
+    // Collect all spaces and some extra information
+    // (and also substitute \t with a space while we are at it)
     if (!fUnicode->computeCodeUnitFlags(&fText[0],
                                         fText.size(),
                                         this->paragraphStyle().getReplaceTabCharacters(),
                                         &fCodeUnitProperties)) {
         return false;
     }
-#endif
 
     // Get some information about trailing spaces / hard line breaks
     fTrailingSpaces = fText.size();
@@ -1150,7 +1266,7 @@ bool ParagraphImpl::computeCodeUnitProperties() {
     for (int i = 0; i < fCodeUnitProperties.size(); ++i) {
         auto flags = fCodeUnitProperties[i];
         if (SkUnicode::hasPartOfWhiteSpaceBreakFlag(flags)) {
-            if (fTrailingSpaces  == fText.size()) {
+            if (fTrailingSpaces == fText.size()) {
                 fTrailingSpaces = i;
             }
             if (firstWhitespace == EMPTY_INDEX) {
@@ -1170,6 +1286,7 @@ bool ParagraphImpl::computeCodeUnitProperties() {
 
     return true;
 }
+#endif
 
 static bool is_ascii_7bit_space(int c) {
     SkASSERT(c >= 0 && c <= 127);

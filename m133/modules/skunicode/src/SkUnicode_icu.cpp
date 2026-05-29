@@ -647,17 +647,6 @@ public:
     }
 
 #ifdef ENABLE_TEXT_ENHANCE
-    void processEmail(skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results,
-        int i, SkUnichar unichar) {
-        if (!fSawAtSign && isAtSign(unichar)) {
-            fSawAtSign = true;
-            return;
-        }
-        if (fSawAtSign && isDot(unichar)) {
-            results->at(i) |= SkUnicode::kSoftLineBreakBefore;
-        }
-    }
-
     void processPunctuationAndEllipsis(skia_private::TArray<SkUnicode::CodeUnitFlags, true>* results,
         int i, SkUnichar unichar) {
         if (SkUnicode_icu::isPunctuation(unichar)) {
@@ -715,9 +704,6 @@ public:
                     results->at(i) |= SkUnicode::kIdeographic;
                 }
                 processPunctuationAndEllipsis(results, i, unichar);
-                if (locale) {
-                    processEmail(results, i, unichar);
-                }
             }
 
             if (SkUnicode_icu::isGraphemeExtend(unichar)) {
@@ -910,9 +896,6 @@ public:
 
 private:
     sk_sp<SkBidiFactory> fBidiFact = sk_make_sp<SkBidiICUFactory>();
-#ifdef ENABLE_TEXT_ENHANCE
-    bool fSawAtSign{false};
-#endif
 };
 
 namespace SkUnicodes::ICU {
