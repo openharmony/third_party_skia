@@ -29,7 +29,7 @@ RunBaseImpl::RunBaseImpl(
     size_t visitorGlobalPos,
     size_t trailSpaces,
     size_t visitorSize,
-    std::optional<TextStyle> textStyle)
+    TextStyle textStyle)
     : fBlob(blob),
     fOffset(offset),
     fClippingNeeded(clippingNeeded),
@@ -123,7 +123,7 @@ const TextStyle* RunBaseImpl::GetTextStyle() const
     if (fVisitorRun == nullptr) {
         return nullptr;
     }
-    return fTextStyle.has_value() ? &fTextStyle.value() : nullptr;
+    return &fTextStyle;
 }
 
 size_t RunBaseImpl::getVisitorPos() const

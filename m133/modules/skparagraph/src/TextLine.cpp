@@ -562,14 +562,13 @@ void TextLine::buildComplexTextBlobCache() {
         });
 }
 
-void TextLine::ensureTextBlobCachePopulated(bool needTextStyle) {
+void TextLine::ensureTextBlobCachePopulated() {
     if (fTextBlobCachePopulated && fArcTextState == fIsArcText) {
-        if (!needTextStyle || fCacheHasTextStyle) {
-            return;
-        }
+        return;
     }
     fTextBlobCache.clear();
-    fCacheHasTextStyle = needTextStyle;
+    fTextStyleCache.clear();
+    fTextStyleCachePopulated = false;
     if (isSimpleTextBlobCase()) {
         if (fClusterRange.width() == 0) {
             return;
@@ -581,6 +580,34 @@ void TextLine::ensureTextBlobCachePopulated(bool needTextStyle) {
     fTextBlobCachePopulated = true;
     fArcTextState = fIsArcText;
     pathParameters.recordPath = nullptr;
+}
+
+void TextLine::ensureTextStyleCachePopulated() {
+    if (fTextStyleCachePopulated) return;
+    fTextStyleCache.clear();
+
+    if (isSimpleTextBlobCase()) {
+        const auto& style = fOwner->block(fBlockRange.start).fStyle;
+        fTextStyleCache.push_back(style);
+    } else {
+        this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_ELLIPSIS_WORD,
+            false,
+            [this](const Run* run, SkScalar runOffsetInLine,
+                   TextRange textRange, SkScalar* runWidthInLine) {
+                if (run->placeholderStyle() != nullptr) {
+                    *runWidthInLine = run->advance().fX;
+                    return true;
+                }
+                *runWidthInLine = this->iterateThroughSingleRunByStyles(
+                    TextAdjustment::GlyphCluster, run, runOffsetInLine,
+                    textRange, StyleType::kForeground,
+                    [this](TextRange tr, const TextStyle& style, const ClipContext& ctx) {
+                        fTextStyleCache.push_back(style);
+                    });
+                return true;
+            });
+    }
+    fTextStyleCachePopulated = true;
 }
 #else
 void TextLine::ensureTextBlobCachePopulated() {
@@ -792,9 +819,6 @@ void TextLine::initRecordFields(TextBlobRecord& record, const TextStyle& style, 
         record.fPaint = style.getForegroundPaintOrID();
     } else {
         std::get<SkPaint>(record.fPaint).setColor(style.getColor());
-    }
-    if (fCacheHasTextStyle) {
-        record.fTextStyle = style;
     }
     record.fVisitor_Run = context.run;
     record.fVisitor_Pos = context.pos;
@@ -3781,7 +3805,8 @@ std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
     // Gets the offset position of the current line across the paragraph
     size_t pos = fClusterRange.start;
     size_t trailSpaces = 0;
-    for (auto& blob: fTextBlobCache) {
+    for (size_t i = 0; i < fTextBlobCache.size(); i++) {
+        auto& blob = fTextBlobCache[i];
         ++num;
         if (blob.fVisitor_Size == 0) {
             continue;
@@ -3790,9 +3815,10 @@ std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
             // Counts how many tabs have been removed from the end of the current line
             trailSpaces = fGhostClusterRange.width() - fClusterRange.width();
         }
+        const TextStyle& textStyle = fTextStyleCache.at(i);
         std::unique_ptr<RunBaseImpl> runBaseImplPtr = std::make_unique<RunBaseImpl>(
             blob.fBlob, blob.fOffset, blob.fPaint, blob.fClippingNeeded, blob.fClipRect,
-            blob.fVisitor_Run, blob.fVisitor_Pos, pos, trailSpaces, blob.fVisitor_Size, blob.fTextStyle);
+            blob.fVisitor_Run, blob.fVisitor_Pos, pos, trailSpaces, blob.fVisitor_Size, textStyle);
 
         // Calculate the position of each blob, relative to the entire paragraph
         pos += blob.fVisitor_Size;
@@ -3869,6 +3895,8 @@ TextLine TextLine::CloneSelf()
 
     textLine.fRoundRectAttrs = this->fRoundRectAttrs;
     textLine.fTextBlobCache = this->fTextBlobCache;
+    textLine.fTextStyleCache = this->fTextStyleCache;
+    textLine.fTextStyleCachePopulated = this->fTextStyleCachePopulated;
     textLine.fTextRangeReplacedByEllipsis = this->fTextRangeReplacedByEllipsis;
     textLine.fEllipsisIndex = this->fEllipsisIndex;
     textLine.fLastClipRunLtr = this->fLastClipRunLtr;
