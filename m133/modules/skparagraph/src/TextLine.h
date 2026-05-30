@@ -223,7 +223,15 @@ public:
 #endif
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y);
     void visit(SkScalar x, SkScalar y);
+#ifdef ENABLE_TEXT_ENHANCE
     void ensureTextBlobCachePopulated();
+    void ensureTextStyleCachePopulated();
+    bool isSimpleTextBlobCase() const;
+    void buildSimpleTextBlobCache();
+    void buildComplexTextBlobCache();
+#else
+	void ensureTextBlobCachePopulated();
+#endif
 
     void createEllipsis(SkScalar maxWidth, const SkString& ellipsis, bool ltr);
 
@@ -422,7 +430,6 @@ private:
         void paint(ParagraphPainter* painter);
         std::shared_ptr<RSTextBlob> fBlob;
         size_t fVisitor_Size;
-        TextStyle fTextStyle;
 #else
         sk_sp<SkTextBlob> fBlob;
 #endif
@@ -436,8 +443,15 @@ private:
         const Run* fVisitor_Run;
         size_t     fVisitor_Pos;
     };
+#ifdef ENABLE_TEXT_ENHANCE
+    void initRecordFields(TextBlobRecord& record, const TextStyle& style, const ClipContext& context);
+    void fillRecordGeometry(TextBlobRecord& record, const TextStyle& style, const ClipContext& context);
+    void detectAndSetEmoji(TextBlobRecord& record);
+#endif
     bool fTextBlobCachePopulated;
 #ifdef ENABLE_TEXT_ENHANCE
+    std::vector<TextStyle> fTextStyleCache;
+    bool fTextStyleCachePopulated = false;
     DecorationContext fDecorationContext;
     std::vector<RoundRectAttr> fRoundRectAttrs = {};
     EllipsisModal fCreateTruncatedLineEllipsisModel = EllipsisModal::TAIL;

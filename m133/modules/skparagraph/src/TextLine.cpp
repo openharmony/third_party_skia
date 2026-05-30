@@ -504,23 +504,119 @@ void TextLine::prepareRoundRect() {
 }
 #endif
 
-void TextLine::ensureTextBlobCachePopulated() {
 #ifdef ENABLE_TEXT_ENHANCE
+bool TextLine::isSimpleTextBlobCase() const {
+    return fBlockRange.width() == 1 &&
+        fRunsInVisualOrder.size() == 1 &&
+        fEllipsis == nullptr &&
+        fHyphenRun == nullptr &&
+        fOwner->run(fRunsInVisualOrder[0]).placeholderStyle() == nullptr;
+}
+
+void TextLine::buildSimpleTextBlobCache() {
+    const auto& style = fOwner->block(fBlockRange.start).fStyle;
+    const auto& run = fOwner->run(fRunsInVisualOrder[0]);
+    auto clip = SkRect::MakeXYWH(0.0f, this->sizes().runTop(&run, this->fAscentStyle),
+        fAdvance.fX, run.calculateHeight(this->fAscentStyle, this->fDescentStyle));
+
+    auto& start = fOwner->cluster(fClusterRange.start);
+    auto& end = fOwner->cluster(fClusterRange.end - 1);
+    SkASSERT(start.runIndex() == end.runIndex());
+    GlyphRange glyphs;
+    if (run.leftToRight()) {
+        glyphs = GlyphRange(start.startPos(), end.isHardBreak() ? end.startPos() : end.endPos());
+    } else {
+        glyphs = GlyphRange(end.startPos(), start.isHardBreak() ? start.startPos() : start.endPos());
+    }
+    ClipContext context = {/*run=*/&run,
+                           /*pos=*/glyphs.start,
+                           /*size=*/glyphs.width(),
+                           /*fTextShift=*/-run.positionX(glyphs.start), // starting position
+                           /*clip=*/clip,                               // entire line
+                           /*fExcludedTrailingSpaces=*/0.0f,            // no need for that
+                           /*clippingNeeded=*/false};                   // no need for that
+    this->buildTextBlob(fTextExcludingSpaces, style, context);
+}
+
+void TextLine::buildComplexTextBlobCache() {
+    this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_ELLIPSIS_WORD,
+        false,
+        [this](const Run* run,
+                SkScalar runOffsetInLine,
+                TextRange textRange,
+                SkScalar* runWidthInLine) {
+            if (run->placeholderStyle() != nullptr) {
+                *runWidthInLine = run->advance().fX;
+                return true;
+            }
+            *runWidthInLine = this->iterateThroughSingleRunByStyles(
+                TextAdjustment::GlyphCluster,
+                run,
+                runOffsetInLine,
+                textRange,
+                StyleType::kForeground,
+                [this](TextRange textRange, const TextStyle& style, const ClipContext& context) {
+                    this->buildTextBlob(textRange, style, context);
+                });
+            return true;
+        });
+}
+
+void TextLine::ensureTextBlobCachePopulated() {
     if (fTextBlobCachePopulated && fArcTextState == fIsArcText) {
         return;
     }
     fTextBlobCache.clear();
+    fTextStyleCache.clear();
+    fTextStyleCachePopulated = false;
+    if (isSimpleTextBlobCase()) {
+        if (fClusterRange.width() == 0) {
+            return;
+        }
+        buildSimpleTextBlobCache();
+    } else {
+        buildComplexTextBlobCache();
+    }
+    fTextBlobCachePopulated = true;
+    fArcTextState = fIsArcText;
+    pathParameters.recordPath = nullptr;
+}
+
+void TextLine::ensureTextStyleCachePopulated() {
+    if (fTextStyleCachePopulated) return;
+    fTextStyleCache.clear();
+
+    if (isSimpleTextBlobCase()) {
+        const auto& style = fOwner->block(fBlockRange.start).fStyle;
+        fTextStyleCache.push_back(style);
+    } else {
+        this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_ELLIPSIS_WORD,
+            false,
+            [this](const Run* run, SkScalar runOffsetInLine,
+                   TextRange textRange, SkScalar* runWidthInLine) {
+                if (run->placeholderStyle() != nullptr) {
+                    *runWidthInLine = run->advance().fX;
+                    return true;
+                }
+                *runWidthInLine = this->iterateThroughSingleRunByStyles(
+                    TextAdjustment::GlyphCluster, run, runOffsetInLine,
+                    textRange, StyleType::kForeground,
+                    [this](TextRange tr, const TextStyle& style, const ClipContext& ctx) {
+                        fTextStyleCache.push_back(style);
+                    });
+                return true;
+            });
+    }
+    fTextStyleCachePopulated = true;
+}
 #else
+void TextLine::ensureTextBlobCachePopulated() {
     if (fTextBlobCachePopulated) {
         return;
     }
-#endif
     if (fBlockRange.width() == 1 &&
         fRunsInVisualOrder.size() == 1 &&
         fEllipsis == nullptr &&
-#ifdef ENABLE_TEXT_ENHANCE
-        fHyphenRun == nullptr &&
-#endif
         fOwner->run(fRunsInVisualOrder[0]).placeholderStyle() == nullptr) {
         if (fClusterRange.width() == 0) {
             return;
@@ -552,12 +648,7 @@ void TextLine::ensureTextBlobCachePopulated() {
                                /*clippingNeeded=*/false};                   // no need for that
         this->buildTextBlob(fTextExcludingSpaces, style, context);
     } else {
-#ifdef ENABLE_TEXT_ENHANCE
-        this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_ELLIPSIS_WORD,
-                                       false,
-#else
         this->iterateThroughVisualRuns(false,
-#endif
            [this](const Run* run,
                   SkScalar runOffsetInLine,
                   TextRange textRange,
@@ -579,11 +670,8 @@ void TextLine::ensureTextBlobCachePopulated() {
            });
     }
     fTextBlobCachePopulated = true;
-#ifdef ENABLE_TEXT_ENHANCE
-    fArcTextState = fIsArcText;
-    pathParameters.recordPath = nullptr;
-#endif
 }
+#endif
 
 #ifdef ENABLE_TEXT_ENHANCE
 // Check if RTL punctuation hanging should apply
@@ -726,34 +814,18 @@ SkRect TextLine::extendHeight(const ClipContext& context) const {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
-void TextLine::buildTextBlob(TextRange textRange,
-                             const TextStyle& style,
-                             const ClipContext& context) {
-    if (context.run->placeholderStyle() != nullptr) {
-        return;
-    }
-
-    fTextBlobCache.emplace_back();
-    TextBlobRecord& record = fTextBlobCache.back();
-
+void TextLine::initRecordFields(TextBlobRecord& record, const TextStyle& style, const ClipContext& context) {
     if (style.hasForeground()) {
         record.fPaint = style.getForegroundPaintOrID();
     } else {
         std::get<SkPaint>(record.fPaint).setColor(style.getColor());
     }
-    record.fTextStyle = style;
     record.fVisitor_Run = context.run;
     record.fVisitor_Pos = context.pos;
     record.fVisitor_Size = context.size;
+}
 
-    RSTextBlobBuilder builder;
-    if (pathParameters.recordPath) {
-        context.run->copyTo(builder, pathParameters.recordPath, pathParameters.hOffset, pathParameters.vOffset,
-            context.fTextShift, SkToU32(context.pos), context.size);
-    } else {
-        context.run->copyTo(builder, SkToU32(context.pos), context.size);
-    }
-    // when letterspacing < 0, it causes the font is cliped. so the record fClippingNeeded is set false
+void TextLine::fillRecordGeometry(TextBlobRecord& record, const TextStyle& style, const ClipContext& context) {
     if (context.clippingNeeded) {
         record.fClipRect = extendHeight(context).makeOffset(this->offset());
     } else {
@@ -764,6 +836,42 @@ void TextLine::buildTextBlob(TextRange textRange,
     if (fOwner->getParagraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE) {
         correctedBaseline = SkScalarFloorToScalar(this->baseline() + context.run->getRunTotalShift() + 0.5);
     }
+    record.fOffset = SkPoint::Make(this->offset().fX + context.fTextShift,
+        this->offset().fY + correctedBaseline - (context.run ? context.run->fCompressionBaselineShift : 0));
+}
+
+void TextLine::detectAndSetEmoji(TextBlobRecord& record) {
+    if (record.fBlob == nullptr || record.fVisitor_Run == nullptr) {
+        return;
+    }
+    RSFont font = record.fVisitor_Run->font();
+    if (font.GetTypeface() != nullptr &&
+        (font.GetTypeface()->GetFamilyName().find("Emoji") != std::string::npos ||
+        font.GetTypeface()->GetFamilyName().find("emoji") != std::string::npos)) {
+            record.fBlob->SetEmoji(true);
+    }
+}
+
+void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const ClipContext& context) {
+    if (context.run->placeholderStyle() != nullptr) {
+        return;
+    }
+
+    fTextBlobCache.emplace_back();
+    TextBlobRecord& record = fTextBlobCache.back();
+
+    initRecordFields(record, style, context);
+
+    RSTextBlobBuilder builder;
+    if (pathParameters.recordPath) {
+        context.run->copyTo(builder, pathParameters.recordPath, pathParameters.hOffset, pathParameters.vOffset,
+            context.fTextShift, SkToU32(context.pos), context.size);
+    } else {
+        context.run->copyTo(builder, SkToU32(context.pos), context.size);
+    }
+
+    fillRecordGeometry(record, style, context);
+
     record.fBlob = builder.Make();
     if (record.fBlob != nullptr) {
         auto bounds = record.fBlob->Bounds();
@@ -773,18 +881,7 @@ void TextLine::buildTextBlob(TextRange textRange,
         }
     }
 
-    record.fOffset = SkPoint::Make(this->offset().fX + context.fTextShift,
-        this->offset().fY + correctedBaseline - (context.run ? context.run->fCompressionBaselineShift : 0));
-
-    RSFont font;
-    if (record.fBlob != nullptr && record.fVisitor_Run != nullptr) {
-        font = record.fVisitor_Run->font();
-        if (font.GetTypeface() != nullptr &&
-            (font.GetTypeface()->GetFamilyName().find("Emoji") != std::string::npos ||
-            font.GetTypeface()->GetFamilyName().find("emoji") != std::string::npos)) {
-                record.fBlob->SetEmoji(true);
-        }
-    }
+    detectAndSetEmoji(record);
 }
 #else
 void TextLine::buildTextBlob(TextRange textRange,
@@ -3708,7 +3805,8 @@ std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
     // Gets the offset position of the current line across the paragraph
     size_t pos = fClusterRange.start;
     size_t trailSpaces = 0;
-    for (auto& blob: fTextBlobCache) {
+    for (size_t i = 0; i < fTextBlobCache.size(); i++) {
+        auto& blob = fTextBlobCache[i];
         ++num;
         if (blob.fVisitor_Size == 0) {
             continue;
@@ -3717,9 +3815,10 @@ std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
             // Counts how many tabs have been removed from the end of the current line
             trailSpaces = fGhostClusterRange.width() - fClusterRange.width();
         }
+        const TextStyle& textStyle = fTextStyleCache.at(i);
         std::unique_ptr<RunBaseImpl> runBaseImplPtr = std::make_unique<RunBaseImpl>(
             blob.fBlob, blob.fOffset, blob.fPaint, blob.fClippingNeeded, blob.fClipRect,
-            blob.fVisitor_Run, blob.fVisitor_Pos, pos, trailSpaces, blob.fVisitor_Size, blob.fTextStyle);
+            blob.fVisitor_Run, blob.fVisitor_Pos, pos, trailSpaces, blob.fVisitor_Size, textStyle);
 
         // Calculate the position of each blob, relative to the entire paragraph
         pos += blob.fVisitor_Size;
@@ -3796,6 +3895,8 @@ TextLine TextLine::CloneSelf()
 
     textLine.fRoundRectAttrs = this->fRoundRectAttrs;
     textLine.fTextBlobCache = this->fTextBlobCache;
+    textLine.fTextStyleCache = this->fTextStyleCache;
+    textLine.fTextStyleCachePopulated = this->fTextStyleCachePopulated;
     textLine.fTextRangeReplacedByEllipsis = this->fTextRangeReplacedByEllipsis;
     textLine.fEllipsisIndex = this->fEllipsisIndex;
     textLine.fLastClipRunLtr = this->fLastClipRunLtr;

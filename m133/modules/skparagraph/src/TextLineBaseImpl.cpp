@@ -39,6 +39,7 @@ std::vector<std::unique_ptr<RunBase>> TextLineBaseImpl::getGlyphRuns() const
         return {};
     }
     fVisitorTextLine->ensureTextBlobCachePopulated();
+    fVisitorTextLine->ensureTextStyleCachePopulated();
     return fVisitorTextLine->getGlyphRuns();
 }
 
