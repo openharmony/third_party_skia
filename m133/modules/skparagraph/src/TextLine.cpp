@@ -879,6 +879,36 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
             record.fBounds.joinPossiblyEmptyRect(SkRect::MakeLTRB(
                 bounds->left_, bounds->top_, bounds->right_, bounds->bottom_));
         }
+        bool boundsZero = bounds != nullptr && bounds->IsEmpty();
+        if (boundsZero && textRange.width() > 0 && textRange.start < fOwner->getText().size() &&
+            !fOwner->codeUnitHasProperty(textRange.start, SkUnicode::kPartOfWhiteSpaceBreak)) {
+            const char* text = fOwner->getText().c_str();
+            const char* end = text + fOwner->getText().size();
+            const char* ptr = text;
+            SkUnichar unicode = SkUTF::NextUTF8(&ptr, end);
+            bool singleCodepoint = (ptr == end);
+            if (singleCodepoint) {
+                auto* run = context.run;
+                auto tf = run->font().GetTypeface();
+                auto positions = run->positions();
+                auto glyphs = run->glyphs();
+                SkScalar advanceX = run->fAdvanceX();
+                std::string charStr(text, ptr - text);
+                TEXT_LOGW_LIMIT3_HOUR("buildTextBlob: bounds all zero, unicode=U+%{public}04X char=[%{public}s] "
+                    "family=%{public}s fontSize=%{public}.2f runSize=%{public}zu "
+                    "pos[0]=(%{public}.2f,%{public}.2f) posEnd=(%{public}.2f,%{public}.2f) "
+                    "advanceX=%{public}.2f glyphIDs=[%{public}s]",
+                    unicode, charStr.c_str(),
+                    tf ? tf->GetFamilyName().c_str() : "null",
+                    run->font().GetSize(),
+                    run->size(),
+                    positions[0].fX, positions[0].fY,
+                    positions[run->size()].fX, positions[run->size()].fY,
+                    advanceX,
+                    [&]() { std::string s; for (size_t i = 0; i < glyphs.size(); ++i)
+                        { if (i) s += ","; s += std::to_string(glyphs[i]); } return s; }().c_str());
+            }
+        }
     }
 
     detectAndSetEmoji(record);
