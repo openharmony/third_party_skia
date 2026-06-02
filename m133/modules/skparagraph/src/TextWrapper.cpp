@@ -1615,6 +1615,10 @@ void TextWrapper::finalizeTextLayout(const AddLineToParagraph& addLine) {
 
 void TextWrapper::prepareLineForFormatting(TextStretch& line) {
     fEndLine = std::move(line);
+    // The previous line consumed clusters past our stretch start
+    if (fCurrentStartLine != nullptr && fCurrentStartLine > fEndLine.startCluster()) {
+        fEndLine.setStartCluster(fCurrentStartLine);
+    }
     fHardLineBreak = fEndLine.endCluster()->isHardBreak();
 }
 
