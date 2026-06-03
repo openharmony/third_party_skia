@@ -42,8 +42,9 @@
 #ifdef ENABLE_TEXT_ENHANCE
 #include <unordered_set>
 #endif
-#if defined(SK_USING_THIRD_PARTY_ICU) && defined(SK_BUILD_FOR_WIN)
-#include "SkLoadICU.h"
+#if (defined(SK_USING_THIRD_PARTY_ICU) && defined(SK_BUILD_FOR_WIN)) || \
+    defined(SK_BUILD_FOR_OHOS)
+#include "third_party/icu/SkLoadICU.h"
 #include "include/private/base/SkOnce.h"
 #endif
 
@@ -919,7 +920,8 @@ namespace SkUnicodes::ICU {
 sk_sp<SkUnicode> Make() {
     // We haven't yet created a way to encode the ICU data for assembly on Windows,
     // so we use a helper library to load icudtl.dat from the harddrive.
-#if defined(SK_USING_THIRD_PARTY_ICU) && defined(SK_BUILD_FOR_WIN)
+#if (defined(SK_USING_THIRD_PARTY_ICU) && defined(SK_BUILD_FOR_WIN)) || \
+    defined(SK_BUILD_FOR_OHOS)
     if (!SkLoadICU()) {
         static SkOnce once;
         once([] { SkDEBUGF("SkLoadICU() failed!\n"); });

@@ -7,10 +7,11 @@
 #ifndef load_icu_DEFINED
 #define load_icu_DEFINED
 
-#if defined(_WIN32) && defined(SK_USING_THIRD_PARTY_ICU)
+#if (defined(_WIN32) && defined(SK_USING_THIRD_PARTY_ICU)) || \
+    defined(SK_BUILD_FOR_OHOS)
 bool SkLoadICU();
 #else
 static inline bool SkLoadICU() { return true; }
-#endif  // defined(_WIN32) && defined(SK_USING_THIRD_PARTY_ICU)
+#endif
 
 #endif  // load_icu_DEFINED
