@@ -521,7 +521,7 @@ void Run::copyTo(RSTextBlobBuilder& builder,
     fFont.GetWidths(blobBuffer.glyphs, size, widths.data());
     RSXform* xform = reinterpret_cast<RSXform*>(blobBuffer.pos);
     for (size_t i = 0; i < size; ++i) {
-        float halfWidth = widths[i + pos] * 0.5f;
+        float halfWidth = widths[i] * 0.5f;
         float x = hOffset + posX(i + pos) + halfWidth + fOffsets[i + pos].x() + fTextShift;
         if (!fJustificationShifts.empty()) {
             x += fJustificationShifts[i + pos].fX;
