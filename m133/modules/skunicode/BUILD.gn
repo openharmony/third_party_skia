@@ -86,6 +86,9 @@ if (skia_use_icu || skia_use_client_icu || skia_use_libgrapheme ||
       if (!skia_use_system_icu) {
         defines += [ "U_DISABLE_RENAMING=1" ]
       }
+      if (is_ohos) {
+        defines += [ "SK_BUILD_FOR_OHOS" ]
+      }
 
       sources = skia_unicode_icu_bidi_sources
       sources += skia_unicode_bidi_full_sources

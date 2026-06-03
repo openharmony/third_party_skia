@@ -119,3 +119,87 @@ bool SkLoadICU() {
 }
 
 #endif  // defined(_WIN32) && defined(SK_USING_THIRD_PARTY_ICU)
+
+#if defined(SK_BUILD_FOR_OHOS)
+
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <cstdio>
+#include <cstring>
+#include <mutex>
+#include <string>
+
+#include "unicode/udata.h"
+
+static const char* kICUDataPaths[] = {
+    "/usr/icu/icudt74l.dat",
+    "/system/usr/icu/icudt74l.dat",
+};
+
+static void* posix_mmap(const char* dataFile) {
+    if (!dataFile) {
+        return nullptr;
+    }
+    int fd = open(dataFile, O_RDONLY);
+    if (fd < 0) {
+        fprintf(stderr, "SkIcuLoader: datafile missing: %s.\n", dataFile);
+        return nullptr;
+    }
+    struct stat st;
+    if (fstat(fd, &st) < 0) {
+        fprintf(stderr, "SkIcuLoader: datafile stat error.\n");
+        close(fd);
+        return nullptr;
+    }
+    void* addr = mmap(nullptr, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    close(fd);
+    if (addr == MAP_FAILED) {
+        fprintf(stderr, "SkIcuLoader: datafile mmap error.\n");
+        return nullptr;
+    }
+    return addr;
+}
+
+static bool init_icu(void* addr) {
+    UErrorCode err = U_ZERO_ERROR;
+    udata_setCommonData(addr, &err);
+    if (err != U_ZERO_ERROR && err != U_USING_DEFAULT_WARNING) {
+        fprintf(stderr, "udata_setCommonData() returned %d.\n", (int)err);
+        return false;
+    }
+    err = U_ZERO_ERROR;
+    udata_setFileAccess(UDATA_ONLY_PACKAGES, &err);
+    if (err != U_ZERO_ERROR) {
+        fprintf(stderr, "udata_setFileAccess() returned %d.\n", (int)err);
+        return false;
+    }
+    return true;
+}
+
+static bool load_from(const char* path) {
+    if (void* addr = posix_mmap(path)) {
+        if (init_icu(addr)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool SkLoadICU() {
+    static bool good = false;
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        for (auto path : kICUDataPaths) {
+            if (load_from(path)) {
+                good = true;
+                return;
+            }
+        }
+    });
+    return good;
+}
+
+#endif  // defined(SK_BUILD_FOR_OHOS)
