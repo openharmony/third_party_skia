@@ -1593,6 +1593,10 @@ void TextWrapper::initializeFormattingState(SkScalar maxWidth, const SkSpan<Clus
 void TextWrapper::processLineStretches(SkScalar maxWidth, const AddLineToParagraph& addLine) {
     for (TextStretch& line : fLineStretches) {
         prepareLineForFormatting(line);
+        // Skip stretches whose content has been consumed by previous lines
+        if (fEndLine.startCluster() > fEndLine.endCluster()) {
+            continue;
+        }
         formatCurrentLine(addLine);
 
         advanceToNextLine();
