@@ -3803,7 +3803,8 @@ std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
     std::vector<std::unique_ptr<RunBase>> runBases;
     size_t num = 0;
     // Gets the offset position of the current line across the paragraph
-    size_t pos = fClusterRange.start;
+    GlyphRange glyphRange = fOwner->getGlyphRangeForCharacterRange(fText.start, fText.end);
+    size_t pos = glyphRange.start;
     size_t trailSpaces = 0;
     for (size_t i = 0; i < fTextBlobCache.size(); i++) {
         auto& blob = fTextBlobCache[i];

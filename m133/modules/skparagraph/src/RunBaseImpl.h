@@ -61,6 +61,8 @@ public:
 private:
     float calculateTrailSpacesWidth() const;
     uint64_t calculateActualLength(int64_t start, int64_t length) const;
+    // Get cluster by glyph position through two-level index mapping
+    Cluster& getClusterByGlyphPos(size_t glyphPos) const;
     SkRect getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan, size_t startNotWhiteSpaceIndex,
         SkScalar startWhiteSpaceWidth, size_t endWhiteSpaceNum, SkScalar endAdvance) const;
     RSFont fFont;

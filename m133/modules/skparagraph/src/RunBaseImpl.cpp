@@ -252,7 +252,7 @@ SkRect RunBaseImpl::getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan,
         }
         // Stitching removes glyph boundaries at the beginning and end of lines
         joinRect.Join(glyphBounds);
-        auto& cluster = fVisitorRun->owner()->cluster(fVisitorGlobalPos + i);
+        auto& cluster = getClusterByGlyphPos(fVisitorPos + i);
         // Calculates the width of the glyph with the beginning and end of the line removed
         runNotWhiteSpaceWidth += fVisitorRun->usingAutoSpaceWidth(cluster);
     }
@@ -280,21 +280,18 @@ RSRect RunBaseImpl::getImageBounds() const
     SkScalar startWhiteSpaceWidth = 0.0;
     size_t endWhiteSpaceNum = 0;
     size_t startNotWhiteSpaceIndex = 0;
-    // Gets the width of the first non-blank glyph at the end
-    for (size_t i = runGlyphIdSpan.size() - 1; i >= 0; --i) {
-        auto& cluster = fVisitorRun->owner()->cluster(fVisitorGlobalPos + i);
+    // Scan trailing whitespace from the end
+    for (size_t i = runGlyphIdSpan.size(); i > 0; --i) {
+        auto& cluster = getClusterByGlyphPos(fVisitorPos + i - 1);
         if (!cluster.isWhitespaceBreak()) {
             endAdvance = cluster.width();
             break;
         }
         ++endWhiteSpaceNum;
-        if (i == 0) {
-            break;
-        }
     }
-    // Gets the width of the first non-blank glyph at the end
+    // Scan leading whitespace from the start
     for (size_t i = 0; i < runGlyphIdSpan.size(); ++i) {
-        auto& cluster = fVisitorRun->owner()->cluster(fVisitorGlobalPos + i);
+        auto& cluster = getClusterByGlyphPos(fVisitorPos + i);
         if (!cluster.isWhitespaceBreak()) {
             break;
         }
@@ -331,7 +328,7 @@ float RunBaseImpl::calculateTrailSpacesWidth() const
     }
     SkScalar spaceWidth = 0;
     for (size_t i = 0; i < fTrailSpaces; i++) {
-        auto& cluster = fVisitorRun->owner()->cluster(fVisitorGlobalPos + fVisitorSize + i);
+        auto& cluster = getClusterByGlyphPos(fVisitorPos + fVisitorSize + i);
         // doesn't calculate the width of a hard line wrap at the end of a line
         if (cluster.isHardBreak()) {
             break;
@@ -340,6 +337,13 @@ float RunBaseImpl::calculateTrailSpacesWidth() const
     }
 
     return spaceWidth;
+}
+
+Cluster& RunBaseImpl::getClusterByGlyphPos(size_t glyphPos) const
+{
+    TextIndex textIdx = fVisitorRun->globalClusterIndex(glyphPos);
+    ClusterIndex cidx = fVisitorRun->owner()->clusterIndex(textIdx);
+    return fVisitorRun->owner()->cluster(cidx);
 }
 
 uint64_t RunBaseImpl::calculateActualLength(int64_t start, int64_t length) const
