@@ -680,6 +680,11 @@ struct TextWrapScorer {
     {
         CalculateCumulativeLen(parent);
 
+        // If maxWidth cannot fit even a single cluster, skip balanced scoring
+        if (!canFitAnyCluster_) {
+            return;
+        }
+
         if (parent_.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
             // calculate target width before breaks
             int64_t targetLines = 1 + cumulativeLen_ / maxWidth_;
@@ -745,9 +750,11 @@ struct TextWrapScorer {
         auto endCluster = &parent.cluster(0);
         auto locale = parent.paragraphStyle().getTextStyle().getLocale();
         for (size_t clusterIx = 0; clusterIx < parent.clusters().size(); clusterIx++) {
+            auto len = parent.cluster(clusterIx).width();
+            if (!canFitAnyCluster_ && len > 0 && len <= maxWidth_) {
+                canFitAnyCluster_ = true;
+            }
             if (parent.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
-                auto& cluster = parent.cluster(clusterIx);
-                auto len = cluster.width();
                 cumulativeLen_ += len;
             }
             CalculateHyphenPos(clusterIx, startCluster, endCluster, parent, locale);
@@ -1008,6 +1015,11 @@ struct TextWrapScorer {
         }
     }
 
+    bool CanFitAnyCluster()
+    {
+        return canFitAnyCluster_;
+    }
+
 private:
     struct Index {
         size_t lineNumber { 0 };
@@ -1039,6 +1051,7 @@ private:
     SkScalar maxWidth_ { 0 };
     SkScalar currentTarget_ { 0 };
     SkScalar cumulativeLen_ { 0 };
+    bool canFitAnyCluster_ { false };
     size_t maxLines_ { 0 };
     ParagraphImpl& parent_;
     std::vector<SkScalar> current_;
@@ -1074,6 +1087,11 @@ uint64_t TextWrapper::CalculateBestScore(std::vector<SkScalar>& widthOut, SkScal
     }
 
     TextWrapScorer* scorer = new TextWrapScorer(maxWidth, *parent, maxLines);
+    if (!scorer->CanFitAnyCluster()) {
+        delete scorer;
+        return -1;
+    }
+
     scorer->Run();
     while (scorer && scorer->GetResult().size()) {
         auto width = scorer->GetResult().back();
