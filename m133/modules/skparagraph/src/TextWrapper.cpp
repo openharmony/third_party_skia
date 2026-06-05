@@ -841,7 +841,7 @@ struct TextWrapScorer {
         // This should come precalculated
         param.currentMax = maxWidth_ - parent_.detectIndents(param.lineNumber) -
             parent_.detectTailIndents(param.lineNumber);
-        if (nearlyZero(param.currentMax)) {
+        if (param.currentMax <= SK_ScalarNearlyZero) {
             return BEST_LOCAL_SCORE;
         }
 
