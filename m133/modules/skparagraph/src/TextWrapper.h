@@ -292,6 +292,12 @@ private:
     };
 
     friend TextTabAlign;
+
+    // Action returned by lookAhead sub-functions to control the main loop
+    enum class LoopAction { CONTINUE, BREAK };
+
+    // lookAhead sub-functions
+    struct LookAheadContext;
 #endif
     TextStretch fWords;
     TextStretch fClusters;
@@ -336,6 +342,26 @@ private:
 
 #ifdef ENABLE_TEXT_ENHANCE
     void lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack, WordBreakType wordBreakType);
+
+    // lookAhead sub-functions
+    void initLookAheadState();
+    void handleHeadPunctuation(Cluster* cluster);
+    void accumulateAutoSpacing(LookAheadContext& ctx, Cluster* cluster);
+    // Overflow: returns LoopAction::CONTINUE to continue loop, LoopAction::BREAK to exit
+    LoopAction handleOverflowCluster(Cluster* cluster, LookAheadContext& ctx,
+                                       SkScalar widthBeforeCluster, TextTabAlign& textTabAlign);
+    LoopAction handleOverflowHyphenBreak(Cluster* cluster);
+    LoopAction handleOverflowWhitespaceBreak(Cluster* cluster, LookAheadContext& ctx,
+                                               TextTabAlign& textTabAlign);
+    LoopAction handleOverflowPlaceholder(Cluster* cluster, LookAheadContext& ctx);
+    // Returns true if lookAhead should proceed to fallback, false if hyphen break was found
+    bool attemptHyphenation(Cluster* cluster, LookAheadContext& ctx, SkScalar widthBeforeCluster);
+    bool detectTooLongWord(Cluster* cluster, LookAheadContext& ctx);
+    void checkTooLongCluster(Cluster* cluster, LookAheadContext& ctx);
+    // Normal (non-overflow) cluster handling
+    LoopAction handleNormalCluster(Cluster* cluster, LookAheadContext& ctx,
+                                     SkScalar widthBeforeCluster, TextTabAlign& textTabAlign);
+
     void moveForward(bool breakAll); // breakAll = true, break occurs after each character
     bool lookAheadByHyphen(Cluster* endOfClusters, SkScalar widthBeforeCluster, SkScalar maxWidth);
     uint64_t CalculateBestScore(std::vector<SkScalar>& widthOut,

@@ -157,6 +157,262 @@ struct LineBreakerWithLittleRounding {
 }  // namespace
 
 #ifdef ENABLE_TEXT_ENHANCE
+
+struct TextWrapper::LookAheadContext {
+    bool isFirstWord{true};
+    SkScalar totalFakeSpacing{0.0};
+    bool attemptedHyphenate{false};
+    Cluster* nextNonBreakingSpace{nullptr};
+    SkScalar maxWidth{0.0};
+    Cluster* endOfClusters{nullptr};
+    WordBreakType wordBreakType{WordBreakType::NORMAL};
+    LineBreakerWithLittleRounding breaker{0.0, false};
+
+    LookAheadContext(SkScalar mw, Cluster* endClusters, bool applyRoundingHack, WordBreakType wbType)
+        : maxWidth(mw), endOfClusters(endClusters), wordBreakType(wbType)
+        , breaker(mw, applyRoundingHack) {}
+};
+
+void TextWrapper::initLookAheadState() {
+    reset();
+    fEndLine.metrics().clean();
+    fWords.startFrom(fEndLine.startCluster(), fEndLine.startPos());
+    fClusters.startFrom(fEndLine.startCluster(), fEndLine.startPos());
+    fClip.startFrom(fEndLine.startCluster(), fEndLine.startPos());
+}
+
+void TextWrapper::handleHeadPunctuation(Cluster* cluster) {
+    if (cluster == fEndLine.endCluster()) {
+        ClusterIndex headClusterIndex = cluster->getOwner()->clusterIndex(cluster->textRange().start);
+        bool isProcessedHeadPunc = fParent->isShapedCompressHeadPunctuation(headClusterIndex);
+        if (isProcessedHeadPunc) {
+            fParent->setNeedUpdateRunCache(true);
+        }
+    }
+}
+
+void TextWrapper::accumulateAutoSpacing(LookAheadContext& ctx, Cluster* cluster) {
+    ctx.totalFakeSpacing += (cluster->needAutoSpacing() && cluster != fEndLine.endCluster()) ?
+        (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
+}
+
+// Returns true if the too-long-word situation was resolved (caller should skip checkTooLongCluster).
+bool TextWrapper::detectTooLongWord(Cluster* cluster, LookAheadContext& ctx) {
+    // Walk further to see if there is a too long word, cluster or glyph
+    SkScalar nextWordLength = fClusters.width();
+    SkScalar nextShortWordLength = nextWordLength;
+    for (auto further = cluster; further != ctx.endOfClusters; ++further) {
+        if (further->isSoftBreak() || further->isHardBreak() || further->isWhitespaceBreak()) {
+            break;
+        }
+        if (further->run().isPlaceholder()) {
+            // Placeholder ends the word
+            break;
+        }
+
+        if (nextWordLength > 0 && nextWordLength <= ctx.maxWidth && further->isIntraWordBreak()) {
+            // The cluster is spaces but not the end of the word in a normal sense
+            ctx.nextNonBreakingSpace = further;
+            nextShortWordLength = nextWordLength;
+        }
+
+        if (ctx.maxWidth == 0) {
+            // This is a tricky flutter case: layout(width:0) places 1 cluster on each line
+            nextWordLength = std::max(nextWordLength, further->width());
+        } else {
+            nextWordLength += further->width();
+        }
+    }
+
+    if (nextWordLength > ctx.maxWidth) {
+        if (ctx.nextNonBreakingSpace != nullptr) {
+            // We only get here if the non-breaking space improves our situation
+            // (allows us to break the text to fit the word)
+            if (SkScalar shortLength = fWords.width() + nextShortWordLength;
+                !ctx.breaker.breakLine(shortLength)) {
+                // We can add the short word to the existing line
+                fClusters = TextStretch(fClusters.startCluster(), ctx.nextNonBreakingSpace,
+                                        fClusters.metrics().getForceStrut());
+                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, nextShortWordLength);
+                fWords.extend(fClusters);
+            } else {
+                // We can place the short word on the next line
+                fClusters.clean();
+            }
+            // Either way we are not in "word is too long" situation anymore
+            return true;
+        }
+        // If the word is too long we can break it right now and hope it's enough
+        fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, nextWordLength);
+        if (fClusters.endPos() - fClusters.startPos() > 1 || fWords.empty()) {
+            fTooLongWord = true;
+        } else {
+            // Even if the word is too long there is a very little space on this line.
+            // let's deal with it on the next line.
+        }
+    }
+    return false;
+}
+
+void TextWrapper::checkTooLongCluster(Cluster* cluster, LookAheadContext& ctx) {
+    if (fWords.empty() && ctx.breaker.breakLine(cluster->width())) {
+        fClusters.extend(cluster);
+        fTooLongCluster = true;
+        fTooLongWord = true;
+    }
+}
+
+TextWrapper::LoopAction TextWrapper::handleNormalCluster(
+    Cluster* cluster, LookAheadContext& ctx, SkScalar widthBeforeCluster, TextTabAlign& textTabAlign) {
+    if (cluster->run().isPlaceholder()) {
+        if (!fClusters.empty()) {
+            // Placeholder ends the previous word (placeholders are ignored in trimming)
+            fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
+            fWords.extend(fClusters);
+        }
+
+        // Placeholder is separate word and its width now is counted in minIntrinsicWidth
+        fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, cluster->width());
+        fWords.extend(cluster);
+    } else {
+        if (cluster->isTabulation()) {
+            if (textTabAlign.processTab(fWords, fClusters, cluster, ctx.totalFakeSpacing)) {
+                return LoopAction::BREAK;
+            }
+            fClusters.extend(cluster);
+
+            fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
+            fWords.extend(fClusters);
+        } else {
+            fClusters.extend(cluster);
+            if (fClusters.endOfWord()) { // Keep adding clusters/words
+                if (textTabAlign.processEndofWord(fWords, fClusters, cluster, ctx.totalFakeSpacing)) {
+                    if (ctx.wordBreakType == WordBreakType::BREAK_ALL) {
+                        fClusters.trim(cluster);
+                    }
+                    return LoopAction::BREAK;
+                }
+                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
+                fWords.extend(fClusters);
+            } else {
+                if (textTabAlign.processCluster(fWords, fClusters, cluster, ctx.totalFakeSpacing)) {
+                    fClusters.trim(cluster);
+                    return LoopAction::BREAK;
+                }
+                if (handleHighQualityBreakAllPunctuation(cluster, ctx.endOfClusters,
+                                                         widthBeforeCluster, ctx.maxWidth)) {
+                    return LoopAction::BREAK;
+                }
+            }
+        }
+    }
+    return LoopAction::CONTINUE;
+}
+
+TextWrapper::LoopAction TextWrapper::handleOverflowHyphenBreak(Cluster* cluster) {
+    // we dont want to add the current cluster as the hyphenation algorithm marks breaks before a cluster
+    // however, if we cannot fit anything to a line, we need to break out here
+    if (fWords.empty() && fClusters.empty()) {
+        fClusters.extend(cluster);
+        fTooLongCluster = true;
+        return LoopAction::BREAK;
+    }
+    if (!fClusters.empty()) {
+        fWords.extend(fClusters);
+        fBrokeLineWithHyphen = true;
+        return LoopAction::BREAK;
+    }
+    // let hyphenator try before this if it is enabled
+    return LoopAction::CONTINUE;
+}
+
+TextWrapper::LoopAction TextWrapper::handleOverflowWhitespaceBreak(Cluster* cluster, LookAheadContext& ctx,
+                                                        TextTabAlign& textTabAlign) {
+    // It's the end of the word
+    ctx.isFirstWord = false;
+    fClusters.extend(cluster);
+    bool tabAlignRet = false;
+    if (cluster->isTabulation()) {
+        tabAlignRet = textTabAlign.processTab(fWords, fClusters, cluster, ctx.totalFakeSpacing);
+    } else {
+        tabAlignRet = textTabAlign.processEndofWord(fWords, fClusters, cluster, ctx.totalFakeSpacing);
+    }
+    if (tabAlignRet) {
+        return LoopAction::BREAK;
+    }
+    fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, this->getClustersTrimmedWidth());
+    fWords.extend(fClusters);
+    return LoopAction::CONTINUE;
+}
+
+TextWrapper::LoopAction TextWrapper::handleOverflowPlaceholder(Cluster* cluster, LookAheadContext& ctx) {
+    ctx.isFirstWord = false;
+    if (!fClusters.empty()) {
+        // Placeholder ends the previous word
+        fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, this->getClustersTrimmedWidth());
+        fWords.extend(fClusters);
+    }
+
+    if (cluster->width() > ctx.maxWidth && fWords.empty()) {
+        // Placeholder is the only text and it's longer than the line;
+        // it does not count in fMinIntrinsicWidth
+        fClusters.extend(cluster);
+        fTooLongCluster = true;
+        fTooLongWord = true;
+    } else {
+        // Placeholder does not fit the line; it will be considered again on the next line
+    }
+    return LoopAction::BREAK;
+}
+
+bool TextWrapper::attemptHyphenation(Cluster* cluster, LookAheadContext& ctx, SkScalar widthBeforeCluster) {
+    // should do this only if hyphenation is enabled
+    if (ctx.wordBreakType != WordBreakType::BREAK_HYPHEN || ctx.attemptedHyphenate ||
+        fClusters.empty() || fNeedEllipsis) {
+        return true;  // not attempted, proceed with fallback
+    }
+    ctx.attemptedHyphenate = true;
+    // lookAheadByHyphen returns false when it found a hyphen break (already updated state)
+    return lookAheadByHyphen(ctx.endOfClusters, widthBeforeCluster, ctx.breaker.fUpper);
+}
+
+TextWrapper::LoopAction TextWrapper::handleOverflowCluster(Cluster* cluster, LookAheadContext& ctx,
+                                                 SkScalar widthBeforeCluster,
+                                                 TextTabAlign& textTabAlign) {
+    // Check if the overflowing cluster is a single hanging punctuation
+    // that can be allowed to hang over the line boundary instead of breaking
+    if (handlePunctuationOverflow(cluster, ctx.endOfClusters, widthBeforeCluster, ctx.maxWidth)) {
+        return LoopAction::CONTINUE;
+    }
+
+    // if the hyphenator has already run as balancing algorithm, use the cluster information
+    if (cluster->isHyphenBreak() && !fNeedEllipsis) {
+        auto action = handleOverflowHyphenBreak(cluster);
+        if (action == LoopAction::BREAK) {
+            return LoopAction::BREAK;
+        }
+        // Fall through: hyphen break found but no words/clusters to commit yet,
+        // skip whitespace/placeholder checks and try hyphenation directly.
+    } else if (cluster->isWhitespaceBreak() &&
+               ((ctx.wordBreakType != WordBreakType::BREAK_HYPHEN) ||
+               (ctx.wordBreakType == WordBreakType::BREAK_HYPHEN &&
+               ctx.attemptedHyphenate && !fNeedEllipsis))) {
+        return handleOverflowWhitespaceBreak(cluster, ctx, textTabAlign);
+    } else if (cluster->run().isPlaceholder()) {
+        return handleOverflowPlaceholder(cluster, ctx);
+    }
+
+    if (!attemptHyphenation(cluster, ctx, widthBeforeCluster)) {
+        return LoopAction::BREAK;
+    }
+
+    textTabAlign.processEndofLine(fWords, fClusters, cluster, ctx.totalFakeSpacing);
+    if (!detectTooLongWord(cluster, ctx)) {
+        checkTooLongCluster(cluster, ctx);
+    }
+    return LoopAction::BREAK;
+}
+
 void TextWrapper::matchHyphenResult(const std::vector<uint8_t>& result, ParagraphImpl* owner, size_t& pos,
                                     SkScalar maxWidth, SkScalar len)
 {
@@ -337,218 +593,40 @@ bool TextWrapper::handlePunctuationOverflow(Cluster* cluster, Cluster* endOfClus
 void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool applyRoundingHack,
                             WordBreakType wordBreakType) {
 
-    reset();
-    fEndLine.metrics().clean();
-    fWords.startFrom(fEndLine.startCluster(), fEndLine.startPos());
-    fClusters.startFrom(fEndLine.startCluster(), fEndLine.startPos());
-    fClip.startFrom(fEndLine.startCluster(), fEndLine.startPos());
+    LookAheadContext ctx(maxWidth, endOfClusters, applyRoundingHack, wordBreakType);
+    initLookAheadState();
 
-    bool isFirstWord = true;
     TextTabAlign textTabAlign(endOfClusters->getOwner()->paragraphStyle().getTextTab());
     textTabAlign.init(maxWidth, endOfClusters);
 
-    LineBreakerWithLittleRounding breaker(maxWidth, applyRoundingHack);
-    Cluster* nextNonBreakingSpace = nullptr;
-    SkScalar totalFakeSpacing = 0.0;
-    bool attemptedHyphenate = false;
-
     for (auto cluster = fEndLine.endCluster(); cluster < endOfClusters; ++cluster) {
-        if (cluster == fEndLine.endCluster()) {
-            ClusterIndex headClusterIndex = cluster->getOwner()->clusterIndex(cluster->textRange().start);
-            bool isProcessedHeadPunc = fParent->isShapedCompressHeadPunctuation(headClusterIndex);
-            if (isProcessedHeadPunc) {
-                fParent->setNeedUpdateRunCache(true);
-            }
-        }
-        totalFakeSpacing += (cluster->needAutoSpacing() && cluster != fEndLine.endCluster()) ?
-            (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
-        SkScalar widthBeforeCluster = fWords.width() + fClusters.width() + totalFakeSpacing;
+        handleHeadPunctuation(cluster);
+        accumulateAutoSpacing(ctx, cluster);
+        SkScalar widthBeforeCluster = fWords.width() + fClusters.width() + ctx.totalFakeSpacing;
+
         if (cluster->isHardBreak()) {
             if (cluster != fEndLine.endCluster()) {
-                isFirstWord = false;
+                ctx.isFirstWord = false;
             }
         } else if (
                 // TODO: Trying to deal with flutter rounding problem. Must be removed...
                 SkScalar width = cluster->width() + widthBeforeCluster;
-                (!isFirstWord || wordBreakType != WordBreakType::NORMAL) &&
-                breaker.breakLine(width)) {
-            // Check if the overflowing cluster is a single hanging punctuation
-            // that can be allowed to hang over the line boundary instead of breaking
-            if (handlePunctuationOverflow(cluster, endOfClusters, widthBeforeCluster, maxWidth)) {
+                (!ctx.isFirstWord || ctx.wordBreakType != WordBreakType::NORMAL) &&
+                ctx.breaker.breakLine(width)) {
+            auto action = handleOverflowCluster(cluster, ctx, widthBeforeCluster, textTabAlign);
+            if (action == LoopAction::CONTINUE) {
                 continue;
-            }
-
-            // if the hyphenator has already run as balancing algorithm, use the cluster information
-            if (cluster->isHyphenBreak() && !fNeedEllipsis) {
-                // we dont want to add the current cluster as the hyphenation algorithm marks breaks before a cluster
-                // however, if we cannot fit anything to a line, we need to break out here
-                if (fWords.empty() && fClusters.empty()) {
-                    fClusters.extend(cluster);
-                    fTooLongCluster = true;
-                    break;
-                }
-                if (!fClusters.empty()) {
-                    fWords.extend(fClusters);
-                    fBrokeLineWithHyphen = true;
-                    break;
-                }
-                // let hyphenator try before this if it is enabled
-            } else if (cluster->isWhitespaceBreak() && ((wordBreakType != WordBreakType::BREAK_HYPHEN) ||
-                       (wordBreakType == WordBreakType::BREAK_HYPHEN && attemptedHyphenate && !fNeedEllipsis))) {
-                // It's the end of the word
-                isFirstWord = false;
-                fClusters.extend(cluster);
-
-                bool tabAlignRet = false;
-                if (cluster->isTabulation()) {
-                    tabAlignRet = textTabAlign.processTab(fWords, fClusters, cluster, totalFakeSpacing);
-                } else {
-                    tabAlignRet = textTabAlign.processEndofWord(fWords, fClusters, cluster, totalFakeSpacing);
-                }
-                if (tabAlignRet) {
-                    break;
-                }
-                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, this->getClustersTrimmedWidth());
-                fWords.extend(fClusters);
-                continue;
-            } else if (cluster->run().isPlaceholder()) {
-                isFirstWord = false;
-                if (!fClusters.empty()) {
-                    // Placeholder ends the previous word
-                    fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, this->getClustersTrimmedWidth());
-                    fWords.extend(fClusters);
-                }
-
-                if (cluster->width() > maxWidth && fWords.empty()) {
-                    // Placeholder is the only text and it's longer than the line;
-                    // it does not count in fMinIntrinsicWidth
-                    fClusters.extend(cluster);
-                    fTooLongCluster = true;
-                    fTooLongWord = true;
-                } else {
-                    // Placeholder does not fit the line; it will be considered again on the next line
-                }
-                break;
-            }
-
-            // should do this only if hyphenation is enabled
-            if (wordBreakType == WordBreakType::BREAK_HYPHEN && !attemptedHyphenate && !fClusters.empty() &&
-                !fNeedEllipsis) {
-                attemptedHyphenate = true;
-                if (!lookAheadByHyphen(endOfClusters, widthBeforeCluster, breaker.fUpper)) {
-                    break;
-                }
-            }
-
-            textTabAlign.processEndofLine(fWords, fClusters, cluster, totalFakeSpacing);
-
-            // Walk further to see if there is a too long word, cluster or glyph
-            SkScalar nextWordLength = fClusters.width();
-            SkScalar nextShortWordLength = nextWordLength;
-            for (auto further = cluster; further != endOfClusters; ++further) {
-                if (further->isSoftBreak() || further->isHardBreak() || further->isWhitespaceBreak()) {
-                    break;
-                }
-                if (further->run().isPlaceholder()) {
-                  // Placeholder ends the word
-                  break;
-                }
-
-                if (nextWordLength > 0 && nextWordLength <= maxWidth && further->isIntraWordBreak()) {
-                    // The cluster is spaces but not the end of the word in a normal sense
-                    nextNonBreakingSpace = further;
-                    nextShortWordLength = nextWordLength;
-                }
-
-                if (maxWidth == 0) {
-                    // This is a tricky flutter case: layout(width:0) places 1 cluster on each line
-                    nextWordLength = std::max(nextWordLength, further->width());
-                } else {
-                    nextWordLength += further->width();
-                }
-            }
-            if (nextWordLength > maxWidth) {
-                if (nextNonBreakingSpace != nullptr) {
-                    // We only get here if the non-breaking space improves our situation
-                    // (allows us to break the text to fit the word)
-                    if (SkScalar shortLength = fWords.width() + nextShortWordLength;
-                        !breaker.breakLine(shortLength)) {
-                        // We can add the short word to the existing line
-                        fClusters = TextStretch(fClusters.startCluster(), nextNonBreakingSpace, fClusters.metrics().getForceStrut());
-                        fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, nextShortWordLength);
-                        fWords.extend(fClusters);
-                    } else {
-                        // We can place the short word on the next line
-                        fClusters.clean();
-                    }
-                    // Either way we are not in "word is too long" situation anymore
-                    break;
-                }
-                // If the word is too long we can break it right now and hope it's enough
-                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, nextWordLength);
-                if (fClusters.endPos() - fClusters.startPos() > 1 ||
-                    fWords.empty()) {
-                    fTooLongWord = true;
-                } else {
-                    // Even if the word is too long there is a very little space on this line.
-                    // let's deal with it on the next line.
-                }
-            }
-
-            if (fWords.empty() && breaker.breakLine(cluster->width())) {
-                fClusters.extend(cluster);
-                fTooLongCluster = true;
-                fTooLongWord = true;
             }
             break;
         }
 
         if (cluster->isSoftBreak() || cluster->isWhitespaceBreak()) {
-            isFirstWord = false;
+            ctx.isFirstWord = false;
         }
 
-        if (cluster->run().isPlaceholder()) {
-            if (!fClusters.empty()) {
-                // Placeholder ends the previous word (placeholders are ignored in trimming)
-                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
-                fWords.extend(fClusters);
-            }
-
-            // Placeholder is separate word and its width now is counted in minIntrinsicWidth
-            fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, cluster->width());
-            fWords.extend(cluster);
-        } else {
-            if (cluster->isTabulation()) {
-                if (textTabAlign.processTab(fWords, fClusters, cluster, totalFakeSpacing)) {
-                    break;
-                }
-                fClusters.extend(cluster);
-
-                fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
-                fWords.extend(fClusters);
-            } else {
-                fClusters.extend(cluster);
-                if (fClusters.endOfWord()) { // Keep adding clusters/words
-                    if (textTabAlign.processEndofWord(fWords, fClusters, cluster, totalFakeSpacing)) {
-                        if (wordBreakType == WordBreakType::BREAK_ALL) {
-                            fClusters.trim(cluster);
-                        }
-                        break;
-                    }
-
-                    fMinIntrinsicWidth = std::max(fMinIntrinsicWidth, getClustersTrimmedWidth());
-                    fWords.extend(fClusters);
-                } else {
-                    if (textTabAlign.processCluster(fWords, fClusters, cluster, totalFakeSpacing)) {
-                        fClusters.trim(cluster);
-                        break;
-                    }
-
-                    if (handleHighQualityBreakAllPunctuation(cluster, endOfClusters, widthBeforeCluster, maxWidth)) {
-                        break;
-                    }
-                }
-            }
+        auto action = handleNormalCluster(cluster, ctx, widthBeforeCluster, textTabAlign);
+        if (action == LoopAction::BREAK) {
+            break;
         }
 
         if ((fHardLineBreak = cluster->isHardBreak())) {
