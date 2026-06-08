@@ -276,6 +276,17 @@ RSRect RunBaseImpl::getImageBounds() const
     if (runGlyphIdSpan.size() == 0) {
         return {};
     }
+    // Ellipsis run has no clusters in the paragraph's cluster table,
+    // skip whitespace scanning (ellipsis has no whitespace glyphs anyway).
+    if (fVisitorRun->isEllipsis()) {
+        SkScalar endAdvance = 0.0;
+        SkSpan<const SkPoint> advanceSpan = fVisitorRun->advances();
+        if (runGlyphIdSpan.size() > 0) {
+            endAdvance = advanceSpan[fVisitorPos + runGlyphIdSpan.size() - 1].fX;
+        }
+        SkRect rect = getAllGlyphRectInfo(runGlyphIdSpan, 0, 0.0, 0, endAdvance);
+        return {rect.fLeft, rect.fTop, rect.fRight, rect.fBottom};
+    }
     SkScalar endAdvance = 0.0;
     SkScalar startWhiteSpaceWidth = 0.0;
     size_t endWhiteSpaceNum = 0;
@@ -323,7 +334,7 @@ float RunBaseImpl::getTypographicBounds(float* ascent, float* descent, float* le
 float RunBaseImpl::calculateTrailSpacesWidth() const
 {
     // Calculates the width of the whitespace character at the end of the line
-    if (!fVisitorRun || fTrailSpaces == 0) {
+    if (!fVisitorRun || fTrailSpaces == 0 || fVisitorRun->isEllipsis()) {
         return 0.0;
     }
     SkScalar spaceWidth = 0;
