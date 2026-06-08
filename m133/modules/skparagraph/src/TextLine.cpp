@@ -840,6 +840,49 @@ void TextLine::fillRecordGeometry(TextBlobRecord& record, const TextStyle& style
         this->offset().fY + correctedBaseline - (context.run ? context.run->fCompressionBaselineShift : 0));
 }
 
+void TextLine::logZeroBoundsDiagnostic(const TextRange& textRange, const ClipContext& context,
+    const std::shared_ptr<RSTextBlob>& blob) {
+    auto bounds = blob->Bounds();
+    bool boundsZero = bounds != nullptr && bounds->IsEmpty();
+    if (!boundsZero || textRange.width() <= 0 || textRange.start >= fOwner->getText().size() ||
+        fOwner->codeUnitHasProperty(textRange.start, SkUnicode::kPartOfWhiteSpaceBreak)) {
+        return;
+    }
+
+    const char* text = fOwner->getText().c_str();
+    const char* end = text + fOwner->getText().size();
+    const char* ptr = text;
+    SkUnichar unicode = SkUTF::NextUTF8(&ptr, end);
+    if (ptr != end) {
+        return;
+    }
+
+    if (fOwner->codeUnitHasProperty(textRange.start, SkUnicode::kControl) ||
+        fOwner->codeUnitHasProperty(textRange.start, SkUnicode::kCombine)) {
+        TEXT_LOGI_LIMIT3_HOUR("buildTextBlob: zero bounds for control/combine char, unicode=U+%{public}04X", unicode);
+        return;
+    }
+
+    auto* run = context.run;
+    auto tf = run->font().GetTypeface();
+    auto positions = run->positions();
+    auto glyphs = run->glyphs();
+    SkScalar advanceX = run->fAdvanceX();
+
+    std::string charStr(text, ptr - text);
+
+    TEXT_LOGW_LIMIT3_HOUR("buildTextBlob: bounds all zero, unicode=U+%{public}04X char=[%{public}s] "
+        "family=%{public}s fontSize=%{public}.2f runSize=%{public}zu "
+        "pos[0]=(%{public}.2f,%{public}.2f) posEnd=(%{public}.2f,%{public}.2f) "
+        "advanceX=%{public}.2f glyphID=%{public}u "
+        "bounds=(%{public}.2f,%{public}.2f,%{public}.2f,%{public}.2f)",
+        unicode, charStr.c_str(),
+        tf ? tf->GetFamilyName().c_str() : "null", run->font().GetSize(), run->size(),
+        positions[0].fX, positions[0].fY, positions[run->size()].fX, positions[run->size()].fY,
+        advanceX, glyphs[0],
+        bounds->GetLeft(), bounds->GetTop(), bounds->GetRight(), bounds->GetBottom());
+}
+
 void TextLine::detectAndSetEmoji(TextBlobRecord& record) {
     if (record.fBlob == nullptr || record.fVisitor_Run == nullptr) {
         return;
@@ -879,6 +922,7 @@ void TextLine::buildTextBlob(TextRange textRange, const TextStyle& style, const 
             record.fBounds.joinPossiblyEmptyRect(SkRect::MakeLTRB(
                 bounds->left_, bounds->top_, bounds->right_, bounds->bottom_));
         }
+        logZeroBoundsDiagnostic(textRange, context, record.fBlob);
     }
 
     detectAndSetEmoji(record);

@@ -447,6 +447,8 @@ private:
     void initRecordFields(TextBlobRecord& record, const TextStyle& style, const ClipContext& context);
     void fillRecordGeometry(TextBlobRecord& record, const TextStyle& style, const ClipContext& context);
     void detectAndSetEmoji(TextBlobRecord& record);
+    void logZeroBoundsDiagnostic(const TextRange& textRange, const ClipContext& context,
+                                 const std::shared_ptr<RSTextBlob>& blob);
 #endif
     bool fTextBlobCachePopulated;
 #ifdef ENABLE_TEXT_ENHANCE
