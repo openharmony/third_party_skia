@@ -234,11 +234,14 @@ SkRect RunBaseImpl::getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan,
     SkScalar startWhiteSpaceWidth, size_t endWhiteSpaceNum, SkScalar endAdvance) const
 {
     SkRect rect = {0.0, 0.0, 0.0, 0.0};
-    SkScalar runNotWhiteSpaceWidth = 0.0;
     RSRect joinRect{0.0, 0.0, 0.0, 0.0};
     RSRect endRect {0.0, 0.0, 0.0, 0.0};
     RSRect startRect {0.0, 0.0, 0.0, 0.0};
     size_t end = runGlyphIdSpan.size() - endWhiteSpaceNum;
+    SkScalar runNotWhiteSpaceWidth =
+        fVisitorRun->calculateWidth(fVisitorPos + startNotWhiteSpaceIndex, fVisitorPos + end, false);
+    SkScalar startJustificationShift =
+        fVisitorRun->getJustificationShiftsWidth(startNotWhiteSpaceIndex, startNotWhiteSpaceIndex + 1);
     for (size_t i = startNotWhiteSpaceIndex; i < end; i++) {
     // Get the bounds of each glyph
         RSRect glyphBounds;
@@ -252,15 +255,12 @@ SkRect RunBaseImpl::getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan,
         }
         // Stitching removes glyph boundaries at the beginning and end of lines
         joinRect.Join(glyphBounds);
-        auto& cluster = getClusterByGlyphPos(fVisitorPos + i);
-        // Calculates the width of the glyph with the beginning and end of the line removed
-        runNotWhiteSpaceWidth += fVisitorRun->usingAutoSpaceWidth(cluster);
     }
     // If the first glyph of run is a blank glyph, you need to add startWhitespaceWidth
-    SkScalar x = fClipRect.fLeft + startRect.GetLeft() + startWhiteSpaceWidth;
+    SkScalar x = fClipRect.fLeft + startRect.GetLeft() + startWhiteSpaceWidth + startJustificationShift;
     SkScalar y = joinRect.GetBottom();
     SkScalar width = runNotWhiteSpaceWidth -
-        (endAdvance - endRect.GetLeft() - endRect.GetWidth()) - startRect.GetLeft();
+        (endAdvance - endRect.GetLeft() - endRect.GetWidth()) - startRect.GetLeft() - startJustificationShift;
     SkScalar height = joinRect.GetHeight();
      rect.setXYWH(x, y, width, height);
      return rect;
