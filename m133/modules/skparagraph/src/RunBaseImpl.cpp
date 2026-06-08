@@ -27,7 +27,7 @@ RunBaseImpl::RunBaseImpl(
     const Run* visitorRun,
     size_t visitorPos,
     size_t visitorGlobalPos,
-    size_t trailSpaces,
+    SkScalar trailSpacesWidth,
     size_t visitorSize,
     TextStyle textStyle)
     : fBlob(blob),
@@ -37,7 +37,7 @@ RunBaseImpl::RunBaseImpl(
     fVisitorRun(visitorRun),
     fVisitorPos(visitorPos),
     fVisitorGlobalPos(visitorGlobalPos),
-    fTrailSpaces(trailSpaces),
+    fTrailSpacesWidth(trailSpacesWidth),
     fVisitorSize(visitorSize),
     fTextStyle(textStyle)
 {
@@ -328,27 +328,9 @@ float RunBaseImpl::getTypographicBounds(float* ascent, float* descent, float* le
     *ascent = fVisitorRun->ascent() + fVisitorRun->getVerticalAlignShift();
     *descent = fVisitorRun->descent() + fVisitorRun->getVerticalAlignShift();
     *leading = fVisitorRun->leading();
-    return fClipRect.width() + calculateTrailSpacesWidth();
+    return fClipRect.width() + fTrailSpacesWidth;
 }
 
-float RunBaseImpl::calculateTrailSpacesWidth() const
-{
-    // Calculates the width of the whitespace character at the end of the line
-    if (!fVisitorRun || fTrailSpaces == 0 || fVisitorRun->isEllipsis()) {
-        return 0.0;
-    }
-    SkScalar spaceWidth = 0;
-    for (size_t i = 0; i < fTrailSpaces; i++) {
-        auto& cluster = getClusterByGlyphPos(fVisitorPos + fVisitorSize + i);
-        // doesn't calculate the width of a hard line wrap at the end of a line
-        if (cluster.isHardBreak()) {
-            break;
-        }
-        spaceWidth += fVisitorRun->usingAutoSpaceWidth(cluster);
-    }
-
-    return spaceWidth;
-}
 
 Cluster& RunBaseImpl::getClusterByGlyphPos(size_t glyphPos) const
 {

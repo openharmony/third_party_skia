@@ -33,7 +33,7 @@ public:
         const Run* visitorRun,
         size_t visitorPos,
         size_t visitorGlobalPos,
-        size_t trailSpaces,
+        SkScalar trailSpacesWidth,
         size_t visitorSize,
         TextStyle textStyle
     );
@@ -59,7 +59,6 @@ public:
     size_t getVisitorSize() const;
 
 private:
-    float calculateTrailSpacesWidth() const;
     uint64_t calculateActualLength(int64_t start, int64_t length) const;
     // Get cluster by glyph position through two-level index mapping
     Cluster& getClusterByGlyphPos(size_t glyphPos) const;
@@ -75,7 +74,7 @@ private:
     const Run* fVisitorRun;
     size_t     fVisitorPos;
     size_t     fVisitorGlobalPos = 0;
-    size_t     fTrailSpaces = 0;
+    SkScalar   fTrailSpacesWidth = 0.0;
     size_t     fVisitorSize;
     TextStyle fTextStyle;
 };
