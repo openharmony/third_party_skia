@@ -3944,6 +3944,9 @@ TextLine TextLine::CloneSelf()
     textLine.fTextRangeReplacedByEllipsis = this->fTextRangeReplacedByEllipsis;
     textLine.fEllipsisIndex = this->fEllipsisIndex;
     textLine.fLastClipRunLtr = this->fLastClipRunLtr;
+    textLine.fIsArcText = this->fIsArcText;
+    textLine.fArcTextState = this->fArcTextState;
+    textLine.fDecorationContext = this->fDecorationContext;
     return textLine;
 }
 void TextLine::updateTextLinePaintAttributes() {
