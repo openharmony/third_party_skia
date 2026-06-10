@@ -261,6 +261,12 @@ public:
     const skia_private::STArray<PARAM_64, SkPoint, true>& getAutoSpacings() const {
         return fAutoSpacings;
     }
+    SkScalar getJustificationShiftsWidth(size_t start, size_t end) const {
+        if (start >= end || fJustificationShifts.empty()) {
+            return 0.0;
+        }
+        return fJustificationShifts[end - 1].fX - fJustificationShifts[start].fY;
+    }
     void extendClusterWidth(Cluster* cluster, SkScalar space);
     template<typename Visitor>
     void iterateGlyphRangeInTextOrder(const GlyphRange& glyphRange, Visitor visitor);

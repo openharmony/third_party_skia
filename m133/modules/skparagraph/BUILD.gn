@@ -107,6 +107,7 @@ ohos_static_library("skia_paragraph_ohos_new") {
     "$skia_modules_root/skparagraph/src/TextStyle.cpp",
     "$skia_modules_root/skparagraph/src/TextTabAlign.cpp",
     "$skia_modules_root/skparagraph/src/TextWrapper.cpp",
+    "$skia_modules_root/skparagraph/src/TextWrapScorer.cpp",
     "$skia_modules_root/skparagraph/src/TypefaceFontProvider.cpp",
   ]
 

@@ -3845,24 +3845,22 @@ RSRect TextLine::getImageBounds() const
 std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
 {
     std::vector<std::unique_ptr<RunBase>> runBases;
-    size_t num = 0;
     // Gets the offset position of the current line across the paragraph
-    size_t pos = fClusterRange.start;
-    size_t trailSpaces = 0;
+    GlyphRange glyphRange = fOwner->getGlyphRangeForCharacterRange(fText.start, fText.end);
+    size_t pos = glyphRange.start;
+    SkScalar trailSpacesWidth = 0.0;
     for (size_t i = 0; i < fTextBlobCache.size(); i++) {
         auto& blob = fTextBlobCache[i];
-        ++num;
         if (blob.fVisitor_Size == 0) {
             continue;
         }
-        if (num == fTextBlobCache.size()) {
-            // Counts how many tabs have been removed from the end of the current line
-            trailSpaces = fGhostClusterRange.width() - fClusterRange.width();
+        if ((i + 1) == fTextBlobCache.size()) {
+            trailSpacesWidth = spacesWidth();
         }
         const TextStyle& textStyle = fTextStyleCache.at(i);
         std::unique_ptr<RunBaseImpl> runBaseImplPtr = std::make_unique<RunBaseImpl>(
             blob.fBlob, blob.fOffset, blob.fPaint, blob.fClippingNeeded, blob.fClipRect,
-            blob.fVisitor_Run, blob.fVisitor_Pos, pos, trailSpaces, blob.fVisitor_Size, textStyle);
+            blob.fVisitor_Run, blob.fVisitor_Pos, pos, trailSpacesWidth, blob.fVisitor_Size, textStyle);
 
         // Calculate the position of each blob, relative to the entire paragraph
         pos += blob.fVisitor_Size;

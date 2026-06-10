@@ -27,7 +27,7 @@ RunBaseImpl::RunBaseImpl(
     const Run* visitorRun,
     size_t visitorPos,
     size_t visitorGlobalPos,
-    size_t trailSpaces,
+    SkScalar trailSpacesWidth,
     size_t visitorSize,
     TextStyle textStyle)
     : fBlob(blob),
@@ -37,7 +37,7 @@ RunBaseImpl::RunBaseImpl(
     fVisitorRun(visitorRun),
     fVisitorPos(visitorPos),
     fVisitorGlobalPos(visitorGlobalPos),
-    fTrailSpaces(trailSpaces),
+    fTrailSpacesWidth(trailSpacesWidth),
     fVisitorSize(visitorSize),
     fTextStyle(textStyle)
 {
@@ -234,11 +234,14 @@ SkRect RunBaseImpl::getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan,
     SkScalar startWhiteSpaceWidth, size_t endWhiteSpaceNum, SkScalar endAdvance) const
 {
     SkRect rect = {0.0, 0.0, 0.0, 0.0};
-    SkScalar runNotWhiteSpaceWidth = 0.0;
     RSRect joinRect{0.0, 0.0, 0.0, 0.0};
     RSRect endRect {0.0, 0.0, 0.0, 0.0};
     RSRect startRect {0.0, 0.0, 0.0, 0.0};
     size_t end = runGlyphIdSpan.size() - endWhiteSpaceNum;
+    SkScalar runNotWhiteSpaceWidth =
+        fVisitorRun->calculateWidth(fVisitorPos + startNotWhiteSpaceIndex, fVisitorPos + end, false);
+    SkScalar startJustificationShift =
+        fVisitorRun->getJustificationShiftsWidth(startNotWhiteSpaceIndex, startNotWhiteSpaceIndex + 1);
     for (size_t i = startNotWhiteSpaceIndex; i < end; i++) {
     // Get the bounds of each glyph
         RSRect glyphBounds;
@@ -252,15 +255,12 @@ SkRect RunBaseImpl::getAllGlyphRectInfo(SkSpan<const SkGlyphID>& runGlyphIdSpan,
         }
         // Stitching removes glyph boundaries at the beginning and end of lines
         joinRect.Join(glyphBounds);
-        auto& cluster = fVisitorRun->owner()->cluster(fVisitorGlobalPos + i);
-        // Calculates the width of the glyph with the beginning and end of the line removed
-        runNotWhiteSpaceWidth += fVisitorRun->usingAutoSpaceWidth(cluster);
     }
     // If the first glyph of run is a blank glyph, you need to add startWhitespaceWidth
-    SkScalar x = fClipRect.fLeft + startRect.GetLeft() + startWhiteSpaceWidth;
+    SkScalar x = fClipRect.fLeft + startRect.GetLeft() + startWhiteSpaceWidth + startJustificationShift;
     SkScalar y = joinRect.GetBottom();
     SkScalar width = runNotWhiteSpaceWidth -
-        (endAdvance - endRect.GetLeft() - endRect.GetWidth()) - startRect.GetLeft();
+        (endAdvance - endRect.GetLeft() - endRect.GetWidth()) - startRect.GetLeft() - startJustificationShift;
     SkScalar height = joinRect.GetHeight();
      rect.setXYWH(x, y, width, height);
      return rect;
@@ -276,25 +276,33 @@ RSRect RunBaseImpl::getImageBounds() const
     if (runGlyphIdSpan.size() == 0) {
         return {};
     }
+    // Ellipsis run has no clusters in the paragraph's cluster table,
+    // skip whitespace scanning (ellipsis has no whitespace glyphs anyway).
+    if (fVisitorRun->isEllipsis()) {
+        SkScalar endAdvance = 0.0;
+        SkSpan<const SkPoint> advanceSpan = fVisitorRun->advances();
+        if (runGlyphIdSpan.size() > 0) {
+            endAdvance = advanceSpan[fVisitorPos + runGlyphIdSpan.size() - 1].fX;
+        }
+        SkRect rect = getAllGlyphRectInfo(runGlyphIdSpan, 0, 0.0, 0, endAdvance);
+        return {rect.fLeft, rect.fTop, rect.fRight, rect.fBottom};
+    }
     SkScalar endAdvance = 0.0;
     SkScalar startWhiteSpaceWidth = 0.0;
     size_t endWhiteSpaceNum = 0;
     size_t startNotWhiteSpaceIndex = 0;
-    // Gets the width of the first non-blank glyph at the end
-    for (size_t i = runGlyphIdSpan.size() - 1; i >= 0; --i) {
-        auto& cluster = fVisitorRun->owner()->cluster(fVisitorGlobalPos + i);
+    // Scan trailing whitespace from the end
+    for (size_t i = runGlyphIdSpan.size(); i > 0; --i) {
+        auto& cluster = getClusterByGlyphPos(fVisitorPos + i - 1);
         if (!cluster.isWhitespaceBreak()) {
             endAdvance = cluster.width();
             break;
         }
         ++endWhiteSpaceNum;
-        if (i == 0) {
-            break;
-        }
     }
-    // Gets the width of the first non-blank glyph at the end
+    // Scan leading whitespace from the start
     for (size_t i = 0; i < runGlyphIdSpan.size(); ++i) {
-        auto& cluster = fVisitorRun->owner()->cluster(fVisitorGlobalPos + i);
+        auto& cluster = getClusterByGlyphPos(fVisitorPos + i);
         if (!cluster.isWhitespaceBreak()) {
             break;
         }
@@ -320,26 +328,15 @@ float RunBaseImpl::getTypographicBounds(float* ascent, float* descent, float* le
     *ascent = fVisitorRun->ascent() + fVisitorRun->getVerticalAlignShift();
     *descent = fVisitorRun->descent() + fVisitorRun->getVerticalAlignShift();
     *leading = fVisitorRun->leading();
-    return fClipRect.width() + calculateTrailSpacesWidth();
+    return fClipRect.width() + fTrailSpacesWidth;
 }
 
-float RunBaseImpl::calculateTrailSpacesWidth() const
-{
-    // Calculates the width of the whitespace character at the end of the line
-    if (!fVisitorRun || fTrailSpaces == 0) {
-        return 0.0;
-    }
-    SkScalar spaceWidth = 0;
-    for (size_t i = 0; i < fTrailSpaces; i++) {
-        auto& cluster = fVisitorRun->owner()->cluster(fVisitorGlobalPos + fVisitorSize + i);
-        // doesn't calculate the width of a hard line wrap at the end of a line
-        if (cluster.isHardBreak()) {
-            break;
-        }
-        spaceWidth += fVisitorRun->usingAutoSpaceWidth(cluster);
-    }
 
-    return spaceWidth;
+Cluster& RunBaseImpl::getClusterByGlyphPos(size_t glyphPos) const
+{
+    TextIndex textIdx = fVisitorRun->globalClusterIndex(glyphPos);
+    ClusterIndex cidx = fVisitorRun->owner()->clusterIndex(textIdx);
+    return fVisitorRun->owner()->cluster(cidx);
 }
 
 uint64_t RunBaseImpl::calculateActualLength(int64_t start, int64_t length) const
