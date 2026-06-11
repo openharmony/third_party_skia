@@ -1922,8 +1922,7 @@ void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
                 }
                 auto longestLine = std::max(line.width(), line.widthWithEllipsisSpaces());
                 fLongestLine = std::max(fLongestLine, longestLine);
-                SkScalar endIndent = detectTailIndents(fLines.size() > 0 ? fLines.size() - 1 : 0);
-                fLongestLineWithIndent = std::max(fLongestLineWithIndent, longestLine + indent + endIndent);
+                fLongestLineWithIndent = std::max(fLongestLineWithIndent, longestLine + indent);
             });
     setSize(textWrapper.height(), maxWidth, fLongestLine);
     setIntrinsicSize(textWrapper.maxIntrinsicWidth(), textWrapper.minIntrinsicWidth(),
