@@ -1057,6 +1057,13 @@
       "range": [3, 0, 0, 0, 0, 0, 0, 0, 0, 2147483648, 15]
     },
     {
+      "type": 1,
+      "lang": "zh-Hans",
+      "family": "HYQiHei L3 Ext",
+      "file": "HYQiHeiL3Ext.ttf",
+      "range": [3, 0, 0, 20972032, 0, 0, 0, 0, 0, 2147483648, 241]
+    },
+    {
       "type": 0,
       "alias": "notdef",
       "family": "HarmonyOS Sans Notdef",
