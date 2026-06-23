@@ -3204,12 +3204,13 @@ RSFontMetrics ParagraphImpl::measureText()
     return metrics;
 }
 
-std::vector<std::unique_ptr<TextLineBase>> ParagraphImpl::GetTextLines() {
-    std::vector<std::unique_ptr<TextLineBase>> textLineBases;
-    for (auto& line: fLines) {
-        std::unique_ptr<TextLineBaseImpl> textLineBaseImplPtr =
-            std::make_unique<TextLineBaseImpl>(std::make_unique<TextLine>(line.CloneSelf()));
-        textLineBases.emplace_back(std::move(textLineBaseImplPtr));
+std::vector<std::shared_ptr<TextLineBase>> ParagraphImpl::GetTextLines() {
+    std::vector<std::shared_ptr<TextLineBase>> textLineBases;
+    textLineBases.reserve(fLines.size());
+    for (int i = 0; i < fLines.size(); ++i) {
+        // Hand out the shared_ptr that owns each line: zero copy (refcount bump) and the
+        // returned TextLine stays alive independently of the paragraph (true shared ownership).
+        textLineBases.emplace_back(std::make_shared<TextLineBaseImpl>(fLines.sharedAt(i)));
     }
 
     return textLineBases;

@@ -45,7 +45,7 @@ size_t ParagraphLineFetcherImpl::getLineBreak(size_t startIndex, SkScalar width)
     return count;
 }
 
-std::unique_ptr<TextLineBase> ParagraphLineFetcherImpl::createLine(size_t startIndex, size_t count) {
+std::shared_ptr<TextLineBase> ParagraphLineFetcherImpl::createLine(size_t startIndex, size_t count) {
     size_t unicodeSize = fRootParagraph->unicodeText().size();
     if (startIndex >= unicodeSize) {
         return nullptr;

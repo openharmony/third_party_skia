@@ -28,7 +28,7 @@ public:
     explicit ParagraphLineFetcherImpl(std::unique_ptr<Paragraph>&& paragraph);
     ~ParagraphLineFetcherImpl() override;
     size_t getLineBreak(size_t startIndex, SkScalar width) const override;
-    std::unique_ptr<TextLineBase> createLine(size_t startIndex, size_t count) override;
+    std::shared_ptr<TextLineBase> createLine(size_t startIndex, size_t count) override;
     std::unique_ptr<Paragraph> getTempParagraph() override { return std::move(fTempParagraph); };
     size_t getUnicodeSize() const override { return fUnicodeSize; };
 private:

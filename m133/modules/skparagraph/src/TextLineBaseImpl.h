@@ -25,13 +25,13 @@ namespace skia {
 namespace textlayout {
 class TextLineBaseImpl : public TextLineBase {
 public:
-    TextLineBaseImpl(std::unique_ptr<TextLine> visitorTextLine);
+    TextLineBaseImpl(std::shared_ptr<TextLine> visitorTextLine);
     size_t getGlyphCount() const override;
     std::vector<std::unique_ptr<RunBase>> getGlyphRuns() const override;
     SkRange<size_t> getTextRange() const override;
     void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) override;
 
-    std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
+    std::shared_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
         const std::string& ellipsisStr) override;
     double getTypographicBounds(double* ascent, double* descent, double* leading) const override;
     RSRect getImageBounds() const override;
@@ -42,7 +42,7 @@ public:
     double getAlignmentOffset(double alignmentFactor, double alignmentWidth) const override;
 
 private:
-    std::unique_ptr<TextLine> fVisitorTextLine;
+    std::shared_ptr<TextLine> fVisitorTextLine;
 };
 }  // namespace textlayout
 }  // namespace skia

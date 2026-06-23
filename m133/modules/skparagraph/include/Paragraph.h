@@ -376,7 +376,7 @@ public:
     virtual SkScalar detectIndents(size_t index) = 0;
 
     virtual SkScalar getTextSplitRatio() const = 0;
-    virtual std::vector<std::unique_ptr<TextLineBase>> GetTextLines() = 0;
+    virtual std::vector<std::shared_ptr<TextLineBase>> GetTextLines() = 0;
     virtual std::unique_ptr<Paragraph> CloneSelf() = 0;
     virtual size_t getUnicodeIndex(TextIndex index) const = 0;
     virtual const std::vector<SkUnichar>& unicodeText() const = 0;
