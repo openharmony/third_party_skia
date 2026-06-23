@@ -510,10 +510,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     if (fState == kLineBroken) {
 #ifdef ENABLE_TEXT_ENHANCE
         if (paragraphStyle().getCompressHeadPunctuation()) {
-            for (const auto& line : fLines) {
-                ClusterRange clusterRange = line.clusters();
-                isShapedCompressHeadPunctuation(clusterRange.start);
+            for (auto& line : fLines) {
+                line.applyHeadPunctuationCompression();
             }
+            refreshLongestLine();
         }
 
         if (!fTextStyles.empty() &&
@@ -855,40 +855,6 @@ void ParagraphImpl::splitRuns(std::deque<SplitPoint>& splitPoints) {
     }
     fRuns = std::move(newRuns);
     refreshLines();
-}
-
-bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
-{
-    Cluster& originCluster = cluster(clusterIndex);
-    if ((!originCluster.isCompressPunctuation())) {
-        return false;
-    }
-    // Shape a single cluster to get compressed glyph information.
-    TextRange headPuncRange = originCluster.textRange();
-    BlockRange headPuncBlockRange = findAllBlocks(headPuncRange);
-    Block& compressBlock = block(headPuncBlockRange.start);
-    TArray<SkShaper::Feature> adjustedFeatures = getAdjustedFontFeature(compressBlock, headPuncRange);
-    Run& originRun = originCluster.run();
-    TextStyle updateTextStyle = compressBlock.fStyle;
-
-    SkSpan<const char> headPuncSpan = text(headPuncRange);
-    SkString headPuncStr = SkString(headPuncSpan.data(), headPuncSpan.size());
-    std::unique_ptr<Run> headCompressPuncRun = shapeString(headPuncStr, updateTextStyle, originRun.fFont.GetTypeface(),
-        adjustedFeatures.data(), adjustedFeatures.size());
-    if (headCompressPuncRun == nullptr) {
-        return false;
-    }
-    if (nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) {
-        return false;
-    }
-    // Directly replace glyphs in the original run (no split, no refreshLines).
-    size_t glyphStart = originCluster.startPos();
-    size_t oldGlyphCount = originCluster.endPos() - originCluster.startPos();
-    originRun.replaceCompressedGlyphs(glyphStart, oldGlyphCount, *headCompressPuncRun);
-
-    // Update cluster width to reflect compressed advance.
-    originCluster.updateWidth(headCompressPuncRun->fAdvance.fX);
-    return true;
 }
 
 std::unique_ptr<Run> ParagraphImpl::shapeString(const SkString& str, const TextStyle& textStyle,

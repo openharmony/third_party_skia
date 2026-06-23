@@ -340,6 +340,7 @@ public:
     SkScalar reflowFromPreviousLine(size_t wordBoundaryStart);
     bool startWithIdeographic() const;
     bool endWithIdeographic() const;
+    void applyHeadPunctuationCompression();
 #endif
 private:
 #ifdef ENABLE_TEXT_ENHANCE

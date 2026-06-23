@@ -4037,6 +4037,44 @@ bool TextLine::startWithIdeographic() const {
 bool TextLine::endWithIdeographic() const {
     return fOwner->cluster(clustersWithSpaces().end - 1).isIdeographic();
 }
+
+void TextLine::applyHeadPunctuationCompression() {
+    Cluster& originCluster = fOwner->cluster(fClusterRange.start);
+    if ((!originCluster.isCompressPunctuation())) {
+        return;
+    }
+    // Shape a single cluster to get compressed glyph information.
+    TextRange headPuncRange = originCluster.textRange();
+    BlockRange headPuncBlockRange = fOwner->findAllBlocks(headPuncRange);
+    Block& compressBlock = fOwner->block(headPuncBlockRange.start);
+    TArray<SkShaper::Feature> adjustedFeatures = fOwner->getAdjustedFontFeature(compressBlock, headPuncRange);
+    Run& originRun = originCluster.run();
+    TextStyle updateTextStyle = compressBlock.fStyle;
+
+    SkSpan<const char> headPuncSpan = fOwner->text(headPuncRange);
+    SkString headPuncStr = SkString(headPuncSpan.data(), headPuncSpan.size());
+    std::unique_ptr<Run> headCompressPuncRun = fOwner->shapeString(headPuncStr,
+        updateTextStyle, originRun.fFont.GetTypeface(), adjustedFeatures.data(), adjustedFeatures.size());
+    if (headCompressPuncRun == nullptr) {
+        return;
+    }
+    if (nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) {
+        return;
+    }
+    // Directly replace glyphs in the original run (no split, no refreshLines).
+    size_t glyphStart = originCluster.startPos();
+    size_t oldGlyphCount = originCluster.endPos() - originCluster.startPos();
+    originRun.replaceCompressedGlyphs(glyphStart, oldGlyphCount, *headCompressPuncRun);
+
+    // Update cluster width to reflect compressed advance.
+    SkScalar oldWidth = originCluster.width();
+    SkScalar newWidth = headCompressPuncRun->fAdvance.fX;
+    originCluster.updateWidth(newWidth);
+
+    // Update line width to reflect compressed advance.
+    fAdvance.fX += (newWidth - oldWidth);
+    fWidthWithSpaces += (newWidth - oldWidth);
+}
 #endif
 }  // namespace textlayout
 }  // namespace skia
