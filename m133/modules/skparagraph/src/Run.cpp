@@ -15,6 +15,48 @@
 #include "include/FontCollection.h"
 #include "log.h"
 #endif
+
+namespace {
+// Replaces oldCount elements at position pos with newCount elements from src.
+// For MEM_MOVE=true arrays only (trivially relocatable types).
+// If src is nullptr, only performs the structural resize + shift without filling.
+template <typename T>
+void replaceRangeInArray(skia_private::TArray<T, true>& arr,
+                         size_t pos, size_t oldCount,
+                         const T* src, size_t newCount) {
+    SkASSERT(pos + oldCount <= static_cast<size_t>(arr.size()));
+    int oldSize = arr.size();
+    int remainingCount = oldSize - static_cast<int>(pos + oldCount);
+
+    if (newCount > oldCount) {
+        // Growing: extend first (may reallocate), then shift remaining right
+        int grow = static_cast<int>(newCount - oldCount);
+        arr.push_back_n(grow);
+        T* data = arr.begin(); // re-fetch after potential realloc
+        if (remainingCount > 0) {
+            memmove(data + pos + newCount,
+                    data + pos + oldCount,
+                    static_cast<size_t>(remainingCount) * sizeof(T));
+        }
+    } else if (newCount < oldCount) {
+        // Shrinking: shift remaining left first, then trim
+        T* data = arr.begin();
+        if (remainingCount > 0) {
+            memmove(data + pos + newCount,
+                    data + pos + oldCount,
+                    static_cast<size_t>(remainingCount) * sizeof(T));
+        }
+        arr.resize(oldSize - static_cast<int>(oldCount - newCount));
+    }
+
+    // Fill new elements (skipped if src is nullptr)
+    if (src != nullptr && newCount > 0) {
+        T* data = arr.begin();
+        memcpy(data + pos, src, newCount * sizeof(T));
+    }
+}
+} // namespace
+
 namespace skia {
 namespace textlayout {
 #ifdef ENABLE_TEXT_ENHANCE
@@ -451,16 +493,52 @@ void Run::generateSplitRun(Run& splitRun, const SplitPoint& splitPoint) {
     updateSplitRunMesureInfo(splitRun, startClusterPos, endClusterPos);
 }
 
-void Run::updateCompressedRunMeasureInfo(Run& headCompressPuncRun) {
-    fGlyphs[0] = headCompressPuncRun.glyphs()[0];
-    fOffsets[0] = headCompressPuncRun.offsets()[0];
-    fGlyphAdvances[0] = headCompressPuncRun.advances()[0];
-    fPositions[1].fX = fPositions[0].fX + fGlyphAdvances[0].fX ;
+void Run::replaceCompressedGlyphs(size_t glyphStart, size_t oldCount, const Run& shapedRun) {
+    size_t newCount = shapedRun.size();       // number of glyphs from shaped run
+    size_t tail = glyphStart + oldCount;      // first index after replaced region
 
-    fGlyphData->glyphs[0] = fGlyphs[0];
-    fGlyphData->offsets[0] = fOffsets[0];
-    fGlyphData->advances[0] = fGlyphAdvances[0];
-    fGlyphData->positions[1].set(fPositions[1].fX, fPositions[1].fY);
+    // --- Save values needed before array modification ---
+    SkScalar startPosX = fPositions[glyphStart].fX;
+    SkScalar startPosY = fPositions[glyphStart].fY;
+    SkScalar oldAdvance = fPositions[tail].fX - startPosX;
+    uint32_t clusterIdx = fClusterIndexes[glyphStart];
+
+    // --- Step 1: Structural resize + shift in all 5 parallel arrays ---
+    // fGlyphs: copy shaped glyph IDs directly
+    replaceRangeInArray(fGlyphs, glyphStart, oldCount, shapedRun.fGlyphs.begin(), newCount);
+    // fOffsets: copy shaped offsets directly
+    replaceRangeInArray(fOffsets, glyphStart, oldCount, shapedRun.fOffsets.begin(), newCount);
+    // fGlyphAdvances: copy shaped advances directly
+    replaceRangeInArray(fGlyphAdvances, glyphStart, oldCount, shapedRun.fGlyphAdvances.begin(), newCount);
+    // fClusterIndexes: structural change only, fill manually below
+    replaceRangeInArray(fClusterIndexes, glyphStart, oldCount, static_cast<const uint32_t*>(nullptr), newCount);
+    // fPositions: structural change only, recalculate below
+    replaceRangeInArray(fPositions, glyphStart, oldCount, static_cast<const SkPoint*>(nullptr), newCount);
+
+    // --- Step 2: Set cluster indexes for newCount new glyphs ---
+    for (size_t i = 0; i < newCount; ++i) {
+        fClusterIndexes[glyphStart + i] = clusterIdx;
+    }
+
+    // --- Step 3: Recalculate positions for replaced glyphs ---
+    // Restore start position, then accumulate advances
+    fPositions[glyphStart].fX = startPosX;
+    fPositions[glyphStart].fY = startPosY;
+    for (size_t i = 0; i < newCount; ++i) {
+        fPositions[glyphStart + i + 1].fX =
+            fPositions[glyphStart + i].fX + fGlyphAdvances[glyphStart + i].fX;
+        fPositions[glyphStart + i + 1].fY = startPosY;
+    }
+
+    // --- Step 4: Cascade spacing to all subsequent positions (including sentinel) ---
+    SkScalar newAdvance = shapedRun.fAdvance.fX;
+    SkScalar spacing = newAdvance - oldAdvance;
+    for (size_t i = glyphStart + newCount + 1; i < fPositions.size(); ++i) {
+        fPositions[i].fX += spacing;
+    }
+
+    // --- Step 5: Update run total width ---
+    fAdvance.fX += spacing;
 }
 
 #endif

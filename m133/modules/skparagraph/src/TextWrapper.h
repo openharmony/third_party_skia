@@ -345,7 +345,6 @@ private:
 
     // lookAhead sub-functions
     void initLookAheadState();
-    void handleHeadPunctuation(Cluster* cluster);
     void accumulateAutoSpacing(LookAheadContext& ctx, Cluster* cluster);
     // Overflow: returns LoopAction::CONTINUE to continue loop, LoopAction::BREAK to exit
     LoopAction handleOverflowCluster(Cluster* cluster, LookAheadContext& ctx,

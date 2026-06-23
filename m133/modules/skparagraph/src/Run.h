@@ -192,7 +192,9 @@ public:
     void updateSplitRunMesureInfo(Run& splitRun, size_t startClusterPos, size_t endClusterPos);
     void generateSplitRun(Run& splitRun, const SplitPoint& splitPoint);
     void updatePlaceholderAlignmentIfNeeded(PlaceholderAlignment& alignment, TextVerticalAlign paragraphAlignment);
-    void updateCompressedRunMeasureInfo(Run& headCompressPuncRun);
+    // Replaces N glyphs at glyphStart with M glyphs from shapedRun (in-place, no split).
+    // Recalculates positions for replaced glyphs and cascades spacing to remaining glyphs.
+    void replaceCompressedGlyphs(size_t glyphStart, size_t oldGlyphCount, const Run& shapedRun);
 #endif
     SkScalar calculateHeight(LineMetricStyle ascentStyle, LineMetricStyle descentStyle) const {
         auto ascent = ascentStyle == LineMetricStyle::Typographic ? this->ascent()
