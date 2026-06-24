@@ -3690,27 +3690,6 @@ void TextLine::shiftTextByVerticalAlignment(Run& run, TextVerticalAlign Vertical
     run.setVerticalAlignShift(shift);
 }
 
-void TextLine::applyPlaceholderVerticalShift() {
-    TextVerticalAlign VerticalAlignment = fOwner->getParagraphStyle().getVerticalAlignment();
-
-    ClusterRange clustersRange = clusters();
-    ClusterIndex curClusterIndex = clustersRange.start;
-    // Reset textStyle vertical shift for current line's first run
-    const Run& run = fOwner->runByCluster(curClusterIndex);
-    resetBlobShift(run);
-
-    while (curClusterIndex < clustersRange.end) {
-        Run& run = fOwner->runByCluster(curClusterIndex);
-        ClusterRange groupClusterRange = {std::max(curClusterIndex, run.clusterRange().start),
-            std::min(clustersRange.end, run.clusterRange().end)};
-
-        if (run.isPlaceholder()) {
-            shiftPlaceholderByVerticalAlignMode(run, VerticalAlignment);
-        }
-        curClusterIndex = groupClusterRange.end;
-    }
-}
-
 void TextLine::applyVerticalShift() {
     TextVerticalAlign verticalAlignment = fOwner->getParagraphStyle().getVerticalAlignment();
     if (verticalAlignment == TextVerticalAlign::BASELINE) {
