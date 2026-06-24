@@ -181,6 +181,13 @@ void TextWrapper::initLookAheadState() {
     fClip.startFrom(fEndLine.startCluster(), fEndLine.startPos());
 }
 
+void TextWrapper::handleHeadPunctuation(Cluster* cluster) {
+    if (cluster == fEndLine.endCluster()) {
+        ClusterIndex headClusterIndex = cluster->getOwner()->clusterIndex(cluster->textRange().start);
+        fParent->isShapedCompressHeadPunctuation(headClusterIndex);
+    }
+}
+
 void TextWrapper::accumulateAutoSpacing(LookAheadContext& ctx, Cluster* cluster) {
     ctx.totalFakeSpacing += (cluster->needAutoSpacing() && cluster != fEndLine.endCluster()) ?
         (cluster - 1)->getFontSize() / AUTO_SPACING_WIDTH_RATIO : 0;
@@ -590,6 +597,7 @@ void TextWrapper::lookAhead(SkScalar maxWidth, Cluster* endOfClusters, bool appl
     textTabAlign.init(maxWidth, endOfClusters);
 
     for (auto cluster = fEndLine.endCluster(); cluster < endOfClusters; ++cluster) {
+        handleHeadPunctuation(cluster);
         accumulateAutoSpacing(ctx, cluster);
         SkScalar widthBeforeCluster = fWords.width() + fClusters.width() + ctx.totalFakeSpacing;
 

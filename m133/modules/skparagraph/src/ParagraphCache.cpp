@@ -494,6 +494,9 @@ bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const Parag
 
 void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
     SkAutoMutexExclusive lock(fParagraphMutex);
+    if (paragraph.getParagraphStyle().getCompressHeadPunctuation()) {
+        return;
+    }
     auto key = ParagraphCacheKey(&paragraph);
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
 
@@ -552,6 +555,9 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
     TEXT_TRACE_FUNC();
     SkAutoMutexExclusive lock(fParagraphMutex);
+    if (paragraph.getParagraphStyle().getCompressHeadPunctuation()) {
+        return false;
+    }
     auto key = ParagraphCacheKey(&paragraph);
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
     if (!entry || !*entry) {

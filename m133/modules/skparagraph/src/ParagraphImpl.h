@@ -264,6 +264,7 @@ public:
     void refreshLines();
     bool isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated);
 
+    bool isShapedCompressHeadPunctuation(ClusterIndex clusterIndex);
     std::unique_ptr<Run> shapeString(const SkString& str, const TextStyle& textStyle,
         std::shared_ptr<RSTypeface> typeface, const SkShaper::Feature* features = nullptr, size_t featuresSize = 0);
     skia_private::TArray<SkShaper::Feature> getAdjustedFontFeature(Block& compressBlock,
