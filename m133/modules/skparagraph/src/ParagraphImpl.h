@@ -265,6 +265,8 @@ public:
     bool isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated);
 
     bool isShapedCompressHeadPunctuation(ClusterIndex clusterIndex);
+    void setNeedUpdateRunCache(bool state) { fIsNeedUpdateRunCache = state; };
+    bool isNeedUpdateRunCache() const { return fIsNeedUpdateRunCache; }
     std::unique_ptr<Run> shapeString(const SkString& str, const TextStyle& textStyle,
         std::shared_ptr<RSTypeface> typeface, const SkShaper::Feature* features = nullptr, size_t featuresSize = 0);
     skia_private::TArray<SkShaper::Feature> getAdjustedFontFeature(Block& compressBlock,
@@ -606,6 +608,7 @@ private:
     bool fSkipTextBlobDrawing{false};
     int fEllipsisRunIndexOffset{0};
     bool fIsEllipsisReplaceFitCluster{false};
+    bool fIsNeedUpdateRunCache{false};
 #endif
 };
 }  // namespace textlayout

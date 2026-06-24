@@ -484,6 +484,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     }
 
     if (fState == kShaped) {
+        if (isNeedUpdateRunCache() && fOldWidth != floorWidth) {
+            paragraphCache->findParagraph(this);
+            setNeedUpdateRunCache(false);
+        }
         this->resetContext();
         this->resolveStrut();
         this->computeEmptyMetrics();

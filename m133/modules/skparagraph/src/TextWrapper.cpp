@@ -184,7 +184,10 @@ void TextWrapper::initLookAheadState() {
 void TextWrapper::handleHeadPunctuation(Cluster* cluster) {
     if (cluster == fEndLine.endCluster()) {
         ClusterIndex headClusterIndex = cluster->getOwner()->clusterIndex(cluster->textRange().start);
-        fParent->isShapedCompressHeadPunctuation(headClusterIndex);
+        bool isProcessedHeadPunc = fParent->isShapedCompressHeadPunctuation(headClusterIndex);
+        if (isProcessedHeadPunc) {
+            fParent->setNeedUpdateRunCache(true);
+        }
     }
 }
 
