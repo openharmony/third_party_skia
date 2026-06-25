@@ -10,20 +10,19 @@
 #include "modules/skparagraph/src/Run.h"
 #include "modules/skshaper/include/SkShaper.h"
 #include "src/base/SkUTF.h"
+#include <securec.h>
 
 #ifdef ENABLE_TEXT_ENHANCE
 #include "include/FontCollection.h"
 #include "log.h"
-#endif
 
 namespace {
 // Replaces oldCount elements at position pos with newCount elements from src.
 // For MEM_MOVE=true arrays only (trivially relocatable types).
 // If src is nullptr, only performs the structural resize + shift without filling.
 template <typename T>
-void replaceRangeInArray(skia_private::TArray<T, true>& arr,
-                         size_t pos, size_t oldCount,
-                         const T* src, size_t newCount) {
+void replaceRangeInArray(skia_private::TArray<T, true>& arr, size_t pos, size_t oldCount, const T* src,
+    size_t newCount) {
     SkASSERT(pos + oldCount <= static_cast<size_t>(arr.size()));
     int oldSize = arr.size();
     int remainingCount = oldSize - static_cast<int>(pos + oldCount);
@@ -32,19 +31,27 @@ void replaceRangeInArray(skia_private::TArray<T, true>& arr,
         // Growing: extend first (may reallocate), then shift remaining right
         int grow = static_cast<int>(newCount - oldCount);
         arr.push_back_n(grow);
-        T* data = arr.begin(); // re-fetch after potential realloc
+        T* data = arr.begin();  // re-fetch after potential realloc
         if (remainingCount > 0) {
-            memmove(data + pos + newCount,
-                    data + pos + oldCount,
-                    static_cast<size_t>(remainingCount) * sizeof(T));
+            size_t shiftBytes = static_cast<size_t>(remainingCount) * sizeof(T);
+            size_t destBytes = (static_cast<size_t>(arr.size()) - (pos + newCount)) * sizeof(T);
+            if (memmove_s(data + pos + newCount, destBytes, data + pos + oldCount, shiftBytes) != EOK) {
+                TEXT_LOGE("replaceRangeInArray memmove_s(grow) failed: pos=%{public}zu "
+                    "oldCount=%{public}zu newCount=%{public}zu", pos, oldCount, newCount);
+                SkASSERT(false);  // destBytes >= shiftBytes by construction; failure indicates a logic bug
+            }
         }
     } else if (newCount < oldCount) {
         // Shrinking: shift remaining left first, then trim
         T* data = arr.begin();
         if (remainingCount > 0) {
-            memmove(data + pos + newCount,
-                    data + pos + oldCount,
-                    static_cast<size_t>(remainingCount) * sizeof(T));
+            size_t shiftBytes = static_cast<size_t>(remainingCount) * sizeof(T);
+            size_t destBytes = (static_cast<size_t>(arr.size()) - (pos + newCount)) * sizeof(T);
+            if (memmove_s(data + pos + newCount, destBytes, data + pos + oldCount, shiftBytes) != EOK) {
+                TEXT_LOGE("replaceRangeInArray memmove_s(shrink) failed: pos=%{public}zu "
+                    "oldCount=%{public}zu newCount=%{public}zu", pos, oldCount, newCount);
+                SkASSERT(false);  // destBytes >= shiftBytes by construction; failure indicates a logic bug
+            }
         }
         arr.resize(oldSize - static_cast<int>(oldCount - newCount));
     }
@@ -52,10 +59,17 @@ void replaceRangeInArray(skia_private::TArray<T, true>& arr,
     // Fill new elements (skipped if src is nullptr)
     if (src != nullptr && newCount > 0) {
         T* data = arr.begin();
-        memcpy(data + pos, src, newCount * sizeof(T));
+        size_t fillBytes = newCount * sizeof(T);
+        size_t destBytes = (static_cast<size_t>(arr.size()) - pos) * sizeof(T);
+        if (memcpy_s(data + pos, destBytes, src, fillBytes) != EOK) {
+            TEXT_LOGE( "replaceRangeInArray memcpy_s(fill) failed: pos=%{public}zu newCount=%{public}zu",
+                pos, newCount);
+            SkASSERT(false);  // destBytes >= fillBytes by construction; failure indicates a logic bug
+        }
     }
 }
 } // namespace
+#endif
 
 namespace skia {
 namespace textlayout {
