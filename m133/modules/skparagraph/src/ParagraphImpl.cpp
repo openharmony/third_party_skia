@@ -1599,7 +1599,12 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                         lastSpaceCluster = cluster;
                         wordSpacingPending = true;
                     }
+#ifdef ENABLE_TEXT_ENHANCE
+                } else if (wordSpacingPending &&
+                    !codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+#else
                 } else if (wordSpacingPending) {
+#endif
                     SkScalar spacing = currentStyle->fStyle.getWordSpacing();
                     if (cluster->fRunIndex != lastSpaceCluster->fRunIndex) {
                         // If the last space cluster belongs to the previous run
