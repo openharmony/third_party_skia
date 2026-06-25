@@ -2736,14 +2736,15 @@ LineMetrics TextLine::getMetrics() const {
     result.fLeft = this->offset().fX;
     // This is Flutter definition of a baseline
     result.fBaseline = this->offset().fY + this->height() - this->sizes().descent();
-    result.fLineNumber = this - fOwner->lines().begin();
 #ifdef ENABLE_TEXT_ENHANCE
+    result.fLineNumber = fLineIndex;
     result.fWidthWithSpaces = fWidthWithSpaces;
     result.fTopHeight = this->offset().fY;
 
     // Fill out the style parts
     this->iterateThroughVisualRuns(EllipsisReadStrategy::READ_REPLACED_WORD, false,
 #else
+    result.fLineNumber = this - fOwner->lines().begin();
     this->iterateThroughVisualRuns(false,
 #endif
         [this, &result]
@@ -3342,7 +3343,7 @@ size_t TextLine::getGlyphCount() const
     return glyphCount;
 }
 
-std::unique_ptr<TextLineBase> TextLine::createTruncatedLine(double width, EllipsisModal ellipsisMode,
+std::shared_ptr<TextLineBase> TextLine::createTruncatedLine(double width, EllipsisModal ellipsisMode,
     const std::string& ellipsisStr)
 {
     if (width <= 0 || (ellipsisMode != EllipsisModal::HEAD && ellipsisMode != EllipsisModal::MULTILINE_HEAD &&
@@ -3369,7 +3370,7 @@ std::unique_ptr<TextLineBase> TextLine::createTruncatedLine(double width, Ellips
             textLine.createTailEllipsis(widthVal, SkString(ellipsisStr), true, fOwner->getWordBreakType());
         }
     }
-    return std::make_unique<TextLineBaseImpl>(std::make_unique<TextLine>(std::move(textLine)));
+    return std::make_shared<TextLineBaseImpl>(std::make_shared<TextLine>(std::move(textLine)));
 }
 
 double TextLine::getTrailingSpaceWidth() const
@@ -3920,6 +3921,7 @@ TextLine TextLine::CloneSelf()
     textLine.fTextStyleCachePopulated = this->fTextStyleCachePopulated;
     textLine.fTextRangeReplacedByEllipsis = this->fTextRangeReplacedByEllipsis;
     textLine.fEllipsisIndex = this->fEllipsisIndex;
+    textLine.fLineIndex = this->fLineIndex;
     textLine.fLastClipRunLtr = this->fLastClipRunLtr;
     textLine.fIsArcText = this->fIsArcText;
     textLine.fArcTextState = this->fArcTextState;

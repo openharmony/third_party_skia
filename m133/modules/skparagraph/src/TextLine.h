@@ -322,7 +322,7 @@ public:
         fTextBlobCachePopulated = textBlobCachePopulated;
     }
     SkScalar usingAutoSpaceWidth(const Cluster* cluster) const;
-    std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
+    std::shared_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
         const std::string& ellipsisStr);
 
     double getTrailingSpaceWidth() const;

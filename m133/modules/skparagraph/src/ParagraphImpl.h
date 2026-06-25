@@ -49,6 +49,102 @@ template <typename T> bool operator==(const SkSpan<T>& a, const SkSpan<T>& b) {
     return a.size() == b.size() && a.begin() == b.begin();
 }
 
+#ifdef ENABLE_TEXT_ENHANCE
+// Stores TextLine objects with true shared ownership (std::shared_ptr) so that
+// GetTextLines() can hand out shared_ptr copies with zero copy and full memory
+// safety, while still exposing them as TextLine& so all existing call sites
+// (fLines[i].x(), range-for, front()/back(), size()/empty()/clear()) compile
+// unchanged. Core layout code therefore needs no modifications.
+class SharedTextLineArray {
+public:
+    SharedTextLineArray() = default;
+
+    TextLine& operator[](int i) { return *data_[static_cast<size_t>(i)]; }
+    const TextLine& operator[](int i) const { return *data_[static_cast<size_t>(i)]; }
+    TextLine& front() { return *data_.front(); }
+    const TextLine& front() const { return *data_.front(); }
+    TextLine& back() { return *data_.back(); }
+    const TextLine& back() const { return *data_.back(); }
+
+    // Returns int to match SkTArray::size(), avoiding signed/unsigned comparison
+    // warnings in existing call sites (e.g. `for (int i = 0; i < fLines.size(); ...)`).
+    int size() const { return static_cast<int>(data_.size()); }
+    bool empty() const { return data_.empty(); }
+    void clear() { data_.clear(); }
+    void pop_back() { data_.pop_back(); }
+    void reserve(size_t n) { data_.reserve(n); }
+
+    template <typename... Args>
+    TextLine& emplace_back(Args&&... args) {
+        data_.push_back(std::make_shared<TextLine>(std::forward<Args>(args)...));
+        return *data_.back();
+    }
+    void push_back(std::shared_ptr<TextLine> line) { data_.push_back(std::move(line)); }
+
+    // Extracts the shared_ptr for zero-copy return in GetTextLines().
+    std::shared_ptr<TextLine> sharedAt(int i) const { return data_[static_cast<size_t>(i)]; }
+
+    class iterator {
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = TextLine;
+        using difference_type = std::ptrdiff_t;
+        using pointer = TextLine*;
+        using reference = TextLine&;
+        iterator() = default;
+        explicit iterator(std::vector<std::shared_ptr<TextLine>>::iterator it) : it_(it) {}
+        reference operator*() const { return **it_; }
+        pointer operator->() const { return it_->get(); }
+        iterator& operator++() { 
+            ++it_;
+            return *this;
+        }
+        iterator operator++(int) { 
+            iterator tmp = *this;
+            ++it_;
+            return tmp;
+        }
+        bool operator==(const iterator& other) const { return it_ == other.it_; }
+        bool operator!=(const iterator& other) const { return it_ != other.it_; }
+    private:
+        std::vector<std::shared_ptr<TextLine>>::iterator it_;
+    };
+    class const_iterator {
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = TextLine;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const TextLine*;
+        using reference = const TextLine&;
+        const_iterator() = default;
+        explicit const_iterator(std::vector<std::shared_ptr<TextLine>>::const_iterator it) : it_(it) {}
+        reference operator*() const { return **it_; }
+        pointer operator->() const { return it_->get(); }
+        const_iterator& operator++() { 
+            ++it_;
+            return *this;
+        }
+        const_iterator operator++(int) { 
+            const_iterator tmp = *this;
+            ++it_;
+            return tmp;
+        }
+        bool operator==(const const_iterator& other) const { return it_ == other.it_; }
+        bool operator!=(const const_iterator& other) const { return it_ != other.it_; }
+    private:
+        std::vector<std::shared_ptr<TextLine>>::const_iterator it_;
+    };
+    iterator begin() { return iterator(data_.begin()); }
+    iterator end() { return iterator(data_.end()); }
+    const_iterator begin() const { return const_iterator(data_.begin()); }
+    const_iterator end() const { return const_iterator(data_.end()); }
+
+private:
+    std::vector<std::shared_ptr<TextLine>> data_;
+};
+#endif  // ENABLE_TEXT_ENHANCE
+
+
 template <typename T> bool operator<=(const SkSpan<T>& a, const SkSpan<T>& b) {
     return a.begin() >= b.begin() && a.end() <= b.end();
 }
@@ -188,7 +284,11 @@ public:
     SkSpan<Placeholder> placeholders() {
         return SkSpan<Placeholder>(fPlaceholders.data(), fPlaceholders.size());
     }
+#ifdef ENABLE_TEXT_ENHANCE
+    SharedTextLineArray& lines() { return fLines; }
+#else
     SkSpan<TextLine> lines() { return SkSpan<TextLine>(fLines.data(), fLines.size()); }
+#endif
     const ParagraphStyle& paragraphStyle() const { return fParagraphStyle; }
     SkSpan<Cluster> clusters() { return SkSpan<Cluster>(fClusters.begin(), fClusters.size()); }
     sk_sp<FontCollection> fontCollection() const { return fFontCollection; }
@@ -229,7 +329,7 @@ public:
         UtfEncodeType encodeType) override;
     SkIRect generatePaintRegion(SkScalar x, SkScalar y) override;
     skia_private::TArray<Block, true>& exportTextStyles() override { return fTextStyles; }
-    skia_private::TArray<TextLine, false>& exportTextLines() { return fLines; }
+    SharedTextLineArray& exportTextLines() { return fLines; }
     bool preCalculateSingleRunAutoSpaceWidth(SkScalar floorWidth);
     bool hasLegalHeadIndents();
     void setIndents(const std::vector<SkScalar>& indents) override;
@@ -239,7 +339,7 @@ public:
     bool isParagraphFirstLine(size_t lineIndex) const;
     size_t findParagraphByLine(size_t lineIndex) const;
     SkScalar getTextSplitRatio() const override { return fParagraphStyle.getTextSplitRatio(); }
-    std::vector<std::unique_ptr<TextLineBase>> GetTextLines() override;
+    std::vector<std::shared_ptr<TextLineBase>> GetTextLines() override;
     std::unique_ptr<Paragraph> CloneSelf() override;
     uint32_t& hash() {
         return hash_;
@@ -573,7 +673,11 @@ private:
     size_t fUnresolvedGlyphs;
     std::unordered_set<SkUnichar> fUnresolvedCodepoints;
 
+#ifdef ENABLE_TEXT_ENHANCE
+    SharedTextLineArray fLines;   // kFormatted: shared-owned TextLines (zero-copy GetTextLines, memory-safe)
+#else
     skia_private::TArray<TextLine, false> fLines;   // kFormatted   (cached: width, max lines, ellipsis, text align)
+#endif
     sk_sp<SkPicture> fPicture;          // kRecorded    (cached: text styles)
 
     skia_private::TArray<ResolvedFontDescriptor> fFontSwitches;

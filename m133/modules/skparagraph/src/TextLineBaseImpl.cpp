@@ -20,7 +20,7 @@
 namespace skia {
 namespace textlayout {
 TextLineBaseImpl::TextLineBaseImpl(
-    std::unique_ptr<TextLine> visitorTextLine) : fVisitorTextLine(std::move(visitorTextLine))
+    std::shared_ptr<TextLine> visitorTextLine) : fVisitorTextLine(std::move(visitorTextLine))
 {
 }
 
@@ -59,7 +59,7 @@ void TextLineBaseImpl::paint(ParagraphPainter* painter, SkScalar x, SkScalar y)
     return fVisitorTextLine->paint(painter, x, y);
 }
 
-std::unique_ptr<TextLineBase> TextLineBaseImpl::createTruncatedLine(double width, EllipsisModal ellipsisMode,
+std::shared_ptr<TextLineBase> TextLineBaseImpl::createTruncatedLine(double width, EllipsisModal ellipsisMode,
     const std::string& ellipsisStr)
 {
     if (!fVisitorTextLine) {

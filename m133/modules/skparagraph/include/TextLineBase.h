@@ -33,7 +33,7 @@ public:
     virtual SkRange<size_t> getTextRange() const = 0;
     virtual void paint(ParagraphPainter* painter, SkScalar x, SkScalar y) = 0;
 
-    virtual std::unique_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
+    virtual std::shared_ptr<TextLineBase> createTruncatedLine(double width, EllipsisModal ellipsisMode,
         const std::string& ellipsisStr) = 0;
     virtual double getTypographicBounds(double* ascent, double* descent, double* leading) const = 0;
     virtual RSRect getImageBounds() const = 0;
