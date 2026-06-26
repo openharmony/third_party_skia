@@ -364,7 +364,6 @@ public:
     void refreshLines();
     bool isTailOfLineNeedSplit(const Run& lineLastRun, size_t lineEnd, bool hasGenerated);
 
-    void splitRunsWhenCompressPunction(ClusterIndex clusterIndex);
     bool isShapedCompressHeadPunctuation(ClusterIndex clusterIndex);
     void setNeedUpdateRunCache(bool state) { fIsNeedUpdateRunCache = state; };
     bool isNeedUpdateRunCache() const { return fIsNeedUpdateRunCache; }

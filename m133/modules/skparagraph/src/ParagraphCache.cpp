@@ -494,6 +494,9 @@ bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const Parag
 
 void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
     SkAutoMutexExclusive lock(fParagraphMutex);
+    if (paragraph.getParagraphStyle().getCompressHeadPunctuation()) {
+        return;
+    }
     auto key = ParagraphCacheKey(&paragraph);
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
 
@@ -509,11 +512,7 @@ void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
 }
 
 void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCacheValue* value) {
-    if(paragraph.isNeedUpdateRunCache()) {
-        // Scenario of splitting runs during line breaking.
-        value->fRuns = paragraph.fRuns;
-        value->fClusters = paragraph.fClusters;
-    } else if (paragraph.fRuns.size() == value->fRuns.size()) {
+    if (paragraph.fRuns.size() == value->fRuns.size()) {
         // update PlaceholderRun metrics cache value for placeholder alignment
         for (size_t idx = 0; idx < value->fRuns.size(); ++idx) {
             value->fRuns[idx].fAutoSpacings = paragraph.fRuns[idx].fAutoSpacings;
@@ -556,6 +555,9 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
     TEXT_TRACE_FUNC();
     SkAutoMutexExclusive lock(fParagraphMutex);
+    if (paragraph.getParagraphStyle().getCompressHeadPunctuation()) {
+        return false;
+    }
     auto key = ParagraphCacheKey(&paragraph);
     std::unique_ptr<Entry>* entry = fLRUCacheMap.find(key);
     if (!entry || !*entry) {
@@ -585,17 +587,6 @@ bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
             paragraph.fRuns[idx].fFontMetrics = value->fRuns[idx].fFontMetrics;
             paragraph.fRuns[idx].fCorrectAscent = value->fRuns[idx].fCorrectAscent;
             paragraph.fRuns[idx].fCorrectDescent = value->fRuns[idx].fCorrectDescent;
-        }
-    } else {
-        paragraph.fRuns.clear();
-        paragraph.fRuns = value->fRuns;
-        for (auto& run : paragraph.fRuns) {
-            run.setOwner(&paragraph);
-        }
-        paragraph.fClusters.clear();
-        paragraph.fClusters = value->fClusters;
-        for (auto& cluster : paragraph.fClusters) {
-            cluster.setOwner(&paragraph);
         }
     }
     paragraph.fLines.clear();

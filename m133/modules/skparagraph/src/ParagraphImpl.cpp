@@ -484,6 +484,10 @@ void ParagraphImpl::layout(SkScalar rawWidth) {
     }
 
     if (fState == kShaped) {
+        if (isNeedUpdateRunCache() && fOldWidth != floorWidth) {
+            paragraphCache->findParagraph(this);
+            setNeedUpdateRunCache(false);
+        }
         this->resetContext();
         this->resolveStrut();
         this->computeEmptyMetrics();
@@ -850,28 +854,6 @@ void ParagraphImpl::splitRuns(std::deque<SplitPoint>& splitPoints) {
     refreshLines();
 }
 
-void ParagraphImpl::splitRunsWhenCompressPunction(ClusterIndex clusterIndex) {
-    // Splits the head cluster of each line into a separate run.
-    std::deque<SplitPoint> splitPoints;
-    if (clusterIndex > 0) {
-        ClusterRange lastClusterRunClusterRange = cluster(clusterIndex - 1).run().clusterRange();
-        ClusterRange beforePuncSplitClusterRange = ClusterRange(lastClusterRunClusterRange.start, clusterIndex);
-        std::optional<SplitPoint> beforePuncSplitPoint = generateSplitPoint(beforePuncSplitClusterRange);
-        splitPoints.push_back(*beforePuncSplitPoint);
-    }
-    ClusterRange puncSplitClusterRange = ClusterRange(clusterIndex, clusterIndex + 1);
-    std::optional<SplitPoint> puncSplitPoint = generateSplitPoint(puncSplitClusterRange);
-    splitPoints.push_back(*puncSplitPoint);
-    // The clusters size includes one extra element at the paragraph end.
-    if (clusterIndex + 1 < clusters().size() - 1) {
-        ClusterRange nextClusterRunClusterRange = cluster(clusterIndex + 1).run().clusterRange();
-        ClusterRange afterPuncSplitClusterRange = ClusterRange(clusterIndex + 1, nextClusterRunClusterRange.end);
-        std::optional<SplitPoint> afterPuncSplitPoint = generateSplitPoint(afterPuncSplitClusterRange);
-        splitPoints.push_back(*afterPuncSplitPoint);
-    }
-    splitRuns(splitPoints);
-}
-
 bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
 {
     Cluster& originCluster = cluster(clusterIndex);
@@ -896,17 +878,14 @@ bool ParagraphImpl::isShapedCompressHeadPunctuation(ClusterIndex clusterIndex)
     if (nearlyEqual(originCluster.width(), headCompressPuncRun->advances()[0].x())) {
         return false;
     }
-    // Split runs and replace run information in punctuation split.
-    splitRunsWhenCompressPunction(clusterIndex);
-    Run& fixedRun = originCluster.run();
-    TextRange splitedRange(fixedRun.clusterIndexes()[0] + fixedRun.fClusterStart,
-        fixedRun.clusterIndexes()[1] + fixedRun.fClusterStart);
-    if (splitedRange.start == originCluster.textRange().start && splitedRange.end == originCluster.textRange().end) {
-        SkScalar spacing = headCompressPuncRun->advances()[0].x() - originCluster.width();
-        originCluster.updateWidth(originCluster.width() + spacing);
-        fixedRun.setWidth(fixedRun.fAdvanceX() + spacing);
-        fixedRun.updateCompressedRunMeasureInfo(*headCompressPuncRun);
-    }
+     // Directly replace glyphs in the original run (no split, no refreshLines).
+    size_t glyphStart = originCluster.startPos();
+    size_t oldGlyphCount = originCluster.endPos() - originCluster.startPos();
+    originRun.replaceCompressedGlyphs(glyphStart, oldGlyphCount, *headCompressPuncRun);
+
+    // Update cluster width to reflect compressed advance.
+    originCluster.updateWidth(headCompressPuncRun->fAdvance.fX);
+
     return true;
 }
 
@@ -1887,7 +1866,6 @@ void ParagraphImpl::positionShapedTextIntoLine(SkScalar maxWidth) {
 void ParagraphImpl::breakShapedTextIntoLines(SkScalar maxWidth) {
     TEXT_TRACE_FUNC();
     resetAutoSpacing();
-    setNeedUpdateRunCache(false);
     TextWrapper textWrapper;
     textWrapper.breakTextIntoLines(
             this,
