@@ -494,7 +494,8 @@ bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const Parag
 
 void ParagraphCache::SetStoredLayout(ParagraphImpl& paragraph) {
     SkAutoMutexExclusive lock(fParagraphMutex);
-    if (paragraph.getParagraphStyle().getCompressHeadPunctuation()) {
+    if (paragraph.getParagraphStyle().getCompressHeadPunctuation() ||
+        paragraph.getParagraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE) {
         return;
     }
     auto key = ParagraphCacheKey(&paragraph);
@@ -555,7 +556,8 @@ void ParagraphCache::SetStoredLayoutImpl(ParagraphImpl& paragraph, ParagraphCach
 bool ParagraphCache::GetStoredLayout(ParagraphImpl& paragraph) {
     TEXT_TRACE_FUNC();
     SkAutoMutexExclusive lock(fParagraphMutex);
-    if (paragraph.getParagraphStyle().getCompressHeadPunctuation()) {
+    if (paragraph.getParagraphStyle().getCompressHeadPunctuation() ||
+        paragraph.getParagraphStyle().getVerticalAlignment() != TextVerticalAlign::BASELINE) {
         return false;
     }
     auto key = ParagraphCacheKey(&paragraph);
