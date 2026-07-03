@@ -180,6 +180,7 @@ void ParagraphCacheKey::computeHashMix(uint32_t& hash) const {
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getFallbackLineSpacing()));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getOrphanCharOptimization()));
     hash = mix(hash, SkGoodHash()(fParagraphStyle.getUseLocaleForTextBreak()));
+    hash = mix(hash, SkGoodHash()(fParagraphStyle.getDisableSpacingForControlChar()));
 
     auto& strutStyle = fParagraphStyle.getStrutStyle();
     if (strutStyle.getStrutEnabled()) {
@@ -365,6 +366,12 @@ bool ParagraphCacheKey::operator==(const ParagraphCacheKey& other) const {
     if (!(fParagraphStyle.getReplaceTabCharacters() == other.fParagraphStyle.getReplaceTabCharacters())) {
         return false;
     }
+
+#ifdef ENABLE_TEXT_ENHANCE
+    if (fParagraphStyle.getDisableSpacingForControlChar() != other.fParagraphStyle.getDisableSpacingForControlChar()) {
+        return false;
+    }
+#endif
 
     if (fParagraphStyle.getEllipsisUtf16() != other.fParagraphStyle.getEllipsisUtf16()) {
         return false;
