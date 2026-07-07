@@ -1580,7 +1580,8 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                     }
 #ifdef ENABLE_TEXT_ENHANCE
                 } else if (wordSpacingPending &&
-                    !codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+                    (!paragraphStyle().getDisableSpacingForControlChar() ||
+                     !codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl))) {
 #else
                 } else if (wordSpacingPending) {
 #endif
@@ -1601,7 +1602,8 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
             // Process letter spacing
 #ifdef ENABLE_TEXT_ENHANCE
             if (currentStyle->fStyle.getLetterSpacing() != 0 &&
-                !codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+                (!paragraphStyle().getDisableSpacingForControlChar() ||
+                 !codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl))) {
 #else
             if (currentStyle->fStyle.getLetterSpacing() != 0) {
 #endif
