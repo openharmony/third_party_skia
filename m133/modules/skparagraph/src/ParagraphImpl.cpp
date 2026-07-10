@@ -1527,7 +1527,8 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
         SkScalar shift = 0;
         run.iterateThroughClusters([this, &run, &shift, &style](Cluster* cluster) {
             run.shift(cluster, shift);
-            if (codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+            if (codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl) &&
+                paragraphStyle().getDisableSpacingForControlChar()) {
                 return;
             }
             shift += run.addSpacesEvenly(style.getLetterSpacing(), cluster);

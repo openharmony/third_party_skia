@@ -98,8 +98,17 @@ void TextWrapScorer::CalculateCumulativeLen(ParagraphImpl& parent)
     auto endCluster = &parent.cluster(0);
     auto locale = parent.paragraphStyle().getTextStyle().getLocale();
     for (size_t clusterIx = 0; clusterIx < parent.clusters().size(); clusterIx++) {
-        auto len = parent.cluster(clusterIx).width();
-        if (!canFitAnyCluster_ && len > 0 && len <= maxWidth_) {
+        const auto& cluster = parent.cluster(clusterIx);
+        auto len = cluster.width();
+        // A cluster is considered "fitable" only when it carries real, non-negligible
+        // advance AND it is not a control character. Control chars (any width) and
+        // zero-width format chars (e.g. ZWSP/ZWJ) cannot form meaningful lines, but
+        // their tiny widths can fall into (0, maxWidth] after letterSpacing is no
+        // longer applied to controls — that falsely enables the scorer and triggers
+        // unbounded recursion. Both filters are needed: !nearlyZero does not catch
+        // non-zero-width control chars, and !kControl does not catch Cf-class zero-widths.
+        if (!canFitAnyCluster_ && !nearlyZero(len) && len <= maxWidth_ &&
+            !parent.codeUnitHasProperty(cluster.textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
             canFitAnyCluster_ = true;
         }
         if (parent.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
