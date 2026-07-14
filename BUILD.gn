@@ -501,7 +501,7 @@ if (is_arkui_x) {
     }
   }
   ohos_static_library("sksl_ext_static") {
-    banch_protector_ret = "pac_ret"
+    branch_protector_ret = "pac_ret"
     part_name = "skia"
     subsystem_name = "thirdparty"
 
@@ -544,7 +544,7 @@ if (is_arkui_x) {
     include_dirs = [ "${skia_root_dir}" ]
   }
   ohos_static_library("skia_canvaskit_static") {
-    banch_protector_ret = "pac_ret"
+    branch_protector_ret = "pac_ret"
     part_name = "skia"
     subsystem_name = "thirdparty"
 
