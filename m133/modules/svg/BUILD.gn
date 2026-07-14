@@ -38,6 +38,7 @@ if (skia_enable_svg && skia_use_expat) {
   }
 
   ohos_source_set("svg") {
+    banch_protector_ret = "pac_ret"
     check_includes = false
     import("svg.gni")
     public_configs = [ ":public_config" ]
