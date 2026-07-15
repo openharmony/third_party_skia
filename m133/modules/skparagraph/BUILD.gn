@@ -28,6 +28,7 @@ config("skia_paragraph_config") {
 }
 
 ohos_static_library("skia_paragraph_ohos_new") {
+  branch_protector_ret = "pac_ret"
   part_name = "skia"
   subsystem_name = "thirdparty"
 
