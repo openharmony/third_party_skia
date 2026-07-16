@@ -1527,7 +1527,8 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
         SkScalar shift = 0;
         run.iterateThroughClusters([this, &run, &shift, &style](Cluster* cluster) {
             run.shift(cluster, shift);
-            if (codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+            if (codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl) &&
+                paragraphStyle().getDisableSpacingForControlChar()) {
                 return;
             }
             shift += run.addSpacesEvenly(style.getLetterSpacing(), cluster);
@@ -1580,7 +1581,8 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
                     }
 #ifdef ENABLE_TEXT_ENHANCE
                 } else if (wordSpacingPending &&
-                    !codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+                    (!paragraphStyle().getDisableSpacingForControlChar() ||
+                     !codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl))) {
 #else
                 } else if (wordSpacingPending) {
 #endif
@@ -1601,7 +1603,8 @@ void ParagraphImpl::applySpacingAndBuildClusterTable() {
             // Process letter spacing
 #ifdef ENABLE_TEXT_ENHANCE
             if (currentStyle->fStyle.getLetterSpacing() != 0 &&
-                !codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+                (!paragraphStyle().getDisableSpacingForControlChar() ||
+                 !codeUnitHasProperty(cluster->textRange().start, SkUnicode::CodeUnitFlags::kControl))) {
 #else
             if (currentStyle->fStyle.getLetterSpacing() != 0) {
 #endif
