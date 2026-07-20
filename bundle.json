@@ -45,6 +45,7 @@
                 "graphic_2d",
                 "libpng",
                 "freetype",
+                "vulkan-headers",
                 "faultloggerd",
                 "harfbuzz",
                 "vma"
