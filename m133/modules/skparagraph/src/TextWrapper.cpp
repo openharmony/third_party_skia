@@ -1260,6 +1260,10 @@ void TextWrapper::processLineStretches(SkScalar maxWidth, const AddLineToParagra
         prepareLineForFormatting(line);
         // Skip stretches whose content has been consumed by previous lines
         if (fEndLine.startCluster() > fEndLine.endCluster()) {
+            // The skipped line never goes through trimEndSpaces/saveBreak, so fBreak
+            // is still null (or stale). Reset fHardLineBreak to keep addFinalLineBreakIfNeeded
+            // from dereferencing a null breakCluster for this consumed line.
+            fHardLineBreak = false;
             continue;
         }
         formatCurrentLine(addLine);
