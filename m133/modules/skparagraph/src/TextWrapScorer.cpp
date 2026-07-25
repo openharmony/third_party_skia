@@ -26,6 +26,7 @@ namespace textlayout {
 TextWrapScorer::TextWrapScorer(SkScalar maxWidth, ParagraphImpl& parent, size_t maxLines)
     : maxWidth_(maxWidth), currentTarget_(maxWidth), maxLines_(maxLines), parent_(parent)
 {
+    minWidth_ = maxWidth_;
     CalculateCumulativeLen(parent);
 
     // If maxWidth cannot fit even a single cluster, skip balanced scoring
@@ -107,8 +108,9 @@ void TextWrapScorer::CalculateCumulativeLen(ParagraphImpl& parent)
         // longer applied to controls — that falsely enables the scorer and triggers
         // unbounded recursion. Both filters are needed: !nearlyZero does not catch
         // non-zero-width control chars, and !kControl does not catch Cf-class zero-widths.
-        if (!canFitAnyCluster_ && !nearlyZero(len) && len <= maxWidth_ &&
+        if (!nearlyZero(len) && len <= maxWidth_ &&
             !parent.codeUnitHasProperty(cluster.textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+            minWidth_ = std::min(len, minWidth_);
             canFitAnyCluster_ = true;
         }
         if (parent.getLineBreakStrategy() == LineBreakStrategy::BALANCED) {
@@ -188,6 +190,7 @@ int64_t TextWrapScorer::CalculateRecursive(RecursiveParam param)
     // This should come precalculated
     param.currentMax = maxWidth_ - parent_.detectIndents(param.lineNumber) -
         parent_.detectTailIndents(param.lineNumber);
+    param.currentMax = std::max(minWidth_, std::min(param.currentMax, maxWidth_));
     if (param.currentMax <= SK_ScalarNearlyZero) {
         return BEST_LOCAL_SCORE;
     }
