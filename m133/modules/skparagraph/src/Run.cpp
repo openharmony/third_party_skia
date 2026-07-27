@@ -130,14 +130,18 @@ std::string getFamilyNameFromFont(const RSFont& font)
 
 const ScaleParam& findCompressionConfigWithFont(const RSFont& font)
 {
-    auto fontCompressionStatus = getFontCompressionStatus(font);
-    if (fontCompressionStatus != FontCompressionStatus::COMPRESSED) {
+    auto typeface = font.GetTypeface();
+    if (typeface == nullptr) {
+        return DEFAULT_SCALE_PARAM;
+    }
+
+    if (typeface->IsCustomTypeface() && !typeface->IsThemeTypeface()) {
         return DEFAULT_SCALE_PARAM;
     }
 
     const auto& config = FontCollection::IsAdapterTextHeightEnabled() ?
         FONT_FAMILY_COMPRESSION_WITH_HEIGHT_ADAPTER_CONFIG : FONT_FAMILY_COMPRESSION_CONFIG;
-    std::string familyName = getFamilyNameFromFont(font);
+    std::string familyName = typeface->GetFamilyName();
     auto iter = config.find(familyName);
     if (iter == config.end()) {
         return DEFAULT_SCALE_PARAM;

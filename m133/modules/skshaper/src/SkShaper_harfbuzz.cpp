@@ -1610,11 +1610,11 @@ ShapedRun ShaperHarfBuzz::shape(char const * const utf8,
 #endif
 
 #ifdef ENABLE_TEXT_ENHANCE
-    double SkScalarFromHBPosX = +(1.52587890625e-5) * run.fFont.GetScaleX();
+    float SkScalarFromHBPosX = +(1.52587890625e-5f) * run.fFont.GetScaleX();
 #else
-    double SkScalarFromHBPosX = +(1.52587890625e-5) * run.fFont.getScaleX();
+    float SkScalarFromHBPosX = +(1.52587890625e-5f) * run.fFont.getScaleX();
 #endif
-    double SkScalarFromHBPosY = -(1.52587890625e-5);  // HarfBuzz y-up, Skia y-down
+    float SkScalarFromHBPosY = -(1.52587890625e-5f);  // HarfBuzz y-up, Skia y-down
     SkVector runAdvance = { 0, 0 };
     for (unsigned i = 0; i < len; i++) {
         ShapedGlyph& glyph = run.fGlyphs[i];

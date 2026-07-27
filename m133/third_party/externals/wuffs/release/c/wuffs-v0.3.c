@@ -1081,6 +1081,11 @@ wuffs_base__count_leading_zeroes_u64(uint64_t u) {
 #define WUFFS_BASE__USE_MEMCPY_LE_PEEK_POKE
 #endif
 
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \
+    __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define WUFFS_BASE__ORDER_LITTLE_ENDIAN
+#endif
+
 #define wuffs_base__peek_u8be__no_bounds_check \
   wuffs_base__peek_u8__no_bounds_check
 #define wuffs_base__peek_u8le__no_bounds_check \
@@ -1104,7 +1109,7 @@ wuffs_base__peek_u16be__no_bounds_check(const uint8_t* p) {
 
 static inline uint16_t  //
 wuffs_base__peek_u16le__no_bounds_check(const uint8_t* p) {
-#if defined(WUFFS_BASE__USE_MEMCPY_LE_PEEK_POKE)
+#if defined(WUFFS_BASE__USE_MEMCPY_LE_PEEK_POKE) || defined(WUFFS_BASE__ORDER_LITTLE_ENDIAN)
   uint16_t x;
   memcpy(&x, p, 2);
   return x;
@@ -1139,7 +1144,7 @@ wuffs_base__peek_u32be__no_bounds_check(const uint8_t* p) {
 
 static inline uint32_t  //
 wuffs_base__peek_u32le__no_bounds_check(const uint8_t* p) {
-#if defined(WUFFS_BASE__USE_MEMCPY_LE_PEEK_POKE)
+#if defined(WUFFS_BASE__USE_MEMCPY_LE_PEEK_POKE) || defined(WUFFS_BASE__ORDER_LITTLE_ENDIAN)
   uint32_t x;
   memcpy(&x, p, 4);
   return x;
@@ -1209,7 +1214,7 @@ wuffs_base__peek_u64be__no_bounds_check(const uint8_t* p) {
 
 static inline uint64_t  //
 wuffs_base__peek_u64le__no_bounds_check(const uint8_t* p) {
-#if defined(WUFFS_BASE__USE_MEMCPY_LE_PEEK_POKE)
+#if defined(WUFFS_BASE__USE_MEMCPY_LE_PEEK_POKE) || defined(WUFFS_BASE__ORDER_LITTLE_ENDIAN)
   uint64_t x;
   memcpy(&x, p, 8);
   return x;
@@ -1242,7 +1247,7 @@ wuffs_base__poke_u16be__no_bounds_check(uint8_t* p, uint16_t x) {
 static inline void  //
 wuffs_base__poke_u16le__no_bounds_check(uint8_t* p, uint16_t x) {
 #if defined(WUFFS_BASE__USE_MEMCPY_LE_PEEK_POKE) || \
-    (defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__))
+    (defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__)) || defined(WUFFS_BASE__ORDER_LITTLE_ENDIAN)
   // This seems to perform better on gcc 10 (but not clang 9). Clang also
   // defines "__GNUC__".
   memcpy(p, &x, 2);
@@ -1277,7 +1282,7 @@ wuffs_base__poke_u32be__no_bounds_check(uint8_t* p, uint32_t x) {
 static inline void  //
 wuffs_base__poke_u32le__no_bounds_check(uint8_t* p, uint32_t x) {
 #if defined(WUFFS_BASE__USE_MEMCPY_LE_PEEK_POKE) || \
-    (defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__))
+    (defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__)) || defined(WUFFS_BASE__ORDER_LITTLE_ENDIAN)
   // This seems to perform better on gcc 10 (but not clang 9). Clang also
   // defines "__GNUC__".
   memcpy(p, &x, 4);
@@ -1364,7 +1369,7 @@ wuffs_base__poke_u64be__no_bounds_check(uint8_t* p, uint64_t x) {
 static inline void  //
 wuffs_base__poke_u64le__no_bounds_check(uint8_t* p, uint64_t x) {
 #if defined(WUFFS_BASE__USE_MEMCPY_LE_PEEK_POKE) || \
-    (defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__))
+    (defined(__GNUC__) && !defined(__clang__) && defined(__x86_64__)) || defined(WUFFS_BASE__ORDER_LITTLE_ENDIAN)
   // This seems to perform better on gcc 10 (but not clang 9). Clang also
   // defines "__GNUC__".
   memcpy(p, &x, 8);
