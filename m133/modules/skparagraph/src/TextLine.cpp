@@ -3363,6 +3363,9 @@ int getEndWhitespaceCount(const ClusterRange& range, ParagraphImpl* owner)
         }
 
         endWhitespaceCount++;
+        if (clusterIndex == range.start) {
+            break;
+        }
     }
 
     return endWhitespaceCount;
