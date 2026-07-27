@@ -3352,7 +3352,7 @@ size_t getPrevGlyphsIndex(const ClusterRange& range, ParagraphImpl* owner, RunIn
 
 int getEndWhitespaceCount(const ClusterRange& range, ParagraphImpl* owner)
 {
-    if (owner == nullptr) {
+    if (owner == nullptr || range.start >= range.end) {
         return 0;
     }
 
