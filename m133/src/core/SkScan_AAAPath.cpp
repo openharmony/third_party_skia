@@ -30,6 +30,14 @@
 #include <cstdint>
 #include <cstring>
 
+#if defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
+#define likely(x) (__builtin_expect(!!(x), 1))
+#define unlikely(x) (__builtin_expect(!!(x), 0))
+#else
+#define likely(x) (x)
+#define unlikely(x) (x)
+#endif
+
 /*
 
 The following is a high-level overview of our analytic anti-aliasing
@@ -826,8 +834,10 @@ static void blit_trapezoid_row(AdditiveBlitter* blitter,
         ll = lr = approximate_intersection(ul, ll, ur, lr);
     }
 
-    if (ul == ur && ll == lr) {
-        return;  // empty trapzoid
+    if unlikely(ul == ur) {
+        if (ll == lr) {
+            return; // empty trapzoid
+        }
     }
 
     // We're going to use the left line ul-ll and the rite line ur-lr

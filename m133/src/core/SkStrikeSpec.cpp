@@ -69,20 +69,19 @@ std::tuple<SkStrikeSpec, SkScalar> SkStrikeSpec::MakePath(
 
 std::tuple<SkStrikeSpec, SkScalar> SkStrikeSpec::MakeCanonicalized(
         const SkFont& font, const SkPaint* paint) {
-    SkPaint canonicalizedPaint;
-    if (paint != nullptr) {
-        canonicalizedPaint = *paint;
-    }
+    SkPaint defaultPaint;
+    const SkPaint& paintRef = (paint != nullptr) ? *paint : defaultPaint;
 
     const SkFont* canonicalizedFont = &font;
     SkTLazy<SkFont> pathFont;
     SkScalar strikeToSourceScale = 1;
-    if (ShouldDrawAsPath(canonicalizedPaint, font, SkMatrix::I())) {
+    bool shouldDrawAsPath = ShouldDrawAsPath(paintRef, font, SkMatrix::I());
+    if (shouldDrawAsPath) {
         canonicalizedFont = pathFont.set(font);
         strikeToSourceScale = pathFont->setupForAsPaths(nullptr);
-        canonicalizedPaint.reset();
     }
-
+    
+    const SkPaint& canonicalizedPaint = shouldDrawAsPath ? defaultPaint : paintRef;
     return {SkStrikeSpec(*canonicalizedFont, canonicalizedPaint, SkSurfaceProps(),
                          SkScalerContextFlags::kFakeGammaAndBoostContrast, SkMatrix::I()),
             strikeToSourceScale};
