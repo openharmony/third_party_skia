@@ -3318,38 +3318,6 @@ void TextLine::getRectsForPlaceholders(std::vector<TextBox>& boxes) {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
-size_t getPrevGlyphsIndex(const ClusterRange& range, ParagraphImpl* owner, RunIndex& prevRunIndex)
-{
-    if (owner == nullptr) {
-        return 0;
-    }
-
-    size_t glyphsIndex = 0;
-    auto clusterIndex = range.start - 1;
-    prevRunIndex = owner->cluster(clusterIndex).runIndex();
-    if (prevRunIndex != owner->cluster(range.start).runIndex()) {
-        // Belongs to a different run.
-        return 0;
-    }
-
-    for (; clusterIndex >= 0; clusterIndex--) {
-        RunIndex runIndex = owner->cluster(clusterIndex).runIndex();
-        if (prevRunIndex != runIndex) {
-            // Found a different run.
-            break;
-        }
-
-        glyphsIndex++;
-
-        if (clusterIndex == 0) {
-            // All belong to the first run.
-            break;
-        }
-    }
-
-    return glyphsIndex;
-}
-
 int getEndWhitespaceCount(const ClusterRange& range, ParagraphImpl* owner)
 {
     if (owner == nullptr || range.start >= range.end) {
@@ -3594,30 +3562,45 @@ std::vector<RSRect> getAllRectInfo(const ClusterRange& range, ParagraphImpl* own
         return rectVec;
     }
 
-    // If it is not the first line, you need to get the GlyphsIndex of the first character.
-    size_t glyphsIndex  = 0;
-    RunIndex prevRunIndex = 0;
-    if (range.start > 0) {
-        glyphsIndex = getPrevGlyphsIndex(range, owner, prevRunIndex);
-    }
-
     for (auto clusterIndex = range.start; clusterIndex < range.end; clusterIndex++) {
-        RunIndex runIndex = owner->cluster(clusterIndex).runIndex();
-        if (prevRunIndex != runIndex) {
-            glyphsIndex = 0;
-        }
-
-        auto run = owner->cluster(clusterIndex).runOrNull();
+        auto& cluster = owner->cluster(clusterIndex);
+        auto run = cluster.runOrNull();
         if (run == nullptr) {
-            break;
+            TEXT_LOGW("getAllRectInfo: cluster[%{public}zu] run is null, range[%{public}zu, %{public}zu)",
+                      clusterIndex, range.start, range.end);
+            rectVec.push_back(RSRect{});
+            continue;
         }
 
-        SkGlyphID glyphId = run->glyphs()[glyphsIndex];
-        RSRect glyphBounds;
-        run->font().GetWidths(&glyphId, 1, nullptr, &glyphBounds);
-        rectVec.push_back(glyphBounds);
-        glyphsIndex++;
-        prevRunIndex = runIndex;
+        size_t glyphStart = cluster.startPos();
+        size_t glyphEnd = cluster.endPos();
+
+        if (glyphStart >= run->size() || glyphStart >= glyphEnd) {
+            TEXT_LOGW("getAllRectInfo: cluster[%{public}zu] invalid glyph range [%{public}zu, %{public}zu), "
+                      "runSize=%{public}zu, range[%{public}zu, %{public}zu)",
+                      clusterIndex, glyphStart, glyphEnd, run->size(), range.start, range.end);
+            rectVec.push_back(RSRect{});
+            continue;
+        }
+
+        // Clamp glyphEnd to avoid out-of-bounds access on run->glyphs()
+        if (glyphEnd > run->size()) {
+            glyphEnd = run->size();
+        }
+
+        // Get bounds for all glyphs in this cluster (handles multi-glyph clusters)
+        SkGlyphID glyphId = run->glyphs()[glyphStart];
+        RSRect clusterBounds;
+        run->font().GetWidths(&glyphId, 1, nullptr, &clusterBounds);
+
+        for (size_t g = glyphStart + 1; g < glyphEnd; ++g) {
+            glyphId = run->glyphs()[g];
+            RSRect glyphBounds;
+            run->font().GetWidths(&glyphId, 1, nullptr, &glyphBounds);
+            clusterBounds.Join(glyphBounds);
+        }
+
+        rectVec.push_back(clusterBounds);
     }
 
     return rectVec;
