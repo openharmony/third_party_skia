@@ -362,7 +362,7 @@ bool processPairs(const ArrayOf16bits* data, HyphenFindBreakParam& param, uint16
     TEXT_LOGD("Code:0x%{public}x", code);
     uint16_t count = data->count;
     bool match = false;
-    for (size_t j = 0; j < count; j += HYPHEN_BASE_CODE_SHIFT) {
+    for (size_t j = 0; j + 1 < count; j += HYPHEN_BASE_CODE_SHIFT) {
         if (data->codes[j] == code) {
             nextOffset = data->codes[j + 1] & 0x3fff;
             type = (PathType)(data->codes[j + 1] >> HYPHEN_SHIFT_BITS_14);

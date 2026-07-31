@@ -67,7 +67,7 @@ struct HyphenatorHeader {
         // need still reconsider what we want to do with a nodes in the middle of graph
         if (maps != nullptr && (code < minCp || code > maxCp)) {
             // we could assert that count is even
-            for (size_t i = maps->count; i != 0;) {
+            for (size_t i = maps->count; i >= HYPHEN_BASE_CODE_SHIFT;) {
                 i -= HYPHEN_BASE_CODE_SHIFT;
                 if (maps->codes[i] == code) {
                     auto offset = maps->codes[i + 1];
