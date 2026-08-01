@@ -3589,20 +3589,6 @@ static RSRect getClusterGlyphBounds(const Cluster& cluster)
     return clusterBounds;
 }
 
-std::vector<RSRect> getAllRectInfo(const ClusterRange& range, ParagraphImpl* owner)
-{
-    std::vector<RSRect> rectVec;
-    if (owner == nullptr) {
-        return rectVec;
-    }
-
-    for (auto clusterIndex = range.start; clusterIndex < range.end; clusterIndex++) {
-        rectVec.push_back(getClusterGlyphBounds(owner->cluster(clusterIndex)));
-    }
-
-    return rectVec;
-}
-
 bool TextLine::isLineHeightDominatedByRun(const Run& run) {
     return SkScalarNearlyEqual(run.ascent(), sizes().ascent());
 }
