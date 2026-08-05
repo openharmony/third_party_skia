@@ -3560,7 +3560,7 @@ static RSRect getClusterGlyphBounds(const Cluster& cluster)
 {
     auto run = cluster.runOrNull();
     if (run == nullptr) {
-        TEXT_LOGE("getClusterGlyphBounds: run is null, textIndex=%{public}zu", cluster.textRange().start);
+        TEXT_LOGE("Run is null, textIndex=%{public}zu", cluster.textRange().start);
         return {};
     }
 
@@ -3568,7 +3568,7 @@ static RSRect getClusterGlyphBounds(const Cluster& cluster)
     size_t glyphEnd = cluster.endPos();
 
     if (glyphStart >= run->size() || glyphStart >= glyphEnd) {
-        TEXT_LOGE("getClusterGlyphBounds: invalid glyph range [%{public}zu, %{public}zu), "
+        TEXT_LOGE("Invalid glyph range [%{public}zu, %{public}zu), "
             "runSize=%{public}zu, textIndex=%{public}zu", glyphStart, glyphEnd, run->size(), cluster.textRange().start);
         return {};
     }
@@ -3583,7 +3583,9 @@ static RSRect getClusterGlyphBounds(const Cluster& cluster)
     for (size_t g = glyphStart + 1; g < glyphEnd; ++g) {
         RSRect glyphBounds;
         run->font().GetWidths(&run->glyphs()[g], 1, nullptr, &glyphBounds);
-        clusterBounds.Join(glyphBounds);
+        if (glyphBounds.IsValid()) {
+            clusterBounds.Join(glyphBounds);
+        }
     }
 
     return clusterBounds;
