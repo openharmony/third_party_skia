@@ -3817,47 +3817,45 @@ std::string_view ParagraphImpl::GetState() const
 std::string ParagraphImpl::GetDumpInfo() const
 {
     std::ostringstream paragraphInfo;
-    paragraphInfo << "Paragraph dump:";
-    paragraphInfo << "Text sz:" << fText.size() << ",State:" << GetState()
+    paragraphInfo << "Paragraph dump:Text sz:" << fText.size() << ",State:" << GetState()
                   << ",TextDraw:" << (fSkipTextBlobDrawing ? "T" : "F") << ",";
     uint32_t glyphSize = 0;
     uint32_t runIndex = 0;
     for (auto& run : fRuns) {
-        paragraphInfo << "Run" << runIndex << " glyph sz:" << run.size()
-                      << ",rng[" << run.textRange().start << "-" << run.textRange().end << "),";
-        // Add typeface file path and font family
+        // family/id come from the typeface; glyph IDs below are the shaping result
+        // copied verbatim into the drawn SkTextBlob (Run::copyTo), matching the RS.
         auto typeface = run.font().GetTypeface();
-        if (typeface) {
-            paragraphInfo << "family:" << typeface->GetFamilyName()
-                          << ",id:" << typeface->GetUniqueID() << ",";
-        } else {
-            paragraphInfo << "family:null,id:0,";
+        paragraphInfo << "Run" << runIndex << " glyph sz:" << run.size() << ",rng["
+                      << run.textRange().start << "-" << run.textRange().end << "),family:"
+                      << (typeface ? typeface->GetFamilyName() : "null") << ",id:"
+                      << (typeface ? typeface->GetUniqueID() : 0) << ",";
+        paragraphInfo << "glyphs:[";
+        for (SkGlyphID g : run.glyphs()) {
+            paragraphInfo << g << " ";
         }
-        runIndex++;
+        paragraphInfo << "],";
         glyphSize += run.size();
+        runIndex++;
     }
     uint32_t blockIndex = 0;
     for (auto& block : fTextStyles) {
-        paragraphInfo << "Blk" << blockIndex
-                      << " rng[" << block.fRange.start << "-"<< block.fRange.end << ")"
-                      << ",sz:" << block.fStyle.getFontSize()
-                      << ",clr:" << std::hex << block.fStyle.getColor() << std::dec
-                      << ",ht:" << block.fStyle.getHeight()
-                      << ",wt:" << block.fStyle.getFontStyle().GetWeight()
-                      << ",wd:" << block.fStyle.getFontStyle().GetWidth()
-                      << ",slt:" << block.fStyle.getFontStyle().GetSlant() << ",";
+        const auto& style = block.fStyle;
+        paragraphInfo << "Blk" << blockIndex << " rng[" << block.fRange.start << "-"
+                      << block.fRange.end << "),sz:" << style.getFontSize() << ",clr:" << std::hex
+                      << style.getColor() << std::dec << ",ht:" << style.getHeight() << ",wt:"
+                      << style.getFontStyle().GetWeight() << ",wd:" << style.getFontStyle().GetWidth()
+                      << ",slt:" << style.getFontStyle().GetSlant() << ",";
         blockIndex++;
     }
     paragraphInfo << "Paragraph glyph sz:" << glyphSize << ",";
     uint32_t lineIndex = 0;
     for (auto& line : fLines) {
+        auto runs = line.getLineAllRuns();
         if (lineIndex > 0) {
             paragraphInfo << ",";
         }
-        auto runs = line.getLineAllRuns();
-        auto runSize = runs.size();
-        if (runSize !=0 ) {
-            paragraphInfo << "L" << lineIndex << " run rng:" << runs[0] << "-" << runs[runSize - 1];
+        if (!runs.empty()) {
+            paragraphInfo << "L" << lineIndex << " run rng:" << runs.front() << "-" << runs.back();
         }
         lineIndex++;
     }
