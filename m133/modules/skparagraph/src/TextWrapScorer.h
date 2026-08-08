@@ -117,6 +117,7 @@ private:
     // to be seen if unordered map would be better fit
     std::map<Index, Score> cache_;
 
+    SkScalar minWidth_ { 0 };
     SkScalar maxWidth_ { 0 };
     SkScalar currentTarget_ { 0 };
     SkScalar cumulativeLen_ { 0 };
