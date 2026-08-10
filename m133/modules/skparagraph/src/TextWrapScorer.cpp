@@ -175,59 +175,287 @@ void TextWrapScorer::Run() {
         // need to have at least two lines for algo to do anything useful
         return;
     }
-    CalculateRecursive(RecursiveParam{
-        targetLines, maxLines_, 0, 0.f, cumulativeLen_,
-    });
+
+    // --- Iterative stack-based solver (replaces recursive CalculateRecursive) ---
+    //
+    // Each stack frame corresponds to one line being scored. The original algorithm
+    // recursed via CalculateRecursive -> FindOptimalSolutionForCurrentLine ->
+    // HandleLastLine -> CalculateRecursive, which could overflow the C++ call stack
+    // when indent forced currentMax down to minWidth_ (each level consumed only a
+    // few pixels of text, requiring thousands of levels).
+    //
+    // We now manage the call tree explicitly with a std::vector<Frame> stack.
+    struct Frame {
+        RecursiveParam param;
+        size_t breakCursor = 0;       // per-frame break position (was global lastBreakPos_)
+
+        // Best result from this line down through all children
+        int64_t bestScore = BEST_LOCAL_SCORE;
+        std::vector<SkScalar> bestWidths;
+
+        // Current do-while iteration state
+        bool looped = false;
+        SkScalar iterWidth = 0;
+        int64_t iterScore = 0;
+        int64_t overallScore = 0;
+
+        // Child communication: parent->childScore receives child's bestScore on pop
+        int64_t childScore = BEST_LOCAL_SCORE;
+
+        enum Phase {
+            SETUP,           // compute currentMax, trim spaces, find breakPos
+            NEXT_WIDTH,      // calculateCurrentWidth for this iteration
+            CHECK_RECURSE,   // HandleLastLine: last line / need child / can't fit
+            AFTER_CHILD,     // child returned — incorporate its result
+            FINALIZE         // cache, update best, check loop condition
+        } phase = SETUP;
+    };
+
+    std::vector<Frame> stack;
+    stack.reserve(128);  // reasonable pre-allocation; actual depth bounded algorithmically
+    stack.push_back({RecursiveParam{targetLines, maxLines_, 0, 0.f, cumulativeLen_}});
+
+    // Helper: pop the top frame and communicate its result to the new top (parent).
+    auto popFrame = [&]() {
+        Frame& top = stack.back();
+        current_ = std::move(top.bestWidths);
+        int64_t score = top.bestScore;
+        stack.pop_back();
+        if (!stack.empty()) {
+            stack.back().childScore = score;
+        }
+    };
+
+    while (!stack.empty()) {
+        Frame& f = stack.back();
+
+        switch (f.phase) {
+        // ---------------------------------------------------------------
+        // SETUP — was the body of CalculateRecursive (before the call to
+        //         FindOptimalSolutionForCurrentLine)
+        // ---------------------------------------------------------------
+        case Frame::SETUP: {
+            // Terminal conditions (was: return BEST_LOCAL_SCORE)
+            if (f.param.maxLines == 0 || f.param.remainingTextWidth <= 1.f) {
+                popFrame();
+                continue;
+            }
+
+            // Compute available width for this line, floored at minWidth_
+            f.param.currentMax = maxWidth_ - parent_.detectIndents(f.param.lineNumber) -
+                parent_.detectTailIndents(f.param.lineNumber);
+            f.param.currentMax = std::max(minWidth_, std::min(f.param.currentMax, maxWidth_));
+            if (f.param.currentMax <= SK_ScalarNearlyZero) {
+                popFrame();
+                continue;
+            }
+
+            // Trim whitespace at the beginning of a new line
+            while ((f.param.lineNumber > 0) && (f.breakCursor + 1 < breaks_.size()) &&
+                (breaks_[f.breakCursor + 1].subsequentWhitespace)) {
+                f.param.remainingTextWidth +=
+                    (f.param.begin - breaks_[++f.breakCursor].width);
+                f.param.begin = breaks_[f.breakCursor].width;
+            }
+
+            // Advance past a forced break left by the previous line
+            if (f.breakCursor < breaks_.size() &&
+                breaks_[f.breakCursor].type == Break::BreakType::BREAKTYPE_FORCED) {
+                f.breakCursor++;
+            }
+            f.param.breakPos = f.breakCursor;
+
+            // Find the first break that exceeds the line width
+            while (f.param.breakPos < breaks_.size() &&
+                   breaks_[f.param.breakPos].width < (f.param.begin + f.param.currentMax)) {
+                f.param.breakPos++;
+            }
+
+            // If no suitable break was found, insert a forced one
+            if (f.param.breakPos == f.breakCursor &&
+                f.param.remainingTextWidth > f.param.currentMax) {
+                if (f.param.breakPos + 1 > breaks_.size()) {
+                    breaks_.emplace_back(f.param.begin + f.param.currentMax,
+                                        Break::BreakType::BREAKTYPE_FORCED, false);
+                } else {
+                    breaks_.insert(breaks_.cbegin() + f.param.breakPos + 1,
+                                  Break(f.param.begin + f.param.currentMax,
+                                        Break::BreakType::BREAKTYPE_FORCED, false));
+                }
+                f.param.breakPos += BREAK_NUM_TWO;
+            }
+
+            LOGD("Line %{public}lu about to loop %{public}f, %{public}lu, %{public}lu, max: %{public}f",
+                 static_cast<unsigned long>(f.param.lineNumber), f.param.begin,
+                 static_cast<unsigned long>(f.param.breakPos),
+                 static_cast<unsigned long>(f.breakCursor), maxWidth_);
+
+            f.phase = Frame::NEXT_WIDTH;
+            break;
+        }
+
+        // ---------------------------------------------------------------
+        // NEXT_WIDTH — was calculateCurrentWidth + cache lookup
+        // ---------------------------------------------------------------
+        case Frame::NEXT_WIDTH: {
+            // ---- calculateCurrentWidth logic (inlined, per-frame breakCursor) ----
+            SkScalar newWidth = f.param.currentMax;
+
+            if (((f.param.breakPos > 0) && (f.param.breakPos - 1) < breaks_.size()) &&
+                f.param.begin < breaks_[f.param.breakPos - 1].width) {
+                newWidth = std::min(breaks_[--f.param.breakPos].width - f.param.begin,
+                                    f.param.currentMax);
+            }
+
+            if (f.looped &&
+                ((f.breakCursor == f.param.breakPos) ||
+                 (newWidth / f.param.currentMax * UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
+                LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
+                     static_cast<unsigned long>(f.param.lineNumber), f.param.begin,
+                     static_cast<unsigned long>(f.param.breakPos), newWidth, maxWidth_);
+                popFrame();
+                continue;
+            }
+
+            f.breakCursor = f.param.breakPos;
+            f.iterWidth = std::min(newWidth, f.param.remainingTextWidth);
+
+            // ---- cache lookup ----
+            Index index{f.param.lineNumber, f.param.begin, f.iterWidth};
+            const auto& ite = cache_.find(index);
+            if (ite != cache_.cend()) {
+                cacheHits_++;
+                current_ = ite->second.widths;
+                f.overallScore = ite->second.score;
+                if (f.overallScore > f.bestScore) {
+                    f.bestScore = f.overallScore;
+                    f.bestWidths = current_;
+                }
+                f.looped = true;
+                // Stay in NEXT_WIDTH for the next loop iteration
+                continue;
+            }
+
+            // ---- compute line score ----
+            SkScalar scoref = std::min(1.f, abs(currentTarget_ - f.iterWidth) / currentTarget_);
+            f.iterScore = int64_t((1.f - scoref) * UNDERFLOW_SCORE);
+            f.iterScore *= f.iterScore;
+
+            current_.clear();
+            f.overallScore = f.iterScore;
+
+            f.phase = Frame::CHECK_RECURSE;
+            break;
+        }
+
+        // ---------------------------------------------------------------
+        // CHECK_RECURSE — was HandleLastLine
+        // ---------------------------------------------------------------
+        case Frame::CHECK_RECURSE: {
+            // For hyphen breaks, account for the reserved hyphen width
+            SkScalar adjustedWidth = f.iterWidth;
+            if (f.param.breakPos < breaks_.size() &&
+                breaks_[f.param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN) {
+                adjustedWidth = f.iterWidth - breaks_[f.param.breakPos].reservedSpace;
+            }
+
+            // Case 1: this is the last line (remaining text fits in current width)
+            if (abs(adjustedWidth - f.param.remainingTextWidth) < 1.f) {
+                if (parent_.getLineBreakStrategy() == LineBreakStrategy::HIGH_QUALITY) {
+                    f.overallScore = std::max(MINIMUM_FILL_RATIO, f.overallScore);
+                } else {
+                    f.overallScore *= BALANCED_LAST_LINE_MULTIPLIER;
+                }
+                // Force the do-while loop to exit after this iteration
+                f.iterWidth = f.param.currentMax;
+                f.iterScore = MINIMUM_FILL_RATIO_SQUARED - 1;
+                LOGD("last line %{public}lu reached",
+                     static_cast<unsigned long>(f.param.lineNumber));
+                f.phase = Frame::FINALIZE;
+                continue;
+            }
+
+            // Case 2: need to recurse to children (remaining text can still fit)
+            if (((f.param.remainingTextWidth - adjustedWidth) / maxWidth_) < f.param.maxLines) {
+                // Push child frame — mark our state so we resume at AFTER_CHILD
+                f.phase = Frame::AFTER_CHILD;
+                Frame child;
+                child.param.targetLines = f.param.targetLines - 1;
+                child.param.maxLines =
+                    f.param.maxLines > f.param.lineNumber
+                        ? f.param.maxLines - f.param.lineNumber
+                        : 0;
+                child.param.lineNumber = f.param.lineNumber + 1;
+                child.param.begin = f.param.begin + adjustedWidth;
+                child.param.remainingTextWidth =
+                    f.param.remainingTextWidth - adjustedWidth;
+                child.breakCursor = f.param.breakPos;  // inherit parent's cursor
+                stack.push_back(std::move(child));
+                continue;
+            }
+
+            // Case 3: text won't fit — abandon this branch
+            popFrame();
+            continue;
+        }
+
+        // ---------------------------------------------------------------
+        // AFTER_CHILD — child frame has been popped, its result is in
+        //               f.childScore and current_
+        // ---------------------------------------------------------------
+        case Frame::AFTER_CHILD: {
+            f.overallScore += f.childScore;
+            // current_ was set by popFrame() to the child's bestWidths.
+            // f.breakCursor is unchanged (child had its own copy).
+            f.phase = Frame::FINALIZE;
+            continue;
+        }
+
+        // ---------------------------------------------------------------
+        // FINALIZE — cache the result, update best, check loop condition
+        // ---------------------------------------------------------------
+        case Frame::FINALIZE: {
+            // Penalty for exceeding the target number of lines
+            if (f.param.targetLines < 0) {
+                f.overallScore += f.param.targetLines * PARAM_10000;
+            }
+
+            // Append this line's width to the widths accumulated by children
+            current_.push_back(f.iterWidth);
+
+            // Cache the composite result
+            Index index{f.param.lineNumber, f.param.begin, f.iterWidth};
+            cache_[index] = {f.overallScore, current_};
+
+            // Update best-so-far for this frame
+            if (f.overallScore > f.bestScore) {
+                f.bestScore = f.overallScore;
+                f.bestWidths = current_;
+            }
+
+            f.looped = true;
+
+            // Check do-while loop condition
+            if (f.iterScore > MINIMUM_FILL_RATIO_SQUARED &&
+                !(f.param.lineNumber == 0 &&
+                  f.bestScore > f.param.targetLines * GOOD_ENOUGH_LINE_SCORE)) {
+                f.phase = Frame::NEXT_WIDTH;
+            } else {
+                popFrame();
+            }
+            break;
+        }
+        } // switch
+    } // while
+
+    // current_ was set by the last popFrame() (root frame) — GetResult() reads it.
     LOGD("cache_: %{public}zu", cache_.size());
 }
 
-int64_t TextWrapScorer::CalculateRecursive(RecursiveParam param)
+int64_t TextWrapScorer::CalculateRecursive(RecursiveParam /*param*/)
 {
-    if (param.maxLines == 0 || param.remainingTextWidth <= 1.f) {
-        return BEST_LOCAL_SCORE;
-    }
-
-    // This should come precalculated
-    param.currentMax = maxWidth_ - parent_.detectIndents(param.lineNumber) -
-        parent_.detectTailIndents(param.lineNumber);
-    param.currentMax = std::max(minWidth_, std::min(param.currentMax, maxWidth_));
-    if (param.currentMax <= SK_ScalarNearlyZero) {
-        return BEST_LOCAL_SCORE;
-    }
-
-    // trim possible spaces at the beginning of line
-    while ((param.lineNumber > 0) && (lastBreakPos_ + 1 < breaks_.size()) &&
-        (breaks_[lastBreakPos_ + 1].subsequentWhitespace)) {
-        param.remainingTextWidth += (param.begin - breaks_[++lastBreakPos_].width);
-        param.begin = breaks_[lastBreakPos_].width;
-    }
-
-    if (lastBreakPos_ < breaks_.size() && breaks_[lastBreakPos_].type == Break::BreakType::BREAKTYPE_FORCED) {
-        lastBreakPos_++;
-    }
-    param.breakPos = lastBreakPos_;
-
-    while (param.breakPos < breaks_.size() && breaks_[param.breakPos].width < (param.begin + param.currentMax)) {
-        param.breakPos++;
-    }
-
-    if (param.breakPos == lastBreakPos_ && param.remainingTextWidth > param.currentMax) {
-        // If we were unable to find a break that matches the criteria, insert new one
-        // This may happen if there is a long word and per line indent for this particular line
-        if (param.breakPos + 1 > breaks_.size()) {
-            breaks_.emplace_back(param.begin + param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false);
-        } else {
-            breaks_.insert(breaks_.cbegin() + param.breakPos + 1, Break(param.begin + param.currentMax,
-                Break::BreakType::BREAKTYPE_FORCED, false));
-        }
-        param.breakPos += BREAK_NUM_TWO;
-    }
-
-    LOGD("Line %{public}lu about to loop %{public}f, %{public}lu, %{public}lu, max: %{public}f",
-        static_cast<unsigned long>(param.lineNumber), param.begin, static_cast<unsigned long>(param.breakPos),
-        static_cast<unsigned long>(lastBreakPos_), maxWidth_);
-
-    return FindOptimalSolutionForCurrentLine(param);
+    // DEPRECATED — kept for ABI compatibility. All work now happens in Run().
+    return BEST_LOCAL_SCORE;
 }
 
 std::vector<SkScalar>& TextWrapScorer::GetResult()
@@ -235,125 +463,22 @@ std::vector<SkScalar>& TextWrapScorer::GetResult()
     return current_;
 }
 
-SkScalar TextWrapScorer::calculateCurrentWidth(RecursiveParam& param, bool looped)
+SkScalar TextWrapScorer::calculateCurrentWidth(RecursiveParam& /*param*/, bool /*looped*/)
 {
-    SkScalar newWidth = param.currentMax;
-
-    if (((param.breakPos > 0) && (param.breakPos - 1) < breaks_.size()) &&
-        param.begin < breaks_[param.breakPos - 1].width) {
-        newWidth = std::min(breaks_[--param.breakPos].width - param.begin, param.currentMax);
-    }
-
-    if (looped
-        && ((lastBreakPos_ == param.breakPos)
-            || (newWidth / param.currentMax * UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
-        LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
-             static_cast<unsigned long>(param.lineNumber), param.begin, static_cast<unsigned long>(param.breakPos),
-             newWidth, maxWidth_);
-        return 0;
-    }
-
-    lastBreakPos_ = param.breakPos;
-
-    return std::min(newWidth, param.remainingTextWidth);
+    // DEPRECATED — inlined into the iterative solver in Run().
+    return 0;
 }
 
-int64_t TextWrapScorer::FindOptimalSolutionForCurrentLine(RecursiveParam& param)
+int64_t TextWrapScorer::FindOptimalSolutionForCurrentLine(RecursiveParam& /*param*/)
 {
-    // have this in reversed order to avoid extra insertions
-    std::vector<SkScalar> currentBest;
-    bool looped = false;
-    int64_t score = 0;
-    int64_t overallScore = score;
-    int64_t bestLocalScore = BEST_LOCAL_SCORE;
-    do {
-        // until the given threshold is crossed (minimum line fill rate)
-        // re-break this line, if a result is different, calculate score
-        SkScalar currentWidth = calculateCurrentWidth(param, looped);
-        if (currentWidth == 0) {
-            break;
-        }
-        Index index { param.lineNumber, param.begin, currentWidth };
-
-        // check cache
-        const auto& ite = cache_.find(index);
-        if (ite != cache_.cend()) {
-            cacheHits_++;
-            current_ = ite->second.widths;
-            overallScore = ite->second.score;
-            UpdateSolution(bestLocalScore, overallScore, currentBest);
-            looped = true;
-            continue;
-        }
-        SkScalar scoref = std::min(1.f, abs(currentTarget_ - currentWidth) / currentTarget_);
-        score = int64_t((1.f - scoref) * UNDERFLOW_SCORE);
-        score *= score;
-
-        current_.clear();
-        overallScore = score;
-
-        // Handle last line
-        if (param.breakPos < breaks_.size() && breaks_[param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN) {
-            auto copy = currentWidth - breaks_[param.breakPos].reservedSpace;
-            // name is bit confusing as the method enters also recursion
-            // with hyphen break this never is the last line
-            if (!HandleLastLine(param, overallScore, copy, score)) {
-                break;
-            }
-        } else { // real last line may update currentWidth
-            if (!HandleLastLine(param, overallScore, currentWidth, score)) {
-                break;
-            }
-        }
-        // we have exceeded target number of lines, add some penalty
-        if (param.targetLines < 0) {
-            overallScore += param.targetLines * PARAM_10000; // MINIMUM_FILL_RATIO;
-        }
-
-        // We always hold the best possible score of children at this point
-        current_.push_back(currentWidth);
-        cache_[index] = { overallScore, current_ };
-
-        UpdateSolution(bestLocalScore, overallScore, currentBest);
-        looped = true;
-    } while (score > MINIMUM_FILL_RATIO_SQUARED &&
-        !(param.lineNumber == 0 && bestLocalScore > param.targetLines * GOOD_ENOUGH_LINE_SCORE));
-    current_ = currentBest;
-    return bestLocalScore;
+    // DEPRECATED — inlined into the iterative solver in Run().
+    return BEST_LOCAL_SCORE;
 }
 
-bool TextWrapScorer::HandleLastLine(RecursiveParam& param, int64_t& overallScore, SkScalar& currentWidth, int64_t&score)
+bool TextWrapScorer::HandleLastLine(RecursiveParam& /*param*/, int64_t& /*overallScore*/,
+                                    SkScalar& /*currentWidth*/, int64_t& /*score*/)
 {
-    // Handle last line
-    if (abs(currentWidth - param.remainingTextWidth) < 1.f) {
-        // this is last line, with high-quality wrapping, relax the score a bit
-        if (parent_.getLineBreakStrategy() == LineBreakStrategy::HIGH_QUALITY) {
-            overallScore = std::max(MINIMUM_FILL_RATIO, overallScore);
-        } else {
-            overallScore *= BALANCED_LAST_LINE_MULTIPLIER;
-        }
-
-        // let's break the loop, under no same condition / fill-rate added rows can result to a better
-        // score.
-        currentWidth = param.currentMax;
-        score = MINIMUM_FILL_RATIO_SQUARED - 1;
-        LOGD("last line %{public}lu reached", static_cast<unsigned long>(param.lineNumber));
-        return true;
-    }
-    if (((param.remainingTextWidth - currentWidth) / maxWidth_) < param.maxLines) {
-        // recursively calculate best score for children
-        overallScore += CalculateRecursive(RecursiveParam{
-            param.targetLines - 1,
-            param.maxLines > param.lineNumber ? param.maxLines - param.lineNumber : 0,
-            param.lineNumber + 1,
-            param.begin + currentWidth,
-            param.remainingTextWidth - currentWidth
-        });
-        lastBreakPos_ = param.breakPos; // restore our ix
-        return true;
-    }
-
-    // the text is not going to fit anyway (anymore), no need to push it
+    // DEPRECATED — inlined into the iterative solver in Run().
     return false;
 }
 

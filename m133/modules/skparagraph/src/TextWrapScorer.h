@@ -127,7 +127,6 @@ private:
     std::vector<SkScalar> current_;
 
     std::vector<Break> breaks_;
-    size_t lastBreakPos_ { 0 };
 
     uint64_t cacheHits_ { 0 };
     bool fPrevWasWhitespace{false};
