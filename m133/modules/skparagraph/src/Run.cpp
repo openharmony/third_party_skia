@@ -445,10 +445,19 @@ size_t Run::findSplitClusterPos(size_t target) {
 
 // Compatible with getCoordinate RTL scenario
 size_t Run::globalClusterIndex(size_t pos) const {
-    if (leftToRight() || pos == (size_t)fGlyphs.size()) {
-        return fClusterStart + fClusterIndexes[pos];
+    // Defense-in-depth: callers may pass pos = context.pos + context.size,
+    // which can exceed fClusterIndexes.size()-1 when upstream range adjustment
+    // (adjustTextRange / getRunClipContextByRange) crossed run boundaries on
+    // combining-mark-heavy text. Clamp to avoid OOB read.
+    if (fClusterIndexes.empty()) {
+        return fClusterStart;
     }
-    return fClusterStart + fClusterIndexes[pos + 1];
+    size_t maxValid = fClusterIndexes.size() - 1;
+    size_t idx = (leftToRight() || pos == (size_t)fGlyphs.size()) ? pos : pos + 1;
+    if (idx > maxValid) {
+        idx = maxValid;
+    }
+    return fClusterStart + fClusterIndexes[idx];
 }
 
 void Run::updateSplitRunRangeInfo(Run& splitRun, size_t headIndex, size_t tailIndex) {

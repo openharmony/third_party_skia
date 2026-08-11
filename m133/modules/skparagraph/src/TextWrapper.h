@@ -104,8 +104,16 @@ class TextWrapper {
                 auto endIndex = (cluster)->textRange().end;
                 Cluster* endCluster = &owner->cluster(
                     std::min(owner->fClustersIndexFromCodeUnit[endIndex], owner->clusters().size() - 1));
-                TextStretch singleClusterStretch = TextStretch(cluster, metrics().getForceStrut());
-                result.push_back(singleClusterStretch);
+                if (cluster->isHardBreak() && !result.empty()) {
+                    // Hard break does not stand alone: merge it into the previous sub-stretch.
+                    // extend(Cluster*) ignores hard break metrics (matching Flutter behavior),
+                    // and fEnd advances to the hard break's endPos so endCluster()->isHardBreak()
+                    // still triggers fHardLineBreak downstream.
+                    result.back().extend(cluster);
+                } else {
+                    TextStretch singleClusterStretch = TextStretch(cluster, metrics().getForceStrut());
+                    result.push_back(singleClusterStretch);
+                }
                 cluster = endCluster;
             }
             return result;

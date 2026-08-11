@@ -2020,14 +2020,53 @@ void adjustTextRange(TextRange& textRange, const Run* run, TextLine::TextAdjustm
         textRange = updatedTextRange;
     }
 }
+
+// Clamp textRange into [runRange.start, runRange.end]. If the caller's range
+// does not overlap the run at all (start > end after clamp), fall back to the
+// full runRange to preserve the [start <= end] invariant and avoid downstream
+// `originalTextRange.end - 1` underflow. Used to prevent adjustTextRange from
+// expanding the range across run boundaries on combining-mark-heavy text
+// where only the base char carries kGlyphClusterStart.
+TextRange clampTextRangeToRun(TextRange textRange, TextRange runRange) {
+    textRange.start = std::max(textRange.start, runRange.start);
+    textRange.end = std::min(textRange.end, runRange.end);
+    if (textRange.start > textRange.end) {
+        textRange = runRange;
+    }
+    return textRange;
+}
+
+// Clamp ClipContext.pos / .size so that pos + size never exceeds runSize.
+// pos is clamped first, then size is bounded by (runSize - pos) — this order
+// avoids `pos + size` overflow when size underflows to SIZE_MAX.
+void clampClipContextPosSize(size_t& pos, size_t& size, size_t runSize) {
+    if (runSize == 0) {
+        pos = 0;
+        size = 0;
+        return;
+    }
+    if (pos >= runSize) {
+        pos = runSize - 1;
+    }
+    size_t maxRemaining = runSize - pos;
+    if (size > maxRemaining) {
+        size = maxRemaining;
+    }
+}
 } // namespace
 
 TextLine::ClipContext TextLine::getRunClipContextByRange(
     const Run* run, TextRange textRange, TextLine::TextAdjustment textAdjustment, SkScalar textStartInLine) const {
     ClipContext result = {run, 0, run->size(), 0, SkRect::MakeEmpty(), 0, false};
+    TextRange runRange = run->textRange();
+    // Clamp before & after adjustTextRange: it can expand the range across run
+    // boundaries on combining-mark-heavy text where only the base char carries
+    // kGlyphClusterStart (see clampTextRangeToRun for details).
+    textRange = clampTextRangeToRun(textRange, runRange);
     TextRange originalTextRange(textRange); // We need it for proportional measurement
     // Find [start:end] clusters for the text
     adjustTextRange(textRange, run, textAdjustment);
+    textRange = clampTextRangeToRun(textRange, runRange);
 
     Cluster* start = &fOwner->cluster(getValidClusterIndex(fOwner, textRange.start, originalTextRange.start));
     Cluster* end = &fOwner->cluster(getValidClusterIndex(fOwner, textRange.end - (textRange.width() == 0 ? 0 : 1),
@@ -2038,6 +2077,9 @@ TextLine::ClipContext TextLine::getRunClipContextByRange(
     }
     result.pos = start->startPos();
     result.size = (end->isHardBreak() ? end->startPos() : end->endPos()) - start->startPos();
+    // Final guard: never let (pos + size) exceed run->size(), otherwise
+    // downstream callers (e.g. globalClusterIndex) read out of bounds.
+    clampClipContextPosSize(result.pos, result.size, run->size());
     auto textStartInRun = run->positionX(start->startPos());
 
     if (!run->leftToRight()) {
