@@ -24,8 +24,7 @@ namespace skia {
 namespace textlayout {
 
 TextWrapScorer::TextWrapScorer(SkScalar maxWidth, ParagraphImpl& parent, size_t maxLines)
-    : maxWidth_(maxWidth), currentTarget_(maxWidth), maxLines_(maxLines), parent_(parent)
-{
+        : maxWidth_(maxWidth), currentTarget_(maxWidth), maxLines_(maxLines), parent_(parent) {
     minWidth_ = maxWidth_;
     CalculateCumulativeLen(parent);
 
@@ -43,8 +42,7 @@ TextWrapScorer::TextWrapScorer(SkScalar maxWidth, ParagraphImpl& parent, size_t 
     GenerateBreaks(parent);
 }
 
-void TextWrapScorer::GenerateBreaks(ParagraphImpl& parent)
-{
+void TextWrapScorer::GenerateBreaks(ParagraphImpl& parent) {
     // we trust that clusters are sorted on parent
     bool prevWasWhitespace = false;
     SkScalar currentWidth = 0;
@@ -57,7 +55,8 @@ void TextWrapScorer::GenerateBreaks(ParagraphImpl& parent)
         currentWidth += len;
         currentCount++;
         if (cluster.isWhitespaceBreak()) {
-            breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
+            breaks_.emplace_back(
+                    cumulativeLen, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
             prevWasWhitespace = true;
             currentWidth = 0;
             currentCount = 0;
@@ -68,7 +67,8 @@ void TextWrapScorer::GenerateBreaks(ParagraphImpl& parent)
             currentCount = 0;
         } else if (cluster.isHyphenBreak()) {
             breaks_.emplace_back(cumulativeLen - cluster.width() + cluster.height(),
-                Break::BreakType::BREAKTYPE_HYPHEN, false);
+                                 Break::BreakType::BREAKTYPE_HYPHEN,
+                                 false);
             breaks_.back().reservedSpace = cluster.height();
             prevWasWhitespace = true;
             currentWidth = 0;
@@ -93,8 +93,7 @@ void TextWrapScorer::GenerateBreaks(ParagraphImpl& parent)
     }
 }
 
-void TextWrapScorer::CalculateCumulativeLen(ParagraphImpl& parent)
-{
+void TextWrapScorer::CalculateCumulativeLen(ParagraphImpl& parent) {
     auto startCluster = &parent.cluster(0);
     auto endCluster = &parent.cluster(0);
     auto locale = parent.paragraphStyle().getTextStyle().getLocale();
@@ -109,7 +108,8 @@ void TextWrapScorer::CalculateCumulativeLen(ParagraphImpl& parent)
         // unbounded recursion. Both filters are needed: !nearlyZero does not catch
         // non-zero-width control chars, and !kControl does not catch Cf-class zero-widths.
         if (!nearlyZero(len) && len <= maxWidth_ &&
-            !parent.codeUnitHasProperty(cluster.textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
+            !parent.codeUnitHasProperty(cluster.textRange().start,
+                                        SkUnicode::CodeUnitFlags::kControl)) {
             minWidth_ = std::min(len, minWidth_);
             canFitAnyCluster_ = true;
         }
@@ -121,15 +121,15 @@ void TextWrapScorer::CalculateCumulativeLen(ParagraphImpl& parent)
 }
 
 void TextWrapScorer::CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster, Cluster*& endCluster,
-    ParagraphImpl& parent, const SkString& locale)
-{
+                                        ParagraphImpl& parent, const SkString& locale) {
     auto& cluster = parent.cluster(clusterIx);
     const bool hyphenEnabled = parent.getWordBreakType() == WordBreakType::BREAK_HYPHEN;
-    bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak() || cluster.isTabulation());
+    bool isWhitespace =
+            (cluster.isHardBreak() || cluster.isWhitespaceBreak() || cluster.isTabulation());
     if (hyphenEnabled && !fPrevWasWhitespace && isWhitespace && endCluster > startCluster) {
         fPrevWasWhitespace = true;
         auto results = Hyphenator::getInstance().findBreakPositions(
-            locale, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
+                locale, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
         CheckHyphenBreak(results, parent, startCluster);
         if (clusterIx + 1 < parent.clusters().size()) {
             startCluster = &cluster + 1;
@@ -150,8 +150,7 @@ void TextWrapScorer::CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster
     }
 }
 
-void TextWrapScorer::CheckHyphenBreak(std::vector<uint8_t> results, ParagraphImpl& parent, Cluster*& startCluster)
-{
+void TextWrapScorer::CheckHyphenBreak(std::vector<uint8_t> results, ParagraphImpl& parent, Cluster*& startCluster) {
     size_t prevClusterIx = 0;
     for (size_t resultIx = 0; resultIx < results.size(); resultIx++) {
         if (results[resultIx] & 0x1) {
@@ -183,7 +182,7 @@ bool TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
 
     // Compute available width for this line, floored at minWidth_
     f.param.currentMax = maxWidth_ - parent_.detectIndents(f.param.lineNumber) -
-        parent_.detectTailIndents(f.param.lineNumber);
+                         parent_.detectTailIndents(f.param.lineNumber);
     f.param.currentMax = std::max(minWidth_, std::min(f.param.currentMax, maxWidth_));
     if (f.param.currentMax <= SK_ScalarNearlyZero) {
         PopFrame(stack);
@@ -192,7 +191,7 @@ bool TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
 
     // Trim whitespace at the beginning of a new line
     while ((f.param.lineNumber > 0) && (f.breakCursor + 1 < breaks_.size()) &&
-        (breaks_[f.breakCursor + 1].subsequentWhitespace)) {
+           (breaks_[f.breakCursor + 1].subsequentWhitespace)) {
         f.param.remainingTextWidth += (f.param.begin - breaks_[++f.breakCursor].width);
         f.param.begin = breaks_[f.breakCursor].width;
     }
@@ -214,10 +213,12 @@ bool TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
     if (f.param.breakPos == f.breakCursor && f.param.remainingTextWidth > f.param.currentMax) {
         if (f.param.breakPos + 1 > breaks_.size()) {
             breaks_.emplace_back(
-                f.param.begin + f.param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false);
+                    f.param.begin + f.param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false);
         } else {
-            breaks_.insert(breaks_.cbegin() + f.param.breakPos + 1, Break(f.param.begin + f.param.currentMax,
-                Break::BreakType::BREAKTYPE_FORCED, false));
+            breaks_.insert(breaks_.cbegin() + f.param.breakPos + 1,
+                           Break(f.param.begin + f.param.currentMax,
+                                 Break::BreakType::BREAKTYPE_FORCED,
+                                 false));
         }
         f.param.breakPos += BREAK_NUM_TWO;
     }
@@ -233,8 +234,7 @@ bool TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
     return false;
 }
 
-bool TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack)
-{
+bool TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack) {
     // ---- width candidate selection for this iteration ----
     SkScalar newWidth = f.param.currentMax;
 
@@ -244,7 +244,7 @@ bool TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack)
     }
 
     if (f.looped && ((f.breakCursor == f.param.breakPos) ||
-        (newWidth / f.param.currentMax * UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
+                     (newWidth / f.param.currentMax * UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
         LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
              static_cast<unsigned long>(f.param.lineNumber),
              f.param.begin,
@@ -288,8 +288,7 @@ bool TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack)
     return false;
 }
 
-bool TextWrapScorer::CheckRecurseFrame(Frame& f, std::vector<Frame>& stack)
-{
+bool TextWrapScorer::CheckRecurseFrame(Frame& f, std::vector<Frame>& stack) {
     // For hyphen breaks, account for the reserved hyphen width
     bool isHyphen = f.param.breakPos < breaks_.size() &&
                     breaks_[f.param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN;
@@ -340,16 +339,14 @@ bool TextWrapScorer::CheckRecurseFrame(Frame& f, std::vector<Frame>& stack)
     return true;
 }
 
-void TextWrapScorer::AfterChildFrame(Frame& f)
-{
+void TextWrapScorer::AfterChildFrame(Frame& f) {
     f.overallScore += f.childScore;
     // PopFrame already restored current_ to the child's bestWidths;
     // f.breakCursor is untouched — the child operated on its own copy.
     f.phase = Frame::FINALIZE;
 }
 
-bool TextWrapScorer::FinalizeFrame(Frame& f, std::vector<Frame>& stack)
-{
+bool TextWrapScorer::FinalizeFrame(Frame& f, std::vector<Frame>& stack) {
     // Penalty for exceeding the target number of lines
     if (f.param.targetLines < 0) {
         f.overallScore += f.param.targetLines * PARAM_10000;

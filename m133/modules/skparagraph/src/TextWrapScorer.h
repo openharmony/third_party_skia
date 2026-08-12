@@ -52,13 +52,20 @@ struct TextWrapScorer {
 
     void GenerateBreaks(ParagraphImpl& parent);
     void CalculateCumulativeLen(ParagraphImpl& parent);
-    void CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster, Cluster*& endCluster, ParagraphImpl& parent,
-        const SkString& locale);
-    void CheckHyphenBreak(std::vector<uint8_t> results, ParagraphImpl& parent, Cluster*& startCluster);
+    void CalculateHyphenPos(size_t clusterIx,
+                            Cluster*& startCluster,
+                            Cluster*& endCluster,
+                            ParagraphImpl& parent,
+                            const SkString& locale);
+    void CheckHyphenBreak(std::vector<uint8_t> results,
+                          ParagraphImpl& parent,
+                          Cluster*& startCluster);
 
     void Run();
     std::vector<SkScalar>& GetResult();
-    void UpdateSolution(int64_t& bestLocalScore, const int64_t overallScore, std::vector<SkScalar>& currentBest);
+    void UpdateSolution(int64_t& bestLocalScore,
+                        const int64_t overallScore,
+                        std::vector<SkScalar>& currentBest);
     bool CanFitAnyCluster();
 
 private:
@@ -68,13 +75,13 @@ private:
         SkScalar width{0};
         bool operator==(const Index& other) const {
             return (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE &&
-                fabs(width - other.width) < WIDTH_TOLERANCE);
+                    fabs(width - other.width) < WIDTH_TOLERANCE);
         }
         bool operator<(const Index& other) const {
             return lineNumber < other.lineNumber ||
-                (lineNumber == other.lineNumber && other.begin - begin > WIDTH_TOLERANCE) ||
-                (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE &&
-                other.width - width > WIDTH_TOLERANCE);
+                   (lineNumber == other.lineNumber && other.begin - begin > WIDTH_TOLERANCE) ||
+                   (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE &&
+                    other.width - width > WIDTH_TOLERANCE);
         }
     };
 
