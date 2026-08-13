@@ -24,7 +24,7 @@ namespace skia {
 namespace textlayout {
 
 TextWrapScorer::TextWrapScorer(SkScalar maxWidth, ParagraphImpl& parent, size_t maxLines)
-        : maxWidth_(maxWidth), currentTarget_(maxWidth), maxLines_(maxLines), parent_(parent) {
+    : maxWidth_(maxWidth), currentTarget_(maxWidth), maxLines_(maxLines), parent_(parent) {
     minWidth_ = maxWidth_;
     CalculateCumulativeLen(parent);
 
@@ -55,8 +55,7 @@ void TextWrapScorer::GenerateBreaks(ParagraphImpl& parent) {
         currentWidth += len;
         currentCount++;
         if (cluster.isWhitespaceBreak()) {
-            breaks_.emplace_back(
-                    cumulativeLen, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
+            breaks_.emplace_back(cumulativeLen, Break::BreakType::BREAKTYPE_WHITE_SPACE, prevWasWhitespace);
             prevWasWhitespace = true;
             currentWidth = 0;
             currentCount = 0;
@@ -67,8 +66,7 @@ void TextWrapScorer::GenerateBreaks(ParagraphImpl& parent) {
             currentCount = 0;
         } else if (cluster.isHyphenBreak()) {
             breaks_.emplace_back(cumulativeLen - cluster.width() + cluster.height(),
-                                 Break::BreakType::BREAKTYPE_HYPHEN,
-                                 false);
+                Break::BreakType::BREAKTYPE_HYPHEN, false);
             breaks_.back().reservedSpace = cluster.height();
             prevWasWhitespace = true;
             currentWidth = 0;
@@ -108,8 +106,7 @@ void TextWrapScorer::CalculateCumulativeLen(ParagraphImpl& parent) {
         // unbounded recursion. Both filters are needed: !nearlyZero does not catch
         // non-zero-width control chars, and !kControl does not catch Cf-class zero-widths.
         if (!nearlyZero(len) && len <= maxWidth_ &&
-            !parent.codeUnitHasProperty(cluster.textRange().start,
-                                        SkUnicode::CodeUnitFlags::kControl)) {
+            !parent.codeUnitHasProperty(cluster.textRange().start, SkUnicode::CodeUnitFlags::kControl)) {
             minWidth_ = std::min(len, minWidth_);
             canFitAnyCluster_ = true;
         }
@@ -121,15 +118,14 @@ void TextWrapScorer::CalculateCumulativeLen(ParagraphImpl& parent) {
 }
 
 void TextWrapScorer::CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster, Cluster*& endCluster,
-                                        ParagraphImpl& parent, const SkString& locale) {
+    ParagraphImpl& parent, const SkString& locale) {
     auto& cluster = parent.cluster(clusterIx);
     const bool hyphenEnabled = parent.getWordBreakType() == WordBreakType::BREAK_HYPHEN;
-    bool isWhitespace =
-            (cluster.isHardBreak() || cluster.isWhitespaceBreak() || cluster.isTabulation());
+    bool isWhitespace = (cluster.isHardBreak() || cluster.isWhitespaceBreak() || cluster.isTabulation());
     if (hyphenEnabled && !fPrevWasWhitespace && isWhitespace && endCluster > startCluster) {
         fPrevWasWhitespace = true;
         auto results = Hyphenator::getInstance().findBreakPositions(
-                locale, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
+            locale, parent.fText, startCluster->textRange().start, endCluster->textRange().end);
         CheckHyphenBreak(results, parent, startCluster);
         if (clusterIx + 1 < parent.clusters().size()) {
             startCluster = &cluster + 1;
@@ -182,7 +178,7 @@ void TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
 
     // Compute available width for this line, floored at minWidth_
     f.param.currentMax = maxWidth_ - parent_.detectIndents(f.param.lineNumber) -
-                         parent_.detectTailIndents(f.param.lineNumber);
+        parent_.detectTailIndents(f.param.lineNumber);
     f.param.currentMax = std::max(minWidth_, std::min(f.param.currentMax, maxWidth_));
     if (f.param.currentMax <= SK_ScalarNearlyZero) {
         PopFrame(stack);
@@ -191,7 +187,7 @@ void TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
 
     // Trim whitespace at the beginning of a new line
     while ((f.param.lineNumber > 0) && (f.breakCursor + 1 < breaks_.size()) &&
-           (breaks_[f.breakCursor + 1].subsequentWhitespace)) {
+        (breaks_[f.breakCursor + 1].subsequentWhitespace)) {
         f.param.remainingTextWidth += (f.param.begin - breaks_[++f.breakCursor].width);
         f.param.begin = breaks_[f.breakCursor].width;
     }
@@ -205,7 +201,7 @@ void TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
 
     // Find the first break that exceeds the line width
     while (f.param.breakPos < breaks_.size() &&
-           breaks_[f.param.breakPos].width < (f.param.begin + f.param.currentMax)) {
+        breaks_[f.param.breakPos].width < (f.param.begin + f.param.currentMax)) {
         f.param.breakPos++;
     }
 
@@ -213,22 +209,16 @@ void TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
     if (f.param.breakPos == f.breakCursor && f.param.remainingTextWidth > f.param.currentMax) {
         if (f.param.breakPos + 1 > breaks_.size()) {
             breaks_.emplace_back(
-                    f.param.begin + f.param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false);
+                f.param.begin + f.param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false);
         } else {
             breaks_.insert(breaks_.cbegin() + f.param.breakPos + 1,
-                           Break(f.param.begin + f.param.currentMax,
-                                 Break::BreakType::BREAKTYPE_FORCED,
-                                 false));
+                Break(f.param.begin + f.param.currentMax, Break::BreakType::BREAKTYPE_FORCED, false));
         }
         f.param.breakPos += BREAK_NUM_TWO;
     }
 
-    LOGD("Line %{public}lu about to loop %{public}f, %{public}lu, %{public}lu, max: %{public}f",
-         static_cast<unsigned long>(f.param.lineNumber),
-         f.param.begin,
-         static_cast<unsigned long>(f.param.breakPos),
-         static_cast<unsigned long>(f.breakCursor),
-         maxWidth_);
+    LOGD("Line %{public}zu about to loop %{public}f, %{public}zu, %{public}zu, max: %{public}f",
+        f.param.lineNumber, f.param.begin, f.param.breakPos, f.breakCursor, maxWidth_);
 
     f.phase = Frame::NEXT_WIDTH;
     return;
@@ -244,13 +234,9 @@ void TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack) {
     }
 
     if (f.looped && ((f.breakCursor == f.param.breakPos) ||
-                     (newWidth / f.param.currentMax * UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
-        LOGD("line %{public}lu breaking %{public}f, %{public}lu, %{public}f/%{public}f",
-             static_cast<unsigned long>(f.param.lineNumber),
-             f.param.begin,
-             static_cast<unsigned long>(f.param.breakPos),
-             newWidth,
-             maxWidth_);
+        (newWidth / f.param.currentMax * UNDERFLOW_SCORE < MINIMUM_FILL_RATIO))) {
+        LOGD("line %{public}zu breaking %{public}f, %{public}zu, %{public}f/%{public}f",
+             f.param.lineNumber, f.param.begin, f.param.breakPos, newWidth, maxWidth_);
         PopFrame(stack);
         return;
     }
@@ -291,7 +277,7 @@ void TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack) {
 void TextWrapScorer::CheckRecurseFrame(Frame& f, std::vector<Frame>& stack) {
     // For hyphen breaks, account for the reserved hyphen width
     bool isHyphen = f.param.breakPos < breaks_.size() &&
-                    breaks_[f.param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN;
+        breaks_[f.param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN;
     SkScalar adjustedWidth = f.iterWidth;
     if (isHyphen) {
         adjustedWidth = f.iterWidth - breaks_[f.param.breakPos].reservedSpace;
@@ -313,7 +299,7 @@ void TextWrapScorer::CheckRecurseFrame(Frame& f, std::vector<Frame>& stack) {
             f.iterWidth = f.param.currentMax;
         }
         f.iterScore = MINIMUM_FILL_RATIO_SQUARED - 1;
-        LOGD("last line %{public}lu reached", static_cast<unsigned long>(f.param.lineNumber));
+        LOGD("last line %{public}zu reached", f.param.lineNumber);
         f.phase = Frame::FINALIZE;
         return;
     }
