@@ -40,45 +40,32 @@ constexpr int64_t GOOD_ENOUGH_LINE_SCORE = 95 * 95;
 constexpr int64_t UNDERFLOW_SCORE = 100;
 constexpr float BALANCED_LAST_LINE_MULTIPLIER = 1.4f;
 constexpr int64_t BEST_LOCAL_SCORE = -1000000;
-constexpr float  WIDTH_TOLERANCE = 5.f;
+constexpr float WIDTH_TOLERANCE = 5.f;
 constexpr int64_t PARAM_2 = 2;
 constexpr int64_t PARAM_10000 = 10000;
 
-// mkay, this makes an assumption that we do the scoring runs in a single thread and holds the variables during
-// recursion
+// Single-shot scorer: one Run() call evaluates all candidate line-break combinations
+// via an iterative stack machine. Member fields hold per-pass state and are not
+// guarded for concurrent use.
 struct TextWrapScorer {
     TextWrapScorer(SkScalar maxWidth, ParagraphImpl& parent, size_t maxLines);
 
     void GenerateBreaks(ParagraphImpl& parent);
     void CalculateCumulativeLen(ParagraphImpl& parent);
-    void CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster, Cluster*& endCluster,
-                            ParagraphImpl& parent, const SkString& locale);
+    void CalculateHyphenPos(size_t clusterIx, Cluster*& startCluster, Cluster*& endCluster, ParagraphImpl& parent,
+        const SkString& locale);
     void CheckHyphenBreak(std::vector<uint8_t> results, ParagraphImpl& parent, Cluster*& startCluster);
 
-    struct RecursiveParam {
-        int64_t targetLines;
-        size_t maxLines;
-        size_t lineNumber;
-        SkScalar begin;
-        SkScalar remainingTextWidth;
-        SkScalar currentMax;
-        size_t breakPos;
-    };
-
     void Run();
-    int64_t CalculateRecursive(RecursiveParam param);
     std::vector<SkScalar>& GetResult();
-    SkScalar calculateCurrentWidth(RecursiveParam& param, bool looped);
-    int64_t FindOptimalSolutionForCurrentLine(RecursiveParam& param);
-    bool HandleLastLine(RecursiveParam& param, int64_t& overallScore, SkScalar& currentWidth, int64_t& score);
     void UpdateSolution(int64_t& bestLocalScore, const int64_t overallScore, std::vector<SkScalar>& currentBest);
     bool CanFitAnyCluster();
 
 private:
     struct Index {
-        size_t lineNumber { 0 };
-        SkScalar begin { 0 };
-        SkScalar width { 0 };
+        size_t lineNumber{0};
+        SkScalar begin{0};
+        SkScalar width{0};
         bool operator==(const Index& other) const {
             return (lineNumber == other.lineNumber && fabs(begin - other.begin) < WIDTH_TOLERANCE &&
                 fabs(width - other.width) < WIDTH_TOLERANCE);
@@ -92,7 +79,7 @@ private:
     };
 
     struct Score {
-        int64_t score { 0 };
+        int64_t score{0};
         // in reversed order
         std::vector<SkScalar> widths;
     };
@@ -108,29 +95,74 @@ private:
         };
         Break(SkScalar w, BreakType t, bool ssws) : width(w), type(t), subsequentWhitespace(ssws) {}
 
-        SkScalar width { 0.f };
-        BreakType type { BreakType::BREAKTYPE_NONE };
-        bool subsequentWhitespace { false };
-        SkScalar reservedSpace { 0.f };
+        SkScalar width{0.f};
+        BreakType type{BreakType::BREAKTYPE_NONE};
+        bool subsequentWhitespace{false};
+        SkScalar reservedSpace{0.f};
     };
 
-    // to be seen if unordered map would be better fit
+    struct LineParam {
+        int64_t targetLines{0};
+        size_t maxLines{0};
+        size_t lineNumber{0};
+        SkScalar begin{0};
+        SkScalar remainingTextWidth{0};
+        SkScalar currentMax{0};
+        size_t breakPos{0};
+    };
+
+    struct Frame {
+        LineParam param;
+        size_t breakCursor{0};  // break position inherited by the current frame
+
+        // Best result from this line down through all children
+        int64_t bestScore = BEST_LOCAL_SCORE;
+        std::vector<SkScalar> bestWidths;
+
+        // Current do-while iteration state
+        bool looped{false};
+        SkScalar iterWidth{0};
+        SkScalar cacheKeyWidth{0};  // original iterWidth, preserved for the cache key
+                                     // (iterWidth itself may be overwritten on the
+                                     //  last-line path so the two can diverge)
+        int64_t iterScore{0};
+        int64_t overallScore{0};
+
+        // Child communication: parent->childScore receives child's bestScore on pop
+        int64_t childScore = BEST_LOCAL_SCORE;
+
+        enum Phase {
+            SETUP,          // compute currentMax, trim leading whitespace, locate breakPos
+            NEXT_WIDTH,     // try the next candidate width for this line (one do-while step)
+            CHECK_RECURSE,  // last-line detection / push child frame / abandon branch
+            AFTER_CHILD,    // child frame finished — fold its score into this frame
+            FINALIZE        // cache result, update best-so-far, evaluate loop condition
+        } phase = SETUP;
+    };
+
+    // memoisation table: (lineNumber, begin, width) → (score, accumulated widths)
     std::map<Index, Score> cache_;
 
-    SkScalar minWidth_ { 0 };
-    SkScalar maxWidth_ { 0 };
-    SkScalar currentTarget_ { 0 };
-    SkScalar cumulativeLen_ { 0 };
-    bool canFitAnyCluster_ { false };
-    size_t maxLines_ { 0 };
+    SkScalar minWidth_{0};
+    SkScalar maxWidth_{0};
+    SkScalar currentTarget_{0};
+    SkScalar cumulativeLen_{0};
+    bool canFitAnyCluster_{false};
+    size_t maxLines_{0};
     ParagraphImpl& parent_;
     std::vector<SkScalar> current_;
 
     std::vector<Break> breaks_;
-    size_t lastBreakPos_ { 0 };
 
-    uint64_t cacheHits_ { 0 };
+    uint64_t cacheHits_{0};
     bool fPrevWasWhitespace{false};
+
+    void PopFrame(std::vector<Frame>& stack);
+    void SetupFrame(Frame& f, std::vector<Frame>& stack);
+    void NextWidthFrame(Frame& f, std::vector<Frame>& stack);
+    void CheckRecurseFrame(Frame& f, std::vector<Frame>& stack);
+    void AfterChildFrame(Frame& f);
+    void FinalizeFrame(Frame& f, std::vector<Frame>& stack);
 };
 
 }  // namespace textlayout
