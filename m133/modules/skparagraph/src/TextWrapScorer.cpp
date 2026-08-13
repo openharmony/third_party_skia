@@ -173,11 +173,11 @@ void TextWrapScorer::PopFrame(std::vector<Frame>& stack) {
     }
 }
 
-bool TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
+void TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
     // Terminal conditions: no lines left or no meaningful text width remaining
     if (f.param.maxLines == 0 || f.param.remainingTextWidth <= 1.f) {
         PopFrame(stack);
-        return true;
+        return;
     }
 
     // Compute available width for this line, floored at minWidth_
@@ -186,7 +186,7 @@ bool TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
     f.param.currentMax = std::max(minWidth_, std::min(f.param.currentMax, maxWidth_));
     if (f.param.currentMax <= SK_ScalarNearlyZero) {
         PopFrame(stack);
-        return true;
+        return;
     }
 
     // Trim whitespace at the beginning of a new line
@@ -231,10 +231,10 @@ bool TextWrapScorer::SetupFrame(Frame& f, std::vector<Frame>& stack) {
          maxWidth_);
 
     f.phase = Frame::NEXT_WIDTH;
-    return false;
+    return;
 }
 
-bool TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack) {
+void TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack) {
     // ---- width candidate selection for this iteration ----
     SkScalar newWidth = f.param.currentMax;
 
@@ -252,7 +252,7 @@ bool TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack) {
              newWidth,
              maxWidth_);
         PopFrame(stack);
-        return true;
+        return;
     }
 
     f.breakCursor = f.param.breakPos;
@@ -273,7 +273,7 @@ bool TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack) {
         }
         f.looped = true;
         // Stay in NEXT_WIDTH for the next loop iteration
-        return true;
+        return;
     }
 
     // ---- compute line score ----
@@ -285,10 +285,10 @@ bool TextWrapScorer::NextWidthFrame(Frame& f, std::vector<Frame>& stack) {
     f.overallScore = f.iterScore;
 
     f.phase = Frame::CHECK_RECURSE;
-    return false;
+    return;
 }
 
-bool TextWrapScorer::CheckRecurseFrame(Frame& f, std::vector<Frame>& stack) {
+void TextWrapScorer::CheckRecurseFrame(Frame& f, std::vector<Frame>& stack) {
     // For hyphen breaks, account for the reserved hyphen width
     bool isHyphen = f.param.breakPos < breaks_.size() &&
                     breaks_[f.param.breakPos].type == Break::BreakType::BREAKTYPE_HYPHEN;
@@ -315,7 +315,7 @@ bool TextWrapScorer::CheckRecurseFrame(Frame& f, std::vector<Frame>& stack) {
         f.iterScore = MINIMUM_FILL_RATIO_SQUARED - 1;
         LOGD("last line %{public}lu reached", static_cast<unsigned long>(f.param.lineNumber));
         f.phase = Frame::FINALIZE;
-        return true;
+        return;
     }
 
     // Case 2: remaining text can still fit — push a child frame for the next line
@@ -331,12 +331,12 @@ bool TextWrapScorer::CheckRecurseFrame(Frame& f, std::vector<Frame>& stack) {
         child.param.remainingTextWidth = f.param.remainingTextWidth - adjustedWidth;
         child.breakCursor = f.param.breakPos;  // inherit parent's cursor
         stack.push_back(std::move(child));
-        return true;
+        return;
     }
 
     // Case 3: text won't fit — abandon this branch
     PopFrame(stack);
-    return true;
+    return;
 }
 
 void TextWrapScorer::AfterChildFrame(Frame& f) {
@@ -346,7 +346,7 @@ void TextWrapScorer::AfterChildFrame(Frame& f) {
     f.phase = Frame::FINALIZE;
 }
 
-bool TextWrapScorer::FinalizeFrame(Frame& f, std::vector<Frame>& stack) {
+void TextWrapScorer::FinalizeFrame(Frame& f, std::vector<Frame>& stack) {
     // Penalty for exceeding the target number of lines
     if (f.param.targetLines < 0) {
         f.overallScore += f.param.targetLines * PARAM_10000;
@@ -373,10 +373,10 @@ bool TextWrapScorer::FinalizeFrame(Frame& f, std::vector<Frame>& stack) {
     if (f.iterScore > MINIMUM_FILL_RATIO_SQUARED &&
         !(f.param.lineNumber == 0 && f.bestScore > f.param.targetLines * GOOD_ENOUGH_LINE_SCORE)) {
         f.phase = Frame::NEXT_WIDTH;
-        return false;
+        return;
     } else {
         PopFrame(stack);
-        return true;
+        return;
     }
 }
 
@@ -402,19 +402,19 @@ void TextWrapScorer::Run() {
 
         switch (f.phase) {
             case Frame::SETUP:
-                if (SetupFrame(f, stack)) continue;
+                SetupFrame(f, stack);
                 break;
             case Frame::NEXT_WIDTH:
-                if (NextWidthFrame(f, stack)) continue;
+                NextWidthFrame(f, stack);
                 break;
             case Frame::CHECK_RECURSE:
-                if (CheckRecurseFrame(f, stack)) continue;
+                CheckRecurseFrame(f, stack);
                 break;
             case Frame::AFTER_CHILD:
                 AfterChildFrame(f);
                 break;
             case Frame::FINALIZE:
-                if (FinalizeFrame(f, stack)) continue;
+                FinalizeFrame(f, stack);
                 break;
         }  // switch
     }      // while

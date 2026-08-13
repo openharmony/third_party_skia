@@ -165,11 +165,11 @@ private:
     bool fPrevWasWhitespace{false};
 
     void PopFrame(std::vector<Frame>& stack);
-    bool SetupFrame(Frame& f, std::vector<Frame>& stack);
-    bool NextWidthFrame(Frame& f, std::vector<Frame>& stack);
-    bool CheckRecurseFrame(Frame& f, std::vector<Frame>& stack);
+    void SetupFrame(Frame& f, std::vector<Frame>& stack);
+    void NextWidthFrame(Frame& f, std::vector<Frame>& stack);
+    void CheckRecurseFrame(Frame& f, std::vector<Frame>& stack);
     void AfterChildFrame(Frame& f);
-    bool FinalizeFrame(Frame& f, std::vector<Frame>& stack);
+    void FinalizeFrame(Frame& f, std::vector<Frame>& stack);
 };
 
 }  // namespace textlayout
