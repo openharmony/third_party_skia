@@ -3318,38 +3318,6 @@ void TextLine::getRectsForPlaceholders(std::vector<TextBox>& boxes) {
 }
 
 #ifdef ENABLE_TEXT_ENHANCE
-size_t getPrevGlyphsIndex(const ClusterRange& range, ParagraphImpl* owner, RunIndex& prevRunIndex)
-{
-    if (owner == nullptr) {
-        return 0;
-    }
-
-    size_t glyphsIndex = 0;
-    auto clusterIndex = range.start - 1;
-    prevRunIndex = owner->cluster(clusterIndex).runIndex();
-    if (prevRunIndex != owner->cluster(range.start).runIndex()) {
-        // Belongs to a different run.
-        return 0;
-    }
-
-    for (; clusterIndex >= 0; clusterIndex--) {
-        RunIndex runIndex = owner->cluster(clusterIndex).runIndex();
-        if (prevRunIndex != runIndex) {
-            // Found a different run.
-            break;
-        }
-
-        glyphsIndex++;
-
-        if (clusterIndex == 0) {
-            // All belong to the first run.
-            break;
-        }
-    }
-
-    return glyphsIndex;
-}
-
 int getEndWhitespaceCount(const ClusterRange& range, ParagraphImpl* owner)
 {
     if (owner == nullptr || range.start >= range.end) {
@@ -3587,49 +3555,40 @@ int32_t TextLine::getStringIndexForPosition(SkPoint point) const
     return index;
 }
 
-std::vector<RSRect> getAllRectInfo(const ClusterRange& range, ParagraphImpl* owner)
+// Extracts the glyph bounding rect for a single cluster (handles multi-glyph clusters).
+static RSRect getClusterGlyphBounds(const Cluster& cluster)
 {
-    std::vector<RSRect> rectVec;
-    if (owner == nullptr) {
-        return rectVec;
+    auto run = cluster.runOrNull();
+    if (run == nullptr) {
+        TEXT_LOGE("Run is null, textIndex=%{public}zu", cluster.textRange().start);
+        return {};
     }
 
-    // If it is not the first line, you need to get the GlyphsIndex of the first character.
-    size_t glyphsIndex  = 0;
-    RunIndex prevRunIndex = 0;
-    if (range.start > 0) {
-        glyphsIndex = getPrevGlyphsIndex(range, owner, prevRunIndex);
+    size_t glyphStart = cluster.startPos();
+    size_t glyphEnd = cluster.endPos();
+
+    if (glyphStart >= run->size() || glyphStart >= glyphEnd) {
+        TEXT_LOGE("Invalid glyph range [%{public}zu, %{public}zu), "
+            "runSize=%{public}zu, textIndex=%{public}zu", glyphStart, glyphEnd, run->size(), cluster.textRange().start);
+        return {};
     }
 
-    for (auto clusterIndex = range.start; clusterIndex < range.end; clusterIndex++) {
-        RunIndex runIndex = owner->cluster(clusterIndex).runIndex();
-        if (prevRunIndex != runIndex) {
-            glyphsIndex = 0;
-        }
+    if (glyphEnd > run->size()) {
+        glyphEnd = run->size();
+    }
 
-        auto run = owner->cluster(clusterIndex).runOrNull();
-        if (run == nullptr) {
-            break;
-        }
+    RSRect clusterBounds;
+    run->font().GetWidths(&run->glyphs()[glyphStart], 1, nullptr, &clusterBounds);
 
-        SkGlyphID glyphId = run->glyphs()[glyphsIndex];
+    for (size_t g = glyphStart + 1; g < glyphEnd; ++g) {
         RSRect glyphBounds;
-        run->font().GetWidths(&glyphId, 1, nullptr, &glyphBounds);
-        rectVec.push_back(glyphBounds);
-        glyphsIndex++;
-        prevRunIndex = runIndex;
+        run->font().GetWidths(&run->glyphs()[g], 1, nullptr, &glyphBounds);
+        if (glyphBounds.IsValid()) {
+            clusterBounds.Join(glyphBounds);
+        }
     }
 
-    return rectVec;
-}
-
-RSRect getClusterRangeBounds(const ClusterRange& range, ParagraphImpl* owner) {
-    auto rectVec = getAllRectInfo(range, owner);
-    RSRect finalRect{0.0, 0.0, 0.0, 0.0};
-    for (const auto& rect : rectVec) {
-        finalRect.Join(rect);
-    }
-    return finalRect;
+    return clusterBounds;
 }
 
 bool TextLine::isLineHeightDominatedByRun(const Run& run) {
@@ -3822,46 +3781,64 @@ void TextLine::refresh() {
 
 RSRect TextLine::getImageBounds() const
 {
-    // Look for the first non-space character from the end and get its advance and index
-    // to calculate the final image bounds.
-    SkRect rect = {0.0, 0.0, 0.0, 0.0};
-    int endWhitespaceCount = getEndWhitespaceCount(fGhostClusterRange, fOwner);
-    size_t endWhitespaceCountVal = static_cast<size_t>(endWhitespaceCount);
-    if (endWhitespaceCountVal == (fGhostClusterRange.end - fGhostClusterRange.start)) {
-        // Full of Spaces.
+    // Single-pass computation: iterate clusters once, tracking first/last visible glyph
+    // bounds, leading whitespace advance, and vertical extent — all in one traversal.
+    if (fOwner == nullptr) {
         return {};
     }
-    SkScalar endAdvance = usingAutoSpaceWidth(&fOwner->cluster(fGhostClusterRange.end - endWhitespaceCountVal - 1));
 
-    // The first space width of the line needs to be added to the x value.
+    size_t rangeStart = fGhostClusterRange.start;
+    size_t rangeEnd = fGhostClusterRange.end;
+    if (rangeStart >= rangeEnd) {
+        return {};
+    }
+
     SkScalar startWhitespaceAdvance = 0.0;
-    size_t startWhitespaceCount = 0;
-    for (auto clusterIndex = fGhostClusterRange.start; clusterIndex < fGhostClusterRange.end; clusterIndex++) {
-        if (fOwner->cluster(clusterIndex).isWhitespaceBreak()) {
-            startWhitespaceAdvance += fOwner->cluster(clusterIndex).width();
-            startWhitespaceCount++;
-        } else {
-            break;
+    bool hasVisible = false;
+    size_t lastVisibleIndex = rangeStart;
+    RSRect firstVisibleBounds;
+    RSRect lastVisibleBounds;
+    RSRect joinRect;
+
+    for (size_t i = rangeStart; i < rangeEnd; ++i) {
+        auto& cluster = fOwner->cluster(i);
+
+        if (cluster.isWhitespaceBreak()) {
+            if (!hasVisible) {
+                // Still in the leading whitespace zone — accumulate advance.
+                startWhitespaceAdvance += cluster.width();
+            }
+            // Middle or trailing whitespace: skip without updating lastVisible.
+            continue;
         }
+
+        // --- Visible (non-whitespace) cluster ---
+        lastVisibleIndex = i;
+        RSRect bounds = getClusterGlyphBounds(cluster);
+
+        if (!hasVisible) {
+            hasVisible = true;
+            firstVisibleBounds = bounds;
+            joinRect = bounds;
+        } else {
+            joinRect.Join(bounds);
+        }
+        lastVisibleBounds = bounds;
     }
 
-    // Gets rect information for all characters in line.
-    auto rectVec = getAllRectInfo(fGhostClusterRange, fOwner);
-    // Calculate the final y and height.
-    auto joinRect = rectVec[startWhitespaceCount];
-    for (size_t i = startWhitespaceCount + 1; i < rectVec.size() - endWhitespaceCountVal; ++i) {
-        joinRect.Join(rectVec[i]);
+    if (!hasVisible) {
+        // Entire line consists of whitespace.
+        return {};
     }
 
+    SkScalar endAdvance = usingAutoSpaceWidth(&fOwner->cluster(lastVisibleIndex));
     SkScalar lineWidth = width();
-    auto endRect = rectVec[rectVec.size() - endWhitespaceCountVal - 1];
-    SkScalar x = rectVec[startWhitespaceCount].GetLeft() + startWhitespaceAdvance;
+    SkScalar x = firstVisibleBounds.GetLeft() + startWhitespaceAdvance;
     SkScalar y = joinRect.GetBottom();
-    SkScalar width = lineWidth - (endAdvance - endRect.GetLeft() - endRect.GetWidth()) - x;
-    SkScalar height = joinRect.GetHeight();
+    SkScalar w = lineWidth - (endAdvance - lastVisibleBounds.GetLeft() - lastVisibleBounds.GetWidth()) - x;
+    SkScalar h = joinRect.GetHeight();
 
-    rect.setXYWH(x, y, width, height);
-    return {rect.fLeft, rect.fTop, rect.fRight, rect.fBottom};
+    return {x, y, x + w, y + h};
 }
 
 std::vector<std::unique_ptr<RunBase>> TextLine::getGlyphRuns() const
