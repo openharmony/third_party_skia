@@ -15,6 +15,12 @@
 #include "modules/svg/include/SkSVGValue.h"
 
 void SkSVGSVG::renderNode(const SkSVGRenderContext& ctx, const SkSVGIRI& iri) const {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    SkSVGRenderContext::RecursionScope recursionScope(ctx);
+    if (!recursionScope) {
+        return;
+    }
+#endif
     SkSVGRenderContext localContext(ctx, this);
     SkSVGRenderContext::BorrowedNode node = localContext.findNodeById(iri);
     if (!node) {

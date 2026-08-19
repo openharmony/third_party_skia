@@ -15,6 +15,9 @@
 #include "modules/skresources/include/SkResources.h"
 #include "modules/skshaper/include/SkShaper_factory.h"
 #include "modules/svg/include/SkSVGIDMapper.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "modules/svg/include/SkSVGResourceLimits.h"
+#endif
 #include "modules/svg/include/SkSVGSVG.h"
 
 class SkCanvas;
@@ -48,7 +51,20 @@ public:
         sk_sp<SkSVGDOM> make(SkStream&) const;
         sk_sp<SkSVGDOM> make(SkStream&, uint64_t) const;
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        /** Builds an SVG DOM using the supplied non-zero resource limits. */
+        sk_sp<SkSVGDOM> makeWithLimits(
+                SkStream&, const SkSVGResourceLimits&) const;
+        sk_sp<SkSVGDOM> makeWithLimits(
+                SkStream&, uint64_t,
+                const SkSVGResourceLimits&) const;
+#endif
+
     private:
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        sk_sp<SkSVGDOM> makeInternal(SkStream&, uint64_t,
+                                     const SkSVGResourceLimits&) const;
+#endif
         sk_sp<SkFontMgr>                             fFontMgr;
         sk_sp<skresources::ResourceProvider>         fResourceProvider;
         sk_sp<SkShapers::Factory>                    fTextShapingFactory;
@@ -61,6 +77,21 @@ public:
     static sk_sp<SkSVGDOM> MakeFromStream(SkStream&str, uint64_t svgColor) {
         return Builder().make(str, svgColor);
     }
+
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    /** Builds an SVG DOM using the supplied non-zero resource limits. */
+    static sk_sp<SkSVGDOM> MakeFromStreamWithLimits(
+            SkStream& str,
+            const SkSVGResourceLimits& limits) {
+        return Builder().makeWithLimits(str, limits);
+    }
+
+    static sk_sp<SkSVGDOM> MakeFromStreamWithLimits(
+            SkStream& str, uint64_t svgColor,
+            const SkSVGResourceLimits& limits) {
+        return Builder().makeWithLimits(str, svgColor, limits);
+    }
+#endif
 
     /**
      * Returns the root (outermost) SVG element.
@@ -98,15 +129,26 @@ public:
 
     void render(SkCanvas*) const;
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    bool renderWithLimits(SkCanvas*) const;
+#endif
+
     /** Render the node with the given id as if it were the only child of the root. */
     void renderNode(SkCanvas*, SkSVGPresentationContext&, const char* id) const;
 
 private:
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    bool renderInternal(SkCanvas*) const;
+#endif
     SkSVGDOM(sk_sp<SkSVGSVG>,
              sk_sp<SkFontMgr>,
              sk_sp<skresources::ResourceProvider>,
              SkSVGIDMapper&&,
-             sk_sp<SkShapers::Factory>);
+             sk_sp<SkShapers::Factory>
+#ifdef SKIA_OHOS_SVG_PROTECTION
+             , const SkSVGResourceLimits&
+#endif
+             );
 
     const sk_sp<SkSVGSVG>                       fRoot;
     const sk_sp<SkFontMgr>                      fFontMgr;
@@ -115,6 +157,9 @@ private:
     const SkSVGIDMapper                         fIDMapper;
     float                                       fSVGResizePercentage;
     SkSize                                      fContainerSize;
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    const SkSVGResourceLimits                   fResourceLimits;
+#endif
 };
 
 #endif // SkSVGDOM_DEFINED

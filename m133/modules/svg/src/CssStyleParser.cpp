@@ -6,6 +6,12 @@
 
 #include "CssStyleParser.h"
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "include/core/SkLog.h"
+#include "modules/svg/include/SkSVGResourceLimits.h"
+#include "modules/svg/include/SkSVGResourceProtection.h"
+#endif
+
 const std::unordered_map<std::string, std::string>& CssStyleParser::getArributesMap(const std::string& key) const
 {
     auto styleClassIter = fStyleMap.find(key);
@@ -31,6 +37,25 @@ void CssStyleParser::parseCssStyle(const std::string& style)
             auto splitNames = splitString(names, ",.");
             auto attributesString = style.substr(nameEnd + 1);
             auto attributesVector = splitString(attributesString, ";");
+#ifdef SKIA_OHOS_SVG_PROTECTION
+            if (fSVGResourceLimits && fSVGResourceLimits->fMaxCssDeclarationsPerRule > 0) {
+                size_t declarationCount = 0;
+                for (const auto& attribute : attributesVector) {
+                    if (splitString(attribute, ":").size() == 2) {
+                        ++declarationCount;
+                    }
+                }
+                if (declarationCount > fSVGResourceLimits->fMaxCssDeclarationsPerRule) {
+                    fResourceLimitExceeded = true;
+                    SK_LOGE("SVG resource limit exceeded: fMaxCssDeclarationsPerRule "
+                            "actual=%{public}zu max=%{public}zu\n",
+                            declarationCount,
+                            fSVGResourceLimits->fMaxCssDeclarationsPerRule);
+                    SK_SVG_RESOURCE_PROTECTION_REPORT();
+                    return;
+                }
+            }
+#endif
             for (auto& splitName : splitNames) {
                 for (auto& attribute : attributesVector) {
                     auto arrPair = splitString(attribute, ":");
@@ -38,6 +63,21 @@ void CssStyleParser::parseCssStyle(const std::string& style)
                     if (arrPair.size() == 2) {
                         auto arrMapIter = fStyleMap.find(splitName);
                         if (arrMapIter == fStyleMap.end()) {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                            if (fResourceLimitExceeded) {
+                                return;
+                            }
+                            if (fSVGResourceLimits && fSVGResourceLimits->fMaxCssStyleEntries > 0 &&
+                                fStyleMap.size() >= fSVGResourceLimits->fMaxCssStyleEntries) {
+                                fResourceLimitExceeded = true;
+                                SK_LOGE("SVG resource limit exceeded: fMaxCssStyleEntries "
+                                        "actual=%{public}zu max=%{public}zu\n",
+                                        fStyleMap.size() + 1,
+                                        fSVGResourceLimits->fMaxCssStyleEntries);
+                                SK_SVG_RESOURCE_PROTECTION_REPORT();
+                                return;
+                            }
+#endif
                             std::unordered_map<std::string, std::string> arrMap;
                             arrMap.emplace(std::make_pair(arrPair[0], arrPair[1]));
                             fStyleMap.emplace(std::make_pair(splitName, arrMap));
