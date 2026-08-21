@@ -9,6 +9,7 @@
 #include "include/core/SkFontMetrics.h"
 #include "include/core/SkFontMgr.h"
 #include "include/core/SkFontStyle.h"
+#include "include/core/SkLog.h"
 #include "include/core/SkTypeface.h"
 #include "include/private/base/SkTFitsIn.h"
 #include "modules/skshaper/include/SkShaper.h"
@@ -150,7 +151,7 @@ public:
                 candidate = std::shared_ptr<RSTypeface>(fFallbackMgr->MatchFamilyStyleCharacter(
                     fRequestName, fRequestStyle, &language, languageCount, u));
             } else {
-                SkDebugf("FontMgrRunIterator::consume: fFallbackMgr is null");
+                SK_LOGE("FontMgrRunIterator::consume: fFallbackMgr is null");
             }
             if (candidate) {
                 fFallbackFont.SetTypeface(std::move(candidate));
@@ -182,7 +183,7 @@ public:
                         return;
                     }
                 } else {
-                    SkDebugf("FontMgrRunIterator::consume: fFallbackMgr is null in run loop");
+                    SK_LOGE("FontMgrRunIterator::consume: fFallbackMgr is null in run loop");
                 }
             }
         }
@@ -256,7 +257,7 @@ public:
                 candidate = sk_sp<SkTypeface>(fFallbackMgr->matchFamilyStyleCharacter(
                     fRequestName, fRequestStyle, &language, languageCount, u));
             } else {
-                SkDebugf("FontMgrRunIterator::consume: fFallbackMgr is null");
+                SK_LOGE("FontMgrRunIterator::consume: fFallbackMgr is null");
             }
             if (candidate) {
                 fFallbackFont.setTypeface(std::move(candidate));
@@ -289,7 +290,7 @@ public:
                         return;
                     }
                 } else {
-                    SkDebugf("FontMgrRunIterator::consume: fFallbackMgr is null in run loop");
+                    SK_LOGE("FontMgrRunIterator::consume: fFallbackMgr is null in run loop");
                 }
             }
         }
