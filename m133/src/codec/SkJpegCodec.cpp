@@ -551,18 +551,19 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
 
     // Get a pointer to the decompress info since we will use it quite frequently
     jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
-    const bool isProgressive = dinfo->progressive_mode;
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
-    if (!setAndCheckLibJpegMemoryLimit(dinfo, this->dimensions(), options.fMaxDecodeMemory)) {
-        return kOutOfMemory;
-    }
-#endif
 
     // Set the jump location for libjpeg errors
     skjpeg_error_mgr::AutoPushJmpBuf jmp(fDecoderMgr->errorMgr());
     if (setjmp(jmp)) {
         return fDecoderMgr->returnFailure("setjmp", kInvalidInput);
     }
+
+    const bool isProgressive = dinfo->progressive_mode;
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+    if (!setAndCheckLibJpegMemoryLimit(dinfo, this->dimensions(), options.fMaxDecodeMemory)) {
+        return kOutOfMemory;
+    }
+#endif
 
     if (isProgressive) {
        dinfo->buffered_image = TRUE;
