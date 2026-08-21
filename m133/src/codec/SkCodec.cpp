@@ -482,7 +482,7 @@ SkCodec::Result SkCodec::handleFrameIndex(const SkImageInfo& info, void* pixels,
 SkCodec::Result SkCodec::getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
                                    const Options* options) {
     Options optsStorage;
-    if (!options) {
+    if (nullptr == options) {
         options = &optsStorage;
     }
 
@@ -569,7 +569,7 @@ SkCodec::Result SkCodec::getPixelsBudgeted(const SkImageInfo& info,
 std::tuple<sk_sp<SkImage>, SkCodec::Result> SkCodec::getImage(const SkImageInfo& info,
                                                               const Options* options) {
     Options optsStorage;
-    if (!options) {
+    if (nullptr == options) {
         options = &optsStorage;
     }
     fDecodeBudget = options->fMaxDecodeMemory;
@@ -689,13 +689,9 @@ SkCodec::Result SkCodec::startScanlineDecode(const SkImageInfo& info,
 
     // Set options.
     Options optsStorage;
-    if (!options) {
+    if (nullptr == options) {
         options = &optsStorage;
-    }
-    fDecodeBudget = options->fMaxDecodeMemory;
-    fDecodeBudgetEnabled = fDecodeBudget != 0;
-
-    if (options->fSubset) {
+    } else if (options->fSubset) {
         SkIRect size = SkIRect::MakeSize(info.dimensions());
         if (!size.contains(*options->fSubset)) {
             return kInvalidInput;
@@ -707,6 +703,8 @@ SkCodec::Result SkCodec::startScanlineDecode(const SkImageInfo& info,
             return kInvalidInput;
         }
     }
+    fDecodeBudget = options->fMaxDecodeMemory;
+    fDecodeBudgetEnabled = fDecodeBudget != 0;
 
     // Scanline decoding only supports decoding the first frame.
     if (options->fFrameIndex != 0) {
