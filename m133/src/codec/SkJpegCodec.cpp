@@ -35,6 +35,7 @@
 #endif  // SK_CODEC_DECODES_JPEG_GAINMAPS
 
 #include <array>
+#include <climits>
 #include <csetjmp>
 #include <cstring>
 #include <utility>
@@ -505,19 +506,22 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     // Get a pointer to the decompress info since we will use it quite frequently
     jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
 
-    dinfo->mem->max_memory_to_use = static_cast<long>(options.fMaxDecodeMemory);
+    dinfo->mem->max_memory_to_use = options.fMaxDecodeMemory > static_cast<size_t>(LONG_MAX)
+            ? LONG_MAX
+            : static_cast<long>(options.fMaxDecodeMemory);
 
     const bool isProgressive = dinfo->progressive_mode;
     size_t estimatedLibJpegMemory;
     if (isProgressive) {
-        // https://github.com/libjpeg-turbo/libjpeg-turbo/blob/af9c1c268520a29adf98cad5138dafe612b3d318/doc/libjpeg.txt
-        // "Worst case (1x1 sampling) [for a progressive JPEG] requires 6 bytes/pixel."
+        // Progressive JPEG coefficient buffers require one JCOEF per component per pixel in the
+        // worst-case 1x1 sampling configuration.
+        const size_t bytesPerPixel = SkSafeMath::Mul(
+                static_cast<size_t>(dinfo->num_components), sizeof(JCOEF));
         estimatedLibJpegMemory =
-                SkSafeMath::Mul(6u,
+                SkSafeMath::Mul(bytesPerPixel,
                                 SkSafeMath::Mul(static_cast<size_t>(this->dimensions().width()),
                                                 static_cast<size_t>(this->dimensions().height())));
     } else {
-        // https://github.com/libjpeg-turbo/libjpeg-turbo/blob/af9c1c268520a29adf98cad5138dafe612b3d318/doc/libjpeg.txt
         // "The worst case for commonly used sampling factors is about 34 bytes * width in pixels
         // for a color image."
         estimatedLibJpegMemory =
@@ -695,18 +699,21 @@ SkSampler* SkJpegCodec::getSampler(bool createIfNecessary) {
 SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         const Options& options) {
     jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
-    dinfo->mem->max_memory_to_use = static_cast<long>(options.fMaxDecodeMemory);
+    dinfo->mem->max_memory_to_use = options.fMaxDecodeMemory > static_cast<size_t>(LONG_MAX)
+            ? LONG_MAX
+            : static_cast<long>(options.fMaxDecodeMemory);
 
     size_t estimatedLibJpegMemory;
     if (dinfo->progressive_mode) {
-        // https://github.com/libjpeg-turbo/libjpeg-turbo/blob/af9c1c268520a29adf98cad5138dafe612b3d318/doc/libjpeg.txt
-        // "Worst case (1x1 sampling) [for a progressive JPEG] requires 6 bytes/pixel."
+        // Progressive JPEG coefficient buffers require one JCOEF per component per pixel in the
+        // worst-case 1x1 sampling configuration.
+        const size_t bytesPerPixel = SkSafeMath::Mul(
+                static_cast<size_t>(dinfo->num_components), sizeof(JCOEF));
         estimatedLibJpegMemory =
-                SkSafeMath::Mul(6u,
+                SkSafeMath::Mul(bytesPerPixel,
                                 SkSafeMath::Mul(static_cast<size_t>(this->dimensions().width()),
                                                 static_cast<size_t>(this->dimensions().height())));
     } else {
-        // https://github.com/libjpeg-turbo/libjpeg-turbo/blob/af9c1c268520a29adf98cad5138dafe612b3d318/doc/libjpeg.txt
         // "The worst case for commonly used sampling factors is about 34 bytes * width in pixels
         // for a color image."
         estimatedLibJpegMemory =

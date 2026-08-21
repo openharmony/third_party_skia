@@ -29,9 +29,14 @@
 #include <tuple>
 #include <vector>
 
-// The default decode memory limit is 1200 MiB, twice PIXEL_MAP_MAX_RAM_SIZE
-// (600 * 1024 * 1024) in image_framework/interfaces/innerkits/include/pixel_map.h.
-#define SK_MAX_LIBJPEG_MEMORY (1200u * 1024u * 1024u)
+// PIXEL_MAP_MAX_RAM_SIZE in image_framework/interfaces/innerkits/include/pixel_map.h limits the
+// decoded PixelMap to 600 MiB. In the worst supported progressive JPEG case, a 600 MiB RGB_565
+// output contains 300 Mi pixels, while a four-component CMYK/YCCK image may need one 2-byte JCOEF
+// per component per pixel: 300 Mi * 4 * 2 = 2400 MiB. For interlaced PNG, the largest ratio is a
+// 16-bit RGB row buffer decoded to RGB_565 (6 encoded bytes versus 2 output bytes per pixel), which
+// needs at most 600 MiB * 3 = 1800 MiB. Round the larger 2400 MiB requirement up to 2560 MiB,
+// leaving 160 MiB of margin for the protected decoder-internal storage.
+#define SK_MAX_LIBJPEG_MEMORY (2560u * 1024u * 1024u)
 
 #ifdef SK_ENABLE_OHOS_CODEC
 #include <functional>
