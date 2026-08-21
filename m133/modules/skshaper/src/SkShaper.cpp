@@ -145,8 +145,13 @@ public:
         } else {
             const char* language = fLanguage ? fLanguage->currentLanguage() : nullptr;
             int languageCount = fLanguage ? 1 : 0;
-            std::shared_ptr<RSTypeface> candidate(fFallbackMgr->MatchFamilyStyleCharacter(
-                fRequestName, fRequestStyle, &language, languageCount, u));
+            std::shared_ptr<RSTypeface> candidate;
+            if (fFallbackMgr) {
+                candidate = std::shared_ptr<RSTypeface>(fFallbackMgr->MatchFamilyStyleCharacter(
+                    fRequestName, fRequestStyle, &language, languageCount, u));
+            } else {
+                SkDebugf("FontMgrRunIterator::consume: fFallbackMgr is null");
+            }
             if (candidate) {
                 fFallbackFont.SetTypeface(std::move(candidate));
                 fCurrentFont = &fFallbackFont;
@@ -168,11 +173,16 @@ public:
             if (!fCurrentFont->UnicharToGlyph(u)) {
                 const char* language = fLanguage ? fLanguage->currentLanguage() : nullptr;
                 int languageCount = fLanguage ? 1 : 0;
-                std::shared_ptr<RSTypeface> candidate(fFallbackMgr->MatchFamilyStyleCharacter(
-                    fRequestName, fRequestStyle, &language, languageCount, u));
-                if (candidate) {
-                    fCurrent = prev;
-                    return;
+                std::shared_ptr<RSTypeface> candidate;
+                if (fFallbackMgr) {
+                    candidate = std::shared_ptr<RSTypeface>(fFallbackMgr->MatchFamilyStyleCharacter(
+                        fRequestName, fRequestStyle, &language, languageCount, u));
+                    if (candidate) {
+                        fCurrent = prev;
+                        return;
+                    }
+                } else {
+                    SkDebugf("FontMgrRunIterator::consume: fFallbackMgr is null in run loop");
                 }
             }
         }
@@ -241,8 +251,13 @@ public:
         } else {
             const char* language = fLanguage ? fLanguage->currentLanguage() : nullptr;
             int languageCount = fLanguage ? 1 : 0;
-            sk_sp<SkTypeface> candidate(fFallbackMgr->matchFamilyStyleCharacter(
-                fRequestName, fRequestStyle, &language, languageCount, u));
+            sk_sp<SkTypeface> candidate;
+            if (fFallbackMgr) {
+                candidate = sk_sp<SkTypeface>(fFallbackMgr->matchFamilyStyleCharacter(
+                    fRequestName, fRequestStyle, &language, languageCount, u));
+            } else {
+                SkDebugf("FontMgrRunIterator::consume: fFallbackMgr is null");
+            }
             if (candidate) {
                 fFallbackFont.setTypeface(std::move(candidate));
                 fCurrentFont = &fFallbackFont;
@@ -265,11 +280,16 @@ public:
             if (!fCurrentFont->unicharToGlyph(u)) {
                 const char* language = fLanguage ? fLanguage->currentLanguage() : nullptr;
                 int languageCount = fLanguage ? 1 : 0;
-                sk_sp<SkTypeface> candidate(fFallbackMgr->matchFamilyStyleCharacter(
-                    fRequestName, fRequestStyle, &language, languageCount, u));
-                if (candidate) {
-                    fCurrent = prev;
-                    return;
+                sk_sp<SkTypeface> candidate;
+                if (fFallbackMgr) {
+                    candidate = sk_sp<SkTypeface>(fFallbackMgr->matchFamilyStyleCharacter(
+                        fRequestName, fRequestStyle, &language, languageCount, u));
+                    if (candidate) {
+                        fCurrent = prev;
+                        return;
+                    }
+                } else {
+                    SkDebugf("FontMgrRunIterator::consume: fFallbackMgr is null in run loop");
                 }
             }
         }
