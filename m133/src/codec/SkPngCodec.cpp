@@ -11,7 +11,9 @@
 #include "include/codec/SkPngDecoder.h"
 #include "include/core/SkData.h"
 #include "include/core/SkImageInfo.h"
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
 #include "include/core/SkLog.h"
+#endif
 #include "include/core/SkRect.h"
 #include "include/core/SkSize.h"
 #include "include/core/SkSpan.h"
@@ -21,7 +23,9 @@
 #include "include/private/base/SkNoncopyable.h"
 #include "include/private/base/SkTemplates.h"
 #include "modules/skcms/skcms.h"
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
 #include "src/base/SkSafeMath.h"
+#endif
 #include "src/codec/SkCodecPriv.h"
 #include "src/codec/SkPngCompositeChunkReader.h"
 #include "src/codec/SkPngPriv.h"
@@ -483,7 +487,11 @@ private:
         fDst = SkTAddOffset<void>(fDst, fRowBytes);
     }
 
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     bool setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
+#else
+    void setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
+#endif
         png_set_progressive_read_fn(this->png_ptr(), this, nullptr, RowCallback, nullptr);
         fFirstRow = firstRow;
         fLastRow = lastRow;
@@ -491,7 +499,9 @@ private:
         fRowBytes = rowBytes;
         fRowsWrittenToOutput = 0;
         fRowsNeeded = fLastRow - fFirstRow + 1;
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         return true;
+#endif
     }
 
     Result decode(int* rowsDecoded) override {
@@ -611,9 +621,13 @@ private:
 
     Result decodeAllRows(void* dst, size_t rowBytes, int* rowsDecoded) override {
         const int height = this->dimensions().height();
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         if (!this->setUpInterlaceBuffer(height)) {
             return kOutOfMemory;
         }
+#else
+        this->setUpInterlaceBuffer(height);
+#endif
         png_set_progressive_read_fn(this->png_ptr(), this, nullptr, InterlacedRowCallback,
                                     nullptr);
 
@@ -640,18 +654,28 @@ private:
         return log_and_return_error(success);
     }
 
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     bool setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
+#else
+    void setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
+#endif
         // FIXME: We could skip rows in the interlace buffer that we won't put in the output.
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         if (!this->setUpInterlaceBuffer(lastRow - firstRow + 1)) {
             return false;
         }
+#else
+        this->setUpInterlaceBuffer(lastRow - firstRow + 1);
+#endif
         png_set_progressive_read_fn(this->png_ptr(), this, nullptr, InterlacedRowCallback, nullptr);
         fFirstRow = firstRow;
         fLastRow = lastRow;
         fDst = dst;
         fRowBytes = rowBytes;
         fLinesDecoded = 0;
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         return true;
+#endif
     }
 
     Result decode(int* rowsDecoded) override {
@@ -695,8 +719,13 @@ private:
         return log_and_return_error(success);
     }
 
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     bool setUpInterlaceBuffer(int height) {
+#else
+    void setUpInterlaceBuffer(int height) {
+#endif
         fPng_rowbytes = png_get_rowbytes(this->png_ptr(), this->info_ptr());
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         SkSafeMath safe;
         const size_t bufferBytes = safe.mul(fPng_rowbytes, static_cast<size_t>(height));
         const size_t memoryLimit = this->options().fMaxDecodeMemory;
@@ -713,8 +742,13 @@ private:
         if (!fInterlaceBuffer.reset(bufferBytes)) {
             return false;
         }
+#else
+        fInterlaceBuffer.reset(fPng_rowbytes * height);
+#endif
         fInterlacedComplete = false;
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         return true;
+#endif
     }
 };
 
@@ -1044,7 +1078,12 @@ SkCodec::Result SkPngCodec::onStartIncrementalDecode(const SkImageInfo& dstInfo,
         firstRow = 0;
         lastRow = dstInfo.height() - 1;
     }
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     return this->setRange(firstRow, lastRow, dst, rowBytes) ? kSuccess : kOutOfMemory;
+#else
+    this->setRange(firstRow, lastRow, dst, rowBytes);
+    return kSuccess;
+#endif
 }
 
 SkCodec::Result SkPngCodec::onIncrementalDecode(int* rowsDecoded) {

@@ -97,7 +97,11 @@ private:
     void destroyReadStruct();
 
     virtual Result decodeAllRows(void* dst, size_t rowBytes, int* rowsDecoded) = 0;
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     virtual bool setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) = 0;
+#else
+    virtual void setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) = 0;
+#endif
     virtual Result decode(int* rowsDecoded) = 0;
 
     size_t                         fIdatLength;

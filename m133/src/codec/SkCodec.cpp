@@ -915,8 +915,10 @@ const char* SkCodec::ResultToString(Result result) {
             return "internal error";
         case kUnimplemented:
             return "unimplemented";
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         case kOutOfMemory:
             return "out of memory";
+#endif
         default:
             SkASSERT(false);
             return "bogus result value";

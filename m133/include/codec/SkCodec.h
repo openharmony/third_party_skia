@@ -29,6 +29,11 @@
 #include <tuple>
 #include <vector>
 
+#ifndef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#define SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT 1
+#endif
+
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
 // PIXEL_MAP_MAX_RAM_SIZE in image_framework/interfaces/innerkits/include/pixel_map.h limits the
 // decoded PixelMap to 600 MiB. In the worst supported progressive JPEG case, a 600 MiB RGB_565
 // output contains 300 Mi pixels, while a four-component CMYK/YCCK image may need one 2-byte JCOEF
@@ -37,6 +42,7 @@
 // needs at most 600 MiB * 3 = 1800 MiB. Round the larger 2400 MiB requirement up to 2560 MiB,
 // leaving 160 MiB of margin for the protected decoder-internal storage.
 #define SK_MAX_DECODE_MEMORY (2560u * 1024u * 1024u)
+#endif
 
 #ifdef SK_ENABLE_OHOS_CODEC
 #include <functional>
@@ -134,10 +140,12 @@ public:
          *  FIXME: Perhaps this should be kUnsupported?
          */
         kUnimplemented,
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         /**
          *  If the memory allocation exceeded the provided budget.
          */
         kOutOfMemory,
+#endif
     };
 
     /**
@@ -351,7 +359,9 @@ public:
             , fSubset(nullptr)
             , fFrameIndex(0)
             , fPriorFrame(kNoFrame)
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
             , fMaxDecodeMemory(SK_MAX_DECODE_MEMORY)
+#endif
         {}
 
         ZeroInitialized            fZeroInitialized;
@@ -396,11 +406,13 @@ public:
          */
         int                        fPriorFrame;
 
+#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         /**
          * If non-zero, JPEG and interlaced PNG decoding will fail when their protected internal
          * allocations exceed this many bytes.
          */
         size_t                     fMaxDecodeMemory;
+#endif
     };
 
     /**
