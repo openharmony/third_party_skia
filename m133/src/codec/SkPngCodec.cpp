@@ -55,9 +55,6 @@ using namespace skia_private;
 // When setjmp is first called, it returns 0, meaning longjmp was not called.
 constexpr int kSetJmpOkay   = 0;
 
-// Keep this limit in sync with PIXEL_MAP_MAX_RAM_SIZE (600 * 1024 * 1024) in
-// image_framework/interfaces/innerkits/include/pixel_map.h.
-static constexpr size_t kMaxPngInterlaceBuffer = 600u * 1024u * 1024u;
 // An error internal to libpng.
 constexpr int kPngError     = 1;
 // Passed to longjmp when we have decoded as many lines as we need.
@@ -702,7 +699,7 @@ private:
         fPng_rowbytes = png_get_rowbytes(this->png_ptr(), this->info_ptr());
         SkSafeMath safe;
         const size_t bufferBytes = safe.mul(fPng_rowbytes, static_cast<size_t>(height));
-        if (!safe || bufferBytes > kMaxPngInterlaceBuffer ||
+        if (!safe || !this->allocateFromBudget(bufferBytes) ||
             !fInterlaceBuffer.reset(bufferBytes)) {
             return false;
         }

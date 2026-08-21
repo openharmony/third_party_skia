@@ -486,11 +486,15 @@ SkCodec::Result SkCodec::getPixels(const SkImageInfo& info, void* pixels, size_t
         options = &optsStorage;
     }
 
-    fDecodeBudget = options->fMaxDecodeMemory ? options->fMaxDecodeMemory : SIZE_MAX;
+    fDecodeBudget = options->fMaxDecodeMemory;
+    fDecodeBudgetEnabled = fDecodeBudget != 0;
     return this->getPixelsBudgeted(info, pixels, rowBytes, options);
 }
 
 bool SkCodec::allocateFromBudget(size_t numBytes) {
+    if (!fDecodeBudgetEnabled) {
+        return true;
+    }
     if (numBytes > fDecodeBudget) SK_UNLIKELY {
         return false;
     }
@@ -568,7 +572,8 @@ std::tuple<sk_sp<SkImage>, SkCodec::Result> SkCodec::getImage(const SkImageInfo&
     if (!options) {
         options = &optsStorage;
     }
-    fDecodeBudget = options->fMaxDecodeMemory ? options->fMaxDecodeMemory : SIZE_MAX;
+    fDecodeBudget = options->fMaxDecodeMemory;
+    fDecodeBudgetEnabled = fDecodeBudget != 0;
 
     if (size_t size = info.computeByteSize(info.minRowBytes()); !this->allocateFromBudget(size)) {
         return {nullptr, kOutOfMemory};
@@ -643,6 +648,8 @@ SkCodec::Result SkCodec::startIncrementalDecode(const SkImageInfo& info, void* p
             }
         }
     }
+    fDecodeBudget = options->fMaxDecodeMemory;
+    fDecodeBudgetEnabled = fDecodeBudget != 0;
 
     const Result frameIndexResult = this->handleFrameIndex(info, pixels, rowBytes,
                                                            *options);
@@ -684,7 +691,8 @@ SkCodec::Result SkCodec::startScanlineDecode(const SkImageInfo& info,
     if (!options) {
         options = &optsStorage;
     }
-    fDecodeBudget = options->fMaxDecodeMemory ? options->fMaxDecodeMemory : SIZE_MAX;
+    fDecodeBudget = options->fMaxDecodeMemory;
+    fDecodeBudgetEnabled = fDecodeBudget != 0;
 
     if (options->fSubset) {
         SkIRect size = SkIRect::MakeSize(info.dimensions());

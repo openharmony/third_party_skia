@@ -28,6 +28,11 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
+
+// The default decode memory limit is 1200 MiB, twice PIXEL_MAP_MAX_RAM_SIZE
+// (600 * 1024 * 1024) in image_framework/interfaces/innerkits/include/pixel_map.h.
+#define SK_MAX_LIBJPEG_MEMORY (1200u * 1024u * 1024u)
+
 #ifdef SK_ENABLE_OHOS_CODEC
 #include <functional>
 #endif
@@ -341,7 +346,7 @@ public:
             , fSubset(nullptr)
             , fFrameIndex(0)
             , fPriorFrame(kNoFrame)
-            , fMaxDecodeMemory(0)
+            , fMaxDecodeMemory(SK_MAX_LIBJPEG_MEMORY)
         {}
 
         ZeroInitialized            fZeroInitialized;
@@ -1020,6 +1025,7 @@ private:
 
     // How many bytes we are allowed to use when decoding.
     size_t fDecodeBudget = 0;
+    bool fDecodeBudgetEnabled = false;
 
     bool fStartedIncrementalDecode = false;
 
