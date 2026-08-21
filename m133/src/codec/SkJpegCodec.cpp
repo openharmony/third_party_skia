@@ -492,9 +492,9 @@ static inline bool needs_swizzler_to_convert_from_cmyk(J_COLOR_SPACE jpegColorTy
     return !hasCMYKColorSpace || !hasColorSpaceXform;
 }
 
-static bool set_and_check_libjpeg_memory_limit(jpeg_decompress_struct* dinfo,
-                                               const SkISize& dimensions,
-                                               size_t memoryLimit) {
+static bool setAndCheckLibJpegMemoryLimit(jpeg_decompress_struct* dinfo,
+                                          const SkISize& dimensions,
+                                          size_t memoryLimit) {
     // libjpeg stores this limit in a long and treats 0 as unlimited. If the size_t budget cannot
     // be represented by long, leave libjpeg unlimited and enforce the full budget in Skia below.
     dinfo->mem->max_memory_to_use = memoryLimit > static_cast<size_t>(LONG_MAX)
@@ -544,8 +544,7 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     // Get a pointer to the decompress info since we will use it quite frequently
     jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
     const bool isProgressive = dinfo->progressive_mode;
-    if (!set_and_check_libjpeg_memory_limit(dinfo, this->dimensions(),
-                                            options.fMaxDecodeMemory)) {
+    if (!setAndCheckLibJpegMemoryLimit(dinfo, this->dimensions(), options.fMaxDecodeMemory)) {
         return kOutOfMemory;
     }
 
@@ -716,8 +715,7 @@ SkSampler* SkJpegCodec::getSampler(bool createIfNecessary) {
 SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         const Options& options) {
     jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
-    if (!set_and_check_libjpeg_memory_limit(dinfo, this->dimensions(),
-                                            options.fMaxDecodeMemory)) {
+    if (!setAndCheckLibJpegMemoryLimit(dinfo, this->dimensions(), options.fMaxDecodeMemory)) {
         return kOutOfMemory;
     }
 
