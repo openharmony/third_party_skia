@@ -20,6 +20,7 @@
 #include "include/private/base/SkNoncopyable.h"
 #include "include/private/base/SkTemplates.h"
 #include "modules/skcms/skcms.h"
+#include "src/base/SkSafeMath.h"
 #include "src/codec/SkCodecPriv.h"
 #include "src/codec/SkPngCompositeChunkReader.h"
 #include "src/codec/SkPngPriv.h"
@@ -53,6 +54,10 @@ using namespace skia_private;
 
 // When setjmp is first called, it returns 0, meaning longjmp was not called.
 constexpr int kSetJmpOkay   = 0;
+
+// Keep this limit in sync with PIXEL_MAP_MAX_RAM_SIZE (600 * 1024 * 1024) in
+// image_framework/interfaces/innerkits/include/pixel_map.h.
+static constexpr size_t kMaxPngInterlaceBuffer = 600u * 1024u * 1024u;
 // An error internal to libpng.
 constexpr int kPngError     = 1;
 // Passed to longjmp when we have decoded as many lines as we need.
@@ -481,7 +486,7 @@ private:
         fDst = SkTAddOffset<void>(fDst, fRowBytes);
     }
 
-    void setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
+    bool setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
         png_set_progressive_read_fn(this->png_ptr(), this, nullptr, RowCallback, nullptr);
         fFirstRow = firstRow;
         fLastRow = lastRow;
@@ -489,6 +494,7 @@ private:
         fRowBytes = rowBytes;
         fRowsWrittenToOutput = 0;
         fRowsNeeded = fLastRow - fFirstRow + 1;
+        return true;
     }
 
     Result decode(int* rowsDecoded) override {
@@ -608,7 +614,9 @@ private:
 
     Result decodeAllRows(void* dst, size_t rowBytes, int* rowsDecoded) override {
         const int height = this->dimensions().height();
-        this->setUpInterlaceBuffer(height);
+        if (!this->setUpInterlaceBuffer(height)) {
+            return kOutOfMemory;
+        }
         png_set_progressive_read_fn(this->png_ptr(), this, nullptr, InterlacedRowCallback,
                                     nullptr);
 
@@ -635,15 +643,18 @@ private:
         return log_and_return_error(success);
     }
 
-    void setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
+    bool setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
         // FIXME: We could skip rows in the interlace buffer that we won't put in the output.
-        this->setUpInterlaceBuffer(lastRow - firstRow + 1);
+        if (!this->setUpInterlaceBuffer(lastRow - firstRow + 1)) {
+            return false;
+        }
         png_set_progressive_read_fn(this->png_ptr(), this, nullptr, InterlacedRowCallback, nullptr);
         fFirstRow = firstRow;
         fLastRow = lastRow;
         fDst = dst;
         fRowBytes = rowBytes;
         fLinesDecoded = 0;
+        return true;
     }
 
     Result decode(int* rowsDecoded) override {
@@ -687,10 +698,16 @@ private:
         return log_and_return_error(success);
     }
 
-    void setUpInterlaceBuffer(int height) {
+    bool setUpInterlaceBuffer(int height) {
         fPng_rowbytes = png_get_rowbytes(this->png_ptr(), this->info_ptr());
-        fInterlaceBuffer.reset(fPng_rowbytes * height);
+        SkSafeMath safe;
+        const size_t bufferBytes = safe.mul(fPng_rowbytes, static_cast<size_t>(height));
+        if (!safe || bufferBytes > kMaxPngInterlaceBuffer ||
+            !fInterlaceBuffer.reset(bufferBytes)) {
+            return false;
+        }
         fInterlacedComplete = false;
+        return true;
     }
 };
 
@@ -1020,8 +1037,7 @@ SkCodec::Result SkPngCodec::onStartIncrementalDecode(const SkImageInfo& dstInfo,
         firstRow = 0;
         lastRow = dstInfo.height() - 1;
     }
-    this->setRange(firstRow, lastRow, dst, rowBytes);
-    return kSuccess;
+    return this->setRange(firstRow, lastRow, dst, rowBytes) ? kSuccess : kOutOfMemory;
 }
 
 SkCodec::Result SkPngCodec::onIncrementalDecode(int* rowsDecoded) {

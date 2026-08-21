@@ -21,6 +21,7 @@
 #include "include/private/base/SkAlign.h"
 #include "include/private/base/SkTemplates.h"
 #include "modules/skcms/skcms.h"
+#include "src/base/SkSafeMath.h"
 #include "src/codec/SkCodecPriv.h"
 #include "src/codec/SkJpegConstants.h"
 #include "src/codec/SkJpegDecoderMgr.h"
@@ -42,6 +43,10 @@ using namespace skia_private;
 
 class SkSampler;
 struct SkGainmapInfo;
+
+// Keep this limit in sync with PIXEL_MAP_MAX_RAM_SIZE (600 * 1024 * 1024) in
+// image_framework/interfaces/innerkits/include/pixel_map.h.
+static constexpr size_t kMaxLibJpegMemory = 600u * 1024u * 1024u;
 
 // This warning triggers false postives way too often in here.
 #if defined(__GNUC__) && !defined(__clang__)
@@ -504,13 +509,27 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     // Get a pointer to the decompress info since we will use it quite frequently
     jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
 
+    const size_t jpegMemoryLimit =
+            options.fMaxDecodeMemory ? options.fMaxDecodeMemory : kMaxLibJpegMemory;
+    dinfo->mem->max_memory_to_use = static_cast<long>(jpegMemoryLimit);
+
+    const bool isProgressive = dinfo->progressive_mode;
+    const size_t estimatedLibJpegMemory = isProgressive
+            ? SkSafeMath::Mul(6u,
+                              SkSafeMath::Mul(static_cast<size_t>(this->dimensions().width()),
+                                              static_cast<size_t>(this->dimensions().height())))
+            : SkSafeMath::Mul(34u, static_cast<size_t>(this->dimensions().width()));
+    if (estimatedLibJpegMemory > jpegMemoryLimit ||
+        !this->allocateFromBudget(estimatedLibJpegMemory)) {
+        return kOutOfMemory;
+    }
+
     // Set the jump location for libjpeg errors
     skjpeg_error_mgr::AutoPushJmpBuf jmp(fDecoderMgr->errorMgr());
     if (setjmp(jmp)) {
         return fDecoderMgr->returnFailure("setjmp", kInvalidInput);
     }
 
-    const bool isProgressive = dinfo->progressive_mode;
     if (isProgressive) {
        dinfo->buffered_image = TRUE;
        jpeg_start_decompress(dinfo);
@@ -528,7 +547,7 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     }
 
     if (!this->allocateStorage(dstInfo)) {
-        return kInternalError;
+        return kOutOfMemory;
     }
 
     if (isProgressive) {
@@ -596,6 +615,9 @@ bool SkJpegCodec::allocateStorage(const SkImageInfo& dstInfo) {
 
     size_t totalBytes = swizzleBytes + xformBytes;
     if (totalBytes > 0) {
+        if (!this->allocateFromBudget(totalBytes)) {
+            return false;
+        }
         if (!fStorage.reset(totalBytes)) {
             return false;
         }
@@ -671,6 +693,21 @@ SkSampler* SkJpegCodec::getSampler(bool createIfNecessary) {
 
 SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         const Options& options) {
+    jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
+    const size_t jpegMemoryLimit =
+            options.fMaxDecodeMemory ? options.fMaxDecodeMemory : kMaxLibJpegMemory;
+    dinfo->mem->max_memory_to_use = static_cast<long>(jpegMemoryLimit);
+
+    const size_t estimatedLibJpegMemory = dinfo->progressive_mode
+            ? SkSafeMath::Mul(6u,
+                              SkSafeMath::Mul(static_cast<size_t>(this->dimensions().width()),
+                                              static_cast<size_t>(this->dimensions().height())))
+            : SkSafeMath::Mul(34u, static_cast<size_t>(this->dimensions().width()));
+    if (estimatedLibJpegMemory > jpegMemoryLimit ||
+        !this->allocateFromBudget(estimatedLibJpegMemory)) {
+        return kOutOfMemory;
+    }
+
     // Set the jump location for libjpeg errors
     skjpeg_error_mgr::AutoPushJmpBuf jmp(fDecoderMgr->errorMgr());
     if (setjmp(jmp)) {
@@ -678,7 +715,7 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         return kInvalidInput;
     }
 
-    if (!jpeg_start_decompress(fDecoderMgr->dinfo())) {
+    if (!jpeg_start_decompress(dinfo)) {
         SkCodecPrintf("start decompress failed\n");
         return kInvalidInput;
     }
@@ -729,7 +766,7 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
     }
 
     if (!this->allocateStorage(dstInfo)) {
-        return kInternalError;
+        return kOutOfMemory;
     }
 
     return kSuccess;
