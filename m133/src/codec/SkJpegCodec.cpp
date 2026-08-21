@@ -495,8 +495,10 @@ static inline bool needs_swizzler_to_convert_from_cmyk(J_COLOR_SPACE jpegColorTy
 static bool set_and_check_libjpeg_memory_limit(jpeg_decompress_struct* dinfo,
                                                const SkISize& dimensions,
                                                size_t memoryLimit) {
+    // libjpeg stores this limit in a long and treats 0 as unlimited. If the size_t budget cannot
+    // be represented by long, leave libjpeg unlimited and enforce the full budget in Skia below.
     dinfo->mem->max_memory_to_use = memoryLimit > static_cast<size_t>(LONG_MAX)
-            ? LONG_MAX
+            ? 0
             : static_cast<long>(memoryLimit);
     if (memoryLimit == 0) {
         return true;
