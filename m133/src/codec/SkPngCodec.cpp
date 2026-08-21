@@ -55,7 +55,6 @@ using namespace skia_private;
 
 // When setjmp is first called, it returns 0, meaning longjmp was not called.
 constexpr int kSetJmpOkay   = 0;
-
 // An error internal to libpng.
 constexpr int kPngError     = 1;
 // Passed to longjmp when we have decoded as many lines as we need.
