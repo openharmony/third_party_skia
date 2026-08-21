@@ -482,7 +482,7 @@ SkCodec::Result SkCodec::handleFrameIndex(const SkImageInfo& info, void* pixels,
 SkCodec::Result SkCodec::getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
                                    const Options* options) {
     Options optsStorage;
-    if (nullptr == options) {
+    if (!options) {
         options = &optsStorage;
     }
 
@@ -516,14 +516,18 @@ SkCodec::Result SkCodec::getPixelsBudgeted(const SkImageInfo& info,
         return kInvalidParameters;
     }
 
-    SkASSERT(options);
-
-    if (options->fSubset) {
-        SkIRect subset(*options->fSubset);
-        if (!this->onGetValidSubset(&subset) || subset != *options->fSubset) {
-            // FIXME: How to differentiate between not supporting subset at all
-            // and not supporting this particular subset?
-            return kUnimplemented;
+    // Default options.
+    Options optsStorage;
+    if (nullptr == options) {
+        options = &optsStorage;
+    } else {
+        if (options->fSubset) {
+            SkIRect subset(*options->fSubset);
+            if (!this->onGetValidSubset(&subset) || subset != *options->fSubset) {
+                // FIXME: How to differentiate between not supporting subset at all
+                // and not supporting this particular subset?
+                return kUnimplemented;
+            }
         }
     }
 
@@ -569,7 +573,7 @@ SkCodec::Result SkCodec::getPixelsBudgeted(const SkImageInfo& info,
 std::tuple<sk_sp<SkImage>, SkCodec::Result> SkCodec::getImage(const SkImageInfo& info,
                                                               const Options* options) {
     Options optsStorage;
-    if (nullptr == options) {
+    if (!options) {
         options = &optsStorage;
     }
     fDecodeBudget = options->fMaxDecodeMemory;
@@ -689,9 +693,13 @@ SkCodec::Result SkCodec::startScanlineDecode(const SkImageInfo& info,
 
     // Set options.
     Options optsStorage;
-    if (nullptr == options) {
+    if (!options) {
         options = &optsStorage;
-    } else if (options->fSubset) {
+    }
+    fDecodeBudget = options->fMaxDecodeMemory;
+    fDecodeBudgetEnabled = fDecodeBudget != 0;
+
+    if (options->fSubset) {
         SkIRect size = SkIRect::MakeSize(info.dimensions());
         if (!size.contains(*options->fSubset)) {
             return kInvalidInput;
@@ -703,8 +711,6 @@ SkCodec::Result SkCodec::startScanlineDecode(const SkImageInfo& info,
             return kInvalidInput;
         }
     }
-    fDecodeBudget = options->fMaxDecodeMemory;
-    fDecodeBudgetEnabled = fDecodeBudget != 0;
 
     // Scanline decoding only supports decoding the first frame.
     if (options->fFrameIndex != 0) {
