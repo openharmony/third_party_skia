@@ -514,11 +514,21 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     dinfo->mem->max_memory_to_use = static_cast<long>(jpegMemoryLimit);
 
     const bool isProgressive = dinfo->progressive_mode;
-    const size_t estimatedLibJpegMemory = isProgressive
-            ? SkSafeMath::Mul(6u,
-                              SkSafeMath::Mul(static_cast<size_t>(this->dimensions().width()),
-                                              static_cast<size_t>(this->dimensions().height())))
-            : SkSafeMath::Mul(34u, static_cast<size_t>(this->dimensions().width()));
+    size_t estimatedLibJpegMemory;
+    if (isProgressive) {
+        // https://github.com/libjpeg-turbo/libjpeg-turbo/blob/af9c1c268520a29adf98cad5138dafe612b3d318/doc/libjpeg.txt
+        // "Worst case (1x1 sampling) [for a progressive JPEG] requires 6 bytes/pixel."
+        estimatedLibJpegMemory =
+                SkSafeMath::Mul(6u,
+                                SkSafeMath::Mul(static_cast<size_t>(this->dimensions().width()),
+                                                static_cast<size_t>(this->dimensions().height())));
+    } else {
+        // https://github.com/libjpeg-turbo/libjpeg-turbo/blob/af9c1c268520a29adf98cad5138dafe612b3d318/doc/libjpeg.txt
+        // "The worst case for commonly used sampling factors is about 34 bytes * width in pixels
+        // for a color image."
+        estimatedLibJpegMemory =
+                SkSafeMath::Mul(34u, static_cast<size_t>(this->dimensions().width()));
+    }
     if (estimatedLibJpegMemory > jpegMemoryLimit ||
         !this->allocateFromBudget(estimatedLibJpegMemory)) {
         return kOutOfMemory;
@@ -698,11 +708,21 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
             options.fMaxDecodeMemory ? options.fMaxDecodeMemory : kMaxLibJpegMemory;
     dinfo->mem->max_memory_to_use = static_cast<long>(jpegMemoryLimit);
 
-    const size_t estimatedLibJpegMemory = dinfo->progressive_mode
-            ? SkSafeMath::Mul(6u,
-                              SkSafeMath::Mul(static_cast<size_t>(this->dimensions().width()),
-                                              static_cast<size_t>(this->dimensions().height())))
-            : SkSafeMath::Mul(34u, static_cast<size_t>(this->dimensions().width()));
+    size_t estimatedLibJpegMemory;
+    if (dinfo->progressive_mode) {
+        // https://github.com/libjpeg-turbo/libjpeg-turbo/blob/af9c1c268520a29adf98cad5138dafe612b3d318/doc/libjpeg.txt
+        // "Worst case (1x1 sampling) [for a progressive JPEG] requires 6 bytes/pixel."
+        estimatedLibJpegMemory =
+                SkSafeMath::Mul(6u,
+                                SkSafeMath::Mul(static_cast<size_t>(this->dimensions().width()),
+                                                static_cast<size_t>(this->dimensions().height())));
+    } else {
+        // https://github.com/libjpeg-turbo/libjpeg-turbo/blob/af9c1c268520a29adf98cad5138dafe612b3d318/doc/libjpeg.txt
+        // "The worst case for commonly used sampling factors is about 34 bytes * width in pixels
+        // for a color image."
+        estimatedLibJpegMemory =
+                SkSafeMath::Mul(34u, static_cast<size_t>(this->dimensions().width()));
+    }
     if (estimatedLibJpegMemory > jpegMemoryLimit ||
         !this->allocateFromBudget(estimatedLibJpegMemory)) {
         return kOutOfMemory;
