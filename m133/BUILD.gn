@@ -1818,10 +1818,14 @@ optional("jpeg_decode") {
   public_defines = [ "SK_CODEC_DECODES_JPEG" ]
 
   deps = []
+  external_deps = []
   if (skia_use_system_lib) {
-    external_deps = [ "libjpeg-turbo:turbojpeg" ]
+    external_deps += [ "libjpeg-turbo:turbojpeg" ]
   } else {
     deps += [ "${skia_third_party_dir}/libjpeg-turbo:libjpegm133" ]
+  }
+  if (is_ohos) {
+    external_deps += [ "hilog:libhilog" ]
   }
   sources = [
     "src/codec/SkJpegCodec.cpp",
@@ -2004,12 +2008,16 @@ optional("png_decode_libpng") {
     "SK_CODEC_DECODES_PNG_WITH_LIBPNG",
   ]
 
+  external_deps = []
   if (skia_use_system_lib) {
-    external_deps = [ "libpng:libpng" ]
+    external_deps += [ "libpng:libpng" ]
   } else if (build_ohos_sdk) {
-    external_deps = [ "libpng:libpng_static" ]
+    external_deps += [ "libpng:libpng_static" ]
   } else {
     deps = [ "${skia_third_party_dir}/libpng" ]
+  }
+  if (is_ohos) {
+    external_deps += [ "hilog:libhilog" ]
   }
   sources = [ "src/codec/SkIcoCodec.cpp" ] + skia_codec_png_base +
             skia_codec_libpng_srcs

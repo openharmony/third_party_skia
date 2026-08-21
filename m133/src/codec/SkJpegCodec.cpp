@@ -492,6 +492,41 @@ static inline bool needs_swizzler_to_convert_from_cmyk(J_COLOR_SPACE jpegColorTy
     return !hasCMYKColorSpace || !hasColorSpaceXform;
 }
 
+static bool set_and_check_libjpeg_memory_limit(jpeg_decompress_struct* dinfo,
+                                               const SkISize& dimensions,
+                                               size_t memoryLimit) {
+    dinfo->mem->max_memory_to_use = memoryLimit > static_cast<size_t>(LONG_MAX)
+            ? LONG_MAX
+            : static_cast<long>(memoryLimit);
+    if (memoryLimit == 0) {
+        return true;
+    }
+
+    size_t estimatedLibJpegMemory;
+    if (dinfo->progressive_mode) {
+        // Progressive JPEG coefficient buffers require one JCOEF per component per pixel in the
+        // worst-case 1x1 sampling configuration.
+        const size_t bytesPerPixel = SkSafeMath::Mul(
+                static_cast<size_t>(dinfo->num_components), sizeof(JCOEF));
+        estimatedLibJpegMemory =
+                SkSafeMath::Mul(bytesPerPixel,
+                                SkSafeMath::Mul(static_cast<size_t>(dimensions.width()),
+                                                static_cast<size_t>(dimensions.height())));
+    } else {
+        // "The worst case for commonly used sampling factors is about 34 bytes * width in pixels
+        // for a color image."
+        estimatedLibJpegMemory =
+                SkSafeMath::Mul(34u, static_cast<size_t>(dimensions.width()));
+    }
+    if (estimatedLibJpegMemory <= memoryLimit) {
+        return true;
+    }
+
+    SK_LOGE("JPEG decode memory limit exceeded, estimated: %{public}zu, limit: %{public}zu",
+            estimatedLibJpegMemory, memoryLimit);
+    return false;
+}
+
 /*
  * Performs the jpeg decode
  */
@@ -506,32 +541,9 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
 
     // Get a pointer to the decompress info since we will use it quite frequently
     jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
-
-    dinfo->mem->max_memory_to_use = options.fMaxDecodeMemory > static_cast<size_t>(LONG_MAX)
-            ? LONG_MAX
-            : static_cast<long>(options.fMaxDecodeMemory);
-
     const bool isProgressive = dinfo->progressive_mode;
-    size_t estimatedLibJpegMemory;
-    if (isProgressive) {
-        // Progressive JPEG coefficient buffers require one JCOEF per component per pixel in the
-        // worst-case 1x1 sampling configuration.
-        const size_t bytesPerPixel = SkSafeMath::Mul(
-                static_cast<size_t>(dinfo->num_components), sizeof(JCOEF));
-        estimatedLibJpegMemory =
-                SkSafeMath::Mul(bytesPerPixel,
-                                SkSafeMath::Mul(static_cast<size_t>(this->dimensions().width()),
-                                                static_cast<size_t>(this->dimensions().height())));
-    } else {
-        // "The worst case for commonly used sampling factors is about 34 bytes * width in pixels
-        // for a color image."
-        estimatedLibJpegMemory =
-                SkSafeMath::Mul(34u, static_cast<size_t>(this->dimensions().width()));
-    }
-    if (options.fMaxDecodeMemory != 0 &&
-        estimatedLibJpegMemory > options.fMaxDecodeMemory) {
-        SK_LOGE("SkJpegCodec::onGetPixels decode memory limit exceeded, estimated: %{public}zu, "
-                "limit: %{public}zu", estimatedLibJpegMemory, options.fMaxDecodeMemory);
+    if (!set_and_check_libjpeg_memory_limit(dinfo, this->dimensions(),
+                                            options.fMaxDecodeMemory)) {
         return kOutOfMemory;
     }
 
@@ -702,31 +714,8 @@ SkSampler* SkJpegCodec::getSampler(bool createIfNecessary) {
 SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         const Options& options) {
     jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
-    dinfo->mem->max_memory_to_use = options.fMaxDecodeMemory > static_cast<size_t>(LONG_MAX)
-            ? LONG_MAX
-            : static_cast<long>(options.fMaxDecodeMemory);
-
-    size_t estimatedLibJpegMemory;
-    if (dinfo->progressive_mode) {
-        // Progressive JPEG coefficient buffers require one JCOEF per component per pixel in the
-        // worst-case 1x1 sampling configuration.
-        const size_t bytesPerPixel = SkSafeMath::Mul(
-                static_cast<size_t>(dinfo->num_components), sizeof(JCOEF));
-        estimatedLibJpegMemory =
-                SkSafeMath::Mul(bytesPerPixel,
-                                SkSafeMath::Mul(static_cast<size_t>(this->dimensions().width()),
-                                                static_cast<size_t>(this->dimensions().height())));
-    } else {
-        // "The worst case for commonly used sampling factors is about 34 bytes * width in pixels
-        // for a color image."
-        estimatedLibJpegMemory =
-                SkSafeMath::Mul(34u, static_cast<size_t>(this->dimensions().width()));
-    }
-    if (options.fMaxDecodeMemory != 0 &&
-        estimatedLibJpegMemory > options.fMaxDecodeMemory) {
-        SK_LOGE("SkJpegCodec::onStartScanlineDecode decode memory limit exceeded, estimated: "
-                "%{public}zu, limit: %{public}zu", estimatedLibJpegMemory,
-                options.fMaxDecodeMemory);
+    if (!set_and_check_libjpeg_memory_limit(dinfo, this->dimensions(),
+                                            options.fMaxDecodeMemory)) {
         return kOutOfMemory;
     }
 

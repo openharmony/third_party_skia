@@ -701,13 +701,13 @@ private:
         const size_t bufferBytes = safe.mul(fPng_rowbytes, static_cast<size_t>(height));
         const size_t memoryLimit = this->options().fMaxDecodeMemory;
         if (!safe) {
-            SK_LOGE("SkPngCodec::setUpInterlaceBuffer size overflow, row bytes: %{public}zu, "
-                    "height: %{public}d", fPng_rowbytes, height);
+            SK_LOGE("PNG interlace buffer size overflow, row bytes: %{public}zu, height: %{public}d",
+                    fPng_rowbytes, height);
             return false;
         }
         if (memoryLimit != 0 && bufferBytes > memoryLimit) {
-            SK_LOGE("SkPngCodec::setUpInterlaceBuffer decode memory limit exceeded, required: "
-                    "%{public}zu, limit: %{public}zu", bufferBytes, memoryLimit);
+            SK_LOGE("PNG decode memory limit exceeded, required: %{public}zu, limit: %{public}zu",
+                    bufferBytes, memoryLimit);
             return false;
         }
         if (!fInterlaceBuffer.reset(bufferBytes)) {
