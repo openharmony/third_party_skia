@@ -575,7 +575,8 @@ std::tuple<sk_sp<SkImage>, SkCodec::Result> SkCodec::getImage(const SkImageInfo&
     fDecodeBudget = options->fMaxDecodeMemory;
     fDecodeBudgetEnabled = fDecodeBudget != 0;
 
-    if (size_t size = info.computeByteSize(info.minRowBytes()); !this->allocateFromBudget(size)) {
+    size_t size = info.computeByteSize(info.minRowBytes());
+    if (!this->allocateFromBudget(size)) {
         return {nullptr, kOutOfMemory};
     }
 
