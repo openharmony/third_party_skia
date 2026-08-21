@@ -523,7 +523,8 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
         estimatedLibJpegMemory =
                 SkSafeMath::Mul(34u, static_cast<size_t>(this->dimensions().width()));
     }
-    if (!this->allocateFromBudget(estimatedLibJpegMemory)) {
+    if (options.fMaxDecodeMemory != 0 &&
+        estimatedLibJpegMemory > options.fMaxDecodeMemory) {
         return kOutOfMemory;
     }
 
@@ -550,7 +551,7 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     }
 
     if (!this->allocateStorage(dstInfo)) {
-        return kOutOfMemory;
+        return kInternalError;
     }
 
     if (isProgressive) {
@@ -618,9 +619,6 @@ bool SkJpegCodec::allocateStorage(const SkImageInfo& dstInfo) {
 
     size_t totalBytes = swizzleBytes + xformBytes;
     if (totalBytes > 0) {
-        if (!this->allocateFromBudget(totalBytes)) {
-            return false;
-        }
         if (!fStorage.reset(totalBytes)) {
             return false;
         }
@@ -714,7 +712,8 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         estimatedLibJpegMemory =
                 SkSafeMath::Mul(34u, static_cast<size_t>(this->dimensions().width()));
     }
-    if (!this->allocateFromBudget(estimatedLibJpegMemory)) {
+    if (options.fMaxDecodeMemory != 0 &&
+        estimatedLibJpegMemory > options.fMaxDecodeMemory) {
         return kOutOfMemory;
     }
 
@@ -776,7 +775,7 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
     }
 
     if (!this->allocateStorage(dstInfo)) {
-        return kOutOfMemory;
+        return kInternalError;
     }
 
     return kSuccess;

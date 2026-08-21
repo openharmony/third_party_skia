@@ -699,7 +699,8 @@ private:
         fPng_rowbytes = png_get_rowbytes(this->png_ptr(), this->info_ptr());
         SkSafeMath safe;
         const size_t bufferBytes = safe.mul(fPng_rowbytes, static_cast<size_t>(height));
-        if (!safe || !this->allocateFromBudget(bufferBytes) ||
+        const size_t memoryLimit = this->options().fMaxDecodeMemory;
+        if (!safe || (memoryLimit != 0 && bufferBytes > memoryLimit) ||
             !fInterlaceBuffer.reset(bufferBytes)) {
             return false;
         }

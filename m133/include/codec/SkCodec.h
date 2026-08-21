@@ -392,7 +392,8 @@ public:
         int                        fPriorFrame;
 
         /**
-         * If non-zero, image decoding will fail if cumulative allocations exceed this many bytes.
+         * If non-zero, JPEG and interlaced PNG decoding will fail when their protected internal
+         * allocations exceed this many bytes.
          */
         size_t                     fMaxDecodeMemory;
     };
@@ -997,9 +998,6 @@ protected:
         return 0;
     }
 
-    // Returns true if the requested amount keeps the current total under Options::fMaxDecodeMemory.
-    bool allocateFromBudget(size_t numBytes);
-
 private:
     const SkEncodedInfo                fEncodedInfo;
     XformFormat                        fSrcXformFormat;
@@ -1023,10 +1021,6 @@ private:
     // Only meaningful during scanline decodes.
     int fCurrScanline = -1;
 
-    // How many bytes we are allowed to use when decoding.
-    size_t fDecodeBudget = 0;
-    bool fDecodeBudgetEnabled = false;
-
     bool fStartedIncrementalDecode = false;
 
     // Allows SkAndroidCodec to call handleFrameIndex (potentially decoding a prior frame and
@@ -1047,11 +1041,6 @@ private:
     bool dimensionsSupported(const SkISize& dim) {
         return dim == this->dimensions() || this->onDimensionsSupported(dim);
     }
-
-    Result getPixelsBudgeted(const SkImageInfo& info,
-                             void* pixels,
-                             size_t rowBytes,
-                             const Options*);
 
     /**
      *  For multi-framed images, return the object with information about the frames.
