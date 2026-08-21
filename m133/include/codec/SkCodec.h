@@ -36,7 +36,7 @@
 // 16-bit RGB row buffer decoded to RGB_565 (6 encoded bytes versus 2 output bytes per pixel), which
 // needs at most 600 MiB * 3 = 1800 MiB. Round the larger 2400 MiB requirement up to 2560 MiB,
 // leaving 160 MiB of margin for the protected decoder-internal storage.
-#define SK_MAX_LIBJPEG_MEMORY (2560u * 1024u * 1024u)
+#define SK_MAX_DECODE_MEMORY (2560u * 1024u * 1024u)
 
 #ifdef SK_ENABLE_OHOS_CODEC
 #include <functional>
@@ -351,7 +351,7 @@ public:
             , fSubset(nullptr)
             , fFrameIndex(0)
             , fPriorFrame(kNoFrame)
-            , fMaxDecodeMemory(SK_MAX_LIBJPEG_MEMORY)
+            , fMaxDecodeMemory(SK_MAX_DECODE_MEMORY)
         {}
 
         ZeroInitialized            fZeroInitialized;
