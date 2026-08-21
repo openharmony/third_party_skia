@@ -13,6 +13,7 @@
 #include "include/core/SkColorType.h"
 #include "include/core/SkData.h"
 #include "include/core/SkImageInfo.h"
+#include "include/core/SkLog.h"
 #include "include/core/SkPixmap.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkStream.h"
@@ -529,6 +530,8 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     }
     if (options.fMaxDecodeMemory != 0 &&
         estimatedLibJpegMemory > options.fMaxDecodeMemory) {
+        SK_LOGE("SkJpegCodec::onGetPixels decode memory limit exceeded, estimated: %{public}zu, "
+                "limit: %{public}zu", estimatedLibJpegMemory, options.fMaxDecodeMemory);
         return kOutOfMemory;
     }
 
@@ -721,6 +724,9 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
     }
     if (options.fMaxDecodeMemory != 0 &&
         estimatedLibJpegMemory > options.fMaxDecodeMemory) {
+        SK_LOGE("SkJpegCodec::onStartScanlineDecode decode memory limit exceeded, estimated: "
+                "%{public}zu, limit: %{public}zu", estimatedLibJpegMemory,
+                options.fMaxDecodeMemory);
         return kOutOfMemory;
     }
 
