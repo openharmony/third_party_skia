@@ -89,6 +89,7 @@ config("skia_public") {
     "TODO_M133_SKIA",
     "SK_USE_LEGACY_BLUR_RASTER",
     "SK_OHOS_EXTENSION",
+    "SKIA_OHOS_SVG_PROTECTION"
   ]
   if (defined(skia_ohos_debug) && skia_ohos_debug) {
     defines += [ "SKIA_OHOS_DEBUG" ]
@@ -2317,6 +2318,10 @@ optional("xml") {
   public_defines = [ "SK_XML" ]
   external_deps = []
   deps = []
+
+  if (is_ohos && !is_arkui_x) {
+    external_deps += [ "hilog:libhilog" ]
+  }
 
   if (skia_feature_upgrade) {
     if (is_arkui_x) {
