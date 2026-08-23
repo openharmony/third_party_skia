@@ -8,7 +8,13 @@ import("../../gn/skia.gni")
 
 if (skia_enable_svg && skia_use_expat) {
   config("public_config") {
-    defines = [ "SK_ENABLE_SVG" ]
+    defines = [
+      "SK_ENABLE_SVG",
+      "SKIA_OHOS_SVG_PROTECTION"
+    ]
+    if (is_ohos && (target_cpu == "arm" || target_cpu == "arm64" || is_emulator)) {
+      defines += [ "SKIA_OHOS" ]
+    }
     include_dirs = [ "include" ]
     include_dirs += [
       "${skia_root_dir}",
@@ -40,11 +46,24 @@ if (skia_enable_svg && skia_use_expat) {
   ohos_source_set("svg") {
     branch_protector_ret = "pac_ret"
     check_includes = false
+    part_name = "skia"
+    subsystem_name = "thirdparty"
     import("svg.gni")
     public_configs = [ ":public_config" ]
     public = skia_svg_public
     sources = skia_svg_sources
     configs = [ "../../:skia_private" ]
+    if (is_ohos && !is_arkui_x) {
+      external_deps = [
+        "hilog:libhilog",
+        "hitrace:hitrace_meter",
+      ]
+      if (is_component_build) {
+        external_deps += [ "bounds_checking_function:libsec_shared" ]
+      } else {
+        external_deps += [ "bounds_checking_function:libsec_static" ]
+      }
+    }
     if (use_oh_skia) {
       configs += [ "../../:skia_wno" ]
       configs += [ ":svg_private_config" ]

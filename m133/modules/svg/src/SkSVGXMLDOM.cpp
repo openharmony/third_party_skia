@@ -5,16 +5,35 @@
  */
 
 #include "include/core/SkColor.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "include/core/SkLog.h"
+#endif
 #include "src/xml/SkDOM.h"
 #include "src/xml/SkDOMParser.h"
 
 #include "modules/svg/include/CssStyleParser.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "modules/svg/include/SkSVGResourceProtection.h"
+#endif
 #include "modules/svg/include/SkSVGXMLDOM.h"
+
+#include <cctype>
+
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "include/private/base/SkDebug.h"
+#endif
 
 
 class SkSVGDOMParser : public SkDOMParser {
 public:
     SkSVGDOMParser(SkArenaAllocWithReset* chunk) : SkDOMParser(chunk) {}
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    void setSVGResourceLimits(const SkSVGResourceLimits* limits) {
+        fSVGResourceLimits = limits;
+        SkDOMParser::setSVGResourceLimits(limits);
+        fStyleParser.setSVGResourceLimits(limits);
+    }
+#endif
     /** Returns true for success
     */
     bool parse(SkStream& docStream, uint64_t svgThemeColor) {
@@ -33,11 +52,25 @@ protected:
     };
 
     bool onStartElement(const char elem[]) override {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        if (fResourceLimitExceeded) {
+            return true;
+        }
+#endif
         this->startCommon(elem, strlen(elem), SkDOM::kElement_Type);
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        if (fResourceLimitExceeded) {
+            return true;
+        }
+#endif
         if (!strcmp(elem, "style")) {
             fProcessingStyle = true;
         }
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        return fResourceLimitExceeded;
+#else
         return false;
+#endif
     }
 
     bool setSVGColor(
@@ -47,9 +80,19 @@ protected:
             char colorBuffer[8];
             int res = snprintf(colorBuffer, sizeof(colorBuffer), "#%06x", (svgThemeColor.color & 0xFFFFFF));
             if (res < 0) {
-                attr->fValue = dupstr(fAlloc, value, strlen(value));
+                attr->fValue =
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                        dupstrLimited(value, strlen(value));
+#else
+                        dupstr(fAlloc, value, strlen(value));
+#endif
             } else {
-                attr->fValue = dupstr(fAlloc, colorBuffer, strlen(colorBuffer));
+                attr->fValue =
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                        dupstrLimited(colorBuffer, strlen(colorBuffer));
+#else
+                        dupstr(fAlloc, colorBuffer, strlen(colorBuffer));
+#endif
             }
 
             return false;
@@ -62,9 +105,19 @@ protected:
             int res = snprintf(
                 opacityBuffer, sizeof(opacityBuffer), "%2.1f", ((svgThemeColor.color & 0xFF000000) >> 24) / 255.0);
             if (res < 0) {
-                attr->fValue = dupstr(fAlloc, value,  strlen(value));
+                attr->fValue =
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                        dupstrLimited(value, strlen(value));
+#else
+                        dupstr(fAlloc, value, strlen(value));
+#endif
             } else {
-                attr->fValue = dupstr(fAlloc, opacityBuffer, strlen(opacityBuffer));
+                attr->fValue =
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                        dupstrLimited(opacityBuffer, strlen(opacityBuffer));
+#else
+                        dupstr(fAlloc, opacityBuffer, strlen(opacityBuffer));
+#endif
             }
             return false;
         }
@@ -72,6 +125,68 @@ protected:
     }
 
     bool onAddAttribute(const char name[], const char value[]) override {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        if (fResourceLimitExceeded) {
+            return true;
+        }
+        char* attrName = dupstrLimited(name, strlen(name));
+        if (!attrName) {
+            return true;
+        }
+        SkColorEx svgThemeColor;
+        svgThemeColor.value = fSvgThemeColor;
+
+        SkDOM::Attr pendingAttr = { attrName, nullptr };
+        if (setSVGColor(&pendingAttr, name, value, svgThemeColor)) {
+            pendingAttr.fValue = dupstrLimited(value, strlen(value));
+        }
+        if (!pendingAttr.fValue) {
+            return true;
+        }
+        *fAttrs.append() = pendingAttr;
+
+        // add attributes in style classes.
+        if (!strcmp(pendingAttr.fName, "class")) {
+            const auto classNames = SplitClassNames(pendingAttr.fValue);
+            size_t classFanOut = 0;
+            for (const auto& className : classNames) {
+                const auto& styleClassMap = fStyleParser.getArributesMap(className);
+                if (fSVGResourceLimits && fSVGResourceLimits->fMaxClassFanOut > 0 &&
+                    (styleClassMap.size() > fSVGResourceLimits->fMaxClassFanOut - classFanOut)) {
+                    const size_t actual = classFanOut > SIZE_MAX - styleClassMap.size()
+                            ? SIZE_MAX : classFanOut + styleClassMap.size();
+                    fResourceLimitExceeded = true;
+                    SK_LOGE("SVG resource limit exceeded: fMaxClassFanOut "
+                            "actual=%{public}zu max=%{public}zu\n",
+                            actual, fSVGResourceLimits->fMaxClassFanOut);
+                    SK_SVG_RESOURCE_PROTECTION_REPORT();
+                    return true;
+                }
+                classFanOut += styleClassMap.size();
+            }
+            for (const auto& className : classNames) {
+                const auto& styleClassMap = fStyleParser.getArributesMap(className);
+                for (auto& arr: styleClassMap) {
+                    char* classAttrName =
+                            dupstrLimited(arr.first.c_str(), arr.first.size());
+                    if (!classAttrName) {
+                        return true;
+                    }
+                    SkDOM::Attr pendingClassAttr = { classAttrName, nullptr };
+                    if (setSVGColor(&pendingClassAttr, classAttrName,
+                                    arr.second.c_str(), svgThemeColor)) {
+                        pendingClassAttr.fValue =
+                                dupstrLimited(arr.second.c_str(), arr.second.size());
+                    }
+                    if (!pendingClassAttr.fValue) {
+                        return true;
+                    }
+                    *fAttrs.append() = pendingClassAttr;
+                }
+            }
+        }
+        return false;
+#else
         SkDOM::Attr* attr = fAttrs.append();
         attr->fName = dupstr(fAlloc, name, strlen(name));
         SkColorEx svgThemeColor;
@@ -82,29 +197,43 @@ protected:
         attr->fValue = dupstr(fAlloc, value, strlen(value));
         // add attributes in style classes.
         if (!strcmp(attr->fName, "class")) {
-            auto styleClassMap = fStyleParser.getArributesMap(attr->fValue);
-            if (!styleClassMap.empty()) {
+            const auto classNames = SplitClassNames(attr->fValue);
+            for (const auto& className : classNames) {
+                const auto& styleClassMap = fStyleParser.getArributesMap(className);
                 for (auto& arr: styleClassMap) {
-                    SkDOM::Attr* attr = fAttrs.append();
-                    attr->fName = dupstr(fAlloc, arr.first.c_str(), strlen(arr.first.c_str()));
-                    if (!setSVGColor(attr, attr->fName, arr.second.c_str(), svgThemeColor)) {
+                    SkDOM::Attr* classAttr = fAttrs.append();
+                    classAttr->fName =
+                            dupstr(fAlloc, arr.first.c_str(), strlen(arr.first.c_str()));
+                    if (!setSVGColor(classAttr, classAttr->fName,
+                                     arr.second.c_str(), svgThemeColor)) {
                         continue;
                     }
-                    attr->fValue = dupstr(fAlloc, arr.second.c_str(), strlen(arr.second.c_str()));
+                    classAttr->fValue =
+                            dupstr(fAlloc, arr.second.c_str(), strlen(arr.second.c_str()));
                 }
             }
         }
         return false;
+#endif
     }
 
     bool onEndElement(const char elem[]) override {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        if (fResourceLimitExceeded) {
+            return true;
+        }
+#endif
         if (SkDOMParser::onEndElement(elem)) {
             return true;
         }
         if (!strcmp(elem, "style")) {
             fProcessingStyle = false;
         }
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        return fResourceLimitExceeded;
+#else
         return false;
+#endif
     }
 
     static std::string RemoveEmptyChar(const char text[], int len) {
@@ -118,14 +247,70 @@ protected:
         return std::string(output.begin(), output.end());
     }
 
+    static std::vector<std::string> SplitClassNames(const char text[]) {
+        std::vector<std::string> classNames;
+        const char* cursor = text;
+        while (*cursor != '\0') {
+            while (*cursor != '\0' &&
+                   std::isspace(static_cast<unsigned char>(*cursor))) {
+                ++cursor;
+            }
+            if (*cursor == '\0') {
+                break;
+            }
+            const char* begin = cursor;
+            while (*cursor != '\0' &&
+                   !std::isspace(static_cast<unsigned char>(*cursor))) {
+                ++cursor;
+            }
+            classNames.emplace_back(begin, cursor - begin);
+        }
+        return classNames;
+    }
+
     bool onText(const char text[], int len) override {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        if (fResourceLimitExceeded) {
+            return true;
+        }
+        if (fProcessingStyle && fSVGResourceLimits &&
+            fSVGResourceLimits->fMaxStyleTextLen > 0) {
+            const size_t textLen = static_cast<size_t>(len > 0 ? len : 0);
+            const size_t maxLen = fSVGResourceLimits->fMaxStyleTextLen;
+            if (fStyleTextBytes > maxLen || textLen > maxLen - fStyleTextBytes) {
+                const size_t actual = textLen > SIZE_MAX - fStyleTextBytes
+                        ? SIZE_MAX : fStyleTextBytes + textLen;
+                fResourceLimitExceeded = true;
+                SK_LOGE("SVG resource limit exceeded: fMaxStyleTextLen "
+                        "actual=%{public}zu max=%{public}zu\n",
+                        actual, maxLen);
+                SK_SVG_RESOURCE_PROTECTION_REPORT();
+                return true;
+            }
+            fStyleTextBytes += textLen;
+        }
+#endif
         std::string style = RemoveEmptyChar(text, len);
         this->startCommon(style.c_str(), style.size(), SkDOM::kText_Type);
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        if (fResourceLimitExceeded) {
+            return true;
+        }
+#endif
         this->SkSVGDOMParser::onEndElement(style.c_str());
         if (fProcessingStyle && !style.empty() && style.front() == '.') {
             fStyleParser.parseCssStyle(style);
+#ifdef SKIA_OHOS_SVG_PROTECTION
+            if (fStyleParser.resourceLimitExceeded()) {
+                fResourceLimitExceeded = true;
+            }
+#endif
         }
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        return fResourceLimitExceeded;
+#else
         return false;
+#endif
     }
 
     // check is pure color svg
@@ -150,6 +335,10 @@ private:
     bool fProcessingStyle = false;
     CssStyleParser fStyleParser;
     uint64_t fSvgThemeColor = 0;
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    const SkSVGResourceLimits* fSVGResourceLimits = nullptr;
+    size_t fStyleTextBytes = 0;
+#endif
 };
 
 
@@ -165,6 +354,25 @@ const SkSVGXMLDOM::Node* SkSVGXMLDOM::build(SkStream& docStream) {
     fRoot = parser.getRoot();
     return fRoot;
 }
+
+#ifdef SKIA_OHOS_SVG_PROTECTION
+const SkSVGXMLDOM::Node* SkSVGXMLDOM::build(
+        SkStream& docStream, uint64_t svgThemeColor, const SkSVGResourceLimits& limits) {
+    fSvgThemeColor = svgThemeColor;
+    SkSVGDOMParser parser(&fAlloc);
+    parser.setSVGResourceLimits(&limits);
+    if (!parser.parse(docStream, svgThemeColor) || parser.resourceLimitExceeded()) {
+        if (parser.resourceLimitExceeded()) {
+            SK_LOGE("SVG XML construction failed due to resource limit\n");
+        }
+        fRoot = nullptr;
+        fAlloc.reset();
+        return nullptr;
+    }
+    fRoot = parser.getRoot();
+    return fRoot;
+}
+#endif
 
 const SkSVGXMLDOM::Node* SkSVGXMLDOM::build(SkStream& docStream, uint64_t svgThemeColor) {
     fSvgThemeColor = svgThemeColor;
