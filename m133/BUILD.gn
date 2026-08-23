@@ -89,8 +89,8 @@ config("skia_public") {
     "TODO_M133_SKIA",
     "SK_USE_LEGACY_BLUR_RASTER",
     "SK_OHOS_EXTENSION",
-    "SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT",
-    "SKIA_OHOS_SVG_PROTECTION"
+    "SKIA_OHOS_SVG_PROTECTION",
+    "SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT"
   ]
   if (defined(skia_ohos_debug) && skia_ohos_debug) {
     defines += [ "SKIA_OHOS_DEBUG" ]
