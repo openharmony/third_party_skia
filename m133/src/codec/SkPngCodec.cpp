@@ -11,7 +11,7 @@
 #include "include/codec/SkPngDecoder.h"
 #include "include/core/SkData.h"
 #include "include/core/SkImageInfo.h"
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SKIA_OHOS
 #include "include/core/SkLog.h"
 #endif
 #include "include/core/SkRect.h"
@@ -23,7 +23,7 @@
 #include "include/private/base/SkNoncopyable.h"
 #include "include/private/base/SkTemplates.h"
 #include "modules/skcms/skcms.h"
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
 #include "src/base/SkSafeMath.h"
 #endif
 #include "src/codec/SkCodecPriv.h"
@@ -487,7 +487,7 @@ private:
         fDst = SkTAddOffset<void>(fDst, fRowBytes);
     }
 
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     bool setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
 #else
     void setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
@@ -499,7 +499,7 @@ private:
         fRowBytes = rowBytes;
         fRowsWrittenToOutput = 0;
         fRowsNeeded = fLastRow - fFirstRow + 1;
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         return true;
 #endif
     }
@@ -621,7 +621,7 @@ private:
 
     Result decodeAllRows(void* dst, size_t rowBytes, int* rowsDecoded) override {
         const int height = this->dimensions().height();
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         if (!this->setUpInterlaceBuffer(height)) {
             return kOutOfMemory;
         }
@@ -654,13 +654,13 @@ private:
         return log_and_return_error(success);
     }
 
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     bool setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
 #else
     void setRange(int firstRow, int lastRow, void* dst, size_t rowBytes) override {
 #endif
         // FIXME: We could skip rows in the interlace buffer that we won't put in the output.
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         if (!this->setUpInterlaceBuffer(lastRow - firstRow + 1)) {
             return false;
         }
@@ -673,7 +673,7 @@ private:
         fDst = dst;
         fRowBytes = rowBytes;
         fLinesDecoded = 0;
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         return true;
 #endif
     }
@@ -719,24 +719,28 @@ private:
         return log_and_return_error(success);
     }
 
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     bool setUpInterlaceBuffer(int height) {
 #else
     void setUpInterlaceBuffer(int height) {
 #endif
         fPng_rowbytes = png_get_rowbytes(this->png_ptr(), this->info_ptr());
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         SkSafeMath safe;
         const size_t bufferBytes = safe.mul(fPng_rowbytes, static_cast<size_t>(height));
         const size_t memoryLimit = this->options().fMaxDecodeMemory;
         if (!safe) {
+#ifdef SKIA_OHOS
             SK_LOGE("PNG interlace buffer size overflow, row bytes: %{public}zu, height: %{public}d",
                     fPng_rowbytes, height);
+#endif
             return false;
         }
         if (memoryLimit != 0 && bufferBytes > memoryLimit) {
+#ifdef SKIA_OHOS
             SK_LOGE("PNG decode memory limit exceeded, required: %{public}zu, limit: %{public}zu",
                     bufferBytes, memoryLimit);
+#endif
             return false;
         }
         if (!fInterlaceBuffer.reset(bufferBytes)) {
@@ -746,7 +750,7 @@ private:
         fInterlaceBuffer.reset(fPng_rowbytes * height);
 #endif
         fInterlacedComplete = false;
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
         return true;
 #endif
     }
@@ -1078,7 +1082,7 @@ SkCodec::Result SkPngCodec::onStartIncrementalDecode(const SkImageInfo& dstInfo,
         firstRow = 0;
         lastRow = dstInfo.height() - 1;
     }
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     return this->setRange(firstRow, lastRow, dst, rowBytes) ? kSuccess : kOutOfMemory;
 #else
     this->setRange(firstRow, lastRow, dst, rowBytes);

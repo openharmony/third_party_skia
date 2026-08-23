@@ -13,7 +13,7 @@
 #include "include/core/SkColorType.h"
 #include "include/core/SkData.h"
 #include "include/core/SkImageInfo.h"
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SKIA_OHOA
 #include "include/core/SkLog.h"
 #endif
 #include "include/core/SkPixmap.h"
@@ -24,7 +24,7 @@
 #include "include/private/base/SkAlign.h"
 #include "include/private/base/SkTemplates.h"
 #include "modules/skcms/skcms.h"
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
 #include "src/base/SkSafeMath.h"
 #endif
 #include "src/codec/SkCodecPriv.h"
@@ -40,7 +40,7 @@
 #endif  // SK_CODEC_DECODES_JPEG_GAINMAPS
 
 #include <array>
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
 #include <climits>
 #endif
 #include <csetjmp>
@@ -498,7 +498,7 @@ static inline bool needs_swizzler_to_convert_from_cmyk(J_COLOR_SPACE jpegColorTy
     return !hasCMYKColorSpace || !hasColorSpaceXform;
 }
 
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
 static bool setAndCheckLibJpegMemoryLimit(jpeg_decompress_struct* dinfo,
                                          const SkISize& dimensions,
                                          size_t memoryLimit) {
@@ -530,9 +530,10 @@ static bool setAndCheckLibJpegMemoryLimit(jpeg_decompress_struct* dinfo,
     if (estimatedLibJpegMemory <= memoryLimit) {
         return true;
     }
-
+#ifdef SKIA_OHOS
     SK_LOGE("JPEG decode memory limit exceeded, estimated: %{public}zu, limit: %{public}zu",
             estimatedLibJpegMemory, memoryLimit);
+#endif
     return false;
 }
 #endif
@@ -559,7 +560,7 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     }
 
     const bool isProgressive = dinfo->progressive_mode;
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     if (!setAndCheckLibJpegMemoryLimit(dinfo, this->dimensions(), options.fMaxDecodeMemory)) {
         return kOutOfMemory;
     }
@@ -726,7 +727,7 @@ SkSampler* SkJpegCodec::getSampler(bool createIfNecessary) {
 SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         const Options& options) {
     jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
-#if SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
     if (!setAndCheckLibJpegMemoryLimit(dinfo, this->dimensions(), options.fMaxDecodeMemory)) {
         return kOutOfMemory;
     }
