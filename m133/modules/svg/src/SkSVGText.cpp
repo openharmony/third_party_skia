@@ -428,6 +428,11 @@ SkSVGTextContext::PathData::PathData(const SkSVGRenderContext& ctx, const SkSVGT
         return;
     }
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (ctx.resourceLimitExceeded()) {
+        return;
+    }
+#endif
     SkContourMeasureIter cmi(ref->asPath(ctx), false);
     while (sk_sp<SkContourMeasure> contour = cmi.next()) {
         fLength += contour->length();
@@ -552,6 +557,15 @@ void SkSVGTextFragment::renderText(const SkSVGRenderContext& ctx, SkSVGTextConte
                                    SkSVGXmlSpace xs) const {
     // N.B.: unlike regular elements, text fragments do not establish a new OBB scope -- they
     // always defer to the root <text> element for OBB resolution.
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (ctx.resourceLimitExceeded()) {
+        return;
+    }
+    SkSVGRenderContext::RecursionScope recursionScope(ctx);
+    if (!recursionScope) {
+        return;
+    }
+#endif
     SkSVGRenderContext localContext(ctx);
 
     if (this->onPrepareToRender(&localContext)) {
@@ -591,6 +605,11 @@ void SkSVGTextContainer::onShapeText(const SkSVGRenderContext& ctx, SkSVGTextCon
     const SkSVGTextContext::ScopedPosResolver resolver(*this, ctx.lengthContext(), tctx);
 
     for (const auto& frag : fChildren) {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        if (ctx.resourceLimitExceeded()) {
+            return;
+        }
+#endif
         // Containers always override xml:space with the local value.
         frag->renderText(ctx, tctx, this->getXmlSpace());
     }
