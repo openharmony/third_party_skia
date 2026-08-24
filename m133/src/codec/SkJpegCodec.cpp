@@ -13,7 +13,7 @@
 #include "include/core/SkColorType.h"
 #include "include/core/SkData.h"
 #include "include/core/SkImageInfo.h"
-#ifdef SKIA_OHOA
+#ifdef SKIA_OHOS
 #include "include/core/SkLog.h"
 #endif
 #include "include/core/SkPixmap.h"
