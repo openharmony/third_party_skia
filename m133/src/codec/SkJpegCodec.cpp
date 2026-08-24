@@ -13,6 +13,9 @@
 #include "include/core/SkColorType.h"
 #include "include/core/SkData.h"
 #include "include/core/SkImageInfo.h"
+#ifdef SKIA_OHOS
+#include "include/core/SkLog.h"
+#endif
 #include "include/core/SkPixmap.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkStream.h"
@@ -21,6 +24,9 @@
 #include "include/private/base/SkAlign.h"
 #include "include/private/base/SkTemplates.h"
 #include "modules/skcms/skcms.h"
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#include "src/base/SkSafeMath.h"
+#endif
 #include "src/codec/SkCodecPriv.h"
 #include "src/codec/SkJpegConstants.h"
 #include "src/codec/SkJpegDecoderMgr.h"
@@ -34,6 +40,9 @@
 #endif  // SK_CODEC_DECODES_JPEG_GAINMAPS
 
 #include <array>
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+#include <climits>
+#endif
 #include <csetjmp>
 #include <cstring>
 #include <utility>
@@ -489,6 +498,46 @@ static inline bool needs_swizzler_to_convert_from_cmyk(J_COLOR_SPACE jpegColorTy
     return !hasCMYKColorSpace || !hasColorSpaceXform;
 }
 
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+static bool setAndCheckLibJpegMemoryLimit(jpeg_decompress_struct* dinfo,
+                                         const SkISize& dimensions,
+                                         size_t memoryLimit) {
+    // libjpeg stores this limit in a long and treats 0 as unlimited. If the size_t budget cannot
+    // be represented by long, leave libjpeg unlimited and enforce the full budget in Skia below.
+    dinfo->mem->max_memory_to_use = memoryLimit > static_cast<size_t>(LONG_MAX)
+            ? 0
+            : static_cast<long>(memoryLimit);
+    if (memoryLimit == 0) {
+        return true;
+    }
+
+    size_t estimatedLibJpegMemory;
+    if (dinfo->progressive_mode) {
+        // Progressive JPEG coefficient buffers require one JCOEF per component per pixel in the
+        // worst-case 1x1 sampling configuration.
+        const size_t bytesPerPixel = SkSafeMath::Mul(
+                static_cast<size_t>(dinfo->num_components), sizeof(JCOEF));
+        estimatedLibJpegMemory =
+                SkSafeMath::Mul(bytesPerPixel,
+                                SkSafeMath::Mul(static_cast<size_t>(dimensions.width()),
+                                                static_cast<size_t>(dimensions.height())));
+    } else {
+        // "The worst case for commonly used sampling factors is about 34 bytes * width in pixels
+        // for a color image."
+        estimatedLibJpegMemory =
+                SkSafeMath::Mul(34u, static_cast<size_t>(dimensions.width()));
+    }
+    if (estimatedLibJpegMemory <= memoryLimit) {
+        return true;
+    }
+#ifdef SKIA_OHOS
+    SK_LOGE("JPEG decode memory limit exceeded, estimated: %{public}zu, limit: %{public}zu",
+            estimatedLibJpegMemory, memoryLimit);
+#endif
+    return false;
+}
+#endif
+
 /*
  * Performs the jpeg decode
  */
@@ -511,6 +560,12 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     }
 
     const bool isProgressive = dinfo->progressive_mode;
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+    if (!setAndCheckLibJpegMemoryLimit(dinfo, this->dimensions(), options.fMaxDecodeMemory)) {
+        return kOutOfMemory;
+    }
+#endif
+
     if (isProgressive) {
        dinfo->buffered_image = TRUE;
        jpeg_start_decompress(dinfo);
@@ -671,6 +726,13 @@ SkSampler* SkJpegCodec::getSampler(bool createIfNecessary) {
 
 SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         const Options& options) {
+    jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
+#ifdef SK_ENABLE_IMAGE_DECODE_MEMORY_LIMIT
+    if (!setAndCheckLibJpegMemoryLimit(dinfo, this->dimensions(), options.fMaxDecodeMemory)) {
+        return kOutOfMemory;
+    }
+#endif
+
     // Set the jump location for libjpeg errors
     skjpeg_error_mgr::AutoPushJmpBuf jmp(fDecoderMgr->errorMgr());
     if (setjmp(jmp)) {
@@ -678,7 +740,7 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         return kInvalidInput;
     }
 
-    if (!jpeg_start_decompress(fDecoderMgr->dinfo())) {
+    if (!jpeg_start_decompress(dinfo)) {
         SkCodecPrintf("start decompress failed\n");
         return kInvalidInput;
     }
