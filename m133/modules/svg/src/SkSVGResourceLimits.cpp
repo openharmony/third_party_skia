@@ -46,7 +46,7 @@ SkSVGResourceLimits SkSVGResourceLimits::MakePreset(Preset preset) {
             limits.fMaxTextUtf8Bytes = 1024 * 1024;
             limits.fMaxCssStyleEntries = 10'000;
             limits.fMaxCssDeclarationsPerRule = 1'000;
-            limits.fMaxClassFanOut = 100;
+            limits.fMaxClassFanOut = 1'000'000;
             limits.fMaxListAttributeCount = 100'000;
             limits.fMaxPointsCount = 100'000;
             limits.fMaxPathSegmentCount = 100'000;
