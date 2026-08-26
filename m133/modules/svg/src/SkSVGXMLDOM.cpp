@@ -17,8 +17,6 @@
 #endif
 #include "modules/svg/include/SkSVGXMLDOM.h"
 
-#include <cctype>
-
 #ifdef SKIA_OHOS_SVG_PROTECTION
 #include "include/private/base/SkDebug.h"
 #endif
@@ -147,14 +145,13 @@ protected:
 
         // add attributes in style classes.
         if (!strcmp(pendingAttr.fName, "class")) {
-            const auto classNames = SplitClassNames(pendingAttr.fValue);
-            size_t classFanOut = 0;
-            for (const auto& className : classNames) {
-                const auto& styleClassMap = fStyleParser.getArributesMap(className);
-                if (fSVGResourceLimits && fSVGResourceLimits->fMaxClassFanOut > 0 &&
-                    (styleClassMap.size() > fSVGResourceLimits->fMaxClassFanOut - classFanOut)) {
-                    const size_t actual = classFanOut > SIZE_MAX - styleClassMap.size()
-                            ? SIZE_MAX : classFanOut + styleClassMap.size();
+            const auto& styleClassMap = fStyleParser.getArributesMap(pendingAttr.fValue);
+            if (fSVGResourceLimits && fSVGResourceLimits->fMaxClassFanOut > 0) {
+                const size_t maxClassFanOut = fSVGResourceLimits->fMaxClassFanOut;
+                if (fClassFanOut > maxClassFanOut ||
+                    styleClassMap.size() > maxClassFanOut - fClassFanOut) {
+                    const size_t actual = styleClassMap.size() > SIZE_MAX - fClassFanOut
+                            ? SIZE_MAX : fClassFanOut + styleClassMap.size();
                     fResourceLimitExceeded = true;
                     SK_LOGE("SVG resource limit exceeded: fMaxClassFanOut "
                             "actual=%{public}zu max=%{public}zu\n",
@@ -162,27 +159,23 @@ protected:
                     SK_SVG_RESOURCE_PROTECTION_REPORT();
                     return true;
                 }
-                classFanOut += styleClassMap.size();
+                fClassFanOut += styleClassMap.size();
             }
-            for (const auto& className : classNames) {
-                const auto& styleClassMap = fStyleParser.getArributesMap(className);
-                for (auto& arr: styleClassMap) {
-                    char* classAttrName =
-                            dupstrLimited(arr.first.c_str(), arr.first.size());
-                    if (!classAttrName) {
-                        return true;
-                    }
-                    SkDOM::Attr pendingClassAttr = { classAttrName, nullptr };
-                    if (setSVGColor(&pendingClassAttr, classAttrName,
-                                    arr.second.c_str(), svgThemeColor)) {
-                        pendingClassAttr.fValue =
-                                dupstrLimited(arr.second.c_str(), arr.second.size());
-                    }
-                    if (!pendingClassAttr.fValue) {
-                        return true;
-                    }
-                    *fAttrs.append() = pendingClassAttr;
+            for (auto& arr : styleClassMap) {
+                char* classAttrName = dupstrLimited(arr.first.c_str(), arr.first.size());
+                if (!classAttrName) {
+                    return true;
                 }
+                SkDOM::Attr pendingClassAttr = { classAttrName, nullptr };
+                if (setSVGColor(&pendingClassAttr, classAttrName,
+                                arr.second.c_str(), svgThemeColor)) {
+                    pendingClassAttr.fValue =
+                            dupstrLimited(arr.second.c_str(), arr.second.size());
+                }
+                if (!pendingClassAttr.fValue) {
+                    return true;
+                }
+                *fAttrs.append() = pendingClassAttr;
             }
         }
         return false;
@@ -197,19 +190,15 @@ protected:
         attr->fValue = dupstr(fAlloc, value, strlen(value));
         // add attributes in style classes.
         if (!strcmp(attr->fName, "class")) {
-            const auto classNames = SplitClassNames(attr->fValue);
-            for (const auto& className : classNames) {
-                const auto& styleClassMap = fStyleParser.getArributesMap(className);
+            auto styleClassMap = fStyleParser.getArributesMap(attr->fValue);
+            if (!styleClassMap.empty()) {
                 for (auto& arr: styleClassMap) {
-                    SkDOM::Attr* classAttr = fAttrs.append();
-                    classAttr->fName =
-                            dupstr(fAlloc, arr.first.c_str(), strlen(arr.first.c_str()));
-                    if (!setSVGColor(classAttr, classAttr->fName,
-                                     arr.second.c_str(), svgThemeColor)) {
+                    SkDOM::Attr* attr = fAttrs.append();
+                    attr->fName = dupstr(fAlloc, arr.first.c_str(), strlen(arr.first.c_str()));
+                    if (!setSVGColor(attr, attr->fName, arr.second.c_str(), svgThemeColor)) {
                         continue;
                     }
-                    classAttr->fValue =
-                            dupstr(fAlloc, arr.second.c_str(), strlen(arr.second.c_str()));
+                    attr->fValue = dupstr(fAlloc, arr.second.c_str(), strlen(arr.second.c_str()));
                 }
             }
         }
@@ -245,27 +234,6 @@ protected:
             }
         }
         return std::string(output.begin(), output.end());
-    }
-
-    static std::vector<std::string> SplitClassNames(const char text[]) {
-        std::vector<std::string> classNames;
-        const char* cursor = text;
-        while (*cursor != '\0') {
-            while (*cursor != '\0' &&
-                   std::isspace(static_cast<unsigned char>(*cursor))) {
-                ++cursor;
-            }
-            if (*cursor == '\0') {
-                break;
-            }
-            const char* begin = cursor;
-            while (*cursor != '\0' &&
-                   !std::isspace(static_cast<unsigned char>(*cursor))) {
-                ++cursor;
-            }
-            classNames.emplace_back(begin, cursor - begin);
-        }
-        return classNames;
     }
 
     bool onText(const char text[], int len) override {
@@ -338,6 +306,8 @@ private:
 #ifdef SKIA_OHOS_SVG_PROTECTION
     const SkSVGResourceLimits* fSVGResourceLimits = nullptr;
     size_t fStyleTextBytes = 0;
+    // Total number of style attributes expanded from all class attributes in this DOM.
+    size_t fClassFanOut = 0;
 #endif
 };
 
