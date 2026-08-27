@@ -47,7 +47,7 @@ struct SK_API SkSVGResourceLimits {
     size_t fMaxCssDeclarationsPerRule;
     size_t fMaxClassFanOut;
 
-    size_t fMaxListAttributeCount;
+    size_t fMaxListAttributeBytes;
     size_t fMaxPointsCount;
     size_t fMaxPathSegmentCount;
 

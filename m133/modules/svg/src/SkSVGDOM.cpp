@@ -104,7 +104,7 @@ bool validate_resource_limits(const SkSVGResourceLimits& limits) {
     CHECK_LIMIT(fMaxCssStyleEntries)
     CHECK_LIMIT(fMaxCssDeclarationsPerRule)
     CHECK_LIMIT(fMaxClassFanOut)
-    CHECK_LIMIT(fMaxListAttributeCount)
+    CHECK_LIMIT(fMaxListAttributeBytes)
     CHECK_LIMIT(fMaxPointsCount)
     CHECK_LIMIT(fMaxPathSegmentCount)
     CHECK_LIMIT(fMaxLayerEffectPixels)
@@ -430,41 +430,11 @@ bool is_list_attribute(const char* name) {
     return false;
 }
 
-size_t count_list_values(const char* value, size_t stopAfter) {
-    size_t count = 0;
-    const char* cursor = value;
-    for (;;) {
-        while (*cursor == ' ' || *cursor == '\t' || *cursor == '\r' ||
-               *cursor == '\n' || *cursor == ',') {
-            ++cursor;
-        }
-        if (*cursor == '\0') {
-            return count;
-        }
-        SkScalar scalar;
-        const char* next = SkParse::FindScalar(cursor, &scalar);
-        if (!next || next == cursor) {
-            return count;
-        }
-        ++count;
-        if (count >= stopAfter) {
-            return count;
-        }
-        cursor = next;
-        while ((*cursor >= 'a' && *cursor <= 'z') ||
-               (*cursor >= 'A' && *cursor <= 'Z') || *cursor == '%') {
-            ++cursor;
-        }
-    }
-}
-
 bool validate_list_attributes(const SkDOM& xmlDom, const SkDOM::Node* xmlNode,
                               const SkSVGResourceLimits& limits) {
-    if (limits.fMaxListAttributeCount == 0) {
+    if (limits.fMaxListAttributeBytes == 0) {
         return true;
     }
-    const size_t stopAfter = limits.fMaxListAttributeCount == SIZE_MAX
-            ? SIZE_MAX : limits.fMaxListAttributeCount + 1;
     const char* name;
     const char* value;
     SkDOM::AttrIter attrIter(xmlDom, xmlNode);
@@ -472,11 +442,11 @@ bool validate_list_attributes(const SkDOM& xmlDom, const SkDOM::Node* xmlNode,
         if (!is_list_attribute(name)) {
             continue;
         }
-        const size_t count = count_list_values(value, stopAfter);
-        if (count > limits.fMaxListAttributeCount) {
-            SK_LOGE("SVG resource limit exceeded: fMaxListAttributeCount "
+        const size_t valueBytes = strlen(value);
+        if (valueBytes > limits.fMaxListAttributeBytes) {
+            SK_LOGE("SVG resource limit exceeded: fMaxListAttributeBytes "
                     "actual=%{public}zu max=%{public}zu\n",
-                    count, limits.fMaxListAttributeCount);
+                    valueBytes, limits.fMaxListAttributeBytes);
             SK_SVG_RESOURCE_PROTECTION_REPORT();
             return false;
         }
