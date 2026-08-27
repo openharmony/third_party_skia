@@ -26,7 +26,7 @@ SkSVGResourceLimits::SkSVGResourceLimits()
         , fMaxCssStyleEntries(0)
         , fMaxCssDeclarationsPerRule(0)
         , fMaxClassFanOut(0)
-        , fMaxListAttributeCount(0)
+        , fMaxListAttributeBytes(0)
         , fMaxPointsCount(0)
         , fMaxPathSegmentCount(0)
         , fMaxLayerEffectPixels(0)
@@ -47,7 +47,7 @@ SkSVGResourceLimits SkSVGResourceLimits::MakePreset(Preset preset) {
             limits.fMaxCssStyleEntries = 10'000;
             limits.fMaxCssDeclarationsPerRule = 1'000;
             limits.fMaxClassFanOut = 1'000'000;
-            limits.fMaxListAttributeCount = 100'000;
+            limits.fMaxListAttributeBytes = 1'000'000;
             limits.fMaxPointsCount = 100'000;
             limits.fMaxPathSegmentCount = 100'000;
             limits.fMaxLayerEffectPixels = 500'000'000;
