@@ -18,9 +18,7 @@
 
 #include <csignal>
 
-#define SK_SVG_RESOURCE_PROTECTION_REPORT() \
-    do {                                    \
-        raise(42); /* 42 is signal no. */   \
-    } while (false)
+// This is currently a no-op by intention
+#define SK_SVG_RESOURCE_PROTECTION_REPORT()
 
 #endif  // SkSVGResourceProtection_DEFINED
