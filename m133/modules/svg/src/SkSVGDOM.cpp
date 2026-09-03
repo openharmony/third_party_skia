@@ -9,9 +9,19 @@
 
 #include "include/core/SkData.h"
 #include "include/core/SkFontMgr.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "include/core/SkLog.h"
+#endif
 #include "include/core/SkString.h"
 #include "include/private/base/SkAssert.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "include/private/base/SkDebug.h"
+#endif
 #include "include/private/base/SkTo.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "include/utils/SkParse.h"
+#include "include/utils/SkParsePath.h"
+#endif
 #include "modules/skshaper/include/SkShaper_factory.h"
 #include "modules/skshaper/utils/FactoryHelpers.h"
 #include "modules/svg/include/SkSVGAttribute.h"
@@ -47,6 +57,9 @@
 #include "modules/svg/include/SkSVGRadialGradient.h"
 #include "modules/svg/include/SkSVGRect.h"
 #include "modules/svg/include/SkSVGRenderContext.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "modules/svg/include/SkSVGResourceProtection.h"
+#endif
 #include "modules/svg/include/SkSVGSVG.h"
 #include "modules/svg/include/SkSVGStop.h"
 #include "modules/svg/include/SkSVGText.h"
@@ -54,6 +67,9 @@
 #include "modules/svg/include/SkSVGUse.h"
 #include "modules/svg/include/SkSVGValue.h"
 #include "modules/svg/include/SkSVGXMLDOM.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "modules/svg/src/SkSVGStackGuard.h"
+#endif
 #include "src/base/SkTSearch.h"
 #include "src/core/SkTraceEvent.h"
 #include "src/xml/SkDOM.h"
@@ -65,6 +81,38 @@
 #include <utility>
 
 namespace {
+
+#ifdef SKIA_OHOS_SVG_PROTECTION
+bool validate_resource_limits(const SkSVGResourceLimits& limits) {
+    if (limits.fMaxSVGRecursionDepth <= 0) {
+        SK_LOGE("SVG resource limit parameter unsafe: "
+                "fMaxSVGRecursionDepth=%{public}d\n",
+                limits.fMaxSVGRecursionDepth);
+        SK_SVG_RESOURCE_PROTECTION_REPORT();
+        return false;
+    }
+#define CHECK_LIMIT(field) \
+    if (limits.field == 0) { \
+        SK_LOGE("SVG resource limit parameter unsafe: " #field "=0\n"); \
+        SK_SVG_RESOURCE_PROTECTION_REPORT(); \
+        return false; \
+    }
+    CHECK_LIMIT(fMaxDOMNodeCount)
+    CHECK_LIMIT(fMaxArenaAllocBytes)
+    CHECK_LIMIT(fMaxStyleTextLen)
+    CHECK_LIMIT(fMaxTextUtf8Bytes)
+    CHECK_LIMIT(fMaxCssStyleEntries)
+    CHECK_LIMIT(fMaxCssDeclarationsPerRule)
+    CHECK_LIMIT(fMaxClassFanOut)
+    CHECK_LIMIT(fMaxListAttributeBytes)
+    CHECK_LIMIT(fMaxPointsCount)
+    CHECK_LIMIT(fMaxPathSegmentCount)
+    CHECK_LIMIT(fMaxLayerEffectPixels)
+    CHECK_LIMIT(fMaxFilterFanIn)
+#undef CHECK_LIMIT
+    return true;
+}
+#endif
 
 bool SetIRIAttribute(const sk_sp<SkSVGNode>& node, SkSVGAttribute attr,
                       const char* stringValue) {
@@ -297,12 +345,32 @@ SortedDictionaryEntry<sk_sp<SkSVGNode>(*)()> gTagFactories[] = {
 };
 
 struct ConstructionContext {
-    ConstructionContext(SkSVGIDMapper* mapper) : fParent(nullptr), fIDMapper(mapper) {}
+    ConstructionContext(SkSVGIDMapper* mapper
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                        , const SkSVGResourceLimits& limits, bool* failed
+#endif
+                        )
+            : fParent(nullptr), fIDMapper(mapper)
+#ifdef SKIA_OHOS_SVG_PROTECTION
+            , fLimits(limits), fFailed(failed), fDepth(0), fTextBytes(nullptr)
+#endif
+            {}
     ConstructionContext(const ConstructionContext& other, const sk_sp<SkSVGNode>& newParent)
-        : fParent(newParent.get()), fIDMapper(other.fIDMapper) {}
+        : fParent(newParent.get()), fIDMapper(other.fIDMapper)
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        , fLimits(other.fLimits), fFailed(other.fFailed), fDepth(other.fDepth + 1)
+        , fTextBytes(other.fTextBytes)
+#endif
+        {}
 
     SkSVGNode*     fParent;
     SkSVGIDMapper* fIDMapper;
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    const SkSVGResourceLimits& fLimits;
+    bool*                     fFailed;
+    int                       fDepth;
+    size_t*                   fTextBytes;
+#endif
 };
 
 bool set_string_attribute(const sk_sp<SkSVGNode>& node, const char* name, const char* value) {
@@ -347,14 +415,206 @@ void parse_node_attributes(const SkDOM& xmlDom, const SkDOM::Node* xmlNode,
     }
 }
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+bool is_list_attribute(const char* name) {
+    static constexpr const char* kListAttributes[] = {
+        "x", "y", "dx", "dy", "rotate", "values", "tableValues",
+        "stroke-dasharray", "stdDeviation", "radius", "baseFrequency",
+        "kernelMatrix", "kernelUnitLength", "keyTimes", "keySplines",
+    };
+    for (const char* listAttribute : kListAttributes) {
+        if (!strcmp(name, listAttribute)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool validate_list_attributes(const SkDOM& xmlDom, const SkDOM::Node* xmlNode,
+                              const SkSVGResourceLimits& limits) {
+    if (limits.fMaxListAttributeBytes == 0) {
+        return true;
+    }
+    const char* name;
+    const char* value;
+    SkDOM::AttrIter attrIter(xmlDom, xmlNode);
+    while ((name = attrIter.next(&value))) {
+        if (!is_list_attribute(name)) {
+            continue;
+        }
+        const size_t valueBytes = strlen(value);
+        if (valueBytes > limits.fMaxListAttributeBytes) {
+            SK_LOGE("SVG resource limit exceeded: fMaxListAttributeBytes "
+                    "actual=%{public}zu max=%{public}zu\n",
+                    valueBytes, limits.fMaxListAttributeBytes);
+            SK_SVG_RESOURCE_PROTECTION_REPORT();
+            return false;
+        }
+    }
+    return true;
+}
+
+size_t count_point_pairs(const char* value, size_t stopAfter) {
+    size_t scalarCount = 0;
+    const char* cursor = value;
+    for (;;) {
+        while (*cursor == ' ' || *cursor == '\t' || *cursor == '\r' ||
+               *cursor == '\n' || *cursor == ',') {
+            ++cursor;
+        }
+        if (*cursor == '\0') {
+            return (scalarCount + 1) / 2;
+        }
+        SkScalar scalar;
+        const char* next = SkParse::FindScalar(cursor, &scalar);
+        if (!next || next == cursor) {
+            return (scalarCount + 1) / 2;
+        }
+        ++scalarCount;
+        const size_t pointCount = (scalarCount + 1) / 2;
+        if (pointCount >= stopAfter) {
+            return pointCount;
+        }
+        cursor = next;
+    }
+}
+
+bool validate_points_attribute(const SkDOM& xmlDom, const SkDOM::Node* xmlNode,
+                               const char* elem, const SkSVGResourceLimits& limits) {
+    if (limits.fMaxPointsCount == 0 ||
+        (strcmp(elem, "polyline") && strcmp(elem, "polygon"))) {
+        return true;
+    }
+    const size_t stopAfter = limits.fMaxPointsCount == SIZE_MAX
+            ? SIZE_MAX : limits.fMaxPointsCount + 1;
+    const char* name;
+    const char* value;
+    SkDOM::AttrIter attrIter(xmlDom, xmlNode);
+    while ((name = attrIter.next(&value))) {
+        if (strcmp(name, "points")) {
+            continue;
+        }
+        const size_t count = count_point_pairs(value, stopAfter);
+        if (count > limits.fMaxPointsCount) {
+            SK_LOGE("SVG resource limit exceeded: fMaxPointsCount "
+                    "actual=%{public}zu max=%{public}zu\n",
+                    count, limits.fMaxPointsCount);
+            SK_SVG_RESOURCE_PROTECTION_REPORT();
+            return false;
+        }
+    }
+    return true;
+}
+
+bool validate_path_segments(const SkDOM& xmlDom, const SkDOM::Node* xmlNode,
+                            const char* elem, const SkSVGResourceLimits& limits) {
+    if (limits.fMaxPathSegmentCount == 0 || strcmp(elem, "path")) {
+        return true;
+    }
+    const char* name;
+    const char* value;
+    SkDOM::AttrIter attrIter(xmlDom, xmlNode);
+    while ((name = attrIter.next(&value))) {
+        if (strcmp(name, "d")) {
+            continue;
+        }
+        SkPath path;
+        if (!SkParsePath::FromSVGString(value, &path)) {
+            return true;
+        }
+        size_t segmentCount = 0;
+        SkPath::Iter iter(path, false);
+        SkPoint points[4];
+        SkPath::Verb verb;
+        while ((verb = iter.next(points)) != SkPath::kDone_Verb) {
+            if (verb != SkPath::kMove_Verb) {
+                ++segmentCount;
+                if (segmentCount > limits.fMaxPathSegmentCount) {
+                    SK_LOGE("SVG resource limit exceeded: fMaxPathSegmentCount "
+                            "actual=%{public}zu max=%{public}zu\n",
+                            segmentCount, limits.fMaxPathSegmentCount);
+                    SK_SVG_RESOURCE_PROTECTION_REPORT();
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+bool validate_filter_fan_in(const SkDOM& dom, const SkDOM::Node* xmlNode,
+                            const char* elem, const SkSVGResourceLimits& limits) {
+    if (limits.fMaxFilterFanIn == 0 || strcmp(elem, "feMerge")) {
+        return true;
+    }
+    size_t inputCount = 0;
+    for (auto* child = dom.getFirstChild(xmlNode, nullptr); child;
+         child = dom.getNextSibling(child)) {
+        if (dom.getType(child) == SkDOM::kElement_Type &&
+            !strcmp(dom.getName(child), "feMergeNode")) {
+            ++inputCount;
+            if (inputCount > limits.fMaxFilterFanIn) {
+                SK_LOGE("SVG resource limit exceeded: fMaxFilterFanIn "
+                        "actual=%{public}zu max=%{public}zu\n",
+                        inputCount, limits.fMaxFilterFanIn);
+                SK_SVG_RESOURCE_PROTECTION_REPORT();
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+#endif
+
 sk_sp<SkSVGNode> construct_svg_node(const SkDOM& dom, const ConstructionContext& ctx,
                                     const SkDOM::Node* xmlNode) {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    const int recursionDepthLimit = ctx.fLimits.fMaxSVGRecursionDepth;
+    size_t remainingStackBytes = 0;
+    const bool depthLimitExceeded =
+            recursionDepthLimit > 0 && ctx.fDepth > recursionDepthLimit;
+    const bool stackSpaceInsufficient =
+            recursionDepthLimit <= 0 &&
+            !sksvg::HasSufficientStackForRecursion(&remainingStackBytes);
+    if (depthLimitExceeded || stackSpaceInsufficient) {
+        *ctx.fFailed = true;
+        if (depthLimitExceeded) {
+            SK_LOGE("SVG resource limit exceeded: fMaxSVGRecursionDepth "
+                    "actual=%{public}d max=%{public}d\n",
+                    ctx.fDepth, recursionDepthLimit);
+        } else {
+            SK_LOGE("SVG recursion stopped: remaining stack space "
+                    "actual=%{public}zu min=%{public}zu\n",
+                    remainingStackBytes, sksvg::kMinRecursionStackBytes);
+        }
+        SK_SVG_RESOURCE_PROTECTION_REPORT();
+        return nullptr;
+    }
+#endif
     const char* elem = dom.getName(xmlNode);
     const SkDOM::Type elemType = dom.getType(xmlNode);
 
     if (elemType == SkDOM::kText_Type) {
         // Text literals require special handling.
         SkASSERT(dom.countChildren(xmlNode) == 0);
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        if (ctx.fTextBytes && ctx.fLimits.fMaxTextUtf8Bytes > 0) {
+            const size_t textBytes = strlen(dom.getName(xmlNode));
+            const size_t maxBytes = ctx.fLimits.fMaxTextUtf8Bytes;
+            if (*ctx.fTextBytes > maxBytes || textBytes > maxBytes - *ctx.fTextBytes) {
+                const size_t actual = textBytes > SIZE_MAX - *ctx.fTextBytes
+                        ? SIZE_MAX : *ctx.fTextBytes + textBytes;
+                *ctx.fFailed = true;
+                SK_LOGE("SVG resource limit exceeded: fMaxTextUtf8Bytes "
+                        "actual=%{public}zu max=%{public}zu\n",
+                        actual, maxBytes);
+                SK_SVG_RESOURCE_PROTECTION_REPORT();
+                return nullptr;
+            }
+            *ctx.fTextBytes += textBytes;
+        }
+#endif
         auto txt = SkSVGTextLiteral::Make();
         txt->setText(SkString(dom.getName(xmlNode)));
         ctx.fParent->appendChild(std::move(txt));
@@ -390,9 +650,24 @@ sk_sp<SkSVGNode> construct_svg_node(const SkDOM& dom, const ConstructionContext&
         return nullptr;
     }
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (!validate_list_attributes(dom, xmlNode, ctx.fLimits) ||
+        !validate_points_attribute(dom, xmlNode, elem, ctx.fLimits) ||
+        !validate_path_segments(dom, xmlNode, elem, ctx.fLimits) ||
+        !validate_filter_fan_in(dom, xmlNode, elem, ctx.fLimits)) {
+        *ctx.fFailed = true;
+        return nullptr;
+    }
+#endif
     parse_node_attributes(dom, xmlNode, node, ctx.fIDMapper);
 
     ConstructionContext localCtx(ctx, node);
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    size_t textBytes = 0;
+    if (!strcmp(elem, "text")) {
+        localCtx.fTextBytes = &textBytes;
+    }
+#endif
     for (auto* child = dom.getFirstChild(xmlNode, nullptr); child;
          child = dom.getNextSibling(child)) {
         sk_sp<SkSVGNode> childNode = construct_svg_node(dom, localCtx, child);
@@ -429,9 +704,22 @@ sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str) const {
     }
 
     SkSVGIDMapper mapper;
-    ConstructionContext ctx(&mapper);
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    const SkSVGResourceLimits limits;
+    bool failed = false;
+#endif
+    ConstructionContext ctx(&mapper
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                            , limits, &failed
+#endif
+                            );
 
     auto root = construct_svg_node(xmlDom, ctx, xmlDom.getRootNode());
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (failed) {
+        return nullptr;
+    }
+#endif
     if (!root || root->tag() != SkSVGTag::kSvg) {
         return nullptr;
     }
@@ -449,7 +737,11 @@ sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str) const {
                                         std::move(fFontMgr),
                                         std::move(resource_provider),
                                         std::move(mapper),
-                                        std::move(factory)));
+                                        std::move(factory)
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                                        , SkSVGResourceLimits()
+#endif
+                                        ));
 }
 
 
@@ -461,9 +753,20 @@ sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str, uint64_t svgColor) const 
     }
 
     SkSVGIDMapper mapper;
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    const SkSVGResourceLimits limits;
+    bool failed = false;
+    ConstructionContext ctx(&mapper, limits, &failed);
+#else
     ConstructionContext ctx(&mapper);
+#endif
 
     auto root = construct_svg_node(xmlDom, ctx, xmlDom.getRootNode());
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (failed) {
+        return nullptr;
+    }
+#endif
     if (!root || root->tag() != SkSVGTag::kSvg) {
         return nullptr;
     }
@@ -481,26 +784,97 @@ sk_sp<SkSVGDOM> SkSVGDOM::Builder::make(SkStream& str, uint64_t svgColor) const 
                                         std::move(fFontMgr), 
                                         std::move(resource_provider),
                                         std::move(mapper),
-                                        std::move(factory)));
+                                        std::move(factory)
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                                        , SkSVGResourceLimits()
+#endif
+                                        ));
 }
+
+#ifdef SKIA_OHOS_SVG_PROTECTION
+sk_sp<SkSVGDOM> SkSVGDOM::Builder::makeWithLimits(
+        SkStream& str, const SkSVGResourceLimits& limits) const {
+    return this->makeInternal(str, 0, limits);
+}
+
+sk_sp<SkSVGDOM> SkSVGDOM::Builder::makeWithLimits(
+        SkStream& str, uint64_t svgColor, const SkSVGResourceLimits& limits) const {
+    return this->makeInternal(str, svgColor, limits);
+}
+
+sk_sp<SkSVGDOM> SkSVGDOM::Builder::makeInternal(
+        SkStream& str, uint64_t svgColor, const SkSVGResourceLimits& limits) const {
+    TRACE_EVENT0("skia", TRACE_FUNC);
+    if (!validate_resource_limits(limits)) {
+        return nullptr;
+    }
+    SkSVGXMLDOM xmlDom;
+    if (!xmlDom.build(str, svgColor, limits)) {
+        return nullptr;
+    }
+
+    SkSVGIDMapper mapper;
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    bool failed = false;
+    ConstructionContext ctx(&mapper, limits, &failed);
+#else
+    ConstructionContext ctx(&mapper);
+#endif
+    auto root = construct_svg_node(xmlDom, ctx, xmlDom.getRootNode());
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (failed) {
+        return nullptr;
+    }
+#endif
+    if (!root || root->tag() != SkSVGTag::kSvg) {
+        return nullptr;
+    }
+
+    class NullResourceProvider final : public skresources::ResourceProvider {
+        sk_sp<SkData> load(const char[], const char[]) const override { return nullptr; }
+    };
+
+    auto resource_provider = fResourceProvider ? fResourceProvider
+                                               : sk_make_sp<NullResourceProvider>();
+    auto factory = fTextShapingFactory ? fTextShapingFactory : SkShapers::BestAvailable();
+
+    return sk_sp<SkSVGDOM>(new SkSVGDOM(
+            sk_sp<SkSVGSVG>(static_cast<SkSVGSVG*>(root.release())),
+            std::move(fFontMgr), std::move(resource_provider), std::move(mapper),
+            std::move(factory), limits));
+}
+#endif  // SKIA_OHOS_SVG_PROTECTION
 
 SkSVGDOM::SkSVGDOM(sk_sp<SkSVGSVG> root,
                    sk_sp<SkFontMgr> fmgr,
                    sk_sp<skresources::ResourceProvider> rp,
                    SkSVGIDMapper&& mapper,
-                   sk_sp<SkShapers::Factory> fact)
+                   sk_sp<SkShapers::Factory> fact
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                   , const SkSVGResourceLimits& limits
+#endif
+                   )
         : fRoot(std::move(root))
         , fFontMgr(std::move(fmgr))
         , fTextShapingFactory(std::move(fact))
         , fResourceProvider(std::move(rp))
         , fIDMapper(std::move(mapper))
         , fSVGResizePercentage(DEFAULT_RESIZE_PERCENTAGE)
-        , fContainerSize(fRoot->intrinsicSize(SkSVGLengthContext(SkSize::Make(0, 0)))) {
+        , fContainerSize(fRoot->intrinsicSize(SkSVGLengthContext(SkSize::Make(0, 0)))
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        )
+        , fResourceLimits(limits) {
+#else
+        ) {
+#endif
     SkASSERT(fResourceProvider);
     SkASSERT(fTextShapingFactory);
 }
 
 void SkSVGDOM::render(SkCanvas* canvas) const {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    (void)this->renderInternal(canvas);
+#else
     TRACE_EVENT0("skia", TRACE_FUNC);
     if (fRoot) {
         SkSVGLengthContext       lctx(fContainerSize, fSVGResizePercentage);
@@ -514,13 +888,43 @@ void SkSVGDOM::render(SkCanvas* canvas) const {
                                          {nullptr, nullptr},
                                          fTextShapingFactory));
     }
+#endif
 }
+
+#ifdef SKIA_OHOS_SVG_PROTECTION
+bool SkSVGDOM::renderWithLimits(SkCanvas* canvas) const {
+    return this->renderInternal(canvas);
+}
+
+bool SkSVGDOM::renderInternal(SkCanvas* canvas) const {
+    TRACE_EVENT0("skia", TRACE_FUNC);
+    if (!fRoot) {
+        return true;
+    }
+    SkSVGLengthContext lctx(fContainerSize, fSVGResizePercentage);
+    SkSVGPresentationContext pctx;
+    SkSVGRenderContext::ResourceState resourceState{&fResourceLimits};
+    fRoot->render(SkSVGRenderContext(canvas,
+                                     fFontMgr,
+                                     fResourceProvider,
+                                     fIDMapper,
+                                     lctx,
+                                     pctx,
+                                     {nullptr, nullptr},
+                                     fTextShapingFactory,
+                                     &resourceState));
+    return !resourceState.fFailed;
+}
+#endif
 
 void SkSVGDOM::renderNode(SkCanvas* canvas, SkSVGPresentationContext& pctx, const char* id) const {
     TRACE_EVENT0("skia", TRACE_FUNC);
 
     if (fRoot) {
         SkSVGLengthContext lctx(fContainerSize);
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        SkSVGRenderContext::ResourceState resourceState{&fResourceLimits};
+#endif
         fRoot->renderNode(SkSVGRenderContext(canvas,
                                              fFontMgr,
                                              fResourceProvider,
@@ -528,7 +932,11 @@ void SkSVGDOM::renderNode(SkCanvas* canvas, SkSVGPresentationContext& pctx, cons
                                              lctx,
                                              pctx,
                                              {nullptr, nullptr},
-                                             fTextShapingFactory),
+                                             fTextShapingFactory
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                                             , &resourceState
+#endif
+                                             ),
                           SkSVGIRI(SkSVGIRI::Type::kLocal, SkSVGStringType(id)));
     }
 }
