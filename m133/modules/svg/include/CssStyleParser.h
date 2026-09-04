@@ -11,6 +11,10 @@
 #include <unordered_map>
 #include <vector>
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+struct SkSVGResourceLimits;
+#endif
+
 using ClassStyleMap = std::unordered_map<std::string, std::unordered_map<std::string, std::string>>;
 
 class CssStyleParser {
@@ -19,7 +23,16 @@ public:
     const std::unordered_map<std::string, std::string>& getArributesMap(const std::string& key) const;
     static std::vector<std::string> splitString(const std::string& srcString, const std::string& splitString);
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    void setSVGResourceLimits(const SkSVGResourceLimits* limits) { fSVGResourceLimits = limits; }
+    bool resourceLimitExceeded() const { return fResourceLimitExceeded; }
+#endif
+
 private:
     ClassStyleMap fStyleMap;
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    const SkSVGResourceLimits* fSVGResourceLimits = nullptr;
+    bool fResourceLimitExceeded = false;
+#endif
 };
 #endif

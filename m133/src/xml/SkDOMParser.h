@@ -10,6 +10,10 @@
 #include "src/base/SkArenaAlloc.h"
 #include "src/xml/SkXMLParser.h"
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "modules/svg/include/SkSVGResourceLimits.h"
+#endif
+
 class SkDOMParser : public SkXMLParser {
 public:
     SkDOMParser(SkArenaAllocWithReset* chunk) : SkXMLParser(&fParserError), fAlloc(chunk) {
@@ -20,7 +24,16 @@ public:
     }
     SkDOM::Node* getRoot() const;
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    void setSVGResourceLimits(const SkSVGResourceLimits* limits) { fSVGResourceLimits = limits; }
+    bool resourceLimitExceeded() const { return fResourceLimitExceeded; }
+#endif
+
     static char* dupstr(SkArenaAlloc* chunk, const char src[], size_t srcLen);
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    char* dupstrLimited(const char src[], size_t srcLen);
+    bool consumeArenaBytes(size_t bytes);
+#endif
 
     SkXMLParserError fParserError;
 
@@ -42,5 +55,11 @@ protected:
     char*                   fElemName;
     SkDOM::Type             fElemType;
     int                     fLevel;
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    const SkSVGResourceLimits* fSVGResourceLimits = nullptr;
+    size_t                     fNodeCount = 0;
+    bool                       fResourceLimitExceeded = false;
+    size_t                     fArenaAllocBytes = 0;
+#endif
 };
 #endif

@@ -53,6 +53,12 @@ void SkSVGGradient::collectColorStops(const SkSVGRenderContext& ctx,
         const auto ref = ctx.findNodeById(fHref);
         if (ref && (ref->tag() == SkSVGTag::kLinearGradient ||
                     ref->tag() == SkSVGTag::kRadialGradient)) {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+            SkSVGRenderContext::RecursionScope recursionScope(ctx);
+            if (!recursionScope) {
+                return;
+            }
+#endif
             static_cast<const SkSVGGradient*>(ref.get())->collectColorStops(ctx, pos, colors);
         }
     }
