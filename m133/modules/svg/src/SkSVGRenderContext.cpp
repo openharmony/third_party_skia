@@ -11,6 +11,9 @@
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkImageFilter.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "include/core/SkLog.h"
+#endif
 #include "include/core/SkPaint.h"
 #include "include/core/SkPath.h"
 #include "include/core/SkPathEffect.h"
@@ -25,9 +28,16 @@
 #include "modules/svg/include/SkSVGFilter.h"
 #include "modules/svg/include/SkSVGMask.h"
 #include "modules/svg/include/SkSVGNode.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "modules/svg/include/SkSVGResourceProtection.h"
+#endif
 #include "modules/svg/include/SkSVGTypes.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "modules/svg/src/SkSVGStackGuard.h"
+#endif
 
 #include <cstring>
+#include <limits>
 #include <vector>
 
 using namespace skia_private;
@@ -196,7 +206,11 @@ SkSVGRenderContext::SkSVGRenderContext(SkCanvas* canvas,
                                        const SkSVGLengthContext& lctx,
                                        const SkSVGPresentationContext& pctx,
                                        const OBBScope& obbs,
-                                       const sk_sp<SkShapers::Factory>& fact)
+                                       const sk_sp<SkShapers::Factory>& fact
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                                       , ResourceState* resourceState
+#endif
+                                       )
         : fFontMgr(fmgr)
         , fTextShapingFactory(fact)
         , fResourceProvider(rp)
@@ -205,7 +219,11 @@ SkSVGRenderContext::SkSVGRenderContext(SkCanvas* canvas,
         , fPresentationContext(pctx)
         , fCanvas(canvas)
         , fCanvasSaveCount(canvas->getSaveCount())
-        , fOBBScope(obbs) {}
+        , fOBBScope(obbs)
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        , fResourceState(resourceState)
+#endif
+        {}
 
 SkSVGRenderContext::SkSVGRenderContext(const SkSVGRenderContext& other)
         : SkSVGRenderContext(other.fCanvas,
@@ -215,7 +233,11 @@ SkSVGRenderContext::SkSVGRenderContext(const SkSVGRenderContext& other)
                              *other.fLengthContext,
                              *other.fPresentationContext,
                              other.fOBBScope,
-                             other.fTextShapingFactory) {}
+                             other.fTextShapingFactory
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                             , other.fResourceState
+#endif
+                             ) {}
 
 SkSVGRenderContext::SkSVGRenderContext(const SkSVGRenderContext& other, SkCanvas* canvas)
         : SkSVGRenderContext(canvas,
@@ -225,7 +247,11 @@ SkSVGRenderContext::SkSVGRenderContext(const SkSVGRenderContext& other, SkCanvas
                              *other.fLengthContext,
                              *other.fPresentationContext,
                              other.fOBBScope,
-                             other.fTextShapingFactory) {}
+                             other.fTextShapingFactory
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                             , other.fResourceState
+#endif
+                             ) {}
 
 SkSVGRenderContext::SkSVGRenderContext(const SkSVGRenderContext& other, const SkSVGNode* node)
         : SkSVGRenderContext(other.fCanvas,
@@ -235,11 +261,71 @@ SkSVGRenderContext::SkSVGRenderContext(const SkSVGRenderContext& other, const Sk
                              *other.fLengthContext,
                              *other.fPresentationContext,
                              OBBScope{node, this},
-                             other.fTextShapingFactory) {}
+                             other.fTextShapingFactory
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                             , other.fResourceState
+#endif
+                             ) {}
 
 SkSVGRenderContext::~SkSVGRenderContext() {
     fCanvas->restoreToCount(fCanvasSaveCount);
 }
+
+#ifdef SKIA_OHOS_SVG_PROTECTION
+SkSVGRenderContext::RecursionScope::RecursionScope(const SkSVGRenderContext& ctx)
+        : RecursionScope(ctx, 1) {}
+
+SkSVGRenderContext::RecursionScope::RecursionScope(const SkSVGRenderContext& ctx,
+                                                   size_t initialDepth)
+        : fState(ctx.fResourceState) {
+    while (initialDepth-- > 0 && this->enter()) {}
+}
+
+bool SkSVGRenderContext::RecursionScope::enter() {
+    if (fState && fState->fFailed) {
+        fValid = false;
+        return false;
+    }
+
+    const int recursionDepthLimit = fState && fState->fLimits
+            ? fState->fLimits->fMaxSVGRecursionDepth : 0;
+    if (recursionDepthLimit <= 0) {
+        size_t remainingStackBytes = 0;
+        if (sksvg::HasSufficientStackForRecursion(&remainingStackBytes)) {
+            return true;
+        }
+        if (fState) {
+            fState->fFailed = true;
+        }
+        SK_LOGE("SVG recursion stopped: remaining stack space "
+                "actual=%{public}zu min=%{public}zu\n",
+                remainingStackBytes, sksvg::kMinRecursionStackBytes);
+        SK_SVG_RESOURCE_PROTECTION_REPORT();
+        fValid = false;
+        return false;
+    }
+
+    if (fState->fRecursionDepth > static_cast<size_t>(recursionDepthLimit)) {
+        fState->fFailed = true;
+        SK_LOGE("SVG resource limit exceeded: fMaxSVGRecursionDepth "
+                "actual=%{public}zu max=%{public}d\n",
+                fState->fRecursionDepth, recursionDepthLimit);
+        SK_SVG_RESOURCE_PROTECTION_REPORT();
+        fValid = false;
+        return false;
+    }
+    ++fState->fRecursionDepth;
+    ++fEnteredDepth;
+    return true;
+}
+
+SkSVGRenderContext::RecursionScope::~RecursionScope() {
+    if (fState && fState->fLimits && fState->fLimits->fMaxSVGRecursionDepth > 0) {
+        SkASSERT(fState->fRecursionDepth >= fEnteredDepth);
+        fState->fRecursionDepth -= fEnteredDepth;
+    }
+}
+#endif
 
 SkSVGRenderContext::BorrowedNode SkSVGRenderContext::findNodeById(const SkSVGIRI& iri) const {
     if (iri.type() != SkSVGIRI::Type::kLocal) {
@@ -251,6 +337,11 @@ SkSVGRenderContext::BorrowedNode SkSVGRenderContext::findNodeById(const SkSVGIRI
 
 void SkSVGRenderContext::applyPresentationAttributes(const SkSVGPresentationAttributes& attrs,
                                                      uint32_t flags) {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (this->resourceLimitExceeded()) {
+        return;
+    }
+#endif
 
 #define ApplyLazyInheritedAttribute(ATTR)                                               \
     do {                                                                                \
@@ -317,6 +408,57 @@ void SkSVGRenderContext::applyPresentationAttributes(const SkSVGPresentationAttr
     // - lighting-color
 }
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+bool SkSVGRenderContext::consumeLayerEffectPixels(const SkRect* bounds, size_t layerCount) {
+    if (!fResourceState || !fResourceState->fLimits ||
+        fResourceState->fLimits->fMaxLayerEffectPixels == 0) {
+        return true;
+    }
+    if (fResourceState->fFailed) {
+        return false;
+    }
+
+    SkIRect deviceBounds = fCanvas->getDeviceClipBounds();
+    if (bounds) {
+        SkRect mappedBounds = fCanvas->getTotalMatrix().mapRect(*bounds);
+        SkIRect mappedIBounds = mappedBounds.roundOut();
+        if (!deviceBounds.intersect(mappedIBounds)) {
+            return true;
+        }
+    }
+    const int64_t width = deviceBounds.width();
+    const int64_t height = deviceBounds.height();
+    size_t pixels = 0;
+    if (width > 0 && height > 0) {
+        const uint64_t area = static_cast<uint64_t>(width) * static_cast<uint64_t>(height);
+        pixels = area > std::numeric_limits<size_t>::max()
+                ? std::numeric_limits<size_t>::max() : static_cast<size_t>(area);
+    }
+    if (layerCount > 0 && pixels > std::numeric_limits<size_t>::max() / layerCount) {
+        pixels = std::numeric_limits<size_t>::max();
+    } else {
+        pixels *= layerCount;
+    }
+
+    const size_t maxPixels = fResourceState->fLimits->fMaxLayerEffectPixels;
+    if (fResourceState->fLayerEffectPixels > maxPixels ||
+        pixels > maxPixels - fResourceState->fLayerEffectPixels) {
+        const size_t actual = pixels > std::numeric_limits<size_t>::max() -
+                                      fResourceState->fLayerEffectPixels
+                ? std::numeric_limits<size_t>::max()
+                : fResourceState->fLayerEffectPixels + pixels;
+        fResourceState->fFailed = true;
+        SK_LOGE("SVG resource limit exceeded: fMaxLayerEffectPixels "
+                "actual=%{public}zu max=%{public}zu\n",
+                actual, maxPixels);
+        SK_SVG_RESOURCE_PROTECTION_REPORT();
+        return false;
+    }
+    fResourceState->fLayerEffectPixels += pixels;
+    return true;
+}
+#endif
+
 void SkSVGRenderContext::applyOpacity(SkScalar opacity, uint32_t flags, bool hasFilter) {
     if (opacity >= 1) {
         return;
@@ -336,6 +478,11 @@ void SkSVGRenderContext::applyOpacity(SkScalar opacity, uint32_t flags, bool has
         fDeferredPaintOpacity *= opacity;
     } else {
         // Expensive, layer-based fall back.
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        if (!this->consumeLayerEffectPixels(nullptr)) {
+            return;
+        }
+#endif
         SkPaint opacityPaint;
         opacityPaint.setAlphaf(SkTPin(opacity, 0.0f, 1.0f));
         // Balanced in the destructor, via restoreToCount().
@@ -354,8 +501,30 @@ void SkSVGRenderContext::applyFilter(const SkSVGFuncIRI& filter) {
     }
 
     const SkSVGFilter* filterNode = reinterpret_cast<const SkSVGFilter*>(node.get());
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    RecursionScope recursionScope(*this);
+    if (!recursionScope) {
+        return;
+    }
+#endif
     sk_sp<SkImageFilter> imageFilter = filterNode->buildFilterDAG(*this);
     if (imageFilter) {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        const SkIRect deviceClip = fCanvas->getDeviceClipBounds();
+        SkIRect filterBounds = imageFilter->filterBounds(
+                deviceClip, fCanvas->getTotalMatrix(),
+                SkImageFilter::kReverse_MapDirection, &deviceClip);
+        SkRect localFilterBounds = SkRect::Make(filterBounds);
+        SkMatrix inverseCTM;
+        const SkRect* effectBounds = nullptr;
+        if (fCanvas->getTotalMatrix().invert(&inverseCTM)) {
+            localFilterBounds = inverseCTM.mapRect(localFilterBounds);
+            effectBounds = &localFilterBounds;
+        }
+        if (!this->consumeLayerEffectPixels(effectBounds)) {
+            return;
+        }
+#endif
         SkPaint filterPaint;
         filterPaint.setImageFilter(imageFilter);
         // Balanced in the destructor, via restoreToCount().
@@ -408,7 +577,19 @@ void SkSVGRenderContext::applyMask(const SkSVGFuncIRI& mask) {
     }
 
     const auto* mask_node = static_cast<const SkSVGMask*>(node.get());
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    RecursionScope recursionScope(*this);
+    if (!recursionScope) {
+        return;
+    }
+#endif
     const auto mask_bounds = mask_node->bounds(*this);
+
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (!this->consumeLayerEffectPixels(&mask_bounds, 2)) {
+        return;
+    }
+#endif
 
     // Isolation/mask layer.
     fCanvas->saveLayer(mask_bounds, nullptr);
@@ -460,7 +641,11 @@ SkTLazy<SkPaint> SkSVGRenderContext::commonPaint(const SkSVGPaint& paint_selecto
                                      *fLengthContext,
                                      pctx,
                                      fOBBScope,
-                                     fTextShapingFactory);
+                                     fTextShapingFactory
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                                     , fResourceState
+#endif
+                                     );
 
         const auto node = this->findNodeById(paint_selector.iri());
         if (!node || !node->asPaint(local_ctx, p.get())) {

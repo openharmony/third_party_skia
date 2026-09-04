@@ -32,20 +32,51 @@ SkSVGNode::SkSVGNode(SkSVGTag t) : fTag(t) {
 SkSVGNode::~SkSVGNode() { }
 
 void SkSVGNode::render(const SkSVGRenderContext& ctx) const {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (ctx.resourceLimitExceeded()) {
+        return;
+    }
+    SkSVGRenderContext::RecursionScope recursionScope(ctx);
+    if (!recursionScope) {
+        return;
+    }
+#endif
     SkSVGRenderContext localContext(ctx, this);
 
-    if (this->onPrepareToRender(&localContext)) {
+    if (this->onPrepareToRender(&localContext)
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        && !localContext.resourceLimitExceeded()
+#endif
+        ) {
         this->onRender(localContext);
     }
 }
 
 bool SkSVGNode::asPaint(const SkSVGRenderContext& ctx, SkPaint* paint) const {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (ctx.resourceLimitExceeded()) {
+        return false;
+    }
+    SkSVGRenderContext::RecursionScope recursionScope(ctx);
+    if (!recursionScope) {
+        return false;
+    }
+#endif
     SkSVGRenderContext localContext(ctx);
 
     return this->onPrepareToRender(&localContext) && this->onAsPaint(localContext, paint);
 }
 
 SkPath SkSVGNode::asPath(const SkSVGRenderContext& ctx) const {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (ctx.resourceLimitExceeded()) {
+        return SkPath();
+    }
+    SkSVGRenderContext::RecursionScope recursionScope(ctx);
+    if (!recursionScope) {
+        return SkPath();
+    }
+#endif
     SkSVGRenderContext localContext(ctx);
     if (!this->onPrepareToRender(&localContext)) {
         return SkPath();
@@ -62,6 +93,15 @@ SkPath SkSVGNode::asPath(const SkSVGRenderContext& ctx) const {
 }
 
 SkRect SkSVGNode::objectBoundingBox(const SkSVGRenderContext& ctx) const {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (ctx.resourceLimitExceeded()) {
+        return SkRect::MakeEmpty();
+    }
+    SkSVGRenderContext::RecursionScope recursionScope(ctx);
+    if (!recursionScope) {
+        return SkRect::MakeEmpty();
+    }
+#endif
     return this->onObjectBoundingBox(ctx);
 }
 

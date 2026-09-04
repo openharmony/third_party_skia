@@ -68,6 +68,9 @@ const SkSVGPattern* SkSVGPattern::resolveHref(const SkSVGRenderContext& ctx,
                                               PatternAttributes* attrs) const {
     const SkSVGPattern *currentNode = this,
                        *contentNode = this;
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    SkSVGRenderContext::RecursionScope recursionScope(ctx, 0);
+#endif
     do {
         // Bitwise OR to avoid short-circuiting.
         const bool didInherit =
@@ -88,6 +91,11 @@ const SkSVGPattern* SkSVGPattern::resolveHref(const SkSVGRenderContext& ctx,
         }
 
         // TODO: reference loop mitigation.
+#ifdef SKIA_OHOS_SVG_PROTECTION
+        if (!recursionScope.enter()) {
+            break;
+        }
+#endif
         currentNode = currentNode->hrefTarget(ctx);
     } while (currentNode);
 

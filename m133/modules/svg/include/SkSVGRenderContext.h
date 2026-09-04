@@ -22,6 +22,9 @@
 #include "modules/svg/include/SkSVGAttribute.h"
 #include "modules/svg/include/SkSVGIDMapper.h"
 #include "modules/svg/include/SkSVGNode.h"
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "modules/svg/include/SkSVGResourceLimits.h"
+#endif
 #include "modules/svg/include/SkSVGTypes.h"
 #include "src/base/SkTLazy.h"
 #include "src/core/SkTHash.h"
@@ -78,6 +81,14 @@ struct SK_API SkSVGPresentationContext {
 
 class SK_API SkSVGRenderContext {
 public:
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    struct ResourceState {
+        const SkSVGResourceLimits* fLimits;
+        size_t fLayerEffectPixels = 0;
+        size_t fRecursionDepth = 0;
+        bool fFailed = false;
+    };
+#endif
     // Captures data required for object bounding box resolution.
     struct OBBScope {
         const SkSVGNode*          fNode;
@@ -91,7 +102,11 @@ public:
                        const SkSVGLengthContext&,
                        const SkSVGPresentationContext&,
                        const OBBScope&,
-                       const sk_sp<SkShapers::Factory>&);
+                       const sk_sp<SkShapers::Factory>&
+#ifdef SKIA_OHOS_SVG_PROTECTION
+                       , ResourceState* = nullptr
+#endif
+                       );
     SkSVGRenderContext(const SkSVGRenderContext&);
     SkSVGRenderContext(const SkSVGRenderContext&, SkCanvas*);
     // Establish a new OBB scope.  Normally used when entering a node's render scope.
@@ -105,6 +120,30 @@ public:
 
     SkCanvas* canvas() const { return fCanvas; }
     void saveOnce();
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    bool resourceLimitExceeded() const { return fResourceState && fResourceState->fFailed; }
+
+    // Tracks one actual SVG traversal step. The scope is shared by all render
+    // contexts belonging to a render operation, so href expansion and regular
+    // child traversal consume the same depth budget.
+    class RecursionScope {
+    public:
+        explicit RecursionScope(const SkSVGRenderContext&);
+        RecursionScope(const SkSVGRenderContext&, size_t initialDepth);
+        ~RecursionScope();
+
+        explicit operator bool() const { return fValid; }
+        bool enter();
+
+    private:
+        RecursionScope(const RecursionScope&) = delete;
+        RecursionScope& operator=(const RecursionScope&) = delete;
+
+        ResourceState* fState;
+        size_t fEnteredDepth = 0;
+        bool fValid = true;
+    };
+#endif
 
     enum ApplyFlags {
         kLeaf = 1 << 0, // the target node doesn't have descendants
@@ -208,6 +247,9 @@ private:
     void applyFilter(const SkSVGFuncIRI&);
     void applyClip(const SkSVGFuncIRI&);
     void applyMask(const SkSVGFuncIRI&);
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    bool consumeLayerEffectPixels(const SkRect* bounds, size_t layerCount = 1);
+#endif
 
     SkTLazy<SkPaint> commonPaint(const SkSVGPaint&, float opacity) const;
 
@@ -230,6 +272,9 @@ private:
 
     // Current object bounding box scope.
     const OBBScope                                fOBBScope;
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    ResourceState* const                          fResourceState;
+#endif
 };
 
 #endif // SkSVGRenderContext_DEFINED

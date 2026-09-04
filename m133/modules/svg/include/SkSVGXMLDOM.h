@@ -9,6 +9,10 @@
 
 #include "src/xml/SkDOM.h"
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "modules/svg/include/SkSVGResourceLimits.h"
+#endif
+
 class SkSVGXMLDOM : public SkDOM {
 public:
     using SkDOMNode = Node;
@@ -18,6 +22,10 @@ public:
     ~SkSVGXMLDOM() override = default;
 
     const Node* build(SkStream& docStream, uint64_t svgThemeColor);
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    const Node* build(SkStream& docStream, uint64_t svgThemeColor,
+                      const SkSVGResourceLimits& limits);
+#endif
 
     // override SkDom functions
     const Node* build(SkStream& docStream) override;
