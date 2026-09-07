@@ -488,7 +488,7 @@ bool ParagraphCache::useCachedLayout(const ParagraphImpl& paragraph, const Parag
         nearlyEqual(paragraph.fFirstLineIndent, value->fFirstLineIndent) &&
         paragraph.getLineBreakStrategy() == value->linebreakStrategy &&
         paragraph.getWordBreakType() == value->wordBreakType &&
-        abs(paragraph.fLayoutRawWidth - value->fLayoutRawWidth) < 1.f &&
+        nearlyEqual(paragraph.fLayoutRawWidth, value->fLayoutRawWidth) &&
         nearlyEqual(paragraph.fConstraintsHeight, value->fLayoutConstraintsHeight) &&
         paragraph.fParagraphStyle.getMaxLines() == value->maxlines &&
         paragraph.fParagraphStyle.getEllipsisMod() == value->ellipsisModal &&
