@@ -2775,6 +2775,9 @@ void SkCanvas::drawPicture(const SkPicture* picture, const SkMatrix* matrix, con
     TRACE_EVENT0("skia", TRACE_FUNC);
     RETURN_ON_NULL(picture);
 
+    #if defined(SKIA_OHOS)
+    #endif
+
     if (matrix && matrix->isIdentity()) {
         matrix = nullptr;
     }
