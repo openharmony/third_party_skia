@@ -64,6 +64,10 @@
 #include "src/text/GlyphRun.h"
 #include "src/utils/SkPatchUtils.h"
 
+#if defined(SKIA_OHOS)
+#include "modules/svg/src/SkSVGStackGuard.h"
+#endif
+
 #include <algorithm>
 #include <memory>
 #include <new>
@@ -2775,8 +2779,12 @@ void SkCanvas::drawPicture(const SkPicture* picture, const SkMatrix* matrix, con
     TRACE_EVENT0("skia", TRACE_FUNC);
     RETURN_ON_NULL(picture);
 
-    #if defined(SKIA_OHOS)
-    #endif
+#if defined(SKIA_OHOS)
+    if (!sksvg::HasSufficientStackForRecursion(nullptr)) {
+        SkDebugf("xw_debug SkCanvas::drawPicture: insufficient stack for picture recursion, skipping");
+        return;
+    }
+#endif
 
     if (matrix && matrix->isIdentity()) {
         matrix = nullptr;
@@ -2791,6 +2799,12 @@ void SkCanvas::drawPicture(const SkPicture* picture, const SkMatrix* matrix, con
 
 void SkCanvas::onDrawPicture(const SkPicture* picture, const SkMatrix* matrix,
                              const SkPaint* paint) {
+#if defined(SKIA_OHOS)
+    if (!sksvg::HasSufficientStackForRecursion(nullptr)) {
+        SkDebugf("xw_debug SkCanvas::onDrawPicture: insufficient stack for picture recursion, skipping");
+        return;
+    }
+#endif
     if (this->internalQuickReject(picture->cullRect(), paint ? *paint : SkPaint{}, matrix)) {
         return;
     }
