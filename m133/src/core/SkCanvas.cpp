@@ -2781,7 +2781,7 @@ void SkCanvas::drawPicture(const SkPicture* picture, const SkMatrix* matrix, con
 
 #if defined(SKIA_OHOS)
     if (!sksvg::HasSufficientStackForRecursion(nullptr)) {
-        SkDebugf("xw_debug SkCanvas::drawPicture: insufficient stack for picture recursion, skipping");
+        SkDebugf("SkCanvas::drawPicture: insufficient stack for picture recursion, skipping");
         return;
     }
 #endif
@@ -2801,7 +2801,7 @@ void SkCanvas::onDrawPicture(const SkPicture* picture, const SkMatrix* matrix,
                              const SkPaint* paint) {
 #if defined(SKIA_OHOS)
     if (!sksvg::HasSufficientStackForRecursion(nullptr)) {
-        SkDebugf("xw_debug SkCanvas::onDrawPicture: insufficient stack for picture recursion, skipping");
+        SkDebugf("SkCanvas::onDrawPicture: insufficient stack for picture recursion, skipping");
         return;
     }
 #endif
