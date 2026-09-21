@@ -64,7 +64,11 @@ bool VulkanMemory::AllocBufferMemory(VulkanMemoryAllocator* allocator,
     } else {
         propFlags = VulkanMemoryAllocator::kNone_AllocationPropertyFlag;
     }
-
+#ifdef IS_OHOS_EMULATOR
+    if (usage == BufferUsage::kTransfersFromGpuToCpu) {
+        propFlags = propFlags | VulkanMemoryAllocator::kDedicatedAllocation_AllocationPropertyFlag;
+    }
+#endif
     if (isProtected == Protected::kYes) {
         propFlags = propFlags | VulkanMemoryAllocator::kProtected_AllocationPropertyFlag;
     }
