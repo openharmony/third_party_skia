@@ -354,6 +354,12 @@ skif::LayerSpace<SkIRect> SkImageFilter_Base::getChildInputLayerBounds(
         const skif::Mapping& mapping,
         const skif::LayerSpace<SkIRect>& desiredOutput,
         std::optional<skif::LayerSpace<SkIRect>> contentBounds) const {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (!sksvg::HasSufficientStackForRecursion(nullptr)) {
+        SkDebugf("SkImageFilter: insufficient stack for input layer bounds recursion, skipping");
+        return skif::LayerSpace<SkIRect>::Empty();
+    }
+#endif
     // The required input for childFilter filter, or 'contentBounds' intersected with
     // 'desiredOutput' if the filter is null and the source image is used (i.e. the identity filter)
     const SkImageFilter* childFilter = this->getInput(index);
@@ -377,6 +383,12 @@ std::optional<skif::LayerSpace<SkIRect>> SkImageFilter_Base::getChildOutputLayer
         int index,
         const skif::Mapping& mapping,
         std::optional<skif::LayerSpace<SkIRect>> contentBounds) const {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (!sksvg::HasSufficientStackForRecursion(nullptr)) {
+        SkDebugf("SkImageFilter: insufficient stack for output layer bounds recursion, skipping");
+        return skif::LayerSpace<SkIRect>::Empty();
+    }
+#endif
     // The output for just childFilter filter, or 'contentBounds' if the filter is null and
     // the source image is used (i.e. the identity filter applied to the source).
     const SkImageFilter* childFilter = this->getInput(index);
@@ -385,6 +397,12 @@ std::optional<skif::LayerSpace<SkIRect>> SkImageFilter_Base::getChildOutputLayer
 }
 
 skif::FilterResult SkImageFilter_Base::getChildOutput(int index, const skif::Context& ctx) const {
+#ifdef SKIA_OHOS_SVG_PROTECTION
+    if (!sksvg::HasSufficientStackForRecursion(nullptr)) {
+        SkDebugf("SkImageFilter: insufficient stack for filter image recursion, skipping");
+        return {};
+    }
+#endif
     const SkImageFilter* input = this->getInput(index);
     return input ? as_IFB(input)->filterImage(ctx) : ctx.source();
 }
