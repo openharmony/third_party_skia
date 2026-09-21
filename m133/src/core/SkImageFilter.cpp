@@ -28,6 +28,10 @@
 #include "src/core/SkWriteBuffer.h"
 #include "src/effects/colorfilters/SkColorFilterBase.h"
 
+#ifdef SKIA_OHOS_SVG_PROTECTION
+#include "modules/svg/src/SkSVGStackGuard.h"
+#endif
+
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
