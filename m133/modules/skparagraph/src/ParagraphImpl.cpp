@@ -3931,6 +3931,13 @@ bool ParagraphImpl::addPathInfoFromLine(
                 runOffsetInLine, textRange, StyleType::kForeground,
                 [this, &line, &range, run, &pathInfo, &allSuccess](
                 TextRange textRange, const TextStyle& style, const TextLine::ClipContext& context) {
+                    // Defensive: EMPTY_INDEX is not a valid text index.
+                    // It must never reach clusterIndex(), whose lookup is
+                    // bounds-checked and traps (SIGILL) on out-of-range input.
+                    if (textRange.start == EMPTY_INDEX || textRange.end == EMPTY_INDEX) {
+                        TEXT_LOGE("Abnormal textRange");
+                        return;
+                    }
                     ClusterRange boxClusterRange = {clusterIndex(textRange.start), clusterIndex(textRange.end)};
                     const auto& mixClusterRange = intersection(range, boxClusterRange);
                     if (mixClusterRange == EMPTY_RANGE) {
