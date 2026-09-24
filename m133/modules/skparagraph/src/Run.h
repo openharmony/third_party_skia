@@ -360,6 +360,7 @@ private:
     bool fEllipsis;
     uint8_t fBidiLevel;
 #ifdef ENABLE_TEXT_ENHANCE
+    bool fHyphen{false};
     SkScalar fTopInGroup{0.0f};
     SkScalar fBottomInGroup{0.0f};
     SkScalar fMaxRoundRectRadius{0.0f};

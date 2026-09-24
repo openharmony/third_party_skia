@@ -1712,7 +1712,9 @@ static std::unique_ptr<Run> tryShapeWithSpecifiedTypefaces(const TextStyle& text
 std::unique_ptr<Run> TextLine::shapeEllipsis(const SkString& ellipsis, const Cluster* cluster) {
 #ifdef ENABLE_TEXT_ENHANCE
     fEllipsisString = ellipsis;
-    return shapeString(ellipsis, cluster);
+    std::unique_ptr<Run> run = shapeString(ellipsis, cluster);
+    run->fEllipsis = true;
+    return run;
 }
 
 std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* cluster) {
@@ -1746,8 +1748,10 @@ std::unique_ptr<Run> TextLine::shapeString(const SkString& str, const Cluster* c
             fRun->fAdvance.fX = info.fAdvance.fX;
             fRun->fAdvance.fY = fRun->advance().fY;
             fRun->fPlaceholderIndex = std::numeric_limits<size_t>::max();
+#ifndef ENABLE_TEXT_ENHANCE
             // this may not be fully accurate, but limiting the changes to the text line
             fRun->fEllipsis = true;
+#endif
         }
 
         void commitLine() override {}
@@ -2116,7 +2120,7 @@ TextLine::ClipContext TextLine::measureTextInsideOneRun(TextRange textRange, con
     SkScalar textOffsetInRunInLine, bool includeGhostSpaces, TextAdjustment textAdjustment) const {
     ClipContext result = {run, 0, run->size(), 0, SkRect::MakeEmpty(), 0, false};
 
-    if (run->fEllipsis) {
+    if (run->fEllipsis || run->fHyphen) {
         // Both ellipsis and placeholders can only be measured as one glyph
         result.fTextShift = runOffsetInLine;
         result.clip = SkRect::MakeXYWH(runOffsetInLine, sizes().runTop(run, this->fAscentStyle), run->advance().fX,
@@ -2393,11 +2397,13 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
     };
 #endif
 
+#ifdef ENABLE_TEXT_ENHANCE
+    if (run->fEllipsis || run->fHyphen) {
+#else
     if (run->fEllipsis) {
+#endif
         // Extra efforts to get the ellipsis text style
         ClipContext clipContext = correctContext(run->textRange(), 0.0f);
-        TextRange testRange(run->fClusterStart, run->fClusterStart + run->textRange().width());
-        
 #ifdef ENABLE_TEXT_ENHANCE
         BlockIndex blockRangeEnd = (fBlockRange.end < fOwner->styles().size())
             ? fBlockRange.end + 1 : fOwner->styles().size();
@@ -2405,17 +2411,20 @@ SkScalar TextLine::iterateThroughSingleRunByStyles(TextAdjustment textAdjustment
             auto block = fOwner->styles().begin() + index;
             TextRange intersect = intersected(
                     block->fRange, TextRange(run->textRange().start, run->textRange().end));
-            if (intersect.width() > 0) {
-                visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
-                return run->advance().fX;
-            }
-            if (block->fRange.start >= run->fClusterStart &&
-                block->fRange.end < run->fClusterStart) {
-                visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
+            if (intersect.width() > 0 || (block->fRange.start >= run->fClusterStart &&
+                block->fRange.end < run->fClusterStart)) {
+                if (run->fEllipsis) {
+                    visitor(fTextRangeReplacedByEllipsis, block->fStyle, clipContext);
+                }
+                if (run->fHyphen) {
+                    visitor(run->textRange(), block->fStyle, clipContext);
+                }
                 return run->advance().fX;
             }
         }
 #else
+        TextRange testRange(run->fClusterStart, run->fClusterStart + run->textRange().width());
+
         for (BlockIndex index = fBlockRange.start; index < fBlockRange.end; ++index) {
             auto block = fOwner->styles().begin() + index;
             auto intersect = intersected(block->fRange, testRange);
@@ -3473,6 +3482,7 @@ void TextLine::setBreakWithHyphen(bool breakWithHyphen)
         SkString dash("-");
         if (fHyphenRun == nullptr) {
             fHyphenRun = shapeString(dash, &cluster);
+            fHyphenRun->fHyphen = true;
             fHyphenRun->setOwner(fOwner);
         }
 
