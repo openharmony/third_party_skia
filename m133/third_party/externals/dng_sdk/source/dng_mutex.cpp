@@ -24,68 +24,7 @@
 
 namespace
 	{
-
-	class InnermostMutexHolder
-		{
-		
-		private:
-
-			pthread_key_t fInnermostMutexKey;
-
-		public:
-
-			InnermostMutexHolder ()
-			
-				:	fInnermostMutexKey ()
-				
-				{
-
-				int result = pthread_key_create (&fInnermostMutexKey, NULL);
-
-				DNG_ASSERT (result == 0, "pthread_key_create failed.");
-
-				if (result != 0)
-					ThrowProgramError ();
-
-				}
-
-			~InnermostMutexHolder ()
-				{
-				
-				pthread_key_delete (fInnermostMutexKey);
-				
-				}
-
-			void SetInnermostMutex (dng_mutex *mutex)
-				{
-
-				int result;
-
-				result = pthread_setspecific (fInnermostMutexKey, (void *)mutex);
-
-				DNG_ASSERT (result == 0, "pthread_setspecific failed.");
-
-				#if 0		// Hard failure here was causing crash on quit.
-				
-				if (result != 0)
-					ThrowProgramError ();
-					
-				#endif
-
-				}
-
-			dng_mutex *GetInnermostMutex ()
-				{
-
-				void *result = pthread_getspecific (fInnermostMutexKey);
-
-				return reinterpret_cast<dng_mutex *> (result);
-
-				}
-
-		};
-
-	InnermostMutexHolder gInnermostMutexHolder;
+	thread_local dng_mutex *gInnermostMutex = NULL;
 	
 	}
 
@@ -138,7 +77,7 @@ void dng_mutex::Lock ()
 	
 	#if qDNGThreadSafe
 
-	dng_mutex *innermostMutex = gInnermostMutexHolder.GetInnermostMutex ();
+	dng_mutex *innermostMutex = gInnermostMutex;
 
 	if (innermostMutex != NULL)
 		{
@@ -176,7 +115,7 @@ void dng_mutex::Lock ()
 
 	fPrevHeldMutex = innermostMutex;
 
-	gInnermostMutexHolder.SetInnermostMutex (this);
+	gInnermostMutex = this;
 
 	#endif
 	
@@ -189,7 +128,7 @@ void dng_mutex::Unlock ()
 	
 	#if qDNGThreadSafe
 	
-	DNG_ASSERT (gInnermostMutexHolder.GetInnermostMutex () == this, "Mutexes unlocked out of order!!!");
+	DNG_ASSERT (gInnermostMutex == this, "Mutexes unlocked out of order!!!");
 
 	if (fRecursiveLockCount > 0)
 		{
@@ -200,7 +139,7 @@ void dng_mutex::Unlock ()
 
 		}
 
-	gInnermostMutexHolder.SetInnermostMutex (fPrevHeldMutex);
+	gInnermostMutex = fPrevHeldMutex;
 
 	fPrevHeldMutex = NULL;
 
@@ -313,13 +252,13 @@ bool dng_condition::Wait (dng_mutex &mutex, double timeoutSecs)
 
 	bool timedOut = false;
 
-	dng_mutex *innermostMutex = gInnermostMutexHolder.GetInnermostMutex ();
+	dng_mutex *innermostMutex = gInnermostMutex;
 
 	DNG_ASSERT (innermostMutex == &mutex, "Attempt to wait on non-innermost mutex.");
 
 	innermostMutex = mutex.fPrevHeldMutex;
 
-	gInnermostMutexHolder.SetInnermostMutex (innermostMutex);
+	gInnermostMutex = innermostMutex;
 
 	mutex.fPrevHeldMutex = NULL;
 
@@ -349,7 +288,7 @@ bool dng_condition::Wait (dng_mutex &mutex, double timeoutSecs)
 
 	mutex.fPrevHeldMutex = innermostMutex;
 
-	gInnermostMutexHolder.SetInnermostMutex (&mutex);
+	gInnermostMutex = &mutex;
 
 	return !timedOut;
 
