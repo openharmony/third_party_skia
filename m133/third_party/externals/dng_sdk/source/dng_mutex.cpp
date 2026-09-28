@@ -32,62 +32,62 @@ namespace
 		{
 		
 		private:
- 
+
 			pthread_key_t fInnermostMutexKey;
- 
+
 		public:
- 
+
 			InnermostMutexHolder ()
 			
 				:	fInnermostMutexKey ()
 				
 				{
- 
+
 				int result = pthread_key_create (&fInnermostMutexKey, NULL);
- 
+
 				DNG_ASSERT (result == 0, "pthread_key_create failed.");
- 
+
 				if (result != 0)
 					ThrowProgramError ();
- 
+
 				}
- 
+
 			~InnermostMutexHolder ()
 				{
 				
 				pthread_key_delete (fInnermostMutexKey);
 				
 				}
- 
+
 			void SetInnermostMutex (dng_mutex *mutex)
 				{
- 
+
 				int result;
- 
+
 				result = pthread_setspecific (fInnermostMutexKey, (void *)mutex);
- 
+
 				DNG_ASSERT (result == 0, "pthread_setspecific failed.");
- 
+
 				#if 0		// Hard failure here was causing crash on quit.
 				
 				if (result != 0)
 					ThrowProgramError ();
 					
 				#endif
- 
+
 				}
- 
+
 			dng_mutex *GetInnermostMutex ()
 				{
- 
+
 				void *result = pthread_getspecific (fInnermostMutexKey);
- 
+
 				return reinterpret_cast<dng_mutex *> (result);
- 
+
 				}
- 
+
 		};
- 
+
 	InnermostMutexHolder gInnermostMutexHolder;
 #endif
 	
