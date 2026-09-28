@@ -28,7 +28,7 @@ namespace
 #if defined(SKIA_OHOS)
 	thread_local dng_mutex *gInnermostMutex = NULL;
 #else
-		class InnermostMutexHolder
+	class InnermostMutexHolder
 		{
 		
 		private:
