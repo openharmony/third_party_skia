@@ -141,8 +141,11 @@ void dng_mutex::Lock ()
 	{
 	
 	#if qDNGThreadSafe
-
+#if defined(SKIA_OHOS)
 	dng_mutex *innermostMutex = gInnermostMutex;
+#else
+	dng_mutex *innermostMutex = gInnermostMutexHolder.GetInnermostMutex ();
+#endif
 
 	if (innermostMutex != NULL)
 		{
@@ -180,7 +183,11 @@ void dng_mutex::Lock ()
 
 	fPrevHeldMutex = innermostMutex;
 
+#if defined(SKIA_OHOS)
 	gInnermostMutex = this;
+#else
+	gInnermostMutexHolder.SetInnermostMutex (this);
+#endif
 
 	#endif
 	
@@ -193,7 +200,11 @@ void dng_mutex::Unlock ()
 	
 	#if qDNGThreadSafe
 	
+#if defined(SKIA_OHOS)
 	DNG_ASSERT (gInnermostMutex == this, "Mutexes unlocked out of order!!!");
+#else
+	gInnermostMutexHolder.SetInnermostMutex (fPrevHeldMutex);
+#endif
 
 	if (fRecursiveLockCount > 0)
 		{
@@ -317,13 +328,21 @@ bool dng_condition::Wait (dng_mutex &mutex, double timeoutSecs)
 
 	bool timedOut = false;
 
+#if defined(SKIA_OHOS)
 	dng_mutex *innermostMutex = gInnermostMutex;
+#else
+	dng_mutex *innermostMutex = gInnermostMutexHolder.GetInnermostMutex ();
+#endif
 
 	DNG_ASSERT (innermostMutex == &mutex, "Attempt to wait on non-innermost mutex.");
 
 	innermostMutex = mutex.fPrevHeldMutex;
 
+#if defined(SKIA_OHOS)
 	gInnermostMutex = innermostMutex;
+#else
+	gInnermostMutexHolder.SetInnermostMutex (innermostMutex);
+#endif
 
 	mutex.fPrevHeldMutex = NULL;
 
@@ -353,7 +372,11 @@ bool dng_condition::Wait (dng_mutex &mutex, double timeoutSecs)
 
 	mutex.fPrevHeldMutex = innermostMutex;
 
+#if defined(SKIA_OHOS)
 	gInnermostMutex = &mutex;
+#else
+	gInnermostMutexHolder.SetInnermostMutex (&mutex);
+#endif
 
 	return !timedOut;
 
