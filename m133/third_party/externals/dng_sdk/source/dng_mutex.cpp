@@ -203,7 +203,7 @@ void dng_mutex::Unlock ()
 #if defined(SKIA_OHOS)
 	DNG_ASSERT (gInnermostMutex == this, "Mutexes unlocked out of order!!!");
 #else
-	gInnermostMutexHolder.SetInnermostMutex (fPrevHeldMutex);
+	DNG_ASSERT (gInnermostMutexHolder.GetInnermostMutex () == this, "Mutexes unlocked out of order!!!");
 #endif
 
 	if (fRecursiveLockCount > 0)
