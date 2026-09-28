@@ -141,6 +141,7 @@ void dng_mutex::Lock ()
 	{
 	
 	#if qDNGThreadSafe
+
 #if defined(SKIA_OHOS)
 	dng_mutex *innermostMutex = gInnermostMutex;
 #else
@@ -215,7 +216,11 @@ void dng_mutex::Unlock ()
 
 		}
 
+#if defined(SKIA_OHOS)
 	gInnermostMutex = fPrevHeldMutex;
+#else
+	gInnermostMutexHolder.SetInnermostMutex (fPrevHeldMutex);
+#endif
 
 	fPrevHeldMutex = NULL;
 
