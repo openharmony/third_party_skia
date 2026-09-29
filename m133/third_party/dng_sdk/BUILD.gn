@@ -29,6 +29,9 @@ third_party("dng_sdk") {
     "qDNGValidateTarget=1",
     "UNIX_ENV=1",
   ]
+  if (is_ohos && (target_cpu == "arm" || target_cpu == "arm64" || is_emulator)) {
+    defines += [ "SKIA_OHOS" ]
+  }
   deps = []
   external_deps = []
   if (skia_use_system_lib) {
