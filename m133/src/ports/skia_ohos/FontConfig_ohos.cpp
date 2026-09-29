@@ -484,6 +484,9 @@ int FontConfig_OHOS::parseFontDir(const char* fname, const Json::Value& root)
         } else {
             dir = (path.asString() != "/system/fonts/")
                 ? path.asString() : "../../../../hms/previewer/resources/fonts/";
+            std::string dir1 = (path.asString() != "/system/fonts/")
+                ? path.asString() : "../../../../openharmony/previewer/common/bin/fonts/";
+            fFontDir.push_back(std::move(dir1));
         }
 #else
         dir = path.asString();
