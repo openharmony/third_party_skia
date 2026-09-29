@@ -6,7 +6,6 @@
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
 #include "modules/skshaper/include/SkShaper_harfbuzz.h"
-#include "trace.h"
 
 namespace {
 #ifndef ENABLE_TEXT_ENHANCE
@@ -290,7 +289,6 @@ std::vector<sk_sp<SkTypeface>> FontCollection::findTypefaces(const std::vector<S
 
 #ifdef ENABLE_TEXT_ENHANCE
 std::shared_ptr<RSTypeface> FontCollection::matchTypeface(const SkString& familyName, RSFontStyle fontStyle) {
-    TEXT_TRACE("FontCollection::matchTypeface");
     for (const auto& manager : this->getFontManagerOrder()) {
         std::shared_ptr<RSFontStyleSet> set(manager->MatchFamily(familyName.c_str()));
         if (!set || set->Count() == 0) {
@@ -327,7 +325,6 @@ sk_sp<SkTypeface> FontCollection::matchTypeface(const SkString& familyName, SkFo
 #ifdef ENABLE_TEXT_ENHANCE
 std::shared_ptr<RSTypeface> FontCollection::defaultFallback(
     SkUnichar unicode, RSFontStyle fontStyle, const SkString& locale) {
-    TEXT_TRACE("FontCollection::defaultFallback");
     std::shared_lock<std::shared_mutex> readLock(mutex_);
     for (const auto& manager : this->getFontManagerOrder()) {
         std::vector<const char*> bcp47;
@@ -473,7 +470,6 @@ static SkLRUCacheMgr GetLRUCacheInstance() {
 
 std::shared_ptr<RSTypeface> FontCollection::CloneTypeface(std::shared_ptr<RSTypeface> typeface,
     const std::optional<FontArguments>& fontArgs) {
-    TEXT_TRACE("FontCollection::CloneTypeface");
     if (!typeface || !fontArgs) {
         return typeface;
     }
