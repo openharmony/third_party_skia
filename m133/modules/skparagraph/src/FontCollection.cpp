@@ -204,7 +204,6 @@ void FontCollection::updateTypefacesMatch(std::vector<std::shared_ptr<RSTypeface
 
 std::vector<std::shared_ptr<RSTypeface>> FontCollection::findTypefaces(const std::vector<SkString>& familyNames,
     RSFontStyle fontStyle, const std::optional<FontArguments>& fontArgs) {
-    TEXT_TRACE("FontCollection::findTypefaces");
     // Look inside the font collections cache first
     FamilyKey familyKey(familyNames, fontStyle, fontArgs);
     {
