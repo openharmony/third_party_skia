@@ -25,6 +25,9 @@
 namespace
 	{
 
+#ifdef SKIA_OHOS
+	thread_local dng_mutex *gInnermostMutex = NULL;
+#else
 	class InnermostMutexHolder
 		{
 		
@@ -86,6 +89,7 @@ namespace
 		};
 
 	InnermostMutexHolder gInnermostMutexHolder;
+#endif
 	
 	}
 
@@ -138,7 +142,11 @@ void dng_mutex::Lock ()
 	
 	#if qDNGThreadSafe
 
+#ifdef SKIA_OHOS
+	dng_mutex *innermostMutex = gInnermostMutex;
+#else
 	dng_mutex *innermostMutex = gInnermostMutexHolder.GetInnermostMutex ();
+#endif
 
 	if (innermostMutex != NULL)
 		{
@@ -176,7 +184,11 @@ void dng_mutex::Lock ()
 
 	fPrevHeldMutex = innermostMutex;
 
+#ifdef SKIA_OHOS
+	gInnermostMutex = this;
+#else
 	gInnermostMutexHolder.SetInnermostMutex (this);
+#endif
 
 	#endif
 	
@@ -189,7 +201,11 @@ void dng_mutex::Unlock ()
 	
 	#if qDNGThreadSafe
 	
+#ifdef SKIA_OHOS
+	DNG_ASSERT (gInnermostMutex == this, "Mutexes unlocked out of order!!!");
+#else
 	DNG_ASSERT (gInnermostMutexHolder.GetInnermostMutex () == this, "Mutexes unlocked out of order!!!");
+#endif
 
 	if (fRecursiveLockCount > 0)
 		{
@@ -200,7 +216,11 @@ void dng_mutex::Unlock ()
 
 		}
 
+#ifdef SKIA_OHOS
+	gInnermostMutex = fPrevHeldMutex;
+#else
 	gInnermostMutexHolder.SetInnermostMutex (fPrevHeldMutex);
+#endif
 
 	fPrevHeldMutex = NULL;
 
@@ -313,13 +333,21 @@ bool dng_condition::Wait (dng_mutex &mutex, double timeoutSecs)
 
 	bool timedOut = false;
 
+#ifdef SKIA_OHOS
+	dng_mutex *innermostMutex = gInnermostMutex;
+#else
 	dng_mutex *innermostMutex = gInnermostMutexHolder.GetInnermostMutex ();
+#endif
 
 	DNG_ASSERT (innermostMutex == &mutex, "Attempt to wait on non-innermost mutex.");
 
 	innermostMutex = mutex.fPrevHeldMutex;
 
+#ifdef SKIA_OHOS
+	gInnermostMutex = innermostMutex;
+#else
 	gInnermostMutexHolder.SetInnermostMutex (innermostMutex);
+#endif
 
 	mutex.fPrevHeldMutex = NULL;
 
@@ -349,7 +377,11 @@ bool dng_condition::Wait (dng_mutex &mutex, double timeoutSecs)
 
 	mutex.fPrevHeldMutex = innermostMutex;
 
+#ifdef SKIA_OHOS
+	gInnermostMutex = &mutex;
+#else
 	gInnermostMutexHolder.SetInnermostMutex (&mutex);
+#endif
 
 	return !timedOut;
 
